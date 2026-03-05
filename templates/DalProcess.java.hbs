@@ -3,6 +3,7 @@
 package {{package}};
 
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openbravo.base.exception.OBException;
@@ -10,12 +11,13 @@ import org.openbravo.dal.service.OBDal;
 import org.openbravo.erpCommon.utility.OBError;
 import org.openbravo.scheduling.ProcessBundle;
 import org.openbravo.service.db.DalBaseProcess;
-import {{entityClass}};
 
 /**
  * DAL Process: {{className}}
  *
- * Executes precondition checks followed by process steps.
+ * Entity: {{entity}}
+ * Preconditions: {{preconditions.length}}
+ * Steps: {{steps.length}}
  */
 public class {{className}} extends DalBaseProcess {
 
@@ -27,30 +29,21 @@ public class {{className}} extends DalBaseProcess {
       final Map<String, Object> params = bundle.getParams();
       final String recordId = (String) params.get("recordId");
 
-      // Load entity
-      final var order = OBDal.getInstance().get({{entityClass}}.class, recordId);
+      // TODO(vertical-slice): Load entity using OBDal
+      // final var entity = OBDal.getInstance().get(Order.class, recordId);
 
       // --- Preconditions ---
 {{#each preconditions}}
-      {{#if negate}}
-      if (!({{assertion}})) {
-        throw new OBException("{{errorMessage}}");
-      }
-      {{else}}
-      if ({{assertion}}) {
-        throw new OBException("{{errorMessage}}");
-      }
-      {{/if}}
+      // {{id}}: {{{errorMessage}}}
+      // Assertion: {{{assertion}}}
+      // TODO(vertical-slice): implement precondition check
 {{/each}}
 
       // --- Process Steps ---
 {{#each steps}}
-      // Step: {{name}}
-      {{#if stub}}
-      // {{comment}}
-      {{else}}
-      {{{code}}}
-      {{/if}}
+      // Step {{order}}: {{name}} ({{type}})
+      // {{{description}}}
+      // TODO(vertical-slice): implement step logic
 {{/each}}
 
       OBDal.getInstance().flush();

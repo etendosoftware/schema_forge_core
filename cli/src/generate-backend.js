@@ -6,7 +6,6 @@ import { getOrCreateUuid, loadManifest, saveManifest } from './uuid-manifest.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** Map schema field types to Java types */
 const JAVA_TYPE_MAP = {
   string: 'String',
   integer: 'Integer',
@@ -23,7 +22,6 @@ function toJavaType(fieldType) {
   return JAVA_TYPE_MAP[fieldType] || 'String';
 }
 
-/** Convert a name to PascalCase class name */
 function toPascalCase(name) {
   return name
     .replace(/[-_]+/g, ' ')
@@ -31,20 +29,22 @@ function toPascalCase(name) {
     .replace(/\s+/g, '');
 }
 
-/** Convert window name to camelCase package segment (no hyphens) */
-function toPackageName(windowName) {
-  return windowName
-    .replace(/[-_]+(.)/g, (_, c) => c.toUpperCase())
-    .replace(/^(.)/, (_, c) => c.toLowerCase());
+/** "Sales Order" → "salesorder" (package-safe, no hyphens/spaces) */
+function toWindowPackage(windowName) {
+  return windowName.replace(/[\s-_]+/g, '').toLowerCase();
 }
 
 /**
  * Transforms schema/rules/processes into template-ready data structures.
+ * All generated classes go under: basePackage.windowPkg.* (e.g., com.etendoerp.go.salesorder.dto)
  */
 export function prepareTemplateData(schema, rules, processes, moduleConfig = {}) {
   const windowName = schema.window.name;
   const basePackage = moduleConfig.javaPackage ?? 'com.etendoerp.go';
-  const packageSegment = basePackage.split('.').pop();
+  const windowPkg = toWindowPackage(windowName);
+  const windowBasePackage = `${basePackage}.${windowPkg}`;
+
+  const now = new Date().toISOString();
 
   // Event handlers: one per entity with system field derivations
   const eventHandlers = schema.entities
@@ -62,15 +62,14 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
       return {
         entityName: entity.name,
         className: `${toPascalCase(entity.name)}DerivationHandler`,
-        table: entity.table,
+        table: entity.table ?? entity.tableName,
         derivations,
-        packageName: `${basePackage}.event`,
-        entityClass: `${basePackage}.dto.${toPascalCase(entity.name)}DTO`,
+        packageName: `${windowBasePackage}.event`,
       };
     })
     .filter(h => h.derivations.length > 0);
 
-  // Processes: class data with preconditions and steps
+  // Processes
   const processData = (processes || []).map(proc => ({
     name: proc.name,
     className: `${toPascalCase(proc.name)}Process`,
@@ -78,17 +77,16 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
     preconditions: proc.preconditions || [],
     steps: (proc.steps || []).map(s => ({
       order: s.order,
-      operation: s.operation,
+      name: s.name || s.operation || 'unnamed',
+      description: s.description || '',
+      type: s.type || s.operation || 'unknown',
       target: s.target,
-      value: s.value || null,
-      rule: s.rule || null,
-      isStub: s.operation !== 'validate' && s.operation !== 'mutation',
     })),
     edgeCases: proc.edgeCases || [],
-    packageName: `${basePackage}.process`,
+    packageName: `${windowBasePackage}.process`,
   }));
 
-  // DTOs: one per entity with only visible (non-system, non-discarded) fields
+  // DTOs: one per entity with visible fields
   const dtos = schema.entities.map(entity => {
     const visibleFields = entity.fields
       .filter(f => f.visibility !== 'system' && f.visibility !== 'discarded')
@@ -104,14 +102,14 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
     return {
       entityName: entity.name,
       className: `${toPascalCase(entity.name)}DTO`,
-      table: entity.table,
+      table: entity.table ?? entity.tableName,
       fields: visibleFields,
-      packageName: `${basePackage}.dto`,
+      packageName: `${windowBasePackage}.dto`,
     };
   });
 
-  // Endpoints: one per entity with searchable filters
-  const endpoints = schema.entities.map(entity => {
+  // Handlers: one per entity — these are called by the RestService router
+  const handlers = schema.entities.map(entity => {
     const searchableFields = entity.fields
       .filter(f => f.visibility !== 'system' && f.visibility !== 'discarded')
       .filter(f => f.type === 'string' || f.type === 'id' || f.type === 'foreignKey')
@@ -123,101 +121,77 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
 
     return {
       entityName: entity.name,
-      className: `${toPascalCase(entity.name)}Endpoint`,
-      table: entity.table,
+      className: `${toPascalCase(entity.name)}Handler`,
+      table: entity.table ?? entity.tableName,
       filters: searchableFields,
       dtoClass: `${toPascalCase(entity.name)}DTO`,
-      packageName: `${basePackage}.rest.handler`,
+      packageName: `${windowBasePackage}.handler`,
+      // REST path segment: "cOrder" → "orders", "cOrderLine" → "order-lines" etc.
+      pathSegment: entity.name,
     };
   });
 
-  // Validators: precondition validators from processes
+  // Validators
   const validators = (processes || [])
     .filter(p => p.preconditions && p.preconditions.length > 0)
     .map(proc => ({
       name: proc.name,
       className: `${toPascalCase(proc.name)}Validator`,
       preconditions: proc.preconditions,
-      packageName: `${basePackage}.validation`,
+      packageName: `${windowBasePackage}.validation`,
     }));
-
-  // Error serializer data
-  const errorSerializer = {
-    className: 'ErrorSerializer',
-    packageName: `${basePackage}.rest`,
-  };
-
-  // Build gradle config
-  const buildGradle = {
-    group: basePackage,
-    version: schema.version || '0.1.0',
-    moduleName: packageSegment,
-  };
-
-  // Dataset records
-  const datasets = {
-    windowId: schema.window.id,
-    windowName: schema.window.name,
-    entities: schema.entities.map(e => ({
-      name: e.name,
-      table: e.table,
-    })),
-    processes: (processes || []).map(p => ({
-      name: p.name,
-      entity: p.entity,
-    })),
-  };
 
   return {
     basePackage,
-    packageSegment,
+    windowPkg,
+    windowBasePackage,
     windowName,
+    now,
     eventHandlers,
     processes: processData,
     dtos,
-    endpoints,
+    handlers,
     validators,
-    errorSerializer,
-    buildGradle,
-    datasets,
   };
 }
 
 /**
  * Creates the list of { path, templateName, data } entries for file generation.
+ * All files go under modulePath/src/com/etendoerp/go/{windowPkg}/...
  */
-export function generateFileList(data, windowName, modulePath) {
-  const srcPath = `${modulePath}/src/${data.basePackage.replace(/\./g, '/')}`;
+export function generateFileList(data, modulePath) {
+  const windowSrcPath = `${modulePath}/src/${data.windowBasePackage.replace(/\./g, '/')}`;
+  const restSrcPath = `${modulePath}/src/${data.basePackage.replace(/\./g, '/')}/rest`;
   const files = [];
 
   // Event handlers
   for (const handler of data.eventHandlers) {
     files.push({
-      path: `${srcPath}/event/${handler.className}.java`,
+      path: `${windowSrcPath}/event/${handler.className}.java`,
       templateName: 'EventHandler.java.hbs',
-      data: { ...handler, package: handler.packageName, generatedDate: new Date().toISOString() },
+      data: { ...handler, package: handler.packageName, generatedDate: data.now },
     });
   }
 
   // Processes
   for (const proc of data.processes) {
     files.push({
-      path: `${srcPath}/process/${proc.className}.java`,
+      path: `${windowSrcPath}/process/${proc.className}.java`,
       templateName: 'DalProcess.java.hbs',
-      data: { ...proc, package: proc.packageName, generatedDate: new Date().toISOString() },
+      data: { ...proc, package: proc.packageName, generatedDate: data.now },
     });
   }
 
   // DTOs
   for (const dto of data.dtos) {
     files.push({
-      path: `${srcPath}/dto/${dto.className}.java`,
+      path: `${windowSrcPath}/dto/${dto.className}.java`,
       templateName: 'DTO.java.hbs',
       data: {
         ...dto,
         package: dto.packageName,
         version: '1',
-        generatedDate: new Date().toISOString(),
+        generatedDate: data.now,
         fields: dto.fields.map(f => ({
           ...f,
           type: f.javaType,
@@ -228,17 +202,16 @@ export function generateFileList(data, windowName, modulePath) {
     });
   }
 
-  // Endpoints
-  for (const endpoint of data.endpoints) {
+  // Handlers
+  for (const handler of data.handlers) {
     files.push({
-      path: `${srcPath}/rest/handler/${endpoint.className}.java`,
+      path: `${windowSrcPath}/handler/${handler.className}.java`,
       templateName: 'RxEndpoint.java.hbs',
       data: {
-        ...endpoint,
-        package: endpoint.packageName,
-        generatedDate: new Date().toISOString(),
-        entityClass: `${data.basePackage}.dto.${endpoint.dtoClass}`,
-        filters: endpoint.filters.map(f => ({ ...f, type: f.javaType })),
+        ...handler,
+        package: handler.packageName,
+        generatedDate: data.now,
+        filters: handler.filters.map(f => ({ ...f, type: f.javaType })),
       },
     });
   }
@@ -246,26 +219,103 @@ export function generateFileList(data, windowName, modulePath) {
   // Validators
   for (const validator of data.validators) {
     files.push({
-      path: `${srcPath}/validation/${validator.className}.java`,
+      path: `${windowSrcPath}/validation/${validator.className}.java`,
       templateName: 'PreconditionValidator.java.hbs',
-      data: { ...validator, package: validator.packageName, generatedDate: new Date().toISOString() },
+      data: { ...validator, package: validator.packageName, generatedDate: data.now },
     });
   }
 
-  // Error serializer
+  // Shared infrastructure (only generated once, not per-window)
+  // RequestHandler interface
   files.push({
-    path: `${srcPath}/rest/${data.errorSerializer.className}.java`,
-    templateName: 'ErrorSerializer.java.hbs',
-    data: { ...data.errorSerializer, package: data.errorSerializer.packageName, generatedDate: new Date().toISOString() },
+    path: `${restSrcPath}/RequestHandler.java`,
+    templateName: null,
+    content: `package ${data.basePackage}.rest;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * Interface for all entity request handlers.
+ * Implementations are registered in HandlerRegistry and dispatched by EtendoGoRestService.
+ */
+public interface RequestHandler {
+  String getBasePath();
+  void doGet(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException;
+  void doPost(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException;
+  void doPut(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException;
+  void doDelete(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException;
+}
+`,
   });
 
-  // build.gradle and dataset.xml are NOT generated — the module already has them
+  // HandlerRegistry
+  const handlerImports = data.handlers.map(h =>
+    `import ${h.packageName}.${h.className};`
+  ).join('\n');
+  const handlerRegistrations = data.handlers.map(h =>
+    `    register(new ${h.className}());`
+  ).join('\n');
+
+  files.push({
+    path: `${restSrcPath}/HandlerRegistry.java`,
+    templateName: null,
+    content: `package ${data.basePackage}.rest;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+${handlerImports}
+
+/**
+ * Registry of all request handlers, keyed by base path.
+ * Auto-generated — regenerate when adding new windows.
+ */
+public class HandlerRegistry {
+
+  private static final HandlerRegistry INSTANCE = new HandlerRegistry();
+  private final Map<String, RequestHandler> handlers = new ConcurrentHashMap<>();
+
+  private HandlerRegistry() {
+${handlerRegistrations}
+  }
+
+  public static HandlerRegistry getInstance() {
+    return INSTANCE;
+  }
+
+  private void register(RequestHandler handler) {
+    handlers.put(handler.getBasePath(), handler);
+  }
+
+  public RequestHandler findHandler(String path) {
+    if (path == null) return null;
+    // Match longest prefix: /salesorder/cOrder/123 → find handler for /salesorder/cOrder
+    String remaining = path;
+    while (remaining.length() > 0) {
+      RequestHandler handler = handlers.get(remaining);
+      if (handler != null) return handler;
+      int lastSlash = remaining.lastIndexOf('/');
+      if (lastSlash <= 0) break;
+      remaining = remaining.substring(0, lastSlash);
+    }
+    return null;
+  }
+
+  public String getSubPath(String fullPath, RequestHandler handler) {
+    String base = handler.getBasePath();
+    if (fullPath.length() <= base.length()) return "";
+    return fullPath.substring(base.length());
+  }
+}
+`,
+  });
 
   return files;
 }
 
 /**
- * Full orchestrator: compiles templates, writes files to artifacts/{windowName}/generated/backend/
+ * Full orchestrator: compiles templates, writes files to the module.
  */
 export async function generateBackend(schema, rules, processes, contract, windowName, moduleConfig = {}) {
   const modulePath = moduleConfig.modulePath;
@@ -274,22 +324,16 @@ export async function generateBackend(schema, rules, processes, contract, window
   }
 
   const data = prepareTemplateData(schema, rules, processes, moduleConfig);
-  const files = generateFileList(data, windowName, modulePath);
+  const files = generateFileList(data, modulePath);
 
   const slug = windowName.replace(/\s+/g, '-').toLowerCase();
   const manifestPath = join(__dirname, '..', '..', 'artifacts', slug, 'uuid-manifest.json');
   const manifest = await loadManifest(manifestPath);
 
-  // Assign UUIDs to processes and entities in datasets
+  // Assign UUIDs
   for (const proc of data.processes) {
     proc.uuid = getOrCreateUuid(manifest, 'AD_Process', proc.name);
   }
-  for (const entity of data.datasets.entities) {
-    entity.uuid = getOrCreateUuid(manifest, 'AD_Table', entity.table);
-  }
-
-  // Load and compile Handlebars templates
-  const templatesDir = join(__dirname, '..', '..', 'templates');
 
   // Register Handlebars helpers
   Handlebars.registerHelper('unless', function(conditional, options) {
@@ -297,22 +341,28 @@ export async function generateBackend(schema, rules, processes, contract, window
     return options.inverse(this);
   });
 
+  const templatesDir = join(__dirname, '..', '..', 'templates');
+
   for (const file of files) {
-    const templatePath = join(templatesDir, file.templateName);
     let content;
-    try {
-      const templateSource = await readFile(templatePath, 'utf8');
-      const template = Handlebars.compile(templateSource);
-      content = template(file.data);
-    } catch (err) {
-      // If template not found, generate a placeholder
-      console.warn(`  Warning: template ${file.templateName} failed: ${err.message}`);
-      content = `// Generated file: ${file.path}\n// Template: ${file.templateName}\n`;
+
+    if (file.content) {
+      // Pre-built content (no template needed)
+      content = file.content;
+    } else {
+      const templatePath = join(templatesDir, file.templateName);
+      try {
+        const templateSource = await readFile(templatePath, 'utf8');
+        const template = Handlebars.compile(templateSource);
+        content = template(file.data);
+      } catch (err) {
+        console.warn(`  Warning: template ${file.templateName} failed: ${err.message}`);
+        content = `// Generated file: ${file.path}\n// Template: ${file.templateName}\n`;
+      }
     }
 
-    const outputPath = file.path;
-    await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, content);
+    await mkdir(dirname(file.path), { recursive: true });
+    await writeFile(file.path, content);
   }
 
   // Save UUID manifest

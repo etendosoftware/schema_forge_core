@@ -4,36 +4,35 @@ package {{package}};
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openbravo.base.exception.OBException;
-import {{entityClass}};
+import org.openbravo.base.structure.BaseOBObject;
 
 /**
  * Precondition Validator: {{className}}
  *
  * Validates entity state before process execution.
- * Collects all validation errors before throwing.
+ * Preconditions: {{preconditions.length}}
  */
 public class {{className}} {
+
+  private static final Logger log = LogManager.getLogger();
 
   /**
    * Validate all preconditions for the given entity.
    *
-   * @param order the entity to validate
+   * @param entity the entity to validate
    * @throws OBException if any precondition fails
    */
-  public void validate(Object order) {
+  public void validate(BaseOBObject entity) {
     final List<String> errors = new ArrayList<>();
 
 {{#each preconditions}}
-    {{#if negate}}
-    if (!({{assertion}})) {
-      errors.add("{{errorMessage}}");
-    }
-    {{else}}
-    if ({{assertion}}) {
-      errors.add("{{errorMessage}}");
-    }
-    {{/if}}
+    // {{id}}: {{{assertion}}}
+    // TODO(vertical-slice): implement precondition check
+    // Expected error: {{{errorMessage}}}
 {{/each}}
 
     if (!errors.isEmpty()) {

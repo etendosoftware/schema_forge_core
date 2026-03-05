@@ -2,75 +2,104 @@
 // Generated: {{generatedDate}}
 package {{package}};
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONObject;
 import org.hibernate.criterion.Restrictions;
 import org.openbravo.dal.core.OBContext;
 import org.openbravo.dal.service.OBCriteria;
 import org.openbravo.dal.service.OBDal;
-import {{entityClass}};
+import org.openbravo.model.common.order.Order;
+
+import com.etendoerp.go.rest.RequestHandler;
 
 /**
- * Etendo RX Endpoint: {{className}}
+ * Request Handler: {{className}}
  *
- * Provides REST API for {{entityName}} entity with org-level filtering.
+ * Handles REST requests for {{entityName}} entity.
  */
-@Path("/{{entityName}}")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public class {{className}} {
+public class {{className}} implements RequestHandler {
 
-  @GET
-  public Response list(
-{{#each filters}}
-    @QueryParam("{{name}}") {{type}} {{name}}{{#unless @last}},{{/unless}}
-{{/each}}
-  ) {
+  private static final Logger log = LogManager.getLogger();
+  private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
+
+  @Override
+  public String getBasePath() {
+    return "/{{pathSegment}}";
+  }
+
+  @Override
+  public void doGet(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
     OBContext.setAdminMode(false);
     try {
-      final OBCriteria<{{entityName}}> criteria = OBDal.getInstance()
-          .createCriteria({{entityName}}.class);
-
-      // RT-5: Organization-level security filter
-      criteria.add(Restrictions.in("organization.id",
-          (Object[]) OBContext.getOBContext().getReadableOrganizations()));
-
-{{#each filters}}
-      if ({{name}} != null) {
-        criteria.add(Restrictions.eq("{{column}}", {{name}}));
+      if (subPath != null && subPath.length() > 1) {
+        // GET /{id}
+        String id = subPath.startsWith("/") ? subPath.substring(1) : subPath;
+        getById(id, response);
+      } else {
+        // GET / (list)
+        list(request, response);
       }
-{{/each}}
-
-      final List<{{entityName}}> results = criteria.list();
-
-      // TODO(vertical-slice): implement entity-to-DTO mapping via {{dtoClass}}
-
-      return Response.ok(results).build();
-
+    } catch (Exception e) {
+      log.error("Error in GET {}", request.getPathInfo(), e);
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     } finally {
       OBContext.restorePreviousMode();
     }
   }
 
-  @GET
-  @Path("/{id}")
-  public Response getById(@PathParam("id") String id) {
-    OBContext.setAdminMode(false);
-    try {
-      final {{entityName}} entity = OBDal.getInstance().get({{entityName}}.class, id);
-      if (entity == null) {
-        return Response.status(Response.Status.NOT_FOUND).build();
-      }
+  @Override
+  public void doPost(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
+    // TODO(vertical-slice): implement create
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.setContentType(APPLICATION_JSON);
+    response.getWriter().write("{\"error\":\"POST not yet implemented\"}");
+  }
 
-      // TODO(vertical-slice): implement entity-to-DTO mapping via {{dtoClass}}
+  @Override
+  public void doPut(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
+    // TODO(vertical-slice): implement update
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.setContentType(APPLICATION_JSON);
+    response.getWriter().write("{\"error\":\"PUT not yet implemented\"}");
+  }
 
-      return Response.ok(entity).build();
+  @Override
+  public void doDelete(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
+    // TODO(vertical-slice): implement delete
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.setContentType(APPLICATION_JSON);
+    response.getWriter().write("{\"error\":\"DELETE not yet implemented\"}");
+  }
 
-    } finally {
-      OBContext.restorePreviousMode();
-    }
+  private void list(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    // TODO(vertical-slice): replace with proper OBDal entity class
+    response.setContentType(APPLICATION_JSON);
+    JSONObject result = new JSONObject();
+    result.put("entity", "{{entityName}}");
+    result.put("action", "list");
+    result.put("status", "stub");
+{{#each filters}}
+    // Filter: {{name}} ({{type}}) → column {{column}}
+{{/each}}
+    response.getWriter().write(result.toString());
+  }
+
+  private void getById(String id, HttpServletResponse response) throws Exception {
+    // TODO(vertical-slice): replace with proper OBDal entity lookup
+    response.setContentType(APPLICATION_JSON);
+    JSONObject result = new JSONObject();
+    result.put("entity", "{{entityName}}");
+    result.put("id", id);
+    result.put("action", "getById");
+    result.put("status", "stub");
+    response.getWriter().write(result.toString());
   }
 }

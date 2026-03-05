@@ -88,6 +88,9 @@ After DEV completes, the coordinator creates a PR:
 
 **No direct merges to main.** Every change goes through a PR.
 
+## Branch Safety (MANDATORY)
+When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
+
 </pipeline_rules>
 
 <what_i_do>
