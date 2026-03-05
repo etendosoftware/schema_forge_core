@@ -175,66 +175,48 @@ ${fieldElements}
 /**
  * Generate a header-detail page component.
  * Shows header table, header form, and detail table.
- * Includes API fetch logic using token/apiBaseUrl props.
+ * Uses useEntity hook for state management and API calls.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
 
-  return `import React, { useState, useEffect } from 'react';
+  return `import React from 'react';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { useEntity } from '@/hooks/useEntity';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 
 export default function ${compName}({ token, apiBaseUrl }) {
-  const [items, setItems] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [details, setDetails] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const headers = {
-    'Authorization': \`Bearer \${token}\`,
-    'Content-Type': 'application/json',
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(\`\${apiBaseUrl}/${headerEntity}\`, { headers })
-      .then(res => res.json())
-      .then(data => { setItems(data); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [apiBaseUrl, token]);
-
-  useEffect(() => {
-    if (!selected?.id) { setDetails([]); return; }
-    fetch(\`\${apiBaseUrl}/${headerEntity}/\${selected.id}/${detailEntity}\`, { headers })
-      .then(res => res.json())
-      .then(setDetails)
-      .catch(() => setDetails([]));
-  }, [selected]);
-
-  const handleProcess = async (processName) => {
-    if (!selected?.id) return;
-    await fetch(\`\${apiBaseUrl}/process/\${processName}\`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ id: selected.id }),
-    });
-  };
+  const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
 
   return (
     <div className="space-y-6 p-4">
-      <h2 className="text-xl font-semibold">${toLabel(headerEntity)}</h2>
-      <${headerName}Table data={items} onRowSelect={setSelected} />
-      {selected && (
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">${toLabel(headerEntity)}</h2>
+        <div className="flex gap-2">
+          <Button onClick={${headerEntity}.handleNew}>New</Button>
+          {${headerEntity}.selected && (
+            <Button variant="outline" onClick={${headerEntity}.handleDelete}>Delete</Button>
+          )}
+        </div>
+      </div>
+      <${headerName}Table data={${headerEntity}.items} onRowSelect={${headerEntity}.handleSelect} />
+      {${headerEntity}.editing && (
         <>
           <Separator />
-          <${headerName}Form data={selected} onProcess={handleProcess} />
+          <${headerName}Form
+            data={${headerEntity}.editing}
+            onChange={${headerEntity}.handleChange}
+            onSave={${headerEntity}.handleSave}
+            onProcess={${headerEntity}.handleProcess}
+          />
           <Separator />
           <h3 className="text-lg font-medium">${toLabel(detailEntity)}</h3>
-          <${detailName}Table data={details} />
+          <${detailName}Table data={${headerEntity}.children} />
         </>
       )}
     </div>
