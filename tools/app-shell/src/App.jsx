@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
+import PreviewPage from './preview/PreviewPage.jsx';
 import { buildMenuFromContract, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 
@@ -51,6 +52,7 @@ function AppRoutes({ menuItems, windowMap }) {
         }
       >
         <Route index element={<Navigate to={`/${menuItems[0].name}`} replace />} />
+        <Route path="preview" element={<PreviewPage />} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
