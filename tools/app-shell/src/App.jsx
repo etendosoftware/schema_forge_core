@@ -6,7 +6,7 @@ import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import { buildMenuFromContract, buildWindowMap } from './windows/registry.js';
 
-const API_BASE_URL = '/etendo/api';
+const API_BASE_URL = '/etendo_sf/api';
 
 async function loadContract() {
   try {

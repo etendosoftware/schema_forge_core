@@ -25,6 +25,7 @@ model: inherit
 - Fix bugs directly (only report them)
 - Skip running existing tests
 - Approve without running the full test suite
+- Commit or work directly on the main branch — ALWAYS work on a feature branch in a worktree
 - Work outside my assigned worktree
 </what_i_never_do>
 

@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = '/etendo';
+const DEFAULT_BASE_URL = '/etendo_sf';
 
 export function buildHeaders(token) {
   const headers = { 'Content-Type': 'application/json' };
@@ -16,7 +16,7 @@ export async function login(baseUrl, username, password) {
   const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}/sws/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user: username, password }),
+    body: JSON.stringify({ username, password }),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');

@@ -23,17 +23,11 @@ const sampleContract = {
 };
 
 describe('buildMenuFromContract', () => {
-  it('creates menu items from contract entities', () => {
+  it('creates one menu item per window', () => {
     const items = buildMenuFromContract(sampleContract);
-    assert.equal(items.length, 2);
-    assert.equal(items[0].name, 'order');
-    assert.equal(items[1].name, 'orderLine');
-  });
-
-  it('generates labels from entity names', () => {
-    const items = buildMenuFromContract(sampleContract);
-    assert.equal(items[0].label, 'Order');
-    assert.equal(items[1].label, 'Order Line');
+    assert.equal(items.length, 1);
+    assert.equal(items[0].name, 'sales-order');
+    assert.equal(items[0].label, 'Sales Order');
   });
 
   it('returns empty array for empty contract', () => {
@@ -43,17 +37,21 @@ describe('buildMenuFromContract', () => {
 });
 
 describe('buildWindowMap', () => {
-  it('creates window map with loaders', () => {
-    const loaders = { order: () => Promise.resolve({ default: () => null }) };
-    const map = buildWindowMap(sampleContract, loaders);
-    assert.ok(map.order);
-    assert.ok(map.order.loader);
-    assert.equal(map.order.name, 'order');
+  it('creates window map keyed by slug', () => {
+    const map = buildWindowMap(sampleContract);
+    assert.ok(map['sales-order']);
+    assert.equal(map['sales-order'].name, 'sales-order');
+    assert.equal(map['sales-order'].label, 'Sales Order');
+    assert.ok(map['sales-order'].loader);
   });
 
-  it('uses placeholder loader when no loader provided', () => {
-    const map = buildWindowMap(sampleContract, {});
-    assert.ok(map.order);
-    assert.ok(map.order.loader);
+  it('passes the full frontend contract', () => {
+    const map = buildWindowMap(sampleContract);
+    assert.deepEqual(map['sales-order'].contract, sampleContract.frontendContract);
+  });
+
+  it('returns empty object for empty contract', () => {
+    const map = buildWindowMap({});
+    assert.deepEqual(map, {});
   });
 });

@@ -25,6 +25,7 @@ model: inherit
 - Fix code directly (only report issues)
 - Approve without checking build
 - Block on pure style preferences
+- Commit or work directly on the main branch — ALWAYS work on a feature branch in a worktree
 - Work outside my assigned worktree
 </what_i_never_do>
 

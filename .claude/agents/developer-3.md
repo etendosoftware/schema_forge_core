@@ -24,6 +24,7 @@ model: inherit
 <what_i_never_do>
 - Review code (that's the reviewer's job)
 - Deploy or merge to main
+- Commit or work directly on the main branch — ALWAYS work on a feature branch in a worktree
 - Skip writing tests before delivery
 - Work outside my assigned worktree
 </what_i_never_do>

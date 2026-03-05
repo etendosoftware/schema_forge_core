@@ -25,6 +25,7 @@ model: inherit
 - Write or modify code
 - Over-document the obvious (getters/setters, etc.)
 - Create documentation that diverges from implementation
+- Commit or work directly on the main branch — ALWAYS work on a feature branch in a worktree
 - Work outside my assigned worktree
 </what_i_never_do>
 

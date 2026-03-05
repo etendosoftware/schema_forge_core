@@ -1,46 +1,49 @@
 /**
- * Convert camelCase entity name to display label.
- * 'orderLine' → 'Order Line'
+ * Convert a window name to a URL-safe slug.
+ * 'Sales Order' → 'sales-order'
  */
-function toLabel(name) {
-  return name
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, s => s.toUpperCase())
-    .trim();
+function toSlug(name) {
+  return name.toLowerCase().replace(/\s+/g, '-');
 }
 
 /**
- * Build menu items from a contract.json frontendContract.
+ * Known window loaders — maps slug to dynamic import.
+ * Add new entries here when generating new windows.
+ */
+const windowLoaders = {
+  'sales-order': () => import('@generated/web/sales-order/index.jsx'),
+};
+
+/**
+ * Build menu items from a contract.json — one item per window.
  */
 export function buildMenuFromContract(contract) {
-  const entities = contract?.frontendContract?.entities;
-  if (!entities) return [];
+  const window = contract?.frontendContract?.window;
+  if (!window) return [];
 
-  return Object.keys(entities).map(name => ({
-    name,
-    label: toLabel(name),
-  }));
+  return [{
+    name: toSlug(window.name),
+    label: window.name,
+  }];
 }
 
 /**
- * Build window map with loaders for each entity.
- * loaders: { entityName: () => import('...') }
- * Falls back to a placeholder component if no loader is provided.
+ * Build window map with a loader for the window's generated component.
  */
-export function buildWindowMap(contract, loaders = {}) {
-  const entities = contract?.frontendContract?.entities;
-  if (!entities) return {};
+export function buildWindowMap(contract) {
+  const fc = contract?.frontendContract;
+  if (!fc?.window) return {};
 
-  const map = {};
-  for (const name of Object.keys(entities)) {
-    map[name] = {
-      name,
-      label: toLabel(name),
-      entityConfig: entities[name],
-      loader: loaders[name] || (() =>
+  const slug = toSlug(fc.window.name);
+
+  return {
+    [slug]: {
+      name: slug,
+      label: fc.window.name,
+      contract: fc,
+      loader: windowLoaders[slug] || (() =>
         import('./PlaceholderWindow.jsx')
       ),
-    };
-  }
-  return map;
+    },
+  };
 }
