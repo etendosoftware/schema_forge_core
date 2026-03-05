@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/status-badge';
 
 export default function OrderTable({ data = [], onRowSelect }) {
   const [filterDocumentNo, setFilterDocumentNo] = useState('');
@@ -40,26 +39,26 @@ export default function OrderTable({ data = [], onRowSelect }) {
       </div>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Document No</TableHead>
-            <TableHead>Business Partner</TableHead>
-            <TableHead>Order Date</TableHead>
-            <TableHead>Currency</TableHead>
-            <TableHead>Total Lines</TableHead>
-            <TableHead>Grand Total</TableHead>
-            <TableHead>Doc Status</TableHead>
+          <TableRow className="border-b border-gray-100">
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Document No</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business Partner</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Lines</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Grand Total</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Doc Status</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="divide-y divide-gray-50">
           {filteredData.map((row, idx) => (
-            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer">
+            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer hover:bg-gray-50 transition-colors">
             <TableCell>{row.documentNo}</TableCell>
             <TableCell>{row.businessPartner}</TableCell>
             <TableCell>{row.orderDate}</TableCell>
             <TableCell>{row.currency}</TableCell>
-            <TableCell>{row.totalLines?.toLocaleString()}</TableCell>
-            <TableCell>{row.grandTotal?.toLocaleString()}</TableCell>
-            <TableCell>{row.docStatus}</TableCell>
+            <TableCell className="tabular-nums">{row.totalLines?.toLocaleString()}</TableCell>
+            <TableCell className="tabular-nums">{row.grandTotal?.toLocaleString()}</TableCell>
+            <TableCell><StatusBadge status={row.docStatus} /></TableCell>
             </TableRow>
           ))}
         </TableBody>

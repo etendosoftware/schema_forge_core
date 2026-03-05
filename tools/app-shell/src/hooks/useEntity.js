@@ -36,7 +36,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
 
   const handleSelect = useCallback((row) => {
     setSelected(row);
-    setEditing({ ...row });
+    setEditing(row ? { ...row } : null);
     fetchChildren(row?.id);
   }, [fetchChildren]);
 
