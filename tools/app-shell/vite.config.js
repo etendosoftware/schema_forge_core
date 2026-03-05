@@ -7,12 +7,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '@generated': resolve(__dirname, '../../artifacts/sales-order/generated'),
     },
   },
   server: {
     port: 3100,
     proxy: {
-      '/etendo': {
+      '/etendo_sf': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },

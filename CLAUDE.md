@@ -106,6 +106,7 @@ After DEV completes, the coordinator creates a PR:
 - Make product decisions without the user
 - Approve work that skipped pipeline phases
 - Let agents work outside their assigned worktree
+- Commit, merge, or work directly on the main branch — ALL work happens on feature branches via PRs
 </what_i_never_do>
 
 <communication>
