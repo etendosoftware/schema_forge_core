@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 export default function OrderLineTable({ data = [], onRowSelect }) {
   const [filterProduct, setFilterProduct] = useState('');
@@ -24,25 +22,25 @@ export default function OrderLineTable({ data = [], onRowSelect }) {
       </div>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Line No</TableHead>
-            <TableHead>Product</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Unit Price</TableHead>
-            <TableHead>Discount</TableHead>
-            <TableHead>Line Net Amount</TableHead>
-            <TableHead>Tax</TableHead>
+          <TableRow className="border-b border-gray-100">
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Line No</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Product</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Line Net Amount</TableHead>
+            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="divide-y divide-gray-50">
           {filteredData.map((row, idx) => (
-            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer">
+            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer hover:bg-gray-50 transition-colors">
             <TableCell>{row.lineNo}</TableCell>
             <TableCell>{row.product}</TableCell>
             <TableCell>{row.quantity}</TableCell>
-            <TableCell>{row.unitPrice?.toLocaleString()}</TableCell>
+            <TableCell className="tabular-nums">{row.unitPrice?.toLocaleString()}</TableCell>
             <TableCell>{row.discount}</TableCell>
-            <TableCell>{row.lineNetAmount?.toLocaleString()}</TableCell>
+            <TableCell className="tabular-nums">{row.lineNetAmount?.toLocaleString()}</TableCell>
             <TableCell>{row.tax}</TableCell>
             </TableRow>
           ))}

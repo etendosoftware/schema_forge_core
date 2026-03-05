@@ -59,6 +59,17 @@ describe('generateTableComponent', () => {
     const code = generateTableComponent('order', sampleContract);
     assert.ok(code.includes('Filter'), 'should have filter inputs');
   });
+
+  it('renders status fields with StatusBadge', () => {
+    const code = generateTableComponent('order', sampleContract);
+    assert.ok(code.includes('StatusBadge'), 'should import and use StatusBadge');
+    assert.ok(code.includes('status-badge'), 'should import from status-badge');
+  });
+
+  it('adds hover styling to rows', () => {
+    const code = generateTableComponent('order', sampleContract);
+    assert.ok(code.includes('hover:bg-gray-50'), 'should have hover effect on rows');
+  });
 });
 
 describe('generateFormComponent', () => {
@@ -87,15 +98,20 @@ describe('generateFormComponent', () => {
     const code = generateFormComponent('orderLine', sampleContract);
     assert.ok(!code.includes('completeOrder'), 'should not include order processes in orderLine form');
   });
+
+  it('uses single-column layout for panel width', () => {
+    const code = generateFormComponent('order', sampleContract);
+    assert.ok(!code.includes('grid-cols-2'), 'should not use 2-column grid (panel is narrow)');
+    assert.ok(code.includes('space-y-3'), 'should use vertical stacking');
+  });
 });
 
 describe('generatePageComponent', () => {
-  it('generates header-detail layout with useEntity hook', () => {
+  it('generates page with SlidePanel', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('export default function OrderPage'), 'should export OrderPage');
-    assert.ok(code.includes('OrderTable'), 'should include header table');
-    assert.ok(code.includes('OrderForm'), 'should include header form');
-    assert.ok(code.includes('OrderLineTable'), 'should include detail table');
+    assert.ok(code.includes('SlidePanel'), 'should use SlidePanel');
+    assert.ok(code.includes('slide-panel'), 'should import from slide-panel');
   });
 
   it('imports useEntity from @/hooks/useEntity', () => {
@@ -110,8 +126,7 @@ describe('generatePageComponent', () => {
 
   it('does NOT contain inline useState or fetch', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(!code.includes('useState'), 'should not have useState (hook handles state)');
-    assert.ok(!code.includes('fetch('), 'should not have fetch calls (hook handles fetching)');
+    assert.ok(!code.includes('fetch('), 'should not have fetch calls');
   });
 
   it('passes hook properties to child components', () => {
@@ -125,10 +140,19 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('.children'), 'should pass children to detail table');
   });
 
-  it('includes New and Delete buttons', () => {
+  it('includes New button and close panel clears editing', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('.handleNew'), 'should wire handleNew');
-    assert.ok(code.includes('.handleDelete'), 'should wire handleDelete');
+    assert.ok(code.includes('onClose'), 'should have onClose for panel');
+  });
+
+  it('puts form and detail table inside SlidePanel', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    const panelStart = code.indexOf('<SlidePanel');
+    const panelEnd = code.indexOf('</SlidePanel>');
+    const panelContent = code.slice(panelStart, panelEnd);
+    assert.ok(panelContent.includes('Form'), 'form should be inside SlidePanel');
+    assert.ok(panelContent.includes('Table'), 'detail table should be inside SlidePanel');
   });
 });
 
