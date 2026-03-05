@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import Handlebars from 'handlebars';
 import { getOrCreateUuid, loadManifest, saveManifest } from './uuid-manifest.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -40,10 +41,10 @@ function toPackageName(windowName) {
 /**
  * Transforms schema/rules/processes into template-ready data structures.
  */
-export function prepareTemplateData(schema, rules, processes) {
+export function prepareTemplateData(schema, rules, processes, moduleConfig = {}) {
   const windowName = schema.window.name;
-  const packageSegment = toPackageName(windowName.replace(/\s+/g, '-').toLowerCase());
-  const basePackage = `com.etendo.schemaforge.${packageSegment}`;
+  const basePackage = moduleConfig.javaPackage ?? 'com.etendoerp.go';
+  const packageSegment = basePackage.split('.').pop();
 
   // Event handlers: one per entity with system field derivations
   const eventHandlers = schema.entities
@@ -64,6 +65,7 @@ export function prepareTemplateData(schema, rules, processes) {
         table: entity.table,
         derivations,
         packageName: `${basePackage}.event`,
+        entityClass: `${basePackage}.dto.${toPascalCase(entity.name)}DTO`,
       };
     })
     .filter(h => h.derivations.length > 0);
@@ -104,7 +106,7 @@ export function prepareTemplateData(schema, rules, processes) {
       className: `${toPascalCase(entity.name)}DTO`,
       table: entity.table,
       fields: visibleFields,
-      packageName: `${basePackage}.dto.v1`,
+      packageName: `${basePackage}.dto`,
     };
   });
 
@@ -125,7 +127,7 @@ export function prepareTemplateData(schema, rules, processes) {
       table: entity.table,
       filters: searchableFields,
       dtoClass: `${toPascalCase(entity.name)}DTO`,
-      packageName: `${basePackage}.api.v1`,
+      packageName: `${basePackage}.rest.handler`,
     };
   });
 
@@ -142,7 +144,7 @@ export function prepareTemplateData(schema, rules, processes) {
   // Error serializer data
   const errorSerializer = {
     className: 'ErrorSerializer',
-    packageName: `${basePackage}.api.v1`,
+    packageName: `${basePackage}.rest`,
   };
 
   // Build gradle config
@@ -184,10 +186,8 @@ export function prepareTemplateData(schema, rules, processes) {
 /**
  * Creates the list of { path, templateName, data } entries for file generation.
  */
-export function generateFileList(data, windowName) {
-  const slug = windowName.replace(/\s+/g, '-').toLowerCase();
-  const basePath = `artifacts/${slug}/generated/backend`;
-  const srcPath = `${basePath}/src/main/java/${data.basePackage.replace(/\./g, '/')}`;
+export function generateFileList(data, windowName, modulePath) {
+  const srcPath = `${modulePath}/src/${data.basePackage.replace(/\./g, '/')}`;
   const files = [];
 
   // Event handlers
@@ -195,7 +195,7 @@ export function generateFileList(data, windowName) {
     files.push({
       path: `${srcPath}/event/${handler.className}.java`,
       templateName: 'EventHandler.java.hbs',
-      data: handler,
+      data: { ...handler, package: handler.packageName, generatedDate: new Date().toISOString() },
     });
   }
 
@@ -203,26 +203,43 @@ export function generateFileList(data, windowName) {
   for (const proc of data.processes) {
     files.push({
       path: `${srcPath}/process/${proc.className}.java`,
-      templateName: 'Process.java.hbs',
-      data: proc,
+      templateName: 'DalProcess.java.hbs',
+      data: { ...proc, package: proc.packageName, generatedDate: new Date().toISOString() },
     });
   }
 
   // DTOs
   for (const dto of data.dtos) {
     files.push({
-      path: `${srcPath}/dto/v1/${dto.className}.java`,
+      path: `${srcPath}/dto/${dto.className}.java`,
       templateName: 'DTO.java.hbs',
-      data: dto,
+      data: {
+        ...dto,
+        package: dto.packageName,
+        version: '1',
+        generatedDate: new Date().toISOString(),
+        fields: dto.fields.map(f => ({
+          ...f,
+          type: f.javaType,
+          getter: `get${f.name.charAt(0).toUpperCase()}${f.name.slice(1)}`,
+          setter: `set${f.name.charAt(0).toUpperCase()}${f.name.slice(1)}`,
+        })),
+      },
     });
   }
 
   // Endpoints
   for (const endpoint of data.endpoints) {
     files.push({
-      path: `${srcPath}/api/v1/${endpoint.className}.java`,
-      templateName: 'Endpoint.java.hbs',
-      data: endpoint,
+      path: `${srcPath}/rest/handler/${endpoint.className}.java`,
+      templateName: 'RxEndpoint.java.hbs',
+      data: {
+        ...endpoint,
+        package: endpoint.packageName,
+        generatedDate: new Date().toISOString(),
+        entityClass: `${data.basePackage}.dto.${endpoint.dtoClass}`,
+        filters: endpoint.filters.map(f => ({ ...f, type: f.javaType })),
+      },
     });
   }
 
@@ -230,31 +247,19 @@ export function generateFileList(data, windowName) {
   for (const validator of data.validators) {
     files.push({
       path: `${srcPath}/validation/${validator.className}.java`,
-      templateName: 'Validator.java.hbs',
-      data: validator,
+      templateName: 'PreconditionValidator.java.hbs',
+      data: { ...validator, package: validator.packageName, generatedDate: new Date().toISOString() },
     });
   }
 
   // Error serializer
   files.push({
-    path: `${srcPath}/api/v1/${data.errorSerializer.className}.java`,
+    path: `${srcPath}/rest/${data.errorSerializer.className}.java`,
     templateName: 'ErrorSerializer.java.hbs',
-    data: data.errorSerializer,
+    data: { ...data.errorSerializer, package: data.errorSerializer.packageName, generatedDate: new Date().toISOString() },
   });
 
-  // Build gradle
-  files.push({
-    path: `${basePath}/build.gradle`,
-    templateName: 'build.gradle.hbs',
-    data: data.buildGradle,
-  });
-
-  // Dataset XML
-  files.push({
-    path: `${basePath}/src/main/resources/referencedata/dataset.xml`,
-    templateName: 'dataset.xml.hbs',
-    data: data.datasets,
-  });
+  // build.gradle and dataset.xml are NOT generated — the module already has them
 
   return files;
 }
@@ -262,9 +267,14 @@ export function generateFileList(data, windowName) {
 /**
  * Full orchestrator: compiles templates, writes files to artifacts/{windowName}/generated/backend/
  */
-export async function generateBackend(schema, rules, processes, contract, windowName) {
-  const data = prepareTemplateData(schema, rules, processes);
-  const files = generateFileList(data, windowName);
+export async function generateBackend(schema, rules, processes, contract, windowName, moduleConfig = {}) {
+  const modulePath = moduleConfig.modulePath;
+  if (!modulePath) {
+    throw new Error('moduleConfig.modulePath is required — set it in schema_forge.properties');
+  }
+
+  const data = prepareTemplateData(schema, rules, processes, moduleConfig);
+  const files = generateFileList(data, windowName, modulePath);
 
   const slug = windowName.replace(/\s+/g, '-').toLowerCase();
   const manifestPath = join(__dirname, '..', '..', 'artifacts', slug, 'uuid-manifest.json');
@@ -281,24 +291,26 @@ export async function generateBackend(schema, rules, processes, contract, window
   // Load and compile Handlebars templates
   const templatesDir = join(__dirname, '..', '..', 'templates');
 
+  // Register Handlebars helpers
+  Handlebars.registerHelper('unless', function(conditional, options) {
+    if (!conditional) return options.fn(this);
+    return options.inverse(this);
+  });
+
   for (const file of files) {
     const templatePath = join(templatesDir, file.templateName);
     let content;
     try {
       const templateSource = await readFile(templatePath, 'utf8');
-      // Simple Handlebars-like replacement (for MVP, real Handlebars can be added later)
-      content = templateSource;
-      for (const [key, value] of Object.entries(file.data)) {
-        if (typeof value === 'string') {
-          content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-        }
-      }
-    } catch {
+      const template = Handlebars.compile(templateSource);
+      content = template(file.data);
+    } catch (err) {
       // If template not found, generate a placeholder
+      console.warn(`  Warning: template ${file.templateName} failed: ${err.message}`);
       content = `// Generated file: ${file.path}\n// Template: ${file.templateName}\n`;
     }
 
-    const outputPath = join(__dirname, '..', '..', file.path);
+    const outputPath = file.path;
     await mkdir(dirname(outputPath), { recursive: true });
     await writeFile(outputPath, content);
   }
