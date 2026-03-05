@@ -154,6 +154,7 @@ schema-forge/
 ├── artifacts/{window-name}/      # Per-window: schemas, rules, decisions, generated code
 ├── core-maps/                    # system-columns.json, impact-messages.json
 └── docs/                         # PRD and TDD documents
+    └── etendo-ad/                # General Etendo AD reference (not window-specific)
 ```
 
 ### Key Data Flow (Pipeline)
@@ -212,8 +213,22 @@ All project management is handled in **GitHub** (repo: `etendosoftware/project_a
 
 ## Design Documents
 
-All design specs are in `docs/`:
+All documentation is in `docs/` — see `docs/index.md` for the full index.
+Key files:
 - `PRD.md` — Product requirements, decision map, pipeline, scope
 - `TDD.md` — Technical design, data models, validation rules, generator specs
-- `PRD-anex.md` — API versioning model (conceptual)
-- `TDD-anex.md` — API versioning implementation details
+- `PRD-anex.md` / `TDD-anex.md` — API versioning (conceptual + implementation)
+- `etendo-ad/` — General Etendo AD reference (schema mappings, process mechanisms)
+
+## Etendo AD Reference
+
+General findings about the Etendo Application Dictionary structure live in `docs/etendo-ad/`.
+These are **not window-specific** — they document how Etendo AD tables, columns, processes, callouts,
+and logic expressions actually work (corrected from initial TDD assumptions).
+
+- `docs/etendo-ad/index.md` — Index of all reference documents
+- `docs/etendo-ad/schema-mappings.md` — Actual AD table relationships (callouts, logic columns, tab clauses)
+- `docs/etendo-ad/process-mechanisms.md` — The 3 process mechanisms: tab_process, classic_process, obuiapp_process
+
+**Rule:** Any discovery about general Etendo AD structure goes in `docs/etendo-ad/`, NOT in per-window artifacts.
+Per-window artifacts (`artifacts/{window}/`) should only contain window-specific data (extracted CSVs, curated schemas, etc.).

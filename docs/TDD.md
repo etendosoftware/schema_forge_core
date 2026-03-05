@@ -353,23 +353,24 @@ The loops are independent. The UI Decisor can run 20+ turns in the fast loop wit
 SELECT
   w.AD_Window_ID, w.Name AS window_name,
   t.AD_Tab_ID, t.Name AS tab_name, t.TabLevel, t.SeqNo AS tab_seq,
+  t.WhereClause, t.OrderByClause, t.FilterClause,
+  t.HQLWhereClause, t.HQLOrderByClause, t.HQLFilterClause,
   tbl.TableName,
   f.AD_Field_ID, f.Name AS field_name,
-  f.IsDisplayed, f.IsReadOnly, f.DisplayLogic, f.ReadOnlyLogic,
+  f.IsDisplayed, f.IsReadOnly, f.DisplayLogic,
   f.SeqNo AS field_seq,
   c.ColumnName, c.AD_Reference_ID, c.IsMandatory, c.IsUpdateable,
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
-  c.AD_Val_Rule_ID,
+  c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   r.Name AS reference_name,
-  co.Classname AS callout_class
+  mo.Classname AS callout_class
 FROM AD_Field f
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-LEFT JOIN AD_Column_Callout cc ON c.AD_Column_ID = cc.AD_Column_ID
-LEFT JOIN AD_Callout co ON cc.AD_Callout_ID = co.AD_Callout_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
 WHERE w.AD_Window_ID = ?
   AND f.IsActive = 'Y' AND t.IsActive = 'Y'
 ORDER BY t.SeqNo, f.SeqNo
@@ -436,12 +437,16 @@ function inferDerivation(field) {
 
 ```sql
 -- Callouts
-SELECT c.AD_Callout_ID, c.Classname, c.Name,
+-- Note: AD_Column_Callout does not exist in Etendo 25/26.
+-- Callouts link via AD_Column.AD_Callout_ID.
+-- The Java classname lives in AD_Model_Object (tab "Callout Class" in AD).
+SELECT co.AD_Callout_ID, co.Name AS callout_name,
+       mo.Classname AS callout_class,
        col.ColumnName, col.AD_Table_ID
-FROM AD_Callout c
-JOIN AD_Column_Callout cc ON c.AD_Callout_ID = cc.AD_Callout_ID
-JOIN AD_Column col ON cc.AD_Column_ID = col.AD_Column_ID
+FROM AD_Callout co
+JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
 WHERE t.AD_Window_ID = ?;
 
 -- Validation Rules
@@ -452,19 +457,79 @@ JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
 WHERE t.AD_Window_ID = ?;
 
 -- Display / ReadOnly Logic
-SELECT f.Name, f.DisplayLogic, f.ReadOnlyLogic, c.ColumnName
+-- Note: DisplayLogic is on AD_Field, ReadOnlyLogic is on AD_Column.
+SELECT f.Name, f.DisplayLogic, c.ReadOnlyLogic, c.ColumnName
 FROM AD_Field f
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = ?
-  AND (f.DisplayLogic IS NOT NULL OR f.ReadOnlyLogic IS NOT NULL);
+  AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL);
+
+-- Auxiliary Inputs (computed variables used in DisplayLogic)
+-- These are per-tab SQL-computed values referenced as @NAME@ in expressions.
+-- See docs/etendo-ad/display-logic-variables.md for the full variable type taxonomy.
+SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID
+FROM AD_AuxiliarInput ai
+JOIN AD_Tab t ON ai.AD_Tab_ID = t.AD_Tab_ID
+WHERE t.AD_Window_ID = ?
+ORDER BY t.SeqNo, ai.Name;
 
 -- Document Processes
-SELECT p.AD_Process_ID, p.Name, p.Classname
+-- Note: AD_Table_Process does not exist in Etendo 25/26.
+-- Processes link via THREE mechanisms (+ rare hardcoded buttons):
+--
+--   1. tab_process:     AD_Tab.AD_Process_ID (tab-level, typically print/report)
+--   2. classic_process: AD_Column.AD_Process_ID (button → AD_Process, e.g. DocAction)
+--   3. obuiapp_process: AD_Column.EM_OBUIAPP_Process_ID → OBUIAPP_Process
+--                       (new process definition with ActionHandler class)
+--   4. hardcoded:       Button columns with no process linked at all
+--                       (resolved by framework convention, very rare)
+
+-- 1. Tab-level process
+SELECT 'tab_process' AS mechanism,
+       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+       p.Name, p.Classname, NULL AS column_name
 FROM AD_Process p
-JOIN AD_Table_Process tp ON p.AD_Process_ID = tp.AD_Process_ID
-JOIN AD_Tab t ON tp.AD_Table_ID = t.AD_Table_ID
-WHERE t.AD_Window_ID = ?;
+JOIN AD_Tab t ON t.AD_Process_ID = p.AD_Process_ID
+WHERE t.AD_Window_ID = ?
+
+UNION ALL
+
+-- 2. Classic process (button column → AD_Process)
+SELECT 'classic_process' AS mechanism,
+       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+       p.Name, p.Classname, c.ColumnName
+FROM AD_Process p
+JOIN AD_Column c ON c.AD_Process_ID = p.AD_Process_ID
+JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+WHERE t.AD_Window_ID = ?
+
+UNION ALL
+
+-- 3. OBUIAPP Process (button column → OBUIAPP_Process definition)
+SELECT 'obuiapp_process' AS mechanism,
+       NULL AS process_id, op.OBUIAPP_Process_ID AS obuiapp_process_id,
+       op.Name, op.Classname, c.ColumnName
+FROM OBUIAPP_Process op
+JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
+JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+WHERE t.AD_Window_ID = ?
+
+UNION ALL
+
+-- 4. Hardcoded buttons (no process linked)
+SELECT 'hardcoded' AS mechanism,
+       NULL AS process_id, NULL AS obuiapp_process_id,
+       c.ColumnName AS name, NULL AS classname, c.ColumnName
+FROM AD_Column c
+JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
+WHERE t.AD_Window_ID = ?
+  AND r.Name = 'Button'
+  AND c.AD_Process_ID IS NULL
+  AND c.EM_OBUIAPP_Process_ID IS NULL
+
+ORDER BY mechanism, name;
 ```
 
 **Java source analysis:**
