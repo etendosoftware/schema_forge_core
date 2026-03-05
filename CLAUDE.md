@@ -126,7 +126,7 @@ After all phases pass:
 |-------|-----------|
 | CLI tools | Node.js (zero-dependency) |
 | Decision tools | React web apps |
-| AI integration | Anthropic Claude API (Sonnet) |
+| AI integration | Claude Code subagents + skills (no direct API) |
 | Generated backend | Java (Etendo module: OBDal, event handlers, processes, Etendo RX endpoints) |
 | Generated frontend | React SPA |
 | Contract tests | Node.js (JSON assertions) |

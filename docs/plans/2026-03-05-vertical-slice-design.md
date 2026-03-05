@@ -147,7 +147,7 @@ schema-forge/
 | JSON validation | Ajv | Standard JSON Schema validator for Node.js |
 | Decision panel framework | React + Vite | Fast dev server, same ecosystem as generated frontend |
 | Test runner (contract tests) | Node.js built-in test runner | Zero dependency, per TDD |
-| IA integration | Anthropic Claude API | Per TDD specification |
+| IA integration | Claude Code subagents + skills | No direct API — AI runs via Claude Code sessions |
 
 ---
 

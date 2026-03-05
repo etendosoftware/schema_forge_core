@@ -6,7 +6,7 @@
 
 **Architecture:** Node.js CLI tools extract metadata from a real Etendo PostgreSQL DB, produce JSON artifacts, validate them, pre-classify rules with Claude AI, present decisions via a React web panel, generate contract tests, then generate a Java Etendo module + React SPA. Each phase produces artifacts consumed by the next.
 
-**Tech Stack:** Node.js 22 (CLI, zero-dep where possible), PostgreSQL (`pg`), Ajv (JSON Schema validation), Handlebars (templates), React + Vite (decision tools), Anthropic Claude API (Sonnet), Java (generated Etendo module), node:test (contract tests)
+**Tech Stack:** Node.js 22 (CLI, zero-dep where possible), PostgreSQL (`pg`), Ajv (JSON Schema validation), Handlebars (templates), React + Vite (decision tools), Claude Code subagents + skills (AI integration, no direct API), Java (generated Etendo module), node:test (contract tests)
 
 ---
 
@@ -1175,10 +1175,41 @@ Expected: FAIL
 
 Implement the deterministic classification from TDD 3.2 (`preClassifyRules`):
 - `classifyRule(rule)` — applies tier logic, returns rule with tier/decision fields added
-- `classifyRules(rules, options)` — orchestrates classification, optionally calls AI for complex rules
-- AI integration: call Anthropic Claude API with the rule classification prompt from TDD 9.2
+- `classifyRules(rules, options)` — orchestrates classification, writes `rules-classified.json`
+- For complex rules (tier=human): the deterministic classifier marks them as `pending` with context
 
-The AI call is optional (`skipAi: true` for tests). When enabled, it calls Claude Sonnet with the rule + schema context and expects JSON response with recommendation, confidence, businessDescription, impactIfOmitted.
+AI classification of complex rules is handled by a **Claude Code skill** (`/sf:classify-rules`), not by direct API calls. The skill:
+1. Reads `rules-raw.json` and `schema-raw.json` from artifacts
+2. Uses Claude's in-context reasoning to classify each complex rule
+3. Writes recommendations back to `rules-classified.json`
+
+This separation means the CLI does deterministic work only. AI work runs in Claude Code sessions via subagents invoking the skill.
+
+**Step 3b: Create the `/sf:classify-rules` skill**
+
+Create: `.claude/skills/classify-rules.md`
+
+```markdown
+---
+name: classify-rules
+description: Classify complex business rules using AI reasoning
+---
+
+Read `artifacts/{window}/rules-raw.json` and `artifacts/{window}/schema-raw.json`.
+
+For each rule with `tier: 'human'` and `decision: 'pending'`:
+1. Analyze the rule's effects, complexity, DML operations, and Java source analysis
+2. Consider the schema context (which fields are affected, their visibility)
+3. Produce a classification following TDD 9.2 prompt format:
+   - recommendation: keep|replace|simplify|omit
+   - confidence: 0-1
+   - businessDescription: plain language explanation
+   - impactIfOmitted: what changes for the user
+   - simplificationSuggestion: what to keep if simplify
+
+Write the classified rules to `artifacts/{window}/rules-classified.json`.
+Preserve all auto-classified rules unchanged.
+```
 
 **Step 4: Run test to verify it passes**
 
@@ -1657,64 +1688,123 @@ git commit -m "feat: implement Backend Generator (F7) with UUID manifest"
 
 ---
 
-### Task 16: UI Generator (F8) — Basic Conversational AI
+### Task 16: UI Generator (F8) — Claude Code Skill + Preview
 
 **Files:**
-- Create: `tools/ui-generator/package.json`
-- Create: `tools/ui-generator/index.html`
-- Create: `tools/ui-generator/vite.config.js`
-- Create: `tools/ui-generator/src/main.jsx`
-- Create: `tools/ui-generator/src/App.jsx`
-- Create: `tools/ui-generator/src/components/Chat.jsx`
-- Create: `tools/ui-generator/src/components/Preview.jsx`
-- Create: `tools/ui-generator/src/lib/claude-client.js`
-- Create: `tools/ui-generator/src/lib/system-prompt.js`
+- Create: `.claude/skills/generate-ui.md`
+- Create: `tools/ui-preview/package.json`
+- Create: `tools/ui-preview/index.html`
+- Create: `tools/ui-preview/vite.config.js`
+- Create: `tools/ui-preview/src/main.jsx`
+- Create: `tools/ui-preview/src/App.jsx`
+- Create: `cli/src/build-ui-context.js`
+- Test: `cli/test/build-ui-context.test.js`
 
-**Context:** Per Decision D7, this is a basic conversational AI: simple chat interface + Claude generates React components + preview iframe. The system prompt is built from the curated schema (TDD 5.1). Preview uses Babel standalone + mock data.
+**Context:** Per Decision D7 (basic conversational AI), the UI Generator is split into two parts:
+1. A **Claude Code skill** (`/sf:generate-ui`) — the user describes what they want in natural language, Claude generates React components in-context
+2. A **preview tool** (Vite app) — renders the generated components in a sandboxed iframe with Babel standalone + mock data
 
-**Step 1: Create package.json**
+No direct API calls. The user runs `/sf:generate-ui` in Claude Code, describes the UI they want, and Claude writes the React components to `artifacts/{window}/generated/web/`.
 
-```json
-{
-  "name": "@schema-forge/ui-generator",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build"
-  },
-  "dependencies": {
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.0",
-    "vite": "^6.0.0"
-  }
-}
+**Step 1: Create the `/sf:generate-ui` skill**
+
+```markdown
+---
+name: generate-ui
+description: Generate React UI components from curated schema via conversational AI
+---
+
+Read the curated schema and process definitions:
+- `artifacts/{window}/schema-curated.json`
+- `artifacts/{window}/rules-curated.json`
+- `artifacts/{window}/processes.json`
+
+SCHEMA CONSTRAINTS (INVIOLABLE):
+- Only render fields with visibility: editable or readOnly
+- System fields NEVER appear in UI
+- ReadOnly fields render as non-editable
+- Computed fields are never editable
+- Only searchable fields can be used as filters/search
+- CascadeFrom relationships must be respected (cascading dropdowns)
+- Never invent fields not in schema
+
+GENERATION RULES:
+- Inline styles + base React (no external UI library)
+- Self-contained default export per component
+- Components target the versioned API endpoints from the contract
+- Mock data generated from schema for preview mode
+
+Ask the user what kind of UI they want (e.g., "Order list with filters and detail form").
+Generate React components and write them to `artifacts/{window}/generated/web/{window}/`.
+
+After generating, tell the user to run `cd tools/ui-preview && npm run dev` to preview.
 ```
 
-**Step 2: Create Vite config and entry point**
-
-Same pattern as Decision Panel.
-
-**Step 3: Implement system-prompt.js**
-
-Build the system prompt from TDD 5.1:
-- Takes curated schema as input
-- Outputs only visible fields (no system)
-- Includes searchable fields as available filters
-- Includes business rules as natural language
-- Includes available actions (process endpoints)
-- Includes the 8 rules from TDD 5.1
+**Step 2: Write the test for build-ui-context.js**
 
 ```javascript
-// tools/ui-generator/src/lib/system-prompt.js
-export function buildSystemPrompt(schema, rules, processes) {
+// cli/test/build-ui-context.test.js
+import { describe, it } from 'node:test';
+import { strict as assert } from 'node:assert';
+import { buildUiContext } from '../src/build-ui-context.js';
+
+describe('buildUiContext', () => {
+  it('excludes system fields from visible entities', () => {
+    const schema = {
+      entities: [{
+        name: 'order',
+        fields: [
+          { name: 'documentNo', visibility: 'readOnly', type: 'string', searchable: true, label: 'Document No' },
+          { name: 'adClientId', visibility: 'system', type: 'id', searchable: false }
+        ]
+      }]
+    };
+    const context = buildUiContext(schema, [], []);
+    assert.ok(context.visibleEntities.order.fields.find(f => f.name === 'documentNo'));
+    assert.ok(!context.visibleEntities.order.fields.find(f => f.name === 'adClientId'));
+  });
+
+  it('includes searchable fields list', () => {
+    const schema = {
+      entities: [{
+        name: 'order',
+        fields: [
+          { name: 'documentNo', visibility: 'readOnly', type: 'string', searchable: true, label: 'Doc' },
+          { name: 'notes', visibility: 'editable', type: 'text', searchable: false, label: 'Notes' }
+        ]
+      }]
+    };
+    const context = buildUiContext(schema, [], []);
+    assert.deepEqual(context.visibleEntities.order.searchableFields, ['documentNo']);
+  });
+
+  it('includes process actions', () => {
+    const processes = {
+      processes: [
+        { name: 'completeOrder', displayName: 'Complete Order',
+          trigger: { type: 'action', endpoint: '/api/orders/{id}/complete', method: 'POST' } }
+      ]
+    };
+    const context = buildUiContext({ entities: [] }, [], processes);
+    assert.equal(context.actions.length, 1);
+    assert.equal(context.actions[0].name, 'completeOrder');
+  });
+});
+```
+
+**Step 3: Run test to verify it fails**
+
+Run: `node --test cli/test/build-ui-context.test.js`
+Expected: FAIL
+
+**Step 4: Implement build-ui-context.js**
+
+```javascript
+// cli/src/build-ui-context.js
+export function buildUiContext(schema, rules, processes) {
   const visibleEntities = {};
-  for (const entity of schema.entities) {
-    const visibleFields = entity.fields
+  for (const entity of (schema.entities || [])) {
+    const visibleFields = (entity.fields || [])
       .filter(f => f.visibility !== 'system')
       .map(f => ({
         name: f.name, type: f.type, required: f.required,
@@ -1724,87 +1814,58 @@ export function buildSystemPrompt(schema, rules, processes) {
       }));
     visibleEntities[entity.name] = {
       fields: visibleFields,
-      searchableFields: entity.fields
+      searchableFields: (entity.fields || [])
         .filter(f => f.searchable).map(f => f.name)
     };
   }
 
-  return `SCHEMA CONSTRAINTS (INVIOLABLE):
-${JSON.stringify(visibleEntities, null, 2)}
+  const actions = (processes?.processes || []).map(p => ({
+    name: p.name,
+    displayName: p.displayName,
+    endpoint: p.trigger?.endpoint,
+    method: p.trigger?.method
+  }));
 
-AVAILABLE FILTERS:
-${Object.entries(visibleEntities).map(([name, e]) =>
-  `${name}: ${e.searchableFields.join(', ')}`).join('\n')}
-
-AVAILABLE ACTIONS:
-${(processes?.processes || []).map(p =>
-  `${p.displayName}: POST ${p.trigger?.endpoint || `/api/${p.name}`}`).join('\n')}
-
-RULES:
-1. System fields never appear
-2. ReadOnly fields render as non-editable
-3. Computed fields never editable
-4. Only searchable fields can be used as filters
-5. CascadeFrom relationships respected
-6. Never invent fields not in schema
-7. Inline styles + base React
-8. Self-contained default export`;
+  return { visibleEntities, actions };
 }
 ```
 
-**Step 4: Implement claude-client.js**
+**Step 5: Run test to verify it passes**
 
-```javascript
-// tools/ui-generator/src/lib/claude-client.js
-export async function generateComponent(messages, systemPrompt, apiKey) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages
-    })
-  });
-  return response.json();
+Run: `node --test cli/test/build-ui-context.test.js`
+Expected: All tests PASS
+
+**Step 6: Create the preview tool (minimal Vite app)**
+
+`tools/ui-preview/` — a simple Vite app that:
+1. Reads generated components from `artifacts/{window}/generated/web/`
+2. Renders them in a sandboxed iframe with React 18 + Babel standalone
+3. Uses mock data from schema
+
+```json
+{
+  "name": "@schema-forge/ui-preview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "vite build" },
+  "dependencies": { "react": "^18.3.0", "react-dom": "^18.3.0" },
+  "devDependencies": { "@vitejs/plugin-react": "^4.3.0", "vite": "^6.0.0" }
 }
 ```
 
-**Step 5: Implement App.jsx — chat + preview layout**
+App.jsx: File picker or auto-loads from `artifacts/sales-order/generated/web/`. Renders in iframe with Babel standalone.
 
-Two-column layout:
-- Left: Chat interface (Chat.jsx) — user types descriptions, AI responds with React code
-- Right: Preview (Preview.jsx) — sandboxed iframe with React 18 + Babel standalone rendering the generated component
+**Step 7: Install and verify preview starts**
 
-**Step 6: Implement Chat.jsx**
-
-Message list + input. On submit, calls Claude API with conversation history. Extracts code blocks from response.
-
-**Step 7: Implement Preview.jsx**
-
-iframe with srcdoc containing:
-- React 18 CDN
-- Babel standalone CDN
-- Mock data generated from schema
-- The latest generated component code
-- `type="text/babel"` script tag
-
-**Step 8: Install dependencies and verify**
-
-Run: `cd tools/ui-generator && npm install && npm run dev`
+Run: `cd tools/ui-preview && npm install && npm run dev`
 Expected: Vite dev server starts
 
-**Step 9: Commit**
+**Step 8: Commit**
 
 ```bash
-git add tools/ui-generator/
-git commit -m "feat: implement UI Generator (F8) — conversational AI + preview"
+git add .claude/skills/generate-ui.md tools/ui-preview/ cli/src/build-ui-context.js cli/test/build-ui-context.test.js
+git commit -m "feat: implement UI Generator (F8) — Claude Code skill + preview tool"
 ```
 
 ---
@@ -1913,10 +1974,11 @@ async function run() {
   }
   console.log('  → Validation passed');
 
-  // Phase 3: Pre-classify
-  console.log('Phase 3: Pre-classifying rules...');
+  // Phase 3: Pre-classify (deterministic only)
+  console.log('Phase 3: Pre-classifying rules (deterministic)...');
   const classified = await classifyRules(rules.rules);
   console.log(`  → ${classified.summary.autoClassified} auto, ${classified.summary.humanReview} human`);
+  console.log('  → For AI classification of complex rules, run: /sf:classify-rules');
 
   // Phase 4: Human decisions (interactive)
   console.log('\nPhase 4: Open Decision Panel at http://localhost:3000');
