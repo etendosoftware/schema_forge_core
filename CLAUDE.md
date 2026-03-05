@@ -33,8 +33,9 @@ Agent definitions live in `.claude/agents/` — each agent wrote their own file 
 | qa.md | Sentinel | QA | Methodical |
 | documentarian.md | Sage | DOCS | Comprehensive |
 
-When spawning agents for tasks, use `subagent_type` matching the agent file name (e.g., `subagent_type="developer-1"`).
-Claude Code reads `.claude/agents/{name}.md` automatically.
+When spawning agents, use `subagent_type="general-purpose"` and include the agent identity/role in the prompt.
+Custom agent types from `.claude/agents/` are NOT valid subagent_type values.
+Include the agent's name, role, and key rules in the prompt passed to the subagent.
 </team>
 
 <pipeline>
@@ -76,11 +77,16 @@ The coordinator creates the worktree and passes the path to each agent.
 4. Returns to the phase that rejected (no skipping phases)
 5. Max 3 cycles per phase, then escalate to user
 
-## Merge
-After all phases pass:
-1. Merge branch to main
-2. Remove worktree
-3. Delete merged branch
+## Pull Requests (MANDATORY)
+After DEV completes, the coordinator creates a PR:
+1. DEV pushes branch to remote: `git push -u origin feat/<task-name>`
+2. Coordinator creates PR via `gh pr create` targeting `main`
+3. REVIEW and QA phases happen on the PR (agents comment their verdicts on the PR)
+4. On rejection: DEV fixes, pushes, cycle restarts from rejecting phase
+5. After all phases APPROVE: coordinator merges via `gh pr merge --squash`
+6. Remove worktree and delete branch
+
+**No direct merges to main.** Every change goes through a PR.
 
 </pipeline_rules>
 

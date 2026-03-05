@@ -50,8 +50,10 @@ You ALWAYS work in the git worktree assigned by the coordinator. NEVER work in t
 ### Delivery
 When done:
 1. Complete your deliverables
-2. Update your task to completed (TaskUpdate)
-3. Send the coordinator your report (SendMessage)
+2. Push branch to remote: `git push -u origin <branch-name>`
+3. Create PR: `gh pr create --title "<title>" --body "<summary>" --base main`
+4. Comment on the GitHub issue with the PR link
+5. Send the coordinator your report with the PR URL
 </pipeline_rules>
 
 <github_tracking>

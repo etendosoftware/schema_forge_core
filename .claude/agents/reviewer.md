@@ -61,8 +61,10 @@ SUGGESTIONS (N):
 
 ### Delivery
 When done:
-1. Update your task to completed (TaskUpdate)
-2. Send the coordinator your review report (SendMessage)
+1. Post review verdict as a PR comment: `gh pr comment <PR-number> --repo etendosoftware/schema-forge --body "<verdict>"`
+2. If REJECT: request changes on PR: `gh pr review <PR-number> --repo etendosoftware/schema-forge --request-changes --body "<findings>"`
+3. If APPROVE: approve PR: `gh pr review <PR-number> --repo etendosoftware/schema-forge --approve --body "<verdict>"`
+4. Send the coordinator your review report with verdict
 </pipeline_rules>
 
 <github_tracking>
@@ -70,10 +72,12 @@ When done:
 Every significant action MUST be commented on the corresponding GitHub issue (`etendosoftware/project_analyzer`).
 Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "message"`.
 
-Comment when:
-- Starting a review: "Reviewing this issue. Checking build and tests..."
-- Completing review: post the full VERDICT report (APPROVE/REJECT with findings)
-- Re-reviewing after fixes: "Re-review after developer addressed feedback..."
+Comment on both the GitHub issue AND the PR:
+- Starting a review: comment on PR with "Reviewing. Checking build and tests..."
+- Completing review: post the full VERDICT report on the PR (APPROVE/REJECT with findings)
+- Re-reviewing after fixes: comment on PR "Re-review after developer addressed feedback..."
+- Use `gh pr comment <PR-number> --repo etendosoftware/schema-forge --body "<message>"` for PR comments
+- Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "<message>"` for issue comments
 
 Keep comments concise. Include file paths and test results when relevant.
 </github_tracking>

@@ -64,9 +64,11 @@ BUGS:
 
 ### Delivery
 When done:
-1. Commit any new test files
-2. Update your task to completed (TaskUpdate)
-3. Send the coordinator your QA report (SendMessage)
+1. Commit and push any new test files to the PR branch
+2. Post QA verdict as a PR comment: `gh pr comment <PR-number> --repo etendosoftware/schema-forge --body "<verdict>"`
+3. If APPROVE: approve PR: `gh pr review <PR-number> --repo etendosoftware/schema-forge --approve --body "<verdict>"`
+4. If REJECT: request changes: `gh pr review <PR-number> --repo etendosoftware/schema-forge --request-changes --body "<bugs>"`
+5. Send the coordinator your QA report with verdict
 </pipeline_rules>
 
 <github_tracking>
@@ -74,11 +76,13 @@ When done:
 Every significant action MUST be commented on the corresponding GitHub issue (`etendosoftware/project_analyzer`).
 Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "message"`.
 
-Comment when:
-- Starting QA: "Running QA on this issue. Executing test suite..."
-- Completing QA: post the full VERDICT report (APPROVE/REJECT with test results and bugs)
-- Finding critical bugs: immediately comment with severity and reproduction steps
-- Re-testing after fixes: "Re-testing after bug fixes..."
+Comment on both the GitHub issue AND the PR:
+- Starting QA: comment on PR with "Running QA. Executing test suite..."
+- Completing QA: post VERDICT on PR (APPROVE/REJECT with test results and bugs)
+- Finding critical bugs: immediately comment on PR with severity and reproduction steps
+- Re-testing after fixes: comment on PR "Re-testing after bug fixes..."
+- Use `gh pr comment <PR-number> --repo etendosoftware/schema-forge --body "<message>"` for PR comments
+- Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "<message>"` for issue comments
 
 Keep comments concise. Include test counts and bug details when relevant.
 </github_tracking>
