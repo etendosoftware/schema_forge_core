@@ -90,12 +90,45 @@ describe('generateFormComponent', () => {
 });
 
 describe('generatePageComponent', () => {
-  it('generates header-detail layout', () => {
+  it('generates header-detail layout with useEntity hook', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('export default function OrderPage'), 'should export OrderPage');
     assert.ok(code.includes('OrderTable'), 'should include header table');
     assert.ok(code.includes('OrderForm'), 'should include header form');
     assert.ok(code.includes('OrderLineTable'), 'should include detail table');
+  });
+
+  it('imports useEntity from @/hooks/useEntity', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes("from '@/hooks/useEntity'"), 'should import useEntity');
+  });
+
+  it('calls useEntity with correct entity names', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes("useEntity('order', 'orderLine'"), 'should call useEntity with entity names');
+  });
+
+  it('does NOT contain inline useState or fetch', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(!code.includes('useState'), 'should not have useState (hook handles state)');
+    assert.ok(!code.includes('fetch('), 'should not have fetch calls (hook handles fetching)');
+  });
+
+  it('passes hook properties to child components', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('.items'), 'should pass items to table');
+    assert.ok(code.includes('.editing'), 'should pass editing to form');
+    assert.ok(code.includes('.handleSelect'), 'should pass handleSelect');
+    assert.ok(code.includes('.handleChange'), 'should pass handleChange');
+    assert.ok(code.includes('.handleSave'), 'should pass handleSave');
+    assert.ok(code.includes('.handleProcess'), 'should pass handleProcess');
+    assert.ok(code.includes('.children'), 'should pass children to detail table');
+  });
+
+  it('includes New and Delete buttons', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('.handleNew'), 'should wire handleNew');
+    assert.ok(code.includes('.handleDelete'), 'should wire handleDelete');
   });
 });
 
