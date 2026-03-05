@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Schema Raw",
+  "description": "Raw schema extraction from Etendo database. TDD 2.1.",
+  "type": "object",
+  "required": ["version", "generatedAt", "sourceChecksum", "window", "entities"],
+  "properties": {
+    "version": { "type": "string" },
+    "generatedAt": { "type": "string" },
+    "sourceChecksum": { "type": "string" },
+    "window": {
+      "type": "object",
+      "required": ["id", "name", "description", "primaryEntity", "category"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "primaryEntity": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["sales", "purchase", "finance", "warehouse", "master", "config"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "table", "description", "level", "fields"],
+        "properties": {
+          "name": { "type": "string" },
+          "table": { "type": "string" },
+          "description": { "type": "string" },
+          "level": {
+            "type": "string",
+            "enum": ["header", "line", "subline"]
+          },
+          "parentEntity": { "type": ["string", "null"] },
+          "parentField": { "type": ["string", "null"] },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "column", "label", "type", "required", "visibility", "sequence", "grid", "form", "searchable"],
+              "properties": {
+                "name": { "type": "string" },
+                "column": { "type": "string" },
+                "label": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["string", "text", "integer", "decimal", "boolean", "date", "datetime", "enum", "foreignKey", "id", "amount", "quantity", "price", "image", "binary"]
+                },
+                "required": { "type": "boolean" },
+                "visibility": {
+                  "type": "string",
+                  "enum": ["editable", "readOnly", "system"]
+                },
+                "derivation": { "type": ["object", "null"] },
+                "reference": { "type": ["object", "null"] },
+                "validation": { "type": ["object", "null"] },
+                "displayLogic": { "type": ["string", "null"] },
+                "readOnlyLogic": { "type": ["string", "null"] },
+                "sequence": { "type": "integer" },
+                "grid": { "type": "boolean" },
+                "form": { "type": "boolean" },
+                "searchable": { "type": "boolean" },
+                "computed": { "type": ["string", "null"] }
+              },
+              "additionalProperties": false
+            }
+          },
+          "defaultSort": { "type": "object" },
+          "uniqueConstraints": { "type": "array" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Processes",
+  "description": "Process definitions artifact. TDD 2.3.",
+  "type": "object",
+  "required": ["version", "processes"],
+  "properties": {
+    "version": { "type": "string" },
+    "processes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "displayName", "entity", "trigger", "preconditions", "steps", "edgeCases", "transactional"],
+        "properties": {
+          "name": { "type": "string" },
+          "displayName": { "type": "string" },
+          "entity": { "type": "string" },
+          "trigger": { "type": "object" },
+          "preconditions": {
+            "type": "array",
+            "minItems": 1
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["order", "name", "description", "type", "target", "operation", "behavioral"],
+              "properties": {
+                "order": { "type": "integer" },
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["validate", "mutation", "forEach"]
+                },
+                "target": { "type": "string" },
+                "operation": { "type": "object" },
+                "ruleDecision": {
+                  "type": ["string", "null"],
+                  "enum": ["keep", "replace", null]
+                },
+                "existingClass": { "type": ["string", "null"] },
+                "behavioral": { "type": "object" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "edgeCases": {
+            "type": "array",
+            "minItems": 3
+          },
+          "transactional": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rules",
+  "description": "Rule extraction and classification artifact. TDD 2.2.",
+  "type": "object",
+  "required": ["version", "window", "summary", "rules"],
+  "properties": {
+    "version": { "type": "string" },
+    "window": { "type": "string" },
+    "summary": {
+      "type": "object",
+      "required": ["total", "autoClassified", "humanReview", "byDecision"],
+      "properties": {
+        "total": { "type": "integer" },
+        "autoClassified": { "type": "integer" },
+        "humanReview": { "type": "integer" },
+        "byDecision": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "source", "tier", "decision", "complexity", "hasDmlOperations", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["callout", "eventHandler", "displayLogic", "readOnlyLogic", "validation", "documentProcess", "constraint"]
+          },
+          "source": {
+            "type": "string",
+            "enum": ["java", "javascript", "sql", "database"]
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["auto", "human"]
+          },
+          "autoDecision": { "type": ["string", "null"] },
+          "decision": {
+            "type": "string",
+            "enum": ["keep", "replace", "simplify", "omit", "pending"]
+          },
+          "class": { "type": ["string", "null"] },
+          "expression": { "type": ["string", "null"] },
+          "translatedExpression": { "type": ["string", "null"] },
+          "trigger": { "type": "object" },
+          "effects": { "type": "array" },
+          "complexity": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "linesOfCode": { "type": ["integer", "null"] },
+          "branches": { "type": ["integer", "null"] },
+          "hasDmlOperations": { "type": "boolean" },
+          "dmlWarning": { "type": ["string", "null"] },
+          "description": { "type": "string" },
+          "iaRecommendation": { "type": ["string", "null"] },
+          "impactIfOmitted": { "type": ["array", "null"] },
+          "behavioralSpec": { "type": ["object", "null"] },
+          "simplificationSpec": { "type": ["object", "null"] },
+          "replacementSpec": { "type": ["object", "null"] },
+          "decisionJustification": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

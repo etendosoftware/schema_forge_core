@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Step Operation",
+  "description": "Operation definition for process steps. Only 3 types: validate, mutation, forEach.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "validate" },
+        "assertion": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "errorCode": { "type": "string" }
+      },
+      "required": ["type", "assertion", "errorMessage", "errorCode"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "mutation" },
+        "entity": { "type": "string" },
+        "field": { "type": "string" },
+        "value": {},
+        "condition": { "type": "string" }
+      },
+      "required": ["type", "entity", "field", "value"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "forEach" },
+        "collection": { "type": "string" },
+        "as": { "type": "string" },
+        "steps": { "type": "array", "items": { "$ref": "#" } }
+      },
+      "required": ["type", "collection", "as", "steps"],
+      "additionalProperties": false
+    }
+  ]
+}

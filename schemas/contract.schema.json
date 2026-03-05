@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contract",
+  "description": "Generation contract artifact. TDD 2.4.",
+  "type": "object",
+  "required": ["version", "schemaChecksum", "rulesChecksum", "processesChecksum", "frontendContract", "backendContract", "testManifest"],
+  "properties": {
+    "version": { "type": "string" },
+    "schemaChecksum": { "type": "string" },
+    "rulesChecksum": { "type": "string" },
+    "processesChecksum": { "type": "string" },
+    "frontendContract": { "type": "object" },
+    "backendContract": { "type": "object" },
+    "testManifest": { "type": "object" }
+  },
+  "additionalProperties": false
+}
