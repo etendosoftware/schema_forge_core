@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import FieldEditor from './components/FieldEditor.jsx';
 import RuleCatalog from './components/RuleCatalog.jsx';
 
@@ -75,7 +75,7 @@ export default function App() {
   const rulesInputRef = useRef(null);
 
   // Try loading impact-messages from core-maps (relative path in dev)
-  useState(() => {
+  useEffect(() => {
     fetch('../../core-maps/impact-messages.json')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -84,7 +84,7 @@ export default function App() {
       .catch(() => {
         // Fallback to defaults — already set
       });
-  });
+  }, []);
 
   const loadSchema = async (e) => {
     const file = e.target.files[0];
