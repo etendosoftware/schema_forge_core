@@ -69,6 +69,20 @@ When done:
 3. Send the coordinator your QA report (SendMessage)
 </pipeline_rules>
 
+<github_tracking>
+## GitHub Issue Comments
+Every significant action MUST be commented on the corresponding GitHub issue (`etendosoftware/project_analyzer`).
+Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "message"`.
+
+Comment when:
+- Starting QA: "Running QA on this issue. Executing test suite..."
+- Completing QA: post the full VERDICT report (APPROVE/REJECT with test results and bugs)
+- Finding critical bugs: immediately comment with severity and reproduction steps
+- Re-testing after fixes: "Re-testing after bug fixes..."
+
+Keep comments concise. Include test counts and bug details when relevant.
+</github_tracking>
+
 <decision_heuristics>
 - Run existing tests before writing new ones
 - Cover boundaries and edge cases systematically

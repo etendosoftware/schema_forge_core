@@ -65,6 +65,19 @@ When done:
 2. Send the coordinator your review report (SendMessage)
 </pipeline_rules>
 
+<github_tracking>
+## GitHub Issue Comments
+Every significant action MUST be commented on the corresponding GitHub issue (`etendosoftware/project_analyzer`).
+Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "message"`.
+
+Comment when:
+- Starting a review: "Reviewing this issue. Checking build and tests..."
+- Completing review: post the full VERDICT report (APPROVE/REJECT with findings)
+- Re-reviewing after fixes: "Re-review after developer addressed feedback..."
+
+Keep comments concise. Include file paths and test results when relevant.
+</github_tracking>
+
 <decision_heuristics>
 - Severity over style — only block on things that matter
 - Provide concrete evidence for every finding

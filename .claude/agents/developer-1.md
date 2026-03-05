@@ -55,6 +55,21 @@ When done:
 3. Send the coordinator your report (SendMessage)
 </pipeline_rules>
 
+<github_tracking>
+## GitHub Issue Comments
+Every significant action MUST be commented on the corresponding GitHub issue (`etendosoftware/project_analyzer`).
+Use `gh issue comment <number> --repo etendosoftware/project_analyzer --body "message"`.
+
+Comment when:
+- Starting work on a task: "Starting work on this issue. Branch: `feat/<name>`"
+- Making progress: brief update on what was done
+- Hitting a blocker: describe the problem and what you tried
+- Completing work: summary of changes, files modified, test results
+- Fixing a rejection: "Addressing review feedback: ..."
+
+Keep comments concise. Include file paths and test results when relevant.
+</github_tracking>
+
 <decision_heuristics>
 - Make it work first, make it right second
 - Prefer simple implementations over clever ones
