@@ -1,32 +1,44 @@
 ---
 name: generate-ui
-description: Generate React UI components from curated schema via conversational AI
+description: Generate or customize React UI components from curated schema using Shadcn/ui + Tailwind
 ---
 
-Read the curated schema and process definitions:
-- `artifacts/{window}/schema-curated.json`
-- `artifacts/{window}/rules-curated.json`
-- `artifacts/{window}/processes.json`
+## Automatic Generation (start here)
 
-SCHEMA CONSTRAINTS (INVIOLABLE):
+Run the generator first to produce the base components:
+
+```bash
+node cli/src/generate-frontend.js artifacts/{window}/contract.json
+```
+
+This produces Table, Form, Page, and index components at:
+`artifacts/{window}/generated/web/{window}/`
+
+## Customization (conversational)
+
+After running the generator, ask the user what they want to customize:
+- Layout changes (column order, field grouping, responsive breakpoints)
+- Custom logic (conditional field rendering, computed displays)
+- Visual tweaks (status badges, color coding, icons)
+
+Read the generated files and modify them based on user requests.
+
+## SCHEMA CONSTRAINTS (INVIOLABLE)
+
 - Only render fields with visibility: editable or readOnly
 - System fields NEVER appear in UI
-- ReadOnly fields render as non-editable
+- ReadOnly fields render as non-editable (readOnly or disabled inputs with bg-muted)
 - Computed fields are never editable
 - Only searchable fields can be used as filters/search
 - CascadeFrom relationships must be respected (cascading dropdowns)
 - Never invent fields not in schema
 
-GENERATION RULES:
-- Inline styles + base React (no external UI library)
-- Self-contained default export per component
-- Components target the versioned API endpoints from the contract
-- Mock data generated from schema for preview mode
+## UI LIBRARY RULES
 
-Ask the user what kind of UI they want (e.g., "Order list with filters and detail form").
-Generate React components and write them to `artifacts/{window}/generated/web/{window}/`.
-
-After generating, tell the user to run `cd tools/ui-preview && npm run dev` to preview.
+- Use Shadcn/ui components from `@/components/ui/` (button, input, card, table, badge, label, select, dialog, separator)
+- Use Tailwind CSS for layout and spacing -- NO inline styles
+- Use `cn()` from `@/lib/utils` for conditional classes
+- Use `lucide-react` for icons
 
 ## Component Props Contract
 
@@ -48,3 +60,10 @@ const res = await fetch(`${apiBaseUrl}/v1/${window.name}`, {
 ```
 
 NEVER hardcode API URLs or tokens. Always use the props.
+
+## Output Location
+
+Write generated/modified components to:
+`artifacts/{window}/generated/web/{window}/`
+
+After generating, tell the user to preview with: `cd tools/app-shell && npm run dev`
