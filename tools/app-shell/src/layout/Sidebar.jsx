@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, Eye } from 'lucide-react';
 
 export default function Sidebar({ menuItems }) {
   return (
@@ -25,6 +25,20 @@ export default function Sidebar({ menuItems }) {
           </NavLink>
         ))}
       </nav>
+      <div className="border-t p-2">
+        <NavLink
+          to="/preview"
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+              isActive && 'bg-accent text-accent-foreground'
+            )
+          }
+        >
+          <Eye className="h-3.5 w-3.5" />
+          Preview
+        </NavLink>
+      </div>
     </aside>
   );
 }
