@@ -5,6 +5,7 @@ import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import { buildMenuFromContract, buildWindowMap } from './windows/registry.js';
+import { createMockFetch } from './lib/mockFetch.js';
 
 const API_BASE_URL = '/etendo_sf/api';
 
@@ -64,7 +65,21 @@ export default function App() {
   const [windowMap, setWindowMap] = useState({});
 
   useEffect(() => {
-    loadContract().then(contract => {
+    loadContract().then(async contract => {
+      if (import.meta.env.VITE_MOCK === 'true') {
+        const mockModule = await import('@generated/web/sales-order/mockData.js');
+        const mockData = {};
+        for (const [key, value] of Object.entries(mockModule)) {
+          mockData[key] = value;
+        }
+        const mockFetch = createMockFetch(mockData, API_BASE_URL);
+        const originalFetch = window.fetch;
+        window.fetch = async (url, opts) => {
+          const mockResult = await mockFetch(url, opts);
+          if (mockResult !== undefined) return mockResult;
+          return originalFetch(url, opts);
+        };
+      }
       setMenuItems(buildMenuFromContract(contract));
       setWindowMap(buildWindowMap(contract));
     });
