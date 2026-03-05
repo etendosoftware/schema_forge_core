@@ -1,0 +1,7 @@
+{
+  "name": "schema-forge",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "workspaces": ["cli", "tools/*"]
+}
