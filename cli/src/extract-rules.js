@@ -10,12 +10,12 @@ const ROOT = join(__dirname, '..', '..');
 // --- SQL Queries (TDD 3.2) ---
 
 const CALLOUTS_SQL = `
-SELECT c.AD_Callout_ID, c.Classname, c.Name,
-       col.ColumnName, col.AD_Table_ID
-FROM AD_Callout c
-JOIN AD_Column_Callout cc ON c.AD_Callout_ID = cc.AD_Callout_ID
-JOIN AD_Column col ON cc.AD_Column_ID = col.AD_Column_ID
+SELECT co.AD_Callout_ID, co.Name,
+       mo.Classname, col.ColumnName, col.AD_Table_ID
+FROM AD_Callout co
+JOIN AD_Column col ON col.AD_Callout_ID = co.AD_Callout_ID
 JOIN AD_Tab t ON col.AD_Table_ID = t.AD_Table_ID
+LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = co.AD_Callout_ID
 WHERE t.AD_Window_ID = $1
 `;
 
@@ -28,20 +28,68 @@ WHERE t.AD_Window_ID = $1
 `;
 
 const DISPLAY_LOGIC_SQL = `
-SELECT f.Name, f.DisplayLogic, f.ReadOnlyLogic, c.ColumnName
+SELECT f.Name, f.DisplayLogic, c.ReadOnlyLogic, c.ColumnName
 FROM AD_Field f
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = $1
-  AND (f.DisplayLogic IS NOT NULL OR f.ReadOnlyLogic IS NOT NULL)
+  AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)
+`;
+
+const AUXILIARY_INPUTS_SQL = `
+SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID
+FROM AD_AuxiliarInput ai
+JOIN AD_Tab t ON ai.AD_Tab_ID = t.AD_Tab_ID
+WHERE t.AD_Window_ID = $1
+ORDER BY t.SeqNo, ai.Name
 `;
 
 const DOCUMENT_PROCESSES_SQL = `
-SELECT p.AD_Process_ID, p.Name, p.Classname
+-- 1. Tab-level process
+SELECT 'tab_process' AS mechanism,
+       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+       p.Name, p.Classname, NULL AS column_name
 FROM AD_Process p
-JOIN AD_Table_Process tp ON p.AD_Process_ID = tp.AD_Process_ID
-JOIN AD_Tab t ON tp.AD_Table_ID = t.AD_Table_ID
+JOIN AD_Tab t ON t.AD_Process_ID = p.AD_Process_ID
 WHERE t.AD_Window_ID = $1
+
+UNION ALL
+
+-- 2. Classic process (button column -> AD_Process)
+SELECT 'classic_process' AS mechanism,
+       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+       p.Name, p.Classname, c.ColumnName
+FROM AD_Process p
+JOIN AD_Column c ON c.AD_Process_ID = p.AD_Process_ID
+JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+WHERE t.AD_Window_ID = $1
+
+UNION ALL
+
+-- 3. OBUIAPP Process (button column -> OBUIAPP_Process)
+SELECT 'obuiapp_process' AS mechanism,
+       NULL AS process_id, op.OBUIAPP_Process_ID AS obuiapp_process_id,
+       op.Name, op.Classname, c.ColumnName
+FROM OBUIAPP_Process op
+JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
+JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+WHERE t.AD_Window_ID = $1
+
+UNION ALL
+
+-- 4. Hardcoded buttons (no process linked)
+SELECT 'hardcoded' AS mechanism,
+       NULL AS process_id, NULL AS obuiapp_process_id,
+       c.ColumnName AS name, NULL AS classname, c.ColumnName
+FROM AD_Column c
+JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
+WHERE t.AD_Window_ID = $1
+  AND r.Name = 'Button'
+  AND c.AD_Process_ID IS NULL
+  AND c.EM_OBUIAPP_Process_ID IS NULL
+
+ORDER BY mechanism, name
 `;
 
 // --- Pure functions ---
@@ -293,12 +341,13 @@ export async function main(windowId, windowName) {
   const sourceDir = process.env.ETENDO_SOURCE_DIR ?? null;
 
   try {
-    // Run all 4 queries in parallel
-    const [calloutsRes, validationsRes, displayLogicRes, processesRes] = await Promise.all([
+    // Run all 5 queries in parallel
+    const [calloutsRes, validationsRes, displayLogicRes, processesRes, auxInputsRes] = await Promise.all([
       pool.query(CALLOUTS_SQL, [windowId]),
       pool.query(VALIDATION_RULES_SQL, [windowId]),
       pool.query(DISPLAY_LOGIC_SQL, [windowId]),
       pool.query(DOCUMENT_PROCESSES_SQL, [windowId]),
+      pool.query(AUXILIARY_INPUTS_SQL, [windowId]),
     ]);
 
     const rules = [];
@@ -347,7 +396,7 @@ export async function main(windowId, windowName) {
         const translated = translateExpression(row.readonlylogic);
         rules.push({
           type: 'readOnlyLogic',
-          source: 'AD_Field',
+          source: 'AD_Column',
           fieldName: row.name,
           column: row.columnname,
           rawExpression: row.readonlylogic,
@@ -357,7 +406,7 @@ export async function main(windowId, windowName) {
       }
     }
 
-    // Process document processes
+    // Process document processes (3 mechanisms + hardcoded)
     for (const row of processesRes.rows) {
       let sourceAnalysis = null;
       if (sourceDir && row.classname) {
@@ -367,10 +416,12 @@ export async function main(windowId, windowName) {
 
       rules.push({
         type: 'process',
-        source: 'AD_Process',
-        id: row.ad_process_id,
+        source: row.mechanism === 'obuiapp_process' ? 'OBUIAPP_Process' : 'AD_Process',
+        mechanism: row.mechanism,
+        id: row.process_id ?? row.obuiapp_process_id,
         name: row.name,
         className: row.classname,
+        column: row.column_name,
         ...(sourceAnalysis && {
           hasDml: sourceAnalysis.hasDml,
           loc: sourceAnalysis.loc,
@@ -379,17 +430,27 @@ export async function main(windowId, windowName) {
       });
     }
 
+    // Process auxiliary inputs (computed variables for DisplayLogic)
+    const auxiliaryInputs = auxInputsRes.rows.map((row) => ({
+      name: row.name,
+      code: row.validation_code,
+      tabName: row.tab_name,
+      tabId: row.ad_tab_id,
+    }));
+
     const output = {
       windowId,
       windowName,
       extractedAt: new Date().toISOString(),
       rules,
+      auxiliaryInputs,
       summary: {
         callouts: calloutsRes.rows.length,
         validations: validationsRes.rows.length,
         displayLogic: displayLogicRes.rows.filter((r) => r.displaylogic).length,
         readOnlyLogic: displayLogicRes.rows.filter((r) => r.readonlylogic).length,
         processes: processesRes.rows.length,
+        auxiliaryInputs: auxInputsRes.rows.length,
         total: rules.length,
       },
     };

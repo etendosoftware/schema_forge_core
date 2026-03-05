@@ -1,0 +1,2948 @@
+{
+  "window": {
+    "id": "143",
+    "name": "Sales Order"
+  },
+  "entities": [
+    {
+      "name": "cOrder",
+      "tableName": "C_Order",
+      "tabName": "Header",
+      "level": "0",
+      "sequence": "10",
+      "fields": [
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "22",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_Organization",
+          "validationRuleId": "49DC1D6F086945AB82F84C66F5F13F16"
+        },
+        {
+          "name": "cDocTypeTargetId",
+          "columnName": "C_DocTypeTarget_ID",
+          "label": "Transaction Document",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "doctype.salesOrder"
+          },
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_DocType",
+          "validationRuleId": "133"
+        },
+        {
+          "name": "documentNo",
+          "columnName": "DocumentNo",
+          "label": "Document No.",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence",
+            "source": "documentType.sequence"
+          },
+          "maxLength": "30",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
+        },
+        {
+          "name": "dateOrdered",
+          "columnName": "DateOrdered",
+          "label": "Order Date",
+          "type": "date",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "@#Date@"
+          },
+          "maxLength": "10",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
+        },
+        {
+          "name": "cBpartnerId",
+          "columnName": "C_BPartner_ID",
+          "label": "Business Partner",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "60",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
+        },
+        {
+          "name": "cBpartnerLocationId",
+          "columnName": "C_BPartner_Location_ID",
+          "label": "Partner Address",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartnerLocation",
+          "validationRuleId": "167"
+        },
+        {
+          "name": "mPriceListId",
+          "columnName": "M_PriceList_ID",
+          "label": "Price List",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList",
+          "validationRuleId": "DB85A30739C3487988921CE3FFFD3BAD"
+        },
+        {
+          "name": "datePromised",
+          "columnName": "DatePromised",
+          "label": "Scheduled Delivery Date",
+          "type": "date",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "@#Date@"
+          },
+          "maxLength": "10",
+          "displayLogic": "@OrderType@='OB' | @OrderType@='SO'",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
+        },
+        {
+          "name": "finPaymentmethodId",
+          "columnName": "FIN_Paymentmethod_ID",
+          "label": "Payment Method",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "readOnlyLogic": "@Processed@='Y'",
+          "validationRuleId": "FF80808130B107670130B1115F22000D"
+        },
+        {
+          "name": "cPaymentTermId",
+          "columnName": "C_PaymentTerm_ID",
+          "label": "Payment Terms",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "mWarehouseId",
+          "columnName": "M_Warehouse_ID",
+          "label": "Warehouse",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "invoiceRule",
+          "columnName": "InvoiceRule",
+          "label": "Invoice Terms",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "D"
+          },
+          "maxLength": "60",
+          "displayLogic": "@OrderType@='SO' | @OrderType@='WP' | @OrderType@='PR' | @OrderType@='WR'",
+          "validationRuleId": "1000200003"
+        },
+        {
+          "name": "docStatus",
+          "columnName": "DocStatus",
+          "label": "Document Status",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "DR"
+          },
+          "maxLength": "60"
+        },
+        {
+          "name": "grandTotal",
+          "columnName": "GrandTotal",
+          "label": "Total Gross Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22"
+        },
+        {
+          "name": "totalLines",
+          "columnName": "TotalLines",
+          "label": "Total Net Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22"
+        },
+        {
+          "name": "cCurrencyId",
+          "columnName": "C_Currency_ID",
+          "label": "Currency",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.cCurrencyId"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "adUserId",
+          "columnName": "AD_User_ID",
+          "label": "User/Contact",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'",
+          "validationRuleId": "123"
+        },
+        {
+          "name": "cDocTypeId",
+          "columnName": "C_DocType_ID",
+          "label": "Document Type",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "doctype.salesOrder"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "soResStatus",
+          "columnName": "SO_Res_Status",
+          "label": "Reservation Status",
+          "type": "enum",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "60",
+          "displayLogic": "@StockReservations@!''"
+        },
+        {
+          "name": "poreference",
+          "columnName": "POReference",
+          "label": "Order Reference",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "20"
+        },
+        {
+          "name": "salesRepId",
+          "columnName": "SalesRep_ID",
+          "label": "Sales Representative",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "22",
+          "validationRuleId": "6F75AF1B05464DD894033D50AEC67310"
+        },
+        {
+          "name": "description",
+          "columnName": "Description",
+          "label": "Description",
+          "type": "text",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "255"
+        },
+        {
+          "name": "billToId",
+          "columnName": "BillTo_ID",
+          "label": "Invoice Address",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+          "validationRuleId": "119"
+        },
+        {
+          "name": "deliveryLocationId",
+          "columnName": "Delivery_Location_ID",
+          "label": "Delivery Location",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "22",
+          "validationRuleId": "167"
+        },
+        {
+          "name": "emAprmAddPayment",
+          "columnName": "EM_APRM_AddPayment",
+          "label": "Add Payment",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@Processed@='Y' & (@showAddPayment@='Y' | @showAddPayment@ ='') & (@APRM_OrderIsPaid@='N' | @APRM_OrderIsPaid@ ='') & @GrandTotal@!0"
+        },
+        {
+          "name": "docAction",
+          "columnName": "DocAction",
+          "label": "Process Order",
+          "type": "image",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "CO"
+          },
+          "maxLength": "60",
+          "displayLogic": "@DocStatus@!'CL'&@DocStatus@!'VO'"
+        },
+        {
+          "name": "copyFrom",
+          "columnName": "CopyFrom",
+          "label": "Copy Lines",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@processed@='N'"
+        },
+        {
+          "name": "copyFromPo",
+          "columnName": "CopyFromPO",
+          "label": "Copy from Orders",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@processed@='N'"
+        },
+        {
+          "name": "deliveryViaRule",
+          "columnName": "DeliveryViaRule",
+          "label": "Delivery Method",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "P"
+          },
+          "maxLength": "60",
+          "displayLogic": "@OrderType@='SO' | @OrderType@='WP' | @OrderType@='PR' | @OrderType@='WR' | @OrderType@='WI'",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "mShipperId",
+          "columnName": "M_Shipper_ID",
+          "label": "Shipping Company",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "displayLogic": "@DeliveryViaRule@='S' & (@OrderType@='SO' | @OrderType@='WP' | @OrderType@='PR' | @OrderType@='WR' | @OrderType@='WI')"
+        },
+        {
+          "name": "deliveryRule",
+          "columnName": "DeliveryRule",
+          "label": "Delivery Terms",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "A"
+          },
+          "maxLength": "60",
+          "displayLogic": "@OrderType@='SO' | @OrderType@='WP'",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "freightCostRule",
+          "columnName": "FreightCostRule",
+          "label": "Freight Cost Rule",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "I"
+          },
+          "maxLength": "60",
+          "displayLogic": "@OrderType@='SO'"
+        },
+        {
+          "name": "freightAmt",
+          "columnName": "FreightAmt",
+          "label": "Freight Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22",
+          "displayLogic": "@OrderType@='SO' & @FreightCostRule@='F'"
+        },
+        {
+          "name": "isDiscountPrinted",
+          "columnName": "IsDiscountPrinted",
+          "label": "Print Discount",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "priorityRule",
+          "columnName": "PriorityRule",
+          "label": "Priority",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "5"
+          },
+          "maxLength": "60",
+          "displayLogic": "@OrderType@='SO' | @OrderType@='WP'",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "cCampaignId",
+          "columnName": "C_Campaign_ID",
+          "label": "Sales Campaign",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "displayLogic": "@$Element_MC@='Y'",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "chargeAmt",
+          "columnName": "ChargeAmt",
+          "label": "Charge Amount",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "cChargeId",
+          "columnName": "C_Charge_ID",
+          "label": "Charge",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Charge"
+        },
+        {
+          "name": "cActivityId",
+          "columnName": "C_Activity_ID",
+          "label": "Activity",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "displayLogic": "@$Element_AY@='Y'",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "adOrgTrxId",
+          "columnName": "AD_OrgTrx_ID",
+          "label": "Trx Organization",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "displayLogic": "@$Element_OT@='Y'",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "quotationId",
+          "columnName": "Quotation_ID",
+          "label": "Quotation",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "32",
+          "displayLogic": "@Quotation_ID@ ! '' & @Quotation_ID@ ! 'null' & @Quotation_ID@ ! null"
+        },
+        {
+          "name": "deliveryStatus",
+          "columnName": "DeliveryStatus",
+          "label": "Delivery Status",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "4"
+        },
+        {
+          "name": "invoiceStatus",
+          "columnName": "InvoiceStatus",
+          "label": "Invoice Status",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "4"
+        },
+        {
+          "name": "calculatePromotions",
+          "columnName": "Calculate_Promotions",
+          "label": "Calculate Promotions",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "1",
+          "displayLogic": "@DocStatus@='DR' & @PromotionsDefined@='Y'"
+        },
+        {
+          "name": "cancelledorderId",
+          "columnName": "Cancelledorder_id",
+          "label": "Canceled Order",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "32",
+          "displayLogic": "@Cancelledorder_id@!''"
+        },
+        {
+          "name": "replacedorderId",
+          "columnName": "Replacedorder_id",
+          "label": "Replaced Order",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "32",
+          "displayLogic": "@Replacedorder_id@!''"
+        },
+        {
+          "name": "replacementorderId",
+          "columnName": "Replacementorder_ID",
+          "label": "Replacement Order",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "iscancelled",
+          "columnName": "Iscancelled",
+          "label": "Is Canceled",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "bpartnerExtRef",
+          "columnName": "BPartner_ExtRef",
+          "label": "CRM Reference",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "256",
+          "displayLogic": "@BPartner_ExtRef@!''"
+        },
+        {
+          "name": "cProjectId",
+          "columnName": "C_Project_ID",
+          "label": "Project",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "60",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_Project",
+          "validationRuleId": "800001"
+        },
+        {
+          "name": "cCostcenterId",
+          "columnName": "C_Costcenter_ID",
+          "label": "Cost Center",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "aAssetId",
+          "columnName": "A_Asset_ID",
+          "label": "Asset",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@$Element_AS@='Y'",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "user1Id",
+          "columnName": "User1_ID",
+          "label": "1st Dimension",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "user2Id",
+          "columnName": "User2_ID",
+          "label": "2nd Dimension",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "cancelandreplace",
+          "columnName": "Cancelandreplace",
+          "label": "Cancel and Replace",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@DocStatus@='CO'&@Cancelledorder_id@=''&@Iscancelled@='N' & @OrderType@='SO' & @EnableCanceAndReplace@!''"
+        },
+        {
+          "name": "confirmcancelandreplace",
+          "columnName": "Confirmcancelandreplace",
+          "label": "Confirm Cancel and Replace",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@DocStatus@='TMP' & @OrderType@='SO' & @EnableCanceAndReplace@!''"
+        },
+        {
+          "name": "isSelfService",
+          "columnName": "IsSelfService",
+          "label": "Self-Service",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "dropShipLocationId",
+          "columnName": "DropShip_Location_ID",
+          "label": "Drop Ship Location",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+          "validationRuleId": "120"
+        },
+        {
+          "name": "dropShipBpartnerId",
+          "columnName": "DropShip_BPartner_ID",
+          "label": "Drop Ship Partner",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "dropShipUserId",
+          "columnName": "DropShip_User_ID",
+          "label": "Drop Ship Contact",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'",
+          "validationRuleId": "168"
+        },
+        {
+          "name": "isSelected",
+          "columnName": "IsSelected",
+          "label": "Selected",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "posted",
+          "columnName": "Posted",
+          "label": "Posted",
+          "type": "image",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "accounting",
+          "derivation": {
+            "type": "computed",
+            "source": "'N'"
+          },
+          "maxLength": "60",
+          "displayLogic": "@Processed@='Y' & @#ShowAcct@='Y'"
+        },
+        {
+          "name": "paymentRule",
+          "columnName": "PaymentRule",
+          "label": "Form of Payment",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "B"
+          },
+          "maxLength": "60",
+          "displayLogic": "@FinancialManagement@=''",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "isSotrx",
+          "columnName": "IsSOTrx",
+          "label": "Sales Transaction",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.isSotrx"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "datePrinted",
+          "columnName": "DatePrinted",
+          "label": "Date printed",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10"
+        },
+        {
+          "name": "processed",
+          "columnName": "Processed",
+          "label": "Processed",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "processing",
+          "columnName": "Processing",
+          "label": "Process Order",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "cOrderId",
+          "columnName": "C_Order_ID",
+          "label": "Sales Order",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "dateAcct",
+          "columnName": "DateAcct",
+          "label": "Accounting Date",
+          "type": "date",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "@#Date@"
+          },
+          "maxLength": "10",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "isPrinted",
+          "columnName": "IsPrinted",
+          "label": "Print",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "isInvoiced",
+          "columnName": "IsInvoiced",
+          "label": "Re-invoice",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "isDelivered",
+          "columnName": "IsDelivered",
+          "label": "Delivered",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "1",
+          "displayLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "isActive",
+          "columnName": "IsActive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "generatetemplate",
+          "columnName": "Generatetemplate",
+          "label": "Copy Product Template",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "1"
+        },
+        {
+          "name": "deliverynotes",
+          "columnName": "Deliverynotes",
+          "label": "Delivery notes",
+          "type": "text",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "2000"
+        },
+        {
+          "name": "cIncotermsId",
+          "columnName": "C_Incoterms_ID",
+          "label": "Incoterms",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "12"
+        },
+        {
+          "name": "incotermsdescription",
+          "columnName": "Incotermsdescription",
+          "label": "INCOTERMS description",
+          "type": "text",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "255"
+        }
+      ],
+      "whereClause": "C_Order.IsSOTrx='Y'",
+      "hqlWhereClause": "e.salesTransaction=true AND e.transactionDocument.return= false AND e.transactionDocument.sOSubType NOT LIKE 'OB'"
+    },
+    {
+      "name": "cOrderLine",
+      "tableName": "C_OrderLine",
+      "tabName": "Lines",
+      "level": "1",
+      "sequence": "20",
+      "fields": [
+        {
+          "name": "line",
+          "columnName": "Line",
+          "label": "Line No.",
+          "type": "integer",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@"
+          },
+          "maxLength": "10",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "mProductId",
+          "columnName": "M_Product_ID",
+          "label": "Product",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "60",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"
+        },
+        {
+          "name": "aumqty",
+          "columnName": "Aumqty",
+          "label": "Operative Quantity",
+          "type": "quantity",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "2",
+          "displayLogic": "@M_Product_Uom_Id@=''",
+          "displayLogicServer": "@UomManagement@='Y'",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.OperativeQuantity_To_BaseQuantity"
+        },
+        {
+          "name": "cAum",
+          "columnName": "C_Aum",
+          "label": "Alternative UOM",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@M_Product_Uom_Id@=''",
+          "displayLogicServer": "@UomManagement@='Y'",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.OperativeQuantity_To_BaseQuantity",
+          "validationRuleId": "5ABEE0829BD24BFB9BA454E607825821"
+        },
+        {
+          "name": "qtyOrdered",
+          "columnName": "QtyOrdered",
+          "label": "Ordered Quantity",
+          "type": "quantity",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "1"
+          },
+          "maxLength": "10",
+          "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "cUomId",
+          "columnName": "C_UOM_ID",
+          "label": "UOM",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "22",
+          "readOnlyLogic": "@UomManagement@='Y'"
+        },
+        {
+          "name": "mAttributeSetInstanceId",
+          "columnName": "M_AttributeSetInstance_ID",
+          "label": "Attribute Set Value",
+          "type": "price",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "22",
+          "displayLogic": "(@ATTRIBUTESET@!''&@ATTRSETVALUETYPE@!'F')|(@M_AttributeSetInstance_ID@!''&@M_AttributeSetInstance_ID@!'0')",
+          "readOnlyLogic": "@Processed@='Y' | @ATTRIBUTESETINSTANCIABLE@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "priceActual",
+          "columnName": "PriceActual",
+          "label": "Net Unit Price",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "grossUnitPrice",
+          "columnName": "Gross_Unit_Price",
+          "label": "Gross Unit Price",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "2",
+          "displayLogic": "@GROSSPRICE@='Y'",
+          "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='N'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "lineNetAmt",
+          "columnName": "LineNetAmt",
+          "label": "Line Net Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Iseditlinenetamt@='N'|@GROSSPRICE@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "lineGrossAmount",
+          "columnName": "Line_Gross_Amount",
+          "label": "Line Gross Amount",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "2",
+          "displayLogic": "@GROSSPRICE@='Y'"
+        },
+        {
+          "name": "cTaxId",
+          "columnName": "C_Tax_ID",
+          "label": "Tax",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt",
+          "validationRuleId": "5BEA56148DC74215A63927481BDC0B63"
+        },
+        {
+          "name": "priceList",
+          "columnName": "PriceList",
+          "label": "Net List Price",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "22",
+          "displayLogic": "@GROSSPRICE@='N'",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "grossPriceList",
+          "columnName": "GrossPriceList",
+          "label": "Gross List Price",
+          "type": "decimal",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "12",
+          "displayLogic": "@GROSSPRICE@='Y'"
+        },
+        {
+          "name": "discount",
+          "columnName": "Discount",
+          "label": "Discount",
+          "type": "decimal",
+          "mandatory": false,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "mWarehouseRuleId",
+          "columnName": "M_Warehouse_Rule_ID",
+          "label": "Warehouse Rule",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "description",
+          "columnName": "Description",
+          "label": "Description",
+          "type": "text",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "2000"
+        },
+        {
+          "name": "replacedorderlineId",
+          "columnName": "Replacedorderline_id",
+          "label": "Replaced Order Line",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "32",
+          "displayLogic": "@Replacedorderline_id@!''"
+        },
+        {
+          "name": "createReservation",
+          "columnName": "Create_Reservation",
+          "label": "Stock Reservation",
+          "type": "enum",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "60",
+          "displayLogic": "@StockReservations@!''",
+          "readOnlyLogic": "@processed@='Y'"
+        },
+        {
+          "name": "taxbaseamt",
+          "columnName": "Taxbaseamt",
+          "label": "Alternate Taxable Amount",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12",
+          "displayLogic": "@UsesAlternate@='Y'",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "qtyInvoiced",
+          "columnName": "QtyInvoiced",
+          "label": "Invoiced Quantity",
+          "type": "quantity",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "10",
+          "displayLogic": "@OrderType@='SO' | @Processed@='Y'"
+        },
+        {
+          "name": "qtyDelivered",
+          "columnName": "QtyDelivered",
+          "label": "Delivered Quantity",
+          "type": "quantity",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "10",
+          "displayLogic": "@Processed@='Y' & @IsStocked@ = 'Y'"
+        },
+        {
+          "name": "dateOrdered",
+          "columnName": "DateOrdered",
+          "label": "Order Date",
+          "type": "date",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.dateOrdered"
+          },
+          "maxLength": "10",
+          "displayLogic": "@OrderType@='OB' | @OrderType@='SO' | @OrderType@='WP'"
+        },
+        {
+          "name": "datePromised",
+          "columnName": "DatePromised",
+          "label": "Scheduled Delivery Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.datePromised"
+          },
+          "maxLength": "10",
+          "displayLogic": "@OrderType@='OB' | @OrderType@='SO' | @OrderType@='WP'"
+        },
+        {
+          "name": "mWarehouseId",
+          "columnName": "M_Warehouse_ID",
+          "label": "Warehouse",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.mWarehouseId"
+          },
+          "maxLength": "22",
+          "displayLogic": "@DirectShip@='N'",
+          "readOnlyLogic": "@OrderType@!'SO'"
+        },
+        {
+          "name": "qtyReserved",
+          "columnName": "QtyReserved",
+          "label": "Reserved Quantity",
+          "type": "quantity",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "10",
+          "displayLogic": "@OrderType@='OB' | @OrderType@='SO' | @Processed@='Y'"
+        },
+        {
+          "name": "mShipperId",
+          "columnName": "M_Shipper_ID",
+          "label": "Shipping Company",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.mShipperId"
+          },
+          "maxLength": "22",
+          "displayLogic": "@DeliveryViaRule@='S'"
+        },
+        {
+          "name": "cBpartnerId",
+          "columnName": "C_BPartner_ID",
+          "label": "Business Partner",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@"
+          },
+          "maxLength": "60",
+          "displayLogic": "(@OrderType@='OB' | @OrderType@='SO' | @OrderType@='WP' | @Processed@='Y') & @C_Order_Discount_ID@=''",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "directShip",
+          "columnName": "DirectShip",
+          "label": "Direct shipment",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "1",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "freightAmt",
+          "columnName": "FreightAmt",
+          "label": "Freight Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22",
+          "displayLogic": "@FreightCostRule@='L'"
+        },
+        {
+          "name": "cBpartnerLocationId",
+          "columnName": "C_BPartner_Location_ID",
+          "label": "Partner Address",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.cBpartnerLocationId"
+          },
+          "maxLength": "22",
+          "displayLogic": "(@OrderType@='OB' | @OrderType@='SO' | @OrderType@='WP' | @Processed@='Y') & @C_Order_Discount_ID@=''",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Tax",
+          "validationRuleId": "167"
+        },
+        {
+          "name": "cancelpricead",
+          "columnName": "CANCELPRICEAD",
+          "label": "Cancel Discounts and Promotions",
+          "type": "boolean",
+          "mandatory": false,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "0",
+          "displayLogic": "@IsStocked@ = 'Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "mProductUomId",
+          "columnName": "M_Product_Uom_Id",
+          "label": "Order UOM",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "22",
+          "displayLogic": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Conversion"
+        },
+        {
+          "name": "quantityOrder",
+          "columnName": "QuantityOrder",
+          "label": "Order Quantity",
+          "type": "quantity",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10",
+          "displayLogic": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Conversion"
+        },
+        {
+          "name": "priceStd",
+          "columnName": "PriceStd",
+          "label": "Base Net Unit Price",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "12",
+          "displayLogic": "@GROSSPRICE@='N'"
+        },
+        {
+          "name": "grosspricestd",
+          "columnName": "grosspricestd",
+          "label": "Base Gross Unit Price",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "12",
+          "displayLogic": "@GROSSPRICE@='Y'"
+        },
+        {
+          "name": "iseditlinenetamt",
+          "columnName": "Iseditlinenetamt",
+          "label": "Edit Line Net Amount",
+          "type": "boolean",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "quotationlineId",
+          "columnName": "Quotationline_ID",
+          "label": "Quotation Line",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "32",
+          "displayLogic": "@Quotationline_ID@ ! '' & @Quotationline_ID@ ! 'null' & @Quotationline_ID@ ! null"
+        },
+        {
+          "name": "soResStatus",
+          "columnName": "SO_Res_Status",
+          "label": "Reservation Status",
+          "type": "enum",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "60",
+          "displayLogic": "@StockReservations@!''"
+        },
+        {
+          "name": "manageReservation",
+          "columnName": "Manage_Reservation",
+          "label": "Manage Reservation",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@StockReservations@!'' & @processed@='Y' & @qtyordered@!@qtydelivered@ & @DocStatus@!'CL'"
+        },
+        {
+          "name": "printDescription",
+          "columnName": "Print_Description",
+          "label": "Print Description",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "displayLogic": "@PRODUCTTYPE@='S'"
+        },
+        {
+          "name": "overdueReturnDays",
+          "columnName": "Overdue_Return_Days",
+          "label": "Overdue Return Days",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12",
+          "displayLogic": "@PRODUCTTYPE@='S'"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "22",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'",
+          "validationRuleId": "53AE60A473D2460D8663D7A1BC5BA732"
+        },
+        {
+          "name": "cProjectId",
+          "columnName": "C_Project_ID",
+          "label": "Project",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "cCostcenterId",
+          "columnName": "C_Costcenter_ID",
+          "label": "Cost Center",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "aAssetId",
+          "columnName": "A_Asset_ID",
+          "label": "Asset",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@$Element_AS@='Y'",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "user1Id",
+          "columnName": "User1_ID",
+          "label": "1st Dimension",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "user2Id",
+          "columnName": "User2_ID",
+          "label": "2nd Dimension",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32",
+          "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "explode",
+          "columnName": "Explode",
+          "label": "Explode",
+          "type": "image",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "1",
+          "displayLogic": "@IsStocked@='N' & @isBOM@='Y' & @explode@!'Y' & @Processed@='N'"
+        },
+        {
+          "name": "bomParentId",
+          "columnName": "BOM_Parent_ID",
+          "label": "BOM_Parent_ID",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "relateOrderline",
+          "columnName": "Relate_Orderline",
+          "label": "Select Order Line",
+          "type": "image",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "displayLogic": "@LINKEDTOPRODUCT@='Y' & @Processed@='N'"
+        },
+        {
+          "name": "cOrderDiscountId",
+          "columnName": "C_Order_Discount_ID",
+          "label": "C_Order_Discount_ID",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "mOfferId",
+          "columnName": "M_Offer_ID",
+          "label": "Promotion/Discount",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "10"
+        },
+        {
+          "name": "isDescription",
+          "columnName": "IsDescription",
+          "label": "Description Only",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "sResourceAssignmentId",
+          "columnName": "S_ResourceAssignment_ID",
+          "label": "Resource Assignment",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22"
+        },
+        {
+          "name": "priceLimit",
+          "columnName": "PriceLimit",
+          "label": "Price Limit",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22"
+        },
+        {
+          "name": "cCurrencyId",
+          "columnName": "C_Currency_ID",
+          "label": "Currency",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.cCurrencyId"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "dateInvoiced",
+          "columnName": "DateInvoiced",
+          "label": "Invoice Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10"
+        },
+        {
+          "name": "dateDelivered",
+          "columnName": "DateDelivered",
+          "label": "Date Delivered",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10"
+        },
+        {
+          "name": "cOrderId",
+          "columnName": "C_Order_ID",
+          "label": "Sales Order",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "60"
+        },
+        {
+          "name": "isActive",
+          "columnName": "IsActive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "cOrderLineId",
+          "columnName": "C_OrderLine_ID",
+          "label": "Sales Order Line",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32"
+        }
+      ],
+      "hqlOrderByClause": "lineNo"
+    },
+    {
+      "name": "cOrderLineTax",
+      "tableName": "C_OrderLineTax",
+      "tabName": "Line Tax",
+      "level": "2",
+      "sequence": "27",
+      "fields": [
+        {
+          "name": "line",
+          "columnName": "Line",
+          "label": "Line No.",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "editable",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERLINETAX WHERE C_ORDERLINE_ID=@C_OrderLine_ID@"
+          },
+          "maxLength": "12"
+        },
+        {
+          "name": "cTaxId",
+          "columnName": "C_Tax_ID",
+          "label": "Tax",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "taxbaseamt",
+          "columnName": "Taxbaseamt",
+          "label": "Taxable Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "12"
+        },
+        {
+          "name": "taxamt",
+          "columnName": "Taxamt",
+          "label": "Tax Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "12"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32",
+          "validationRuleId": "104"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32",
+          "validationRuleId": "103"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "Y"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "cOrderlinetaxId",
+          "columnName": "C_Orderlinetax_ID",
+          "label": "Order Line Tax",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderlineId",
+          "columnName": "C_Orderline_ID",
+          "label": "Sales Order Line",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        }
+      ],
+      "orderByClause": "C_OrderLineTax.Line",
+      "hqlOrderByClause": "lineNo"
+    },
+    {
+      "name": "mSolReservedStockV",
+      "tableName": "M_SOL_Reserved_Stock_V",
+      "tabName": "Reserved Stock",
+      "level": "2",
+      "sequence": "28",
+      "fields": [
+        {
+          "name": "mReservationId",
+          "columnName": "M_Reservation_ID",
+          "label": "Stock Reservation",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "mLocatorId",
+          "columnName": "M_Locator_ID",
+          "label": "Storage Bin",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "mAttributesetinstanceId",
+          "columnName": "M_Attributesetinstance_ID",
+          "label": "Attribute Set Value",
+          "type": "price",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderlineId",
+          "columnName": "C_Orderline_ID",
+          "label": "Purchase Order Line",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "cBpartnerId",
+          "columnName": "C_BPartner_ID",
+          "label": "Vendor",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@"
+          },
+          "maxLength": "60",
+          "readOnlyLogic": "@Posted@='Y'"
+        },
+        {
+          "name": "quantity",
+          "columnName": "Quantity",
+          "label": "Quantity",
+          "type": "quantity",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "releasedQty",
+          "columnName": "ReleasedQty",
+          "label": "Released",
+          "type": "quantity",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "mSolReservedStockVId",
+          "columnName": "M_Sol_Reserved_Stock_V_ID",
+          "label": "M_Sol_Reserved_Stock_V_ID",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "mReservationStockId",
+          "columnName": "M_Reservation_Stock_ID",
+          "label": "Reservation Stock",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderlineId",
+          "columnName": "C_Orderline_ID",
+          "label": "Sales Order Line",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        }
+      ]
+    },
+    {
+      "name": "cOrderlineServicerelation",
+      "tableName": "C_Orderline_Servicerelation",
+      "tabName": "Related Products",
+      "level": "2",
+      "sequence": "29",
+      "fields": [
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "Y"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "cOrderlineId",
+          "columnName": "C_Orderline_ID",
+          "label": "Sales Order Line",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderlineRelatedId",
+          "columnName": "C_Orderline_Related_ID",
+          "label": "Sales Order Line",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "documentNo",
+          "columnName": "DocumentNo",
+          "label": "Document No.",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence",
+            "source": "documentType.sequence"
+          },
+          "maxLength": "30",
+          "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
+        },
+        {
+          "name": "line",
+          "columnName": "Line",
+          "label": "Line No.",
+          "type": "integer",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@"
+          },
+          "maxLength": "10",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "mProductId",
+          "columnName": "M_Product_ID",
+          "label": "Product",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "60",
+          "readOnlyLogic": "@Processed@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"
+        },
+        {
+          "name": "mAttributeSetInstanceId",
+          "columnName": "M_AttributeSetInstance_ID",
+          "label": "Attribute Set Value",
+          "type": "price",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y' | @ATTRIBUTESETINSTANCIABLE@='Y'",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+        },
+        {
+          "name": "amount",
+          "columnName": "Amount",
+          "label": "Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "quantity",
+          "columnName": "Quantity",
+          "label": "Quantity",
+          "type": "decimal",
+          "mandatory": true,
+          "visibility": "system",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "12"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderlineServicerelationId",
+          "columnName": "C_Orderline_Servicerelation_ID",
+          "label": "C_Orderline_Servicerelation_ID",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32"
+        }
+      ]
+    },
+    {
+      "name": "cOrderlineProductrelation",
+      "tableName": "C_Orderline_Productrelation",
+      "tabName": "Related Services",
+      "level": "2",
+      "sequence": "29",
+      "fields": [
+        {
+          "name": "documentNo",
+          "columnName": "documentNo",
+          "label": "Document No.",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "60"
+        },
+        {
+          "name": "lineNo",
+          "columnName": "lineNo",
+          "label": "Line No.",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "10"
+        },
+        {
+          "name": "product",
+          "columnName": "product",
+          "label": "Product",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "32"
+        },
+        {
+          "name": "attributeSetValue",
+          "columnName": "attributeSetValue",
+          "label": "Attribute Set Value",
+          "type": "price",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "22"
+        },
+        {
+          "name": "amount",
+          "columnName": "amount",
+          "label": "Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22"
+        },
+        {
+          "name": "quantity",
+          "columnName": "quantity",
+          "label": "Quantity",
+          "type": "quantity",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "12"
+        }
+      ]
+    },
+    {
+      "name": "cOrderDiscount",
+      "tableName": "C_Order_Discount",
+      "tabName": "Basic Discounts",
+      "level": "1",
+      "sequence": "30",
+      "fields": [
+        {
+          "name": "line",
+          "columnName": "Line",
+          "label": "Line No.",
+          "type": "integer",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDER_DISCOUNT WHERE C_ORDER_ID=@C_ORDER_ID@"
+          },
+          "maxLength": "12",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "cDiscountId",
+          "columnName": "C_Discount_ID",
+          "label": "Basic Discount",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "cascade",
+          "columnName": "Cascade",
+          "label": "Cascade",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "Y"
+          },
+          "maxLength": "1",
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32",
+          "readOnlyLogic": "@Processed@='Y'",
+          "validationRuleId": "104"
+        },
+        {
+          "name": "cOrderDiscountId",
+          "columnName": "C_Order_Discount_ID",
+          "label": "C_Order_Discount_ID",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderId",
+          "columnName": "C_Order_ID",
+          "label": "Sales Order",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32",
+          "readOnlyLogic": "@Processed@='Y'",
+          "validationRuleId": "103"
+        }
+      ],
+      "hqlOrderByClause": "lineNo"
+    },
+    {
+      "name": "cOrderTax",
+      "tableName": "C_OrderTax",
+      "tabName": "Tax",
+      "level": "1",
+      "sequence": "40",
+      "fields": [
+        {
+          "name": "line",
+          "columnName": "Line",
+          "label": "Line No.",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "editable",
+          "derivation": {
+            "type": "lookup",
+            "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
+          },
+          "maxLength": "12"
+        },
+        {
+          "name": "cTaxId",
+          "columnName": "C_Tax_ID",
+          "label": "Tax",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "22"
+        },
+        {
+          "name": "taxAmt",
+          "columnName": "TaxAmt",
+          "label": "Tax Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "22"
+        },
+        {
+          "name": "taxBaseAmt",
+          "columnName": "TaxBaseAmt",
+          "label": "Taxable Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "derivation": {
+            "type": "computed",
+            "source": "0"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "cOrderId",
+          "columnName": "C_Order_ID",
+          "label": "Sales Order",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "60"
+        },
+        {
+          "name": "isActive",
+          "columnName": "IsActive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "22"
+        },
+        {
+          "name": "cOrderTaxId",
+          "columnName": "C_OrderTax_ID",
+          "label": "Order Tax",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32"
+        }
+      ],
+      "orderByClause": "C_OrderTax.Line",
+      "hqlOrderByClause": "lineNo"
+    },
+    {
+      "name": "finPaymentSchedOrdV",
+      "tableName": "FIN_Payment_Sched_Ord_V",
+      "tabName": "Payment Plan",
+      "level": "1",
+      "sequence": "45",
+      "fields": [
+        {
+          "name": "duedate",
+          "columnName": "Duedate",
+          "label": "Due Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "19"
+        },
+        {
+          "name": "finPaymentmethodId",
+          "columnName": "FIN_Paymentmethod_ID",
+          "label": "Payment Method",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "expected",
+          "columnName": "Expected",
+          "label": "Expected Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "received",
+          "columnName": "Received",
+          "label": "Received",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "outstanding",
+          "columnName": "Outstanding",
+          "label": "Outstanding",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "lastpayment",
+          "columnName": "Lastpayment",
+          "label": "Last Payment Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "19"
+        },
+        {
+          "name": "numberofpayments",
+          "columnName": "Numberofpayments",
+          "label": "Number of Payments",
+          "type": "integer",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "cCurrencyId",
+          "columnName": "C_Currency_ID",
+          "label": "Currency",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "finPaymentSchedOrdVId",
+          "columnName": "Fin_Payment_Sched_Ord_V_ID",
+          "label": "Order Payment In Plan",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "cOrderId",
+          "columnName": "C_Order_ID",
+          "label": "Sales Order",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32",
+          "validationRuleId": "130"
+        },
+        {
+          "name": "cInvoiceId",
+          "columnName": "C_Invoice_ID",
+          "label": "Invoice",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32",
+          "validationRuleId": "129"
+        }
+      ]
+    },
+    {
+      "name": "finPaymentDetailV",
+      "tableName": "FIN_Payment_Detail_V",
+      "tabName": "Payment Details",
+      "level": "2",
+      "sequence": "46",
+      "fields": [
+        {
+          "name": "finPaymentId",
+          "columnName": "FIN_Payment_ID",
+          "label": "Payment In",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "paymentdate",
+          "columnName": "Paymentdate",
+          "label": "Payment Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "19"
+        },
+        {
+          "name": "duedate",
+          "columnName": "Duedate",
+          "label": "Due Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "19"
+        },
+        {
+          "name": "finPaymentmethodId",
+          "columnName": "Fin_Paymentmethod_ID",
+          "label": "Payment Method",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "emAprmDisplayedPaymmethId",
+          "columnName": "EM_APRM_Displayed_Paymmeth_ID",
+          "label": "Payment Method",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "finFinancialAccountId",
+          "columnName": "Fin_Financial_Account_ID",
+          "label": "Financial Account",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "emAprmDisplayedAccId",
+          "columnName": "EM_APRM_Displayed_Acc_ID",
+          "label": "Financial Account",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "expected",
+          "columnName": "Expected",
+          "label": "Expected Amount",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "paidamt",
+          "columnName": "Paidamt",
+          "label": "Received Amount",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "writeoffamt",
+          "columnName": "Writeoffamt",
+          "label": "Write-off Amount",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12"
+        },
+        {
+          "name": "cCurrencyId",
+          "columnName": "C_Currency_ID",
+          "label": "Currency",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "expectedConverted",
+          "columnName": "ExpectedConverted",
+          "label": "Expected (Account Currency)",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12",
+          "displayLogic": "@C_Currency_ID@!@FinAcc_Currency_ID@"
+        },
+        {
+          "name": "paidConverted",
+          "columnName": "PaidConverted",
+          "label": "Received (Account Currency)",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12",
+          "displayLogic": "@C_Currency_ID@!@FinAcc_Currency_ID@"
+        },
+        {
+          "name": "finaccTxnConvertRate",
+          "columnName": "Finacc_Txn_Convert_Rate",
+          "label": "Exchange Rate",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "12",
+          "displayLogic": "@C_Currency_ID@!@FinAcc_Currency_ID@"
+        },
+        {
+          "name": "paymentno",
+          "columnName": "Paymentno",
+          "label": "Payment No.",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "30"
+        },
+        {
+          "name": "finaccCurrencyId",
+          "columnName": "Finacc_Currency_ID",
+          "label": "Finacc_Currency_ID",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "iscanceled",
+          "columnName": "Iscanceled",
+          "label": "Canceled",
+          "type": "boolean",
+          "mandatory": false,
+          "visibility": "readOnly",
+          "maxLength": "1"
+        },
+        {
+          "name": "status",
+          "columnName": "Status",
+          "label": "Status",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "readOnly",
+          "maxLength": "60"
+        },
+        {
+          "name": "finPaymentSchedOrdVId",
+          "columnName": "Fin_Payment_Sched_Ord_V_Id",
+          "label": "Order Payment In Plan",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "32"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1"
+        },
+        {
+          "name": "orderno",
+          "columnName": "Orderno",
+          "label": "Order No.",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "30"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32",
+          "validationRuleId": "130"
+        },
+        {
+          "name": "finPaymentDetailVId",
+          "columnName": "Fin_Payment_Detail_V_ID",
+          "label": "Payment Detail",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "invoiceno",
+          "columnName": "Invoiceno",
+          "label": "Invoice No.",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "30"
+        },
+        {
+          "name": "invoicedamt",
+          "columnName": "Invoicedamt",
+          "label": "Invoice Amount",
+          "type": "amount",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "12"
+        },
+        {
+          "name": "cBpartnerId",
+          "columnName": "C_Bpartner_ID",
+          "label": "Business Partner",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32",
+          "validationRuleId": "129"
+        }
+      ]
+    },
+    {
+      "name": "cOrderReplacement",
+      "tableName": "C_Order_Replacement",
+      "tabName": "Replacement Orders",
+      "level": "1",
+      "sequence": "70",
+      "fields": [
+        {
+          "name": "cReplacementId",
+          "columnName": "C_Replacement_ID",
+          "label": "Replacement Order",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "editable",
+          "maxLength": "32"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "isactive",
+          "columnName": "Isactive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "Y"
+          },
+          "maxLength": "1"
+        },
+        {
+          "name": "adOrgId",
+          "columnName": "AD_Org_ID",
+          "label": "Organization",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          },
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderId",
+          "columnName": "C_Order_ID",
+          "label": "Sales Order",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32"
+        },
+        {
+          "name": "cOrderReplacementId",
+          "columnName": "C_Order_Replacement_ID",
+          "label": "id",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1.0",
+    "checksum": "01c7d032",
+    "extractedAt": "2026-03-05T18:34:22.214Z"
+  }
+}
