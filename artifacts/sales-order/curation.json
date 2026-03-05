@@ -1250,7 +1250,10 @@
         }
       ],
       "whereClause": "C_Order.IsSOTrx='Y'",
-      "hqlWhereClause": "e.salesTransaction=true AND e.transactionDocument.return= false AND e.transactionDocument.sOSubType NOT LIKE 'OB'"
+      "hqlWhereClause": "e.salesTransaction=true AND e.transactionDocument.return= false AND e.transactionDocument.sOSubType NOT LIKE 'OB'",
+      "entityClassname": "Order",
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": "org.openbravo.model.common.order.Order"
     },
     {
       "name": "cOrderLine",
@@ -2294,7 +2297,10 @@
       "defaultSort": {
         "field": "lineNo",
         "direction": "asc"
-      }
+      },
+      "entityClassname": "OrderLine",
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": "org.openbravo.model.common.order.OrderLine"
     },
     {
       "name": "cOrderLineTax",
@@ -2458,7 +2464,10 @@
         "field": "lineNo",
         "direction": "asc"
       },
-      "orderByClause": "C_OrderLineTax.Line"
+      "orderByClause": "C_OrderLineTax.Line",
+      "entityClassname": "OrderLineTax",
+      "entityJavaPackage": "org.openbravo.model.ad.access",
+      "entityFullClass": "org.openbravo.model.ad.access.OrderLineTax"
     },
     {
       "name": "mSolReservedStockV",
@@ -2664,7 +2673,10 @@
           }
         }
       ],
-      "tableType": "view"
+      "tableType": "view",
+      "entityClassname": "SOLReservedStock",
+      "entityJavaPackage": "org.openbravo.model.materialmgmt.onhandquantity",
+      "entityFullClass": "org.openbravo.model.materialmgmt.onhandquantity.SOLReservedStock"
     },
     {
       "name": "cOrderlineServicerelation",
@@ -2866,7 +2878,10 @@
             "maxLength": 32
           }
         }
-      ]
+      ],
+      "entityClassname": "OrderlineServiceRelation",
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": "org.openbravo.model.common.order.OrderlineServiceRelation"
     },
     {
       "name": "cOrderlineProductrelation",
@@ -2961,7 +2976,11 @@
             "maxLength": 12
           }
         }
-      ]
+      ],
+      "entityClassname": null,
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": null,
+      "entityAlias": "olpr"
     },
     {
       "name": "cOrderDiscount",
@@ -3113,7 +3132,10 @@
       "defaultSort": {
         "field": "lineNo",
         "direction": "asc"
-      }
+      },
+      "entityClassname": "OrderDiscount",
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": "org.openbravo.model.common.order.OrderDiscount"
     },
     {
       "name": "cOrderTax",
@@ -3271,7 +3293,10 @@
         "field": "lineNo",
         "direction": "asc"
       },
-      "orderByClause": "C_OrderTax.Line"
+      "orderByClause": "C_OrderTax.Line",
+      "entityClassname": "OrderTax",
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": "org.openbravo.model.common.order.OrderTax"
     },
     {
       "name": "finPaymentSchedOrdV",
@@ -3488,7 +3513,10 @@
           "validationRuleId": "129"
         }
       ],
-      "tableType": "view"
+      "tableType": "view",
+      "entityClassname": "FIN_PaymentSchedOrdV",
+      "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
+      "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentSchedOrdV"
     },
     {
       "name": "finPaymentDetailV",
@@ -3895,7 +3923,10 @@
           "validationRuleId": "129"
         }
       ],
-      "tableType": "view"
+      "tableType": "view",
+      "entityClassname": "FIN_PaymentDetailV",
+      "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
+      "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentDetailV"
     },
     {
       "name": "cOrderReplacement",
@@ -3998,7 +4029,10 @@
             "maxLength": 32
           }
         }
-      ]
+      ],
+      "entityClassname": "OrderReplacement",
+      "entityJavaPackage": "org.openbravo.model.common.order",
+      "entityFullClass": "org.openbravo.model.common.order.OrderReplacement"
     }
   ],
   "rules": [

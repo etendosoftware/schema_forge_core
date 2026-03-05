@@ -46,45 +46,44 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
 
   const now = new Date().toISOString();
 
-  // Event handlers: one per entity with system field derivations
-  const eventHandlers = schema.entities
-    .map(entity => {
-      const derivations = entity.fields
-        .filter(f => f.visibility === 'system' && f.derivation)
-        .map(f => ({
-          field: f.name,
-          column: f.column,
-          type: f.derivation.type,
-          source: f.derivation.source,
-          javaType: toJavaType(f.type),
-        }));
+  // NOTE: Event handlers (derivations) are NOT generated.
+  // Etendo already handles system field derivations via existing event handlers
+  // registered in the AD. OBDal triggers them automatically on save.
+  // What we DO generate are callout endpoints — UI-side logic that fires
+  // when a field changes (e.g., change BP → auto-fill address, price list).
 
-      return {
-        entityName: entity.name,
-        className: `${toPascalCase(entity.name)}DerivationHandler`,
-        table: entity.table ?? entity.tableName,
-        derivations,
-        packageName: `${windowBasePackage}.event`,
-      };
-    })
-    .filter(h => h.derivations.length > 0);
+  // Build entity lookup for resolving entity names → classes
+  const entityLookup = {};
+  for (const entity of schema.entities) {
+    entityLookup[entity.name] = {
+      entityClassname: entity.entityClassname,
+      entityFullClass: entity.entityFullClass,
+      table: entity.table ?? entity.tableName,
+    };
+  }
 
   // Processes
-  const processData = (processes || []).map(proc => ({
-    name: proc.name,
-    className: `${toPascalCase(proc.name)}Process`,
-    entity: proc.entity,
-    preconditions: proc.preconditions || [],
-    steps: (proc.steps || []).map(s => ({
-      order: s.order,
-      name: s.name || s.operation || 'unnamed',
-      description: s.description || '',
-      type: s.type || s.operation || 'unknown',
-      target: s.target,
-    })),
-    edgeCases: proc.edgeCases || [],
-    packageName: `${windowBasePackage}.process`,
-  }));
+  const processData = (processes || []).map(proc => {
+    const resolved = entityLookup[proc.entity] || {};
+    return {
+      name: proc.name,
+      className: `${toPascalCase(proc.name)}Process`,
+      entity: proc.entity,
+      entityClassname: resolved.entityClassname,
+      entityFullClass: resolved.entityFullClass,
+      table: resolved.table,
+      preconditions: proc.preconditions || [],
+      steps: (proc.steps || []).map(s => ({
+        order: s.order,
+        name: s.name || s.operation || 'unnamed',
+        description: s.description || '',
+        type: s.type || s.operation || 'unknown',
+        target: s.target,
+      })),
+      edgeCases: proc.edgeCases || [],
+      packageName: `${windowBasePackage}.process`,
+    };
+  });
 
   // DTOs: one per entity with visible fields
   const dtos = schema.entities.map(entity => {
@@ -103,6 +102,8 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
       entityName: entity.name,
       className: `${toPascalCase(entity.name)}DTO`,
       table: entity.table ?? entity.tableName,
+      entityClassname: entity.entityClassname,
+      entityFullClass: entity.entityFullClass,
       fields: visibleFields,
       packageName: `${windowBasePackage}.dto`,
     };
@@ -123,6 +124,8 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
       entityName: entity.name,
       className: `${toPascalCase(entity.name)}Handler`,
       table: entity.table ?? entity.tableName,
+      entityClassname: entity.entityClassname,
+      entityFullClass: entity.entityFullClass,
       filters: searchableFields,
       dtoClass: `${toPascalCase(entity.name)}DTO`,
       packageName: `${windowBasePackage}.handler`,
@@ -134,12 +137,18 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
   // Validators
   const validators = (processes || [])
     .filter(p => p.preconditions && p.preconditions.length > 0)
-    .map(proc => ({
-      name: proc.name,
-      className: `${toPascalCase(proc.name)}Validator`,
-      preconditions: proc.preconditions,
-      packageName: `${windowBasePackage}.validation`,
-    }));
+    .map(proc => {
+      const resolved = entityLookup[proc.entity] || {};
+      return {
+        name: proc.name,
+        className: `${toPascalCase(proc.name)}Validator`,
+        entity: proc.entity,
+        entityClassname: resolved.entityClassname,
+        entityFullClass: resolved.entityFullClass,
+        preconditions: proc.preconditions,
+        packageName: `${windowBasePackage}.validation`,
+      };
+    });
 
   return {
     basePackage,
@@ -147,7 +156,6 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
     windowBasePackage,
     windowName,
     now,
-    eventHandlers,
     processes: processData,
     dtos,
     handlers,
@@ -164,14 +172,7 @@ export function generateFileList(data, modulePath) {
   const restSrcPath = `${modulePath}/src/${data.basePackage.replace(/\./g, '/')}/rest`;
   const files = [];
 
-  // Event handlers
-  for (const handler of data.eventHandlers) {
-    files.push({
-      path: `${windowSrcPath}/event/${handler.className}.java`,
-      templateName: 'EventHandler.java.hbs',
-      data: { ...handler, package: handler.packageName, generatedDate: data.now },
-    });
-  }
+  // NOTE: No event handlers generated — Etendo handles derivations natively via OBDal.
 
   // Processes
   for (const proc of data.processes) {

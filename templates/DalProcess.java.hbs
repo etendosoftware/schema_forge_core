@@ -11,11 +11,14 @@ import org.openbravo.dal.service.OBDal;
 import org.openbravo.erpCommon.utility.OBError;
 import org.openbravo.scheduling.ProcessBundle;
 import org.openbravo.service.db.DalBaseProcess;
+{{#if entityFullClass}}
+import {{entityFullClass}};
+{{/if}}
 
 /**
  * DAL Process: {{className}}
  *
- * Entity: {{entity}}
+ * Entity: {{entity}} ({{entityClassname}})
  * Preconditions: {{preconditions.length}}
  * Steps: {{steps.length}}
  */
@@ -29,8 +32,15 @@ public class {{className}} extends DalBaseProcess {
       final Map<String, Object> params = bundle.getParams();
       final String recordId = (String) params.get("recordId");
 
-      // TODO(vertical-slice): Load entity using OBDal
-      // final var entity = OBDal.getInstance().get(Order.class, recordId);
+{{#if entityFullClass}}
+      final {{entityClassname}} entity = OBDal.getInstance().get({{entityClassname}}.class, recordId);
+      if (entity == null) {
+        throw new OBException("{{entityClassname}} not found with ID: " + recordId);
+      }
+{{else}}
+      // No OBDal class for entity {{entity}} — load via BaseOBObject
+      // TODO(vertical-slice): implement entity loading
+{{/if}}
 
       // --- Preconditions ---
 {{#each preconditions}}

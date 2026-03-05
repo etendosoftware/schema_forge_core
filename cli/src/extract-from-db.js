@@ -16,7 +16,8 @@ SELECT
   t.AD_Tab_ID, t.Name AS tab_name, t.TabLevel, t.SeqNo AS tab_seq,
   t.WhereClause, t.OrderByClause, t.FilterClause,
   t.HQLWhereClause, t.HQLOrderByClause, t.HQLFilterClause,
-  tbl.TableName,
+  tbl.TableName, tbl.Classname AS entity_classname, tbl.Entity_Alias,
+  pkg.JavaPackage AS entity_javapackage,
   f.AD_Field_ID, f.Name AS field_name,
   f.IsDisplayed, f.IsReadOnly,
   f.DisplayLogic, f.DisplayLogic_Server, f.DisplayLogicGrid,
@@ -31,6 +32,7 @@ JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
+LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
 WHERE w.AD_Window_ID = $1
