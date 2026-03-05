@@ -114,3 +114,129 @@ describe('runContractTests', () => {
     assert.ok(result.failed > 0);
   });
 });
+
+describe('edge cases', () => {
+  it('empty testManifest produces zero counts', () => {
+    const emptyContract = { testManifest: { tests: [] } };
+    const result = runContractTests(emptyContract);
+    assert.equal(result.total, 0);
+    assert.equal(result.passed, 0);
+    assert.equal(result.failed, 0);
+    assert.equal(result.skipped, 0);
+    assert.deepEqual(result.results, []);
+  });
+
+  it('missing testManifest produces zero counts', () => {
+    const result = runContractTests({});
+    assert.equal(result.total, 0);
+    assert.equal(result.passed, 0);
+    assert.equal(result.failed, 0);
+    assert.equal(result.skipped, 0);
+  });
+
+  it('all junit tests result in all skipped, zero passed', () => {
+    const junitOnly = {
+      testManifest: {
+        tests: [
+          { id: 'j-1', category: 'process-happy', runner: 'junit', description: 'junit test 1' },
+          { id: 'j-2', category: 'process-happy', runner: 'junit', description: 'junit test 2' },
+          { id: 'j-3', category: 'process-sad', runner: 'junit', description: 'junit test 3' },
+        ]
+      }
+    };
+    const result = runContractTests(junitOnly);
+    assert.equal(result.total, 0);
+    assert.equal(result.passed, 0);
+    assert.equal(result.failed, 0);
+    assert.equal(result.skipped, 3);
+    assert.deepEqual(result.results, []);
+  });
+
+  it('multiple entities have tests across entities work', () => {
+    const multiEntity = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [{ name: 'documentNo', tsType: 'string', visibility: 'readOnly' }],
+            searchableFields: ['documentNo'],
+          },
+          invoice: {
+            fields: [{ name: 'invoiceNo', tsType: 'string', visibility: 'readOnly' }],
+            searchableFields: ['invoiceNo'],
+          }
+        }
+      },
+      backendContract: { entities: {}, endpoints: [] },
+      testManifest: {
+        tests: [
+          { id: 'fp-o1', category: 'field-presence', entity: 'order', field: 'documentNo', runner: 'node', description: 'order documentNo' },
+          { id: 'fp-i1', category: 'field-presence', entity: 'invoice', field: 'invoiceNo', runner: 'node', description: 'invoice invoiceNo' },
+        ]
+      }
+    };
+    const result = runContractTests(multiEntity);
+    assert.equal(result.total, 2);
+    assert.equal(result.passed, 2);
+    assert.equal(result.failed, 0);
+    const ids = result.results.map(r => r.id);
+    assert.ok(ids.includes('fp-o1'));
+    assert.ok(ids.includes('fp-i1'));
+  });
+
+  it('searchable filter for non-existent endpoint fails gracefully', () => {
+    const noEndpoint = {
+      frontendContract: {
+        entities: {
+          product: {
+            fields: [{ name: 'name', tsType: 'string' }],
+            searchableFields: ['name'],
+          }
+        }
+      },
+      backendContract: { entities: {}, endpoints: [] },
+      testManifest: {
+        tests: [
+          { id: 'sf-p1', category: 'searchable-filters', entity: 'product', field: 'name', runner: 'node', description: 'product name searchable' },
+        ]
+      }
+    };
+    const result = runContractTests(noEndpoint);
+    assert.equal(result.failed, 1);
+    assert.equal(result.passed, 0);
+    const failedTest = result.results[0];
+    assert.equal(failedTest.passed, false);
+    assert.ok(failedTest.reason.includes('No endpoint found'));
+  });
+
+  it('contract with no frontendContract handles gracefully', () => {
+    const noFrontend = {
+      backendContract: { entities: {}, endpoints: [] },
+      testManifest: {
+        tests: [
+          { id: 'fp-x1', category: 'field-presence', entity: 'order', field: 'name', runner: 'node', description: 'field in missing frontend' },
+          { id: 'ft-x1', category: 'field-type', entity: 'order', field: 'name', runner: 'node', description: 'type in missing frontend' },
+          { id: 'vis-x1', category: 'visibility', entity: 'order', field: 'name', runner: 'node', description: 'visibility in missing frontend' },
+        ]
+      }
+    };
+    const result = runContractTests(noFrontend);
+    assert.equal(result.total, 3);
+    assert.equal(result.failed, 3);
+    assert.equal(result.passed, 0);
+    assert.ok(result.results.every(r => r.reason.includes('not found in frontendContract')));
+  });
+
+  it('unknown test category reports failure with descriptive reason', () => {
+    const unknownCat = {
+      testManifest: {
+        tests: [
+          { id: 'unk-1', category: 'nonexistent-category', entity: 'order', field: 'x', runner: 'node', description: 'unknown cat' },
+        ]
+      }
+    };
+    const assertions = generateTestAssertions(unknownCat);
+    assert.equal(assertions.length, 1);
+    assert.equal(assertions[0].passed, false);
+    assert.ok(assertions[0].reason.includes('Unknown test category'));
+  });
+});
