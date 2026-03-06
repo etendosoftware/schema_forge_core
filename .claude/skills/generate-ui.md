@@ -1,88 +1,182 @@
 ---
 name: generate-ui
-description: Generate or customize React UI components from curated schema using Shadcn/ui + Tailwind
+description: Use when regenerating UI from schema-curated changes, adding new entity windows, or running the F6-F8-F9 generation pipeline. Triggers on schema edits, new entity creation, field type changes, or master-detail conversions.
 ---
 
-## Automatic Generation (start here)
+# Schema Forge UI Generation Pipeline
 
-Run the generator first to produce the base components:
+## Overview
 
-```bash
-node cli/src/generate-frontend.js artifacts/{window}/contract.json
-```
+Generate contract + frontend from schema-curated.json using a temp-diff-patch flow. Clean diffs auto-apply; ambiguous changes prompt the user. Always runs through the team pipeline (DEV-REVIEW-QA-MERGE).
 
-This produces Table, Form, Page, and index components at:
-`artifacts/{window}/generated/web/{window}/`
+## Flow
 
-## Customization (conversational)
-
-After running the generator, ask the user what they want to customize:
-- Layout changes (column order, field grouping, responsive breakpoints)
-- Custom logic (conditional field rendering, computed displays)
-- Visual tweaks (status badges, color coding, icons)
-
-Read the generated files and modify them based on user requests.
-
-## SCHEMA CONSTRAINTS (INVIOLABLE)
-
-- Only render fields with visibility: editable or readOnly
-- System fields NEVER appear in UI
-- ReadOnly fields render as non-editable (readOnly or disabled inputs with bg-muted)
-- Computed fields are never editable
-- Only searchable fields can be used as filters/search
-- CascadeFrom relationships must be respected (cascading dropdowns)
-- Never invent fields not in schema
-
-## UI LIBRARY RULES
-
-- Use Shadcn/ui components from `@/components/ui/` (button, input, card, table, badge, label, select, dialog, separator)
-- Use Tailwind CSS for layout and spacing -- NO inline styles
-- Use `cn()` from `@/lib/utils` for conditional classes
-- Use `lucide-react` for icons
-
-## Component Props Contract
-
-Generated components MUST accept these props from the app shell:
-
-```jsx
-export default function WindowName({ token, apiBaseUrl, window }) {
-  // token: JWT string for Authorization header
-  // apiBaseUrl: base URL for API calls (e.g., '/etendo/api')
-  // window: { name, label, entityConfig } from contract
+```dot
+digraph generation {
+  "schema-curated.json" -> "Generate in temp";
+  "Generate in temp" -> "Diff vs existing";
+  "Diff vs existing" -> "No changes" [label="clean"];
+  "Diff vs existing" -> "Auto-apply patch" [label="additions/updates"];
+  "Diff vs existing" -> "Ask user" [label="conflict/ambiguous"];
+  "Ask user" -> "Apply selected patches";
+  "Auto-apply patch" -> "Generation Log";
+  "Apply selected patches" -> "Generation Log";
+  "Generation Log" -> "Run contract tests (F9)";
+  "Run contract tests (F9)" -> "Run unit tests";
+  "Run unit tests" -> "Pipeline: DEV-REVIEW-QA-MERGE";
+  "Pipeline: DEV-REVIEW-QA-MERGE" -> "Verify in browser";
 }
 ```
 
-When making API calls, use:
-```javascript
-const res = await fetch(`${apiBaseUrl}/v1/${window.name}`, {
-  headers: { 'Authorization': `Bearer ${token}` },
-});
+## Step 1: Worktree Isolation (MANDATORY)
+
+```bash
+git worktree add .worktrees/feat-<name> -b feat/<name>
 ```
 
-NEVER hardcode API URLs or tokens. Always use the props.
+ALL work happens in the worktree. Never modify main directly.
 
-## Output Location
+## Step 2: Generate Contract + Frontend
 
-Write generated/modified components to:
-`artifacts/{window}/generated/web/{window}/`
+```bash
+WINDOW="<window-name>"
 
-## Generation Log (after F8, before F9)
+# F6: Generate contract
+node cli/src/generate-contract.js \
+  artifacts/$WINDOW/schema-curated.json \
+  artifacts/$WINDOW/rules-curated.json
 
-After regenerating frontend files, run the generation log to track changes:
+# F8: Generate frontend
+node cli/src/generate-frontend.js \
+  artifacts/$WINDOW/contract.json
+```
+
+Output in `artifacts/{window}/generated/web/{window}/`:
+- `*Table.jsx` -- declarative column config imports `DataTable`
+- `*Form.jsx` -- declarative field config imports `EntityForm`
+- `*Page.jsx` -- `MasterDetailPage` (if detail entity) or `SingleEntityPage`
+- `index.jsx` -- entry point
+- `mockCatalogs.js` -- reference data for FK fields
+- `mockData.js` -- sample records (manual, not auto-generated)
+
+## Step 3: Diff and Patch
+
+```bash
+git diff artifacts/$WINDOW/
+```
+
+| Diff type | Action |
+|-----------|--------|
+| New files only | Auto-apply |
+| Field added/removed | Auto-apply |
+| Type changed (string to boolean) | Auto-apply |
+| Component structure changed | Review diff, ask user if unclear |
+| mockData.js changed | SKIP -- manually curated |
+| Hand-edited file overwritten | ASK user -- show diff |
+
+## Step 4: Generation Log
 
 ```bash
 node cli/src/generation-log.js <window-name> "<trigger-description>"
 ```
 
-This:
-1. Diffs current files (disk) against the previous version (git HEAD)
-2. Appends structured entries to `artifacts/generation-log.json`
-3. Generates per-window view: `artifacts/{window}/GENERATION-LOG.md`
-4. Generates transversal view: `artifacts/GENERATION-RUNS.md`
+This diffs current files (disk) vs previous (git HEAD), appends to `artifacts/generation-log.json`, and generates:
+- Per-window: `artifacts/{window}/GENERATION-LOG.md`
+- Transversal: `artifacts/GENERATION-RUNS.md`
 
-The generation log captures field additions, removals, type changes, new/removed files,
-and component-level changes. The JSON log is the source of truth; markdown views are derived.
+## Step 5: Run Tests
 
-Flow: F8 (generate-frontend) -> Log (generation-log) -> F9 (contract tests)
+```bash
+# F9: Contract tests
+node -e "
+import { runContractTests } from './cli/src/run-contract-tests.js';
+import { readFileSync } from 'node:fs';
+const c = JSON.parse(readFileSync('artifacts/$WINDOW/contract.json','utf8'));
+const r = runContractTests(c);
+console.log(r.passed+'/'+r.total+' passed');
+if(r.failed>0) process.exit(1);
+"
 
-After generating, tell the user to preview with: `cd tools/app-shell && npm run dev`
+# Unit tests
+node --test 'cli/test/*.test.js'
+```
+
+## Step 6: Pipeline (DEV-REVIEW-QA-MERGE)
+
+1. Commit in worktree
+2. Push: `git push -u origin feat/<name>`
+3. PR: `gh pr create --title "..." --body "..."`
+4. REVIEW (Alex agent): comment verdict on PR
+5. QA (Sentinel agent): tests + artifact regeneration check
+6. MERGE: `gh pr merge <n> --squash`
+7. Cleanup: remove worktree, delete branch, pull main
+
+## Step 7: Verify in Browser
+
+Dev server at localhost:3102. Use chrome-devtools MCP to reload, navigate, screenshot, verify CRUD.
+
+## Entity Patterns
+
+**Single Entity** (Warehouse, Tax, UOM, etc.): ONE entity in schema, generates `SingleEntityPage`.
+
+**Master-Detail** (Sales Order to Lines, BP to Locations, PriceList to Lines): TWO entities, generates `MasterDetailPage`. Child entity must have system field with `derivation.type: "fromParent"`.
+
+## Field Type Mapping
+
+| Schema type | Table column | Form input |
+|-------------|-------------|------------|
+| string | string | text |
+| number/integer | number | number |
+| amount | amount | number |
+| date | date | date |
+| boolean | boolean (Yes/No) | checkbox |
+| foreignKey + search | -- | search (autocomplete) |
+| foreignKey + selector | -- | selector (dropdown) |
+| foreignKey + dependent | -- | dependent (filtered dropdown) |
+
+## FK inputMode Rules
+
+| Cardinality | inputMode | Component |
+|-------------|-----------|-----------|
+| Many records (BP, Product) | search | SearchInput |
+| Few records (Warehouse, Tax) | selector | SelectorInput |
+| Filtered by parent | dependent | DependentSelect |
+
+Dependent fields need `dependsOn: { field: "parentKey", filterKey: "parentIdColumn" }`.
+
+## Schema Constraints (INVIOLABLE)
+
+- Only `visibility: editable` or `readOnly` in UI
+- System fields NEVER in UI
+- Only `searchable: true` fields become filters
+- `grid: true` appears in table, `form: true` in edit form
+- FK `reference` must match a catalog entity
+
+## Multi-Window Registration
+
+When adding a window, update:
+1. `tools/app-shell/src/windows/registry.js` -- windowLoaders + REFERENCE_WINDOWS
+2. `tools/app-shell/src/App.jsx` -- mockData import
+3. Verify `@generated` alias in vite.config.js
+
+## Regenerate All Entities
+
+After generator changes:
+
+```bash
+for dir in sales-order business-partner warehouse price-list payment-term \
+           payment-method product tax uom user; do
+  node cli/src/generate-contract.js "artifacts/$dir/schema-curated.json" \
+    "artifacts/$dir/rules-curated.json"
+  node cli/src/generate-frontend.js "artifacts/$dir/contract.json"
+  node cli/src/generation-log.js "$dir" "<trigger>"
+done
+```
+
+## Pixel Agents Notification
+
+```bash
+echo '{"session":"schema-forge","from":"Forge","text":"<msg>","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' >> ~/.pixel-agents/chat.jsonl
+```
+
+Notify on: DEV complete, REVIEW verdict, QA verdict, PR merged.
