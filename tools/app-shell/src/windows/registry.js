@@ -12,7 +12,6 @@ function toSlug(name) {
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
-  'bp-location': () => import('@generated/bp-location/generated/web/bp-location/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
@@ -28,7 +27,6 @@ const windowLoaders = {
  */
 const REFERENCE_WINDOWS = [
   { name: 'business-partner', label: 'Business Partner' },
-  { name: 'bp-location', label: 'BP Location' },
   { name: 'warehouse', label: 'Warehouse' },
   { name: 'price-list', label: 'Price List' },
   { name: 'payment-term', label: 'Payment Term' },
