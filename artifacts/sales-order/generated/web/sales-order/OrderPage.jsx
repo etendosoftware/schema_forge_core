@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useEntity } from '@/hooks/useEntity';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -9,9 +9,18 @@ import OrderLineTable from './OrderLineTable';
 export default function OrderPage({ token, apiBaseUrl }) {
   const order = useEntity('order', 'orderLine', { token, apiBaseUrl });
 
+  const [showAddLine, setShowAddLine] = useState(false);
+  const [newLine, setNewLine] = useState({ product: '', quantity: '', unitPrice: '', discount: '', tax: '', description: '' });
+
   const detailTitle = order.editing?.id
     ? `Order ${order.editing.documentNo || order.editing.id}`
     : 'New Order';
+
+  const handleAddLine = () => {
+    order.handleAddChild?.(newLine);
+    setNewLine({ product: '', quantity: '', unitPrice: '', discount: '', tax: '', description: '' });
+    setShowAddLine(false);
+  };
 
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-0">
@@ -102,7 +111,94 @@ export default function OrderPage({ token, apiBaseUrl }) {
 
           {/* Detail zone: fills remaining height */}
           <div className="flex-1 flex flex-col overflow-hidden px-5 py-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Order Lines</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Order Lines</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setShowAddLine(!showAddLine)}
+              >
+                {showAddLine ? 'Cancel' : '+ Add Line'}
+              </Button>
+            </div>
+            {showAddLine && (
+              <form
+                onSubmit={(e) => { e.preventDefault(); handleAddLine(); }}
+                className="flex items-end gap-2 mb-3 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5"
+              >
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">Product *</label>
+                <input
+                  name="product"
+                  type="text"
+                  placeholder="Product"
+                  value={newLine.product ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, product: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">Quantity *</label>
+                <input
+                  name="quantity"
+                  type="number"
+                  placeholder="Quantity"
+                  value={newLine.quantity ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, quantity: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">Unit Price *</label>
+                <input
+                  name="unitPrice"
+                  type="number"
+                  placeholder="Unit Price"
+                  value={newLine.unitPrice ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, unitPrice: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">Discount</label>
+                <input
+                  name="discount"
+                  type="number"
+                  placeholder="Discount"
+                  value={newLine.discount ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, discount: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">Tax</label>
+                <input
+                  name="tax"
+                  type="text"
+                  placeholder="Tax"
+                  value={newLine.tax ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, tax: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">Description</label>
+                <input
+                  name="description"
+                  type="text"
+                  placeholder="Description"
+                  value={newLine.description ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+              </div>
+                <Button type="submit" size="sm" className="h-8 shrink-0">Add</Button>
+              </form>
+            )}
             <div className="flex-1 overflow-auto">
               <OrderLineTable data={order.children} />
             </div>

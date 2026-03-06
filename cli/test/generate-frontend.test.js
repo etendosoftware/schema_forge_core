@@ -217,6 +217,16 @@ describe('generatePageComponent', () => {
     assert.ok(rightPanel.includes('Detail zone'), 'should have labeled detail zone');
   });
 
+  it('has add-line mini form for detail entity', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('showAddLine'), 'should have showAddLine state');
+    assert.ok(code.includes('Add Line'), 'should have Add Line button');
+    assert.ok(code.includes('handleAddChild'), 'should call handleAddChild on submit');
+    assert.ok(code.includes('newLine'), 'should track newLine state');
+    assert.ok(code.includes('product'), 'should include product field in mini form');
+    assert.ok(code.includes('quantity'), 'should include quantity field in mini form');
+  });
+
   it('shows loading skeleton when loading', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('.loading'), 'should check loading state');

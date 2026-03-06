@@ -197,6 +197,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
+  // Detail entity editable fields for the add-line mini form
+  const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
+  const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
+
   // Status field gets a badge in the header; others go in the summary strip
   const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
   const summaryFields = readOnlyFields.filter(f => f !== statusField);
@@ -230,7 +234,26 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n            <StatusBadge status={${headerEntity}.editing?.${statusField.name}} />`
     : '';
 
-  return `import React from 'react';
+  // Build mini form field inputs
+  const miniFormFields = detailEditableFields.map(f => {
+    const label = toLabel(f.name);
+    const inputType = f.tsType === 'number' ? 'number' : 'text';
+    return `              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-500 mb-1 block">${label}${f.required ? ' *' : ''}</label>
+                <input
+                  name="${f.name}"
+                  type="${inputType}"
+                  placeholder="${label}"
+                  value={newLine.${f.name} ?? ''}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, ${f.name}: e.target.value }))}
+                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"${f.required ? '\n                  required' : ''}
+                />
+              </div>`;
+  }).join('\n');
+
+  const emptyLineObj = `{ ${detailEditableFields.map(f => `${f.name}: ''`).join(', ')} }`;
+
+  return `import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useEntity } from '@/hooks/useEntity';${statusBadgeImport}
 import ${headerName}Table from './${headerName}Table';
@@ -240,9 +263,18 @@ import ${detailName}Table from './${detailName}Table';
 export default function ${compName}({ token, apiBaseUrl }) {
   const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
 
+  const [showAddLine, setShowAddLine] = useState(false);
+  const [newLine, setNewLine] = useState(${emptyLineObj});
+
   const detailTitle = ${headerEntity}.editing?.id
     ? \`${toLabel(headerEntity)} \${${headerEntity}.editing.documentNo || ${headerEntity}.editing.id}\`
     : 'New ${toLabel(headerEntity)}';
+
+  const handleAddLine = () => {
+    ${headerEntity}.handleAddChild?.(newLine);
+    setNewLine(${emptyLineObj});
+    setShowAddLine(false);
+  };
 
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-0">
@@ -314,7 +346,26 @@ ${summaryItems}
 
           {/* Detail zone: fills remaining height */}
           <div className="flex-1 flex flex-col overflow-hidden px-5 py-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">${toLabel(detailEntity)}s</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">${toLabel(detailEntity)}s</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setShowAddLine(!showAddLine)}
+              >
+                {showAddLine ? 'Cancel' : '+ Add Line'}
+              </Button>
+            </div>
+            {showAddLine && (
+              <form
+                onSubmit={(e) => { e.preventDefault(); handleAddLine(); }}
+                className="flex items-end gap-2 mb-3 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5"
+              >
+${miniFormFields}
+                <Button type="submit" size="sm" className="h-8 shrink-0">Add</Button>
+              </form>
+            )}
             <div className="flex-1 overflow-auto">
               <${detailName}Table data={${headerEntity}.children} />
             </div>
