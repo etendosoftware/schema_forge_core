@@ -1,18 +1,5 @@
-import { SingleEntityPage } from '@/components/contract-ui';
-import PriceListTable from './PriceListTable';
-import PriceListForm from './PriceListForm';
-import catalogs from './mockCatalogs';
+import PriceListPage from './PriceListPage';
 
 export default function App({ token, apiBaseUrl, window }) {
-  return (
-    <SingleEntityPage
-      entity="priceList"
-      Table={PriceListTable}
-      Form={PriceListForm}
-      catalogs={catalogs}
-      token={token}
-      apiBaseUrl={apiBaseUrl}
-      entityLabel="Price List"
-    />
-  );
+  return <PriceListPage token={token} apiBaseUrl={apiBaseUrl} window={window} />;
 }

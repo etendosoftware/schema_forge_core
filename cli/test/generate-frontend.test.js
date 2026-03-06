@@ -282,6 +282,43 @@ describe('generateIndexComponent', () => {
   });
 });
 
+describe('boolean field handling', () => {
+  const boolContract = {
+    frontendContract: {
+      window: { id: '203', name: 'Price List', primaryEntity: 'priceList', category: 'reference' },
+      entities: {
+        priceList: {
+          fields: [
+            { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            { name: 'isDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['name'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('mapFieldType returns boolean for boolean fields in table columns', () => {
+    const code = generateTableComponent('priceList', boolContract);
+    assert.ok(code.includes("type: 'boolean'"), 'should map boolean fields to boolean type in table columns');
+    assert.ok(code.includes("key: 'isActive'"), 'should include isActive boolean field in grid');
+  });
+
+  it('mapFormFieldType returns checkbox for boolean fields in form', () => {
+    const code = generateFormComponent('priceList', boolContract);
+    assert.ok(code.includes("type: 'checkbox'"), 'should map boolean fields to checkbox type in form');
+    assert.ok(code.includes("key: 'isDefault'"), 'should include editable isDefault boolean in form');
+  });
+
+  it('excludes readOnly boolean fields from form (same rule as other readOnly fields)', () => {
+    const code = generateFormComponent('priceList', boolContract);
+    assert.ok(!code.includes("key: 'isActive'"), 'should NOT include readOnly isActive in form');
+  });
+});
+
 describe('generateAll', () => {
   it('returns map of filename to code', () => {
     const files = generateAll(sampleContract);
