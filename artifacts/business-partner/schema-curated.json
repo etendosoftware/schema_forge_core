@@ -128,6 +128,23 @@
           }
         }
       ]
+    },
+    {
+      "name": "bpLocation",
+      "tableName": "C_BPartner_Location",
+      "fields": [
+        { "name": "name", "column": "Name", "type": "string", "visibility": "editable", "required": true, "grid": true, "form": true, "searchable": true },
+        { "name": "address", "column": "Address1", "type": "string", "visibility": "editable", "required": false, "grid": false, "form": true, "searchable": false },
+        { "name": "city", "column": "City", "type": "string", "visibility": "editable", "required": false, "grid": true, "form": true, "searchable": true },
+        { "name": "postalCode", "column": "Postal", "type": "string", "visibility": "editable", "required": false, "grid": false, "form": true, "searchable": false },
+        { "name": "country", "column": "C_Country_ID", "type": "string", "visibility": "editable", "required": false, "grid": true, "form": true, "searchable": false },
+        { "name": "phone", "column": "Phone", "type": "string", "visibility": "editable", "required": false, "grid": false, "form": true, "searchable": false },
+        { "name": "adClientId", "column": "AD_Client_ID", "type": "id", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "context.client" } },
+        { "name": "adOrgId", "column": "AD_Org_ID", "type": "id", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromParent", "source": "businessPartner.adOrgId" } },
+        { "name": "cBpartnerId", "column": "C_BPartner_ID", "type": "foreignKey", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromParent", "source": "businessPartner.id" } },
+        { "name": "created", "column": "Created", "type": "datetime", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "now()" } },
+        { "name": "updated", "column": "Updated", "type": "datetime", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "now()" } }
+      ]
     }
   ]
 }

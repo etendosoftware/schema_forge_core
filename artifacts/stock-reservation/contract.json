@@ -1,0 +1,887 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T18:34:21.621Z",
+  "checksum": "aca53862b80b7b9c",
+  "frontendContract": {
+    "window": {
+      "id": "1000100",
+      "name": "Stock Reservation",
+      "primaryEntity": "reservation",
+      "category": "warehouse-transactions"
+    },
+    "entities": {
+      "reservation": {
+        "fields": [
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Warehouse",
+            "inputMode": "selector"
+          },
+          {
+            "name": "reservedQty",
+            "column": "Quantity",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "releasedQty",
+            "column": "ReleasedQty",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "status",
+            "column": "RESStatus",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "salesOrderLine",
+            "column": "C_OrderLine_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "SalesOrderLine",
+            "inputMode": "search"
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          },
+          {
+            "name": "attributeSetInstance",
+            "column": "M_AttributeSetInstance_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "AttributeSetInstance",
+            "inputMode": "selector"
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "documentNo",
+          "product",
+          "warehouse",
+          "status"
+        ],
+        "computedFields": []
+      },
+      "reservationStock": {
+        "fields": [
+          {
+            "name": "locator",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Locator",
+            "inputMode": "selector"
+          },
+          {
+            "name": "quantity",
+            "column": "Quantity",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "released",
+            "column": "Released",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "isAllocated",
+            "column": "IsAllocated",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "locator"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "1000100",
+      "name": "Stock Reservation",
+      "primaryEntity": "reservation",
+      "category": "warehouse-transactions"
+    },
+    "entities": {
+      "reservation": {
+        "fields": [
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "reservedQty",
+            "column": "Quantity",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "releasedQty",
+            "column": "ReleasedQty",
+            "type": "number",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "status",
+            "column": "RESStatus",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "salesOrderLine",
+            "column": "C_OrderLine_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "attributeSetInstance",
+            "column": "M_AttributeSetInstance_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "resType",
+            "column": "RESType",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "reservationStock": {
+        "fields": [
+          {
+            "name": "locator",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "quantity",
+            "column": "Quantity",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "released",
+            "column": "Released",
+            "type": "number",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "isAllocated",
+            "column": "IsAllocated",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mReservationId",
+            "column": "M_Reservation_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/reservation",
+        "entity": "reservation",
+        "supportedFilters": [
+          "documentNo",
+          "product",
+          "warehouse",
+          "status"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/reservation/:id",
+        "entity": "reservation",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/reservation",
+        "entity": "reservation",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/reservation/:id",
+        "entity": "reservation",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/reservation/:id",
+        "entity": "reservation",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/reservationStock",
+        "entity": "reservationStock",
+        "supportedFilters": [
+          "locator"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/reservationStock/:id",
+        "entity": "reservationStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/reservationStock",
+        "entity": "reservationStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/reservationStock/:id",
+        "entity": "reservationStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/reservationStock/:id",
+        "entity": "reservationStock",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in reservation"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in reservation"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should be present in reservation"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "reservedQty",
+        "runner": "node",
+        "description": "Field 'reservedQty' should be present in reservation"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "releasedQty",
+        "runner": "node",
+        "description": "Field 'releasedQty' should be present in reservation"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should be present in reservation"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Field 'salesOrderLine' should be present in reservation"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should be present in reservation"
+      },
+      {
+        "id": "t-9",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "attributeSetInstance",
+        "runner": "node",
+        "description": "Field 'attributeSetInstance' should be present in reservation"
+      },
+      {
+        "id": "t-10",
+        "category": "field-presence",
+        "entity": "reservation",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in reservation"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "reservedQty",
+        "runner": "node",
+        "description": "Field 'reservedQty' should have type 'number' in reservation"
+      },
+      {
+        "id": "t-15",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "releasedQty",
+        "runner": "node",
+        "description": "Field 'releasedQty' should have type 'number' in reservation"
+      },
+      {
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-17",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Field 'salesOrderLine' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-18",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-19",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "attributeSetInstance",
+        "runner": "node",
+        "description": "Field 'attributeSetInstance' should have type 'string' in reservation"
+      },
+      {
+        "id": "t-20",
+        "category": "field-type",
+        "entity": "reservation",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in reservation"
+      },
+      {
+        "id": "t-21",
+        "category": "searchable-filters",
+        "entity": "reservation",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for reservation"
+      },
+      {
+        "id": "t-22",
+        "category": "searchable-filters",
+        "entity": "reservation",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for reservation"
+      },
+      {
+        "id": "t-23",
+        "category": "searchable-filters",
+        "entity": "reservation",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should be a supported filter for reservation"
+      },
+      {
+        "id": "t-24",
+        "category": "searchable-filters",
+        "entity": "reservation",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should be a supported filter for reservation"
+      },
+      {
+        "id": "t-25",
+        "category": "visibility",
+        "entity": "reservation",
+        "runner": "node",
+        "description": "Entity 'reservation' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-26",
+        "category": "field-presence",
+        "entity": "reservationStock",
+        "field": "locator",
+        "runner": "node",
+        "description": "Field 'locator' should be present in reservationStock"
+      },
+      {
+        "id": "t-27",
+        "category": "field-presence",
+        "entity": "reservationStock",
+        "field": "quantity",
+        "runner": "node",
+        "description": "Field 'quantity' should be present in reservationStock"
+      },
+      {
+        "id": "t-28",
+        "category": "field-presence",
+        "entity": "reservationStock",
+        "field": "released",
+        "runner": "node",
+        "description": "Field 'released' should be present in reservationStock"
+      },
+      {
+        "id": "t-29",
+        "category": "field-presence",
+        "entity": "reservationStock",
+        "field": "isAllocated",
+        "runner": "node",
+        "description": "Field 'isAllocated' should be present in reservationStock"
+      },
+      {
+        "id": "t-30",
+        "category": "field-presence",
+        "entity": "reservationStock",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in reservationStock"
+      },
+      {
+        "id": "t-31",
+        "category": "field-type",
+        "entity": "reservationStock",
+        "field": "locator",
+        "runner": "node",
+        "description": "Field 'locator' should have type 'string' in reservationStock"
+      },
+      {
+        "id": "t-32",
+        "category": "field-type",
+        "entity": "reservationStock",
+        "field": "quantity",
+        "runner": "node",
+        "description": "Field 'quantity' should have type 'number' in reservationStock"
+      },
+      {
+        "id": "t-33",
+        "category": "field-type",
+        "entity": "reservationStock",
+        "field": "released",
+        "runner": "node",
+        "description": "Field 'released' should have type 'number' in reservationStock"
+      },
+      {
+        "id": "t-34",
+        "category": "field-type",
+        "entity": "reservationStock",
+        "field": "isAllocated",
+        "runner": "node",
+        "description": "Field 'isAllocated' should have type 'boolean' in reservationStock"
+      },
+      {
+        "id": "t-35",
+        "category": "field-type",
+        "entity": "reservationStock",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in reservationStock"
+      },
+      {
+        "id": "t-36",
+        "category": "searchable-filters",
+        "entity": "reservationStock",
+        "field": "locator",
+        "runner": "node",
+        "description": "Field 'locator' should be a supported filter for reservationStock"
+      },
+      {
+        "id": "t-37",
+        "category": "visibility",
+        "entity": "reservationStock",
+        "runner": "node",
+        "description": "Entity 'reservationStock' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-38",
+        "category": "system-field",
+        "entity": "reservation",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for reservation"
+      },
+      {
+        "id": "t-39",
+        "category": "system-field",
+        "entity": "reservation",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for reservation"
+      },
+      {
+        "id": "t-40",
+        "category": "system-field",
+        "entity": "reservation",
+        "field": "resType",
+        "runner": "node",
+        "description": "System field 'resType' should exist in backend but not frontend for reservation"
+      },
+      {
+        "id": "t-41",
+        "category": "system-field",
+        "entity": "reservation",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for reservation"
+      },
+      {
+        "id": "t-42",
+        "category": "system-field",
+        "entity": "reservation",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for reservation"
+      },
+      {
+        "id": "t-43",
+        "category": "system-field",
+        "entity": "reservationStock",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for reservationStock"
+      },
+      {
+        "id": "t-44",
+        "category": "system-field",
+        "entity": "reservationStock",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for reservationStock"
+      },
+      {
+        "id": "t-45",
+        "category": "system-field",
+        "entity": "reservationStock",
+        "field": "mReservationId",
+        "runner": "node",
+        "description": "System field 'mReservationId' should exist in backend but not frontend for reservationStock"
+      },
+      {
+        "id": "t-46",
+        "category": "system-field",
+        "entity": "reservationStock",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for reservationStock"
+      },
+      {
+        "id": "t-47",
+        "category": "system-field",
+        "entity": "reservationStock",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for reservationStock"
+      },
+      {
+        "id": "t-48",
+        "category": "rule-declared",
+        "rule": "reservedQtyMustBePositive",
+        "runner": "node",
+        "description": "Rule 'reservedQtyMustBePositive' (validation) should be declared"
+      },
+      {
+        "id": "t-49",
+        "category": "rule-declared",
+        "rule": "releasedQtyCannotExceedReserved",
+        "runner": "node",
+        "description": "Rule 'releasedQtyCannotExceedReserved' (validation) should be declared"
+      },
+      {
+        "id": "t-50",
+        "category": "rule-declared",
+        "rule": "stockLineQtyMustBePositive",
+        "runner": "node",
+        "description": "Rule 'stockLineQtyMustBePositive' (validation) should be declared"
+      },
+      {
+        "id": "t-51",
+        "category": "rule-declared",
+        "rule": "statusTransitionValidation",
+        "runner": "node",
+        "description": "Rule 'statusTransitionValidation' (validation) should be declared"
+      },
+      {
+        "id": "t-52",
+        "category": "rule-declared",
+        "rule": "completedReservationReadOnly",
+        "runner": "node",
+        "description": "Rule 'completedReservationReadOnly' (constraint) should be declared"
+      }
+    ],
+    "summary": {
+      "total": 52,
+      "byCategory": {
+        "field-presence": 15,
+        "field-type": 15,
+        "searchable-filters": 5,
+        "visibility": 2,
+        "system-field": 10,
+        "rule-declared": 5
+      },
+      "byRunner": {
+        "node": 52,
+        "junit": 0
+      }
+    }
+  }
+}

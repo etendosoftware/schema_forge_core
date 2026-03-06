@@ -3,3 +3,5 @@ app.log
 node_modules/
 tools/decision-panel/dist/
 .claude/
+artifacts/test-report.xml
+artifacts/test-report.html

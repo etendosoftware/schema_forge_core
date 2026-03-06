@@ -140,6 +140,23 @@ export function EntityForm({ fields = [], data, onChange, catalogs }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       {fields.map(f => {
+        if (f.type === 'checkbox') {
+          return (
+            <div key={f.key} className="flex items-center gap-2 pt-6">
+              <input
+                type="checkbox"
+                id={f.key}
+                name={f.key}
+                checked={!!data?.[f.key]}
+                onChange={(e) => onChange?.(f.key, e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
+                {f.label}{f.required ? ' *' : ''}
+              </Label>
+            </div>
+          );
+        }
         if (f.type === 'dependent') {
           return (
             <div key={f.key} className="space-y-1.5">

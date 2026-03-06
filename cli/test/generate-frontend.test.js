@@ -275,10 +275,56 @@ describe('generateIndexComponent', () => {
     assert.ok(code.includes('<OrderPage'), 'should render OrderPage');
   });
 
-  it('handles single-entity without page component', () => {
+  it('handles single-entity with SingleEntityPage component', () => {
     const code = generateIndexComponent('item', null);
     assert.ok(code.includes("import ItemTable"), 'should import ItemTable');
-    assert.ok(!code.includes('Page'), 'should NOT have a Page component');
+    assert.ok(code.includes("import ItemForm"), 'should import ItemForm');
+    assert.ok(code.includes("import { SingleEntityPage } from '@/components/contract-ui'"), 'should import SingleEntityPage');
+    assert.ok(code.includes("import catalogs from './mockCatalogs'"), 'should import mockCatalogs');
+    assert.ok(code.includes('<SingleEntityPage'), 'should render SingleEntityPage');
+    assert.ok(code.includes('entity="item"'), 'should pass entity prop');
+    assert.ok(code.includes('Table={ItemTable}'), 'should pass Table component');
+    assert.ok(code.includes('Form={ItemForm}'), 'should pass Form component');
+    assert.ok(code.includes('catalogs={catalogs}'), 'should pass catalogs prop');
+    assert.ok(code.includes('entityLabel="Item"'), 'should pass entityLabel prop');
+    assert.ok(code.includes('{...props}'), 'should spread remaining props');
+  });
+});
+
+describe('boolean field handling', () => {
+  const boolContract = {
+    frontendContract: {
+      window: { id: '203', name: 'Price List', primaryEntity: 'priceList', category: 'reference' },
+      entities: {
+        priceList: {
+          fields: [
+            { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            { name: 'isDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
+          ],
+          searchableFields: ['name'],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('mapFieldType returns boolean for boolean fields in table columns', () => {
+    const code = generateTableComponent('priceList', boolContract);
+    assert.ok(code.includes("type: 'boolean'"), 'should map boolean fields to boolean type in table columns');
+    assert.ok(code.includes("key: 'isActive'"), 'should include isActive boolean field in grid');
+  });
+
+  it('mapFormFieldType returns checkbox for boolean fields in form', () => {
+    const code = generateFormComponent('priceList', boolContract);
+    assert.ok(code.includes("type: 'checkbox'"), 'should map boolean fields to checkbox type in form');
+    assert.ok(code.includes("key: 'isDefault'"), 'should include editable isDefault boolean in form');
+  });
+
+  it('excludes readOnly boolean fields from form (same rule as other readOnly fields)', () => {
+    const code = generateFormComponent('priceList', boolContract);
+    assert.ok(!code.includes("key: 'isActive'"), 'should NOT include readOnly isActive in form');
   });
 });
 

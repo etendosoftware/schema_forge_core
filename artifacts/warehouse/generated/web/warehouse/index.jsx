@@ -3,16 +3,15 @@ import WarehouseTable from './WarehouseTable';
 import WarehouseForm from './WarehouseForm';
 import catalogs from './mockCatalogs';
 
-export default function App({ token, apiBaseUrl, window }) {
+export default function App(props) {
   return (
     <SingleEntityPage
       entity="warehouse"
       Table={WarehouseTable}
       Form={WarehouseForm}
       catalogs={catalogs}
-      token={token}
-      apiBaseUrl={apiBaseUrl}
       entityLabel="Warehouse"
+      {...props}
     />
   );
 }

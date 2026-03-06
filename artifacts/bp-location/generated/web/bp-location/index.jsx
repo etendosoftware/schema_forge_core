@@ -3,16 +3,15 @@ import BpLocationTable from './BpLocationTable';
 import BpLocationForm from './BpLocationForm';
 import catalogs from './mockCatalogs';
 
-export default function App({ token, apiBaseUrl, window }) {
+export default function App(props) {
   return (
     <SingleEntityPage
       entity="bpLocation"
       Table={BpLocationTable}
       Form={BpLocationForm}
       catalogs={catalogs}
-      token={token}
-      apiBaseUrl={apiBaseUrl}
-      entityLabel="BP Location"
+      entityLabel="Bp Location"
+      {...props}
     />
   );
 }

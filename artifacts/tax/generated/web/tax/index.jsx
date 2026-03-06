@@ -3,16 +3,15 @@ import TaxTable from './TaxTable';
 import TaxForm from './TaxForm';
 import catalogs from './mockCatalogs';
 
-export default function App({ token, apiBaseUrl, window }) {
+export default function App(props) {
   return (
     <SingleEntityPage
       entity="tax"
       Table={TaxTable}
       Form={TaxForm}
       catalogs={catalogs}
-      token={token}
-      apiBaseUrl={apiBaseUrl}
       entityLabel="Tax"
+      {...props}
     />
   );
 }

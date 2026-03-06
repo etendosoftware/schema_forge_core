@@ -1,4 +1,11 @@
-const DEFAULT_BASE_URL = '/etendo_sf';
+function detectBaseUrl() {
+  const path = window.location.pathname;
+  const webIdx = path.indexOf('/web/');
+  if (webIdx !== -1) return path.substring(0, webIdx);
+  return import.meta.env.VITE_API_BASE || '';
+}
+
+const DEFAULT_BASE_URL = detectBaseUrl();
 
 export function buildHeaders(token) {
   const headers = { 'Content-Type': 'application/json' };

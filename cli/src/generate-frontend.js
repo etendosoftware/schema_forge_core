@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
 /**
@@ -40,6 +40,7 @@ export function getReadOnlyFields(contract, entityName) {
  */
 function mapFieldType(field) {
   if (field.name.toLowerCase().includes('status')) return 'status';
+  if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
   if (field.type === 'number' || field.type === 'integer') return 'number';
   if (field.type === 'date') return 'date';
@@ -56,6 +57,7 @@ function mapFormFieldType(field) {
     if (field.inputMode === 'dependent') return 'dependent';
     return 'search';
   }
+  if (field.type === 'boolean') return 'checkbox';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
   return 'text';
@@ -249,14 +251,21 @@ export default function App({ token, apiBaseUrl, window }) {
 `;
   }
 
-  return `import ${headerName}Table from './${headerName}Table';
+  return `import { SingleEntityPage } from '@/components/contract-ui';
+import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
+import catalogs from './mockCatalogs';
 
-export default function App({ token, apiBaseUrl, window }) {
+export default function App(props) {
   return (
-    <div>
-      <${headerName}Table data={[]} />
-    </div>
+    <SingleEntityPage
+      entity="${headerEntity}"
+      Table={${headerName}Table}
+      Form={${headerName}Form}
+      catalogs={catalogs}
+      entityLabel="${toLabel(headerEntity)}"
+      {...props}
+    />
   );
 }
 `;
@@ -317,6 +326,10 @@ const CATALOG_DATA = {
   UOM: Array.from({ length: 5 }, (_, i) => ({
     id: `uom-${String(i + 1).padStart(3, '0')}`,
     name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
+  })),
+  ProductCategory: Array.from({ length: 9 }, (_, i) => ({
+    id: `cat-${String(i + 1).padStart(3, '0')}`,
+    name: ['Electronics', 'Accessories', 'Peripherals', 'Displays', 'Audio', 'Storage', 'Components', 'Networking', 'Power'][i],
   })),
   BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
     id: `bploc-${String(i + 1).padStart(3, '0')}`,
@@ -403,6 +416,22 @@ export function generateAll(contract) {
   // Always generate index
   files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity);
 
+  return files;
+}
+
+/**
+ * Capture the current state of generated files for a window.
+ * Returns a { filename: content } map for use as the "before" snapshot.
+ */
+export function captureCurrentState(windowName, baseDir) {
+  const webDir = resolve(baseDir || '.', `artifacts/${windowName}/generated/web/${windowName}`);
+  const files = {};
+  if (!existsSync(webDir)) return files;
+  for (const filename of readdirSync(webDir)) {
+    if (filename.endsWith('.jsx') || filename.endsWith('.js')) {
+      files[filename] = readFileSync(resolve(webDir, filename), 'utf-8');
+    }
+  }
   return files;
 }
 

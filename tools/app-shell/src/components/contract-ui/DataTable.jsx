@@ -38,6 +38,12 @@ export function DataTable({ columns = [], filters = [], data = [], onRowSelect, 
     if (col.type === 'status') {
       return <StatusBadge status={row[col.key]} />;
     }
+    if (col.type === 'boolean') {
+      const val = row[col.key];
+      if (val === true || val === 'Y') return <span className="text-emerald-600">Yes</span>;
+      if (val === false || val === 'N') return <span className="text-slate-400">No</span>;
+      return <span className="text-slate-300">&mdash;</span>;
+    }
     if (col.type === 'amount') {
       return <span className="tabular-nums">{row[col.key]?.toLocaleString()}</span>;
     }
