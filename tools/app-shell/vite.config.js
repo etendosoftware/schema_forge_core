@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@generated': resolve(__dirname, '../../artifacts/sales-order/generated'),
+      '@generated': resolve(__dirname, '../../artifacts'),
     },
   },
   server: {

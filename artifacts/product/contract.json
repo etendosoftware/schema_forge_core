@@ -1,0 +1,441 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T14:48:21.363Z",
+  "checksum": "80c436e15fa8c019",
+  "frontendContract": {
+    "window": {
+      "id": "206",
+      "name": "Product",
+      "primaryEntity": "product",
+      "category": "reference"
+    },
+    "entities": {
+      "product": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "searchKey",
+            "column": "Value",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          },
+          {
+            "name": "productCategory",
+            "column": "M_Product_Category_ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "listPrice",
+            "column": "ListPrice",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "standardCost",
+            "column": "StandardCost",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "name",
+          "searchKey"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "206",
+      "name": "Product",
+      "primaryEntity": "product",
+      "category": "reference"
+    },
+    "entities": {
+      "product": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "searchKey",
+            "column": "Value",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "productCategory",
+            "column": "M_Product_Category_ID",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "listPrice",
+            "column": "ListPrice",
+            "type": "amount",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "standardCost",
+            "column": "StandardCost",
+            "type": "amount",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/product",
+        "entity": "product",
+        "supportedFilters": [
+          "name",
+          "searchKey"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/product/:id",
+        "entity": "product",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/product",
+        "entity": "product",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/product/:id",
+        "entity": "product",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/product/:id",
+        "entity": "product",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in product"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should be present in product"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in product"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should be present in product"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "productCategory",
+        "runner": "node",
+        "description": "Field 'productCategory' should be present in product"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should be present in product"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "standardCost",
+        "runner": "node",
+        "description": "Field 'standardCost' should be present in product"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "product",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in product"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "product",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in product"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "product",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should have type 'string' in product"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "product",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in product"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "product",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should have type 'string' in product"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "product",
+        "field": "productCategory",
+        "runner": "node",
+        "description": "Field 'productCategory' should have type 'string' in product"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "product",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should have type 'number' in product"
+      },
+      {
+        "id": "t-15",
+        "category": "field-type",
+        "entity": "product",
+        "field": "standardCost",
+        "runner": "node",
+        "description": "Field 'standardCost' should have type 'number' in product"
+      },
+      {
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "product",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in product"
+      },
+      {
+        "id": "t-17",
+        "category": "searchable-filters",
+        "entity": "product",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for product"
+      },
+      {
+        "id": "t-18",
+        "category": "searchable-filters",
+        "entity": "product",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should be a supported filter for product"
+      },
+      {
+        "id": "t-19",
+        "category": "visibility",
+        "entity": "product",
+        "runner": "node",
+        "description": "Entity 'product' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-20",
+        "category": "system-field",
+        "entity": "product",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for product"
+      },
+      {
+        "id": "t-21",
+        "category": "system-field",
+        "entity": "product",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for product"
+      },
+      {
+        "id": "t-22",
+        "category": "system-field",
+        "entity": "product",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for product"
+      },
+      {
+        "id": "t-23",
+        "category": "system-field",
+        "entity": "product",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for product"
+      }
+    ],
+    "summary": {
+      "total": 23,
+      "byCategory": {
+        "field-presence": 8,
+        "field-type": 8,
+        "searchable-filters": 2,
+        "visibility": 1,
+        "system-field": 4
+      },
+      "byRunner": {
+        "node": 23,
+        "junit": 0
+      }
+    }
+  }
+}
