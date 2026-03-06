@@ -1,92 +1,75 @@
-/**
- * Convert a window name to a URL-safe slug.
- * 'Sales Order' -> 'sales-order'
- */
-function toSlug(name) {
-  return name.toLowerCase().replace(/\s+/g, '-');
-}
+import menuConfig from '../menu.json' with { type: 'json' };
 
 /**
  * Known window loaders -- maps slug to dynamic import.
+ * Windows not listed here fall back to PlaceholderWindow.
  */
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
-  'bp-location': () => import('@generated/bp-location/generated/web/bp-location/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
   'payment-method': () => import('@generated/payment-method/generated/web/payment-method/index.jsx'),
   'product': () => import('@generated/product/generated/web/product/index.jsx'),
+  'product-category': () => import('@generated/product-category/generated/web/product-category/index.jsx'),
   'tax': () => import('@generated/tax/generated/web/tax/index.jsx'),
   'uom': () => import('@generated/uom/generated/web/uom/index.jsx'),
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
+  'requisition': () => import('@generated/requisition/generated/web/requisition/index.jsx'),
+  'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
+  'goods-receipt': () => import('@generated/goods-receipt/generated/web/goods-receipt/index.jsx'),
+  'purchase-invoice': () => import('@generated/purchase-invoice/generated/web/purchase-invoice/index.jsx'),
+  'manage-requisitions': () => import('@generated/manage-requisitions/generated/web/manage-requisitions/index.jsx'),
+  'return-to-vendor': () => import('@generated/return-to-vendor/generated/web/return-to-vendor/index.jsx'),
+  'return-to-vendor-shipment': () => import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/index.jsx'),
+  'landed-cost': () => import('@generated/landed-cost/generated/web/landed-cost/index.jsx'),
+  'physical-inventory': () => import('@generated/physical-inventory/generated/web/physical-inventory/index.jsx'),
+  'goods-movements': () => import('@generated/goods-movements/generated/web/goods-movements/index.jsx'),
+  'warehouse-storage-bins': () => import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/index.jsx'),
+  'sales-quotation': () => import('@generated/sales-quotation/generated/web/sales-quotation/index.jsx'),
+  'goods-shipment': () => import('@generated/goods-shipment/generated/web/goods-shipment/index.jsx'),
+  'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
+  'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
+  'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
+  'inventory-quality-inspection': () => import('@generated/inventory-quality-inspection/generated/web/inventory-quality-inspection/index.jsx'),
+  'bom-production': () => import('@generated/bom-production/generated/web/bom-production/index.jsx'),
+  'packing': () => import('@generated/packing/generated/web/packing/index.jsx'),
+  'warehouse-picking-list': () => import('@generated/warehouse-picking-list/generated/web/warehouse-picking-list/index.jsx'),
+  'stock-reservation': () => import('@generated/stock-reservation/generated/web/stock-reservation/index.jsx'),
+  'cost-adjustment': () => import('@generated/cost-adjustment/generated/web/cost-adjustment/index.jsx'),
+  'commission': () => import('@generated/commission/generated/web/commission/index.jsx'),
+  'commission-payment': () => import('@generated/commission-payment/generated/web/commission-payment/index.jsx'),
 };
 
 /**
- * Reference windows -- simple CRUD entities used as FK targets by Sales Order.
+ * Return the 2-level menu groups from menu.json.
  */
-const REFERENCE_WINDOWS = [
-  { name: 'business-partner', label: 'Business Partner' },
-  { name: 'bp-location', label: 'BP Location' },
-  { name: 'warehouse', label: 'Warehouse' },
-  { name: 'price-list', label: 'Price List' },
-  { name: 'payment-term', label: 'Payment Term' },
-  { name: 'payment-method', label: 'Payment Method' },
-  { name: 'product', label: 'Product' },
-  { name: 'tax', label: 'Tax' },
-  { name: 'uom', label: 'UOM' },
-  { name: 'user', label: 'User' },
-];
-
-/**
- * Build menu items from a contract.json -- includes the primary window plus all reference windows.
- */
-export function buildMenuFromContract(contract) {
-  const items = [];
-
-  const window = contract?.frontendContract?.window;
-  if (window) {
-    items.push({
-      name: toSlug(window.name),
-      label: window.name,
-    });
-  }
-
-  for (const ref of REFERENCE_WINDOWS) {
-    items.push(ref);
-  }
-
-  return items;
+export function buildMenuGroups() {
+  return menuConfig.menu;
 }
 
 /**
- * Build window map with loaders for all windows.
+ * Flat list of all window slugs from menu.json.
  */
-export function buildWindowMap(contract) {
+export function getAllWindowNames() {
+  return menuConfig.menu.flatMap(g => g.items.map(i => i.name));
+}
+
+/**
+ * Build window map with loaders for all windows in menu.json.
+ */
+export function buildWindowMap() {
   const map = {};
-
-  const fc = contract?.frontendContract;
-  if (fc?.window) {
-    const slug = toSlug(fc.window.name);
-    map[slug] = {
-      name: slug,
-      label: fc.window.name,
-      contract: fc,
-      loader: windowLoaders[slug] || (() => import('./PlaceholderWindow.jsx')),
-    };
-  }
-
-  for (const ref of REFERENCE_WINDOWS) {
-    if (!map[ref.name]) {
-      map[ref.name] = {
-        name: ref.name,
-        label: ref.label,
+  for (const group of menuConfig.menu) {
+    for (const item of group.items) {
+      map[item.name] = {
+        name: item.name,
+        label: item.label,
         contract: null,
-        loader: windowLoaders[ref.name] || (() => import('./PlaceholderWindow.jsx')),
+        loader: windowLoaders[item.name] || (() => import('./PlaceholderWindow.jsx')),
       };
     }
   }
-
   return map;
 }

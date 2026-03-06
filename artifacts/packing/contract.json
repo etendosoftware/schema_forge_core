@@ -1,0 +1,940 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T18:33:41.508Z",
+  "checksum": "8e0a434a39c3f9aa",
+  "frontendContract": {
+    "window": {
+      "id": "WH-PACK-001",
+      "name": "Packing",
+      "primaryEntity": "packing",
+      "category": "warehouse"
+    },
+    "entities": {
+      "packing": {
+        "fields": [
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "packDate",
+            "column": "PackDate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "shipment",
+            "column": "M_InOut_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Shipment",
+            "inputMode": "search"
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "BusinessPartner",
+            "inputMode": "search"
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Warehouse",
+            "inputMode": "selector"
+          },
+          {
+            "name": "carrier",
+            "column": "Carrier",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "trackingNo",
+            "column": "TrackingNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "documentNo",
+          "docStatus",
+          "packDate",
+          "shipment",
+          "businessPartner",
+          "carrier",
+          "trackingNo"
+        ],
+        "computedFields": []
+      },
+      "packingLine": {
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "quantity",
+            "column": "Qty",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "weight",
+            "column": "Weight",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "packageNo",
+            "column": "PackageNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [
+          "product",
+          "packageNo"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "WH-PACK-001",
+      "name": "Packing",
+      "primaryEntity": "packing",
+      "category": "warehouse"
+    },
+    "entities": {
+      "packing": {
+        "fields": [
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "packDate",
+            "column": "PackDate",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "shipment",
+            "column": "M_InOut_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "carrier",
+            "column": "Carrier",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "trackingNo",
+            "column": "TrackingNo",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "packingLine": {
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "quantity",
+            "column": "Qty",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "weight",
+            "column": "Weight",
+            "type": "number",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "packageNo",
+            "column": "PackageNo",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mPackingId",
+            "column": "M_Packing_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mInoutId",
+            "column": "M_InOut_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/packing",
+        "entity": "packing",
+        "supportedFilters": [
+          "documentNo",
+          "docStatus",
+          "packDate",
+          "shipment",
+          "businessPartner",
+          "carrier",
+          "trackingNo"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/packing/:id",
+        "entity": "packing",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/packing",
+        "entity": "packing",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/packing/:id",
+        "entity": "packing",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/packing/:id",
+        "entity": "packing",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/packingLine",
+        "entity": "packingLine",
+        "supportedFilters": [
+          "product",
+          "packageNo"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/packingLine/:id",
+        "entity": "packingLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/packingLine",
+        "entity": "packingLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/packingLine/:id",
+        "entity": "packingLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/packingLine/:id",
+        "entity": "packingLine",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in packing"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be present in packing"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "packDate",
+        "runner": "node",
+        "description": "Field 'packDate' should be present in packing"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "shipment",
+        "runner": "node",
+        "description": "Field 'shipment' should be present in packing"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in packing"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should be present in packing"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "carrier",
+        "runner": "node",
+        "description": "Field 'carrier' should be present in packing"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Field 'trackingNo' should be present in packing"
+      },
+      {
+        "id": "t-9",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in packing"
+      },
+      {
+        "id": "t-10",
+        "category": "field-presence",
+        "entity": "packing",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in packing"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in packing"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should have type 'string' in packing"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "packDate",
+        "runner": "node",
+        "description": "Field 'packDate' should have type 'string' in packing"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "shipment",
+        "runner": "node",
+        "description": "Field 'shipment' should have type 'string' in packing"
+      },
+      {
+        "id": "t-15",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in packing"
+      },
+      {
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should have type 'string' in packing"
+      },
+      {
+        "id": "t-17",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "carrier",
+        "runner": "node",
+        "description": "Field 'carrier' should have type 'string' in packing"
+      },
+      {
+        "id": "t-18",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Field 'trackingNo' should have type 'string' in packing"
+      },
+      {
+        "id": "t-19",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in packing"
+      },
+      {
+        "id": "t-20",
+        "category": "field-type",
+        "entity": "packing",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in packing"
+      },
+      {
+        "id": "t-21",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for packing"
+      },
+      {
+        "id": "t-22",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be a supported filter for packing"
+      },
+      {
+        "id": "t-23",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "packDate",
+        "runner": "node",
+        "description": "Field 'packDate' should be a supported filter for packing"
+      },
+      {
+        "id": "t-24",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "shipment",
+        "runner": "node",
+        "description": "Field 'shipment' should be a supported filter for packing"
+      },
+      {
+        "id": "t-25",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for packing"
+      },
+      {
+        "id": "t-26",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "carrier",
+        "runner": "node",
+        "description": "Field 'carrier' should be a supported filter for packing"
+      },
+      {
+        "id": "t-27",
+        "category": "searchable-filters",
+        "entity": "packing",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Field 'trackingNo' should be a supported filter for packing"
+      },
+      {
+        "id": "t-28",
+        "category": "visibility",
+        "entity": "packing",
+        "runner": "node",
+        "description": "Entity 'packing' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-29",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in packingLine"
+      },
+      {
+        "id": "t-30",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in packingLine"
+      },
+      {
+        "id": "t-31",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "quantity",
+        "runner": "node",
+        "description": "Field 'quantity' should be present in packingLine"
+      },
+      {
+        "id": "t-32",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "weight",
+        "runner": "node",
+        "description": "Field 'weight' should be present in packingLine"
+      },
+      {
+        "id": "t-33",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "packageNo",
+        "runner": "node",
+        "description": "Field 'packageNo' should be present in packingLine"
+      },
+      {
+        "id": "t-34",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in packingLine"
+      },
+      {
+        "id": "t-35",
+        "category": "field-presence",
+        "entity": "packingLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should be present in packingLine"
+      },
+      {
+        "id": "t-36",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in packingLine"
+      },
+      {
+        "id": "t-37",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in packingLine"
+      },
+      {
+        "id": "t-38",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "quantity",
+        "runner": "node",
+        "description": "Field 'quantity' should have type 'number' in packingLine"
+      },
+      {
+        "id": "t-39",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "weight",
+        "runner": "node",
+        "description": "Field 'weight' should have type 'number' in packingLine"
+      },
+      {
+        "id": "t-40",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "packageNo",
+        "runner": "node",
+        "description": "Field 'packageNo' should have type 'string' in packingLine"
+      },
+      {
+        "id": "t-41",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in packingLine"
+      },
+      {
+        "id": "t-42",
+        "category": "field-type",
+        "entity": "packingLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should have type 'string' in packingLine"
+      },
+      {
+        "id": "t-43",
+        "category": "searchable-filters",
+        "entity": "packingLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for packingLine"
+      },
+      {
+        "id": "t-44",
+        "category": "searchable-filters",
+        "entity": "packingLine",
+        "field": "packageNo",
+        "runner": "node",
+        "description": "Field 'packageNo' should be a supported filter for packingLine"
+      },
+      {
+        "id": "t-45",
+        "category": "visibility",
+        "entity": "packingLine",
+        "runner": "node",
+        "description": "Entity 'packingLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-46",
+        "category": "system-field",
+        "entity": "packing",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for packing"
+      },
+      {
+        "id": "t-47",
+        "category": "system-field",
+        "entity": "packing",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for packing"
+      },
+      {
+        "id": "t-48",
+        "category": "system-field",
+        "entity": "packing",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for packing"
+      },
+      {
+        "id": "t-49",
+        "category": "system-field",
+        "entity": "packing",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for packing"
+      },
+      {
+        "id": "t-50",
+        "category": "system-field",
+        "entity": "packing",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for packing"
+      },
+      {
+        "id": "t-51",
+        "category": "system-field",
+        "entity": "packingLine",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for packingLine"
+      },
+      {
+        "id": "t-52",
+        "category": "system-field",
+        "entity": "packingLine",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for packingLine"
+      },
+      {
+        "id": "t-53",
+        "category": "system-field",
+        "entity": "packingLine",
+        "field": "mPackingId",
+        "runner": "node",
+        "description": "System field 'mPackingId' should exist in backend but not frontend for packingLine"
+      },
+      {
+        "id": "t-54",
+        "category": "system-field",
+        "entity": "packingLine",
+        "field": "mInoutId",
+        "runner": "node",
+        "description": "System field 'mInoutId' should exist in backend but not frontend for packingLine"
+      }
+    ],
+    "summary": {
+      "total": 54,
+      "byCategory": {
+        "field-presence": 17,
+        "field-type": 17,
+        "searchable-filters": 9,
+        "visibility": 2,
+        "system-field": 9
+      },
+      "byRunner": {
+        "node": 54,
+        "junit": 0
+      }
+    }
+  }
+}

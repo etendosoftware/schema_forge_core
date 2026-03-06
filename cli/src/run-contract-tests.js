@@ -90,6 +90,16 @@ function checkVisibility(contract, test) {
   if (!entity) {
     return { passed: false, reason: `Entity '${test.entity}' not found in frontendContract` };
   }
+
+  // Entity-level visibility test: no system fields should be in frontend
+  if (!test.field) {
+    const systemFields = entity.fields.filter(f => f.visibility === 'system');
+    return systemFields.length === 0
+      ? { passed: true }
+      : { passed: false, reason: `Entity '${test.entity}' exposes system fields: ${systemFields.map(f => f.name).join(', ')}` };
+  }
+
+  // Field-level visibility test
   const field = entity.fields.find(f => f.name === test.field);
   if (!field) {
     return { passed: false, reason: `Field '${test.field}' not found in entity '${test.entity}'` };

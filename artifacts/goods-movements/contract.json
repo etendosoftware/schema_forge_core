@@ -1,0 +1,708 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T18:08:52.760Z",
+  "checksum": "4920066d93a4f697",
+  "frontendContract": {
+    "window": {
+      "id": "170",
+      "name": "Goods Movements",
+      "primaryEntity": "goodsMovement",
+      "category": "warehouseManagement"
+    },
+    "entities": {
+      "goodsMovement": {
+        "fields": [
+          {
+            "name": "movementDate",
+            "column": "MovementDate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "movementDate",
+          "documentNo",
+          "docStatus"
+        ],
+        "computedFields": []
+      },
+      "goodsMovementLine": {
+        "fields": [
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "movementQty",
+            "column": "MovementQty",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "locatorFrom",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Locator",
+            "inputMode": "selector"
+          },
+          {
+            "name": "locatorTo",
+            "column": "M_LocatorTo_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Locator",
+            "inputMode": "selector"
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [
+          "product"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "170",
+      "name": "Goods Movements",
+      "primaryEntity": "goodsMovement",
+      "category": "warehouseManagement"
+    },
+    "entities": {
+      "goodsMovement": {
+        "fields": [
+          {
+            "name": "movementDate",
+            "column": "MovementDate",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "goodsMovementLine": {
+        "fields": [
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "movementQty",
+            "column": "MovementQty",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "locatorFrom",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "locatorTo",
+            "column": "M_LocatorTo_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mMovementId",
+            "column": "M_Movement_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/goodsMovement",
+        "entity": "goodsMovement",
+        "supportedFilters": [
+          "movementDate",
+          "documentNo",
+          "docStatus"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/goodsMovement/:id",
+        "entity": "goodsMovement",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/goodsMovement",
+        "entity": "goodsMovement",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/goodsMovement/:id",
+        "entity": "goodsMovement",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/goodsMovement/:id",
+        "entity": "goodsMovement",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/goodsMovementLine",
+        "entity": "goodsMovementLine",
+        "supportedFilters": [
+          "product"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/goodsMovementLine/:id",
+        "entity": "goodsMovementLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/goodsMovementLine",
+        "entity": "goodsMovementLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/goodsMovementLine/:id",
+        "entity": "goodsMovementLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/goodsMovementLine/:id",
+        "entity": "goodsMovementLine",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "goodsMovement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be present in goodsMovement"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "goodsMovement",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in goodsMovement"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "goodsMovement",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in goodsMovement"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "goodsMovement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in goodsMovement"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "goodsMovement",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be present in goodsMovement"
+      },
+      {
+        "id": "t-6",
+        "category": "field-type",
+        "entity": "goodsMovement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should have type 'string' in goodsMovement"
+      },
+      {
+        "id": "t-7",
+        "category": "field-type",
+        "entity": "goodsMovement",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in goodsMovement"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "goodsMovement",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in goodsMovement"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "goodsMovement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in goodsMovement"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "goodsMovement",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should have type 'string' in goodsMovement"
+      },
+      {
+        "id": "t-11",
+        "category": "searchable-filters",
+        "entity": "goodsMovement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be a supported filter for goodsMovement"
+      },
+      {
+        "id": "t-12",
+        "category": "searchable-filters",
+        "entity": "goodsMovement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for goodsMovement"
+      },
+      {
+        "id": "t-13",
+        "category": "searchable-filters",
+        "entity": "goodsMovement",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be a supported filter for goodsMovement"
+      },
+      {
+        "id": "t-14",
+        "category": "visibility",
+        "entity": "goodsMovement",
+        "runner": "node",
+        "description": "Entity 'goodsMovement' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-15",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-16",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "movementQty",
+        "runner": "node",
+        "description": "Field 'movementQty' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-17",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "locatorFrom",
+        "runner": "node",
+        "description": "Field 'locatorFrom' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-18",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "locatorTo",
+        "runner": "node",
+        "description": "Field 'locatorTo' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-19",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-20",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-21",
+        "category": "field-presence",
+        "entity": "goodsMovementLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should be present in goodsMovementLine"
+      },
+      {
+        "id": "t-22",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in goodsMovementLine"
+      },
+      {
+        "id": "t-23",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "movementQty",
+        "runner": "node",
+        "description": "Field 'movementQty' should have type 'number' in goodsMovementLine"
+      },
+      {
+        "id": "t-24",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "locatorFrom",
+        "runner": "node",
+        "description": "Field 'locatorFrom' should have type 'string' in goodsMovementLine"
+      },
+      {
+        "id": "t-25",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "locatorTo",
+        "runner": "node",
+        "description": "Field 'locatorTo' should have type 'string' in goodsMovementLine"
+      },
+      {
+        "id": "t-26",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in goodsMovementLine"
+      },
+      {
+        "id": "t-27",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in goodsMovementLine"
+      },
+      {
+        "id": "t-28",
+        "category": "field-type",
+        "entity": "goodsMovementLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should have type 'string' in goodsMovementLine"
+      },
+      {
+        "id": "t-29",
+        "category": "searchable-filters",
+        "entity": "goodsMovementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for goodsMovementLine"
+      },
+      {
+        "id": "t-30",
+        "category": "visibility",
+        "entity": "goodsMovementLine",
+        "runner": "node",
+        "description": "Entity 'goodsMovementLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-31",
+        "category": "system-field",
+        "entity": "goodsMovement",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for goodsMovement"
+      },
+      {
+        "id": "t-32",
+        "category": "system-field",
+        "entity": "goodsMovement",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for goodsMovement"
+      },
+      {
+        "id": "t-33",
+        "category": "system-field",
+        "entity": "goodsMovement",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for goodsMovement"
+      },
+      {
+        "id": "t-34",
+        "category": "system-field",
+        "entity": "goodsMovement",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for goodsMovement"
+      },
+      {
+        "id": "t-35",
+        "category": "system-field",
+        "entity": "goodsMovement",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for goodsMovement"
+      },
+      {
+        "id": "t-36",
+        "category": "system-field",
+        "entity": "goodsMovementLine",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for goodsMovementLine"
+      },
+      {
+        "id": "t-37",
+        "category": "system-field",
+        "entity": "goodsMovementLine",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for goodsMovementLine"
+      },
+      {
+        "id": "t-38",
+        "category": "system-field",
+        "entity": "goodsMovementLine",
+        "field": "mMovementId",
+        "runner": "node",
+        "description": "System field 'mMovementId' should exist in backend but not frontend for goodsMovementLine"
+      }
+    ],
+    "summary": {
+      "total": 38,
+      "byCategory": {
+        "field-presence": 12,
+        "field-type": 12,
+        "searchable-filters": 4,
+        "visibility": 2,
+        "system-field": 8
+      },
+      "byRunner": {
+        "node": 38,
+        "junit": 0
+      }
+    }
+  }
+}
