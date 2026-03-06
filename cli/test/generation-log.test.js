@@ -181,10 +181,11 @@ describe('createLogEntries', () => {
     assert.equal(entries[0].runId, 'run-006');
   });
 
-  it('returns empty array when no changes', () => {
+  it('returns single no-changes entry when no changes', () => {
     const content = 'same content';
     const entries = createLogEntries('w', 'test', { 'a.jsx': content }, { 'a.jsx': content }, []);
-    assert.equal(entries.length, 0);
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].change, 'no-changes');
   });
 
   it('entry has all required fields', () => {
@@ -194,6 +195,30 @@ describe('createLogEntries', () => {
     for (const key of requiredKeys) {
       assert.ok(key in e, `missing key: ${key}`);
     }
+  });
+});
+
+// --- createLogEntries no-changes ---
+
+describe('createLogEntries no-changes', () => {
+  it('returns a single no-changes entry when old and new files are identical', () => {
+    const oldFiles = { 'OrderTable.jsx': 'const x = 1;' };
+    const newFiles = { 'OrderTable.jsx': 'const x = 1;' };
+    const existingLog = [{ runId: 'run-005' }];
+    const entries = createLogEntries('sales-order', 'verify-test', oldFiles, newFiles, existingLog);
+
+    assert.equal(entries.length, 1);
+    const entry = entries[0];
+    assert.equal(entry.change, 'no-changes');
+    assert.equal(entry.window, 'sales-order');
+    assert.equal(entry.trigger, 'verify-test');
+    assert.equal(entry.runId, 'run-006');
+    assert.equal(entry.entity, null);
+    assert.equal(entry.field, null);
+    assert.equal(entry.file, null);
+    assert.equal(entry.before, null);
+    assert.equal(entry.after, null);
+    assert.ok(entry.run); // ISO timestamp present
   });
 });
 
