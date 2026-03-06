@@ -33,16 +33,20 @@ export function generateFrontendContract(schema) {
   for (const entity of schema.entities) {
     const visibleFields = entity.fields.filter(isVisible);
 
-    const fields = visibleFields.map(f => ({
-      name: f.name,
-      column: f.column,
-      type: f.type,
-      tsType: mapTsType(f.type),
-      visibility: f.visibility,
-      required: f.required,
-      grid: f.grid,
-      form: f.form,
-    }));
+    const fields = visibleFields.map(f => {
+      const mapped = {
+        name: f.name,
+        column: f.column,
+        type: f.type,
+        tsType: mapTsType(f.type),
+        visibility: f.visibility,
+        required: f.required,
+        grid: f.grid,
+        form: f.form,
+      };
+      if (f.reference) mapped.reference = f.reference;
+      return mapped;
+    });
 
     const searchableFields = visibleFields
       .filter(f => f.searchable)

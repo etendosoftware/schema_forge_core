@@ -50,6 +50,7 @@ function mapFieldType(field) {
  * Map a contract field to a form field type.
  */
 function mapFormFieldType(field) {
+  if (field.type === 'foreignKey') return 'search';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
   return 'text';
@@ -100,7 +101,8 @@ export function generateFormComponent(entityName, contract) {
   const fieldsArray = editableFields.map(f => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart} },`;
+    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${referencePart} },`;
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';
@@ -160,7 +162,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
     const lookupPart = i === 0 ? ', lookup: true' : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart} },`;
+    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart}${referencePart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {

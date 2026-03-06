@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-06T14:01:09.926Z",
-  "checksum": "eb3400b7c20a7f42",
+  "generatedAt": "2026-03-06T14:11:55.769Z",
+  "checksum": "42cc85fc8077158e",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -15,12 +15,13 @@
           {
             "name": "businessPartner",
             "column": "C_BPartner_ID",
-            "type": "string",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "BusinessPartner"
           },
           {
             "name": "partnerAddress",
@@ -30,7 +31,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "BusinessPartnerLocation"
           },
           {
             "name": "orderDate",
@@ -55,12 +57,13 @@
           {
             "name": "warehouse",
             "column": "M_Warehouse_ID",
-            "type": "string",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "Warehouse"
           },
           {
             "name": "priceList",
@@ -70,7 +73,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "PriceList"
           },
           {
             "name": "paymentTerms",
@@ -80,7 +84,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "PaymentTerm"
           },
           {
             "name": "paymentMethod",
@@ -90,7 +95,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "PaymentMethod"
           },
           {
             "name": "invoiceAddress",
@@ -100,7 +106,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "BusinessPartnerLocation"
           },
           {
             "name": "deliveryLocation",
@@ -130,7 +137,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "User"
           },
           {
             "name": "description",
@@ -216,12 +224,13 @@
           {
             "name": "product",
             "column": "M_Product_ID",
-            "type": "string",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "Product"
           },
           {
             "name": "quantity",
@@ -251,7 +260,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "Tax"
           },
           {
             "name": "discount",
@@ -311,7 +321,8 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "UOM"
           }
         ],
         "searchableFields": [
@@ -334,7 +345,7 @@
           {
             "name": "businessPartner",
             "column": "C_BPartner_ID",
-            "type": "string",
+            "type": "foreignKey",
             "visibility": "editable",
             "required": true
           },
@@ -362,7 +373,7 @@
           {
             "name": "warehouse",
             "column": "M_Warehouse_ID",
-            "type": "string",
+            "type": "foreignKey",
             "visibility": "editable",
             "required": true
           },
@@ -576,7 +587,7 @@
           {
             "name": "product",
             "column": "M_Product_ID",
-            "type": "string",
+            "type": "foreignKey",
             "visibility": "editable",
             "required": true
           },

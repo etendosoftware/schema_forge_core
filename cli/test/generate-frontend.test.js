@@ -16,7 +16,8 @@ const sampleContract = {
       order: {
         fields: [
           { name: 'documentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
-          { name: 'businessPartner', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'businessPartner', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner' },
+          { name: 'warehouse', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'Warehouse' },
           { name: 'grandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
           { name: 'docStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
         ],
@@ -25,7 +26,7 @@ const sampleContract = {
       },
       orderLine: {
         fields: [
-          { name: 'product', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'product', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product' },
           { name: 'quantity', type: 'number', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true },
           { name: 'lineNetAmount', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
         ],
@@ -125,6 +126,13 @@ describe('generateFormComponent', () => {
     assert.ok(!code.includes('space-y-1.5'), 'should NOT have spacing classes inline');
   });
 
+  it('generates search type for foreignKey fields with reference', () => {
+    const code = generateFormComponent('order', sampleContract);
+    assert.ok(code.includes("type: 'search'"), 'should use search type for foreignKey fields');
+    assert.ok(code.includes("reference: 'BusinessPartner'"), 'should include reference for businessPartner');
+    assert.ok(code.includes("reference: 'Warehouse'"), 'should include reference for warehouse');
+  });
+
   it('does not render save/delete buttons or process actions', () => {
     const code = generateFormComponent('order', sampleContract);
     assert.ok(!code.includes('Save'), 'should NOT have Save button');
@@ -168,6 +176,12 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes("name: 'voidOrder'"), 'should include voidOrder process');
     assert.ok(code.includes("label: 'Void Order'"), 'should label Void Order');
     assert.ok(code.includes("style: 'destructive'"), 'should mark void as destructive');
+  });
+
+  it('includes reference in addLineFields entry for FK fields', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes("reference: 'Product'"), 'should include reference for product in addLineFields');
+    assert.ok(code.includes("type: 'search'"), 'should use search type for FK entry fields');
   });
 
   it('declares addLineFields with entry and derived arrays', () => {

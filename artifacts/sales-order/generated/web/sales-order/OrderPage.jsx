@@ -19,14 +19,14 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'text', required: true, lookup: true },
+    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product' },
     { key: 'quantity', label: 'Quantity', type: 'number', required: true },
     { key: 'description', label: 'Description', type: 'text' },
     { key: 'lineNo', label: 'Line No', type: 'number', required: true },
   ],
   derived: [
     { key: 'unitPrice', label: 'Unit Price', type: 'number' },
-    { key: 'tax', label: 'Tax', type: 'text' },
+    { key: 'tax', label: 'Tax', type: 'search' },
     { key: 'discount', label: 'Discount', type: 'number' },
   ],
 };
