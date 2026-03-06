@@ -28,6 +28,36 @@ digraph generation {
 }
 ```
 
+## Step 0: Create Schema + Mock (New Entities Only)
+
+For NEW entities, create the schema and mock data before running the pipeline.
+
+### Schema
+Create `artifacts/{window}/schema-curated.json` following the entity pattern:
+- Single entity: one entity in `entities[]`
+- Master-detail: two entities, child has `derivation.type: "fromParent"`
+
+Required system fields (copy from any existing schema):
+- `adClientId` (fromConfig: context.client)
+- `adOrgId` (fromConfig: context.organization)
+- `created` (computed: now())
+- `updated` (computed: now())
+
+### Rules
+Create `artifacts/{window}/rules-curated.json`:
+```json
+{ "version": "0.1.0", "rules": [] }
+```
+
+### Mock Data
+After F8 generates `mockData.js`, replace the placeholder with realistic sample data (10-20 records).
+FK fields must use IDs that match the referenced catalog.
+
+### Registration
+Add the new window to:
+1. `tools/app-shell/src/windows/registry.js` -- windowLoaders + REFERENCE_WINDOWS
+2. `tools/app-shell/src/App.jsx` -- mockData import in `loadAllMockData()`
+
 ## Step 1: Worktree Isolation (MANDATORY)
 
 ```bash
@@ -165,7 +195,7 @@ After generator changes:
 
 ```bash
 for dir in sales-order business-partner warehouse price-list payment-term \
-           payment-method product tax uom user; do
+           payment-method product product-category tax uom user; do
   node cli/src/generate-contract.js "artifacts/$dir/schema-curated.json" \
     "artifacts/$dir/rules-curated.json"
   node cli/src/generate-frontend.js "artifacts/$dir/contract.json"
