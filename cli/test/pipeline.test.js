@@ -67,9 +67,26 @@ describe('buildPipelineSteps', () => {
     assert.equal(humanStep.interactive, true);
   });
 
-  it('returns exactly 8 steps', () => {
+  it('returns exactly 9 steps', () => {
     const steps = buildPipelineSteps();
-    assert.equal(steps.length, 8);
+    assert.equal(steps.length, 9);
+  });
+
+  it('includes generate-frontend step with phase F8', () => {
+    const steps = buildPipelineSteps();
+    const f8 = steps.find(s => s.name === 'generate-frontend');
+    assert.ok(f8, 'generate-frontend step must exist');
+    assert.equal(f8.phase, 'F8');
+    assert.ok(f8.description, 'generate-frontend must have a description');
+  });
+
+  it('F8 comes after F7 and before F9', () => {
+    const steps = buildPipelineSteps();
+    const f7Index = steps.findIndex(s => s.phase === 'F7');
+    const f8Index = steps.findIndex(s => s.phase === 'F8');
+    const f9Index = steps.findIndex(s => s.phase === 'F9');
+    assert.ok(f7Index < f8Index, 'F7 must come before F8');
+    assert.ok(f8Index < f9Index, 'F8 must come before F9');
   });
 
   it('all step names are unique', () => {
