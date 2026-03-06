@@ -32,6 +32,14 @@ const windowLoaders = {
   'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
   'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
   'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
+  'inventory-quality-inspection': () => import('@generated/inventory-quality-inspection/generated/web/inventory-quality-inspection/index.jsx'),
+  'bom-production': () => import('@generated/bom-production/generated/web/bom-production/index.jsx'),
+  'packing': () => import('@generated/packing/generated/web/packing/index.jsx'),
+  'warehouse-picking-list': () => import('@generated/warehouse-picking-list/generated/web/warehouse-picking-list/index.jsx'),
+  'stock-reservation': () => import('@generated/stock-reservation/generated/web/stock-reservation/index.jsx'),
+  'cost-adjustment': () => import('@generated/cost-adjustment/generated/web/cost-adjustment/index.jsx'),
+  'commission': () => import('@generated/commission/generated/web/commission/index.jsx'),
+  'commission-payment': () => import('@generated/commission-payment/generated/web/commission-payment/index.jsx'),
 };
 
 /**

@@ -1,4 +1,4 @@
-.PHONY: test test-frontend generate dev build install clean help
+.PHONY: test test-frontend generate dev build install deploy clean help
 
 # --- Testing ---
 
@@ -25,6 +25,16 @@ build: ## Build app-shell for production
 
 install: ## Install all workspace dependencies
 	npm install
+
+# --- Deploy ---
+
+MODULE_WEB := etendo_core/modules/com.etendoerp.go/web/com.etendoerp.go
+
+deploy: build ## Build app-shell and deploy to Etendo module web dir
+	@rm -rf $(MODULE_WEB)
+	@mkdir -p $(MODULE_WEB)
+	@cp -r tools/app-shell/dist/* $(MODULE_WEB)/
+	@echo "Deployed to $(MODULE_WEB)"
 
 # --- Cleanup ---
 

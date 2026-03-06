@@ -1,0 +1,797 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T18:34:29.534Z",
+  "checksum": "3bbeddb5bc640fcb",
+  "frontendContract": {
+    "window": {
+      "id": "191",
+      "name": "BOM Production",
+      "primaryEntity": "production",
+      "category": "warehouse"
+    },
+    "entities": {
+      "production": {
+        "fields": [
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "movementDate",
+            "column": "MovementDate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "productionQuantity",
+            "column": "ProductionQty",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "documentNo",
+          "name",
+          "movementDate",
+          "product",
+          "docStatus"
+        ],
+        "computedFields": []
+      },
+      "productionLine": {
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "locator",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Locator",
+            "inputMode": "selector"
+          },
+          {
+            "name": "movementQuantity",
+            "column": "MovementQty",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          },
+          {
+            "name": "isEndProduct",
+            "column": "IsEndProduct",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "product"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "191",
+      "name": "BOM Production",
+      "primaryEntity": "production",
+      "category": "warehouse"
+    },
+    "entities": {
+      "production": {
+        "fields": [
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "movementDate",
+            "column": "MovementDate",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "productionQuantity",
+            "column": "ProductionQty",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "productionLine": {
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "locator",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "movementQuantity",
+            "column": "MovementQty",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "isEndProduct",
+            "column": "IsEndProduct",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mProductionId",
+            "column": "M_Production_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/production",
+        "entity": "production",
+        "supportedFilters": [
+          "documentNo",
+          "name",
+          "movementDate",
+          "product",
+          "docStatus"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/production/:id",
+        "entity": "production",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/production",
+        "entity": "production",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/production/:id",
+        "entity": "production",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/production/:id",
+        "entity": "production",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/productionLine",
+        "entity": "productionLine",
+        "supportedFilters": [
+          "product"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/productionLine/:id",
+        "entity": "productionLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/productionLine",
+        "entity": "productionLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/productionLine/:id",
+        "entity": "productionLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/productionLine/:id",
+        "entity": "productionLine",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in production"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in production"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be present in production"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in production"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "productionQuantity",
+        "runner": "node",
+        "description": "Field 'productionQuantity' should be present in production"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in production"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "production",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be present in production"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "production",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in production"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "production",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in production"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "production",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should have type 'string' in production"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "production",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in production"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "production",
+        "field": "productionQuantity",
+        "runner": "node",
+        "description": "Field 'productionQuantity' should have type 'number' in production"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "production",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in production"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "production",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should have type 'string' in production"
+      },
+      {
+        "id": "t-15",
+        "category": "searchable-filters",
+        "entity": "production",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for production"
+      },
+      {
+        "id": "t-16",
+        "category": "searchable-filters",
+        "entity": "production",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for production"
+      },
+      {
+        "id": "t-17",
+        "category": "searchable-filters",
+        "entity": "production",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be a supported filter for production"
+      },
+      {
+        "id": "t-18",
+        "category": "searchable-filters",
+        "entity": "production",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for production"
+      },
+      {
+        "id": "t-19",
+        "category": "searchable-filters",
+        "entity": "production",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be a supported filter for production"
+      },
+      {
+        "id": "t-20",
+        "category": "visibility",
+        "entity": "production",
+        "runner": "node",
+        "description": "Entity 'production' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-21",
+        "category": "field-presence",
+        "entity": "productionLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in productionLine"
+      },
+      {
+        "id": "t-22",
+        "category": "field-presence",
+        "entity": "productionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in productionLine"
+      },
+      {
+        "id": "t-23",
+        "category": "field-presence",
+        "entity": "productionLine",
+        "field": "locator",
+        "runner": "node",
+        "description": "Field 'locator' should be present in productionLine"
+      },
+      {
+        "id": "t-24",
+        "category": "field-presence",
+        "entity": "productionLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should be present in productionLine"
+      },
+      {
+        "id": "t-25",
+        "category": "field-presence",
+        "entity": "productionLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should be present in productionLine"
+      },
+      {
+        "id": "t-26",
+        "category": "field-presence",
+        "entity": "productionLine",
+        "field": "isEndProduct",
+        "runner": "node",
+        "description": "Field 'isEndProduct' should be present in productionLine"
+      },
+      {
+        "id": "t-27",
+        "category": "field-type",
+        "entity": "productionLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in productionLine"
+      },
+      {
+        "id": "t-28",
+        "category": "field-type",
+        "entity": "productionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in productionLine"
+      },
+      {
+        "id": "t-29",
+        "category": "field-type",
+        "entity": "productionLine",
+        "field": "locator",
+        "runner": "node",
+        "description": "Field 'locator' should have type 'string' in productionLine"
+      },
+      {
+        "id": "t-30",
+        "category": "field-type",
+        "entity": "productionLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should have type 'number' in productionLine"
+      },
+      {
+        "id": "t-31",
+        "category": "field-type",
+        "entity": "productionLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should have type 'string' in productionLine"
+      },
+      {
+        "id": "t-32",
+        "category": "field-type",
+        "entity": "productionLine",
+        "field": "isEndProduct",
+        "runner": "node",
+        "description": "Field 'isEndProduct' should have type 'boolean' in productionLine"
+      },
+      {
+        "id": "t-33",
+        "category": "searchable-filters",
+        "entity": "productionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for productionLine"
+      },
+      {
+        "id": "t-34",
+        "category": "visibility",
+        "entity": "productionLine",
+        "runner": "node",
+        "description": "Entity 'productionLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-35",
+        "category": "system-field",
+        "entity": "production",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for production"
+      },
+      {
+        "id": "t-36",
+        "category": "system-field",
+        "entity": "production",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for production"
+      },
+      {
+        "id": "t-37",
+        "category": "system-field",
+        "entity": "production",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for production"
+      },
+      {
+        "id": "t-38",
+        "category": "system-field",
+        "entity": "production",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for production"
+      },
+      {
+        "id": "t-39",
+        "category": "system-field",
+        "entity": "production",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for production"
+      },
+      {
+        "id": "t-40",
+        "category": "system-field",
+        "entity": "productionLine",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for productionLine"
+      },
+      {
+        "id": "t-41",
+        "category": "system-field",
+        "entity": "productionLine",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for productionLine"
+      },
+      {
+        "id": "t-42",
+        "category": "system-field",
+        "entity": "productionLine",
+        "field": "mProductionId",
+        "runner": "node",
+        "description": "System field 'mProductionId' should exist in backend but not frontend for productionLine"
+      },
+      {
+        "id": "t-43",
+        "category": "rule-declared",
+        "rule": "End product line positive quantity",
+        "runner": "node",
+        "description": "Rule 'End product line positive quantity' (validation) should be declared"
+      },
+      {
+        "id": "t-44",
+        "category": "rule-declared",
+        "rule": "Component line negative quantity",
+        "runner": "node",
+        "description": "Rule 'Component line negative quantity' (validation) should be declared"
+      },
+      {
+        "id": "t-45",
+        "category": "rule-declared",
+        "rule": "Production must have exactly one end product line",
+        "runner": "node",
+        "description": "Rule 'Production must have exactly one end product line' (validation) should be declared"
+      },
+      {
+        "id": "t-46",
+        "category": "rule-declared",
+        "rule": "Production must have at least one component line",
+        "runner": "node",
+        "description": "Rule 'Production must have at least one component line' (validation) should be declared"
+      },
+      {
+        "id": "t-47",
+        "category": "rule-declared",
+        "rule": "End product quantity matches header",
+        "runner": "node",
+        "description": "Rule 'End product quantity matches header' (validation) should be declared"
+      }
+    ],
+    "summary": {
+      "total": 47,
+      "byCategory": {
+        "field-presence": 13,
+        "field-type": 13,
+        "searchable-filters": 6,
+        "visibility": 2,
+        "system-field": 8,
+        "rule-declared": 5
+      },
+      "byRunner": {
+        "node": 47,
+        "junit": 0
+      }
+    }
+  }
+}
