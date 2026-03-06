@@ -35,6 +35,11 @@ function toWindowPackage(windowName) {
   return windowName.replace(/[\s-_]+/g, '').toLowerCase();
 }
 
+/** "Sales Order" → "sales-order", "Line Tax" → "line-tax" (URL-safe slug) */
+function toSlug(name) {
+  return name.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[\s_]+/g, '-').toLowerCase();
+}
+
 /**
  * Parse an HQL where clause into simple property=value conditions
  * that can be auto-set on POST (entity creation).
@@ -49,17 +54,14 @@ function parseTabAutoSetters(hqlClause) {
   if (!hqlClause) return [];
   const setters = [];
 
-  // Split by AND and process each condition
   const conditions = hqlClause.split(/\s+AND\s+/i);
   for (const cond of conditions) {
-    // Match simple "e.property = value" (no LIKE, NOT, IN, etc.)
     const match = cond.trim().match(/^e\.([a-zA-Z]+)\s*=\s*(.+)$/);
     if (!match) continue;
 
     const property = match[1];
     const rawValue = match[2].trim();
 
-    // Determine Java value and type
     let javaValue;
     if (rawValue === 'true' || rawValue === 'false') {
       javaValue = rawValue;
@@ -68,7 +70,7 @@ function parseTabAutoSetters(hqlClause) {
     } else if (!isNaN(rawValue)) {
       javaValue = rawValue;
     } else {
-      continue; // Skip unparseable values
+      continue;
     }
 
     setters.push({ property, rawValue, javaValue });
@@ -208,7 +210,9 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
     };
   });
 
-  // Handlers: one per entity — these are called by the RestService router
+  // Handlers: one per tab — window-scoped paths to avoid collisions
+  // Path: /{windowSlug}/{tabSlug} (e.g., /sales-order/header, /sales-order/lines)
+  const windowSlug = toSlug(windowName);
   const handlers = schema.entities.map(entity => {
     const searchableFields = entity.fields
       .filter(f => f.visibility !== 'system' && f.visibility !== 'discarded')
@@ -219,22 +223,27 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
         javaType: toJavaType(f.type),
       }));
 
+    // Tab name from curation (description) or schema-raw (tabName)
+    const tabName = entity.description ?? entity.tabName ?? entity.name;
+    const tabSlug = toSlug(tabName);
+
     // Tab filter: HQL where clause that scopes this endpoint (e.g., "e.salesTransaction=true")
     const hqlWhereClause = entity.hqlWhereClause || null;
     const tabAutoSetters = parseTabAutoSetters(hqlWhereClause);
 
     return {
       entityName: entity.name,
-      className: `${toPascalCase(entity.name)}Handler`,
+      tabName,
+      className: `${toPascalCase(tabName)}Handler`,
       table: entity.table ?? entity.tableName,
       entityClassname: entity.entityClassname,
       entityFullClass: entity.entityFullClass,
       filters: searchableFields,
       dtoClass: `${toPascalCase(entity.name)}DTO`,
       packageName: `${windowBasePackage}.handler`,
-      // REST path segment: "cOrder" → "orders", "cOrderLine" → "order-lines" etc.
-      pathSegment: entity.name,
-      // Tab-level filter: scopes this endpoint to the correct subset (e.g., sales vs purchase)
+      // Window-scoped path: /sales-order/header, /sales-order/lines
+      pathSegment: `${windowSlug}/${tabSlug}`,
+      // Tab-level filter
       hqlWhereClause,
       tabAutoSetters,
     };
@@ -382,14 +391,11 @@ public interface RequestHandler {
 `,
   });
 
-  // HandlerRegistry
-  const handlerImports = [
-    ...data.handlers.map(h => `import ${h.packageName}.${h.className};`),
-    ...(data.selectorEndpoint ? [`import ${data.selectorEndpoint.packageName}.${data.selectorEndpoint.className};`] : []),
-  ].join('\n');
+  // HandlerRegistry — uses fully qualified class names to avoid import collisions
+  // when multiple windows share the same entity (e.g., Sales Order + Purchase Order → both have HeaderHandler)
   const handlerRegistrations = [
-    ...data.handlers.map(h => `    register(new ${h.className}());`),
-    ...(data.selectorEndpoint ? [`    register(new ${data.selectorEndpoint.className}());`] : []),
+    ...data.handlers.map(h => `    register(new ${h.packageName}.${h.className}());`),
+    ...(data.selectorEndpoint ? [`    register(new ${data.selectorEndpoint.packageName}.${data.selectorEndpoint.className}());`] : []),
   ].join('\n');
 
   files.push({
@@ -399,7 +405,6 @@ public interface RequestHandler {
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-${handlerImports}
 
 /**
  * Registry of all request handlers, keyed by base path.
