@@ -373,6 +373,7 @@ export function generateFileList(data, modulePath) {
     templateName: null,
     content: `package ${data.basePackage}.rest;
 
+import javax.annotation.Generated;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -381,6 +382,7 @@ import java.io.IOException;
  * Interface for all entity request handlers.
  * Implementations are registered in HandlerRegistry and dispatched by EtendoGoRestService.
  */
+@Generated(value = "schema-forge", date = "${data.now}")
 public interface RequestHandler {
   String getBasePath();
   void doGet(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException;
@@ -403,6 +405,7 @@ public interface RequestHandler {
     templateName: null,
     content: `package ${data.basePackage}.rest;
 
+import javax.annotation.Generated;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -410,6 +413,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Registry of all request handlers, keyed by base path.
  * Auto-generated — regenerate when adding new windows.
  */
+@Generated(value = "schema-forge", date = "${data.now}")
 public class HandlerRegistry {
 
   private static final HandlerRegistry INSTANCE = new HandlerRegistry();

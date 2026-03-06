@@ -2,6 +2,7 @@
 // Generated: {{generatedDate}}
 package {{package}};
 
+import javax.annotation.Generated;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ import {{entityFullClass}};
  * Preconditions: {{preconditions.length}}
  * Steps: {{steps.length}}
  */
+@Generated(value = "schema-forge", date = "{{generatedDate}}")
 public class {{className}} extends DalBaseProcess {
 
   private static final Logger log = LogManager.getLogger();

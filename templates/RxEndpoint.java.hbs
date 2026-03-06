@@ -2,6 +2,7 @@
 // Generated: {{generatedDate}}
 package {{package}};
 
+import javax.annotation.Generated;
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +35,7 @@ import com.etendoerp.go.rest.RequestHandler;
  * Tab filter: {{{hqlWhereClause}}}
 {{/if}}
  */
+@Generated(value = "schema-forge", date = "{{generatedDate}}")
 public class {{className}} implements RequestHandler {
 
   private static final Logger log = LogManager.getLogger();
