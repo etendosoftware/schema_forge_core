@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-06T14:32:53.397Z",
-  "checksum": "33eb6089279260bd",
+  "generatedAt": "2026-03-06T18:53:17.515Z",
+  "checksum": "bf12f8736c85e698",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -51,7 +51,7 @@
             "form": true
           },
           {
-            "name": "datePromised",
+            "name": "scheduledDeliveryDate",
             "column": "DatePromised",
             "type": "date",
             "tsType": "string",
@@ -127,15 +127,16 @@
           {
             "name": "deliveryLocation",
             "column": "DeliveryLocation",
-            "type": "string",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "reference": "Location"
           },
           {
-            "name": "poReference",
+            "name": "orderReference",
             "column": "POReference",
             "type": "string",
             "tsType": "string",
@@ -145,7 +146,7 @@
             "form": true
           },
           {
-            "name": "salesRep",
+            "name": "salesRepresentative",
             "column": "SalesRep_ID",
             "type": "foreignKey",
             "tsType": "string",
@@ -177,7 +178,7 @@
             "form": true
           },
           {
-            "name": "docStatus",
+            "name": "documentStatus",
             "column": "DocStatus",
             "type": "string",
             "tsType": "string",
@@ -187,7 +188,7 @@
             "form": true
           },
           {
-            "name": "grandTotal",
+            "name": "grandTotalAmount",
             "column": "GrandTotal",
             "type": "amount",
             "tsType": "number",
@@ -197,7 +198,7 @@
             "form": true
           },
           {
-            "name": "totalLines",
+            "name": "summedLineAmount",
             "column": "TotalLines",
             "type": "amount",
             "tsType": "number",
@@ -209,15 +210,16 @@
           {
             "name": "currency",
             "column": "C_Currency_ID",
-            "type": "string",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "Currency"
           },
           {
-            "name": "isDelivered",
+            "name": "delivered",
             "column": "IsDelivered",
             "type": "boolean",
             "tsType": "boolean",
@@ -231,7 +233,7 @@
           "businessPartner",
           "orderDate",
           "documentNo",
-          "docStatus"
+          "documentStatus"
         ],
         "computedFields": []
       },
@@ -250,7 +252,7 @@
             "inputMode": "search"
           },
           {
-            "name": "quantity",
+            "name": "orderedQuantity",
             "column": "QtyOrdered",
             "type": "number",
             "tsType": "number",
@@ -322,7 +324,7 @@
             "form": true
           },
           {
-            "name": "deliveredQty",
+            "name": "deliveredQuantity",
             "column": "QtyDelivered",
             "type": "number",
             "tsType": "number",
@@ -332,7 +334,7 @@
             "form": true
           },
           {
-            "name": "uom",
+            "name": "uOM",
             "column": "C_UOM_ID",
             "type": "foreignKey",
             "tsType": "string",
@@ -383,7 +385,7 @@
             "required": true
           },
           {
-            "name": "datePromised",
+            "name": "scheduledDeliveryDate",
             "column": "DatePromised",
             "type": "date",
             "visibility": "editable",
@@ -427,19 +429,19 @@
           {
             "name": "deliveryLocation",
             "column": "DeliveryLocation",
-            "type": "string",
+            "type": "foreignKey",
             "visibility": "editable",
             "required": false
           },
           {
-            "name": "poReference",
+            "name": "orderReference",
             "column": "POReference",
             "type": "string",
             "visibility": "editable",
             "required": false
           },
           {
-            "name": "salesRep",
+            "name": "salesRepresentative",
             "column": "SalesRep_ID",
             "type": "foreignKey",
             "visibility": "editable",
@@ -460,21 +462,21 @@
             "required": true
           },
           {
-            "name": "docStatus",
+            "name": "documentStatus",
             "column": "DocStatus",
             "type": "string",
             "visibility": "readOnly",
             "required": true
           },
           {
-            "name": "grandTotal",
+            "name": "grandTotalAmount",
             "column": "GrandTotal",
             "type": "amount",
             "visibility": "readOnly",
             "required": false
           },
           {
-            "name": "totalLines",
+            "name": "summedLineAmount",
             "column": "TotalLines",
             "type": "amount",
             "visibility": "readOnly",
@@ -483,12 +485,12 @@
           {
             "name": "currency",
             "column": "C_Currency_ID",
-            "type": "string",
+            "type": "foreignKey",
             "visibility": "readOnly",
             "required": true
           },
           {
-            "name": "isDelivered",
+            "name": "delivered",
             "column": "IsDelivered",
             "type": "boolean",
             "visibility": "readOnly",
@@ -509,21 +511,21 @@
             "required": true
           },
           {
-            "name": "cDocTypeTargetId",
+            "name": "transactionDocument",
             "column": "C_DocTypeTarget_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "cDocTypeId",
+            "name": "documentType",
             "column": "C_DocType_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "isSotrx",
+            "name": "salesTransaction",
             "column": "IsSOTrx",
             "type": "boolean",
             "visibility": "system",
@@ -537,28 +539,28 @@
             "required": true
           },
           {
-            "name": "dateAcct",
+            "name": "accountingDate",
             "column": "DateAcct",
             "type": "date",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "invoiceRule",
+            "name": "invoiceTerms",
             "column": "InvoiceRule",
             "type": "string",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "deliveryRule",
+            "name": "deliveryTerms",
             "column": "DeliveryRule",
             "type": "string",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "deliveryViaRule",
+            "name": "deliveryMethod",
             "column": "DeliveryViaRule",
             "type": "string",
             "visibility": "system",
@@ -572,21 +574,21 @@
             "required": true
           },
           {
-            "name": "priorityRule",
+            "name": "priority",
             "column": "PriorityRule",
             "type": "string",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "paymentRule",
+            "name": "formOfPayment",
             "column": "PaymentRule",
             "type": "string",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "created",
+            "name": "creationDate",
             "column": "Created",
             "type": "datetime",
             "visibility": "system",
@@ -611,7 +613,7 @@
             "required": true
           },
           {
-            "name": "quantity",
+            "name": "orderedQuantity",
             "column": "QtyOrdered",
             "type": "number",
             "visibility": "editable",
@@ -660,14 +662,14 @@
             "required": false
           },
           {
-            "name": "deliveredQty",
+            "name": "deliveredQuantity",
             "column": "QtyDelivered",
             "type": "number",
             "visibility": "readOnly",
             "required": false
           },
           {
-            "name": "uom",
+            "name": "uOM",
             "column": "C_UOM_ID",
             "type": "foreignKey",
             "visibility": "readOnly",
@@ -688,21 +690,21 @@
             "required": true
           },
           {
-            "name": "cOrderId",
+            "name": "salesOrder",
             "column": "C_Order_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "dateOrdered",
+            "name": "orderDate",
             "column": "DateOrdered",
             "type": "date",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "datePromised",
+            "name": "scheduledDeliveryDate",
             "column": "DatePromised",
             "type": "date",
             "visibility": "system",
@@ -716,14 +718,14 @@
             "required": true
           },
           {
-            "name": "cCurrencyId",
+            "name": "currency",
             "column": "C_Currency_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "cBpartnerId",
+            "name": "businessPartner",
             "column": "C_BPartner_ID",
             "type": "foreignKey",
             "visibility": "system",
@@ -741,7 +743,7 @@
           "businessPartner",
           "orderDate",
           "documentNo",
-          "docStatus"
+          "documentStatus"
         ]
       },
       {
@@ -801,31 +803,7 @@
         "supportedFilters": []
       }
     ],
-    "processEndpoints": [
-      {
-        "name": "completeOrder",
-        "method": "POST",
-        "path": "/process/completeOrder",
-        "entity": "Order",
-        "preconditions": [
-          "Order must have at least one line",
-          "Order status must be DR (Draft) or IP (In Progress)",
-          "All order lines must have a product assigned",
-          "All order lines must have a positive quantity"
-        ],
-        "steps": 6
-      },
-      {
-        "name": "voidOrder",
-        "method": "POST",
-        "path": "/process/voidOrder",
-        "entity": "Order",
-        "preconditions": [
-          "Order status must be CO (Completed)"
-        ],
-        "steps": 4
-      }
-    ]
+    "processEndpoints": []
   },
   "testManifest": {
     "tests": [
@@ -857,9 +835,9 @@
         "id": "t-4",
         "category": "field-presence",
         "entity": "order",
-        "field": "datePromised",
+        "field": "scheduledDeliveryDate",
         "runner": "node",
-        "description": "Field 'datePromised' should be present in order"
+        "description": "Field 'scheduledDeliveryDate' should be present in order"
       },
       {
         "id": "t-5",
@@ -913,17 +891,17 @@
         "id": "t-11",
         "category": "field-presence",
         "entity": "order",
-        "field": "poReference",
+        "field": "orderReference",
         "runner": "node",
-        "description": "Field 'poReference' should be present in order"
+        "description": "Field 'orderReference' should be present in order"
       },
       {
         "id": "t-12",
         "category": "field-presence",
         "entity": "order",
-        "field": "salesRep",
+        "field": "salesRepresentative",
         "runner": "node",
-        "description": "Field 'salesRep' should be present in order"
+        "description": "Field 'salesRepresentative' should be present in order"
       },
       {
         "id": "t-13",
@@ -945,25 +923,25 @@
         "id": "t-15",
         "category": "field-presence",
         "entity": "order",
-        "field": "docStatus",
+        "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'docStatus' should be present in order"
+        "description": "Field 'documentStatus' should be present in order"
       },
       {
         "id": "t-16",
         "category": "field-presence",
         "entity": "order",
-        "field": "grandTotal",
+        "field": "grandTotalAmount",
         "runner": "node",
-        "description": "Field 'grandTotal' should be present in order"
+        "description": "Field 'grandTotalAmount' should be present in order"
       },
       {
         "id": "t-17",
         "category": "field-presence",
         "entity": "order",
-        "field": "totalLines",
+        "field": "summedLineAmount",
         "runner": "node",
-        "description": "Field 'totalLines' should be present in order"
+        "description": "Field 'summedLineAmount' should be present in order"
       },
       {
         "id": "t-18",
@@ -977,9 +955,9 @@
         "id": "t-19",
         "category": "field-presence",
         "entity": "order",
-        "field": "isDelivered",
+        "field": "delivered",
         "runner": "node",
-        "description": "Field 'isDelivered' should be present in order"
+        "description": "Field 'delivered' should be present in order"
       },
       {
         "id": "t-20",
@@ -1009,9 +987,9 @@
         "id": "t-23",
         "category": "field-type",
         "entity": "order",
-        "field": "datePromised",
+        "field": "scheduledDeliveryDate",
         "runner": "node",
-        "description": "Field 'datePromised' should have type 'string' in order"
+        "description": "Field 'scheduledDeliveryDate' should have type 'string' in order"
       },
       {
         "id": "t-24",
@@ -1065,17 +1043,17 @@
         "id": "t-30",
         "category": "field-type",
         "entity": "order",
-        "field": "poReference",
+        "field": "orderReference",
         "runner": "node",
-        "description": "Field 'poReference' should have type 'string' in order"
+        "description": "Field 'orderReference' should have type 'string' in order"
       },
       {
         "id": "t-31",
         "category": "field-type",
         "entity": "order",
-        "field": "salesRep",
+        "field": "salesRepresentative",
         "runner": "node",
-        "description": "Field 'salesRep' should have type 'string' in order"
+        "description": "Field 'salesRepresentative' should have type 'string' in order"
       },
       {
         "id": "t-32",
@@ -1097,25 +1075,25 @@
         "id": "t-34",
         "category": "field-type",
         "entity": "order",
-        "field": "docStatus",
+        "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'docStatus' should have type 'string' in order"
+        "description": "Field 'documentStatus' should have type 'string' in order"
       },
       {
         "id": "t-35",
         "category": "field-type",
         "entity": "order",
-        "field": "grandTotal",
+        "field": "grandTotalAmount",
         "runner": "node",
-        "description": "Field 'grandTotal' should have type 'number' in order"
+        "description": "Field 'grandTotalAmount' should have type 'number' in order"
       },
       {
         "id": "t-36",
         "category": "field-type",
         "entity": "order",
-        "field": "totalLines",
+        "field": "summedLineAmount",
         "runner": "node",
-        "description": "Field 'totalLines' should have type 'number' in order"
+        "description": "Field 'summedLineAmount' should have type 'number' in order"
       },
       {
         "id": "t-37",
@@ -1129,9 +1107,9 @@
         "id": "t-38",
         "category": "field-type",
         "entity": "order",
-        "field": "isDelivered",
+        "field": "delivered",
         "runner": "node",
-        "description": "Field 'isDelivered' should have type 'boolean' in order"
+        "description": "Field 'delivered' should have type 'boolean' in order"
       },
       {
         "id": "t-39",
@@ -1161,9 +1139,9 @@
         "id": "t-42",
         "category": "searchable-filters",
         "entity": "order",
-        "field": "docStatus",
+        "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'docStatus' should be a supported filter for order"
+        "description": "Field 'documentStatus' should be a supported filter for order"
       },
       {
         "id": "t-43",
@@ -1184,9 +1162,9 @@
         "id": "t-45",
         "category": "field-presence",
         "entity": "orderLine",
-        "field": "quantity",
+        "field": "orderedQuantity",
         "runner": "node",
-        "description": "Field 'quantity' should be present in orderLine"
+        "description": "Field 'orderedQuantity' should be present in orderLine"
       },
       {
         "id": "t-46",
@@ -1240,17 +1218,17 @@
         "id": "t-52",
         "category": "field-presence",
         "entity": "orderLine",
-        "field": "deliveredQty",
+        "field": "deliveredQuantity",
         "runner": "node",
-        "description": "Field 'deliveredQty' should be present in orderLine"
+        "description": "Field 'deliveredQuantity' should be present in orderLine"
       },
       {
         "id": "t-53",
         "category": "field-presence",
         "entity": "orderLine",
-        "field": "uom",
+        "field": "uOM",
         "runner": "node",
-        "description": "Field 'uom' should be present in orderLine"
+        "description": "Field 'uOM' should be present in orderLine"
       },
       {
         "id": "t-54",
@@ -1264,9 +1242,9 @@
         "id": "t-55",
         "category": "field-type",
         "entity": "orderLine",
-        "field": "quantity",
+        "field": "orderedQuantity",
         "runner": "node",
-        "description": "Field 'quantity' should have type 'number' in orderLine"
+        "description": "Field 'orderedQuantity' should have type 'number' in orderLine"
       },
       {
         "id": "t-56",
@@ -1320,17 +1298,17 @@
         "id": "t-62",
         "category": "field-type",
         "entity": "orderLine",
-        "field": "deliveredQty",
+        "field": "deliveredQuantity",
         "runner": "node",
-        "description": "Field 'deliveredQty' should have type 'number' in orderLine"
+        "description": "Field 'deliveredQuantity' should have type 'number' in orderLine"
       },
       {
         "id": "t-63",
         "category": "field-type",
         "entity": "orderLine",
-        "field": "uom",
+        "field": "uOM",
         "runner": "node",
-        "description": "Field 'uom' should have type 'string' in orderLine"
+        "description": "Field 'uOM' should have type 'string' in orderLine"
       },
       {
         "id": "t-64",
@@ -1367,25 +1345,25 @@
         "id": "t-68",
         "category": "system-field",
         "entity": "order",
-        "field": "cDocTypeTargetId",
+        "field": "transactionDocument",
         "runner": "node",
-        "description": "System field 'cDocTypeTargetId' should exist in backend but not frontend for order"
+        "description": "System field 'transactionDocument' should exist in backend but not frontend for order"
       },
       {
         "id": "t-69",
         "category": "system-field",
         "entity": "order",
-        "field": "cDocTypeId",
+        "field": "documentType",
         "runner": "node",
-        "description": "System field 'cDocTypeId' should exist in backend but not frontend for order"
+        "description": "System field 'documentType' should exist in backend but not frontend for order"
       },
       {
         "id": "t-70",
         "category": "system-field",
         "entity": "order",
-        "field": "isSotrx",
+        "field": "salesTransaction",
         "runner": "node",
-        "description": "System field 'isSotrx' should exist in backend but not frontend for order"
+        "description": "System field 'salesTransaction' should exist in backend but not frontend for order"
       },
       {
         "id": "t-71",
@@ -1399,33 +1377,33 @@
         "id": "t-72",
         "category": "system-field",
         "entity": "order",
-        "field": "dateAcct",
+        "field": "accountingDate",
         "runner": "node",
-        "description": "System field 'dateAcct' should exist in backend but not frontend for order"
+        "description": "System field 'accountingDate' should exist in backend but not frontend for order"
       },
       {
         "id": "t-73",
         "category": "system-field",
         "entity": "order",
-        "field": "invoiceRule",
+        "field": "invoiceTerms",
         "runner": "node",
-        "description": "System field 'invoiceRule' should exist in backend but not frontend for order"
+        "description": "System field 'invoiceTerms' should exist in backend but not frontend for order"
       },
       {
         "id": "t-74",
         "category": "system-field",
         "entity": "order",
-        "field": "deliveryRule",
+        "field": "deliveryTerms",
         "runner": "node",
-        "description": "System field 'deliveryRule' should exist in backend but not frontend for order"
+        "description": "System field 'deliveryTerms' should exist in backend but not frontend for order"
       },
       {
         "id": "t-75",
         "category": "system-field",
         "entity": "order",
-        "field": "deliveryViaRule",
+        "field": "deliveryMethod",
         "runner": "node",
-        "description": "System field 'deliveryViaRule' should exist in backend but not frontend for order"
+        "description": "System field 'deliveryMethod' should exist in backend but not frontend for order"
       },
       {
         "id": "t-76",
@@ -1439,25 +1417,25 @@
         "id": "t-77",
         "category": "system-field",
         "entity": "order",
-        "field": "priorityRule",
+        "field": "priority",
         "runner": "node",
-        "description": "System field 'priorityRule' should exist in backend but not frontend for order"
+        "description": "System field 'priority' should exist in backend but not frontend for order"
       },
       {
         "id": "t-78",
         "category": "system-field",
         "entity": "order",
-        "field": "paymentRule",
+        "field": "formOfPayment",
         "runner": "node",
-        "description": "System field 'paymentRule' should exist in backend but not frontend for order"
+        "description": "System field 'formOfPayment' should exist in backend but not frontend for order"
       },
       {
         "id": "t-79",
         "category": "system-field",
         "entity": "order",
-        "field": "created",
+        "field": "creationDate",
         "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for order"
+        "description": "System field 'creationDate' should exist in backend but not frontend for order"
       },
       {
         "id": "t-80",
@@ -1487,25 +1465,25 @@
         "id": "t-83",
         "category": "system-field",
         "entity": "orderLine",
-        "field": "cOrderId",
+        "field": "salesOrder",
         "runner": "node",
-        "description": "System field 'cOrderId' should exist in backend but not frontend for orderLine"
+        "description": "System field 'salesOrder' should exist in backend but not frontend for orderLine"
       },
       {
         "id": "t-84",
         "category": "system-field",
         "entity": "orderLine",
-        "field": "dateOrdered",
+        "field": "orderDate",
         "runner": "node",
-        "description": "System field 'dateOrdered' should exist in backend but not frontend for orderLine"
+        "description": "System field 'orderDate' should exist in backend but not frontend for orderLine"
       },
       {
         "id": "t-85",
         "category": "system-field",
         "entity": "orderLine",
-        "field": "datePromised",
+        "field": "scheduledDeliveryDate",
         "runner": "node",
-        "description": "System field 'datePromised' should exist in backend but not frontend for orderLine"
+        "description": "System field 'scheduledDeliveryDate' should exist in backend but not frontend for orderLine"
       },
       {
         "id": "t-86",
@@ -1519,175 +1497,31 @@
         "id": "t-87",
         "category": "system-field",
         "entity": "orderLine",
-        "field": "cCurrencyId",
+        "field": "currency",
         "runner": "node",
-        "description": "System field 'cCurrencyId' should exist in backend but not frontend for orderLine"
+        "description": "System field 'currency' should exist in backend but not frontend for orderLine"
       },
       {
         "id": "t-88",
         "category": "system-field",
         "entity": "orderLine",
-        "field": "cBpartnerId",
+        "field": "businessPartner",
         "runner": "node",
-        "description": "System field 'cBpartnerId' should exist in backend but not frontend for orderLine"
-      },
-      {
-        "id": "t-89",
-        "category": "rule-declared",
-        "rule": "BP_AutoFill_Address",
-        "runner": "node",
-        "description": "Rule 'BP_AutoFill_Address' (callout) should be declared"
-      },
-      {
-        "id": "t-90",
-        "category": "rule-declared",
-        "rule": "Line_Recalc_Totals",
-        "runner": "node",
-        "description": "Rule 'Line_Recalc_Totals' (eventHandler) should be declared"
-      },
-      {
-        "id": "t-91",
-        "category": "rule-declared",
-        "rule": "Product_AutoFill_Price",
-        "runner": "node",
-        "description": "Rule 'Product_AutoFill_Price' (callout) should be declared"
-      },
-      {
-        "id": "t-92",
-        "category": "rule-declared",
-        "rule": "Line_Calc_NetAmount",
-        "runner": "node",
-        "description": "Rule 'Line_Calc_NetAmount' (callout) should be declared"
-      },
-      {
-        "id": "t-93",
-        "category": "rule-declared",
-        "rule": "ReadOnly_When_Processed",
-        "runner": "node",
-        "description": "Rule 'ReadOnly_When_Processed' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-94",
-        "category": "process-happy",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' should complete successfully with valid preconditions"
-      },
-      {
-        "id": "t-95",
-        "category": "process-failure",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' should fail when preconditions are not met"
-      },
-      {
-        "id": "t-96",
-        "category": "process-edge",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-97",
-        "category": "process-edge",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-98",
-        "category": "process-edge",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-99",
-        "category": "process-edge",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-100",
-        "category": "process-rollback",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' should rollback on failure"
-      },
-      {
-        "id": "t-101",
-        "category": "process-happy",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' should complete successfully with valid preconditions"
-      },
-      {
-        "id": "t-102",
-        "category": "process-failure",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' should fail when preconditions are not met"
-      },
-      {
-        "id": "t-103",
-        "category": "process-edge",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-104",
-        "category": "process-edge",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-105",
-        "category": "process-edge",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' edge case 'undefined': undefined -> undefined"
-      },
-      {
-        "id": "t-106",
-        "category": "process-rollback",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' should rollback on failure"
+        "description": "System field 'businessPartner' should exist in backend but not frontend for orderLine"
       }
     ],
     "summary": {
-      "total": 106,
+      "total": 88,
       "byCategory": {
         "field-presence": 29,
         "field-type": 29,
         "searchable-filters": 5,
         "visibility": 2,
-        "system-field": 23,
-        "rule-declared": 5,
-        "process-happy": 2,
-        "process-failure": 2,
-        "process-edge": 7,
-        "process-rollback": 2
+        "system-field": 23
       },
       "byRunner": {
-        "node": 93,
-        "junit": 13
+        "node": 88,
+        "junit": 0
       }
     }
   }
