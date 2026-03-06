@@ -28,9 +28,36 @@ export function getProcessesForEntity(contract, entityName) {
 }
 
 /**
+ * Get the read-only fields for an entity (used by page component for summary strip).
+ */
+export function getReadOnlyFields(contract, entityName) {
+  const entity = contract.frontendContract.entities[entityName];
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
+}
+
+/**
+ * Map a contract field type to a column/field type for the declarative config.
+ */
+function mapFieldType(field) {
+  if (field.name.toLowerCase().includes('status')) return 'status';
+  if (field.type === 'amount') return 'amount';
+  if (field.type === 'number' || field.type === 'integer') return 'number';
+  if (field.type === 'date') return 'date';
+  return 'string';
+}
+
+/**
+ * Map a contract field to a form field type.
+ */
+function mapFormFieldType(field) {
+  if (field.tsType === 'number') return 'number';
+  if (field.type === 'date') return 'date';
+  return 'text';
+}
+
+/**
  * Generate a data table component for an entity.
- * Renders grid:true fields as columns, searchableFields as filter inputs.
- * Uses StatusBadge for status fields and clean Holded-style styling.
+ * Produces a thin declarative component that imports DataTable from contract-ui.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
@@ -38,203 +65,149 @@ export function generateTableComponent(entityName, contract) {
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
-  const hasStatusField = gridFields.some(f => f.name.toLowerCase().includes('status'));
+  const columnsArray = gridFields.map(f => {
+    const type = mapFieldType(f);
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+  }).join('\n');
 
-  const imports = [
-    `import React, { useState } from 'react';`,
-    `import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';`,
-    `import { Input } from '@/components/ui/input';`,
-  ];
-  if (hasStatusField) {
-    imports.push(`import { StatusBadge } from '@/components/ui/status-badge';`);
-  }
+  const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
-  const filterState = searchableFields
-    .map(f => `  const [filter${capitalize(f)}, setFilter${capitalize(f)}] = useState('');`)
-    .join('\n');
+  return `import { DataTable } from '@/components/contract-ui';
 
-  const filterInputs = searchableFields
-    .map(f => `        <Input
-          placeholder="Filter ${toLabel(f)}..."
-          value={filter${capitalize(f)}}
-          onChange={(e) => setFilter${capitalize(f)}(e.target.value)}
-          className="max-w-xs"
-        />`)
-    .join('\n');
+const columns = [
+${columnsArray}
+];
 
-  const headerCells = gridFields
-    .map(f => `            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">${toLabel(f.name)}</TableHead>`)
-    .join('\n');
+const filters = [${filtersArray}];
 
-  const bodyCells = gridFields
-    .map(f => {
-      if (f.name.toLowerCase().includes('status')) {
-        return `            <TableCell><StatusBadge status={row.${f.name}} /></TableCell>`;
-      }
-      if (f.type === 'amount') {
-        return `            <TableCell className="tabular-nums">{row.${f.name}?.toLocaleString()}</TableCell>`;
-      }
-      return `            <TableCell>{row.${f.name}}</TableCell>`;
-    })
-    .join('\n');
-
-  return `${imports.join('\n')}
-
-export default function ${compName}({ data = [], onRowSelect }) {
-${filterState}
-
-  const filteredData = data.filter(row => {
-${searchableFields.map(f => `    if (filter${capitalize(f)} && !String(row.${f} ?? '').toLowerCase().includes(filter${capitalize(f)}.toLowerCase())) return false;`).join('\n')}
-    return true;
-  });
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-${filterInputs}
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b border-gray-100">
-${headerCells}
-          </TableRow>
-        </TableHeader>
-        <TableBody className="divide-y divide-gray-50">
-          {filteredData.map((row, idx) => (
-            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-${bodyCells}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+export default function ${compName}(props) {
+  return <DataTable columns={columns} filters={filters} {...props} />;
 }
 `;
 }
 
 /**
  * Generate a detail/edit form component for an entity.
- * Renders form:true fields in single-column layout for panel width.
- * Includes Save/Delete buttons and process action buttons.
+ * Produces a thin declarative component that imports EntityForm from contract-ui.
+ * Only renders editable fields (visibility !== 'readOnly').
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formFields = entity.fields.filter(f => f.form);
-  const processes = getProcessesForEntity(contract, entityName);
+  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
   const compName = `${capitalize(entityName)}Form`;
 
-  const imports = [
-    `import React from 'react';`,
-    `import { Input } from '@/components/ui/input';`,
-    `import { Label } from '@/components/ui/label';`,
-    `import { Button } from '@/components/ui/button';`,
-    `import { Separator } from '@/components/ui/separator';`,
-  ];
-
-  const fieldElements = formFields.map(f => {
-    const label = toLabel(f.name);
-    const isReadOnly = f.visibility === 'readOnly';
-    const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const disabledAttr = isReadOnly ? ' disabled readOnly className="bg-gray-50 text-gray-500"' : '';
-    const requiredAttr = f.required ? ' required' : '';
-
-    return `        <div className="space-y-1.5">
-          <Label htmlFor="${f.name}" className="text-sm text-gray-600">${label}${f.required ? ' *' : ''}</Label>
-          <Input
-            id="${f.name}"
-            name="${f.name}"
-            type="${inputType}"
-            value={data?.${f.name} ?? ''}
-            onChange={(e) => onChange?.('${f.name}', e.target.value)}${disabledAttr}${requiredAttr}
-          />
-        </div>`;
+  const fieldsArray = editableFields.map(f => {
+    const type = mapFormFieldType(f);
+    const requiredPart = f.required ? ', required: true' : '';
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart} },`;
   }).join('\n');
 
-  const processButtons = processes.map(p => {
-    const label = toLabel(p.name);
-    return `          <Button variant="outline" size="sm" onClick={() => onProcess?.('${p.name}')}>
-            ${label}
-          </Button>`;
-  }).join('\n');
+  return `import { EntityForm } from '@/components/contract-ui';
 
-  const processSection = processes.length > 0
-    ? `\n      <Separator className="my-4" />\n      <div className="flex gap-2">\n${processButtons}\n      </div>`
-    : '';
+const fields = [
+${fieldsArray}
+];
 
-  return `${imports.join('\n')}
-
-export default function ${compName}({ data, onChange, onSave, onDelete, onProcess }) {
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-3">
-      <div className="space-y-3">
-${fieldElements}
-      </div>
-      <Separator className="my-4" />
-      <div className="flex gap-2">
-        <Button type="submit" size="sm">Save</Button>
-        {onDelete && <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
-      </div>${processSection}
-    </form>
-  );
+export default function ${compName}(props) {
+  return <EntityForm fields={fields} {...props} />;
 }
 `;
 }
 
 /**
- * Generate a header-detail page component with SlidePanel.
- * Shows header table with New button. Form and detail table open in a slide panel.
- * Uses useEntity hook for state management and API calls.
+ * Generate a header-detail page component with Split View layout.
+ * Produces a thin declarative component that imports MasterDetailPage from contract-ui.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
+  const processes = getProcessesForEntity(contract, headerEntity);
+  const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
-  return `import React from 'react';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { SlidePanel } from '@/components/ui/slide-panel';
-import { useEntity } from '@/hooks/useEntity';
+  // Detail entity editable fields for the add-line mini form
+  const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
+  const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
+
+  // Status field gets a badge in the header; others go in the summary strip
+  const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
+  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+
+  // Summary config
+  const summaryArray = summaryFields.map(f => {
+    const type = mapFieldType(f);
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+  }).join('\n');
+
+  // Status field config
+  const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
+
+  // Process config
+  const processesArray = processes.map(p => {
+    const isDestructive = /void|cancel|reject/i.test(p.name);
+    const style = isDestructive ? 'destructive' : 'positive';
+    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}' },`;
+  }).join('\n');
+
+  // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
+  const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
+  const entryFields = detailEditableFields.filter(f => !autoPatterns.test(f.name));
+  const derivedFields = detailEditableFields.filter(f => autoPatterns.test(f.name));
+
+  // The first entry field (usually product) triggers a lookup
+  const entryArray = entryFields.map((f, i) => {
+    const type = mapFormFieldType(f);
+    const requiredPart = f.required ? ', required: true' : '';
+    const lookupPart = i === 0 ? ', lookup: true' : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart} },`;
+  }).join('\n');
+
+  const derivedArray = derivedFields.map(f => {
+    const type = mapFormFieldType(f);
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+  }).join('\n');
+
+  return `import { MasterDetailPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 
-export default function ${compName}({ token, apiBaseUrl }) {
-  const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
+const summary = [
+${summaryArray}
+];
 
-  const panelTitle = ${headerEntity}.editing?.id
-    ? \`${toLabel(headerEntity)} \${${headerEntity}.editing.documentNo || ${headerEntity}.editing.id}\`
-    : 'New ${toLabel(headerEntity)}';
+const statusField = ${statusFieldLine};
 
-  const handleClose = () => {
-    ${headerEntity}.handleSelect(null);
-  };
+const processes = [
+${processesArray}
+];
 
+const addLineFields = {
+  entry: [
+${entryArray}
+  ],
+  derived: [
+${derivedArray}
+  ],
+};
+
+export default function ${compName}(props) {
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">${toLabel(headerEntity)}s</h2>
-        <Button onClick={${headerEntity}.handleNew}>New</Button>
-      </div>
-      <${headerName}Table data={${headerEntity}.items} onRowSelect={${headerEntity}.handleSelect} />
-      <SlidePanel
-        open={!!${headerEntity}.editing}
-        onClose={handleClose}
-        title={panelTitle}
-      >
-        <${headerName}Form
-          data={${headerEntity}.editing}
-          onChange={${headerEntity}.handleChange}
-          onSave={${headerEntity}.handleSave}
-          onDelete={${headerEntity}.selected ? ${headerEntity}.handleDelete : undefined}
-          onProcess={${headerEntity}.handleProcess}
-        />
-        <Separator className="my-6" />
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
-        <${detailName}Table data={${headerEntity}.children} />
-      </SlidePanel>
-    </div>
+    <MasterDetailPage
+      entity="${headerEntity}"
+      detailEntity="${detailEntity}"
+      Table={${headerName}Table}
+      Form={${headerName}Form}
+      DetailTable={${detailName}Table}
+      summary={summary}
+      statusField={statusField}
+      processes={processes}
+      addLineFields={addLineFields}
+      entityLabel="${toLabel(headerEntity)}"
+      detailLabel="${toLabel(detailEntity)}"
+      {...props}
+    />
   );
 }
 `;
@@ -248,8 +221,7 @@ export function generateIndexComponent(headerEntity, detailEntity) {
   const headerName = capitalize(headerEntity);
 
   if (detailEntity) {
-    return `import React from 'react';
-import ${headerName}Page from './${headerName}Page';
+    return `import ${headerName}Page from './${headerName}Page';
 
 export default function App({ token, apiBaseUrl, window }) {
   return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window} />;
@@ -257,17 +229,13 @@ export default function App({ token, apiBaseUrl, window }) {
 `;
   }
 
-  return `import React from 'react';
-import ${headerName}Table from './${headerName}Table';
+  return `import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 
 export default function App({ token, apiBaseUrl, window }) {
-  const [selected, setSelected] = React.useState(null);
-
   return (
-    <div className="space-y-6 p-4">
-      <${headerName}Table data={[]} onRowSelect={setSelected} />
-      {selected && <${headerName}Form data={selected} />}
+    <div>
+      <${headerName}Table data={[]} />
     </div>
   );
 }
