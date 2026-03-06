@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-06T14:11:55.769Z",
-  "checksum": "42cc85fc8077158e",
+  "generatedAt": "2026-03-06T14:32:53.397Z",
+  "checksum": "33eb6089279260bd",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -21,7 +21,8 @@
             "required": true,
             "grid": true,
             "form": true,
-            "reference": "BusinessPartner"
+            "reference": "BusinessPartner",
+            "inputMode": "search"
           },
           {
             "name": "partnerAddress",
@@ -32,7 +33,12 @@
             "required": true,
             "grid": false,
             "form": true,
-            "reference": "BusinessPartnerLocation"
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "businessPartnerId"
+            }
           },
           {
             "name": "orderDate",
@@ -63,7 +69,8 @@
             "required": true,
             "grid": false,
             "form": true,
-            "reference": "Warehouse"
+            "reference": "Warehouse",
+            "inputMode": "selector"
           },
           {
             "name": "priceList",
@@ -74,7 +81,8 @@
             "required": true,
             "grid": false,
             "form": true,
-            "reference": "PriceList"
+            "reference": "PriceList",
+            "inputMode": "selector"
           },
           {
             "name": "paymentTerms",
@@ -85,7 +93,8 @@
             "required": true,
             "grid": false,
             "form": true,
-            "reference": "PaymentTerm"
+            "reference": "PaymentTerm",
+            "inputMode": "selector"
           },
           {
             "name": "paymentMethod",
@@ -96,7 +105,8 @@
             "required": false,
             "grid": false,
             "form": true,
-            "reference": "PaymentMethod"
+            "reference": "PaymentMethod",
+            "inputMode": "selector"
           },
           {
             "name": "invoiceAddress",
@@ -107,7 +117,12 @@
             "required": true,
             "grid": false,
             "form": true,
-            "reference": "BusinessPartnerLocation"
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "businessPartnerId"
+            }
           },
           {
             "name": "deliveryLocation",
@@ -138,7 +153,8 @@
             "required": false,
             "grid": false,
             "form": true,
-            "reference": "User"
+            "reference": "User",
+            "inputMode": "search"
           },
           {
             "name": "description",
@@ -230,7 +246,8 @@
             "required": true,
             "grid": true,
             "form": true,
-            "reference": "Product"
+            "reference": "Product",
+            "inputMode": "search"
           },
           {
             "name": "quantity",
@@ -261,7 +278,8 @@
             "required": true,
             "grid": true,
             "form": true,
-            "reference": "Tax"
+            "reference": "Tax",
+            "inputMode": "selector"
           },
           {
             "name": "discount",
@@ -322,7 +340,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "reference": "UOM"
+            "reference": "UOM",
+            "inputMode": "selector"
           }
         ],
         "searchableFields": [

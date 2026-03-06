@@ -33,6 +33,7 @@ export function MasterDetailPage({
   statusField,
   processes = [],
   addLineFields = { entry: [], derived: [] },
+  catalogs,
   token,
   apiBaseUrl,
   entityLabel,
@@ -168,6 +169,7 @@ export function MasterDetailPage({
             <Form
               data={hook.editing}
               onChange={hook.handleChange}
+              catalogs={catalogs}
             />
           </div>
 
@@ -191,8 +193,62 @@ export function MasterDetailPage({
               >
                 {allEntryFields.map(f => {
                   const isSearch = f.type === 'search';
+                  const isSelector = f.type === 'selector';
+                  const isDependent = f.type === 'dependent';
                   const inputType = f.type === 'number' ? 'number' : 'text';
                   const isLookupTrigger = f.key === lookupTriggerKey;
+
+                  if (isSelector) {
+                    const options = catalogs?.[f.reference] ?? [];
+                    return (
+                      <div key={f.key} className="flex-1 min-w-0">
+                        <label className="text-xs text-slate-500 mb-1 block">
+                          {f.label}{f.required ? ' *' : ''}
+                        </label>
+                        <select
+                          name={f.key}
+                          value={newLine[f.key] ?? ''}
+                          onChange={(e) => setNewLine(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                          required={f.required}
+                        >
+                          <option value="">Select...</option>
+                          {options.map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  }
+
+                  if (isDependent) {
+                    const parentVal = newLine[f.dependsOn?.field];
+                    const allOpts = catalogs?.[f.reference] ?? [];
+                    const options = parentVal
+                      ? allOpts.filter(opt => opt[f.dependsOn?.filterKey] === parentVal)
+                      : [];
+                    return (
+                      <div key={f.key} className="flex-1 min-w-0">
+                        <label className="text-xs text-slate-500 mb-1 block">
+                          {f.label}{f.required ? ' *' : ''}
+                        </label>
+                        <select
+                          name={f.key}
+                          value={newLine[f.key] ?? ''}
+                          onChange={(e) => setNewLine(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                          required={f.required}
+                          disabled={!parentVal}
+                        >
+                          <option value="">{parentVal ? 'Select...' : `Select ${f.dependsOn?.field} first`}</option>
+                          {options.map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={f.key} className="flex-1 min-w-0">
                       <label className="text-xs text-slate-500 mb-1 block">
