@@ -66,4 +66,23 @@ NEVER hardcode API URLs or tokens. Always use the props.
 Write generated/modified components to:
 `artifacts/{window}/generated/web/{window}/`
 
+## Generation Log (after F8, before F9)
+
+After regenerating frontend files, run the generation log to track changes:
+
+```bash
+node cli/src/generation-log.js <window-name> "<trigger-description>"
+```
+
+This:
+1. Diffs current files (disk) against the previous version (git HEAD)
+2. Appends structured entries to `artifacts/generation-log.json`
+3. Generates per-window view: `artifacts/{window}/GENERATION-LOG.md`
+4. Generates transversal view: `artifacts/GENERATION-RUNS.md`
+
+The generation log captures field additions, removals, type changes, new/removed files,
+and component-level changes. The JSON log is the source of truth; markdown views are derived.
+
+Flow: F8 (generate-frontend) -> Log (generation-log) -> F9 (contract tests)
+
 After generating, tell the user to preview with: `cd tools/app-shell && npm run dev`
