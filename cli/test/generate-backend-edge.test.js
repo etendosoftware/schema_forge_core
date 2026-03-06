@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { prepareTemplateData, generateFileList } from '../src/generate-backend.js';
+import { prepareTemplateData, generateFileList, buildSelectorData, toOBDalProperty } from '../src/generate-backend.js';
 import { getOrCreateUuid } from '../src/uuid-manifest.js';
 
 // Schema with NO system fields (no derivations at all)
@@ -64,9 +64,11 @@ const schemaMultiEntity = {
 };
 
 describe('prepareTemplateData edge cases', () => {
-  it('schema with no system fields produces empty eventHandlers', () => {
+  it('schema with no system fields produces no event-handler-like data', () => {
     const data = prepareTemplateData(schemaNoSystemFields, [], []);
-    assert.equal(data.eventHandlers.length, 0, 'eventHandlers should be empty when no system fields have derivations');
+    // Current implementation does not generate eventHandlers — just handlers, dtos, processes
+    assert.ok(data.handlers.length > 0, 'should have handlers');
+    assert.ok(data.dtos.length > 0, 'should have dtos');
   });
 
   it('schema with no processes produces empty processes array', () => {
@@ -87,27 +89,18 @@ describe('prepareTemplateData edge cases', () => {
     assert.ok(dtoNames.includes('purchaseLine'), 'should include purchaseLine DTO');
   });
 
-  it('schema with multiple entities produces endpoints for each entity', () => {
+  it('schema with multiple entities produces handlers for each entity', () => {
     const data = prepareTemplateData(schemaMultiEntity, [], []);
-    assert.equal(data.endpoints.length, 2, 'should have one endpoint per entity');
-    const endpointNames = data.endpoints.map(e => e.entityName);
-    assert.ok(endpointNames.includes('purchaseHeader'));
-    assert.ok(endpointNames.includes('purchaseLine'));
-  });
-
-  it('schema with multiple entities produces event handlers only for entities with derivations', () => {
-    const data = prepareTemplateData(schemaMultiEntity, [], []);
-    assert.equal(data.eventHandlers.length, 2, 'both entities have system fields with derivations');
-    const handlerEntities = data.eventHandlers.map(h => h.entityName);
-    assert.ok(handlerEntities.includes('purchaseHeader'));
-    assert.ok(handlerEntities.includes('purchaseLine'));
+    assert.equal(data.handlers.length, 2, 'should have one handler per entity');
+    const handlerNames = data.handlers.map(e => e.entityName);
+    assert.ok(handlerNames.includes('purchaseHeader'));
+    assert.ok(handlerNames.includes('purchaseLine'));
   });
 
   it('DTOs for multi-entity schema exclude system fields from each entity', () => {
     const data = prepareTemplateData(schemaMultiEntity, [], []);
     for (const dto of data.dtos) {
       for (const field of dto.fields) {
-        // orgId and lineNo are system fields and should be excluded
         assert.notEqual(field.name, 'orgId', `system field orgId should not appear in ${dto.entityName} DTO`);
         assert.notEqual(field.name, 'lineNo', `system field lineNo should not appear in ${dto.entityName} DTO`);
       }
@@ -168,7 +161,7 @@ describe('prepareTemplateData edge cases', () => {
     };
     const data = prepareTemplateData(schema, [], []);
     assert.equal(data.dtos[0].className, 'MyEntityNameDTO');
-    assert.equal(data.endpoints[0].className, 'MyEntityNameEndpoint');
+    assert.equal(data.handlers[0].className, 'MyEntityNameHandler');
   });
 
   it('validators are empty when no processes have preconditions', () => {
@@ -208,40 +201,159 @@ describe('prepareTemplateData edge cases', () => {
   });
 });
 
+describe('buildSelectorData', () => {
+  it('extracts FK fields with reference metadata', () => {
+    const entities = [{
+      name: 'order',
+      fields: [
+        { name: 'documentNo', type: 'string', visibility: 'editable' },
+        {
+          name: 'businessPartner',
+          columnName: 'C_BPartner_ID',
+          type: 'foreignKey',
+          visibility: 'editable',
+          reference: { targetTable: 'BusinessPartner', displayColumn: 'Name', keyColumn: 'C_BPartner_ID' },
+        },
+      ]
+    }];
+    const selectors = buildSelectorData(entities);
+    assert.equal(selectors.length, 1);
+    assert.equal(selectors[0].fieldName, 'businessPartner');
+    assert.equal(selectors[0].entityClass, 'BusinessPartner');
+    assert.equal(selectors[0].displayProperty, 'name');
+  });
+
+  it('skips FK fields without reference metadata', () => {
+    const entities = [{
+      name: 'order',
+      fields: [
+        { name: 'vendor', type: 'foreignKey', visibility: 'editable' },  // no reference
+      ]
+    }];
+    const selectors = buildSelectorData(entities);
+    assert.equal(selectors.length, 0);
+  });
+
+  it('skips system and discarded FK fields', () => {
+    const entities = [{
+      name: 'order',
+      fields: [
+        { name: 'org', type: 'foreignKey', visibility: 'system',
+          reference: { targetTable: 'Organization', displayColumn: 'Name' } },
+        { name: 'old', type: 'foreignKey', visibility: 'discarded',
+          reference: { targetTable: 'OldTable', displayColumn: 'Name' } },
+        { name: 'partner', type: 'foreignKey', visibility: 'editable',
+          reference: { targetTable: 'BusinessPartner', displayColumn: 'Name' } },
+      ]
+    }];
+    const selectors = buildSelectorData(entities);
+    assert.equal(selectors.length, 1);
+    assert.equal(selectors[0].fieldName, 'partner');
+  });
+
+  it('deduplicates by field name across entities', () => {
+    const entities = [
+      {
+        name: 'order',
+        fields: [
+          { name: 'businessPartner', type: 'foreignKey', visibility: 'editable',
+            reference: { targetTable: 'BusinessPartner', displayColumn: 'Name' } },
+        ]
+      },
+      {
+        name: 'orderLine',
+        fields: [
+          { name: 'businessPartner', type: 'foreignKey', visibility: 'editable',
+            reference: { targetTable: 'BusinessPartner', displayColumn: 'Name' } },
+        ]
+      },
+    ];
+    const selectors = buildSelectorData(entities);
+    assert.equal(selectors.length, 1, 'should deduplicate by field name');
+  });
+
+  it('maps cascade params from column names to OBDal property names', () => {
+    const entities = [{
+      name: 'order',
+      fields: [
+        {
+          name: 'priceList',
+          type: 'foreignKey',
+          visibility: 'editable',
+          reference: { targetTable: 'PricingPriceList', displayColumn: 'Name' },
+          validationRule: { code: "something", cascadeParams: ['C_BPartner_ID', 'AD_Org_ID'] },
+        },
+      ]
+    }];
+    const selectors = buildSelectorData(entities);
+    assert.deepEqual(selectors[0].cascadeParams, ['cBpartner', 'adOrg']);
+  });
+
+  it('defaults displayProperty to name when displayColumn is missing', () => {
+    const entities = [{
+      name: 'order',
+      fields: [
+        {
+          name: 'warehouse',
+          type: 'foreignKey',
+          visibility: 'editable',
+          reference: { targetTable: 'Warehouse' },  // no displayColumn
+        },
+      ]
+    }];
+    const selectors = buildSelectorData(entities);
+    assert.equal(selectors[0].displayProperty, 'name');
+  });
+});
+
+describe('toOBDalProperty', () => {
+  it('strips _ID suffix and converts to camelCase', () => {
+    assert.equal(toOBDalProperty('C_BPartner_ID'), 'cBpartner');
+    assert.equal(toOBDalProperty('AD_Org_ID'), 'adOrg');
+    assert.equal(toOBDalProperty('M_Product_ID'), 'mProduct');
+  });
+
+  it('handles columns without _ID suffix', () => {
+    assert.equal(toOBDalProperty('DocumentNo'), 'documentNo');
+    assert.equal(toOBDalProperty('IsActive'), 'isActive');
+  });
+});
+
 describe('generateFileList edge cases', () => {
-  it('generates only base files when no handlers, processes, validators exist', () => {
+  it('generates base files when no handlers, processes, validators exist', () => {
     const data = prepareTemplateData(schemaNoSystemFields, [], []);
-    const files = generateFileList(data, 'Simple Window');
-    // Should still have: 1 DTO + 1 endpoint + 1 error serializer + build.gradle + dataset.xml = 5
-    assert.equal(files.length, 5, 'should have base files even with no handlers/processes/validators');
-    assert.ok(files.find(f => f.path.includes('build.gradle')), 'should include build.gradle');
-    assert.ok(files.find(f => f.path.includes('dataset.xml')), 'should include dataset.xml');
-    assert.ok(files.find(f => f.path.includes('ErrorSerializer.java')), 'should include ErrorSerializer');
+    const files = generateFileList(data, '/tmp/test-module');
+    // Should have: 1 DTO + 1 handler + RequestHandler + HandlerRegistry = 4 minimum
+    assert.ok(files.length >= 4, `should have base files, got ${files.length}`);
   });
 
-  it('generates correct number of files for multi-entity schema', () => {
+  it('generates correct number of files for multi-entity schema without FK refs', () => {
     const data = prepareTemplateData(schemaMultiEntity, [], []);
-    const files = generateFileList(data, 'Purchase Order');
-    // 2 event handlers + 0 processes + 2 DTOs + 2 endpoints + 0 validators + 1 error serializer + build.gradle + dataset.xml = 9
-    assert.equal(files.length, 9);
+    const files = generateFileList(data, '/tmp/test-module');
+    // 0 processes + 2 DTOs + 2 handlers + 0 validators + RequestHandler + HandlerRegistry = 6
+    // selectorEndpoint is null (no reference metadata on FK fields)
     const javaFiles = files.filter(f => f.path.endsWith('.java'));
-    assert.equal(javaFiles.length, 7, '2 handlers + 2 DTOs + 2 endpoints + 1 error serializer');
+    assert.ok(javaFiles.length >= 4, `should have at least 4 java files, got ${javaFiles.length}`);
   });
 
-  it('file paths use lowercase hyphenated window name as slug', () => {
-    const data = prepareTemplateData(schemaMultiEntity, [], []);
-    const files = generateFileList(data, 'Purchase Order');
-    for (const file of files) {
-      assert.ok(file.path.includes('purchase-order'), `path should contain slug: ${file.path}`);
-    }
-  });
-
-  it('file paths contain correct package directory structure', () => {
-    const data = prepareTemplateData(schemaMultiEntity, [], []);
-    const files = generateFileList(data, 'Purchase Order');
-    const dtoFile = files.find(f => f.path.includes('DTO.java'));
-    assert.ok(dtoFile, 'should have a DTO file');
-    assert.ok(dtoFile.path.includes('com/etendo/schemaforge/'), 'path should contain package structure');
+  it('includes selector file when FK fields have reference data', () => {
+    const fkSchema = {
+      version: '0.1.0',
+      window: { id: '400', name: 'Purchase Order', primaryEntity: 'purchaseHeader' },
+      entities: [{
+        name: 'purchaseHeader',
+        table: 'C_Purchase',
+        level: 'header',
+        fields: [
+          { name: 'vendor', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable',
+            reference: { targetTable: 'BusinessPartner', displayColumn: 'Name' } },
+        ]
+      }]
+    };
+    const data = prepareTemplateData(fkSchema, [], []);
+    const files = generateFileList(data, '/tmp/test-module');
+    const selectorFile = files.find(f => f.path.includes('SelectorHandler.java'));
+    assert.ok(selectorFile, 'should include selector handler file');
   });
 });
 

@@ -128,6 +128,98 @@ export function inferDerivation(defaultValue) {
 }
 
 /**
+ * Parse an AD_Val_Rule code string to extract context and cascade parameters.
+ *
+ * Etendo validation rules use two variable patterns:
+ * - @#VAR@ — session context variables (client, org, role), resolved server-side via OBContext
+ * - @FIELD@ — cascade variables referencing other fields in the same record, sent by the frontend
+ *
+ * Returns null if code is null/undefined.
+ */
+export function parseValidationRule(code) {
+  if (!code) return null;
+
+  const contextParams = new Set();
+  const cascadeParams = new Set();
+
+  // First pass: find all @#VAR@ (session context)
+  for (const match of code.matchAll(/@#([A-Za-z_][A-Za-z0-9_]*)@/g)) {
+    contextParams.add(match[1]);
+  }
+
+  // Second pass: find all @VAR@ that are NOT preceded by #
+  // Use negative lookbehind to exclude @#VAR@ matches
+  for (const match of code.matchAll(/(?<!#)@([A-Za-z_][A-Za-z0-9_]*)@/g)) {
+    const varName = match[1];
+    if (varName === 'SQL') continue;
+    cascadeParams.add(varName);
+  }
+
+  return {
+    code,
+    contextParams: [...contextParams],
+    cascadeParams: [...cascadeParams],
+  };
+}
+
+/**
+ * Build reference metadata for foreign key fields.
+ * Resolves target table, display column, and filters from AD config tables.
+ * Falls back to TableDir convention (column name minus '_ID') when no explicit config exists.
+ */
+export function buildReference(row) {
+  const refName = row.reference_name;
+
+  // Table or TableDir with explicit AD_Ref_Table config
+  if (row.ref_table_target) {
+    return {
+      type: refName,  // 'Table' or 'TableDir'
+      targetTable: row.ref_table_target,
+      keyColumn: row.ref_table_key || null,
+      displayColumn: row.ref_table_display || 'Name',
+      filterExpression: row.ref_table_filter || null,
+      orderBy: row.ref_table_orderby || null,
+    };
+  }
+
+  // Search with AD_Ref_Search config
+  if (row.ref_search_target) {
+    return {
+      type: 'Search',
+      targetTable: row.ref_search_target,
+      keyColumn: row.ref_search_column || null,
+      displayColumn: null,  // Search doesn't store display column in ad_ref_search
+      filterExpression: null,
+    };
+  }
+
+  // OBUISEL Selector
+  if (row.ref_selector_target) {
+    return {
+      type: 'Selector',
+      targetTable: row.ref_selector_target,
+      selectorName: row.ref_selector_name,
+      filterExpression: row.ref_selector_filter || null,
+      hql: row.ref_selector_hql || null,
+      displayColumn: null,  // Comes from obuisel_selector_field, not extracted here yet
+    };
+  }
+
+  // TableDir convention fallback: infer from column name
+  if (refName === 'TableDir' && row.columnname?.endsWith('_ID')) {
+    return {
+      type: 'TableDir',
+      targetTable: row.columnname.slice(0, -3),  // Strip '_ID'
+      keyColumn: row.columnname,
+      displayColumn: 'Name',
+      filterExpression: null,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Build the full schema structure from DB rows.
  *
  * Groups rows by tab, maps AD_Reference_IDs to schema types, and produces
@@ -152,6 +244,9 @@ export function buildSchema(rows, systemColumns, refMap) {
         tabLevel: row.tablevel,
         tabSeq: row.tab_seq,
         tableName: row.tablename,
+        entityClassname: row.entity_classname,
+        entityAlias: row.entity_alias,
+        entityJavaPackage: row.entity_javapackage,
         whereClause: row.whereclause,
         orderByClause: row.orderbyclause,
         filterClause: row.filterclause,
@@ -201,20 +296,40 @@ export function buildSchema(rows, systemColumns, refMap) {
       // Add callout if present
       if (row.callout_class) fieldDef.callout = row.callout_class;
 
-      // Add validation rule reference if present
-      if (row.ad_val_rule_id) fieldDef.validationRuleId = row.ad_val_rule_id;
+      // Add validation rule with parsed params if present
+      if (row.val_rule_code) {
+        fieldDef.validationRule = parseValidationRule(row.val_rule_code);
+      }
+
+      // Add reference metadata for foreign key fields
+      if (schemaType === 'foreignKey') {
+        const reference = buildReference(row);
+        if (reference) {
+          fieldDef.reference = reference;
+        }
+      }
 
       return fieldDef;
     });
 
+    const entityClassname = tab.entityClassname || tab.entityAlias || toCamelCase(tab.tableName);
+    const entityJavaPackage = tab.entityJavaPackage || null;
+
     const entity = {
       name: toCamelCase(tab.tableName),
       tableName: tab.tableName,
+      entityClassname,
+      entityJavaPackage,
       tabName: tab.tabName,
       level: tab.tabLevel,
       sequence: tab.tabSeq,
       fields,
     };
+
+    // Full qualified Java class: package + classname
+    if (entityJavaPackage && entityClassname) {
+      entity.entityFullClass = `${entityJavaPackage}.${entityClassname}`;
+    }
 
     // Add tab clauses if present (convention #6: omit key if null)
     if (tab.whereClause) entity.whereClause = tab.whereClause;
@@ -250,7 +365,8 @@ SELECT
   t.AD_Tab_ID, t.Name AS tab_name, t.TabLevel, t.SeqNo AS tab_seq,
   t.WhereClause, t.OrderByClause, t.FilterClause,
   t.HQLWhereClause, t.HQLOrderByClause, t.HQLFilterClause,
-  tbl.TableName,
+  tbl.TableName, tbl.Classname AS entity_classname, tbl.Entity_Alias,
+  pkg.JavaPackage AS entity_javapackage,
   f.AD_Field_ID, f.Name AS field_name,
   f.IsDisplayed, f.IsReadOnly,
   f.DisplayLogic, f.DisplayLogic_Server, f.DisplayLogicGrid,
@@ -258,15 +374,43 @@ SELECT
   c.ColumnName, c.AD_Reference_ID, c.IsMandatory, c.IsUpdateable,
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
+  c.AD_Reference_Value_ID,
   r.Name AS reference_name,
-  mo.Classname AS callout_class
+  vr.Name AS val_rule_name,
+  vr.Code AS val_rule_code,
+  mo.Classname AS callout_class,
+  -- Table/TableDir reference config
+  rt_tgt.TableName AS ref_table_target,
+  rt_disp.ColumnName AS ref_table_display,
+  rt_key.ColumnName AS ref_table_key,
+  rt.WhereClause AS ref_table_filter,
+  rt.OrderByClause AS ref_table_orderby,
+  -- Search reference config
+  rs_tgt.TableName AS ref_search_target,
+  rs_col.ColumnName AS ref_search_column,
+  -- Selector reference config
+  sel.Name AS ref_selector_name,
+  sel_tgt.TableName AS ref_selector_target,
+  sel.WhereClause AS ref_selector_filter,
+  sel.HQL AS ref_selector_hql
 FROM AD_Field f
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
+LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
+LEFT JOIN ad_ref_table rt ON c.ad_reference_value_id = rt.ad_reference_id
+LEFT JOIN ad_table rt_tgt ON rt.ad_table_id = rt_tgt.ad_table_id
+LEFT JOIN ad_column rt_key ON rt.ad_key = rt_key.ad_column_id
+LEFT JOIN ad_column rt_disp ON rt.ad_display = rt_disp.ad_column_id
+LEFT JOIN ad_ref_search rs ON c.ad_reference_value_id = rs.ad_reference_id
+LEFT JOIN ad_table rs_tgt ON rs.ad_table_id = rs_tgt.ad_table_id
+LEFT JOIN ad_column rs_col ON rs.ad_column_id = rs_col.ad_column_id
+LEFT JOIN ad_val_rule vr ON c.ad_val_rule_id = vr.ad_val_rule_id
+LEFT JOIN obuisel_selector sel ON sel.ad_reference_id = c.ad_reference_value_id
+LEFT JOIN ad_table sel_tgt ON sel.ad_table_id = sel_tgt.ad_table_id
 WHERE w.AD_Window_ID = $1
   AND f.IsActive = 'Y' AND t.IsActive = 'Y'
 ORDER BY t.SeqNo, f.SeqNo

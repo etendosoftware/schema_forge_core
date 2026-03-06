@@ -2,7 +2,9 @@
 // Generated: {{generatedDate}}
 package {{package}};
 
+import javax.annotation.Generated;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openbravo.base.exception.OBException;
@@ -10,13 +12,18 @@ import org.openbravo.dal.service.OBDal;
 import org.openbravo.erpCommon.utility.OBError;
 import org.openbravo.scheduling.ProcessBundle;
 import org.openbravo.service.db.DalBaseProcess;
-import {{entityClass}};
+{{#if entityFullClass}}
+import {{entityFullClass}};
+{{/if}}
 
 /**
  * DAL Process: {{className}}
  *
- * Executes precondition checks followed by process steps.
+ * Entity: {{entity}} ({{entityClassname}})
+ * Preconditions: {{preconditions.length}}
+ * Steps: {{steps.length}}
  */
+@Generated(value = "schema-forge", date = "{{generatedDate}}")
 public class {{className}} extends DalBaseProcess {
 
   private static final Logger log = LogManager.getLogger();
@@ -27,30 +34,28 @@ public class {{className}} extends DalBaseProcess {
       final Map<String, Object> params = bundle.getParams();
       final String recordId = (String) params.get("recordId");
 
-      // Load entity
-      final var order = OBDal.getInstance().get({{entityClass}}.class, recordId);
+{{#if entityFullClass}}
+      final {{entityClassname}} entity = OBDal.getInstance().get({{entityClassname}}.class, recordId);
+      if (entity == null) {
+        throw new OBException("{{entityClassname}} not found with ID: " + recordId);
+      }
+{{else}}
+      // No OBDal class for entity {{entity}} — load via BaseOBObject
+      // TODO(vertical-slice): implement entity loading
+{{/if}}
 
       // --- Preconditions ---
 {{#each preconditions}}
-      {{#if negate}}
-      if (!({{assertion}})) {
-        throw new OBException("{{errorMessage}}");
-      }
-      {{else}}
-      if ({{assertion}}) {
-        throw new OBException("{{errorMessage}}");
-      }
-      {{/if}}
+      // {{id}}: {{{errorMessage}}}
+      // Assertion: {{{assertion}}}
+      // TODO(vertical-slice): implement precondition check
 {{/each}}
 
       // --- Process Steps ---
 {{#each steps}}
-      // Step: {{name}}
-      {{#if stub}}
-      // {{comment}}
-      {{else}}
-      {{{code}}}
-      {{/if}}
+      // Step {{order}}: {{name}} ({{type}})
+      // {{{description}}}
+      // TODO(vertical-slice): implement step logic
 {{/each}}
 
       OBDal.getInstance().flush();

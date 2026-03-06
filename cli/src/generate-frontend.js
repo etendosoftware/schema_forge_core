@@ -30,6 +30,7 @@ export function getProcessesForEntity(contract, entityName) {
 /**
  * Generate a data table component for an entity.
  * Renders grid:true fields as columns, searchableFields as filter inputs.
+ * Uses StatusBadge for status fields and clean Holded-style styling.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
@@ -37,13 +38,16 @@ export function generateTableComponent(entityName, contract) {
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
+  const hasStatusField = gridFields.some(f => f.name.toLowerCase().includes('status'));
+
   const imports = [
     `import React, { useState } from 'react';`,
     `import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';`,
     `import { Input } from '@/components/ui/input';`,
-    `import { Badge } from '@/components/ui/badge';`,
-    `import { Button } from '@/components/ui/button';`,
   ];
+  if (hasStatusField) {
+    imports.push(`import { StatusBadge } from '@/components/ui/status-badge';`);
+  }
 
   const filterState = searchableFields
     .map(f => `  const [filter${capitalize(f)}, setFilter${capitalize(f)}] = useState('');`)
@@ -59,13 +63,16 @@ export function generateTableComponent(entityName, contract) {
     .join('\n');
 
   const headerCells = gridFields
-    .map(f => `            <TableHead>${toLabel(f.name)}</TableHead>`)
+    .map(f => `            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">${toLabel(f.name)}</TableHead>`)
     .join('\n');
 
   const bodyCells = gridFields
     .map(f => {
+      if (f.name.toLowerCase().includes('status')) {
+        return `            <TableCell><StatusBadge status={row.${f.name}} /></TableCell>`;
+      }
       if (f.type === 'amount') {
-        return `            <TableCell>{row.${f.name}?.toLocaleString()}</TableCell>`;
+        return `            <TableCell className="tabular-nums">{row.${f.name}?.toLocaleString()}</TableCell>`;
       }
       return `            <TableCell>{row.${f.name}}</TableCell>`;
     })
@@ -88,13 +95,13 @@ ${filterInputs}
       </div>
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="border-b border-gray-100">
 ${headerCells}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="divide-y divide-gray-50">
           {filteredData.map((row, idx) => (
-            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer">
+            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer hover:bg-gray-50 transition-colors">
 ${bodyCells}
             </TableRow>
           ))}
@@ -108,8 +115,8 @@ ${bodyCells}
 
 /**
  * Generate a detail/edit form component for an entity.
- * Renders form:true fields, editable as inputs, readOnly as disabled.
- * Includes process action buttons for matching entity.
+ * Renders form:true fields in single-column layout for panel width.
+ * Includes Save/Delete buttons and process action buttons.
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
@@ -129,11 +136,11 @@ export function generateFormComponent(entityName, contract) {
     const label = toLabel(f.name);
     const isReadOnly = f.visibility === 'readOnly';
     const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const disabledAttr = isReadOnly ? ' disabled readOnly className="bg-muted"' : '';
+    const disabledAttr = isReadOnly ? ' disabled readOnly className="bg-gray-50 text-gray-500"' : '';
     const requiredAttr = f.required ? ' required' : '';
 
-    return `        <div className="space-y-2">
-          <Label htmlFor="${f.name}">${label}${f.required ? ' *' : ''}</Label>
+    return `        <div className="space-y-1.5">
+          <Label htmlFor="${f.name}" className="text-sm text-gray-600">${label}${f.required ? ' *' : ''}</Label>
           <Input
             id="${f.name}"
             name="${f.name}"
@@ -146,25 +153,27 @@ export function generateFormComponent(entityName, contract) {
 
   const processButtons = processes.map(p => {
     const label = toLabel(p.name);
-    return `          <Button variant="outline" onClick={() => onProcess?.('${p.name}')}>
+    return `          <Button variant="outline" size="sm" onClick={() => onProcess?.('${p.name}')}>
             ${label}
           </Button>`;
   }).join('\n');
 
   const processSection = processes.length > 0
-    ? `\n      <Separator />\n      <div className="flex gap-2">\n${processButtons}\n      </div>`
+    ? `\n      <Separator className="my-4" />\n      <div className="flex gap-2">\n${processButtons}\n      </div>`
     : '';
 
   return `${imports.join('\n')}
 
-export default function ${compName}({ data, onChange, onSave, onProcess }) {
+export default function ${compName}({ data, onChange, onSave, onDelete, onProcess }) {
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-3">
+      <div className="space-y-3">
 ${fieldElements}
       </div>
+      <Separator className="my-4" />
       <div className="flex gap-2">
-        <Button type="submit">Save</Button>
+        <Button type="submit" size="sm">Save</Button>
+        {onDelete && <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
       </div>${processSection}
     </form>
   );
@@ -173,70 +182,58 @@ ${fieldElements}
 }
 
 /**
- * Generate a header-detail page component.
- * Shows header table, header form, and detail table.
- * Includes API fetch logic using token/apiBaseUrl props.
+ * Generate a header-detail page component with SlidePanel.
+ * Shows header table with New button. Form and detail table open in a slide panel.
+ * Uses useEntity hook for state management and API calls.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
 
-  return `import React, { useState, useEffect } from 'react';
+  return `import React from 'react';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { SlidePanel } from '@/components/ui/slide-panel';
+import { useEntity } from '@/hooks/useEntity';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 
 export default function ${compName}({ token, apiBaseUrl }) {
-  const [items, setItems] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [details, setDetails] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
 
-  const headers = {
-    'Authorization': \`Bearer \${token}\`,
-    'Content-Type': 'application/json',
-  };
+  const panelTitle = ${headerEntity}.editing?.id
+    ? \`${toLabel(headerEntity)} \${${headerEntity}.editing.documentNo || ${headerEntity}.editing.id}\`
+    : 'New ${toLabel(headerEntity)}';
 
-  useEffect(() => {
-    setLoading(true);
-    fetch(\`\${apiBaseUrl}/${headerEntity}\`, { headers })
-      .then(res => res.json())
-      .then(data => { setItems(data); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [apiBaseUrl, token]);
-
-  useEffect(() => {
-    if (!selected?.id) { setDetails([]); return; }
-    fetch(\`\${apiBaseUrl}/${headerEntity}/\${selected.id}/${detailEntity}\`, { headers })
-      .then(res => res.json())
-      .then(setDetails)
-      .catch(() => setDetails([]));
-  }, [selected]);
-
-  const handleProcess = async (processName) => {
-    if (!selected?.id) return;
-    await fetch(\`\${apiBaseUrl}/process/\${processName}\`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ id: selected.id }),
-    });
+  const handleClose = () => {
+    ${headerEntity}.handleSelect(null);
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <h2 className="text-xl font-semibold">${toLabel(headerEntity)}</h2>
-      <${headerName}Table data={items} onRowSelect={setSelected} />
-      {selected && (
-        <>
-          <Separator />
-          <${headerName}Form data={selected} onProcess={handleProcess} />
-          <Separator />
-          <h3 className="text-lg font-medium">${toLabel(detailEntity)}</h3>
-          <${detailName}Table data={details} />
-        </>
-      )}
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">${toLabel(headerEntity)}s</h2>
+        <Button onClick={${headerEntity}.handleNew}>New</Button>
+      </div>
+      <${headerName}Table data={${headerEntity}.items} onRowSelect={${headerEntity}.handleSelect} />
+      <SlidePanel
+        open={!!${headerEntity}.editing}
+        onClose={handleClose}
+        title={panelTitle}
+      >
+        <${headerName}Form
+          data={${headerEntity}.editing}
+          onChange={${headerEntity}.handleChange}
+          onSave={${headerEntity}.handleSave}
+          onDelete={${headerEntity}.selected ? ${headerEntity}.handleDelete : undefined}
+          onProcess={${headerEntity}.handleProcess}
+        />
+        <Separator className="my-6" />
+        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
+        <${detailName}Table data={${headerEntity}.children} />
+      </SlidePanel>
     </div>
   );
 }

@@ -2,75 +2,181 @@
 // Generated: {{generatedDate}}
 package {{package}};
 
-import java.util.List;
-import java.util.Map;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.hibernate.criterion.Restrictions;
+import javax.annotation.Generated;
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONObject;
 import org.openbravo.dal.core.OBContext;
+{{#if hqlWhereClause}}
+import org.openbravo.dal.service.OBQuery;
+{{else}}
 import org.openbravo.dal.service.OBCriteria;
+{{/if}}
 import org.openbravo.dal.service.OBDal;
-import {{entityClass}};
+{{#if entityFullClass}}
+import {{entityFullClass}};
+{{/if}}
+
+import com.etendoerp.go.rest.RequestHandler;
 
 /**
- * Etendo RX Endpoint: {{className}}
+ * Request Handler: {{className}}
  *
- * Provides REST API for {{entityName}} entity with org-level filtering.
+ * Tab: {{tabName}}
+ * Entity: {{entityName}} ({{table}})
+ * OBDal class: {{entityClassname}}
+{{#if hqlWhereClause}}
+ * Tab filter: {{{hqlWhereClause}}}
+{{/if}}
  */
-@Path("/{{entityName}}")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public class {{className}} {
+@Generated(value = "schema-forge", date = "{{generatedDate}}")
+public class {{className}} implements RequestHandler {
 
-  @GET
-  public Response list(
-{{#each filters}}
-    @QueryParam("{{name}}") {{type}} {{name}}{{#unless @last}},{{/unless}}
-{{/each}}
-  ) {
+  private static final Logger log = LogManager.getLogger();
+  private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
+{{#if hqlWhereClause}}
+  private static final String TAB_HQL_FILTER = "{{{hqlWhereClause}}}";
+{{/if}}
+
+  @Override
+  public String getBasePath() {
+    return "/{{pathSegment}}";
+  }
+
+  @Override
+  public void doGet(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
     OBContext.setAdminMode(false);
     try {
-      final OBCriteria<{{entityName}}> criteria = OBDal.getInstance()
-          .createCriteria({{entityName}}.class);
-
-      // RT-5: Organization-level security filter
-      criteria.add(Restrictions.in("organization.id",
-          (Object[]) OBContext.getOBContext().getReadableOrganizations()));
-
-{{#each filters}}
-      if ({{name}} != null) {
-        criteria.add(Restrictions.eq("{{column}}", {{name}}));
+      if (subPath != null && subPath.length() > 1) {
+        String id = subPath.startsWith("/") ? subPath.substring(1) : subPath;
+        getById(id, response);
+      } else {
+        list(request, response);
       }
-{{/each}}
-
-      final List<{{entityName}}> results = criteria.list();
-
-      // TODO(vertical-slice): implement entity-to-DTO mapping via {{dtoClass}}
-
-      return Response.ok(results).build();
-
+    } catch (Exception e) {
+      log.error("Error in GET {}", request.getPathInfo(), e);
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     } finally {
       OBContext.restorePreviousMode();
     }
   }
 
-  @GET
-  @Path("/{id}")
-  public Response getById(@PathParam("id") String id) {
-    OBContext.setAdminMode(false);
-    try {
-      final {{entityName}} entity = OBDal.getInstance().get({{entityName}}.class, id);
-      if (entity == null) {
-        return Response.status(Response.Status.NOT_FOUND).build();
-      }
-
-      // TODO(vertical-slice): implement entity-to-DTO mapping via {{dtoClass}}
-
-      return Response.ok(entity).build();
-
-    } finally {
-      OBContext.restorePreviousMode();
-    }
+  @Override
+  public void doPost(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
+    // TODO(vertical-slice): implement create for {{entityClassname}}
+{{#if tabAutoSetters.length}}
+    // Tab auto-setters: these values are implicit for this endpoint
+{{#each tabAutoSetters}}
+    // entity.set("{{property}}", {{{javaValue}}});
+{{/each}}
+{{/if}}
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.setContentType(APPLICATION_JSON);
+    response.getWriter().write("{\"error\":\"POST not yet implemented for {{entityName}}\"}");
   }
+
+  @Override
+  public void doPut(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
+    // TODO(vertical-slice): implement update for {{entityClassname}}
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.setContentType(APPLICATION_JSON);
+    response.getWriter().write("{\"error\":\"PUT not yet implemented for {{entityName}}\"}");
+  }
+
+  @Override
+  public void doDelete(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
+    // TODO(vertical-slice): implement delete for {{entityClassname}}
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.setContentType(APPLICATION_JSON);
+    response.getWriter().write("{\"error\":\"DELETE not yet implemented for {{entityName}}\"}");
+  }
+
+{{#if entityFullClass}}
+  private void list(HttpServletRequest request, HttpServletResponse response) throws Exception {
+{{#if hqlWhereClause}}
+    // Tab filter: scope query to this window's subset of the entity
+    StringBuilder hql = new StringBuilder(TAB_HQL_FILTER);
+
+{{#each filters}}
+    // Filter: {{name}} ({{type}}) -> column {{column}}
+    String param{{name}} = request.getParameter("{{name}}");
+    if (param{{name}} != null && !param{{name}}.isEmpty()) {
+      hql.append(" AND e.{{name}} = '").append(param{{name}}.replace("'", "''")).append("'");
+    }
+{{/each}}
+
+    OBQuery<{{entityClassname}}> query = OBDal.getInstance().createQuery({{entityClassname}}.class, hql.toString());
+    query.setMaxResult(100);
+
+    response.setContentType(APPLICATION_JSON);
+    JSONObject result = new JSONObject();
+    JSONArray data = new JSONArray();
+    for ({{entityClassname}} entity : query.list()) {
+      JSONObject item = new JSONObject();
+      item.put("id", entity.getId());
+      item.put("identifier", entity.getIdentifier());
+      data.put(item);
+    }
+{{else}}
+    OBCriteria<{{entityClassname}}> criteria = OBDal.getInstance().createCriteria({{entityClassname}}.class);
+    criteria.setMaxResults(100);
+
+{{#each filters}}
+    // Filter: {{name}} ({{type}}) -> column {{column}}
+    String param{{name}} = request.getParameter("{{name}}");
+    if (param{{name}} != null && !param{{name}}.isEmpty()) {
+      criteria.add(org.hibernate.criterion.Restrictions.eq("{{name}}", param{{name}}));
+    }
+{{/each}}
+
+    response.setContentType(APPLICATION_JSON);
+    JSONObject result = new JSONObject();
+    JSONArray data = new JSONArray();
+    for ({{entityClassname}} entity : criteria.list()) {
+      JSONObject item = new JSONObject();
+      item.put("id", entity.getId());
+      item.put("identifier", entity.getIdentifier());
+      data.put(item);
+    }
+{{/if}}
+    result.put("data", data);
+    result.put("count", data.length());
+    response.getWriter().write(result.toString());
+  }
+
+  private void getById(String id, HttpServletResponse response) throws Exception {
+    {{entityClassname}} entity = OBDal.getInstance().get({{entityClassname}}.class, id);
+    response.setContentType(APPLICATION_JSON);
+    if (entity == null) {
+      response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      response.getWriter().write("{\"error\":\"{{entityName}} not found\",\"id\":\"" + id + "\"}");
+      return;
+    }
+    JSONObject result = new JSONObject();
+    result.put("id", entity.getId());
+    result.put("identifier", entity.getIdentifier());
+    // TODO(vertical-slice): map all DTO fields from entity
+    response.getWriter().write(result.toString());
+  }
+{{else}}
+  private void list(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    // No OBDal entity class available for {{entityName}} (table: {{table}})
+    // This entity requires direct HQL or SQL queries
+    response.setContentType(APPLICATION_JSON);
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.getWriter().write("{\"error\":\"No OBDal class for {{entityName}}\"}");
+  }
+
+  private void getById(String id, HttpServletResponse response) throws Exception {
+    response.setContentType(APPLICATION_JSON);
+    response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    response.getWriter().write("{\"error\":\"No OBDal class for {{entityName}}\"}");
+  }
+{{/if}}
 }
