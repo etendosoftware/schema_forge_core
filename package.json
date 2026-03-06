@@ -5,6 +5,6 @@
   "engines": { "node": ">=22" },
   "workspaces": ["cli", "tools/*"],
   "scripts": {
-    "test": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=artifacts/test-report.xml 'cli/test/*.test.js'"
+    "test": "mkdir -p artifacts && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=artifacts/test-report.xml 'cli/test/*.test.js'"
   }
 }
