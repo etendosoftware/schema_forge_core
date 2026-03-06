@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { classifyField, inferDerivation, buildSchema } from '../src/extract-fields.js';
+import { classifyField, inferDerivation, buildSchema, buildReference } from '../src/extract-fields.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -44,8 +44,20 @@ function makeRow(overrides = {}) {
     valuemin: null,
     valuemax: null,
     ad_val_rule_id: null,
+    ad_reference_value_id: null,
     reference_name: 'String',
     callout_class: null,
+    ref_table_target: null,
+    ref_table_display: null,
+    ref_table_key: null,
+    ref_table_filter: null,
+    ref_table_orderby: null,
+    ref_search_target: null,
+    ref_search_column: null,
+    ref_selector_name: null,
+    ref_selector_target: null,
+    ref_selector_filter: null,
+    ref_selector_hql: null,
     ...overrides,
   };
 }
@@ -229,5 +241,94 @@ describe('buildSchema', () => {
     const schema = buildSchema([], systemColumns, refMap);
     assert.equal(schema.window, null);
     assert.deepEqual(schema.entities, []);
+  });
+
+  it('includes reference metadata for foreignKey fields', () => {
+    const rows = [
+      makeRow({
+        columnname: 'C_Currency_ID',
+        field_name: 'Currency',
+        ad_reference_id: '19',
+        reference_name: 'TableDir',
+      }),
+    ];
+
+    const schema = buildSchema(rows, systemColumns, refMap);
+    const field = schema.entities[0].fields.find(f => f.columnName === 'C_Currency_ID');
+    assert.ok(field.reference, 'foreignKey field should have reference metadata');
+    assert.equal(field.reference.targetTable, 'C_Currency');
+    assert.equal(field.reference.type, 'TableDir');
+  });
+});
+
+describe('buildReference', () => {
+  it('builds TableDir reference from convention (column name minus _ID)', () => {
+    const row = makeRow({
+      columnname: 'C_Currency_ID',
+      ad_reference_id: '19',
+      reference_name: 'TableDir',
+    });
+    const ref = buildReference(row);
+    assert.equal(ref.type, 'TableDir');
+    assert.equal(ref.targetTable, 'C_Currency');
+    assert.equal(ref.displayColumn, 'Name');
+    assert.equal(ref.keyColumn, 'C_Currency_ID');
+    assert.equal(ref.filterExpression, null);
+  });
+
+  it('builds Table reference from AD_Ref_Table config', () => {
+    const row = makeRow({
+      columnname: 'SalesRep_ID',
+      ad_reference_id: '18',
+      reference_name: 'Table',
+      ref_table_target: 'AD_User',
+      ref_table_key: 'AD_User_ID',
+      ref_table_display: 'Name',
+      ref_table_filter: "EXISTS (SELECT * FROM C_BPartner bp WHERE AD_User.C_BPartner_ID=bp.C_BPartner_ID AND bp.IsSalesRep='Y')",
+    });
+    const ref = buildReference(row);
+    assert.equal(ref.type, 'Table');
+    assert.equal(ref.targetTable, 'AD_User');
+    assert.equal(ref.displayColumn, 'Name');
+    assert.ok(ref.filterExpression.includes('IsSalesRep'));
+  });
+
+  it('builds Search reference from AD_Ref_Search config', () => {
+    const row = makeRow({
+      columnname: 'C_BPartner_ID',
+      ad_reference_id: '30',
+      reference_name: 'Search',
+      ref_search_target: 'C_BPartner',
+      ref_search_column: 'C_BPartner_ID',
+    });
+    const ref = buildReference(row);
+    assert.equal(ref.type, 'Search');
+    assert.equal(ref.targetTable, 'C_BPartner');
+    assert.equal(ref.keyColumn, 'C_BPartner_ID');
+  });
+
+  it('builds Selector reference from OBUISEL_Selector config', () => {
+    const row = makeRow({
+      columnname: 'M_Warehouse_ID',
+      ad_reference_id: '95E2A8B50A254B2AAE6774B8C2F28120',
+      reference_name: 'OBUISEL_Selector Reference',
+      ref_selector_target: 'M_Warehouse',
+      ref_selector_name: 'On hand warehouse',
+      ref_selector_filter: null,
+    });
+    const ref = buildReference(row);
+    assert.equal(ref.type, 'Selector');
+    assert.equal(ref.targetTable, 'M_Warehouse');
+    assert.equal(ref.selectorName, 'On hand warehouse');
+  });
+
+  it('returns null for non-FK fields', () => {
+    const row = makeRow({
+      columnname: 'DocumentNo',
+      ad_reference_id: '10',
+      reference_name: 'String',
+    });
+    const ref = buildReference(row);
+    assert.equal(ref, null);
   });
 });
