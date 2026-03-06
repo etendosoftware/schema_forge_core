@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 export default function OrderLineForm({ data, onChange, onSave, onDelete, onProcess }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-4">
-      <div className="space-y-3 rounded-lg border p-4 bg-muted/20">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border p-4 bg-muted/20">
         <div className="space-y-1.5">
           <Label htmlFor="product" className="text-sm text-foreground font-medium">Product *</Label>
           <Input

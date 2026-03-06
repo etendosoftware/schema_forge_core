@@ -194,7 +194,7 @@ export function generateFormComponent(entityName, contract) {
 export default function ${compName}({ data, onChange, onSave, onDelete, onProcess }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-4">
-      <div className="space-y-3 rounded-lg border p-4 bg-muted/20">
+      <div className="grid grid-cols-2 gap-3 rounded-lg border p-4 bg-muted/20">
 ${editableElements}
       </div>${readOnlySection}
       <div className="flex items-center gap-2 pt-2">
@@ -208,8 +208,8 @@ ${editableElements}
 }
 
 /**
- * Generate a header-detail page component with SlidePanel.
- * Features: loading state, selected row tracking, record count subtitle.
+ * Generate a header-detail page component with Split View layout.
+ * Features: table on left (40%), form+detail on right (60%), loading state, selected row tracking.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
@@ -219,7 +219,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   return `import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { SlidePanel } from '@/components/ui/slide-panel';
 import { useEntity } from '@/hooks/useEntity';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
@@ -228,58 +227,72 @@ import ${detailName}Table from './${detailName}Table';
 export default function ${compName}({ token, apiBaseUrl }) {
   const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
 
-  const panelTitle = ${headerEntity}.editing?.id
+  const detailTitle = ${headerEntity}.editing?.id
     ? \`${toLabel(headerEntity)} \${${headerEntity}.editing.documentNo || ${headerEntity}.editing.id}\`
     : 'New ${toLabel(headerEntity)}';
 
-  const handleClose = () => {
-    ${headerEntity}.handleSelect(null);
-  };
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">${toLabel(headerEntity)}s</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {${headerEntity}.loading ? 'Loading...' : \`\${${headerEntity}.items.length} records\`}
-          </p>
+    <div className="flex h-[calc(100vh-4rem)] gap-0">
+      {/* Left panel: Table */}
+      <div className={\`flex flex-col border-r transition-all duration-300 \${${headerEntity}.editing ? 'w-2/5' : 'w-full'}\`}>
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">${toLabel(headerEntity)}s</h2>
+            <p className="text-xs text-muted-foreground">
+              {${headerEntity}.loading ? 'Loading...' : \`\${${headerEntity}.items.length} records\`}
+            </p>
+          </div>
+          <Button onClick={${headerEntity}.handleNew} size="sm">+ New</Button>
         </div>
-        <Button onClick={${headerEntity}.handleNew} size="sm">+ New ${toLabel(headerEntity)}</Button>
+        <div className="flex-1 overflow-auto p-3">
+          {${headerEntity}.loading ? (
+            <div className="animate-pulse space-y-3">
+              <div className="h-10 bg-muted rounded" />
+              <div className="h-8 bg-muted/60 rounded" />
+              <div className="h-8 bg-muted/40 rounded" />
+              <div className="h-8 bg-muted/60 rounded" />
+              <div className="h-8 bg-muted/40 rounded" />
+            </div>
+          ) : (
+            <${headerName}Table
+              data={${headerEntity}.items}
+              onRowSelect={${headerEntity}.handleSelect}
+              selectedId={${headerEntity}.selected?.id}
+              compact={!!${headerEntity}.editing}
+            />
+          )}
+        </div>
       </div>
-      {${headerEntity}.loading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <div className="animate-pulse space-y-3 w-full">
-            <div className="h-10 bg-muted rounded" />
-            <div className="h-8 bg-muted/60 rounded" />
-            <div className="h-8 bg-muted/40 rounded" />
-            <div className="h-8 bg-muted/60 rounded" />
-            <div className="h-8 bg-muted/40 rounded" />
+
+      {/* Right panel: Form + Detail */}
+      {${headerEntity}.editing && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/20">
+            <h2 className="text-lg font-semibold text-foreground">{detailTitle}</h2>
+            <button
+              onClick={() => ${headerEntity}.handleSelect(null)}
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Close detail"
+            >
+              &times;
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+            <${headerName}Form
+              data={${headerEntity}.editing}
+              onChange={${headerEntity}.handleChange}
+              onSave={${headerEntity}.handleSave}
+              onDelete={${headerEntity}.selected ? ${headerEntity}.handleDelete : undefined}
+              onProcess={${headerEntity}.handleProcess}
+            />
+            <Separator />
+            <div>
+              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
+              <${detailName}Table data={${headerEntity}.children} />
+            </div>
           </div>
         </div>
-      ) : (
-        <${headerName}Table
-          data={${headerEntity}.items}
-          onRowSelect={${headerEntity}.handleSelect}
-          selectedId={${headerEntity}.selected?.id}
-        />
       )}
-      <SlidePanel
-        open={!!${headerEntity}.editing}
-        onClose={handleClose}
-        title={panelTitle}
-      >
-        <${headerName}Form
-          data={${headerEntity}.editing}
-          onChange={${headerEntity}.handleChange}
-          onSave={${headerEntity}.handleSave}
-          onDelete={${headerEntity}.selected ? ${headerEntity}.handleDelete : undefined}
-          onProcess={${headerEntity}.handleProcess}
-        />
-        <Separator className="my-6" />
-        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
-        <${detailName}Table data={${headerEntity}.children} />
-      </SlidePanel>
     </div>
   );
 }

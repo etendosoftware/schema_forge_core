@@ -152,19 +152,20 @@ describe('generateFormComponent', () => {
     assert.ok(code.includes('focus:ring-primary'), 'should use primary focus ring');
   });
 
-  it('uses single-column layout for panel width', () => {
+  it('uses two-column grid for editable fields', () => {
     const code = generateFormComponent('order', sampleContract);
-    assert.ok(!code.includes('grid-cols-2'), 'should not use 2-column grid (panel is narrow)');
-    assert.ok(code.includes('space-y-3') || code.includes('space-y-4'), 'should use vertical stacking');
+    assert.ok(code.includes('grid-cols-2'), 'should use 2-column grid for split view');
+    assert.ok(code.includes('gap-3'), 'should have gap between grid items');
   });
 });
 
 describe('generatePageComponent', () => {
-  it('generates page with SlidePanel', () => {
+  it('generates page with Split View layout', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('export default function OrderPage'), 'should export OrderPage');
-    assert.ok(code.includes('SlidePanel'), 'should use SlidePanel');
-    assert.ok(code.includes('slide-panel'), 'should import from slide-panel');
+    assert.ok(code.includes('w-2/5'), 'should have 40% width for table panel');
+    assert.ok(code.includes('flex-1'), 'should have flex-1 for detail panel');
+    assert.ok(!code.includes('SlidePanel'), 'should NOT use SlidePanel');
   });
 
   it('imports useEntity from @/hooks/useEntity', () => {
@@ -193,19 +194,18 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('.children'), 'should pass children to detail table');
   });
 
-  it('includes New button and close panel clears editing', () => {
+  it('has close button that clears selection', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('.handleNew'), 'should wire handleNew');
-    assert.ok(code.includes('onClose'), 'should have onClose for panel');
+    assert.ok(code.includes('handleSelect(null)'), 'should clear selection on close');
+    assert.ok(code.includes('aria-label="Close detail"'), 'should have accessible close button');
   });
 
-  it('puts form and detail table inside SlidePanel', () => {
+  it('puts form and detail table in right panel', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
-    const panelStart = code.indexOf('<SlidePanel');
-    const panelEnd = code.indexOf('</SlidePanel>');
-    const panelContent = code.slice(panelStart, panelEnd);
-    assert.ok(panelContent.includes('Form'), 'form should be inside SlidePanel');
-    assert.ok(panelContent.includes('Table'), 'detail table should be inside SlidePanel');
+    const rightPanel = code.slice(code.indexOf('Right panel'));
+    assert.ok(rightPanel.includes('Form'), 'form should be in right panel');
+    assert.ok(rightPanel.includes('Table'), 'detail table should be in right panel');
   });
 
   it('shows loading skeleton when loading', () => {
@@ -218,6 +218,17 @@ describe('generatePageComponent', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('selectedId'), 'should pass selectedId to table');
     assert.ok(code.includes('.selected?.id'), 'should derive selectedId from hook');
+  });
+
+  it('passes compact prop to table when detail is open', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('compact={'), 'should pass compact prop to table');
+  });
+
+  it('table expands to full width when no selection', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('w-full'), 'should use full width when no editing');
+    assert.ok(code.includes('transition-all'), 'should animate width transition');
   });
 });
 
