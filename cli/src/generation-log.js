@@ -201,7 +201,6 @@ export function compareGenerated(windowName, oldFiles, newFiles) {
  */
 export function createLogEntries(windowName, trigger, oldFiles, newFiles, existingLog = []) {
   const rawChanges = compareGenerated(windowName, oldFiles, newFiles);
-  if (rawChanges.length === 0) return [];
 
   // Auto-increment runId
   const existingRunIds = existingLog
@@ -212,6 +211,21 @@ export function createLogEntries(windowName, trigger, oldFiles, newFiles, existi
   const nextRun = existingRunIds.length > 0 ? Math.max(...existingRunIds) + 1 : 1;
   const runId = `run-${String(nextRun).padStart(3, '0')}`;
   const run = new Date().toISOString();
+
+  if (rawChanges.length === 0) {
+    return [{
+      run,
+      runId,
+      trigger,
+      window: windowName,
+      entity: null,
+      field: null,
+      file: null,
+      change: 'no-changes',
+      before: null,
+      after: null,
+    }];
+  }
 
   return rawChanges.map(change => ({
     run,
@@ -426,9 +440,9 @@ if (isDirectRun) {
   // Create entries
   const entries = createLogEntries(windowName, trigger, oldFiles, newFiles, existingLog);
 
-  if (entries.length === 0) {
-    console.log(`No changes detected for ${windowName}`);
-    process.exit(0);
+  const isNoChanges = entries.length === 1 && entries[0].change === 'no-changes';
+  if (isNoChanges) {
+    console.log(`No changes detected for ${windowName} (logged as no-changes)`);
   }
 
   // Append
