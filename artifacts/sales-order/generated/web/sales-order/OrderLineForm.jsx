@@ -1,13 +1,10 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 
-export default function OrderLineForm({ data, onChange, onSave, onDelete, onProcess }) {
+export default function OrderLineForm({ data, onChange }) {
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 rounded-lg border p-4 bg-muted/20">
+    <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="product" className="text-sm text-foreground font-medium">Product *</Label>
           <Input
@@ -68,34 +65,6 @@ export default function OrderLineForm({ data, onChange, onSave, onDelete, onProc
             onChange={(e) => onChange?.('description', e.target.value)} className="focus:ring-2 focus:ring-primary focus:outline-none"
           />
         </div>
-      </div>
-      <div className="space-y-3 rounded-lg border border-dashed p-4 bg-muted/10">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">System Fields</p>
-        <div className="space-y-1.5">
-          <Label htmlFor="lineNo" className="text-sm text-muted-foreground">Line No *</Label>
-          <Input
-            id="lineNo"
-            name="lineNo"
-            type="number"
-            value={data?.lineNo ?? ''}
-            onChange={(e) => onChange?.('lineNo', e.target.value)} disabled readOnly className="bg-muted/50 text-muted-foreground border-dashed cursor-not-allowed" required
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="lineNetAmount" className="text-sm text-muted-foreground">Line Net Amount</Label>
-          <Input
-            id="lineNetAmount"
-            name="lineNetAmount"
-            type="number"
-            value={data?.lineNetAmount ?? ''}
-            onChange={(e) => onChange?.('lineNetAmount', e.target.value)} disabled readOnly className="bg-muted/50 text-muted-foreground border-dashed cursor-not-allowed"
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-2 pt-2">
-        <Button type="submit" size="sm">Save</Button>
-        {onDelete && <Button variant="destructive" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
-      </div>
-    </form>
+    </div>
   );
 }

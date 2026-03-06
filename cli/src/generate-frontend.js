@@ -131,95 +131,108 @@ ${bodyCells}
 
 /**
  * Generate a detail/edit form component for an entity.
- * Features: grouped fields (editable vs readOnly), distinct disabled styling, separated process actions.
+ * Only renders editable fields in a 2-column grid.
+ * Read-only fields and process actions are handled by the page component.
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formFields = entity.fields.filter(f => f.form);
-  const processes = getProcessesForEntity(contract, entityName);
   const compName = `${capitalize(entityName)}Form`;
 
   const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
-  const readOnlyFields = formFields.filter(f => f.visibility === 'readOnly');
 
   const imports = [
     `import React from 'react';`,
     `import { Input } from '@/components/ui/input';`,
     `import { Label } from '@/components/ui/label';`,
-    `import { Button } from '@/components/ui/button';`,
-    `import { Separator } from '@/components/ui/separator';`,
   ];
 
   function renderField(f) {
     const label = toLabel(f.name);
-    const isReadOnly = f.visibility === 'readOnly';
     const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const disabledAttr = isReadOnly
-      ? ' disabled readOnly className="bg-muted/50 text-muted-foreground border-dashed cursor-not-allowed"'
-      : ' className="focus:ring-2 focus:ring-primary focus:outline-none"';
     const requiredAttr = f.required ? ' required' : '';
 
     return `        <div className="space-y-1.5">
-          <Label htmlFor="${f.name}" className="text-sm ${isReadOnly ? 'text-muted-foreground' : 'text-foreground font-medium'}">${label}${f.required ? ' *' : ''}</Label>
+          <Label htmlFor="${f.name}" className="text-sm text-foreground font-medium">${label}${f.required ? ' *' : ''}</Label>
           <Input
             id="${f.name}"
             name="${f.name}"
             type="${inputType}"
             value={data?.${f.name} ?? ''}
-            onChange={(e) => onChange?.('${f.name}', e.target.value)}${disabledAttr}${requiredAttr}
+            onChange={(e) => onChange?.('${f.name}', e.target.value)} className="focus:ring-2 focus:ring-primary focus:outline-none"${requiredAttr}
           />
         </div>`;
   }
 
   const editableElements = editableFields.map(renderField).join('\n');
-  const readOnlyElements = readOnlyFields.map(renderField).join('\n');
-
-  const readOnlySection = readOnlyFields.length > 0
-    ? `\n      <div className="space-y-3 rounded-lg border border-dashed p-4 bg-muted/10">\n        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">System Fields</p>\n${readOnlyElements}\n      </div>`
-    : '';
-
-  const processButtons = processes.map(p => {
-    const label = toLabel(p.name);
-    return `          <Button variant="secondary" size="sm" onClick={() => onProcess?.('${p.name}')}>
-            ${label}
-          </Button>`;
-  }).join('\n');
-
-  const processSection = processes.length > 0
-    ? `\n      <div className="rounded-lg border p-4 bg-muted/10 space-y-2">\n        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</p>\n        <div className="flex gap-2">\n${processButtons}\n        </div>\n      </div>`
-    : '';
 
   return `${imports.join('\n')}
 
-export default function ${compName}({ data, onChange, onSave, onDelete, onProcess }) {
+export default function ${compName}({ data, onChange }) {
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 rounded-lg border p-4 bg-muted/20">
+    <div className="grid grid-cols-2 gap-3">
 ${editableElements}
-      </div>${readOnlySection}
-      <div className="flex items-center gap-2 pt-2">
-        <Button type="submit" size="sm">Save</Button>
-        {onDelete && <Button variant="destructive" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
-      </div>${processSection}
-    </form>
+    </div>
   );
 }
 `;
 }
 
 /**
+ * Get the read-only fields for an entity (used by page component for summary strip).
+ */
+export function getReadOnlyFields(contract, entityName) {
+  const entity = contract.frontendContract.entities[entityName];
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
+}
+
+/**
  * Generate a header-detail page component with Split View layout.
- * Features: table on left (40%), form+detail on right (60%), loading state, selected row tracking.
+ * Features: table left (40%), detail right (60%) with toolbar, summary strip, form, and lines.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
+  const processes = getProcessesForEntity(contract, headerEntity);
+  const readOnlyFields = getReadOnlyFields(contract, headerEntity);
+
+  // Status field gets a badge in the header; others go in the summary strip
+  const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
+  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+
+  const summaryItems = summaryFields.map(f => {
+    const label = toLabel(f.name);
+    const isNumber = f.tsType === 'number';
+    const valueExpr = isNumber
+      ? `${headerEntity}.editing?.${f.name}?.toLocaleString() ?? '—'`
+      : `${headerEntity}.editing?.${f.name} ?? '—'`;
+    return `            <div className="flex items-center gap-1.5">\n              <span className="text-slate-500">${label}:</span>\n              <span className="font-semibold text-foreground ${isNumber ? 'tabular-nums' : ''}">{${valueExpr}}</span>\n            </div>`;
+  }).join('\n');
+
+  const processButtons = processes.map(p => {
+    const label = toLabel(p.name);
+    const isDestructive = p.name.toLowerCase().includes('void') || p.name.toLowerCase().includes('cancel') || p.name.toLowerCase().includes('reject');
+    const btnClass = isDestructive
+      ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+    return `            <Button variant="outline" size="sm" className="${btnClass}" onClick={() => ${headerEntity}.handleProcess?.('${p.name}')}>${label}</Button>`;
+  }).join('\n');
+
+  const processSection = processes.length > 0
+    ? `\n            <div className="h-5 w-px bg-border" />\n${processButtons}`
+    : '';
+
+  const statusBadgeImport = statusField
+    ? `\nimport { StatusBadge } from '@/components/ui/status-badge';`
+    : '';
+  const statusBadgeInHeader = statusField
+    ? `\n            <StatusBadge status={${headerEntity}.editing?.${statusField.name}} />`
+    : '';
 
   return `import React from 'react';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { useEntity } from '@/hooks/useEntity';
+import { useEntity } from '@/hooks/useEntity';${statusBadgeImport}
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
@@ -264,30 +277,45 @@ export default function ${compName}({ token, apiBaseUrl }) {
         </div>
       </div>
 
-      {/* Right panel: Form + Detail */}
+      {/* Right panel: Toolbar + Summary + Form + Detail */}
       {${headerEntity}.editing && (
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/20">
-            <h2 className="text-lg font-semibold text-foreground">{detailTitle}</h2>
-            <button
-              onClick={() => ${headerEntity}.handleSelect(null)}
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Close detail"
-            >
-              &times;
-            </button>
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Toolbar: title, status, process actions, save/delete */}
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-slate-200 bg-white shadow-sm">
+            <h2 className="text-base font-semibold text-foreground truncate">{detailTitle}</h2>${statusBadgeInHeader}
+            <div className="flex-1" />
+            <div className="flex items-center gap-2">${processSection}
+              <Button size="sm" onClick={() => ${headerEntity}.handleSave(${headerEntity}.editing)}>Save</Button>
+              {${headerEntity}.selected && (
+                <Button variant="destructive" size="sm" onClick={${headerEntity}.handleDelete}>Delete</Button>
+              )}
+              <button
+                onClick={() => ${headerEntity}.handleSelect(null)}
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label="Close detail"
+              >
+                &times;
+              </button>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+
+          {/* Summary strip: read-only reference fields */}
+          <div className="flex items-center gap-5 px-5 py-2.5 border-b border-slate-200 bg-slate-50 text-xs">
+${summaryItems}
+          </div>
+
+          {/* Form zone: editable fields only */}
+          <div className="px-5 pt-4 pb-3 border-b">
             <${headerName}Form
               data={${headerEntity}.editing}
               onChange={${headerEntity}.handleChange}
-              onSave={${headerEntity}.handleSave}
-              onDelete={${headerEntity}.selected ? ${headerEntity}.handleDelete : undefined}
-              onProcess={${headerEntity}.handleProcess}
             />
-            <Separator />
-            <div>
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
+          </div>
+
+          {/* Detail zone: fills remaining height */}
+          <div className="flex-1 flex flex-col overflow-hidden px-5 py-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">${toLabel(detailEntity)}s</h3>
+            <div className="flex-1 overflow-auto">
               <${detailName}Table data={${headerEntity}.children} />
             </div>
           </div>

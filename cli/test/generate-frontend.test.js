@@ -6,6 +6,7 @@ import {
   generatePageComponent,
   generateIndexComponent,
   generateAll,
+  getReadOnlyFields,
 } from '../src/generate-frontend.js';
 
 const sampleContract = {
@@ -116,34 +117,11 @@ describe('generateFormComponent', () => {
     assert.ok(code.includes('export default function OrderForm'), 'should export OrderForm');
   });
 
-  it('renders editable fields as inputs', () => {
+  it('renders only editable fields as inputs', () => {
     const code = generateFormComponent('order', sampleContract);
     assert.ok(code.includes('businessPartner'), 'should include editable businessPartner');
-  });
-
-  it('separates readOnly fields into system fields group', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes('System Fields'), 'should have System Fields section');
-    assert.ok(code.includes('border-dashed'), 'should use dashed border for readOnly group');
-    assert.ok(code.includes('cursor-not-allowed'), 'should show not-allowed cursor on disabled');
-  });
-
-  it('styles disabled inputs distinctly', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes('bg-muted/50'), 'should use muted background for disabled');
-    assert.ok(code.includes('text-muted-foreground'), 'should use muted text for disabled');
-  });
-
-  it('includes process action buttons in Actions section', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes('completeOrder') || code.includes('Complete Order'), 'should include completeOrder button');
-    assert.ok(code.includes('voidOrder') || code.includes('Void Order'), 'should include voidOrder button');
-    assert.ok(code.includes('Actions'), 'should have Actions section label');
-  });
-
-  it('does not include process buttons for non-matching entity', () => {
-    const code = generateFormComponent('orderLine', sampleContract);
-    assert.ok(!code.includes('completeOrder'), 'should not include order processes in orderLine form');
+    assert.ok(!code.includes('documentNo'), 'should NOT include readOnly documentNo');
+    assert.ok(!code.includes('docStatus'), 'should NOT include readOnly docStatus');
   });
 
   it('adds focus ring to editable inputs', () => {
@@ -154,8 +132,14 @@ describe('generateFormComponent', () => {
 
   it('uses two-column grid for editable fields', () => {
     const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes('grid-cols-2'), 'should use 2-column grid for split view');
+    assert.ok(code.includes('grid-cols-2'), 'should use 2-column grid');
     assert.ok(code.includes('gap-3'), 'should have gap between grid items');
+  });
+
+  it('does not render save/delete buttons or process actions', () => {
+    const code = generateFormComponent('order', sampleContract);
+    assert.ok(!code.includes('Save'), 'should NOT have Save button (lives in page toolbar)');
+    assert.ok(!code.includes('completeOrder'), 'should NOT have process actions (lives in page toolbar)');
   });
 });
 
@@ -194,18 +178,43 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('.children'), 'should pass children to detail table');
   });
 
-  it('has close button that clears selection', () => {
+  it('has toolbar with process actions, Save, Delete, and close', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('.handleNew'), 'should wire handleNew');
     assert.ok(code.includes('handleSelect(null)'), 'should clear selection on close');
     assert.ok(code.includes('aria-label="Close detail"'), 'should have accessible close button');
+    assert.ok(code.includes('.handleSave'), 'should have Save in toolbar');
+    assert.ok(code.includes('.handleDelete'), 'should have Delete in toolbar');
+    assert.ok(code.includes('truncate'), 'should truncate long titles');
+    assert.ok(code.includes('Complete Order') || code.includes('completeOrder'), 'should have process actions in toolbar');
+    assert.ok(code.includes('Void Order') || code.includes('voidOrder'), 'should have void action in toolbar');
+    assert.ok(code.includes('bg-emerald-50'), 'should color-code complete action green');
+    assert.ok(code.includes('bg-amber-50'), 'should color-code void action amber');
   });
 
-  it('puts form and detail table in right panel', () => {
+  it('shows summary strip with read-only reference fields', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('Summary strip'), 'should have labeled summary strip');
+    assert.ok(code.includes('Document No'), 'should show documentNo in summary');
+    assert.ok(code.includes('Grand Total'), 'should show grandTotal in summary');
+    assert.ok(code.includes('tabular-nums'), 'should use tabular-nums for amounts');
+    assert.ok(code.includes('bg-slate-50'), 'should have distinct summary background');
+    assert.ok(code.includes('font-semibold'), 'should use semibold for values');
+  });
+
+  it('shows status badge in toolbar header', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('StatusBadge'), 'should render StatusBadge in toolbar');
+    assert.ok(code.includes('status-badge'), 'should import StatusBadge');
+  });
+
+  it('puts form and detail table in separate zones', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     const rightPanel = code.slice(code.indexOf('Right panel'));
     assert.ok(rightPanel.includes('Form'), 'form should be in right panel');
     assert.ok(rightPanel.includes('Table'), 'detail table should be in right panel');
+    assert.ok(rightPanel.includes('Form zone'), 'should have labeled form zone');
+    assert.ok(rightPanel.includes('Detail zone'), 'should have labeled detail zone');
   });
 
   it('shows loading skeleton when loading', () => {
