@@ -7,6 +7,8 @@
     {
       "name": "cOrder",
       "tableName": "C_Order",
+      "entityClassname": "Order",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Header",
       "level": "0",
       "sequence": "10",
@@ -27,7 +29,18 @@
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
           "readOnlyLogic": "@Processed@='Y'",
           "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_Organization",
-          "validationRuleId": "49DC1D6F086945AB82F84C66F5F13F16"
+          "validationRule": {
+            "code": "AD_ORG_ID <> '0'",
+            "contextParams": [],
+            "cascadeParams": []
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cDocTypeTargetId",
@@ -44,7 +57,26 @@
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
           "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_DocType",
-          "validationRuleId": "133"
+          "validationRule": {
+            "code": "C_DocType.DocBaseType IN ('SOO', 'POO') AND C_DocType.IsSOTrx='@IsSOTrx@'\nAND (AD_ISORGINCLUDED(@AD_Org_ID@,C_DocType.AD_Org_ID, @#AD_Client_ID@) <> '-1' OR COALESCE(@AD_Org_ID@,'-1')='-1')\nAND COALESCE(@isReturnMaterial@, 'N') = C_DocType.IsReturn\nAND ((@isQuotation@='Y' AND docsubtypeso like 'OB') OR ((@isQuotation@='N' OR @isQuotation@ is null) AND (docsubtypeso is null OR docsubtypeso not like 'OB')))",
+            "contextParams": [
+              "AD_Client_ID"
+            ],
+            "cascadeParams": [
+              "IsSOTrx",
+              "AD_Org_ID",
+              "isReturnMaterial",
+              "isQuotation"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_DocType",
+            "keyColumn": "C_DocType_ID",
+            "displayColumn": "Name",
+            "filterExpression": "C_DocType.AD_Client_ID=@#AD_Client_ID@ AND (@AD_Org_ID@ <> '0' OR COALESCE(@AD_Org_ID@,'-1')='-1')",
+            "orderBy": "C_DocType.isdefault DESC, C_DocType.Name"
+          }
         },
         {
           "name": "documentNo",
@@ -80,13 +112,20 @@
           "name": "cBpartnerId",
           "columnName": "C_BPartner_ID",
           "label": "Business Partner",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "60",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
           "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
-          "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
+          "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_BPartner",
+            "keyColumn": "C_BPartner_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "cBpartnerLocationId",
@@ -98,7 +137,20 @@
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
           "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartnerLocation",
-          "validationRuleId": "167"
+          "validationRule": {
+            "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_BPartner_Location",
+            "keyColumn": "C_BPartner_Location_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "mPriceListId",
@@ -110,7 +162,20 @@
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
           "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList",
-          "validationRuleId": "DB85A30739C3487988921CE3FFFD3BAD"
+          "validationRule": {
+            "code": "M_PriceList.issopricelist = @isSOTrx@",
+            "contextParams": [],
+            "cascadeParams": [
+              "isSOTrx"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_PriceList",
+            "keyColumn": "M_PriceList_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "datePromised",
@@ -137,7 +202,20 @@
           "visibility": "editable",
           "maxLength": "32",
           "readOnlyLogic": "@Processed@='Y'",
-          "validationRuleId": "FF80808130B107670130B1115F22000D"
+          "validationRule": {
+            "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@IsSOTrx@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@IsSOTrx@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
+            "contextParams": [],
+            "cascadeParams": [
+              "IsSOTrx"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "FIN_Paymentmethod",
+            "keyColumn": "FIN_Paymentmethod_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cPaymentTermId",
@@ -147,17 +225,32 @@
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_PaymentTerm",
+            "keyColumn": "C_PaymentTerm_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "mWarehouseId",
           "columnName": "M_Warehouse_ID",
           "label": "Warehouse",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Warehouse",
+            "selectorName": "On hand warehouse",
+            "filterExpression": null,
+            "hql": "select w.id as id, w.name as name\nfrom Warehouse w\nwhere @additional_filters@\nand w.active=true",
+            "displayColumn": null
+          }
         },
         {
           "name": "invoiceRule",
@@ -172,7 +265,13 @@
           },
           "maxLength": "60",
           "displayLogic": "@OrderType@='SO' | @OrderType@='WP' | @OrderType@='PR' | @OrderType@='WR'",
-          "validationRuleId": "1000200003"
+          "validationRule": {
+            "code": "(AD_Ref_List.value IN ('I', 'D', 'O') OR (SELECT DOCSUBTYPESO FROM C_DOCTYPE WHERE C_DOCTYPE.C_DOCTYPE_ID = @C_DOCTYPETARGET_ID@) <> 'WR')",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_DOCTYPETARGET_ID"
+            ]
+          }
         },
         {
           "name": "docStatus",
@@ -217,7 +316,14 @@
             "type": "fromConfig",
             "source": "context.cCurrencyId"
           },
-          "maxLength": "22"
+          "maxLength": "22",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Currency",
+            "keyColumn": "C_Currency_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adUserId",
@@ -229,7 +335,20 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y'",
-          "validationRuleId": "123"
+          "validationRule": {
+            "code": "AD_User.C_BPartner_ID=@C_BPartner_ID@",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_User",
+            "keyColumn": "AD_User_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cDocTypeId",
@@ -243,7 +362,14 @@
             "type": "fromConfig",
             "source": "doctype.salesOrder"
           },
-          "maxLength": "22"
+          "maxLength": "22",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_DocType",
+            "keyColumn": "C_DocType_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "soResStatus",
@@ -272,7 +398,23 @@
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "22",
-          "validationRuleId": "6F75AF1B05464DD894033D50AEC67310"
+          "validationRule": {
+            "code": "AD_ISORGINCLUDED(@AD_Org_ID@, td0.AD_Org_ID, @#AD_Client_ID@) <> '-1'",
+            "contextParams": [
+              "AD_Client_ID"
+            ],
+            "cascadeParams": [
+              "AD_Org_ID"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "AD_User",
+            "keyColumn": "AD_User_ID",
+            "displayColumn": "Name",
+            "filterExpression": "EXISTS (SELECT * FROM C_BPartner bp WHERE AD_User.C_BPartner_ID=bp.C_BPartner_ID AND bp.IsSalesRep='Y')",
+            "orderBy": null
+          }
         },
         {
           "name": "description",
@@ -292,7 +434,21 @@
           "visibility": "editable",
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
-          "validationRuleId": "119"
+          "validationRule": {
+            "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsBillTo='Y' AND C_BPartner_Location.IsActive='Y'",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_BPartner_Location",
+            "keyColumn": "C_BPartner_Location_ID",
+            "displayColumn": "Name",
+            "filterExpression": null,
+            "orderBy": null
+          }
         },
         {
           "name": "deliveryLocationId",
@@ -302,7 +458,21 @@
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "22",
-          "validationRuleId": "167"
+          "validationRule": {
+            "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_BPartner_Location",
+            "keyColumn": "C_BPartner_Location_ID",
+            "displayColumn": "Name",
+            "filterExpression": null,
+            "orderBy": null
+          }
         },
         {
           "name": "emAprmAddPayment",
@@ -372,7 +542,14 @@
           "visibility": "system",
           "systemCategory": "internal",
           "maxLength": "22",
-          "displayLogic": "@DeliveryViaRule@='S' & (@OrderType@='SO' | @OrderType@='WP' | @OrderType@='PR' | @OrderType@='WR' | @OrderType@='WI')"
+          "displayLogic": "@DeliveryViaRule@='S' & (@OrderType@='SO' | @OrderType@='WP' | @OrderType@='PR' | @OrderType@='WR' | @OrderType@='WI')",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_Shipper",
+            "keyColumn": "M_Shipper_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "deliveryRule",
@@ -448,7 +625,14 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "displayLogic": "@$Element_MC@='Y'",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Campaign",
+            "keyColumn": "C_Campaign_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "chargeAmt",
@@ -474,7 +658,15 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y'",
-          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Charge"
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Charge",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Charge",
+            "keyColumn": "C_Charge_ID",
+            "displayColumn": "Name",
+            "filterExpression": "C_Charge.AD_Client_ID IN (@#User_Client@)",
+            "orderBy": null
+          }
         },
         {
           "name": "cActivityId",
@@ -486,7 +678,14 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "displayLogic": "@$Element_AY@='Y'",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Activity",
+            "keyColumn": "C_Activity_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adOrgTrxId",
@@ -498,17 +697,32 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "displayLogic": "@$Element_OT@='Y'",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "Table",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": "AD_Org.IsSummary='N' AND AD_Org_ID <> '0'",
+            "orderBy": "AD_Org.Name"
+          }
         },
         {
           "name": "quotationId",
           "columnName": "Quotation_ID",
           "label": "Quotation",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "readOnly",
           "maxLength": "32",
-          "displayLogic": "@Quotation_ID@ ! '' & @Quotation_ID@ ! 'null' & @Quotation_ID@ ! null"
+          "displayLogic": "@Quotation_ID@ ! '' & @Quotation_ID@ ! 'null' & @Quotation_ID@ ! null",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "deliveryStatus",
@@ -546,7 +760,15 @@
           "mandatory": false,
           "visibility": "readOnly",
           "maxLength": "32",
-          "displayLogic": "@Cancelledorder_id@!''"
+          "displayLogic": "@Cancelledorder_id@!''",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": "DocumentNo",
+            "filterExpression": null,
+            "orderBy": "C_Order.DocumentNo"
+          }
         },
         {
           "name": "replacedorderId",
@@ -556,7 +778,15 @@
           "mandatory": false,
           "visibility": "readOnly",
           "maxLength": "32",
-          "displayLogic": "@Replacedorder_id@!''"
+          "displayLogic": "@Replacedorder_id@!''",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": "DocumentNo",
+            "filterExpression": null,
+            "orderBy": "C_Order.DocumentNo"
+          }
         },
         {
           "name": "replacementorderId",
@@ -566,7 +796,15 @@
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": "DocumentNo",
+            "filterExpression": null,
+            "orderBy": "C_Order.DocumentNo"
+          }
         },
         {
           "name": "iscancelled",
@@ -595,58 +833,105 @@
           "name": "cProjectId",
           "columnName": "C_Project_ID",
           "label": "Project",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "60",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
           "readOnlyLogic": "@Posted@='Y'",
           "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_Project",
-          "validationRuleId": "800001"
+          "validationRule": {
+            "code": "C_Project.projectstatus in ('OP', 'OR') and (C_Project.c_bpartner_id=@C_BPartner_ID@ or '@IsSOTrx@'='N') or C_Project.c_project_id = @c_project_id@",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_BPartner_ID",
+              "IsSOTrx",
+              "c_project_id"
+            ]
+          },
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Project",
+            "keyColumn": "C_Project_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "cCostcenterId",
           "columnName": "C_Costcenter_ID",
           "label": "Cost Center",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "C_Costcenter",
+            "selectorName": "Cost Center Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "aAssetId",
           "columnName": "A_Asset_ID",
           "label": "Asset",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@$Element_AS@='Y'",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "A_Asset",
+            "selectorName": "Asset Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "user1Id",
           "columnName": "User1_ID",
           "label": "1st Dimension",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "User1",
+            "selectorName": "User Dimension 1",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "user2Id",
           "columnName": "User2_ID",
           "label": "2nd Dimension",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "User2",
+            "selectorName": "User Dimension 2",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "cancelandreplace",
@@ -688,18 +973,40 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
-          "validationRuleId": "120"
+          "validationRule": {
+            "code": "C_BPartner_Location.C_BPartner_ID=@DropShip_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y'",
+            "contextParams": [],
+            "cascadeParams": [
+              "DropShip_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_BPartner_Location",
+            "keyColumn": "C_BPartner_Location_ID",
+            "displayColumn": "Name",
+            "filterExpression": null,
+            "orderBy": null
+          }
         },
         {
           "name": "dropShipBpartnerId",
           "columnName": "DropShip_BPartner_ID",
           "label": "Drop Ship Partner",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
           "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "C_BPartner",
+            "selectorName": "C_BPartner Customers no combo",
+            "filterExpression": "e.customer = 'Y'",
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "dropShipUserId",
@@ -711,7 +1018,21 @@
           "systemCategory": "internal",
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y'",
-          "validationRuleId": "168"
+          "validationRule": {
+            "code": "AD_User.C_BPartner_ID=@DropShip_BPartner_ID@",
+            "contextParams": [],
+            "cascadeParams": [
+              "DropShip_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "AD_User",
+            "keyColumn": "AD_User_ID",
+            "displayColumn": "Name",
+            "filterExpression": null,
+            "orderBy": "AD_User.Name"
+          }
         },
         {
           "name": "isSelected",
@@ -888,7 +1209,14 @@
             "source": "context.client"
           },
           "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "generatetemplate",
@@ -916,7 +1244,14 @@
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "12"
+          "maxLength": "12",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Incoterms",
+            "keyColumn": "C_Incoterms_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "incotermsdescription",
@@ -928,12 +1263,15 @@
           "maxLength": "255"
         }
       ],
+      "entityFullClass": "org.openbravo.model.common.order.Order",
       "whereClause": "C_Order.IsSOTrx='Y'",
       "hqlWhereClause": "e.salesTransaction=true AND e.transactionDocument.return= false AND e.transactionDocument.sOSubType NOT LIKE 'OB'"
     },
     {
       "name": "cOrderLine",
       "tableName": "C_OrderLine",
+      "entityClassname": "OrderLine",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Lines",
       "level": "1",
       "sequence": "20",
@@ -956,12 +1294,19 @@
           "name": "mProductId",
           "columnName": "M_Product_ID",
           "label": "Product",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "60",
           "readOnlyLogic": "@Processed@='Y'",
-          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product",
+          "reference": {
+            "type": "Search",
+            "targetTable": "M_Product",
+            "keyColumn": "M_Product_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "aumqty",
@@ -988,7 +1333,22 @@
           "displayLogicServer": "@UomManagement@='Y'",
           "readOnlyLogic": "@Processed@='Y'",
           "callout": "org.openbravo.erpCommon.ad_callouts.OperativeQuantity_To_BaseQuantity",
-          "validationRuleId": "5ABEE0829BD24BFB9BA454E607825821"
+          "validationRule": {
+            "code": "td0.c_uom_id IN(select p.c_uom_id from m_product p where p.m_product_id = @M_Product_ID@) or td0.c_uom_id IN(select a.c_uom_id from m_product_aum a where a.m_product_id = @M_Product_ID@ and ((@IsSOTrx@ = 'Y' and a.sales <> 'NA') OR (@IsSOTrx@ <> 'Y' and a.purchase <> 'NA')))",
+            "contextParams": [],
+            "cascadeParams": [
+              "M_Product_ID",
+              "IsSOTrx"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_UOM",
+            "keyColumn": "C_UOM_ID",
+            "displayColumn": "Name",
+            "filterExpression": null,
+            "orderBy": null
+          }
         },
         {
           "name": "qtyOrdered",
@@ -1013,7 +1373,14 @@
           "mandatory": true,
           "visibility": "readOnly",
           "maxLength": "22",
-          "readOnlyLogic": "@UomManagement@='Y'"
+          "readOnlyLogic": "@UomManagement@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_UOM",
+            "keyColumn": "C_UOM_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "mAttributeSetInstanceId",
@@ -1089,7 +1456,25 @@
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y'",
           "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt",
-          "validationRuleId": "5BEA56148DC74215A63927481BDC0B63"
+          "validationRule": {
+            "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
+            "contextParams": [],
+            "cascadeParams": [
+              "DateInvoiced",
+              "DateOrdered",
+              "IsSOTrx",
+              "AD_CLIENT_ID",
+              "AD_ORG_ID"
+            ]
+          },
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Tax",
+            "keyColumn": "C_Tax_ID",
+            "displayColumn": "Name",
+            "filterExpression": "C_Tax.Parent_Tax_ID IS NULL",
+            "orderBy": "2"
+          }
         },
         {
           "name": "priceList",
@@ -1135,7 +1520,14 @@
           "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_Warehouse_Rule",
+            "keyColumn": "M_Warehouse_Rule_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "description",
@@ -1154,7 +1546,15 @@
           "mandatory": false,
           "visibility": "readOnly",
           "maxLength": "32",
-          "displayLogic": "@Replacedorderline_id@!''"
+          "displayLogic": "@Replacedorderline_id@!''",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_OrderLine",
+            "keyColumn": "C_OrderLine_ID",
+            "displayColumn": "Line",
+            "filterExpression": null,
+            "orderBy": null
+          }
         },
         {
           "name": "createReservation",
@@ -1240,7 +1640,15 @@
           },
           "maxLength": "22",
           "displayLogic": "@DirectShip@='N'",
-          "readOnlyLogic": "@OrderType@!'SO'"
+          "readOnlyLogic": "@OrderType@!'SO'",
+          "reference": {
+            "type": "Table",
+            "targetTable": "M_Warehouse",
+            "keyColumn": "M_Warehouse_ID",
+            "displayColumn": "Name",
+            "filterExpression": "M_Warehouse.AD_Client_ID=@#AD_Client_ID@ AND (select ad.isactive from ad_org ad where ad.ad_org_id = M_Warehouse.AD_Org_ID) = 'Y'",
+            "orderBy": null
+          }
         },
         {
           "name": "qtyReserved",
@@ -1265,13 +1673,20 @@
             "source": "context.mShipperId"
           },
           "maxLength": "22",
-          "displayLogic": "@DeliveryViaRule@='S'"
+          "displayLogic": "@DeliveryViaRule@='S'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_Shipper",
+            "keyColumn": "M_Shipper_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cBpartnerId",
           "columnName": "C_BPartner_ID",
           "label": "Business Partner",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -1281,7 +1696,14 @@
           },
           "maxLength": "60",
           "displayLogic": "(@OrderType@='OB' | @OrderType@='SO' | @OrderType@='WP' | @Processed@='Y') & @C_Order_Discount_ID@=''",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_BPartner",
+            "keyColumn": "C_BPartner_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "directShip",
@@ -1318,7 +1740,20 @@
           "maxLength": "22",
           "displayLogic": "(@OrderType@='OB' | @OrderType@='SO' | @OrderType@='WP' | @Processed@='Y') & @C_Order_Discount_ID@=''",
           "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Tax",
-          "validationRuleId": "167"
+          "validationRule": {
+            "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
+            "contextParams": [],
+            "cascadeParams": [
+              "C_BPartner_ID"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_BPartner_Location",
+            "keyColumn": "C_BPartner_Location_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cancelpricead",
@@ -1339,13 +1774,21 @@
           "name": "mProductUomId",
           "columnName": "M_Product_Uom_Id",
           "label": "Order UOM",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "maxLength": "22",
           "displayLogic": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
           "readOnlyLogic": "@Processed@='Y'",
-          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Conversion"
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Conversion",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Product_UOM",
+            "selectorName": "Product UOM Selector",
+            "filterExpression": "e.product.id = @inpmProductId@",
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "quantityOrder",
@@ -1406,11 +1849,18 @@
           "name": "quotationlineId",
           "columnName": "Quotationline_ID",
           "label": "Quotation Line",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "readOnly",
           "maxLength": "32",
-          "displayLogic": "@Quotationline_ID@ ! '' & @Quotationline_ID@ ! 'null' & @Quotationline_ID@ ! null"
+          "displayLogic": "@Quotationline_ID@ ! '' & @Quotationline_ID@ ! 'null' & @Quotationline_ID@ ! null",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_OrderLine",
+            "keyColumn": "C_OrderLine_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "soResStatus",
@@ -1471,62 +1921,115 @@
           "maxLength": "22",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
           "readOnlyLogic": "@Posted@='Y'",
-          "validationRuleId": "53AE60A473D2460D8663D7A1BC5BA732"
+          "validationRule": {
+            "code": "AD_ISORGINCLUDED(ad_org.ad_org_id, CASE WHEN (@Parent_AD_Org@ IS NULL OR @Parent_AD_Org@ = '') THEN @AD_ORG_ID@ ELSE @Parent_AD_Org@ END, ad_org.ad_client_id)<>-1 AND IsReady='Y'",
+            "contextParams": [],
+            "cascadeParams": [
+              "Parent_AD_Org",
+              "AD_ORG_ID"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cProjectId",
           "columnName": "C_Project_ID",
           "label": "Project",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Project",
+            "keyColumn": "C_Project_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "cCostcenterId",
           "columnName": "C_Costcenter_ID",
           "label": "Cost Center",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "C_Costcenter",
+            "selectorName": "Cost Center Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "aAssetId",
           "columnName": "A_Asset_ID",
           "label": "Asset",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@$Element_AS@='Y'",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "A_Asset",
+            "selectorName": "Asset Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "user1Id",
           "columnName": "User1_ID",
           "label": "1st Dimension",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "User1",
+            "selectorName": "User Dimension 1",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "user2Id",
           "columnName": "User2_ID",
           "label": "2nd Dimension",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
           "displayLogic": "@ACCT_DIMENSION_DISPLAY@",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "User2",
+            "selectorName": "User Dimension 2",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "explode",
@@ -1542,11 +2045,18 @@
           "name": "bomParentId",
           "columnName": "BOM_Parent_ID",
           "label": "BOM_Parent_ID",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_OrderLine",
+            "keyColumn": "C_OrderLine_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "relateOrderline",
@@ -1570,17 +2080,32 @@
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Order_Discount",
+            "keyColumn": "C_Order_Discount_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "mOfferId",
           "columnName": "M_Offer_ID",
           "label": "Promotion/Discount",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "10"
+          "maxLength": "10",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Offer",
+            "selectorName": "M_Offer no combo",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "isDescription",
@@ -1627,7 +2152,14 @@
             "type": "fromConfig",
             "source": "context.cCurrencyId"
           },
-          "maxLength": "22"
+          "maxLength": "22",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Currency",
+            "keyColumn": "C_Currency_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "dateInvoiced",
@@ -1651,11 +2183,18 @@
           "name": "cOrderId",
           "columnName": "C_Order_ID",
           "label": "Sales Order",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "60"
+          "maxLength": "60",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "isActive",
@@ -1684,7 +2223,14 @@
             "source": "context.client"
           },
           "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cOrderLineId",
@@ -1700,11 +2246,14 @@
           "maxLength": "32"
         }
       ],
+      "entityFullClass": "org.openbravo.model.common.order.OrderLine",
       "hqlOrderByClause": "lineNo"
     },
     {
       "name": "cOrderLineTax",
       "tableName": "C_OrderLineTax",
+      "entityClassname": "OrderLineTax",
+      "entityJavaPackage": "org.openbravo.model.ad.access",
       "tabName": "Line Tax",
       "level": "2",
       "sequence": "27",
@@ -1729,7 +2278,14 @@
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Tax",
+            "keyColumn": "C_Tax_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "taxbaseamt",
@@ -1770,7 +2326,23 @@
             "source": "context.organization"
           },
           "maxLength": "32",
-          "validationRuleId": "104"
+          "validationRule": {
+            "code": "(@AD_Client_ID@='0' AND AD_Org.AD_Org_ID='0') OR (@AD_Client_ID@!='0' AND ((AD_Org.AD_Client_ID IN (@#User_Client@) AND AD_Org.AD_Org_ID IN (@#User_Org@)) OR AD_Org.AD_Org_ID='0' AND AD_Org.IsSummary='N'))",
+            "contextParams": [
+              "User_Client",
+              "User_Org"
+            ],
+            "cascadeParams": [
+              "AD_Client_ID"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adClientId",
@@ -1785,7 +2357,20 @@
             "source": "context.client"
           },
           "maxLength": "32",
-          "validationRuleId": "103"
+          "validationRule": {
+            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
+            "contextParams": [
+              "User_Client"
+            ],
+            "cascadeParams": []
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "isactive",
@@ -1815,19 +2400,22 @@
           "name": "cOrderlineId",
           "columnName": "C_Orderline_ID",
           "label": "Sales Order Line",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
           "maxLength": "32"
         }
       ],
+      "entityFullClass": "org.openbravo.model.ad.access.OrderLineTax",
       "orderByClause": "C_OrderLineTax.Line",
       "hqlOrderByClause": "lineNo"
     },
     {
       "name": "mSolReservedStockV",
       "tableName": "M_SOL_Reserved_Stock_V",
+      "entityClassname": "SOLReservedStock",
+      "entityJavaPackage": "org.openbravo.model.materialmgmt.onhandquantity",
       "tabName": "Reserved Stock",
       "level": "2",
       "sequence": "28",
@@ -1836,19 +2424,34 @@
           "name": "mReservationId",
           "columnName": "M_Reservation_ID",
           "label": "Stock Reservation",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Reservation",
+            "selectorName": "Reservation Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "mLocatorId",
           "columnName": "M_Locator_ID",
           "label": "Storage Bin",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Search",
+            "targetTable": "M_Locator",
+            "keyColumn": "M_Locator_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "mAttributesetinstanceId",
@@ -1863,7 +2466,7 @@
           "name": "cOrderlineId",
           "columnName": "C_Orderline_ID",
           "label": "Purchase Order Line",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32"
@@ -1872,7 +2475,7 @@
           "name": "cBpartnerId",
           "columnName": "C_BPartner_ID",
           "label": "Vendor",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
           "derivation": {
@@ -1880,7 +2483,14 @@
             "source": "SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@"
           },
           "maxLength": "60",
-          "readOnlyLogic": "@Posted@='Y'"
+          "readOnlyLogic": "@Posted@='Y'",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_BPartner",
+            "keyColumn": "C_BPartner_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "quantity",
@@ -1932,7 +2542,14 @@
             "type": "fromConfig",
             "source": "context.client"
           },
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adOrgId",
@@ -1946,33 +2563,59 @@
             "type": "fromConfig",
             "source": "context.organization"
           },
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "mReservationStockId",
           "columnName": "M_Reservation_Stock_ID",
           "label": "Reservation Stock",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Reservation_Stock",
+            "selectorName": "Reservation Stock Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "cOrderlineId",
           "columnName": "C_Orderline_ID",
           "label": "Sales Order Line",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "C_OrderLine",
+            "selectorName": "C_OrderLine no combo",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         }
-      ]
+      ],
+      "entityFullClass": "org.openbravo.model.materialmgmt.onhandquantity.SOLReservedStock"
     },
     {
       "name": "cOrderlineServicerelation",
       "tableName": "C_Orderline_Servicerelation",
+      "entityClassname": "OrderlineServiceRelation",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Related Products",
       "level": "2",
       "sequence": "29",
@@ -1989,7 +2632,14 @@
             "type": "fromConfig",
             "source": "context.organization"
           },
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "isactive",
@@ -2009,21 +2659,37 @@
           "name": "cOrderlineId",
           "columnName": "C_Orderline_ID",
           "label": "Sales Order Line",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "C_OrderLine",
+            "selectorName": "Orderline selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "cOrderlineRelatedId",
           "columnName": "C_Orderline_Related_ID",
           "label": "Sales Order Line",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "C_OrderLine",
+            "selectorName": "Orderline selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "documentNo",
@@ -2058,12 +2724,19 @@
           "name": "mProductId",
           "columnName": "M_Product_ID",
           "label": "Product",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "readOnly",
           "maxLength": "60",
           "readOnlyLogic": "@Processed@='Y'",
-          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product",
+          "reference": {
+            "type": "Search",
+            "targetTable": "M_Product",
+            "keyColumn": "M_Product_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "mAttributeSetInstanceId",
@@ -2114,7 +2787,14 @@
             "type": "fromConfig",
             "source": "context.client"
           },
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cOrderlineServicerelationId",
@@ -2129,11 +2809,14 @@
           },
           "maxLength": "32"
         }
-      ]
+      ],
+      "entityFullClass": "org.openbravo.model.common.order.OrderlineServiceRelation"
     },
     {
       "name": "cOrderlineProductrelation",
       "tableName": "C_Orderline_Productrelation",
+      "entityClassname": "olpr",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Related Services",
       "level": "2",
       "sequence": "29",
@@ -2160,10 +2843,18 @@
           "name": "product",
           "columnName": "product",
           "label": "Product",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "readOnly",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Product",
+            "selectorName": "Product",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "attributeSetValue",
@@ -2192,11 +2883,14 @@
           "visibility": "system",
           "maxLength": "12"
         }
-      ]
+      ],
+      "entityFullClass": "org.openbravo.model.common.order.olpr"
     },
     {
       "name": "cOrderDiscount",
       "tableName": "C_Order_Discount",
+      "entityClassname": "OrderDiscount",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Basic Discounts",
       "level": "1",
       "sequence": "30",
@@ -2223,7 +2917,14 @@
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "32",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Discount",
+            "keyColumn": "C_Discount_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cascade",
@@ -2267,7 +2968,23 @@
           },
           "maxLength": "32",
           "readOnlyLogic": "@Processed@='Y'",
-          "validationRuleId": "104"
+          "validationRule": {
+            "code": "(@AD_Client_ID@='0' AND AD_Org.AD_Org_ID='0') OR (@AD_Client_ID@!='0' AND ((AD_Org.AD_Client_ID IN (@#User_Client@) AND AD_Org.AD_Org_ID IN (@#User_Org@)) OR AD_Org.AD_Org_ID='0' AND AD_Org.IsSummary='N'))",
+            "contextParams": [
+              "User_Client",
+              "User_Org"
+            ],
+            "cascadeParams": [
+              "AD_Client_ID"
+            ]
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cOrderDiscountId",
@@ -2286,7 +3003,7 @@
           "name": "cOrderId",
           "columnName": "C_Order_ID",
           "label": "Sales Order",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2306,14 +3023,30 @@
           },
           "maxLength": "32",
           "readOnlyLogic": "@Processed@='Y'",
-          "validationRuleId": "103"
+          "validationRule": {
+            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
+            "contextParams": [
+              "User_Client"
+            ],
+            "cascadeParams": []
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         }
       ],
+      "entityFullClass": "org.openbravo.model.common.order.OrderDiscount",
       "hqlOrderByClause": "lineNo"
     },
     {
       "name": "cOrderTax",
       "tableName": "C_OrderTax",
+      "entityClassname": "OrderTax",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Tax",
       "level": "1",
       "sequence": "40",
@@ -2338,7 +3071,14 @@
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "readOnly",
-          "maxLength": "22"
+          "maxLength": "22",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Tax",
+            "keyColumn": "C_Tax_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "taxAmt",
@@ -2366,11 +3106,18 @@
           "name": "cOrderId",
           "columnName": "C_Order_ID",
           "label": "Sales Order",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "60"
+          "maxLength": "60",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "isActive",
@@ -2398,7 +3145,14 @@
             "type": "fromConfig",
             "source": "context.client"
           },
-          "maxLength": "22"
+          "maxLength": "22",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adOrgId",
@@ -2412,7 +3166,14 @@
             "type": "fromConfig",
             "source": "context.organization"
           },
-          "maxLength": "22"
+          "maxLength": "22",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cOrderTaxId",
@@ -2428,12 +3189,15 @@
           "maxLength": "32"
         }
       ],
+      "entityFullClass": "org.openbravo.model.common.order.OrderTax",
       "orderByClause": "C_OrderTax.Line",
       "hqlOrderByClause": "lineNo"
     },
     {
       "name": "finPaymentSchedOrdV",
       "tableName": "FIN_Payment_Sched_Ord_V",
+      "entityClassname": "FIN_PaymentSchedOrdV",
+      "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
       "tabName": "Payment Plan",
       "level": "1",
       "sequence": "45",
@@ -2451,7 +3215,7 @@
           "name": "finPaymentmethodId",
           "columnName": "FIN_Paymentmethod_ID",
           "label": "Payment Method",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "32"
@@ -2505,7 +3269,7 @@
           "name": "cCurrencyId",
           "columnName": "C_Currency_ID",
           "label": "Currency",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "32"
@@ -2534,7 +3298,7 @@
           "name": "cOrderId",
           "columnName": "C_Order_ID",
           "label": "Sales Order",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2544,7 +3308,7 @@
           "name": "adOrgId",
           "columnName": "AD_Org_ID",
           "label": "Organization",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2553,13 +3317,17 @@
             "source": "context.organization"
           },
           "maxLength": "32",
-          "validationRuleId": "130"
+          "validationRule": {
+            "code": "AD_Org.AD_Org_ID<> '0' AND AD_Org.IsReady='Y'",
+            "contextParams": [],
+            "cascadeParams": []
+          }
         },
         {
           "name": "cInvoiceId",
           "columnName": "C_Invoice_ID",
           "label": "Invoice",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2569,7 +3337,7 @@
           "name": "adClientId",
           "columnName": "AD_Client_ID",
           "label": "Client",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2578,13 +3346,20 @@
             "source": "context.client"
           },
           "maxLength": "32",
-          "validationRuleId": "129"
+          "validationRule": {
+            "code": "AD_Client.AD_Client_ID<>'0'",
+            "contextParams": [],
+            "cascadeParams": []
+          }
         }
-      ]
+      ],
+      "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentSchedOrdV"
     },
     {
       "name": "finPaymentDetailV",
       "tableName": "FIN_Payment_Detail_V",
+      "entityClassname": "FIN_PaymentDetailV",
+      "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
       "tabName": "Payment Details",
       "level": "2",
       "sequence": "46",
@@ -2593,10 +3368,18 @@
           "name": "finPaymentId",
           "columnName": "FIN_Payment_ID",
           "label": "Payment In",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "FIN_Payment",
+            "selectorName": "FIN_Payment no combo",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "paymentdate",
@@ -2620,7 +3403,7 @@
           "name": "finPaymentmethodId",
           "columnName": "Fin_Paymentmethod_ID",
           "label": "Payment Method",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2630,16 +3413,24 @@
           "name": "emAprmDisplayedPaymmethId",
           "columnName": "EM_APRM_Displayed_Paymmeth_ID",
           "label": "Payment Method",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "FIN_PaymentMethod",
+            "selectorName": "Payment Method Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "finFinancialAccountId",
           "columnName": "Fin_Financial_Account_ID",
           "label": "Financial Account",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2649,10 +3440,18 @@
           "name": "emAprmDisplayedAccId",
           "columnName": "EM_APRM_Displayed_Acc_ID",
           "label": "Financial Account",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "FIN_Financial_Account",
+            "selectorName": "Financial Account Selector",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
         },
         {
           "name": "expected",
@@ -2685,7 +3484,7 @@
           "name": "cCurrencyId",
           "columnName": "C_Currency_ID",
           "label": "Currency",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2738,7 +3537,15 @@
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Currency",
+            "keyColumn": "C_Currency_ID",
+            "displayColumn": "ISO_Code",
+            "filterExpression": null,
+            "orderBy": "C_Currency.ISO_Code"
+          }
         },
         {
           "name": "iscanceled",
@@ -2762,10 +3569,17 @@
           "name": "finPaymentSchedOrdVId",
           "columnName": "Fin_Payment_Sched_Ord_V_Id",
           "label": "Order Payment In Plan",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Search",
+            "targetTable": "FIN_Payment_Sched_Ord_V",
+            "keyColumn": "Fin_Payment_Sched_Ord_V_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "isactive",
@@ -2790,7 +3604,7 @@
           "name": "adOrgId",
           "columnName": "AD_Org_ID",
           "label": "Organization",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2799,7 +3613,11 @@
             "source": "context.organization"
           },
           "maxLength": "32",
-          "validationRuleId": "130"
+          "validationRule": {
+            "code": "AD_Org.AD_Org_ID<> '0' AND AD_Org.IsReady='Y'",
+            "contextParams": [],
+            "cascadeParams": []
+          }
         },
         {
           "name": "finPaymentDetailVId",
@@ -2833,17 +3651,24 @@
           "name": "cBpartnerId",
           "columnName": "C_Bpartner_ID",
           "label": "Business Partner",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_BPartner",
+            "keyColumn": "C_BPartner_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "adClientId",
           "columnName": "AD_Client_ID",
           "label": "Client",
-          "type": "string",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
@@ -2852,13 +3677,20 @@
             "source": "context.client"
           },
           "maxLength": "32",
-          "validationRuleId": "129"
+          "validationRule": {
+            "code": "AD_Client.AD_Client_ID<>'0'",
+            "contextParams": [],
+            "cascadeParams": []
+          }
         }
-      ]
+      ],
+      "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentDetailV"
     },
     {
       "name": "cOrderReplacement",
       "tableName": "C_Order_Replacement",
+      "entityClassname": "OrderReplacement",
+      "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Replacement Orders",
       "level": "1",
       "sequence": "70",
@@ -2870,7 +3702,15 @@
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "editable",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": "DocumentNo",
+            "filterExpression": null,
+            "orderBy": "C_Order.DocumentNo"
+          }
         },
         {
           "name": "adClientId",
@@ -2884,7 +3724,14 @@
             "type": "fromConfig",
             "source": "context.client"
           },
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "isactive",
@@ -2912,7 +3759,14 @@
             "type": "fromConfig",
             "source": "context.organization"
           },
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cOrderId",
@@ -2922,7 +3776,14 @@
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "32"
+          "maxLength": "32",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Order",
+            "keyColumn": "C_Order_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cOrderReplacementId",
@@ -2937,12 +3798,13 @@
           },
           "maxLength": "32"
         }
-      ]
+      ],
+      "entityFullClass": "org.openbravo.model.common.order.OrderReplacement"
     }
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "01c7d032",
-    "extractedAt": "2026-03-05T18:34:22.214Z"
+    "checksum": "57147602",
+    "extractedAt": "2026-03-06T13:49:51.367Z"
   }
 }

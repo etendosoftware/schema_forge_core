@@ -12,7 +12,11 @@ import org.apache.logging.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.openbravo.dal.core.OBContext;
+{{#if hqlWhereClause}}
+import org.openbravo.dal.service.OBQuery;
+{{else}}
 import org.openbravo.dal.service.OBCriteria;
+{{/if}}
 import org.openbravo.dal.service.OBDal;
 {{#if entityFullClass}}
 import {{entityFullClass}};
@@ -25,11 +29,17 @@ import com.etendoerp.go.rest.RequestHandler;
  *
  * Entity: {{entityName}} ({{table}})
  * OBDal class: {{entityClassname}}
+{{#if hqlWhereClause}}
+ * Tab filter: {{{hqlWhereClause}}}
+{{/if}}
  */
 public class {{className}} implements RequestHandler {
 
   private static final Logger log = LogManager.getLogger();
   private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
+{{#if hqlWhereClause}}
+  private static final String TAB_HQL_FILTER = "{{{hqlWhereClause}}}";
+{{/if}}
 
   @Override
   public String getBasePath() {
@@ -57,6 +67,12 @@ public class {{className}} implements RequestHandler {
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response, String subPath) throws IOException {
     // TODO(vertical-slice): implement create for {{entityClassname}}
+{{#if tabAutoSetters.length}}
+    // Tab auto-setters: these values are implicit for this endpoint
+{{#each tabAutoSetters}}
+    // entity.set("{{property}}", {{{javaValue}}});
+{{/each}}
+{{/if}}
     response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
     response.setContentType(APPLICATION_JSON);
     response.getWriter().write("{\"error\":\"POST not yet implemented for {{entityName}}\"}");
@@ -80,11 +96,36 @@ public class {{className}} implements RequestHandler {
 
 {{#if entityFullClass}}
   private void list(HttpServletRequest request, HttpServletResponse response) throws Exception {
+{{#if hqlWhereClause}}
+    // Tab filter: scope query to this window's subset of the entity
+    StringBuilder hql = new StringBuilder(TAB_HQL_FILTER);
+
+{{#each filters}}
+    // Filter: {{name}} ({{type}}) -> column {{column}}
+    String param{{name}} = request.getParameter("{{name}}");
+    if (param{{name}} != null && !param{{name}}.isEmpty()) {
+      hql.append(" AND e.{{name}} = '").append(param{{name}}.replace("'", "''")).append("'");
+    }
+{{/each}}
+
+    OBQuery<{{entityClassname}}> query = OBDal.getInstance().createQuery({{entityClassname}}.class, hql.toString());
+    query.setMaxResult(100);
+
+    response.setContentType(APPLICATION_JSON);
+    JSONObject result = new JSONObject();
+    JSONArray data = new JSONArray();
+    for ({{entityClassname}} entity : query.list()) {
+      JSONObject item = new JSONObject();
+      item.put("id", entity.getId());
+      item.put("identifier", entity.getIdentifier());
+      data.put(item);
+    }
+{{else}}
     OBCriteria<{{entityClassname}}> criteria = OBDal.getInstance().createCriteria({{entityClassname}}.class);
     criteria.setMaxResults(100);
 
 {{#each filters}}
-    // Filter: {{name}} ({{type}}) → column {{column}}
+    // Filter: {{name}} ({{type}}) -> column {{column}}
     String param{{name}} = request.getParameter("{{name}}");
     if (param{{name}} != null && !param{{name}}.isEmpty()) {
       criteria.add(org.hibernate.criterion.Restrictions.eq("{{name}}", param{{name}}));
@@ -100,6 +141,7 @@ public class {{className}} implements RequestHandler {
       item.put("identifier", entity.getIdentifier());
       data.put(item);
     }
+{{/if}}
     result.put("data", data);
     result.put("count", data.length());
     response.getWriter().write(result.toString());

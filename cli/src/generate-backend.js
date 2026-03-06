@@ -3,6 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Handlebars from 'handlebars';
 import { getOrCreateUuid, loadManifest, saveManifest } from './uuid-manifest.js';
+import { toCamelCase } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -32,6 +33,104 @@ function toPascalCase(name) {
 /** "Sales Order" → "salesorder" (package-safe, no hyphens/spaces) */
 function toWindowPackage(windowName) {
   return windowName.replace(/[\s-_]+/g, '').toLowerCase();
+}
+
+/**
+ * Parse an HQL where clause into simple property=value conditions
+ * that can be auto-set on POST (entity creation).
+ *
+ * Only extracts direct property conditions (e.g., "e.salesTransaction=true").
+ * Skips complex conditions (NOT LIKE, nested paths with multiple dots, etc.).
+ *
+ * @param {string|null} hqlClause - e.g. "e.salesTransaction=true AND e.transactionDocument.return=false"
+ * @returns {Array<{property: string, value: string, javaValue: string}>}
+ */
+function parseTabAutoSetters(hqlClause) {
+  if (!hqlClause) return [];
+  const setters = [];
+
+  // Split by AND and process each condition
+  const conditions = hqlClause.split(/\s+AND\s+/i);
+  for (const cond of conditions) {
+    // Match simple "e.property = value" (no LIKE, NOT, IN, etc.)
+    const match = cond.trim().match(/^e\.([a-zA-Z]+)\s*=\s*(.+)$/);
+    if (!match) continue;
+
+    const property = match[1];
+    const rawValue = match[2].trim();
+
+    // Determine Java value and type
+    let javaValue;
+    if (rawValue === 'true' || rawValue === 'false') {
+      javaValue = rawValue;
+    } else if (rawValue.startsWith("'") && rawValue.endsWith("'")) {
+      javaValue = `"${rawValue.slice(1, -1)}"`;
+    } else if (!isNaN(rawValue)) {
+      javaValue = rawValue;
+    } else {
+      continue; // Skip unparseable values
+    }
+
+    setters.push({ property, rawValue, javaValue });
+  }
+
+  return setters;
+}
+
+/**
+ * Convert column name to OBDal property name for cascade params.
+ * E.g., "C_BPartner_ID" -> "cBpartner" (strip _ID, camelCase)
+ * This is a simplified mapping — for production, we'd use the entity metadata.
+ */
+export function toOBDalProperty(columnName) {
+  if (columnName.endsWith('_ID')) {
+    return toCamelCase(columnName.slice(0, -3));
+  }
+  return toCamelCase(columnName);
+}
+
+/**
+ * Build selector configuration from schema entities.
+ * Extracts unique FK fields that need selector endpoints, deduplicating by field name.
+ */
+export function buildSelectorData(entities) {
+  const selectors = [];
+  const seen = new Set();
+
+  for (const entity of entities) {
+    for (const field of entity.fields) {
+      if (field.type !== 'foreignKey' || !field.reference) continue;
+      // Skip system/discarded fields — no selector needed
+      if (field.visibility === 'system' || field.visibility === 'discarded') continue;
+
+      const key = field.name;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // Map display column to OBDal property name
+      const displayProperty = field.reference.displayColumn
+        ? toCamelCase(field.reference.displayColumn)
+        : 'name';
+
+      // Cascade params from validationRule
+      const cascadeParams = (field.validationRule?.cascadeParams || [])
+        .map(p => toOBDalProperty(p));
+
+      selectors.push({
+        fieldName: field.name,
+        columnName: field.columnName,
+        targetTable: field.reference.targetTable,
+        entityClass: field.reference.targetTable,  // Simplified: table name as entity ref
+        displayProperty,
+        keyColumn: field.reference.keyColumn || field.columnName,
+        cascadeParams,
+        filterExpression: field.reference.filterExpression || null,
+        validationCode: field.validationRule?.code || null,
+      });
+    }
+  }
+
+  return selectors;
 }
 
 /**
@@ -120,6 +219,10 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
         javaType: toJavaType(f.type),
       }));
 
+    // Tab filter: HQL where clause that scopes this endpoint (e.g., "e.salesTransaction=true")
+    const hqlWhereClause = entity.hqlWhereClause || null;
+    const tabAutoSetters = parseTabAutoSetters(hqlWhereClause);
+
     return {
       entityName: entity.name,
       className: `${toPascalCase(entity.name)}Handler`,
@@ -131,6 +234,9 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
       packageName: `${windowBasePackage}.handler`,
       // REST path segment: "cOrder" → "orders", "cOrderLine" → "order-lines" etc.
       pathSegment: entity.name,
+      // Tab-level filter: scopes this endpoint to the correct subset (e.g., sales vs purchase)
+      hqlWhereClause,
+      tabAutoSetters,
     };
   });
 
@@ -150,6 +256,17 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
       };
     });
 
+  // Selectors: one endpoint per window serving all FK field lookups
+  const selectors = buildSelectorData(schema.entities);
+
+  const selectorEndpoint = selectors.length > 0 ? {
+    className: `${toPascalCase(windowName)}SelectorHandler`,
+    windowName,
+    pathSegment: windowPkg,
+    selectors,
+    packageName: `${windowBasePackage}.handler`,
+  } : null;
+
   return {
     basePackage,
     windowPkg,
@@ -160,6 +277,7 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
     dtos,
     handlers,
     validators,
+    selectorEndpoint,
   };
 }
 
@@ -226,6 +344,19 @@ export function generateFileList(data, modulePath) {
     });
   }
 
+  // Selector endpoint
+  if (data.selectorEndpoint) {
+    files.push({
+      path: `${windowSrcPath}/handler/${data.selectorEndpoint.className}.java`,
+      templateName: 'SelectorEndpoint.java.hbs',
+      data: {
+        ...data.selectorEndpoint,
+        package: data.selectorEndpoint.packageName,
+        generatedDate: data.now,
+      },
+    });
+  }
+
   // Shared infrastructure (only generated once, not per-window)
   // RequestHandler interface
   files.push({
@@ -252,12 +383,14 @@ public interface RequestHandler {
   });
 
   // HandlerRegistry
-  const handlerImports = data.handlers.map(h =>
-    `import ${h.packageName}.${h.className};`
-  ).join('\n');
-  const handlerRegistrations = data.handlers.map(h =>
-    `    register(new ${h.className}());`
-  ).join('\n');
+  const handlerImports = [
+    ...data.handlers.map(h => `import ${h.packageName}.${h.className};`),
+    ...(data.selectorEndpoint ? [`import ${data.selectorEndpoint.packageName}.${data.selectorEndpoint.className};`] : []),
+  ].join('\n');
+  const handlerRegistrations = [
+    ...data.handlers.map(h => `    register(new ${h.className}());`),
+    ...(data.selectorEndpoint ? [`    register(new ${data.selectorEndpoint.className}());`] : []),
+  ].join('\n');
 
   files.push({
     path: `${restSrcPath}/HandlerRegistry.java`,

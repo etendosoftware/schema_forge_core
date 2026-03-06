@@ -235,3 +235,10 @@ and logic expressions actually work (corrected from initial TDD assumptions).
 
 **Rule:** Any discovery about general Etendo AD structure goes in `docs/etendo-ad/`, NOT in per-window artifacts.
 Per-window artifacts (`artifacts/{window}/`) should only contain window-specific data (extracted CSVs, curated schemas, etc.).
+
+## Etendo AD Database Conventions
+
+- **All `_ID` columns are `VARCHAR` (strings)**. Legacy IDs look numeric (`'19'`, `'130'`), newer ones are UUIDs (`'95E2A8B50A254B2AAE6774B8C2F28120'`).
+- Default approach: always treat `_ID` columns as strings first. Quote values in SQL: `IN ('18', '19', '30')` not `IN (18, 19, 30)`.
+- This applies to `AD_Reference_ID`, `AD_Reference_Value_ID`, `AD_Table_ID`, `AD_Column_ID`, and all other `_ID` columns.
+- All technical conventions and discoveries about Etendo AD should be documented in this section of CLAUDE.md (committed to the repo), not in personal memory files.
