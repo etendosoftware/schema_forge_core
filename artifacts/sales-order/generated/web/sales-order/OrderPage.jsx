@@ -2,6 +2,7 @@ import { MasterDetailPage } from '@/components/contract-ui';
 import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
+import catalogs from './mockCatalogs';
 
 const summary = [
   { key: 'documentNo', label: 'Document No', type: 'string' },
@@ -19,14 +20,14 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product' },
+    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
     { key: 'quantity', label: 'Quantity', type: 'number', required: true },
     { key: 'description', label: 'Description', type: 'text' },
     { key: 'lineNo', label: 'Line No', type: 'number', required: true },
   ],
   derived: [
     { key: 'unitPrice', label: 'Unit Price', type: 'number' },
-    { key: 'tax', label: 'Tax', type: 'search', reference: 'Tax' },
+    { key: 'tax', label: 'Tax', type: 'selector', reference: 'Tax', inputMode: 'selector' },
     { key: 'discount', label: 'Discount', type: 'number' },
   ],
 };
@@ -43,6 +44,7 @@ export default function OrderPage(props) {
       statusField={statusField}
       processes={processes}
       addLineFields={addLineFields}
+      catalogs={catalogs}
       entityLabel="Order"
       detailLabel="Order Line"
       {...props}

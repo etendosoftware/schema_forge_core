@@ -48,9 +48,14 @@ function mapFieldType(field) {
 
 /**
  * Map a contract field to a form field type.
+ * FK fields use inputMode (search/selector/dependent); non-FK fields use type.
  */
 function mapFormFieldType(field) {
-  if (field.type === 'foreignKey') return 'search';
+  if (field.type === 'foreignKey') {
+    if (field.inputMode === 'selector') return 'selector';
+    if (field.inputMode === 'dependent') return 'dependent';
+    return 'search';
+  }
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
   return 'text';
@@ -102,7 +107,11 @@ export function generateFormComponent(entityName, contract) {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${referencePart} },`;
+    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const dependsOnPart = f.dependsOn
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+      : '';
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';
@@ -163,19 +172,25 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const requiredPart = f.required ? ', required: true' : '';
     const lookupPart = i === 0 ? ', lookup: true' : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart}${referencePart} },`;
+    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const dependsOnPart = f.dependsOn
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+      : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${referencePart} },`;
+    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
   return `import { MasterDetailPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
+import catalogs from './mockCatalogs';
 
 const summary = [
 ${summaryArray}
@@ -208,6 +223,7 @@ export default function ${compName}(props) {
       statusField={statusField}
       processes={processes}
       addLineFields={addLineFields}
+      catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
       detailLabel="${toLabel(detailEntity)}"
       {...props}
@@ -246,6 +262,116 @@ export default function App({ token, apiBaseUrl, window }) {
 `;
 }
 
+// --- Mock Catalog Data Pools ---
+
+const CATALOG_DATA = {
+  BusinessPartner: Array.from({ length: 15 }, (_, i) => ({
+    id: `bp-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'Acme Corp', 'TechFlow Inc', 'Global Trade Ltd', 'Summit Industries',
+      'Pacific Partners', 'Alpine Solutions', 'Meridian Group', 'Vertex Systems',
+      'Atlas Manufacturing', 'Nova Enterprises', 'Pinnacle Services', 'Horizon Labs',
+      'Cedar Holdings', 'Sterling & Co', 'Quantum Logistics',
+    ][i],
+  })),
+  Product: Array.from({ length: 20 }, (_, i) => ({
+    id: `prod-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'Laptop Pro 15', 'USB-C Cable', 'Wireless Mouse', 'Mechanical Keyboard',
+      'Monitor 27"', 'Webcam HD', 'Headset Pro', 'Docking Station',
+      'SSD 1TB', 'RAM 16GB', 'Power Supply 750W', 'Network Switch',
+      'Printer Laser', 'Scanner Flatbed', 'External HDD 2TB', 'Tablet 10"',
+      'Router Pro', 'UPS Battery', 'Graphics Card', 'CPU Cooler',
+    ][i],
+    price: [1299, 15, 29, 89, 549, 79, 149, 199, 109, 65, 95, 45, 299, 189, 79, 449, 129, 159, 699, 49][i],
+    uomId: 'uom-001',
+  })),
+  User: Array.from({ length: 8 }, (_, i) => ({
+    id: `user-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown',
+      'Eva Martinez', 'Frank Lee', 'Grace Kim', 'Henry Davis',
+    ][i],
+  })),
+  Warehouse: Array.from({ length: 5 }, (_, i) => ({
+    id: `wh-${String(i + 1).padStart(3, '0')}`,
+    name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
+  })),
+  PriceList: Array.from({ length: 4 }, (_, i) => ({
+    id: `pl-${String(i + 1).padStart(3, '0')}`,
+    name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],
+  })),
+  PaymentTerm: Array.from({ length: 5 }, (_, i) => ({
+    id: `pt-${String(i + 1).padStart(3, '0')}`,
+    name: ['Immediate', 'Net 15', 'Net 30', 'Net 60', '2/10 Net 30'][i],
+  })),
+  PaymentMethod: Array.from({ length: 4 }, (_, i) => ({
+    id: `pm-${String(i + 1).padStart(3, '0')}`,
+    name: ['Wire Transfer', 'Credit Card', 'Check', 'Cash'][i],
+  })),
+  Tax: Array.from({ length: 6 }, (_, i) => ({
+    id: `tax-${String(i + 1).padStart(3, '0')}`,
+    name: ['VAT 21%', 'VAT 10%', 'VAT 0%', 'Sales Tax 8.5%', 'Exempt', 'Reduced Rate 5%'][i],
+    rate: [21, 10, 0, 8.5, 0, 5][i],
+  })),
+  UOM: Array.from({ length: 5 }, (_, i) => ({
+    id: `uom-${String(i + 1).padStart(3, '0')}`,
+    name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
+  })),
+  BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
+    id: `bploc-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'HQ - 100 Main St', 'Branch - 200 Oak Ave', 'Warehouse - 300 Elm Dr',
+      'Office - 50 Pine Rd', 'Factory - 400 Maple Ln', 'Store - 150 Cedar Blvd',
+      'Depot - 250 Birch Way', 'Lab - 75 Spruce Ct', 'HQ - 500 Willow St',
+      'Branch - 600 Ash Ave', 'Office - 10 Palm Dr', 'Store - 20 Ivy Rd',
+      'Depot - 30 Fern Ln', 'Lab - 40 Sage Blvd', 'HQ - 55 Rose Way',
+      'Branch - 65 Lily Ct', 'Office - 70 Daisy St', 'Store - 80 Tulip Ave',
+      'Depot - 90 Orchid Dr', 'Lab - 95 Violet Rd',
+    ][i],
+    businessPartnerId: `bp-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
+  })),
+};
+
+/**
+ * Collect all unique reference names from a contract's frontend entities.
+ */
+function collectReferences(contract) {
+  const refs = new Set();
+  for (const entity of Object.values(contract.frontendContract.entities)) {
+    for (const field of entity.fields) {
+      if (field.reference) refs.add(field.reference);
+    }
+  }
+  return refs;
+}
+
+/**
+ * Generate a mockCatalogs.js file with reference data for all FK fields in the contract.
+ */
+export function generateMockCatalogs(contract) {
+  const refs = collectReferences(contract);
+  const lines = [
+    '// Auto-generated mock catalogs for FK reference data - do not edit manually',
+    '',
+    'const catalogs = {};',
+    '',
+  ];
+
+  for (const ref of refs) {
+    const data = CATALOG_DATA[ref];
+    if (data) {
+      lines.push(`catalogs['${ref}'] = ${JSON.stringify(data, null, 2)};`);
+      lines.push('');
+    }
+  }
+
+  lines.push('export default catalogs;');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 /**
  * Generate all frontend components from a contract.
  * Returns a map of { filename: code }.
@@ -270,6 +396,9 @@ export function generateAll(contract) {
   if (detailEntity) {
     files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
   }
+
+  // Generate mock catalogs
+  files['mockCatalogs.js'] = generateMockCatalogs(contract);
 
   // Always generate index
   files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity);

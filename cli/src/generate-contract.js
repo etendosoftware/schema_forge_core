@@ -45,6 +45,8 @@ export function generateFrontendContract(schema) {
         form: f.form,
       };
       if (f.reference) mapped.reference = f.reference;
+      if (f.inputMode) mapped.inputMode = f.inputMode;
+      if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       return mapped;
     });
 

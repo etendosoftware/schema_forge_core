@@ -7,6 +7,7 @@ import {
   generateIndexComponent,
   generateAll,
   getReadOnlyFields,
+  generateMockCatalogs,
 } from '../src/generate-frontend.js';
 
 const sampleContract = {
@@ -16,8 +17,10 @@ const sampleContract = {
       order: {
         fields: [
           { name: 'documentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
-          { name: 'businessPartner', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner' },
-          { name: 'warehouse', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'Warehouse' },
+          { name: 'businessPartner', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner', inputMode: 'search' },
+          { name: 'partnerAddress', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
+          { name: 'warehouse', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'Warehouse', inputMode: 'selector' },
+          { name: 'priceList', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'PriceList', inputMode: 'selector' },
           { name: 'grandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
           { name: 'docStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
         ],
@@ -26,8 +29,9 @@ const sampleContract = {
       },
       orderLine: {
         fields: [
-          { name: 'product', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product' },
+          { name: 'product', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product', inputMode: 'search' },
           { name: 'quantity', type: 'number', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'tax', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Tax', inputMode: 'selector' },
           { name: 'lineNetAmount', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
         ],
         searchableFields: ['product'],
@@ -126,11 +130,26 @@ describe('generateFormComponent', () => {
     assert.ok(!code.includes('space-y-1.5'), 'should NOT have spacing classes inline');
   });
 
-  it('generates search type for foreignKey fields with reference', () => {
+  it('generates search type for search-mode FK fields with reference', () => {
     const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("type: 'search'"), 'should use search type for foreignKey fields');
+    assert.ok(code.includes("type: 'search'"), 'should use search type for search-mode FK fields');
     assert.ok(code.includes("reference: 'BusinessPartner'"), 'should include reference for businessPartner');
+  });
+
+  it('generates selector type for selector-mode FK fields', () => {
+    const code = generateFormComponent('order', sampleContract);
+    assert.ok(code.includes("type: 'selector'"), 'should use selector type for selector-mode FK fields');
     assert.ok(code.includes("reference: 'Warehouse'"), 'should include reference for warehouse');
+    assert.ok(code.includes("reference: 'PriceList'"), 'should include reference for priceList');
+    assert.ok(code.includes("inputMode: 'selector'"), 'should include inputMode selector');
+  });
+
+  it('generates dependent type for dependent-mode FK fields', () => {
+    const code = generateFormComponent('order', sampleContract);
+    assert.ok(code.includes("type: 'dependent'"), 'should use dependent type for dependent-mode FK fields');
+    assert.ok(code.includes("reference: 'BusinessPartnerLocation'"), 'should include reference for partnerAddress');
+    assert.ok(code.includes("inputMode: 'dependent'"), 'should include inputMode dependent');
+    assert.ok(code.includes("dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' }"), 'should include dependsOn config');
   });
 
   it('does not render save/delete buttons or process actions', () => {
@@ -181,7 +200,14 @@ describe('generatePageComponent', () => {
   it('includes reference in addLineFields entry for FK fields', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes("reference: 'Product'"), 'should include reference for product in addLineFields');
-    assert.ok(code.includes("type: 'search'"), 'should use search type for FK entry fields');
+    assert.ok(code.includes("type: 'search'"), 'should use search type for search FK entry fields');
+  });
+
+  it('includes selector type for selector FK fields in addLineFields', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes("reference: 'Tax'"), 'should include reference for tax in addLineFields');
+    assert.ok(code.includes("type: 'selector'"), 'should use selector type for selector FK entry fields');
+    assert.ok(code.includes("inputMode: 'selector'"), 'should include inputMode selector in addLineFields');
   });
 
   it('declares addLineFields with entry and derived arrays', () => {
@@ -194,7 +220,7 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('lookup: true'), 'should mark first entry field with lookup');
   });
 
-  it('passes all config props to MasterDetailPage', () => {
+  it('passes all config props to MasterDetailPage including catalogs', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('entity="order"'), 'should pass entity prop');
     assert.ok(code.includes('detailEntity="orderLine"'), 'should pass detailEntity prop');
@@ -205,14 +231,16 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('statusField={statusField}'), 'should pass statusField prop');
     assert.ok(code.includes('processes={processes}'), 'should pass processes prop');
     assert.ok(code.includes('addLineFields={addLineFields}'), 'should pass addLineFields prop');
+    assert.ok(code.includes('catalogs={catalogs}'), 'should pass catalogs prop');
     assert.ok(code.includes('{...props}'), 'should spread remaining props');
   });
 
-  it('imports child components with correct names', () => {
+  it('imports mockCatalogs and child components', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes("import OrderTable from './OrderTable'"), 'should import OrderTable');
     assert.ok(code.includes("import OrderForm from './OrderForm'"), 'should import OrderForm');
     assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"), 'should import OrderLineTable');
+    assert.ok(code.includes("import catalogs from './mockCatalogs'"), 'should import mockCatalogs');
   });
 
   it('does NOT contain inline layout CSS (moved to generic components)', () => {
@@ -264,6 +292,13 @@ describe('generateAll', () => {
     assert.ok(files['index.jsx'], 'should produce index.jsx');
   });
 
+  it('generates mockCatalogs.js', () => {
+    const files = generateAll(sampleContract);
+    assert.ok(files['mockCatalogs.js'], 'should produce mockCatalogs.js');
+    assert.ok(files['mockCatalogs.js'].includes('catalogs'), 'should export catalogs object');
+    assert.ok(files['mockCatalogs.js'].includes('export default catalogs'), 'should have default export');
+  });
+
   it('all generated files import from contract-ui (not individual UI components)', () => {
     const files = generateAll(sampleContract);
     for (const [name, code] of Object.entries(files)) {
@@ -294,6 +329,48 @@ describe('generateAll', () => {
     assert.ok(files['ItemForm.jsx'], 'should produce ItemForm.jsx');
     assert.ok(files['index.jsx'], 'should produce index.jsx');
     assert.ok(!files['ItemPage.jsx'], 'should NOT produce ItemPage.jsx for single entity');
+  });
+});
+
+describe('generateMockCatalogs', () => {
+  it('generates catalogs for all references in the contract', () => {
+    const code = generateMockCatalogs(sampleContract);
+    assert.ok(code.includes("catalogs['BusinessPartner']"), 'should include BusinessPartner catalog');
+    assert.ok(code.includes("catalogs['Warehouse']"), 'should include Warehouse catalog');
+    assert.ok(code.includes("catalogs['PriceList']"), 'should include PriceList catalog');
+    assert.ok(code.includes("catalogs['Product']"), 'should include Product catalog');
+    assert.ok(code.includes("catalogs['Tax']"), 'should include Tax catalog');
+    assert.ok(code.includes("catalogs['BusinessPartnerLocation']"), 'should include BusinessPartnerLocation catalog');
+  });
+
+  it('catalog data has correct structure with id and name', () => {
+    const code = generateMockCatalogs(sampleContract);
+    // BusinessPartner should have id and name
+    assert.ok(code.includes('"id"'), 'catalog items should have id');
+    assert.ok(code.includes('"name"'), 'catalog items should have name');
+    assert.ok(code.includes('bp-'), 'BusinessPartner ids should start with bp-');
+    assert.ok(code.includes('Acme Corp'), 'should have realistic company names');
+  });
+
+  it('BusinessPartnerLocation items have businessPartnerId for dependent filtering', () => {
+    const code = generateMockCatalogs(sampleContract);
+    assert.ok(code.includes('"businessPartnerId"'), 'BPLocation should have businessPartnerId for filtering');
+  });
+
+  it('Tax catalog items have rate property', () => {
+    const code = generateMockCatalogs(sampleContract);
+    assert.ok(code.includes('"rate"'), 'Tax items should have rate');
+  });
+
+  it('Product catalog items have price and uomId', () => {
+    const code = generateMockCatalogs(sampleContract);
+    assert.ok(code.includes('"price"'), 'Product items should have price');
+    assert.ok(code.includes('"uomId"'), 'Product items should have uomId');
+  });
+
+  it('exports catalogs as default export', () => {
+    const code = generateMockCatalogs(sampleContract);
+    assert.ok(code.includes('export default catalogs'), 'should export catalogs as default');
   });
 });
 
