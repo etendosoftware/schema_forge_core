@@ -12,7 +12,6 @@
       "tableName": "M_CostAdjustment",
       "comment": "Header document for cost adjustments. Modifies the cost of inventory items after receipt.",
       "fields": [
-        { "name": "organization", "column": "AD_Org_ID", "type": "foreignKey", "reference": "Organization", "inputMode": "selector", "visibility": "editable", "required": true, "grid": true, "form": true, "searchable": true },
         { "name": "documentDate", "column": "DateAcct", "type": "date", "visibility": "editable", "required": true, "grid": true, "form": true, "searchable": true },
         { "name": "description", "column": "Description", "type": "string", "visibility": "editable", "required": false, "grid": false, "form": true, "searchable": true },
         { "name": "referenceNo", "column": "ReferenceNo", "type": "string", "visibility": "editable", "required": false, "grid": true, "form": true, "searchable": true },
