@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Search } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
 
 /**
@@ -189,6 +190,7 @@ export function MasterDetailPage({
                 className="flex items-end gap-2 mb-3 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5"
               >
                 {allEntryFields.map(f => {
+                  const isSearch = f.type === 'search';
                   const inputType = f.type === 'number' ? 'number' : 'text';
                   const isLookupTrigger = f.key === lookupTriggerKey;
                   return (
@@ -196,16 +198,22 @@ export function MasterDetailPage({
                       <label className="text-xs text-slate-500 mb-1 block">
                         {f.label}{f.required ? ' *' : ''}
                       </label>
-                      <input
-                        name={f.key}
-                        type={inputType}
-                        placeholder={f.label}
-                        value={newLine[f.key] ?? ''}
-                        onChange={(e) => setNewLine(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        onBlur={isLookupTrigger ? (e) => { if (e.target.value) handleProductLookup(e.target.value); } : undefined}
-                        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                        required={f.required}
-                      />
+                      <div className="relative">
+                        {isSearch && (
+                          <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        )}
+                        <input
+                          name={f.key}
+                          type={inputType}
+                          placeholder={isSearch ? `Search ${f.label}...` : f.label}
+                          value={newLine[f.key] ?? ''}
+                          onChange={(e) => setNewLine(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          onBlur={isLookupTrigger ? (e) => { if (e.target.value) handleProductLookup(e.target.value); } : undefined}
+                          className={`w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none ${isSearch ? 'pl-7' : ''}`}
+                          required={f.required}
+                          autoComplete="off"
+                        />
+                      </div>
                     </div>
                   );
                 })}
