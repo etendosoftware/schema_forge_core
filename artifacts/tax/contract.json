@@ -1,0 +1,330 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T14:48:21.364Z",
+  "checksum": "342fcd959903067f",
+  "frontendContract": {
+    "window": {
+      "id": "207",
+      "name": "Tax",
+      "primaryEntity": "tax",
+      "category": "reference"
+    },
+    "entities": {
+      "tax": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "rate",
+            "column": "Rate",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "validFrom",
+            "column": "ValidFrom",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "name"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "207",
+      "name": "Tax",
+      "primaryEntity": "tax",
+      "category": "reference"
+    },
+    "entities": {
+      "tax": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "rate",
+            "column": "Rate",
+            "type": "number",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "validFrom",
+            "column": "ValidFrom",
+            "type": "date",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/tax",
+        "entity": "tax",
+        "supportedFilters": [
+          "name"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/tax/:id",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/tax",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/tax/:id",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/tax/:id",
+        "entity": "tax",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in tax"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "rate",
+        "runner": "node",
+        "description": "Field 'rate' should be present in tax"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in tax"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "validFrom",
+        "runner": "node",
+        "description": "Field 'validFrom' should be present in tax"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in tax"
+      },
+      {
+        "id": "t-6",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in tax"
+      },
+      {
+        "id": "t-7",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "rate",
+        "runner": "node",
+        "description": "Field 'rate' should have type 'number' in tax"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in tax"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "validFrom",
+        "runner": "node",
+        "description": "Field 'validFrom' should have type 'string' in tax"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in tax"
+      },
+      {
+        "id": "t-11",
+        "category": "searchable-filters",
+        "entity": "tax",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for tax"
+      },
+      {
+        "id": "t-12",
+        "category": "visibility",
+        "entity": "tax",
+        "runner": "node",
+        "description": "Entity 'tax' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-13",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-14",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-15",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-16",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for tax"
+      }
+    ],
+    "summary": {
+      "total": 16,
+      "byCategory": {
+        "field-presence": 5,
+        "field-type": 5,
+        "searchable-filters": 1,
+        "visibility": 1,
+        "system-field": 4
+      },
+      "byRunner": {
+        "node": 16,
+        "junit": 0
+      }
+    }
+  }
+}

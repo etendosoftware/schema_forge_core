@@ -9,7 +9,7 @@ export default function Sidebar({ menuItems }) {
         <h1 className="text-lg font-bold tracking-tight text-white">Schema Forge</h1>
         <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--sidebar-text))' }}>ERP Generator</p>
       </div>
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {menuItems.map(item => (
           <NavLink
             key={item.name}

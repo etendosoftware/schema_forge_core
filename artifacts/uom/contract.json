@@ -1,0 +1,297 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T14:48:21.365Z",
+  "checksum": "db1a53b5ffc6fcb9",
+  "frontendContract": {
+    "window": {
+      "id": "208",
+      "name": "UOM",
+      "primaryEntity": "uom",
+      "category": "reference"
+    },
+    "entities": {
+      "uom": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "symbol",
+            "column": "UOMSymbol",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "name"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "208",
+      "name": "UOM",
+      "primaryEntity": "uom",
+      "category": "reference"
+    },
+    "entities": {
+      "uom": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "symbol",
+            "column": "UOMSymbol",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/uom",
+        "entity": "uom",
+        "supportedFilters": [
+          "name"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/uom/:id",
+        "entity": "uom",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/uom",
+        "entity": "uom",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/uom/:id",
+        "entity": "uom",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/uom/:id",
+        "entity": "uom",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "uom",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in uom"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "uom",
+        "field": "symbol",
+        "runner": "node",
+        "description": "Field 'symbol' should be present in uom"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "uom",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in uom"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "uom",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in uom"
+      },
+      {
+        "id": "t-5",
+        "category": "field-type",
+        "entity": "uom",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in uom"
+      },
+      {
+        "id": "t-6",
+        "category": "field-type",
+        "entity": "uom",
+        "field": "symbol",
+        "runner": "node",
+        "description": "Field 'symbol' should have type 'string' in uom"
+      },
+      {
+        "id": "t-7",
+        "category": "field-type",
+        "entity": "uom",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in uom"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "uom",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in uom"
+      },
+      {
+        "id": "t-9",
+        "category": "searchable-filters",
+        "entity": "uom",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for uom"
+      },
+      {
+        "id": "t-10",
+        "category": "visibility",
+        "entity": "uom",
+        "runner": "node",
+        "description": "Entity 'uom' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-11",
+        "category": "system-field",
+        "entity": "uom",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for uom"
+      },
+      {
+        "id": "t-12",
+        "category": "system-field",
+        "entity": "uom",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for uom"
+      },
+      {
+        "id": "t-13",
+        "category": "system-field",
+        "entity": "uom",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for uom"
+      },
+      {
+        "id": "t-14",
+        "category": "system-field",
+        "entity": "uom",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for uom"
+      }
+    ],
+    "summary": {
+      "total": 14,
+      "byCategory": {
+        "field-presence": 4,
+        "field-type": 4,
+        "searchable-filters": 1,
+        "visibility": 1,
+        "system-field": 4
+      },
+      "byRunner": {
+        "node": 14,
+        "junit": 0
+      }
+    }
+  }
+}

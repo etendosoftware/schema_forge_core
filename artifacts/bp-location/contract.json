@@ -1,0 +1,418 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T14:48:21.356Z",
+  "checksum": "b21119370bf96214",
+  "frontendContract": {
+    "window": {
+      "id": "201",
+      "name": "BP Location",
+      "primaryEntity": "bpLocation",
+      "category": "reference"
+    },
+    "entities": {
+      "bpLocation": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "address",
+            "column": "Address1",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "city",
+            "column": "City",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "postalCode",
+            "column": "Postal",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "country",
+            "column": "C_Country_ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "phone",
+            "column": "Phone",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "BusinessPartner",
+            "inputMode": "search"
+          }
+        ],
+        "searchableFields": [
+          "name",
+          "city",
+          "businessPartner"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "201",
+      "name": "BP Location",
+      "primaryEntity": "bpLocation",
+      "category": "reference"
+    },
+    "entities": {
+      "bpLocation": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "address",
+            "column": "Address1",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "city",
+            "column": "City",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "postalCode",
+            "column": "Postal",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "country",
+            "column": "C_Country_ID",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "phone",
+            "column": "Phone",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/bpLocation",
+        "entity": "bpLocation",
+        "supportedFilters": [
+          "name",
+          "city",
+          "businessPartner"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/bpLocation/:id",
+        "entity": "bpLocation",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/bpLocation",
+        "entity": "bpLocation",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/bpLocation/:id",
+        "entity": "bpLocation",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/bpLocation/:id",
+        "entity": "bpLocation",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in bpLocation"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "address",
+        "runner": "node",
+        "description": "Field 'address' should be present in bpLocation"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "city",
+        "runner": "node",
+        "description": "Field 'city' should be present in bpLocation"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "postalCode",
+        "runner": "node",
+        "description": "Field 'postalCode' should be present in bpLocation"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "country",
+        "runner": "node",
+        "description": "Field 'country' should be present in bpLocation"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "phone",
+        "runner": "node",
+        "description": "Field 'phone' should be present in bpLocation"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "bpLocation",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in bpLocation"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "address",
+        "runner": "node",
+        "description": "Field 'address' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "city",
+        "runner": "node",
+        "description": "Field 'city' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "postalCode",
+        "runner": "node",
+        "description": "Field 'postalCode' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "country",
+        "runner": "node",
+        "description": "Field 'country' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "phone",
+        "runner": "node",
+        "description": "Field 'phone' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "bpLocation",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in bpLocation"
+      },
+      {
+        "id": "t-15",
+        "category": "searchable-filters",
+        "entity": "bpLocation",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for bpLocation"
+      },
+      {
+        "id": "t-16",
+        "category": "searchable-filters",
+        "entity": "bpLocation",
+        "field": "city",
+        "runner": "node",
+        "description": "Field 'city' should be a supported filter for bpLocation"
+      },
+      {
+        "id": "t-17",
+        "category": "searchable-filters",
+        "entity": "bpLocation",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for bpLocation"
+      },
+      {
+        "id": "t-18",
+        "category": "visibility",
+        "entity": "bpLocation",
+        "runner": "node",
+        "description": "Entity 'bpLocation' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-19",
+        "category": "system-field",
+        "entity": "bpLocation",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for bpLocation"
+      },
+      {
+        "id": "t-20",
+        "category": "system-field",
+        "entity": "bpLocation",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for bpLocation"
+      },
+      {
+        "id": "t-21",
+        "category": "system-field",
+        "entity": "bpLocation",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for bpLocation"
+      },
+      {
+        "id": "t-22",
+        "category": "system-field",
+        "entity": "bpLocation",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for bpLocation"
+      }
+    ],
+    "summary": {
+      "total": 22,
+      "byCategory": {
+        "field-presence": 7,
+        "field-type": 7,
+        "searchable-filters": 3,
+        "visibility": 1,
+        "system-field": 4
+      },
+      "byRunner": {
+        "node": 22,
+        "junit": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,363 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T14:48:21.359Z",
+  "checksum": "fce86a2221f12e9c",
+  "frontendContract": {
+    "window": {
+      "id": "203",
+      "name": "Price List",
+      "primaryEntity": "priceList",
+      "category": "reference"
+    },
+    "entities": {
+      "priceList": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "isDefault",
+            "column": "IsDefault",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isSalesPrice",
+            "column": "IsSOPriceList",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "name"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "203",
+      "name": "Price List",
+      "primaryEntity": "priceList",
+      "category": "reference"
+    },
+    "entities": {
+      "priceList": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "isDefault",
+            "column": "IsDefault",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isSalesPrice",
+            "column": "IsSOPriceList",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/priceList",
+        "entity": "priceList",
+        "supportedFilters": [
+          "name"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/priceList/:id",
+        "entity": "priceList",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/priceList",
+        "entity": "priceList",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/priceList/:id",
+        "entity": "priceList",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/priceList/:id",
+        "entity": "priceList",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in priceList"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in priceList"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in priceList"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "isDefault",
+        "runner": "node",
+        "description": "Field 'isDefault' should be present in priceList"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "isSalesPrice",
+        "runner": "node",
+        "description": "Field 'isSalesPrice' should be present in priceList"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in priceList"
+      },
+      {
+        "id": "t-7",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in priceList"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in priceList"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in priceList"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "isDefault",
+        "runner": "node",
+        "description": "Field 'isDefault' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "isSalesPrice",
+        "runner": "node",
+        "description": "Field 'isSalesPrice' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-13",
+        "category": "searchable-filters",
+        "entity": "priceList",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for priceList"
+      },
+      {
+        "id": "t-14",
+        "category": "visibility",
+        "entity": "priceList",
+        "runner": "node",
+        "description": "Entity 'priceList' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-15",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-16",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-17",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-18",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for priceList"
+      }
+    ],
+    "summary": {
+      "total": 18,
+      "byCategory": {
+        "field-presence": 6,
+        "field-type": 6,
+        "searchable-filters": 1,
+        "visibility": 1,
+        "system-field": 4
+      },
+      "byRunner": {
+        "node": 18,
+        "junit": 0
+      }
+    }
+  }
+}
