@@ -8,7 +8,20 @@ import PreviewPage from './preview/PreviewPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 
-const API_BASE_URL = '/etendo_sf/api';
+function detectBasePath() {
+  const path = window.location.pathname;
+  const webIdx = path.indexOf('/web/');
+  if (webIdx === -1) return { apiBase: import.meta.env.VITE_API_BASE || '', routerBase: '/' };
+  const contextPath = path.substring(0, webIdx);
+  const moduleSegment = path.substring(webIdx + 1).split('/').slice(0, 2).join('/');
+  return {
+    apiBase: contextPath,
+    routerBase: `${contextPath}/${moduleSegment}`,
+  };
+}
+
+const { apiBase, routerBase } = detectBasePath();
+const API_BASE_URL = `${apiBase}/api`;
 
 async function loadAllMockData() {
   const modules = await Promise.all([
@@ -118,7 +131,7 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBase}>
       <AuthProvider>
         <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
       </AuthProvider>
