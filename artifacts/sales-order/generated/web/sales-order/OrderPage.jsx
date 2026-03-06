@@ -5,16 +5,16 @@ import OrderLineTable from './OrderLineTable';
 
 const summary = [
   { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'currency', label: 'Currency', type: 'string' },
-  { key: 'totalLines', label: 'Total Lines', type: 'amount' },
   { key: 'grandTotal', label: 'Grand Total', type: 'amount' },
+  { key: 'totalLines', label: 'Total Lines', type: 'amount' },
+  { key: 'currency', label: 'Currency', type: 'string' },
+  { key: 'isDelivered', label: 'Is Delivered', type: 'string' },
 ];
 
 const statusField = 'docStatus';
 
 const processes = [
-  { name: 'completeOrder', label: 'Complete Order', style: 'positive' },
-  { name: 'voidOrder', label: 'Void Order', style: 'destructive' },
+
 ];
 
 const addLineFields = {
@@ -22,11 +22,12 @@ const addLineFields = {
     { key: 'product', label: 'Product', type: 'text', required: true, lookup: true },
     { key: 'quantity', label: 'Quantity', type: 'number', required: true },
     { key: 'description', label: 'Description', type: 'text' },
+    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
   ],
   derived: [
     { key: 'unitPrice', label: 'Unit Price', type: 'number' },
-    { key: 'discount', label: 'Discount', type: 'number' },
     { key: 'tax', label: 'Tax', type: 'text' },
+    { key: 'discount', label: 'Discount', type: 'number' },
   ],
 };
 
