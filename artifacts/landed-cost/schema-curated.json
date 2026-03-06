@@ -20,6 +20,7 @@
         { "name": "docStatus", "column": "DocStatus", "type": "string", "visibility": "readOnly", "required": true, "grid": true, "form": true, "searchable": true },
 
         { "name": "adClientId", "column": "AD_Client_ID", "type": "id", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "context.client" } },
+        { "name": "adOrgId", "column": "AD_Org_ID", "type": "id", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "context.organization" } },
         { "name": "cDocTypeId", "column": "C_DocType_ID", "type": "foreignKey", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "doctype.landedCost" } },
         { "name": "processed", "column": "Processed", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "docStatus === 'CO' ? true : false" } },
         { "name": "created", "column": "Created", "type": "datetime", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "now()" } },
