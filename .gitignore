@@ -3,3 +3,4 @@ app.log
 node_modules/
 tools/decision-panel/dist/
 .claude/worktrees/
+artifacts/test-report.xml
