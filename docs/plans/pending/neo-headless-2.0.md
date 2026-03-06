@@ -76,7 +76,7 @@ The current `com.etendoerp.etendorx` module already has a functional config-driv
 | Gap | Impact | Effort |
 |-----|--------|--------|
 | No DELETE support | FlowPoint has no DELETE flag | Small: add column + servlet handler |
-| No PATCH support | PUT already works like PATCH (only updates sent fields) | Semantic: alias PUT behavior to PATCH |
+| No PATCH support | Etendo core `WebService` interface has no `doPatch()`, Servlet API 3.1 doesn't route PATCH | **Requires Etendo core changes** (see below) |
 | No Java override mechanism | Custom logic requires separate endpoints | Medium: new override resolution system |
 | No hierarchical structure | Endpoints are flat (no window > tab > subtab nesting) | Medium: add parent-child config |
 | No per-method override granularity | Can't override just POST for one entity | Medium: override registry table |
@@ -100,6 +100,99 @@ System 2: Projection/Connector API (for external integrations)
 ```
 
 **NEO Headless 2.0 evolves System 1.** System 2 (projections/connectors) remains unchanged.
+
+### Etendo Core Changes Required: PATCH Support
+
+The Servlet API 3.1 (used by Etendo) does not recognize PATCH as an HTTP method. `HttpServlet.service()` only routes GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE — a PATCH request returns `405 Method Not Allowed`.
+
+**3 files need to change in `etendo-core`:**
+
+#### 1. `WebService.java` — Add `doPatch()` with default implementation
+
+```java
+// src/org/openbravo/service/web/WebService.java
+
+// Add default method (non-breaking, existing implementations don't need to change)
+default void doPatch(String path, HttpServletRequest request, HttpServletResponse response)
+    throws Exception {
+  throw new UnsupportedOperationException("PATCH method not supported by this web service.");
+}
+```
+
+#### 2. `BaseWebServiceServlet.java` — Intercept PATCH in `doService()`
+
+The `service()` method is `final`, but `doService()` is `protected` and calls `super.service()` (which is where PATCH gets rejected). Intercept BEFORE that call:
+
+```java
+// src/org/openbravo/service/web/BaseWebServiceServlet.java
+
+protected void doService(HttpServletRequest request, HttpServletResponse response)
+    throws ServletException, IOException {
+  try {
+    // ... existing portal/security checks ...
+
+    // PATCH support: Servlet API 3.1 doesn't route PATCH, so intercept here
+    if ("PATCH".equalsIgnoreCase(request.getMethod())) {
+      doPatch(request, response);
+      return;
+    }
+
+    super.service(request, response);
+    response.setStatus(200);
+  } catch (...) { ... }
+}
+
+// New method — subclasses override this (WebServiceServlet does)
+protected void doPatch(HttpServletRequest request, HttpServletResponse response)
+    throws ServletException, IOException {
+  response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "PATCH not supported");
+}
+```
+
+#### 3. `WebServiceServlet.java` — Route PATCH to the WebService
+
+```java
+// src/org/openbravo/service/web/WebServiceServlet.java
+
+@Override
+protected void doPatch(HttpServletRequest request, HttpServletResponse response)
+    throws ServletException, IOException {
+  final String segment = WebServiceUtil.getInstance().getFirstSegment(request.getPathInfo());
+  try {
+    final WebService ws = (WebService) OBProvider.getInstance().get(segment);
+    ws.doPatch(getRemainingPath(request.getPathInfo(), segment), request, response);
+  } catch (final Exception e) {
+    throw new ServletException(e);
+  }
+}
+```
+
+**Impact analysis:**
+- `WebService.doPatch()` is a `default` method → **zero breaking changes** for existing implementations
+- `BaseWebServiceServlet.doPatch()` is a new `protected` method → no impact on subclasses that don't override it
+- The PATCH interception in `doService()` only fires for PATCH requests → existing GET/POST/PUT/DELETE unaffected
+- All existing web services will return `405` for PATCH (same as today) unless they explicitly implement `doPatch()`
+
+**Why not upgrade to Jakarta Servlet 6.1 (Tomcat 11)?**
+
+Jakarta Servlet 6.1 (Tomcat 11) adds native `doPatch()`. However, upgrading requires migrating the entire codebase from `javax.servlet` to `jakarta.servlet` — a months-long project affecting all of Etendo core and every module. The 3-file workaround above is non-breaking, takes minutes, and can be removed when Etendo eventually migrates to Jakarta.
+
+**Zero breaking changes:**
+- `WebService.doPatch()` is a `default` method → existing implementations don't need to change
+- `BaseWebServiceServlet.doPatch()` is a new `protected` method → no existing subclass overrides it
+- The `if ("PATCH")` check in `doService()` only fires for PATCH requests → GET/POST/PUT/DELETE flow is untouched
+- Any WebService that doesn't implement `doPatch()` returns `405 Method Not Allowed` (same as today)
+
+**Semantics — PUT vs PATCH in NEO Headless:**
+
+| Method | Semantics | Required fields | Missing fields |
+|--------|-----------|----------------|----------------|
+| **PUT** | Full replacement | All required fields must be present | Set to null/default |
+| **PATCH** | Partial update | Only changed fields | Left unchanged |
+
+The current `DataSourceServlet.doPut()` actually behaves like PATCH (only updates sent fields). For NEO Headless:
+- **PATCH** → inherits current PUT behavior (partial update, only sent fields change)
+- **PUT** → gets new strict behavior (full object required, missing fields nullified/defaulted)
 
 ---
 
