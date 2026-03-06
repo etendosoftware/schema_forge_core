@@ -25,4 +25,43 @@ catalogs['UOM'] = [
   }
 ];
 
+catalogs['ProductCategory'] = [
+  {
+    "id": "cat-001",
+    "name": "Electronics"
+  },
+  {
+    "id": "cat-002",
+    "name": "Accessories"
+  },
+  {
+    "id": "cat-003",
+    "name": "Peripherals"
+  },
+  {
+    "id": "cat-004",
+    "name": "Displays"
+  },
+  {
+    "id": "cat-005",
+    "name": "Audio"
+  },
+  {
+    "id": "cat-006",
+    "name": "Storage"
+  },
+  {
+    "id": "cat-007",
+    "name": "Components"
+  },
+  {
+    "id": "cat-008",
+    "name": "Networking"
+  },
+  {
+    "id": "cat-009",
+    "name": "Power"
+  }
+];
+
 export default catalogs;

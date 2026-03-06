@@ -251,14 +251,21 @@ export default function App({ token, apiBaseUrl, window }) {
 `;
   }
 
-  return `import ${headerName}Table from './${headerName}Table';
+  return `import { SingleEntityPage } from '@/components/contract-ui';
+import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
+import catalogs from './mockCatalogs';
 
-export default function App({ token, apiBaseUrl, window }) {
+export default function App(props) {
   return (
-    <div>
-      <${headerName}Table data={[]} />
-    </div>
+    <SingleEntityPage
+      entity="${headerEntity}"
+      Table={${headerName}Table}
+      Form={${headerName}Form}
+      catalogs={catalogs}
+      entityLabel="${toLabel(headerEntity)}"
+      {...props}
+    />
   );
 }
 `;
@@ -319,6 +326,10 @@ const CATALOG_DATA = {
   UOM: Array.from({ length: 5 }, (_, i) => ({
     id: `uom-${String(i + 1).padStart(3, '0')}`,
     name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
+  })),
+  ProductCategory: Array.from({ length: 9 }, (_, i) => ({
+    id: `cat-${String(i + 1).padStart(3, '0')}`,
+    name: ['Electronics', 'Accessories', 'Peripherals', 'Displays', 'Audio', 'Storage', 'Components', 'Networking', 'Power'][i],
   })),
   BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
     id: `bploc-${String(i + 1).padStart(3, '0')}`,

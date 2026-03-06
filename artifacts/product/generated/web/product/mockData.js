@@ -7,7 +7,7 @@ export const product = [
     "searchKey": "LP15",
     "description": "15-inch professional laptop",
     "uom": "uom-001",
-    "productCategory": "Electronics",
+    "productCategory": "cat-001",
     "listPrice": 1299,
     "standardCost": 800,
     "isActive": true
@@ -18,7 +18,7 @@ export const product = [
     "searchKey": "USBC",
     "description": "Type-C charging and data cable",
     "uom": "uom-001",
-    "productCategory": "Accessories",
+    "productCategory": "cat-002",
     "listPrice": 15,
     "standardCost": 5,
     "isActive": true
@@ -29,7 +29,7 @@ export const product = [
     "searchKey": "WMSE",
     "description": "Ergonomic wireless mouse",
     "uom": "uom-001",
-    "productCategory": "Peripherals",
+    "productCategory": "cat-003",
     "listPrice": 29,
     "standardCost": 12,
     "isActive": true
@@ -40,7 +40,7 @@ export const product = [
     "searchKey": "MKBD",
     "description": "Cherry MX switches",
     "uom": "uom-001",
-    "productCategory": "Peripherals",
+    "productCategory": "cat-003",
     "listPrice": 89,
     "standardCost": 45,
     "isActive": true
@@ -51,7 +51,7 @@ export const product = [
     "searchKey": "MN27",
     "description": "4K IPS display",
     "uom": "uom-001",
-    "productCategory": "Displays",
+    "productCategory": "cat-004",
     "listPrice": 549,
     "standardCost": 300,
     "isActive": true
@@ -62,7 +62,7 @@ export const product = [
     "searchKey": "WCHD",
     "description": "1080p webcam with mic",
     "uom": "uom-001",
-    "productCategory": "Peripherals",
+    "productCategory": "cat-003",
     "listPrice": 79,
     "standardCost": 35,
     "isActive": true
@@ -73,7 +73,7 @@ export const product = [
     "searchKey": "HSPR",
     "description": "Noise-cancelling headset",
     "uom": "uom-001",
-    "productCategory": "Audio",
+    "productCategory": "cat-005",
     "listPrice": 149,
     "standardCost": 70,
     "isActive": true
@@ -84,7 +84,7 @@ export const product = [
     "searchKey": "DOCK",
     "description": "USB-C dock with dual display",
     "uom": "uom-001",
-    "productCategory": "Accessories",
+    "productCategory": "cat-002",
     "listPrice": 199,
     "standardCost": 100,
     "isActive": true
@@ -95,7 +95,7 @@ export const product = [
     "searchKey": "SSD1",
     "description": "NVMe solid state drive",
     "uom": "uom-001",
-    "productCategory": "Storage",
+    "productCategory": "cat-006",
     "listPrice": 109,
     "standardCost": 55,
     "isActive": true
@@ -106,7 +106,7 @@ export const product = [
     "searchKey": "RM16",
     "description": "DDR4 memory module",
     "uom": "uom-001",
-    "productCategory": "Components",
+    "productCategory": "cat-007",
     "listPrice": 65,
     "standardCost": 30,
     "isActive": true
@@ -117,7 +117,7 @@ export const product = [
     "searchKey": "PS75",
     "description": "80+ Gold certified PSU",
     "uom": "uom-001",
-    "productCategory": "Components",
+    "productCategory": "cat-007",
     "listPrice": 95,
     "standardCost": 50,
     "isActive": true
@@ -128,7 +128,7 @@ export const product = [
     "searchKey": "NTSW",
     "description": "24-port managed switch",
     "uom": "uom-001",
-    "productCategory": "Networking",
+    "productCategory": "cat-008",
     "listPrice": 45,
     "standardCost": 20,
     "isActive": true
@@ -139,7 +139,7 @@ export const product = [
     "searchKey": "PRLS",
     "description": "Color laser printer",
     "uom": "uom-001",
-    "productCategory": "Peripherals",
+    "productCategory": "cat-003",
     "listPrice": 299,
     "standardCost": 150,
     "isActive": true
@@ -150,7 +150,7 @@ export const product = [
     "searchKey": "SCFB",
     "description": "A4 flatbed scanner",
     "uom": "uom-001",
-    "productCategory": "Peripherals",
+    "productCategory": "cat-003",
     "listPrice": 189,
     "standardCost": 95,
     "isActive": true
@@ -161,7 +161,7 @@ export const product = [
     "searchKey": "EH2T",
     "description": "Portable hard drive",
     "uom": "uom-001",
-    "productCategory": "Storage",
+    "productCategory": "cat-006",
     "listPrice": 79,
     "standardCost": 40,
     "isActive": true
@@ -172,7 +172,7 @@ export const product = [
     "searchKey": "TB10",
     "description": "Android tablet",
     "uom": "uom-001",
-    "productCategory": "Electronics",
+    "productCategory": "cat-001",
     "listPrice": 449,
     "standardCost": 250,
     "isActive": true
@@ -183,7 +183,7 @@ export const product = [
     "searchKey": "RTPR",
     "description": "Enterprise wireless router",
     "uom": "uom-001",
-    "productCategory": "Networking",
+    "productCategory": "cat-008",
     "listPrice": 129,
     "standardCost": 65,
     "isActive": true
@@ -194,7 +194,7 @@ export const product = [
     "searchKey": "UPSB",
     "description": "Uninterruptible power supply",
     "uom": "uom-001",
-    "productCategory": "Power",
+    "productCategory": "cat-009",
     "listPrice": 159,
     "standardCost": 80,
     "isActive": true
@@ -205,7 +205,7 @@ export const product = [
     "searchKey": "GRCD",
     "description": "RTX series GPU",
     "uom": "uom-001",
-    "productCategory": "Components",
+    "productCategory": "cat-007",
     "listPrice": 699,
     "standardCost": 400,
     "isActive": false
@@ -216,7 +216,7 @@ export const product = [
     "searchKey": "CCOL",
     "description": "Tower air cooler",
     "uom": "uom-001",
-    "productCategory": "Components",
+    "productCategory": "cat-007",
     "listPrice": 49,
     "standardCost": 25,
     "isActive": false
