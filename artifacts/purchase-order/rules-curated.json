@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0",
+  "rules": [
+    { "name": "BP_AutoFill_Address", "type": "callout", "entity": "order", "decision": "Keep", "description": "When changing vendor (business partner), auto-fill delivery address, invoice address, payment terms, payment method, and purchase price list from vendor defaults" },
+    { "name": "Line_Recalc_Totals", "type": "eventHandler", "entity": "orderLine", "decision": "Keep", "description": "After saving a line, recalculate header totals (TotalLines, GrandTotal)" },
+    { "name": "Product_AutoFill_Price", "type": "callout", "entity": "orderLine", "decision": "Keep", "description": "When selecting a product, auto-fill unit price from purchase price list, tax category, and UOM from product master" },
+    { "name": "Line_Calc_NetAmount", "type": "callout", "entity": "orderLine", "decision": "Keep", "description": "Recalculate line net amount when quantity, price, or discount changes" },
+    { "name": "ReadOnly_When_Processed", "type": "displayLogic", "entity": "order", "decision": "Keep", "description": "Lock all editable fields when order status is Completed or Voided" },
+    { "name": "PriceList_Filter_Purchase", "type": "displayLogic", "entity": "order", "decision": "Keep", "description": "Filter price list selector to show only purchase price lists (M_PriceList.IsSOPriceList='N')" },
+    { "name": "BP_Filter_Vendor", "type": "displayLogic", "entity": "order", "decision": "Keep", "description": "Filter business partner selector to show only vendors (C_BPartner.IsVendor='Y')" }
+  ]
+}
