@@ -168,7 +168,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${referencePart} },`;
   }).join('\n');
 
   return `import { MasterDetailPage } from '@/components/contract-ui';

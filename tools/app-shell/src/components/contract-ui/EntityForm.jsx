@@ -11,6 +11,11 @@ function SearchInput({ field, value, onChange }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value ?? '');
 
+  // Sync with external value changes
+  React.useEffect(() => {
+    setQuery(value ?? '');
+  }, [value]);
+
   return (
     <div className="relative">
       <div className="relative">
@@ -23,6 +28,7 @@ function SearchInput({ field, value, onChange }) {
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
+            onChange?.(e.target.value);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}

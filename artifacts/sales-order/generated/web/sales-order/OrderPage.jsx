@@ -26,7 +26,7 @@ const addLineFields = {
   ],
   derived: [
     { key: 'unitPrice', label: 'Unit Price', type: 'number' },
-    { key: 'tax', label: 'Tax', type: 'search' },
+    { key: 'tax', label: 'Tax', type: 'search', reference: 'Tax' },
     { key: 'discount', label: 'Discount', type: 'number' },
   ],
 };
