@@ -28,157 +28,6 @@ export function getProcessesForEntity(contract, entityName) {
 }
 
 /**
- * Generate a data table component for an entity.
- * Features: search filters with icons, zebra rows, selected row highlight, record count.
- */
-export function generateTableComponent(entityName, contract) {
-  const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid);
-  const searchableFields = entity.searchableFields ?? [];
-  const compName = `${capitalize(entityName)}Table`;
-
-  const hasStatusField = gridFields.some(f => f.name.toLowerCase().includes('status'));
-
-  const imports = [
-    `import React, { useState } from 'react';`,
-    `import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';`,
-    `import { Input } from '@/components/ui/input';`,
-    `import { Search } from 'lucide-react';`,
-  ];
-  if (hasStatusField) {
-    imports.push(`import { StatusBadge } from '@/components/ui/status-badge';`);
-  }
-
-  const filterState = searchableFields
-    .map(f => `  const [filter${capitalize(f)}, setFilter${capitalize(f)}] = useState('');`)
-    .join('\n');
-
-  const filterInputs = searchableFields
-    .map(f => `        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter ${toLabel(f)}..."
-            value={filter${capitalize(f)}}
-            onChange={(e) => setFilter${capitalize(f)}(e.target.value)}
-            className="pl-8 max-w-xs focus:ring-2 focus:ring-primary focus:outline-none transition-colors duration-200"
-            aria-label={"Filter by ${toLabel(f)}"}
-          />
-        </div>`)
-    .join('\n');
-
-  const headerCells = gridFields
-    .map(f => `            <TableHead className="text-xs font-medium text-blue-800 uppercase tracking-wider">${toLabel(f.name)}</TableHead>`)
-    .join('\n');
-
-  const bodyCells = gridFields
-    .map(f => {
-      if (f.name.toLowerCase().includes('status')) {
-        return `            <TableCell><StatusBadge status={row.${f.name}} /></TableCell>`;
-      }
-      if (f.type === 'amount') {
-        return `            <TableCell className="tabular-nums">{row.${f.name}?.toLocaleString()}</TableCell>`;
-      }
-      return `            <TableCell>{row.${f.name}}</TableCell>`;
-    })
-    .join('\n');
-
-  return `${imports.join('\n')}
-
-export default function ${compName}({ data = [], onRowSelect, selectedId }) {
-${filterState}
-
-  const filteredData = data.filter(row => {
-${searchableFields.map(f => `    if (filter${capitalize(f)} && !String(row.${f} ?? '').toLowerCase().includes(filter${capitalize(f)}.toLowerCase())) return false;`).join('\n')}
-    return true;
-  });
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
-${filterInputs}
-      </div>
-      <div className="rounded-lg border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-b-2 border-primary/20 bg-muted/40">
-${headerCells}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((row, idx) => (
-              <TableRow
-                key={row.id ?? idx}
-                onClick={() => onRowSelect?.(row)}
-                className={[
-                  'cursor-pointer transition-colors',
-                  row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
-                  idx % 2 !== 0 && row.id !== selectedId ? 'bg-muted/30' : '',
-                  'hover:bg-primary/5',
-                ].filter(Boolean).join(' ')}
-              >
-${bodyCells}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <p className="text-xs text-muted-foreground">{filteredData.length} of {data.length} records</p>
-    </div>
-  );
-}
-`;
-}
-
-/**
- * Generate a detail/edit form component for an entity.
- * Only renders editable fields in a 2-column grid.
- * Read-only fields and process actions are handled by the page component.
- */
-export function generateFormComponent(entityName, contract) {
-  const entity = contract.frontendContract.entities[entityName];
-  const formFields = entity.fields.filter(f => f.form);
-  const compName = `${capitalize(entityName)}Form`;
-
-  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
-
-  const imports = [
-    `import React from 'react';`,
-    `import { Input } from '@/components/ui/input';`,
-    `import { Label } from '@/components/ui/label';`,
-  ];
-
-  function renderField(f) {
-    const label = toLabel(f.name);
-    const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const requiredAttr = f.required ? ' required' : '';
-
-    return `        <div className="space-y-1.5">
-          <Label htmlFor="${f.name}" className="text-sm text-foreground font-medium">${label}${f.required ? ' *' : ''}</Label>
-          <Input
-            id="${f.name}"
-            name="${f.name}"
-            type="${inputType}"
-            value={data?.${f.name} ?? ''}
-            onChange={(e) => onChange?.('${f.name}', e.target.value)} className="focus:ring-2 focus:ring-primary focus:outline-none"${requiredAttr}
-          />
-        </div>`;
-  }
-
-  const editableElements = editableFields.map(renderField).join('\n');
-
-  return `${imports.join('\n')}
-
-export default function ${compName}({ data, onChange }) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-${editableElements}
-    </div>
-  );
-}
-`;
-}
-
-/**
  * Get the read-only fields for an entity (used by page component for summary strip).
  */
 export function getReadOnlyFields(contract, entityName) {
@@ -187,8 +36,88 @@ export function getReadOnlyFields(contract, entityName) {
 }
 
 /**
+ * Map a contract field type to a column/field type for the declarative config.
+ */
+function mapFieldType(field) {
+  if (field.name.toLowerCase().includes('status')) return 'status';
+  if (field.type === 'amount') return 'amount';
+  if (field.type === 'number' || field.type === 'integer') return 'number';
+  if (field.type === 'date') return 'date';
+  return 'string';
+}
+
+/**
+ * Map a contract field to a form field type.
+ */
+function mapFormFieldType(field) {
+  if (field.tsType === 'number') return 'number';
+  if (field.type === 'date') return 'date';
+  return 'text';
+}
+
+/**
+ * Generate a data table component for an entity.
+ * Produces a thin declarative component that imports DataTable from contract-ui.
+ */
+export function generateTableComponent(entityName, contract) {
+  const entity = contract.frontendContract.entities[entityName];
+  const gridFields = entity.fields.filter(f => f.grid);
+  const searchableFields = entity.searchableFields ?? [];
+  const compName = `${capitalize(entityName)}Table`;
+
+  const columnsArray = gridFields.map(f => {
+    const type = mapFieldType(f);
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+  }).join('\n');
+
+  const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
+
+  return `import { DataTable } from '@/components/contract-ui';
+
+const columns = [
+${columnsArray}
+];
+
+const filters = [${filtersArray}];
+
+export default function ${compName}(props) {
+  return <DataTable columns={columns} filters={filters} {...props} />;
+}
+`;
+}
+
+/**
+ * Generate a detail/edit form component for an entity.
+ * Produces a thin declarative component that imports EntityForm from contract-ui.
+ * Only renders editable fields (visibility !== 'readOnly').
+ */
+export function generateFormComponent(entityName, contract) {
+  const entity = contract.frontendContract.entities[entityName];
+  const formFields = entity.fields.filter(f => f.form);
+  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
+  const compName = `${capitalize(entityName)}Form`;
+
+  const fieldsArray = editableFields.map(f => {
+    const type = mapFormFieldType(f);
+    const requiredPart = f.required ? ', required: true' : '';
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart} },`;
+  }).join('\n');
+
+  return `import { EntityForm } from '@/components/contract-ui';
+
+const fields = [
+${fieldsArray}
+];
+
+export default function ${compName}(props) {
+  return <EntityForm fields={fields} {...props} />;
+}
+`;
+}
+
+/**
  * Generate a header-detail page component with Split View layout.
- * Features: table left (40%), detail right (60%) with toolbar, summary strip, form, and lines.
+ * Produces a thin declarative component that imports MasterDetailPage from contract-ui.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
@@ -205,208 +134,80 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
   const summaryFields = readOnlyFields.filter(f => f !== statusField);
 
-  const summaryItems = summaryFields.map(f => {
-    const label = toLabel(f.name);
-    const isNumber = f.tsType === 'number';
-    const valueExpr = isNumber
-      ? `${headerEntity}.editing?.${f.name}?.toLocaleString() ?? '—'`
-      : `${headerEntity}.editing?.${f.name} ?? '—'`;
-    return `            <div className="flex items-center gap-1.5">\n              <span className="text-slate-500">${label}:</span>\n              <span className="font-semibold text-foreground ${isNumber ? 'tabular-nums' : ''}">{${valueExpr}}</span>\n            </div>`;
+  // Summary config
+  const summaryArray = summaryFields.map(f => {
+    const type = mapFieldType(f);
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
   }).join('\n');
 
-  const processButtons = processes.map(p => {
-    const label = toLabel(p.name);
-    const isDestructive = p.name.toLowerCase().includes('void') || p.name.toLowerCase().includes('cancel') || p.name.toLowerCase().includes('reject');
-    const btnClass = isDestructive
-      ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
-    return `            <Button variant="outline" size="sm" className="${btnClass}" onClick={() => ${headerEntity}.handleProcess?.('${p.name}')}>${label}</Button>`;
+  // Status field config
+  const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
+
+  // Process config
+  const processesArray = processes.map(p => {
+    const isDestructive = /void|cancel|reject/i.test(p.name);
+    const style = isDestructive ? 'destructive' : 'positive';
+    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}' },`;
   }).join('\n');
-
-  const processSection = processes.length > 0
-    ? `\n            <div className="h-5 w-px bg-border" />\n${processButtons}`
-    : '';
-
-  const statusBadgeImport = statusField
-    ? `\nimport { StatusBadge } from '@/components/ui/status-badge';`
-    : '';
-  const statusBadgeInHeader = statusField
-    ? `\n            <StatusBadge status={${headerEntity}.editing?.${statusField.name}} />`
-    : '';
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
   const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
   const entryFields = detailEditableFields.filter(f => !autoPatterns.test(f.name));
   const derivedFields = detailEditableFields.filter(f => autoPatterns.test(f.name));
 
-  // The first entry field (usually product) triggers a lookup on blur
-  const lookupTriggerField = entryFields[0];
-
-  // Build entry field inputs (user types these)
-  const entryInputs = entryFields.map(f => {
-    const label = toLabel(f.name);
-    const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const isLookupTrigger = f === lookupTriggerField;
-    const onBlurAttr = isLookupTrigger
-      ? `\n                  onBlur={(e) => { if (e.target.value) handleProductLookup(e.target.value); }}`
-      : '';
-    return `              <div className="flex-1 min-w-0">
-                <label className="text-xs text-slate-500 mb-1 block">${label}${f.required ? ' *' : ''}</label>
-                <input
-                  name="${f.name}"
-                  type="${inputType}"
-                  placeholder="${label}"
-                  value={newLine.${f.name} ?? ''}
-                  onChange={(e) => setNewLine(prev => ({ ...prev, ${f.name}: e.target.value }))}${onBlurAttr}
-                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"${f.required ? '\n                  required' : ''}
-                />
-              </div>`;
+  // The first entry field (usually product) triggers a lookup
+  const entryArray = entryFields.map((f, i) => {
+    const type = mapFormFieldType(f);
+    const requiredPart = f.required ? ', required: true' : '';
+    const lookupPart = i === 0 ? ', lookup: true' : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart} },`;
   }).join('\n');
 
-  // Build derived field displays (auto-filled, read-only in mini form)
-  const derivedInputs = derivedFields.map(f => {
-    const label = toLabel(f.name);
-    return `              <div className="flex-1 min-w-0">
-                <label className="text-xs text-slate-400 mb-1 block">${label}</label>
-                <div className="h-8 text-sm rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 flex items-center text-slate-600 tabular-nums">
-                  {newLine.${f.name} || '—'}
-                </div>
-              </div>`;
+  const derivedArray = derivedFields.map(f => {
+    const type = mapFormFieldType(f);
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
   }).join('\n');
 
-  const miniFormFields = derivedFields.length > 0
-    ? `${entryInputs}\n              <div className="w-px h-8 bg-slate-200 self-end mb-0.5" />\n${derivedInputs}`
-    : entryInputs;
-
-  const emptyLineObj = `{ ${detailEditableFields.map(f => `${f.name}: ''`).join(', ')} }`;
-
-  return `import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useEntity } from '@/hooks/useEntity';${statusBadgeImport}
+  return `import { MasterDetailPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 
-export default function ${compName}({ token, apiBaseUrl }) {
-  const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
+const summary = [
+${summaryArray}
+];
 
-  const [showAddLine, setShowAddLine] = useState(false);
-  const [newLine, setNewLine] = useState(${emptyLineObj});
+const statusField = ${statusFieldLine};
 
-  const detailTitle = ${headerEntity}.editing?.id
-    ? \`${toLabel(headerEntity)} \${${headerEntity}.editing.documentNo || ${headerEntity}.editing.id}\`
-    : 'New ${toLabel(headerEntity)}';
+const processes = [
+${processesArray}
+];
 
-  const handleAddLine = () => {
-    ${headerEntity}.handleAddChild?.(newLine);
-    setNewLine(${emptyLineObj});
-    setShowAddLine(false);
-  };
+const addLineFields = {
+  entry: [
+${entryArray}
+  ],
+  derived: [
+${derivedArray}
+  ],
+};
 
-  const handleProductLookup = async (value) => {
-    const defaults = await ${headerEntity}.lookupChildDefaults?.(value);
-    if (defaults) {
-      setNewLine(prev => ({ ...prev, ...defaults }));
-    }
-  };
-
+export default function ${compName}(props) {
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-0">
-      {/* Left panel: Table */}
-      <div className={\`flex flex-col border-r transition-all duration-300 \${${headerEntity}.editing ? 'w-2/5' : 'w-full'}\`}>
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">${toLabel(headerEntity)}s</h2>
-            <p className="text-xs text-muted-foreground">
-              {${headerEntity}.loading ? 'Loading...' : \`\${${headerEntity}.items.length} records\`}
-            </p>
-          </div>
-          <Button onClick={${headerEntity}.handleNew} size="sm">+ New</Button>
-        </div>
-        <div className="flex-1 overflow-auto p-3">
-          {${headerEntity}.loading ? (
-            <div className="animate-pulse space-y-3">
-              <div className="h-10 bg-muted rounded" />
-              <div className="h-8 bg-muted/60 rounded" />
-              <div className="h-8 bg-muted/40 rounded" />
-              <div className="h-8 bg-muted/60 rounded" />
-              <div className="h-8 bg-muted/40 rounded" />
-            </div>
-          ) : (
-            <${headerName}Table
-              data={${headerEntity}.items}
-              onRowSelect={${headerEntity}.handleSelect}
-              selectedId={${headerEntity}.selected?.id}
-              compact={!!${headerEntity}.editing}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Right panel: Toolbar + Summary + Form + Detail */}
-      {${headerEntity}.editing && (
-        <div className="flex-1 flex flex-col overflow-hidden bg-white">
-          {/* Toolbar: title, status, process actions, save/delete */}
-          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-slate-200 bg-white shadow-sm">
-            <h2 className="text-base font-semibold text-foreground truncate">{detailTitle}</h2>${statusBadgeInHeader}
-            <div className="flex-1" />
-            <div className="flex items-center gap-2">${processSection}
-              <Button size="sm" onClick={() => ${headerEntity}.handleSave(${headerEntity}.editing)}>Save</Button>
-              {${headerEntity}.selected && (
-                <Button variant="destructive" size="sm" onClick={${headerEntity}.handleDelete}>Delete</Button>
-              )}
-              <button
-                onClick={() => ${headerEntity}.handleSelect(null)}
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                aria-label="Close detail"
-              >
-                &times;
-              </button>
-            </div>
-          </div>
-
-          {/* Summary strip: read-only reference fields */}
-          <div className="flex items-center gap-5 px-5 py-2.5 border-b border-slate-200 bg-slate-50 text-xs">
-${summaryItems}
-          </div>
-
-          {/* Form zone: editable fields only */}
-          <div className="px-5 pt-4 pb-3 border-b">
-            <${headerName}Form
-              data={${headerEntity}.editing}
-              onChange={${headerEntity}.handleChange}
-            />
-          </div>
-
-          {/* Detail zone: fills remaining height */}
-          <div className="flex-1 flex flex-col overflow-hidden px-5 py-3">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">${toLabel(detailEntity)}s</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setShowAddLine(!showAddLine)}
-              >
-                {showAddLine ? 'Cancel' : '+ Add Line'}
-              </Button>
-            </div>
-            {showAddLine && (
-              <form
-                onSubmit={(e) => { e.preventDefault(); handleAddLine(); }}
-                className="flex items-end gap-2 mb-3 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5"
-              >
-${miniFormFields}
-                <Button type="submit" size="sm" className="h-8 shrink-0">Add</Button>
-              </form>
-            )}
-            <div className="flex-1 overflow-auto">
-              <${detailName}Table data={${headerEntity}.children} />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    <MasterDetailPage
+      entity="${headerEntity}"
+      detailEntity="${detailEntity}"
+      Table={${headerName}Table}
+      Form={${headerName}Form}
+      DetailTable={${detailName}Table}
+      summary={summary}
+      statusField={statusField}
+      processes={processes}
+      addLineFields={addLineFields}
+      entityLabel="${toLabel(headerEntity)}"
+      detailLabel="${toLabel(detailEntity)}"
+      {...props}
+    />
   );
 }
 `;
@@ -420,8 +221,7 @@ export function generateIndexComponent(headerEntity, detailEntity) {
   const headerName = capitalize(headerEntity);
 
   if (detailEntity) {
-    return `import React from 'react';
-import ${headerName}Page from './${headerName}Page';
+    return `import ${headerName}Page from './${headerName}Page';
 
 export default function App({ token, apiBaseUrl, window }) {
   return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window} />;
@@ -429,17 +229,13 @@ export default function App({ token, apiBaseUrl, window }) {
 `;
   }
 
-  return `import React from 'react';
-import ${headerName}Table from './${headerName}Table';
+  return `import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 
 export default function App({ token, apiBaseUrl, window }) {
-  const [selected, setSelected] = React.useState(null);
-
   return (
-    <div className="space-y-6 p-4">
-      <${headerName}Table data={[]} onRowSelect={setSelected} />
-      {selected && <${headerName}Form data={selected} />}
+    <div>
+      <${headerName}Table data={[]} />
     </div>
   );
 }
