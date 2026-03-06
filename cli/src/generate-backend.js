@@ -197,6 +197,7 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
         javaType: toJavaType(f.type),
         required: f.required || false,
         readOnly: f.visibility === 'readOnly',
+        isForeignKey: f.type === 'foreignKey',
       }));
 
     return {
@@ -227,9 +228,68 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
     const tabName = entity.description ?? entity.tabName ?? entity.name;
     const tabSlug = toSlug(tabName);
 
-    // Tab filter: HQL where clause that scopes this endpoint (e.g., "e.salesTransaction=true")
-    const hqlWhereClause = entity.hqlWhereClause || null;
-    const tabAutoSetters = parseTabAutoSetters(hqlWhereClause);
+    // Tab filter: HQL where clause that scopes this endpoint.
+    // Etendo AD stores these with "e." alias (e.g., "e.salesTransaction=true")
+    // but OBQuery doesn't use aliases — strip them before passing to the template.
+    const rawHqlClause = entity.hqlWhereClause || null;
+    const hqlWhereClause = rawHqlClause ? rawHqlClause.replace(/\be\./g, '') : null;
+    const tabAutoSetters = parseTabAutoSetters(rawHqlClause);
+
+    // All visible fields for GET responses and POST body parsing
+    const visibleFields = entity.fields
+      .filter(f => f.visibility !== 'system' && f.visibility !== 'discarded')
+      .map(f => ({
+        name: f.name,
+        column: f.column,
+        type: f.type,
+        javaType: toJavaType(f.type),
+        required: f.required || false,
+        readOnly: f.visibility === 'readOnly',
+        isForeignKey: f.type === 'foreignKey',
+      }));
+
+    const editableFields = visibleFields.filter(f => !f.readOnly);
+
+    // System fields with derivation rules — generate setters for POST create
+    const systemSetters = entity.fields
+      .filter(f => f.visibility === 'system' && f.derivation)
+      .filter(f => f.name !== 'adClientId' && f.name !== 'adOrgId') // already set via setClient/setOrganization
+      .filter(f => f.name !== 'creationDate' && f.name !== 'updated') // auto-managed by OBDal
+      .map(f => {
+        const d = f.derivation;
+        const isFk = f.type === 'foreignKey';
+        if (d.type === 'fromConfig' && d.source === 'context.salesTransaction') {
+          return { property: f.name, javaValue: 'true', type: 'boolean' };
+        }
+        if (d.type === 'computed') {
+          const expr = d.expression;
+          // Literal string values like 'D', 'A', 'I', '5', 'P'
+          const literalMatch = expr.match(/^'([^']+)'$/);
+          if (literalMatch) {
+            return { property: f.name, javaValue: `"${literalMatch[1]}"`, type: 'string' };
+          }
+          // Boolean expressions
+          if (expr.includes('true') || expr.includes('false')) {
+            return { property: f.name, javaValue: 'false', type: 'boolean' };
+          }
+          // Field reference — copy value from another field (e.g., accountingDate = dateOrdered)
+          const fieldRef = expr.match(/^([a-zA-Z]+)$/);
+          if (fieldRef) {
+            return { property: f.name, type: 'copyField', sourceField: fieldRef[1] };
+          }
+          return null; // skip complex expressions
+        }
+        // fromConfig doctype — skip for now, requires lookup
+        if (d.type === 'fromConfig' && d.source && d.source.startsWith('doctype.')) {
+          return { property: f.name, javaValue: null, type: 'doctype', isFk };
+        }
+        // fromParent — only relevant for child entities
+        if (d.type === 'fromParent') {
+          return null; // handled differently for child tabs
+        }
+        return null;
+      })
+      .filter(Boolean);
 
     return {
       entityName: entity.name,
@@ -246,6 +306,10 @@ export function prepareTemplateData(schema, rules, processes, moduleConfig = {})
       // Tab-level filter
       hqlWhereClause,
       tabAutoSetters,
+      // All visible fields for response mapping + POST
+      visibleFields,
+      editableFields,
+      systemSetters,
     };
   });
 
@@ -482,6 +546,14 @@ export async function generateBackend(schema, rules, processes, contract, window
   Handlebars.registerHelper('unless', function(conditional, options) {
     if (!conditional) return options.fn(this);
     return options.inverse(this);
+  });
+
+  Handlebars.registerHelper('ifCond', function(v1, operator, v2, options) {
+    switch (operator) {
+      case '==': return (v1 == v2) ? options.fn(this) : options.inverse(this);
+      case '!=': return (v1 != v2) ? options.fn(this) : options.inverse(this);
+      default: return options.inverse(this);
+    }
   });
 
   const templatesDir = join(__dirname, '..', '..', 'templates');
