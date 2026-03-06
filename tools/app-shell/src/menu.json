@@ -9,7 +9,9 @@
         { "name": "goods-shipment", "label": "Goods Shipment" },
         { "name": "return-from-customer", "label": "Return from Customer" },
         { "name": "return-material-receipt", "label": "Return Material Receipt" },
-        { "name": "sales-invoice", "label": "Sales Invoice" }
+        { "name": "sales-invoice", "label": "Sales Invoice" },
+        { "name": "commission", "label": "Commission" },
+        { "name": "commission-payment", "label": "Commission Payment" }
       ]
     },
     {
@@ -35,7 +37,13 @@
       "icon": "Package",
       "items": [
         { "name": "physical-inventory", "label": "Physical Inventory" },
-        { "name": "goods-movements", "label": "Goods Movements" }
+        { "name": "goods-movements", "label": "Goods Movements" },
+        { "name": "inventory-quality-inspection", "label": "Quality Inspection" },
+        { "name": "bom-production", "label": "BOM Production" },
+        { "name": "packing", "label": "Packing" },
+        { "name": "warehouse-picking-list", "label": "Picking List" },
+        { "name": "stock-reservation", "label": "Stock Reservation" },
+        { "name": "cost-adjustment", "label": "Cost Adjustment" }
       ]
     },
     {

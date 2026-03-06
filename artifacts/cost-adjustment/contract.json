@@ -1,0 +1,1061 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T18:34:55.070Z",
+  "checksum": "1838cc45dafd05fc",
+  "frontendContract": {
+    "window": {
+      "id": "800230",
+      "name": "Cost Adjustment",
+      "primaryEntity": "costAdjustment",
+      "category": "warehouse"
+    },
+    "entities": {
+      "costAdjustment": {
+        "fields": [
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Organization",
+            "inputMode": "selector"
+          },
+          {
+            "name": "documentDate",
+            "column": "DateAcct",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "referenceNo",
+            "column": "ReferenceNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "organization",
+          "documentDate",
+          "description",
+          "referenceNo",
+          "documentNo",
+          "docStatus"
+        ],
+        "computedFields": []
+      },
+      "costAdjustmentLine": {
+        "fields": [
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "inventoryTransaction",
+            "column": "M_Transaction_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "MaterialTransaction",
+            "inputMode": "search"
+          },
+          {
+            "name": "adjustmentAmount",
+            "column": "AdjustmentAmount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isSource",
+            "column": "IsSource",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "isRelated",
+            "column": "IsRelated",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "Currency",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [
+          "product"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "800230",
+      "name": "Cost Adjustment",
+      "primaryEntity": "costAdjustment",
+      "category": "warehouse"
+    },
+    "entities": {
+      "costAdjustment": {
+        "fields": [
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "documentDate",
+            "column": "DateAcct",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "referenceNo",
+            "column": "ReferenceNo",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "docStatus",
+            "column": "DocStatus",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "cDocTypeId",
+            "column": "C_DocType_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "costAdjustmentLine": {
+        "fields": [
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "inventoryTransaction",
+            "column": "M_Transaction_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "adjustmentAmount",
+            "column": "AdjustmentAmount",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "isSource",
+            "column": "IsSource",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "isRelated",
+            "column": "IsRelated",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mCostAdjustmentId",
+            "column": "M_CostAdjustment_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/costAdjustment",
+        "entity": "costAdjustment",
+        "supportedFilters": [
+          "organization",
+          "documentDate",
+          "description",
+          "referenceNo",
+          "documentNo",
+          "docStatus"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/costAdjustment/:id",
+        "entity": "costAdjustment",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/costAdjustment",
+        "entity": "costAdjustment",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/costAdjustment/:id",
+        "entity": "costAdjustment",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/costAdjustment/:id",
+        "entity": "costAdjustment",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/costAdjustmentLine",
+        "entity": "costAdjustmentLine",
+        "supportedFilters": [
+          "product"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/costAdjustmentLine/:id",
+        "entity": "costAdjustmentLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/costAdjustmentLine",
+        "entity": "costAdjustmentLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/costAdjustmentLine/:id",
+        "entity": "costAdjustmentLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/costAdjustmentLine/:id",
+        "entity": "costAdjustmentLine",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": [
+      {
+        "name": "completeCostAdjustment",
+        "method": "POST",
+        "path": "/process/completeCostAdjustment",
+        "entity": "costAdjustment",
+        "preconditions": [
+          "Cost adjustment must have at least one line",
+          "Document status must be DR (Draft)",
+          "All lines must have a product assigned",
+          "All lines must have a non-zero adjustment amount",
+          "All products must be stocked items (productType = I)"
+        ],
+        "steps": 4
+      },
+      {
+        "name": "voidCostAdjustment",
+        "method": "POST",
+        "path": "/process/voidCostAdjustment",
+        "entity": "costAdjustment",
+        "preconditions": [
+          "Document status must be CO (Completed)"
+        ],
+        "steps": 4
+      }
+    ]
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "organization",
+        "runner": "node",
+        "description": "Field 'organization' should be present in costAdjustment"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "documentDate",
+        "runner": "node",
+        "description": "Field 'documentDate' should be present in costAdjustment"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in costAdjustment"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "referenceNo",
+        "runner": "node",
+        "description": "Field 'referenceNo' should be present in costAdjustment"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in costAdjustment"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in costAdjustment"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "costAdjustment",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be present in costAdjustment"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "organization",
+        "runner": "node",
+        "description": "Field 'organization' should have type 'string' in costAdjustment"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "documentDate",
+        "runner": "node",
+        "description": "Field 'documentDate' should have type 'string' in costAdjustment"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in costAdjustment"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "referenceNo",
+        "runner": "node",
+        "description": "Field 'referenceNo' should have type 'string' in costAdjustment"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in costAdjustment"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in costAdjustment"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "costAdjustment",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should have type 'string' in costAdjustment"
+      },
+      {
+        "id": "t-15",
+        "category": "searchable-filters",
+        "entity": "costAdjustment",
+        "field": "organization",
+        "runner": "node",
+        "description": "Field 'organization' should be a supported filter for costAdjustment"
+      },
+      {
+        "id": "t-16",
+        "category": "searchable-filters",
+        "entity": "costAdjustment",
+        "field": "documentDate",
+        "runner": "node",
+        "description": "Field 'documentDate' should be a supported filter for costAdjustment"
+      },
+      {
+        "id": "t-17",
+        "category": "searchable-filters",
+        "entity": "costAdjustment",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be a supported filter for costAdjustment"
+      },
+      {
+        "id": "t-18",
+        "category": "searchable-filters",
+        "entity": "costAdjustment",
+        "field": "referenceNo",
+        "runner": "node",
+        "description": "Field 'referenceNo' should be a supported filter for costAdjustment"
+      },
+      {
+        "id": "t-19",
+        "category": "searchable-filters",
+        "entity": "costAdjustment",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for costAdjustment"
+      },
+      {
+        "id": "t-20",
+        "category": "searchable-filters",
+        "entity": "costAdjustment",
+        "field": "docStatus",
+        "runner": "node",
+        "description": "Field 'docStatus' should be a supported filter for costAdjustment"
+      },
+      {
+        "id": "t-21",
+        "category": "visibility",
+        "entity": "costAdjustment",
+        "runner": "node",
+        "description": "Entity 'costAdjustment' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-22",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-23",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "inventoryTransaction",
+        "runner": "node",
+        "description": "Field 'inventoryTransaction' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-24",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "adjustmentAmount",
+        "runner": "node",
+        "description": "Field 'adjustmentAmount' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-25",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-26",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-27",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-28",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "isSource",
+        "runner": "node",
+        "description": "Field 'isSource' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-29",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "isRelated",
+        "runner": "node",
+        "description": "Field 'isRelated' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-30",
+        "category": "field-presence",
+        "entity": "costAdjustmentLine",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in costAdjustmentLine"
+      },
+      {
+        "id": "t-31",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in costAdjustmentLine"
+      },
+      {
+        "id": "t-32",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "inventoryTransaction",
+        "runner": "node",
+        "description": "Field 'inventoryTransaction' should have type 'string' in costAdjustmentLine"
+      },
+      {
+        "id": "t-33",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "adjustmentAmount",
+        "runner": "node",
+        "description": "Field 'adjustmentAmount' should have type 'number' in costAdjustmentLine"
+      },
+      {
+        "id": "t-34",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in costAdjustmentLine"
+      },
+      {
+        "id": "t-35",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in costAdjustmentLine"
+      },
+      {
+        "id": "t-36",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in costAdjustmentLine"
+      },
+      {
+        "id": "t-37",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "isSource",
+        "runner": "node",
+        "description": "Field 'isSource' should have type 'boolean' in costAdjustmentLine"
+      },
+      {
+        "id": "t-38",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "isRelated",
+        "runner": "node",
+        "description": "Field 'isRelated' should have type 'boolean' in costAdjustmentLine"
+      },
+      {
+        "id": "t-39",
+        "category": "field-type",
+        "entity": "costAdjustmentLine",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in costAdjustmentLine"
+      },
+      {
+        "id": "t-40",
+        "category": "searchable-filters",
+        "entity": "costAdjustmentLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for costAdjustmentLine"
+      },
+      {
+        "id": "t-41",
+        "category": "visibility",
+        "entity": "costAdjustmentLine",
+        "runner": "node",
+        "description": "Entity 'costAdjustmentLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-42",
+        "category": "system-field",
+        "entity": "costAdjustment",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for costAdjustment"
+      },
+      {
+        "id": "t-43",
+        "category": "system-field",
+        "entity": "costAdjustment",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for costAdjustment"
+      },
+      {
+        "id": "t-44",
+        "category": "system-field",
+        "entity": "costAdjustment",
+        "field": "cDocTypeId",
+        "runner": "node",
+        "description": "System field 'cDocTypeId' should exist in backend but not frontend for costAdjustment"
+      },
+      {
+        "id": "t-45",
+        "category": "system-field",
+        "entity": "costAdjustment",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for costAdjustment"
+      },
+      {
+        "id": "t-46",
+        "category": "system-field",
+        "entity": "costAdjustment",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for costAdjustment"
+      },
+      {
+        "id": "t-47",
+        "category": "system-field",
+        "entity": "costAdjustment",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for costAdjustment"
+      },
+      {
+        "id": "t-48",
+        "category": "system-field",
+        "entity": "costAdjustmentLine",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for costAdjustmentLine"
+      },
+      {
+        "id": "t-49",
+        "category": "system-field",
+        "entity": "costAdjustmentLine",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for costAdjustmentLine"
+      },
+      {
+        "id": "t-50",
+        "category": "system-field",
+        "entity": "costAdjustmentLine",
+        "field": "mCostAdjustmentId",
+        "runner": "node",
+        "description": "System field 'mCostAdjustmentId' should exist in backend but not frontend for costAdjustmentLine"
+      },
+      {
+        "id": "t-51",
+        "category": "rule-declared",
+        "rule": "CA_Process_Complete",
+        "runner": "node",
+        "description": "Rule 'CA_Process_Complete' (process) should be declared"
+      },
+      {
+        "id": "t-52",
+        "category": "rule-declared",
+        "rule": "CA_Update_Product_Cost",
+        "runner": "node",
+        "description": "Rule 'CA_Update_Product_Cost' (eventHandler) should be declared"
+      },
+      {
+        "id": "t-53",
+        "category": "rule-declared",
+        "rule": "CA_Void_Reverse",
+        "runner": "node",
+        "description": "Rule 'CA_Void_Reverse' (process) should be declared"
+      },
+      {
+        "id": "t-54",
+        "category": "rule-declared",
+        "rule": "ReadOnly_When_Processed",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_When_Processed' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-55",
+        "category": "rule-declared",
+        "rule": "CA_Line_Validate_Product",
+        "runner": "node",
+        "description": "Rule 'CA_Line_Validate_Product' (validation) should be declared"
+      },
+      {
+        "id": "t-56",
+        "category": "rule-declared",
+        "rule": "CA_Source_Related_Flag",
+        "runner": "node",
+        "description": "Rule 'CA_Source_Related_Flag' (eventHandler) should be declared"
+      },
+      {
+        "id": "t-57",
+        "category": "process-happy",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-58",
+        "category": "process-failure",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-59",
+        "category": "process-edge",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-60",
+        "category": "process-edge",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-61",
+        "category": "process-edge",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-62",
+        "category": "process-edge",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-63",
+        "category": "process-rollback",
+        "process": "completeCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'completeCostAdjustment' should rollback on failure"
+      },
+      {
+        "id": "t-64",
+        "category": "process-happy",
+        "process": "voidCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'voidCostAdjustment' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-65",
+        "category": "process-failure",
+        "process": "voidCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'voidCostAdjustment' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-66",
+        "category": "process-edge",
+        "process": "voidCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'voidCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-67",
+        "category": "process-edge",
+        "process": "voidCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'voidCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-68",
+        "category": "process-edge",
+        "process": "voidCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'voidCostAdjustment' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-69",
+        "category": "process-rollback",
+        "process": "voidCostAdjustment",
+        "entity": "costAdjustment",
+        "runner": "junit",
+        "description": "Process 'voidCostAdjustment' should rollback on failure"
+      }
+    ],
+    "summary": {
+      "total": 69,
+      "byCategory": {
+        "field-presence": 16,
+        "field-type": 16,
+        "searchable-filters": 7,
+        "visibility": 2,
+        "system-field": 9,
+        "rule-declared": 6,
+        "process-happy": 2,
+        "process-failure": 2,
+        "process-edge": 7,
+        "process-rollback": 2
+      },
+      "byRunner": {
+        "node": 56,
+        "junit": 13
+      }
+    }
+  }
+}
