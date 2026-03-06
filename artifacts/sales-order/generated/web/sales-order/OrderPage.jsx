@@ -9,7 +9,7 @@ const summary = [
   { key: 'grandTotal', label: 'Grand Total', type: 'amount' },
   { key: 'totalLines', label: 'Total Lines', type: 'amount' },
   { key: 'currency', label: 'Currency', type: 'string' },
-  { key: 'isDelivered', label: 'Is Delivered', type: 'string' },
+  { key: 'isDelivered', label: 'Is Delivered', type: 'boolean' },
 ];
 
 const statusField = 'docStatus';

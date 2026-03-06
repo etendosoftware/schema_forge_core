@@ -6,7 +6,7 @@ const columns = [
   { key: 'uom', label: 'Uom', type: 'string' },
   { key: 'productCategory', label: 'Product Category', type: 'string' },
   { key: 'listPrice', label: 'List Price', type: 'amount' },
-  { key: 'isActive', label: 'Is Active', type: 'string' },
+  { key: 'isActive', label: 'Is Active', type: 'boolean' },
 ];
 
 const filters = ['name', 'searchKey'];

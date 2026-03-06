@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-06T14:48:21.359Z",
-  "checksum": "fce86a2221f12e9c",
+  "generatedAt": "2026-03-06T15:32:55.015Z",
+  "checksum": "8fe64c499e01e967",
   "frontendContract": {
     "window": {
       "id": "203",
@@ -75,6 +75,68 @@
         ],
         "searchableFields": [
           "name"
+        ],
+        "computedFields": []
+      },
+      "priceListLine": {
+        "fields": [
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "listPrice",
+            "column": "PriceList",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "standardPrice",
+            "column": "PriceStd",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "limitPrice",
+            "column": "PriceLimit",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [
+          "product"
         ],
         "computedFields": []
       }
@@ -161,6 +223,80 @@
             "required": true
           }
         ]
+      },
+      "priceListLine": {
+        "fields": [
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "listPrice",
+            "column": "PriceList",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "standardPrice",
+            "column": "PriceStd",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "limitPrice",
+            "column": "PriceLimit",
+            "type": "amount",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "mPricelistId",
+            "column": "M_PriceList_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
       }
     },
     "endpoints": [
@@ -194,6 +330,38 @@
         "method": "DELETE",
         "path": "/priceList/:id",
         "entity": "priceList",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/priceListLine",
+        "entity": "priceListLine",
+        "supportedFilters": [
+          "product"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/priceListLine/:id",
+        "entity": "priceListLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/priceListLine",
+        "entity": "priceListLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/priceListLine/:id",
+        "entity": "priceListLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/priceListLine/:id",
+        "entity": "priceListLine",
         "supportedFilters": []
       }
     ],
@@ -314,6 +482,101 @@
       },
       {
         "id": "t-15",
+        "category": "field-presence",
+        "entity": "priceListLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in priceListLine"
+      },
+      {
+        "id": "t-16",
+        "category": "field-presence",
+        "entity": "priceListLine",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should be present in priceListLine"
+      },
+      {
+        "id": "t-17",
+        "category": "field-presence",
+        "entity": "priceListLine",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "Field 'standardPrice' should be present in priceListLine"
+      },
+      {
+        "id": "t-18",
+        "category": "field-presence",
+        "entity": "priceListLine",
+        "field": "limitPrice",
+        "runner": "node",
+        "description": "Field 'limitPrice' should be present in priceListLine"
+      },
+      {
+        "id": "t-19",
+        "category": "field-presence",
+        "entity": "priceListLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should be present in priceListLine"
+      },
+      {
+        "id": "t-20",
+        "category": "field-type",
+        "entity": "priceListLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in priceListLine"
+      },
+      {
+        "id": "t-21",
+        "category": "field-type",
+        "entity": "priceListLine",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should have type 'number' in priceListLine"
+      },
+      {
+        "id": "t-22",
+        "category": "field-type",
+        "entity": "priceListLine",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "Field 'standardPrice' should have type 'number' in priceListLine"
+      },
+      {
+        "id": "t-23",
+        "category": "field-type",
+        "entity": "priceListLine",
+        "field": "limitPrice",
+        "runner": "node",
+        "description": "Field 'limitPrice' should have type 'number' in priceListLine"
+      },
+      {
+        "id": "t-24",
+        "category": "field-type",
+        "entity": "priceListLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Field 'uom' should have type 'string' in priceListLine"
+      },
+      {
+        "id": "t-25",
+        "category": "searchable-filters",
+        "entity": "priceListLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for priceListLine"
+      },
+      {
+        "id": "t-26",
+        "category": "visibility",
+        "entity": "priceListLine",
+        "runner": "node",
+        "description": "Entity 'priceListLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-27",
         "category": "system-field",
         "entity": "priceList",
         "field": "adClientId",
@@ -321,7 +584,7 @@
         "description": "System field 'adClientId' should exist in backend but not frontend for priceList"
       },
       {
-        "id": "t-16",
+        "id": "t-28",
         "category": "system-field",
         "entity": "priceList",
         "field": "adOrgId",
@@ -329,7 +592,7 @@
         "description": "System field 'adOrgId' should exist in backend but not frontend for priceList"
       },
       {
-        "id": "t-17",
+        "id": "t-29",
         "category": "system-field",
         "entity": "priceList",
         "field": "created",
@@ -337,25 +600,65 @@
         "description": "System field 'created' should exist in backend but not frontend for priceList"
       },
       {
-        "id": "t-18",
+        "id": "t-30",
         "category": "system-field",
         "entity": "priceList",
         "field": "updated",
         "runner": "node",
         "description": "System field 'updated' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-31",
+        "category": "system-field",
+        "entity": "priceListLine",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for priceListLine"
+      },
+      {
+        "id": "t-32",
+        "category": "system-field",
+        "entity": "priceListLine",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for priceListLine"
+      },
+      {
+        "id": "t-33",
+        "category": "system-field",
+        "entity": "priceListLine",
+        "field": "mPricelistId",
+        "runner": "node",
+        "description": "System field 'mPricelistId' should exist in backend but not frontend for priceListLine"
+      },
+      {
+        "id": "t-34",
+        "category": "system-field",
+        "entity": "priceListLine",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for priceListLine"
+      },
+      {
+        "id": "t-35",
+        "category": "system-field",
+        "entity": "priceListLine",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for priceListLine"
       }
     ],
     "summary": {
-      "total": 18,
+      "total": 35,
       "byCategory": {
-        "field-presence": 6,
-        "field-type": 6,
-        "searchable-filters": 1,
-        "visibility": 1,
-        "system-field": 4
+        "field-presence": 11,
+        "field-type": 11,
+        "searchable-filters": 2,
+        "visibility": 2,
+        "system-field": 9
       },
       "byRunner": {
-        "node": 18,
+        "node": 35,
         "junit": 0
       }
     }

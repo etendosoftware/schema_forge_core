@@ -40,6 +40,7 @@ export function getReadOnlyFields(contract, entityName) {
  */
 function mapFieldType(field) {
   if (field.name.toLowerCase().includes('status')) return 'status';
+  if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
   if (field.type === 'number' || field.type === 'integer') return 'number';
   if (field.type === 'date') return 'date';
@@ -56,6 +57,7 @@ function mapFormFieldType(field) {
     if (field.inputMode === 'dependent') return 'dependent';
     return 'search';
   }
+  if (field.type === 'boolean') return 'checkbox';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
   return 'text';

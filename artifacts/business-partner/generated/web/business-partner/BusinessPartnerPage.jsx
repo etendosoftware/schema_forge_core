@@ -5,7 +5,7 @@ import BpLocationTable from './BpLocationTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'isActive', label: 'Is Active', type: 'string' },
+  { key: 'isActive', label: 'Is Active', type: 'boolean' },
 ];
 
 const statusField = null;

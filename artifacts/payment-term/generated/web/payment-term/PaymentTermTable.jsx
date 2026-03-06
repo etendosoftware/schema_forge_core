@@ -4,7 +4,7 @@ const columns = [
   { key: 'name', label: 'Name', type: 'string' },
   { key: 'searchKey', label: 'Search Key', type: 'string' },
   { key: 'netDays', label: 'Net Days', type: 'number' },
-  { key: 'isActive', label: 'Is Active', type: 'string' },
+  { key: 'isActive', label: 'Is Active', type: 'boolean' },
 ];
 
 const filters = ['name', 'searchKey'];
