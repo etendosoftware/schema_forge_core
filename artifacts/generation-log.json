@@ -1246,5 +1246,53 @@
     "change": "new-file",
     "before": null,
     "after": "5046 bytes"
+  },
+  {
+    "run": "2026-03-06T17:26:37.347Z",
+    "runId": "run-020",
+    "trigger": "new window: Product Category",
+    "window": "product-category",
+    "entity": "productCategory",
+    "field": null,
+    "file": "ProductCategoryForm.jsx",
+    "change": "new-file",
+    "before": null,
+    "after": "385 bytes"
+  },
+  {
+    "run": "2026-03-06T17:26:37.347Z",
+    "runId": "run-020",
+    "trigger": "new window: Product Category",
+    "window": "product-category",
+    "entity": "productCategory",
+    "field": null,
+    "file": "ProductCategoryTable.jsx",
+    "change": "new-file",
+    "before": null,
+    "after": "415 bytes"
+  },
+  {
+    "run": "2026-03-06T17:26:37.347Z",
+    "runId": "run-020",
+    "trigger": "new window: Product Category",
+    "window": "product-category",
+    "entity": "index",
+    "field": null,
+    "file": "index.jsx",
+    "change": "new-file",
+    "before": null,
+    "after": "480 bytes"
+  },
+  {
+    "run": "2026-03-06T17:26:37.347Z",
+    "runId": "run-020",
+    "trigger": "new window: Product Category",
+    "window": "product-category",
+    "entity": "mockCatalogs",
+    "field": null,
+    "file": "mockCatalogs.js",
+    "change": "new-file",
+    "before": null,
+    "after": "125 bytes"
   }
 ]
