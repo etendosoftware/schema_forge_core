@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
 /**
@@ -405,6 +405,22 @@ export function generateAll(contract) {
   // Always generate index
   files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity);
 
+  return files;
+}
+
+/**
+ * Capture the current state of generated files for a window.
+ * Returns a { filename: content } map for use as the "before" snapshot.
+ */
+export function captureCurrentState(windowName, baseDir) {
+  const webDir = resolve(baseDir || '.', `artifacts/${windowName}/generated/web/${windowName}`);
+  const files = {};
+  if (!existsSync(webDir)) return files;
+  for (const filename of readdirSync(webDir)) {
+    if (filename.endsWith('.jsx') || filename.endsWith('.js')) {
+      files[filename] = readFileSync(resolve(webDir, filename), 'utf-8');
+    }
+  }
   return files;
 }
 
