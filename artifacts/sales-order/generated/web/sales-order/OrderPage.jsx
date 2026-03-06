@@ -22,6 +22,13 @@ export default function OrderPage({ token, apiBaseUrl }) {
     setShowAddLine(false);
   };
 
+  const handleProductLookup = async (value) => {
+    const defaults = await order.lookupChildDefaults?.(value);
+    if (defaults) {
+      setNewLine(prev => ({ ...prev, ...defaults }));
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-0">
       {/* Left panel: Table */}
@@ -135,6 +142,7 @@ export default function OrderPage({ token, apiBaseUrl }) {
                   placeholder="Product"
                   value={newLine.product ?? ''}
                   onChange={(e) => setNewLine(prev => ({ ...prev, product: e.target.value }))}
+                  onBlur={(e) => { if (e.target.value) handleProductLookup(e.target.value); }}
                   className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
                   required
                 />
@@ -152,40 +160,6 @@ export default function OrderPage({ token, apiBaseUrl }) {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <label className="text-xs text-slate-500 mb-1 block">Unit Price *</label>
-                <input
-                  name="unitPrice"
-                  type="number"
-                  placeholder="Unit Price"
-                  value={newLine.unitPrice ?? ''}
-                  onChange={(e) => setNewLine(prev => ({ ...prev, unitPrice: e.target.value }))}
-                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                  required
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-xs text-slate-500 mb-1 block">Discount</label>
-                <input
-                  name="discount"
-                  type="number"
-                  placeholder="Discount"
-                  value={newLine.discount ?? ''}
-                  onChange={(e) => setNewLine(prev => ({ ...prev, discount: e.target.value }))}
-                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-xs text-slate-500 mb-1 block">Tax</label>
-                <input
-                  name="tax"
-                  type="text"
-                  placeholder="Tax"
-                  value={newLine.tax ?? ''}
-                  onChange={(e) => setNewLine(prev => ({ ...prev, tax: e.target.value }))}
-                  className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
                 <label className="text-xs text-slate-500 mb-1 block">Description</label>
                 <input
                   name="description"
@@ -195,6 +169,25 @@ export default function OrderPage({ token, apiBaseUrl }) {
                   onChange={(e) => setNewLine(prev => ({ ...prev, description: e.target.value }))}
                   className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
                 />
+              </div>
+              <div className="w-px h-8 bg-slate-200 self-end mb-0.5" />
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-400 mb-1 block">Unit Price</label>
+                <div className="h-8 text-sm rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 flex items-center text-slate-600 tabular-nums">
+                  {newLine.unitPrice || '—'}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-400 mb-1 block">Discount</label>
+                <div className="h-8 text-sm rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 flex items-center text-slate-600 tabular-nums">
+                  {newLine.discount || '—'}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-400 mb-1 block">Tax</label>
+                <div className="h-8 text-sm rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 flex items-center text-slate-600 tabular-nums">
+                  {newLine.tax || '—'}
+                </div>
               </div>
                 <Button type="submit" size="sm" className="h-8 shrink-0">Add</Button>
               </form>

@@ -227,6 +227,13 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('quantity'), 'should include quantity field in mini form');
   });
 
+  it('auto-derives price fields via product lookup', () => {
+    const code = generatePageComponent('order', 'orderLine', sampleContract);
+    assert.ok(code.includes('lookupChildDefaults'), 'should call lookupChildDefaults for auto-fill');
+    assert.ok(code.includes('handleProductLookup'), 'should have product lookup handler');
+    assert.ok(code.includes('onBlur'), 'should trigger lookup on blur of product field');
+  });
+
   it('shows loading skeleton when loading', () => {
     const code = generatePageComponent('order', 'orderLine', sampleContract);
     assert.ok(code.includes('.loading'), 'should check loading state');

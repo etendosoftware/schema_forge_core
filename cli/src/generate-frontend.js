@@ -234,10 +234,22 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n            <StatusBadge status={${headerEntity}.editing?.${statusField.name}} />`
     : '';
 
-  // Build mini form field inputs
-  const miniFormFields = detailEditableFields.map(f => {
+  // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
+  const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
+  const entryFields = detailEditableFields.filter(f => !autoPatterns.test(f.name));
+  const derivedFields = detailEditableFields.filter(f => autoPatterns.test(f.name));
+
+  // The first entry field (usually product) triggers a lookup on blur
+  const lookupTriggerField = entryFields[0];
+
+  // Build entry field inputs (user types these)
+  const entryInputs = entryFields.map(f => {
     const label = toLabel(f.name);
     const inputType = f.tsType === 'number' ? 'number' : 'text';
+    const isLookupTrigger = f === lookupTriggerField;
+    const onBlurAttr = isLookupTrigger
+      ? `\n                  onBlur={(e) => { if (e.target.value) handleProductLookup(e.target.value); }}`
+      : '';
     return `              <div className="flex-1 min-w-0">
                 <label className="text-xs text-slate-500 mb-1 block">${label}${f.required ? ' *' : ''}</label>
                 <input
@@ -245,11 +257,26 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
                   type="${inputType}"
                   placeholder="${label}"
                   value={newLine.${f.name} ?? ''}
-                  onChange={(e) => setNewLine(prev => ({ ...prev, ${f.name}: e.target.value }))}
+                  onChange={(e) => setNewLine(prev => ({ ...prev, ${f.name}: e.target.value }))}${onBlurAttr}
                   className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"${f.required ? '\n                  required' : ''}
                 />
               </div>`;
   }).join('\n');
+
+  // Build derived field displays (auto-filled, read-only in mini form)
+  const derivedInputs = derivedFields.map(f => {
+    const label = toLabel(f.name);
+    return `              <div className="flex-1 min-w-0">
+                <label className="text-xs text-slate-400 mb-1 block">${label}</label>
+                <div className="h-8 text-sm rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 flex items-center text-slate-600 tabular-nums">
+                  {newLine.${f.name} || '—'}
+                </div>
+              </div>`;
+  }).join('\n');
+
+  const miniFormFields = derivedFields.length > 0
+    ? `${entryInputs}\n              <div className="w-px h-8 bg-slate-200 self-end mb-0.5" />\n${derivedInputs}`
+    : entryInputs;
 
   const emptyLineObj = `{ ${detailEditableFields.map(f => `${f.name}: ''`).join(', ')} }`;
 
@@ -274,6 +301,13 @@ export default function ${compName}({ token, apiBaseUrl }) {
     ${headerEntity}.handleAddChild?.(newLine);
     setNewLine(${emptyLineObj});
     setShowAddLine(false);
+  };
+
+  const handleProductLookup = async (value) => {
+    const defaults = await ${headerEntity}.lookupChildDefaults?.(value);
+    if (defaults) {
+      setNewLine(prev => ({ ...prev, ...defaults }));
+    }
   };
 
   return (
