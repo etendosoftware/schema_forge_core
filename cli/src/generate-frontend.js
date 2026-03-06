@@ -29,8 +29,7 @@ export function getProcessesForEntity(contract, entityName) {
 
 /**
  * Generate a data table component for an entity.
- * Renders grid:true fields as columns, searchableFields as filter inputs.
- * Uses StatusBadge for status fields and clean Holded-style styling.
+ * Features: search filters with icons, zebra rows, selected row highlight, record count.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
@@ -44,6 +43,7 @@ export function generateTableComponent(entityName, contract) {
     `import React, { useState } from 'react';`,
     `import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';`,
     `import { Input } from '@/components/ui/input';`,
+    `import { Search } from 'lucide-react';`,
   ];
   if (hasStatusField) {
     imports.push(`import { StatusBadge } from '@/components/ui/status-badge';`);
@@ -54,16 +54,20 @@ export function generateTableComponent(entityName, contract) {
     .join('\n');
 
   const filterInputs = searchableFields
-    .map(f => `        <Input
-          placeholder="Filter ${toLabel(f)}..."
-          value={filter${capitalize(f)}}
-          onChange={(e) => setFilter${capitalize(f)}(e.target.value)}
-          className="max-w-xs"
-        />`)
+    .map(f => `        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Filter ${toLabel(f)}..."
+            value={filter${capitalize(f)}}
+            onChange={(e) => setFilter${capitalize(f)}(e.target.value)}
+            className="pl-8 max-w-xs focus:ring-2 focus:ring-primary focus:outline-none transition-colors duration-200"
+            aria-label={"Filter by ${toLabel(f)}"}
+          />
+        </div>`)
     .join('\n');
 
   const headerCells = gridFields
-    .map(f => `            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">${toLabel(f.name)}</TableHead>`)
+    .map(f => `            <TableHead className="text-xs font-medium text-blue-800 uppercase tracking-wider">${toLabel(f.name)}</TableHead>`)
     .join('\n');
 
   const bodyCells = gridFields
@@ -80,7 +84,7 @@ export function generateTableComponent(entityName, contract) {
 
   return `${imports.join('\n')}
 
-export default function ${compName}({ data = [], onRowSelect }) {
+export default function ${compName}({ data = [], onRowSelect, selectedId }) {
 ${filterState}
 
   const filteredData = data.filter(row => {
@@ -90,23 +94,35 @@ ${searchableFields.map(f => `    if (filter${capitalize(f)} && !String(row.${f} 
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
 ${filterInputs}
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b border-gray-100">
+      <div className="rounded-lg border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b-2 border-primary/20 bg-muted/40">
 ${headerCells}
-          </TableRow>
-        </TableHeader>
-        <TableBody className="divide-y divide-gray-50">
-          {filteredData.map((row, idx) => (
-            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-${bodyCells}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredData.map((row, idx) => (
+              <TableRow
+                key={row.id ?? idx}
+                onClick={() => onRowSelect?.(row)}
+                className={[
+                  'cursor-pointer transition-colors',
+                  row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
+                  idx % 2 !== 0 && row.id !== selectedId ? 'bg-muted/30' : '',
+                  'hover:bg-primary/5',
+                ].filter(Boolean).join(' ')}
+              >
+${bodyCells}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground">{filteredData.length} of {data.length} records</p>
     </div>
   );
 }
@@ -115,14 +131,16 @@ ${bodyCells}
 
 /**
  * Generate a detail/edit form component for an entity.
- * Renders form:true fields in single-column layout for panel width.
- * Includes Save/Delete buttons and process action buttons.
+ * Features: grouped fields (editable vs readOnly), distinct disabled styling, separated process actions.
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formFields = entity.fields.filter(f => f.form);
   const processes = getProcessesForEntity(contract, entityName);
   const compName = `${capitalize(entityName)}Form`;
+
+  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
+  const readOnlyFields = formFields.filter(f => f.visibility === 'readOnly');
 
   const imports = [
     `import React from 'react';`,
@@ -132,15 +150,17 @@ export function generateFormComponent(entityName, contract) {
     `import { Separator } from '@/components/ui/separator';`,
   ];
 
-  const fieldElements = formFields.map(f => {
+  function renderField(f) {
     const label = toLabel(f.name);
     const isReadOnly = f.visibility === 'readOnly';
     const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const disabledAttr = isReadOnly ? ' disabled readOnly className="bg-gray-50 text-gray-500"' : '';
+    const disabledAttr = isReadOnly
+      ? ' disabled readOnly className="bg-muted/50 text-muted-foreground border-dashed cursor-not-allowed"'
+      : ' className="focus:ring-2 focus:ring-primary focus:outline-none"';
     const requiredAttr = f.required ? ' required' : '';
 
     return `        <div className="space-y-1.5">
-          <Label htmlFor="${f.name}" className="text-sm text-gray-600">${label}${f.required ? ' *' : ''}</Label>
+          <Label htmlFor="${f.name}" className="text-sm ${isReadOnly ? 'text-muted-foreground' : 'text-foreground font-medium'}">${label}${f.required ? ' *' : ''}</Label>
           <Input
             id="${f.name}"
             name="${f.name}"
@@ -149,31 +169,37 @@ export function generateFormComponent(entityName, contract) {
             onChange={(e) => onChange?.('${f.name}', e.target.value)}${disabledAttr}${requiredAttr}
           />
         </div>`;
-  }).join('\n');
+  }
+
+  const editableElements = editableFields.map(renderField).join('\n');
+  const readOnlyElements = readOnlyFields.map(renderField).join('\n');
+
+  const readOnlySection = readOnlyFields.length > 0
+    ? `\n      <div className="space-y-3 rounded-lg border border-dashed p-4 bg-muted/10">\n        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">System Fields</p>\n${readOnlyElements}\n      </div>`
+    : '';
 
   const processButtons = processes.map(p => {
     const label = toLabel(p.name);
-    return `          <Button variant="outline" size="sm" onClick={() => onProcess?.('${p.name}')}>
+    return `          <Button variant="secondary" size="sm" onClick={() => onProcess?.('${p.name}')}>
             ${label}
           </Button>`;
   }).join('\n');
 
   const processSection = processes.length > 0
-    ? `\n      <Separator className="my-4" />\n      <div className="flex gap-2">\n${processButtons}\n      </div>`
+    ? `\n      <div className="rounded-lg border p-4 bg-muted/10 space-y-2">\n        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</p>\n        <div className="flex gap-2">\n${processButtons}\n        </div>\n      </div>`
     : '';
 
   return `${imports.join('\n')}
 
 export default function ${compName}({ data, onChange, onSave, onDelete, onProcess }) {
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-3">
-      <div className="space-y-3">
-${fieldElements}
-      </div>
-      <Separator className="my-4" />
-      <div className="flex gap-2">
+    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-4">
+      <div className="space-y-3 rounded-lg border p-4 bg-muted/20">
+${editableElements}
+      </div>${readOnlySection}
+      <div className="flex items-center gap-2 pt-2">
         <Button type="submit" size="sm">Save</Button>
-        {onDelete && <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
+        {onDelete && <Button variant="destructive" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
       </div>${processSection}
     </form>
   );
@@ -183,8 +209,7 @@ ${fieldElements}
 
 /**
  * Generate a header-detail page component with SlidePanel.
- * Shows header table with New button. Form and detail table open in a slide panel.
- * Uses useEntity hook for state management and API calls.
+ * Features: loading state, selected row tracking, record count subtitle.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
@@ -212,12 +237,33 @@ export default function ${compName}({ token, apiBaseUrl }) {
   };
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">${toLabel(headerEntity)}s</h2>
-        <Button onClick={${headerEntity}.handleNew}>New</Button>
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">${toLabel(headerEntity)}s</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {${headerEntity}.loading ? 'Loading...' : \`\${${headerEntity}.items.length} records\`}
+          </p>
+        </div>
+        <Button onClick={${headerEntity}.handleNew} size="sm">+ New ${toLabel(headerEntity)}</Button>
       </div>
-      <${headerName}Table data={${headerEntity}.items} onRowSelect={${headerEntity}.handleSelect} />
+      {${headerEntity}.loading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <div className="animate-pulse space-y-3 w-full">
+            <div className="h-10 bg-muted rounded" />
+            <div className="h-8 bg-muted/60 rounded" />
+            <div className="h-8 bg-muted/40 rounded" />
+            <div className="h-8 bg-muted/60 rounded" />
+            <div className="h-8 bg-muted/40 rounded" />
+          </div>
+        </div>
+      ) : (
+        <${headerName}Table
+          data={${headerEntity}.items}
+          onRowSelect={${headerEntity}.handleSelect}
+          selectedId={${headerEntity}.selected?.id}
+        />
+      )}
       <SlidePanel
         open={!!${headerEntity}.editing}
         onClose={handleClose}
@@ -231,7 +277,7 @@ export default function ${compName}({ token, apiBaseUrl }) {
           onProcess={${headerEntity}.handleProcess}
         />
         <Separator className="my-6" />
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
         <${detailName}Table data={${headerEntity}.children} />
       </SlidePanel>
     </div>

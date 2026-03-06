@@ -19,12 +19,33 @@ export default function OrderPage({ token, apiBaseUrl }) {
   };
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Orders</h2>
-        <Button onClick={order.handleNew}>New</Button>
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Orders</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {order.loading ? 'Loading...' : `${order.items.length} records`}
+          </p>
+        </div>
+        <Button onClick={order.handleNew} size="sm">+ New Order</Button>
       </div>
-      <OrderTable data={order.items} onRowSelect={order.handleSelect} />
+      {order.loading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <div className="animate-pulse space-y-3 w-full">
+            <div className="h-10 bg-muted rounded" />
+            <div className="h-8 bg-muted/60 rounded" />
+            <div className="h-8 bg-muted/40 rounded" />
+            <div className="h-8 bg-muted/60 rounded" />
+            <div className="h-8 bg-muted/40 rounded" />
+          </div>
+        </div>
+      ) : (
+        <OrderTable
+          data={order.items}
+          onRowSelect={order.handleSelect}
+          selectedId={order.selected?.id}
+        />
+      )}
       <SlidePanel
         open={!!order.editing}
         onClose={handleClose}
@@ -38,7 +59,7 @@ export default function OrderPage({ token, apiBaseUrl }) {
           onProcess={order.handleProcess}
         />
         <Separator className="my-6" />
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Order Lines</h3>
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">Order Lines</h3>
         <OrderLineTable data={order.children} />
       </SlidePanel>
     </div>

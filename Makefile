@@ -1,0 +1,39 @@
+.PHONY: test test-frontend generate dev build install clean help
+
+# --- Testing ---
+
+test: ## Run all CLI tests
+	cd cli && node --test 'test/*.test.js'
+
+test-frontend: ## Run only frontend generator tests
+	cd cli && node --test 'test/generate-frontend.test.js'
+
+# --- Code Generation ---
+
+generate: ## Generate frontend from Sales Order contract
+	node cli/src/generate-frontend.js artifacts/sales-order/contract.json
+
+# --- Dev Server ---
+
+dev: ## Start app-shell dev server (http://localhost:3100)
+	cd tools/app-shell && npm run dev
+
+build: ## Build app-shell for production
+	cd tools/app-shell && npm run build
+
+# --- Setup ---
+
+install: ## Install all workspace dependencies
+	npm install
+
+# --- Cleanup ---
+
+clean: ## Remove generated artifacts and build output
+	rm -rf tools/app-shell/dist
+
+# --- Help ---
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT_GOAL := help
