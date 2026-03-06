@@ -25,6 +25,35 @@ async function loadContract() {
   };
 }
 
+/**
+ * Load mock data for all entity windows and merge into a single store.
+ */
+async function loadAllMockData() {
+  const modules = await Promise.all([
+    import('@generated/sales-order/generated/web/sales-order/mockData.js'),
+    import('@generated/business-partner/generated/web/business-partner/mockData.js'),
+    import('@generated/bp-location/generated/web/bp-location/mockData.js'),
+    import('@generated/warehouse/generated/web/warehouse/mockData.js'),
+    import('@generated/price-list/generated/web/price-list/mockData.js'),
+    import('@generated/payment-term/generated/web/payment-term/mockData.js'),
+    import('@generated/payment-method/generated/web/payment-method/mockData.js'),
+    import('@generated/product/generated/web/product/mockData.js'),
+    import('@generated/tax/generated/web/tax/mockData.js'),
+    import('@generated/uom/generated/web/uom/mockData.js'),
+    import('@generated/user/generated/web/user/mockData.js'),
+  ]);
+
+  const merged = {};
+  for (const mod of modules) {
+    for (const [key, value] of Object.entries(mod)) {
+      if (key !== 'default') {
+        merged[key] = value;
+      }
+    }
+  }
+  return merged;
+}
+
 function AuthGuard({ children }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -69,11 +98,7 @@ export default function App() {
   useEffect(() => {
     loadContract().then(async contract => {
       if (import.meta.env.VITE_MOCK === 'true') {
-        const mockModule = await import('@generated/web/sales-order/mockData.js');
-        const mockData = {};
-        for (const [key, value] of Object.entries(mockModule)) {
-          mockData[key] = value;
-        }
+        const mockData = await loadAllMockData();
         const mockFetch = createMockFetch(mockData, API_BASE_URL);
         const originalFetch = window.fetch;
         window.fetch = async (url, opts) => {

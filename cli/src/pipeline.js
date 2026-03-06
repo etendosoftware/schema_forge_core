@@ -15,6 +15,7 @@ export function buildPipelineSteps() {
     { name: 'human-decisions', description: 'Open Decision Panel for human review', phase: 'F4', interactive: true },
     { name: 'generate-contract', description: 'Generate frontend/backend contracts + test manifest', phase: 'F6' },
     { name: 'generate-backend', description: 'Generate Etendo Java module from templates', phase: 'F7' },
+    { name: 'generate-frontend', description: 'Generate React components from contract', phase: 'F8' },
     { name: 'run-tests', description: 'Run contract tests (Node.js side)', phase: 'F9' },
   ];
 }
@@ -99,6 +100,19 @@ async function main() {
           const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
           await generateBackend(schema, rules.rules || [], processes.processes || [], contract, windowName);
           console.log('  ✓ Backend module generated');
+          break;
+        }
+        case 'generate-frontend': {
+          const { generateAll } = await import('./generate-frontend.js');
+          const { readFile, writeFile, mkdir } = await import('node:fs/promises');
+          const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
+          const files = generateAll(contract);
+          const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
+          await mkdir(outDir, { recursive: true });
+          for (const [filename, code] of Object.entries(files)) {
+            await writeFile(`${outDir}/${filename}`, code, 'utf8');
+          }
+          console.log(`  ✓ ${Object.keys(files).length} frontend components generated`);
           break;
         }
         case 'run-tests': {

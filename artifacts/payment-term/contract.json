@@ -1,0 +1,406 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-06T14:48:21.360Z",
+  "checksum": "f1d08d5ff2f81f73",
+  "frontendContract": {
+    "window": {
+      "id": "204",
+      "name": "Payment Term",
+      "primaryEntity": "paymentTerm",
+      "category": "reference"
+    },
+    "entities": {
+      "paymentTerm": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "searchKey",
+            "column": "Value",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "netDays",
+            "column": "NetDays",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "discountDays",
+            "column": "DiscountDays",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "discount",
+            "column": "Discount",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "name",
+          "searchKey"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "204",
+      "name": "Payment Term",
+      "primaryEntity": "paymentTerm",
+      "category": "reference"
+    },
+    "entities": {
+      "paymentTerm": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "searchKey",
+            "column": "Value",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "netDays",
+            "column": "NetDays",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "discountDays",
+            "column": "DiscountDays",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "discount",
+            "column": "Discount",
+            "type": "number",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isActive",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/paymentTerm",
+        "entity": "paymentTerm",
+        "supportedFilters": [
+          "name",
+          "searchKey"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/paymentTerm/:id",
+        "entity": "paymentTerm",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/paymentTerm",
+        "entity": "paymentTerm",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/paymentTerm/:id",
+        "entity": "paymentTerm",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/paymentTerm/:id",
+        "entity": "paymentTerm",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in paymentTerm"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should be present in paymentTerm"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in paymentTerm"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "netDays",
+        "runner": "node",
+        "description": "Field 'netDays' should be present in paymentTerm"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "discountDays",
+        "runner": "node",
+        "description": "Field 'discountDays' should be present in paymentTerm"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "discount",
+        "runner": "node",
+        "description": "Field 'discount' should be present in paymentTerm"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "paymentTerm",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be present in paymentTerm"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in paymentTerm"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should have type 'string' in paymentTerm"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in paymentTerm"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "netDays",
+        "runner": "node",
+        "description": "Field 'netDays' should have type 'number' in paymentTerm"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "discountDays",
+        "runner": "node",
+        "description": "Field 'discountDays' should have type 'number' in paymentTerm"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "discount",
+        "runner": "node",
+        "description": "Field 'discount' should have type 'number' in paymentTerm"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "paymentTerm",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in paymentTerm"
+      },
+      {
+        "id": "t-15",
+        "category": "searchable-filters",
+        "entity": "paymentTerm",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for paymentTerm"
+      },
+      {
+        "id": "t-16",
+        "category": "searchable-filters",
+        "entity": "paymentTerm",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should be a supported filter for paymentTerm"
+      },
+      {
+        "id": "t-17",
+        "category": "visibility",
+        "entity": "paymentTerm",
+        "runner": "node",
+        "description": "Entity 'paymentTerm' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-18",
+        "category": "system-field",
+        "entity": "paymentTerm",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for paymentTerm"
+      },
+      {
+        "id": "t-19",
+        "category": "system-field",
+        "entity": "paymentTerm",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for paymentTerm"
+      },
+      {
+        "id": "t-20",
+        "category": "system-field",
+        "entity": "paymentTerm",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for paymentTerm"
+      },
+      {
+        "id": "t-21",
+        "category": "system-field",
+        "entity": "paymentTerm",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for paymentTerm"
+      }
+    ],
+    "summary": {
+      "total": 21,
+      "byCategory": {
+        "field-presence": 7,
+        "field-type": 7,
+        "searchable-filters": 2,
+        "visibility": 1,
+        "system-field": 4
+      },
+      "byRunner": {
+        "node": 21,
+        "junit": 0
+      }
+    }
+  }
+}

@@ -28,9 +28,42 @@ export function getProcessesForEntity(contract, entityName) {
 }
 
 /**
+ * Get the read-only fields for an entity (used by page component for summary strip).
+ */
+export function getReadOnlyFields(contract, entityName) {
+  const entity = contract.frontendContract.entities[entityName];
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
+}
+
+/**
+ * Map a contract field type to a column/field type for the declarative config.
+ */
+function mapFieldType(field) {
+  if (field.name.toLowerCase().includes('status')) return 'status';
+  if (field.type === 'amount') return 'amount';
+  if (field.type === 'number' || field.type === 'integer') return 'number';
+  if (field.type === 'date') return 'date';
+  return 'string';
+}
+
+/**
+ * Map a contract field to a form field type.
+ * FK fields use inputMode (search/selector/dependent); non-FK fields use type.
+ */
+function mapFormFieldType(field) {
+  if (field.type === 'foreignKey') {
+    if (field.inputMode === 'selector') return 'selector';
+    if (field.inputMode === 'dependent') return 'dependent';
+    return 'search';
+  }
+  if (field.tsType === 'number') return 'number';
+  if (field.type === 'date') return 'date';
+  return 'text';
+}
+
+/**
  * Generate a data table component for an entity.
- * Renders grid:true fields as columns, searchableFields as filter inputs.
- * Uses StatusBadge for status fields and clean Holded-style styling.
+ * Produces a thin declarative component that imports DataTable from contract-ui.
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
@@ -38,203 +71,163 @@ export function generateTableComponent(entityName, contract) {
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
-  const hasStatusField = gridFields.some(f => f.name.toLowerCase().includes('status'));
+  const columnsArray = gridFields.map(f => {
+    const type = mapFieldType(f);
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+  }).join('\n');
 
-  const imports = [
-    `import React, { useState } from 'react';`,
-    `import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';`,
-    `import { Input } from '@/components/ui/input';`,
-  ];
-  if (hasStatusField) {
-    imports.push(`import { StatusBadge } from '@/components/ui/status-badge';`);
-  }
+  const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
-  const filterState = searchableFields
-    .map(f => `  const [filter${capitalize(f)}, setFilter${capitalize(f)}] = useState('');`)
-    .join('\n');
+  return `import { DataTable } from '@/components/contract-ui';
 
-  const filterInputs = searchableFields
-    .map(f => `        <Input
-          placeholder="Filter ${toLabel(f)}..."
-          value={filter${capitalize(f)}}
-          onChange={(e) => setFilter${capitalize(f)}(e.target.value)}
-          className="max-w-xs"
-        />`)
-    .join('\n');
+const columns = [
+${columnsArray}
+];
 
-  const headerCells = gridFields
-    .map(f => `            <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wider">${toLabel(f.name)}</TableHead>`)
-    .join('\n');
+const filters = [${filtersArray}];
 
-  const bodyCells = gridFields
-    .map(f => {
-      if (f.name.toLowerCase().includes('status')) {
-        return `            <TableCell><StatusBadge status={row.${f.name}} /></TableCell>`;
-      }
-      if (f.type === 'amount') {
-        return `            <TableCell className="tabular-nums">{row.${f.name}?.toLocaleString()}</TableCell>`;
-      }
-      return `            <TableCell>{row.${f.name}}</TableCell>`;
-    })
-    .join('\n');
-
-  return `${imports.join('\n')}
-
-export default function ${compName}({ data = [], onRowSelect }) {
-${filterState}
-
-  const filteredData = data.filter(row => {
-${searchableFields.map(f => `    if (filter${capitalize(f)} && !String(row.${f} ?? '').toLowerCase().includes(filter${capitalize(f)}.toLowerCase())) return false;`).join('\n')}
-    return true;
-  });
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-${filterInputs}
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b border-gray-100">
-${headerCells}
-          </TableRow>
-        </TableHeader>
-        <TableBody className="divide-y divide-gray-50">
-          {filteredData.map((row, idx) => (
-            <TableRow key={row.id ?? idx} onClick={() => onRowSelect?.(row)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-${bodyCells}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+export default function ${compName}(props) {
+  return <DataTable columns={columns} filters={filters} {...props} />;
 }
 `;
 }
 
 /**
  * Generate a detail/edit form component for an entity.
- * Renders form:true fields in single-column layout for panel width.
- * Includes Save/Delete buttons and process action buttons.
+ * Produces a thin declarative component that imports EntityForm from contract-ui.
+ * Only renders editable fields (visibility !== 'readOnly').
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formFields = entity.fields.filter(f => f.form);
-  const processes = getProcessesForEntity(contract, entityName);
+  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
   const compName = `${capitalize(entityName)}Form`;
 
-  const imports = [
-    `import React from 'react';`,
-    `import { Input } from '@/components/ui/input';`,
-    `import { Label } from '@/components/ui/label';`,
-    `import { Button } from '@/components/ui/button';`,
-    `import { Separator } from '@/components/ui/separator';`,
-  ];
-
-  const fieldElements = formFields.map(f => {
-    const label = toLabel(f.name);
-    const isReadOnly = f.visibility === 'readOnly';
-    const inputType = f.tsType === 'number' ? 'number' : 'text';
-    const disabledAttr = isReadOnly ? ' disabled readOnly className="bg-gray-50 text-gray-500"' : '';
-    const requiredAttr = f.required ? ' required' : '';
-
-    return `        <div className="space-y-1.5">
-          <Label htmlFor="${f.name}" className="text-sm text-gray-600">${label}${f.required ? ' *' : ''}</Label>
-          <Input
-            id="${f.name}"
-            name="${f.name}"
-            type="${inputType}"
-            value={data?.${f.name} ?? ''}
-            onChange={(e) => onChange?.('${f.name}', e.target.value)}${disabledAttr}${requiredAttr}
-          />
-        </div>`;
+  const fieldsArray = editableFields.map(f => {
+    const type = mapFormFieldType(f);
+    const requiredPart = f.required ? ', required: true' : '';
+    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const dependsOnPart = f.dependsOn
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+      : '';
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
-  const processButtons = processes.map(p => {
-    const label = toLabel(p.name);
-    return `          <Button variant="outline" size="sm" onClick={() => onProcess?.('${p.name}')}>
-            ${label}
-          </Button>`;
-  }).join('\n');
+  return `import { EntityForm } from '@/components/contract-ui';
 
-  const processSection = processes.length > 0
-    ? `\n      <Separator className="my-4" />\n      <div className="flex gap-2">\n${processButtons}\n      </div>`
-    : '';
+const fields = [
+${fieldsArray}
+];
 
-  return `${imports.join('\n')}
-
-export default function ${compName}({ data, onChange, onSave, onDelete, onProcess }) {
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave?.(data); }} className="space-y-3">
-      <div className="space-y-3">
-${fieldElements}
-      </div>
-      <Separator className="my-4" />
-      <div className="flex gap-2">
-        <Button type="submit" size="sm">Save</Button>
-        {onDelete && <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); onDelete(); }}>Delete</Button>}
-      </div>${processSection}
-    </form>
-  );
+export default function ${compName}(props) {
+  return <EntityForm fields={fields} {...props} />;
 }
 `;
 }
 
 /**
- * Generate a header-detail page component with SlidePanel.
- * Shows header table with New button. Form and detail table open in a slide panel.
- * Uses useEntity hook for state management and API calls.
+ * Generate a header-detail page component with Split View layout.
+ * Produces a thin declarative component that imports MasterDetailPage from contract-ui.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
+  const processes = getProcessesForEntity(contract, headerEntity);
+  const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
-  return `import React from 'react';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { SlidePanel } from '@/components/ui/slide-panel';
-import { useEntity } from '@/hooks/useEntity';
+  // Detail entity editable fields for the add-line mini form
+  const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
+  const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
+
+  // Status field gets a badge in the header; others go in the summary strip
+  const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
+  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+
+  // Summary config
+  const summaryArray = summaryFields.map(f => {
+    const type = mapFieldType(f);
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+  }).join('\n');
+
+  // Status field config
+  const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
+
+  // Process config
+  const processesArray = processes.map(p => {
+    const isDestructive = /void|cancel|reject/i.test(p.name);
+    const style = isDestructive ? 'destructive' : 'positive';
+    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}' },`;
+  }).join('\n');
+
+  // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
+  const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
+  const entryFields = detailEditableFields.filter(f => !autoPatterns.test(f.name));
+  const derivedFields = detailEditableFields.filter(f => autoPatterns.test(f.name));
+
+  // The first entry field (usually product) triggers a lookup
+  const entryArray = entryFields.map((f, i) => {
+    const type = mapFormFieldType(f);
+    const requiredPart = f.required ? ', required: true' : '';
+    const lookupPart = i === 0 ? ', lookup: true' : '';
+    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    const dependsOnPart = f.dependsOn
+      ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
+      : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+  }).join('\n');
+
+  const derivedArray = derivedFields.map(f => {
+    const type = mapFormFieldType(f);
+    const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+    const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${referencePart}${inputModePart} },`;
+  }).join('\n');
+
+  return `import { MasterDetailPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
+import catalogs from './mockCatalogs';
 
-export default function ${compName}({ token, apiBaseUrl }) {
-  const ${headerEntity} = useEntity('${headerEntity}', '${detailEntity}', { token, apiBaseUrl });
+const summary = [
+${summaryArray}
+];
 
-  const panelTitle = ${headerEntity}.editing?.id
-    ? \`${toLabel(headerEntity)} \${${headerEntity}.editing.documentNo || ${headerEntity}.editing.id}\`
-    : 'New ${toLabel(headerEntity)}';
+const statusField = ${statusFieldLine};
 
-  const handleClose = () => {
-    ${headerEntity}.handleSelect(null);
-  };
+const processes = [
+${processesArray}
+];
 
+const addLineFields = {
+  entry: [
+${entryArray}
+  ],
+  derived: [
+${derivedArray}
+  ],
+};
+
+export default function ${compName}(props) {
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">${toLabel(headerEntity)}s</h2>
-        <Button onClick={${headerEntity}.handleNew}>New</Button>
-      </div>
-      <${headerName}Table data={${headerEntity}.items} onRowSelect={${headerEntity}.handleSelect} />
-      <SlidePanel
-        open={!!${headerEntity}.editing}
-        onClose={handleClose}
-        title={panelTitle}
-      >
-        <${headerName}Form
-          data={${headerEntity}.editing}
-          onChange={${headerEntity}.handleChange}
-          onSave={${headerEntity}.handleSave}
-          onDelete={${headerEntity}.selected ? ${headerEntity}.handleDelete : undefined}
-          onProcess={${headerEntity}.handleProcess}
-        />
-        <Separator className="my-6" />
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">${toLabel(detailEntity)}s</h3>
-        <${detailName}Table data={${headerEntity}.children} />
-      </SlidePanel>
-    </div>
+    <MasterDetailPage
+      entity="${headerEntity}"
+      detailEntity="${detailEntity}"
+      Table={${headerName}Table}
+      Form={${headerName}Form}
+      DetailTable={${detailName}Table}
+      summary={summary}
+      statusField={statusField}
+      processes={processes}
+      addLineFields={addLineFields}
+      catalogs={catalogs}
+      entityLabel="${toLabel(headerEntity)}"
+      detailLabel="${toLabel(detailEntity)}"
+      {...props}
+    />
   );
 }
 `;
@@ -248,8 +241,7 @@ export function generateIndexComponent(headerEntity, detailEntity) {
   const headerName = capitalize(headerEntity);
 
   if (detailEntity) {
-    return `import React from 'react';
-import ${headerName}Page from './${headerName}Page';
+    return `import ${headerName}Page from './${headerName}Page';
 
 export default function App({ token, apiBaseUrl, window }) {
   return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window} />;
@@ -257,21 +249,127 @@ export default function App({ token, apiBaseUrl, window }) {
 `;
   }
 
-  return `import React from 'react';
-import ${headerName}Table from './${headerName}Table';
+  return `import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 
 export default function App({ token, apiBaseUrl, window }) {
-  const [selected, setSelected] = React.useState(null);
-
   return (
-    <div className="space-y-6 p-4">
-      <${headerName}Table data={[]} onRowSelect={setSelected} />
-      {selected && <${headerName}Form data={selected} />}
+    <div>
+      <${headerName}Table data={[]} />
     </div>
   );
 }
 `;
+}
+
+// --- Mock Catalog Data Pools ---
+
+const CATALOG_DATA = {
+  BusinessPartner: Array.from({ length: 15 }, (_, i) => ({
+    id: `bp-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'Acme Corp', 'TechFlow Inc', 'Global Trade Ltd', 'Summit Industries',
+      'Pacific Partners', 'Alpine Solutions', 'Meridian Group', 'Vertex Systems',
+      'Atlas Manufacturing', 'Nova Enterprises', 'Pinnacle Services', 'Horizon Labs',
+      'Cedar Holdings', 'Sterling & Co', 'Quantum Logistics',
+    ][i],
+  })),
+  Product: Array.from({ length: 20 }, (_, i) => ({
+    id: `prod-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'Laptop Pro 15', 'USB-C Cable', 'Wireless Mouse', 'Mechanical Keyboard',
+      'Monitor 27"', 'Webcam HD', 'Headset Pro', 'Docking Station',
+      'SSD 1TB', 'RAM 16GB', 'Power Supply 750W', 'Network Switch',
+      'Printer Laser', 'Scanner Flatbed', 'External HDD 2TB', 'Tablet 10"',
+      'Router Pro', 'UPS Battery', 'Graphics Card', 'CPU Cooler',
+    ][i],
+    price: [1299, 15, 29, 89, 549, 79, 149, 199, 109, 65, 95, 45, 299, 189, 79, 449, 129, 159, 699, 49][i],
+    uomId: 'uom-001',
+  })),
+  User: Array.from({ length: 8 }, (_, i) => ({
+    id: `user-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown',
+      'Eva Martinez', 'Frank Lee', 'Grace Kim', 'Henry Davis',
+    ][i],
+  })),
+  Warehouse: Array.from({ length: 5 }, (_, i) => ({
+    id: `wh-${String(i + 1).padStart(3, '0')}`,
+    name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
+  })),
+  PriceList: Array.from({ length: 4 }, (_, i) => ({
+    id: `pl-${String(i + 1).padStart(3, '0')}`,
+    name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],
+  })),
+  PaymentTerm: Array.from({ length: 5 }, (_, i) => ({
+    id: `pt-${String(i + 1).padStart(3, '0')}`,
+    name: ['Immediate', 'Net 15', 'Net 30', 'Net 60', '2/10 Net 30'][i],
+  })),
+  PaymentMethod: Array.from({ length: 4 }, (_, i) => ({
+    id: `pm-${String(i + 1).padStart(3, '0')}`,
+    name: ['Wire Transfer', 'Credit Card', 'Check', 'Cash'][i],
+  })),
+  Tax: Array.from({ length: 6 }, (_, i) => ({
+    id: `tax-${String(i + 1).padStart(3, '0')}`,
+    name: ['VAT 21%', 'VAT 10%', 'VAT 0%', 'Sales Tax 8.5%', 'Exempt', 'Reduced Rate 5%'][i],
+    rate: [21, 10, 0, 8.5, 0, 5][i],
+  })),
+  UOM: Array.from({ length: 5 }, (_, i) => ({
+    id: `uom-${String(i + 1).padStart(3, '0')}`,
+    name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
+  })),
+  BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
+    id: `bploc-${String(i + 1).padStart(3, '0')}`,
+    name: [
+      'HQ - 100 Main St', 'Branch - 200 Oak Ave', 'Warehouse - 300 Elm Dr',
+      'Office - 50 Pine Rd', 'Factory - 400 Maple Ln', 'Store - 150 Cedar Blvd',
+      'Depot - 250 Birch Way', 'Lab - 75 Spruce Ct', 'HQ - 500 Willow St',
+      'Branch - 600 Ash Ave', 'Office - 10 Palm Dr', 'Store - 20 Ivy Rd',
+      'Depot - 30 Fern Ln', 'Lab - 40 Sage Blvd', 'HQ - 55 Rose Way',
+      'Branch - 65 Lily Ct', 'Office - 70 Daisy St', 'Store - 80 Tulip Ave',
+      'Depot - 90 Orchid Dr', 'Lab - 95 Violet Rd',
+    ][i],
+    businessPartnerId: `bp-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
+  })),
+};
+
+/**
+ * Collect all unique reference names from a contract's frontend entities.
+ */
+function collectReferences(contract) {
+  const refs = new Set();
+  for (const entity of Object.values(contract.frontendContract.entities)) {
+    for (const field of entity.fields) {
+      if (field.reference) refs.add(field.reference);
+    }
+  }
+  return refs;
+}
+
+/**
+ * Generate a mockCatalogs.js file with reference data for all FK fields in the contract.
+ */
+export function generateMockCatalogs(contract) {
+  const refs = collectReferences(contract);
+  const lines = [
+    '// Auto-generated mock catalogs for FK reference data - do not edit manually',
+    '',
+    'const catalogs = {};',
+    '',
+  ];
+
+  for (const ref of refs) {
+    const data = CATALOG_DATA[ref];
+    if (data) {
+      lines.push(`catalogs['${ref}'] = ${JSON.stringify(data, null, 2)};`);
+      lines.push('');
+    }
+  }
+
+  lines.push('export default catalogs;');
+  lines.push('');
+
+  return lines.join('\n');
 }
 
 /**
@@ -298,6 +396,9 @@ export function generateAll(contract) {
   if (detailEntity) {
     files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
   }
+
+  // Generate mock catalogs
+  files['mockCatalogs.js'] = generateMockCatalogs(contract);
 
   // Always generate index
   files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity);
