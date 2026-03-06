@@ -56,12 +56,14 @@
         {
           "name": "productCategory",
           "column": "M_Product_Category_ID",
-          "type": "string",
+          "type": "foreignKey",
+          "reference": "ProductCategory",
+          "inputMode": "selector",
           "visibility": "editable",
-          "required": false,
+          "required": true,
           "grid": true,
           "form": true,
-          "searchable": false
+          "searchable": true
         },
         {
           "name": "listPrice",

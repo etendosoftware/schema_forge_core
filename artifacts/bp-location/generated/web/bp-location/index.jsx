@@ -1,10 +1,17 @@
+import { SingleEntityPage } from '@/components/contract-ui';
 import BpLocationTable from './BpLocationTable';
 import BpLocationForm from './BpLocationForm';
+import catalogs from './mockCatalogs';
 
-export default function App({ token, apiBaseUrl, window }) {
+export default function App(props) {
   return (
-    <div>
-      <BpLocationTable data={[]} />
-    </div>
+    <SingleEntityPage
+      entity="bpLocation"
+      Table={BpLocationTable}
+      Form={BpLocationForm}
+      catalogs={catalogs}
+      entityLabel="Bp Location"
+      {...props}
+    />
   );
 }

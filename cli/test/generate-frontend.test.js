@@ -275,10 +275,19 @@ describe('generateIndexComponent', () => {
     assert.ok(code.includes('<OrderPage'), 'should render OrderPage');
   });
 
-  it('handles single-entity without page component', () => {
+  it('handles single-entity with SingleEntityPage component', () => {
     const code = generateIndexComponent('item', null);
     assert.ok(code.includes("import ItemTable"), 'should import ItemTable');
-    assert.ok(!code.includes('Page'), 'should NOT have a Page component');
+    assert.ok(code.includes("import ItemForm"), 'should import ItemForm');
+    assert.ok(code.includes("import { SingleEntityPage } from '@/components/contract-ui'"), 'should import SingleEntityPage');
+    assert.ok(code.includes("import catalogs from './mockCatalogs'"), 'should import mockCatalogs');
+    assert.ok(code.includes('<SingleEntityPage'), 'should render SingleEntityPage');
+    assert.ok(code.includes('entity="item"'), 'should pass entity prop');
+    assert.ok(code.includes('Table={ItemTable}'), 'should pass Table component');
+    assert.ok(code.includes('Form={ItemForm}'), 'should pass Form component');
+    assert.ok(code.includes('catalogs={catalogs}'), 'should pass catalogs prop');
+    assert.ok(code.includes('entityLabel="Item"'), 'should pass entityLabel prop');
+    assert.ok(code.includes('{...props}'), 'should spread remaining props');
   });
 });
 

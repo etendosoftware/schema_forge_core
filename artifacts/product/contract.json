@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-06T14:48:21.363Z",
-  "checksum": "80c436e15fa8c019",
+  "generatedAt": "2026-03-06T17:19:46.521Z",
+  "checksum": "d175485d33bdade5",
   "frontendContract": {
     "window": {
       "id": "206",
@@ -57,12 +57,14 @@
           {
             "name": "productCategory",
             "column": "M_Product_Category_ID",
-            "type": "string",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "ProductCategory",
+            "inputMode": "selector"
           },
           {
             "name": "listPrice",
@@ -97,7 +99,8 @@
         ],
         "searchableFields": [
           "name",
-          "searchKey"
+          "searchKey",
+          "productCategory"
         ],
         "computedFields": []
       }
@@ -144,9 +147,9 @@
           {
             "name": "productCategory",
             "column": "M_Product_Category_ID",
-            "type": "string",
+            "type": "foreignKey",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "listPrice",
@@ -207,7 +210,8 @@
         "entity": "product",
         "supportedFilters": [
           "name",
-          "searchKey"
+          "searchKey",
+          "productCategory"
         ]
       },
       {
@@ -385,13 +389,21 @@
       },
       {
         "id": "t-19",
+        "category": "searchable-filters",
+        "entity": "product",
+        "field": "productCategory",
+        "runner": "node",
+        "description": "Field 'productCategory' should be a supported filter for product"
+      },
+      {
+        "id": "t-20",
         "category": "visibility",
         "entity": "product",
         "runner": "node",
         "description": "Entity 'product' should only expose visible fields in frontend"
       },
       {
-        "id": "t-20",
+        "id": "t-21",
         "category": "system-field",
         "entity": "product",
         "field": "adClientId",
@@ -399,7 +411,7 @@
         "description": "System field 'adClientId' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-21",
+        "id": "t-22",
         "category": "system-field",
         "entity": "product",
         "field": "adOrgId",
@@ -407,7 +419,7 @@
         "description": "System field 'adOrgId' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-22",
+        "id": "t-23",
         "category": "system-field",
         "entity": "product",
         "field": "created",
@@ -415,7 +427,7 @@
         "description": "System field 'created' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-23",
+        "id": "t-24",
         "category": "system-field",
         "entity": "product",
         "field": "updated",
@@ -424,16 +436,16 @@
       }
     ],
     "summary": {
-      "total": 23,
+      "total": 24,
       "byCategory": {
         "field-presence": 8,
         "field-type": 8,
-        "searchable-filters": 2,
+        "searchable-filters": 3,
         "visibility": 1,
         "system-field": 4
       },
       "byRunner": {
-        "node": 23,
+        "node": 24,
         "junit": 0
       }
     }

@@ -9,7 +9,7 @@ const columns = [
   { key: 'isActive', label: 'Is Active', type: 'boolean' },
 ];
 
-const filters = ['name', 'searchKey'];
+const filters = ['name', 'searchKey', 'productCategory'];
 
 export default function ProductTable(props) {
   return <DataTable columns={columns} filters={filters} {...props} />;
