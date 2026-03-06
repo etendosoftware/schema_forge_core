@@ -4,7 +4,12 @@
       "group": "Sales",
       "icon": "ShoppingCart",
       "items": [
-        { "name": "sales-order", "label": "Sales Order" }
+        { "name": "sales-order", "label": "Sales Order" },
+        { "name": "sales-quotation", "label": "Sales Quotation" },
+        { "name": "goods-shipment", "label": "Goods Shipment" },
+        { "name": "return-from-customer", "label": "Return from Customer" },
+        { "name": "return-material-receipt", "label": "Return Material Receipt" },
+        { "name": "sales-invoice", "label": "Sales Invoice" }
       ]
     },
     {
@@ -26,6 +31,14 @@
       ]
     },
     {
+      "group": "Warehouse",
+      "icon": "Package",
+      "items": [
+        { "name": "physical-inventory", "label": "Physical Inventory" },
+        { "name": "goods-movements", "label": "Goods Movements" }
+      ]
+    },
+    {
       "group": "Master Data",
       "icon": "Database",
       "items": [
@@ -33,7 +46,8 @@
         { "name": "bp-location", "label": "BP Location" },
         { "name": "product", "label": "Product" },
         { "name": "product-category", "label": "Product Category" },
-        { "name": "warehouse", "label": "Warehouse" }
+        { "name": "warehouse", "label": "Warehouse" },
+        { "name": "warehouse-storage-bins", "label": "Warehouse & Storage Bins" }
       ]
     },
     {

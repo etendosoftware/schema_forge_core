@@ -31,6 +31,14 @@ async function loadAllMockData() {
     import('@generated/return-to-vendor/generated/web/return-to-vendor/mockData.js'),
     import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/mockData.js'),
     import('@generated/landed-cost/generated/web/landed-cost/mockData.js'),
+    import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),
+    import('@generated/goods-movements/generated/web/goods-movements/mockData.js'),
+    import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/mockData.js'),
+    import('@generated/sales-quotation/generated/web/sales-quotation/mockData.js'),
+    import('@generated/goods-shipment/generated/web/goods-shipment/mockData.js'),
+    import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
+    import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
+    import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
   ]);
 
   const merged = {};

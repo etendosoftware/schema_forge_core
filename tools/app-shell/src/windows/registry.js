@@ -24,6 +24,14 @@ const windowLoaders = {
   'return-to-vendor': () => import('@generated/return-to-vendor/generated/web/return-to-vendor/index.jsx'),
   'return-to-vendor-shipment': () => import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/index.jsx'),
   'landed-cost': () => import('@generated/landed-cost/generated/web/landed-cost/index.jsx'),
+  'physical-inventory': () => import('@generated/physical-inventory/generated/web/physical-inventory/index.jsx'),
+  'goods-movements': () => import('@generated/goods-movements/generated/web/goods-movements/index.jsx'),
+  'warehouse-storage-bins': () => import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/index.jsx'),
+  'sales-quotation': () => import('@generated/sales-quotation/generated/web/sales-quotation/index.jsx'),
+  'goods-shipment': () => import('@generated/goods-shipment/generated/web/goods-shipment/index.jsx'),
+  'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
+  'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
+  'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
 };
 
 /**
