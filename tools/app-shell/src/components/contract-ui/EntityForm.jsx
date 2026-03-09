@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 
 /**
  * Combobox-style search input for foreign key fields.
@@ -141,13 +142,14 @@ function DependentSelect({ field, value, onChange, catalogs, formData }) {
  *  - onChange: (fieldKey, value) => void
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  */
-export function EntityForm({ fields = [], data, onChange, catalogs }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       {fields.map(f => {
         if (f.type === 'checkbox') {
           return (
-            <div key={f.key} className="flex items-center gap-2 pt-6">
+            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+            <div className="flex items-center gap-2 pt-6">
               <button
                 type="button"
                 role="checkbox"
@@ -182,70 +184,79 @@ export function EntityForm({ fields = [], data, onChange, catalogs }) {
                 {f.label}{f.required ? ' *' : ''}
               </Label>
             </div>
+            </FieldHighlight>
           );
         }
         if (f.type === 'dependent') {
           return (
-            <div key={f.key} className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {f.label}{f.required ? ' *' : ''}
-              </Label>
-              <DependentSelect
-                field={f}
-                value={data?.[f.key] ?? ''}
-                onChange={(val) => onChange?.(f.key, val)}
-                catalogs={catalogs}
-                formData={data}
-              />
-            </div>
+            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+              <div className="space-y-1.5">
+                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+                  {f.label}{f.required ? ' *' : ''}
+                </Label>
+                <DependentSelect
+                  field={f}
+                  value={data?.[f.key] ?? ''}
+                  onChange={(val) => onChange?.(f.key, val)}
+                  catalogs={catalogs}
+                  formData={data}
+                />
+              </div>
+            </FieldHighlight>
           );
         }
         if (f.type === 'selector') {
           return (
-            <div key={f.key} className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {f.label}{f.required ? ' *' : ''}
-              </Label>
-              <SelectorInput
-                field={f}
-                value={data?.[f.key] ?? ''}
-                onChange={(val) => onChange?.(f.key, val)}
-                catalogs={catalogs}
-              />
-            </div>
+            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+              <div className="space-y-1.5">
+                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+                  {f.label}{f.required ? ' *' : ''}
+                </Label>
+                <SelectorInput
+                  field={f}
+                  value={data?.[f.key] ?? ''}
+                  onChange={(val) => onChange?.(f.key, val)}
+                  catalogs={catalogs}
+                />
+              </div>
+            </FieldHighlight>
           );
         }
         if (f.type === 'search') {
           return (
-            <div key={f.key} className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {f.label}{f.required ? ' *' : ''}
-              </Label>
-              <SearchInput
-                field={f}
-                value={data?.[f.key] ?? ''}
-                onChange={(val) => onChange?.(f.key, val)}
-                catalogs={catalogs}
-              />
-            </div>
+            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+              <div className="space-y-1.5">
+                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+                  {f.label}{f.required ? ' *' : ''}
+                </Label>
+                <SearchInput
+                  field={f}
+                  value={data?.[f.key] ?? ''}
+                  onChange={(val) => onChange?.(f.key, val)}
+                  catalogs={catalogs}
+                />
+              </div>
+            </FieldHighlight>
           );
         }
         const inputType = f.type === 'number' ? 'number' : 'text';
         return (
-          <div key={f.key} className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {f.label}{f.required ? ' *' : ''}
-            </Label>
-            <Input
-              id={f.key}
-              name={f.key}
-              type={inputType}
-              value={data?.[f.key] ?? ''}
-              onChange={(e) => onChange?.(f.key, e.target.value)}
-              className="focus:ring-2 focus:ring-primary focus:outline-none"
-              required={f.required}
-            />
-          </div>
+          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+            <div className="space-y-1.5">
+              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+                {f.label}{f.required ? ' *' : ''}
+              </Label>
+              <Input
+                id={f.key}
+                name={f.key}
+                type={inputType}
+                value={data?.[f.key] ?? ''}
+                onChange={(e) => onChange?.(f.key, e.target.value)}
+                className="focus:ring-2 focus:ring-primary focus:outline-none"
+                required={f.required}
+              />
+            </div>
+          </FieldHighlight>
         );
       })}
     </div>

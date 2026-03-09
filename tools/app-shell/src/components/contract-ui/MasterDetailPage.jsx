@@ -242,6 +242,7 @@ export function MasterDetailPage({
               </div>
             ) : (
               <Table
+                entity={entity}
                 data={hook.items}
                 onRowSelect={hook.handleSelect}
                 selectedId={hook.selected?.id}
@@ -320,6 +321,7 @@ export function MasterDetailPage({
             {/* Form zone: editable fields only */}
             <div className="px-5 pt-4 pb-3 border-b">
               <Form
+                entity={entity}
                 data={hook.editing}
                 onChange={hook.handleChange}
                 catalogs={catalogs}
