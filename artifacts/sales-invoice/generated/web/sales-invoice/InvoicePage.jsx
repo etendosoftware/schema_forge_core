@@ -22,7 +22,7 @@ const addLineFields = {
     { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
     { key: 'quantity', label: 'Quantity', type: 'number', required: true },
     { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'description', label: 'Description', type: 'textarea' },
   ],
   derived: [
     { key: 'unitPrice', label: 'Unit Price', type: 'number' },

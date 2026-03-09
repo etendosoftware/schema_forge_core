@@ -3,7 +3,7 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'searchKey', label: 'Search Key', type: 'text', required: true },
   { key: 'name', label: 'Name', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'address1', label: 'Address1', type: 'text' },
   { key: 'address2', label: 'Address2', type: 'text' },
   { key: 'city', label: 'City', type: 'text' },

@@ -6,7 +6,7 @@ const fields = [
   { key: 'unitPrice', label: 'Unit Price', type: 'number', required: true },
   { key: 'tax', label: 'Tax', type: 'selector', required: true, reference: 'Tax', inputMode: 'selector' },
   { key: 'discount', label: 'Discount', type: 'number' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'lineNo', label: 'Line No', type: 'number', required: true },
 ];
 

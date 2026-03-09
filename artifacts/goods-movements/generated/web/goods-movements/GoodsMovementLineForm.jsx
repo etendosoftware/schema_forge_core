@@ -6,7 +6,7 @@ const fields = [
   { key: 'locatorFrom', label: 'Locator From', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
   { key: 'locatorTo', label: 'Locator To', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
   { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
 ];
 
 export default function GoodsMovementLineForm(props) {

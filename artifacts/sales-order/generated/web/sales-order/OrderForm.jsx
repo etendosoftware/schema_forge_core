@@ -13,7 +13,7 @@ const fields = [
   { key: 'deliveryLocation', label: 'Delivery Location', type: 'text' },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
   { key: 'salesRep', label: 'Sales Rep', type: 'search', reference: 'User', inputMode: 'search' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
 ];
 
 export default function OrderForm(props) {

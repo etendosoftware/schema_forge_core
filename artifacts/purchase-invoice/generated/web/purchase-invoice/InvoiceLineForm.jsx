@@ -8,7 +8,7 @@ const fields = [
   { key: 'tax', label: 'Tax', type: 'selector', required: true, reference: 'Tax', inputMode: 'selector' },
   { key: 'discount', label: 'Discount', type: 'number' },
   { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
 ];
 
 export default function InvoiceLineForm(props) {

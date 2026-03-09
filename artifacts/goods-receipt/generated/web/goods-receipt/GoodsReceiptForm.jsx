@@ -6,7 +6,7 @@ const fields = [
   { key: 'movementDate', label: 'Movement Date', type: 'date', required: true },
   { key: 'dateAcct', label: 'Date Acct', type: 'date', required: true },
   { key: 'warehouse', label: 'Warehouse', type: 'selector', required: true, reference: 'Warehouse', inputMode: 'selector' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
   { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
 ];

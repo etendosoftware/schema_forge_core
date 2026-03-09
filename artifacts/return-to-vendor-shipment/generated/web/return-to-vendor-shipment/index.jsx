@@ -1,5 +1,7 @@
 import ReturnShipmentPage from './ReturnShipmentPage';
 
+const windowMeta = { category: 'procurement', name: 'Return to Vendor Shipment' };
+
 export default function App({ token, apiBaseUrl, window }) {
-  return <ReturnShipmentPage token={token} apiBaseUrl={apiBaseUrl} window={window} />;
+  return <ReturnShipmentPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
 }

@@ -4,7 +4,7 @@ const fields = [
   { key: 'name', label: 'Name', type: 'text', required: true },
   { key: 'email', label: 'Email', type: 'text' },
   { key: 'phone', label: 'Phone', type: 'text' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
 ];
 
 export default function UserForm(props) {

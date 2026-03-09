@@ -3,6 +3,8 @@ import BpLocationTable from './BpLocationTable';
 import BpLocationForm from './BpLocationForm';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: 'reference', name: 'BP Location' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -11,6 +13,7 @@ export default function App(props) {
       Form={BpLocationForm}
       catalogs={catalogs}
       entityLabel="Bp Location"
+      window={windowMeta}
       {...props}
     />
   );
