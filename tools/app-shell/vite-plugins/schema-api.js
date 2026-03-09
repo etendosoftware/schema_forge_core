@@ -5,6 +5,8 @@ const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
 const CONTRACT_GENERATOR = resolve(import.meta.dirname, '../../../cli/src/generate-contract.js');
 const FRONTEND_GENERATOR = resolve(import.meta.dirname, '../../../cli/src/generate-frontend.js');
 
+const SAFE_WINDOW_RE = /^[a-z0-9-]+$/;
+
 /**
  * Vite plugin that exposes REST endpoints for the Schema Inspector.
  *
@@ -20,19 +22,40 @@ export default function schemaApiPlugin() {
         // GET /api/schema-raw/:window
         const rawMatch = req.url?.match(/^\/api\/schema-raw\/([^/?]+)/);
         if (rawMatch && req.method === 'GET') {
-          return serveJson(res, rawMatch[1], 'schema-raw.json');
+          const windowName = rawMatch[1];
+          if (!SAFE_WINDOW_RE.test(windowName)) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Invalid window name' }));
+            return;
+          }
+          return serveJson(res, windowName, 'schema-raw.json');
         }
 
         // GET /api/schema/:window
         const getMatch = req.url?.match(/^\/api\/schema\/([^/?]+)/);
         if (getMatch && req.method === 'GET') {
-          return serveJson(res, getMatch[1], 'schema-curated.json');
+          const windowName = getMatch[1];
+          if (!SAFE_WINDOW_RE.test(windowName)) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Invalid window name' }));
+            return;
+          }
+          return serveJson(res, windowName, 'schema-curated.json');
         }
 
         // POST /api/schema/:window
         const postMatch = req.url?.match(/^\/api\/schema\/([^/?]+)/);
         if (postMatch && req.method === 'POST') {
-          return handlePost(req, res, postMatch[1]);
+          const windowName = postMatch[1];
+          if (!SAFE_WINDOW_RE.test(windowName)) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Invalid window name' }));
+            return;
+          }
+          return handlePost(req, res, windowName);
         }
 
         next();
@@ -110,10 +133,19 @@ async function handlePost(req, res, window) {
   }
 }
 
-function readBody(req) {
+function readBody(req, limit = 5 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
+    let size = 0;
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error('Request body too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', () => resolve(Buffer.concat(chunks).toString()));
     req.on('error', reject);
   });
