@@ -1,6 +1,13 @@
 {
   "menu": [
     {
+      "group": "Get Started",
+      "icon": "Rocket",
+      "items": [
+        { "name": "onboarding", "label": "Setup Wizard" }
+      ]
+    },
+    {
       "group": "Home",
       "icon": "LayoutDashboard",
       "items": [
@@ -41,7 +48,8 @@
         { "name": "payment-out", "label": "Payments Out" },
         { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
         { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "reports", "label": "Reports" }
+        { "name": "reports", "label": "Reports" },
+        { "name": "recurring-invoice", "label": "Recurring Invoices" }
       ]
     },
     {
@@ -111,6 +119,13 @@
         { "name": "tax", "label": "Taxes" },
         { "name": "uom", "label": "Units of Measure" },
         { "name": "user", "label": "Users" }
+      ]
+    },
+    {
+      "group": "Tools",
+      "icon": "Wrench",
+      "items": [
+        { "name": "smart-scan", "label": "Smart Scan" }
       ]
     }
   ]

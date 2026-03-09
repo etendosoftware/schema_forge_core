@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
@@ -17,6 +17,9 @@ import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
+
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
+const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
 
 function detectBasePath() {
   const path = window.location.pathname;
@@ -114,6 +117,8 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="crm" element={<CrmPage />} />
         <Route path="hr" element={<HrPage />} />
         <Route path="projects" element={<ProjectsPage />} />
+        <Route path="onboarding" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OnboardingPage /></Suspense>} />
+        <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
