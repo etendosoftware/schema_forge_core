@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
 import { useSpecs } from './useDiscovery';
 
-export default function SpecList({ selected, onSelect }) {
-  const { specs, loading, error } = useSpecs();
+export default function SpecList({ selected, onSelect, useAdmin = false }) {
+  const { specs, loading, error } = useSpecs({ useAdmin });
 
   if (loading) return <div className="p-4 text-sm text-zinc-400">Loading specs...</div>;
   if (error) return <div className="p-4 text-sm text-red-400">Error: {error}</div>;

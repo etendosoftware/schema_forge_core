@@ -14,16 +14,24 @@ function getToken() {
   return localStorage.getItem('sf_auth_token');
 }
 
-function authHeaders() {
-  const token = getToken();
+function getAdminToken() {
+  return localStorage.getItem('sf_admin_token') || getToken();
+}
+
+function authHeaders(token) {
+  const t = token || getToken();
   const h = { 'Content-Type': 'application/json' };
-  if (token) h['Authorization'] = `Bearer ${token}`;
+  if (t) h['Authorization'] = `Bearer ${t}`;
   return h;
+}
+
+function adminAuthHeaders() {
+  return authHeaders(getAdminToken());
 }
 
 // ── Discovery hooks ──
 
-export function useSpecs() {
+export function useSpecs({ useAdmin = false } = {}) {
   const [specs, setSpecs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +39,7 @@ export function useSpecs() {
   const refresh = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch(`${NEO_BASE}/`, { headers: authHeaders() })
+    fetch(`${NEO_BASE}/`, { headers: useAdmin ? adminAuthHeaders() : authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
         return r.json();
@@ -39,7 +47,7 @@ export function useSpecs() {
       .then(data => setSpecs(data.specs || []))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [useAdmin]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -95,9 +103,12 @@ export function useNeoFetch() {
 // ── Webhook calls (for managing specs) ──
 
 async function callWebhook(name, params) {
-  const qs = new URLSearchParams(params).toString();
-  const url = `${WEBHOOK_BASE}/${name}?${qs}`;
-  const res = await fetch(url, { headers: authHeaders() });
+  const url = `${WEBHOOK_BASE}/${name}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: adminAuthHeaders(),
+    body: JSON.stringify(params),
+  });
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { data = text; }
@@ -139,6 +150,17 @@ export async function upsertField({ EntityID, ColumnID, ModuleID, IsIncluded, Is
   if (SeqNo != null) params.SeqNo = String(SeqNo);
   if (FieldID) params.FieldID = FieldID;
   return callWebhook('SFUpsertField', params);
+}
+
+export async function fetchMenuTree(query) {
+  const params = {};
+  if (query) params.q = query;
+  const data = await callWebhook('SFListMenu', params);
+  // Webhook returns { result: "{json string}" } — need to parse the inner JSON
+  if (typeof data.result === 'string') {
+    try { return JSON.parse(data.result); } catch { /* fall through */ }
+  }
+  return data;
 }
 
 export async function populateSpec({ SpecID, ModuleID, IncludeAllMethods, ExcludeSystemColumns }) {

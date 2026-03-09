@@ -1,14 +1,178 @@
-import { useState } from 'react';
-import { upsertSpec, populateSpec } from './useDiscovery';
+import { useState, useEffect, useRef } from 'react';
+import { upsertSpec, populateSpec, fetchMenuTree } from './useDiscovery';
+import { Folder, AppWindow, Cog, ChevronRight, Search, Loader2, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const DEFAULT_MODULE_ID = '94E1B433CF55451EABB764750AC5902A';
+
+function TypeIcon({ type, className }) {
+  if (type === 'folder') return <Folder className={cn('h-3.5 w-3.5 text-yellow-500/70', className)} />;
+  if (type === 'process') return <Cog className={cn('h-3.5 w-3.5 text-purple-400/70', className)} />;
+  return <AppWindow className={cn('h-3.5 w-3.5 text-blue-400/70', className)} />;
+}
+
+function TreeNode({ node, onSelect, expanded, onToggle }) {
+  const isFolder = node.type === 'folder';
+  const isOpen = expanded[node.id];
+  const hasChildren = node.children && node.children.length > 0;
+
+  if (isFolder) {
+    return (
+      <div>
+        <button
+          onClick={() => onToggle(node.id)}
+          className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700/50 rounded transition-colors"
+        >
+          <ChevronRight className={cn('h-3 w-3 text-zinc-500 transition-transform flex-shrink-0', isOpen && 'rotate-90')} />
+          <TypeIcon type="folder" />
+          <span className="truncate">{node.name}</span>
+          {hasChildren && <span className="text-[10px] text-zinc-500 ml-auto">{node.children.length}</span>}
+        </button>
+        {isOpen && hasChildren && (
+          <div className="ml-3 border-l border-zinc-700/50">
+            {node.children.map(child => (
+              <TreeNode
+                key={child.id}
+                node={child}
+                onSelect={onSelect}
+                expanded={expanded}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => onSelect(node)}
+      className="w-full flex items-center gap-1.5 px-2 py-1 ml-1 text-xs text-zinc-300 hover:bg-blue-600/20 hover:text-blue-300 rounded transition-colors"
+    >
+      <TypeIcon type={node.type} />
+      <span className="truncate">{node.name}</span>
+    </button>
+  );
+}
+
+// Flatten tree into a list of selectable (non-folder) items
+function flattenTree(nodes, result = []) {
+  for (const node of nodes) {
+    if (node.type !== 'folder') result.push(node);
+    if (node.children) flattenTree(node.children, result);
+  }
+  return result;
+}
+
+function MenuSelector({ onSelect, onClose }) {
+  const [tree, setTree] = useState(null);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState({});
+  const flatItemsRef = useRef([]);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchMenuTree()
+      .then(data => {
+        if (cancelled) return;
+        const t = data.tree || [];
+        setTree(t);
+        flatItemsRef.current = flattenTree(t);
+      })
+      .catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const toggleExpand = (id) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? flatItemsRef.current.filter(item => item.name.toLowerCase().includes(q))
+    : null;
+  const items = filtered || tree;
+
+  return (
+    <div className="border border-zinc-700 rounded bg-zinc-800/90 overflow-hidden">
+      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-zinc-700">
+        <Search className="h-3.5 w-3.5 text-zinc-500 flex-shrink-0" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search menu items..."
+          className="flex-1 bg-transparent text-xs text-zinc-200 focus:outline-none placeholder:text-zinc-500"
+        />
+        {query && (
+          <button onClick={() => setQuery('')} className="text-zinc-500 hover:text-zinc-300">
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      <div className="max-h-56 overflow-y-auto p-1">
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-4 text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-xs">Loading menu...</span>
+          </div>
+        ) : error ? (
+          <div className="px-2 py-3 text-xs text-red-400">{error}</div>
+        ) : !items || items.length === 0 ? (
+          <div className="px-2 py-3 text-xs text-zinc-500">No items found</div>
+        ) : filtered ? (
+          // Flat filtered results
+          items.map(item => (
+            <button
+              key={item.id}
+              onClick={() => onSelect(item)}
+              className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs text-zinc-300 hover:bg-blue-600/20 hover:text-blue-300 rounded transition-colors"
+            >
+              <TypeIcon type={item.type} />
+              <span className="truncate">{item.name}</span>
+              {item.type !== 'folder' && (
+                <span className="text-[10px] text-zinc-500 ml-auto">{item.type}</span>
+              )}
+            </button>
+          ))
+        ) : (
+          // Tree view
+          items.map(node => (
+            <TreeNode
+              key={node.id}
+              node={node}
+              onSelect={onSelect}
+              expanded={expanded}
+              onToggle={toggleExpand}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AddSpec({ onCreated }) {
   const [open, setOpen] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [form, setForm] = useState({
     Name: '',
     SpecType: 'W',
     WindowID: '',
     ProcessID: '',
-    ModuleID: '',
+    ModuleID: DEFAULT_MODULE_ID,
     Description: '',
   });
   const [autoPopulate, setAutoPopulate] = useState(true);
@@ -18,6 +182,25 @@ export default function AddSpec({ onCreated }) {
   const [success, setSuccess] = useState(null);
 
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }));
+
+  const handleMenuSelect = (item) => {
+    if (item.type === 'folder') return;
+    const slug = item.name
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .split(/\s+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join('');
+    const isWindow = item.type === 'window';
+    setSelectedItem(item);
+    setForm(f => ({
+      ...f,
+      Name: slug,
+      SpecType: isWindow ? 'W' : 'P',
+      WindowID: isWindow ? (item.windowId || '') : '',
+      ProcessID: !isWindow ? (item.processId || '') : '',
+    }));
+    setShowPicker(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,6 +225,7 @@ export default function AddSpec({ onCreated }) {
 
       setSuccess(`Spec created: ${specId}${populateMsg}`);
       setForm({ Name: '', SpecType: 'W', WindowID: '', ProcessID: '', ModuleID: form.ModuleID, Description: '' });
+      setSelectedItem(null);
       onCreated?.();
     } catch (e) {
       setError(e.message);
@@ -65,10 +249,41 @@ export default function AddSpec({ onCreated }) {
     <div className="border-b border-zinc-800 p-3 bg-zinc-900/50">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">New Spec</span>
-        <button onClick={() => setOpen(false)} className="text-xs text-zinc-500 hover:text-zinc-300">Close</button>
+        <button onClick={() => { setOpen(false); setShowPicker(false); }} className="text-xs text-zinc-500 hover:text-zinc-300">Close</button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-2">
+        {/* Menu item selector */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowPicker(!showPicker)}
+            className={cn(
+              'w-full flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-left transition-colors hover:border-zinc-600',
+              showPicker && 'ring-1 ring-blue-500 border-blue-500'
+            )}
+          >
+            {selectedItem ? (
+              <>
+                <TypeIcon type={selectedItem.type} />
+                <span className="text-zinc-200 truncate flex-1">{selectedItem.name}</span>
+                <span className="text-[10px] text-zinc-500">{selectedItem.type}</span>
+              </>
+            ) : (
+              <>
+                <Search className="h-3.5 w-3.5 text-zinc-500" />
+                <span className="text-zinc-500 flex-1">Select a window or process...</span>
+              </>
+            )}
+          </button>
+          {showPicker && (
+            <div className="mt-1">
+              <MenuSelector onSelect={handleMenuSelect} onClose={() => setShowPicker(false)} />
+            </div>
+          )}
+        </div>
+
+        {/* Name (auto-filled but editable) */}
         <input
           value={form.Name}
           onChange={e => update('Name', e.target.value)}
@@ -77,48 +292,26 @@ export default function AddSpec({ onCreated }) {
           className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
 
-        <div className="flex gap-2">
-          <select
-            value={form.SpecType}
-            onChange={e => update('SpecType', e.target.value)}
-            className="bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none"
-          >
-            <option value="W">Window</option>
-            <option value="P">Process</option>
-          </select>
-
-          {form.SpecType === 'W' ? (
-            <input
-              value={form.WindowID}
-              onChange={e => update('WindowID', e.target.value)}
-              placeholder="AD_Window_ID"
-              required
-              className="flex-1 bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none"
-            />
-          ) : (
-            <input
-              value={form.ProcessID}
-              onChange={e => update('ProcessID', e.target.value)}
-              placeholder="AD_Process_ID"
-              required
-              className="flex-1 bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none"
-            />
-          )}
-        </div>
+        {/* Show selected ID as read-only info */}
+        {selectedItem && (
+          <div className="text-[10px] text-zinc-500 px-1">
+            {form.SpecType === 'W' ? `Window ID: ${form.WindowID}` : `Process ID: ${form.ProcessID}`}
+          </div>
+        )}
 
         <input
           value={form.ModuleID}
           onChange={e => update('ModuleID', e.target.value)}
           placeholder="Module ID"
           required
-          className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none"
+          className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
 
         <input
           value={form.Description}
           onChange={e => update('Description', e.target.value)}
           placeholder="Description (optional)"
-          className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none"
+          className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
 
         <div className="flex items-center gap-4 text-[10px] text-zinc-400">
@@ -149,7 +342,7 @@ export default function AddSpec({ onCreated }) {
 
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || !form.Name}
           className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
         >
           {saving ? 'Creating...' : 'Create Spec'}

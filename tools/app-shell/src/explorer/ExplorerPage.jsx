@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSpecDetail } from './useDiscovery';
 import SpecList from './SpecList';
@@ -9,13 +10,23 @@ import ResponseViewer from './ResponseViewer';
 import SpecManager from './SpecManager';
 
 export default function ExplorerPage() {
-  const [selectedSpec, setSelectedSpec] = useState(null);
+  const [searchParams] = useSearchParams();
+  const specFromUrl = searchParams.get('spec');
+  const [selectedSpec, setSelectedSpec] = useState(specFromUrl);
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [response, setResponse] = useState(null);
   const [mode, setMode] = useState('test'); // 'test' or 'manage'
   const [specListKey, setSpecListKey] = useState(0);
 
   const { spec: specDetail, refresh: refreshSpec } = useSpecDetail(selectedSpec);
+
+  useEffect(() => {
+    if (specFromUrl && specFromUrl !== selectedSpec) {
+      setSelectedSpec(specFromUrl);
+      setSelectedEntity(null);
+      setResponse(null);
+    }
+  }, [specFromUrl]);
 
   const handleSelectSpec = (specName) => {
     setSelectedSpec(specName);
@@ -62,7 +73,7 @@ export default function ExplorerPage() {
         {mode === 'manage' && <AddSpec onCreated={refreshAll} />}
 
         <div className="flex-1 overflow-y-auto">
-          <SpecList key={specListKey} selected={selectedSpec} onSelect={handleSelectSpec} />
+          <SpecList key={specListKey} selected={selectedSpec} onSelect={handleSelectSpec} useAdmin={mode === 'manage'} />
         </div>
       </div>
 

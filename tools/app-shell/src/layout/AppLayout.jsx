@@ -2,10 +2,10 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import TopBar from './TopBar.jsx';
 
-export default function AppLayout({ menuGroups }) {
+export default function AppLayout() {
   return (
     <div className="h-screen flex">
-      <Sidebar menuGroups={menuGroups} />
+      <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-auto p-6">

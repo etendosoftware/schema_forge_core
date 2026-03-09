@@ -24,6 +24,8 @@ export default function SpecManager({ spec, onRefresh }) {
   const [populating, setPopulating] = useState(false);
   const [message, setMessage] = useState(null);
   const [expandedEntity, setExpandedEntity] = useState(null);
+  const [editingQualifier, setEditingQualifier] = useState(null);
+  const [qualifierValue, setQualifierValue] = useState('');
 
   if (!spec) return <div className="p-4 text-sm text-zinc-500">Select a spec to manage</div>;
 
@@ -75,6 +77,26 @@ export default function SpecManager({ spec, onRefresh }) {
       }
       await upsertField(params);
       showMessage(`${field.name}: ${prop} toggled`);
+      onRefresh?.();
+    } catch (e) {
+      showMessage(e.message, true);
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleSaveQualifier = async (entity) => {
+    setSaving(entity.id + 'qualifier');
+    try {
+      await upsertEntity({
+        SpecID: spec.id,
+        TabID: entity.tabId,
+        ModuleID: spec.moduleId,
+        EntityID: entity.id,
+        JavaQualifier: qualifierValue || undefined,
+      });
+      showMessage(`Java qualifier ${qualifierValue ? 'set to ' + qualifierValue : 'cleared'} for ${entity.name}`);
+      setEditingQualifier(null);
       onRefresh?.();
     } catch (e) {
       showMessage(e.message, true);
@@ -152,7 +174,7 @@ export default function SpecManager({ spec, onRefresh }) {
             </div>
 
             {/* Method toggles */}
-            <div className="flex gap-1.5 mt-2 flex-wrap">
+            <div className="flex gap-1.5 mt-2 flex-wrap items-center">
               {METHOD_FLAGS.map(flag => (
                 <button
                   key={flag.key}
@@ -168,6 +190,51 @@ export default function SpecManager({ spec, onRefresh }) {
                   {saving === entity.id + flag.key ? '...' : flag.label}
                 </button>
               ))}
+
+              {/* Java Qualifier (CDI override) */}
+              <span className="ml-auto" onClick={e => e.stopPropagation()}>
+                {editingQualifier === entity.id ? (
+                  <span className="flex items-center gap-1">
+                    <input
+                      value={qualifierValue}
+                      onChange={e => setQualifierValue(e.target.value)}
+                      placeholder="CDI qualifier"
+                      className="w-32 bg-zinc-800 text-zinc-200 border border-zinc-600 rounded px-1.5 py-0.5 text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleSaveQualifier(entity);
+                        if (e.key === 'Escape') setEditingQualifier(null);
+                      }}
+                    />
+                    <button
+                      onClick={() => handleSaveQualifier(entity)}
+                      disabled={saving === entity.id + 'qualifier'}
+                      className="text-[10px] text-green-400 hover:text-green-300"
+                    >
+                      {saving === entity.id + 'qualifier' ? '...' : '✓'}
+                    </button>
+                    <button
+                      onClick={() => setEditingQualifier(null)}
+                      className="text-[10px] text-zinc-500 hover:text-zinc-300"
+                    >
+                      ✗
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => { setEditingQualifier(entity.id); setQualifierValue(entity.javaQualifier || ''); }}
+                    className={cn(
+                      'px-2 py-0.5 rounded border text-[10px] font-mono transition-all',
+                      entity.javaQualifier
+                        ? 'bg-cyan-600/20 text-cyan-400 border-cyan-600/40'
+                        : 'bg-zinc-900 text-zinc-600 border-zinc-800 opacity-50 hover:opacity-80'
+                    )}
+                    title="Set CDI Java qualifier for custom NeoHandler override"
+                  >
+                    {entity.javaQualifier || 'CDI'}
+                  </button>
+                )}
+              </span>
             </div>
           </button>
 
