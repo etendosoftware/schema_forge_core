@@ -46,7 +46,6 @@ const windowLoaders = {
   'payment-out': () => import('@generated/payment-out/generated/web/payment-out/index.jsx'),
   'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
   'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
-  'bp-location': () => import('@generated/bp-location/generated/web/bp-location/index.jsx'),
 };
 
 /**

@@ -44,6 +44,27 @@ const aggregateArtifacts = artifactDirs.filter(d =>
   existsSync(resolve(ARTIFACTS, d, 'aggregate-contract.json'))
 );
 
+// Build child entity set: entities that are detail/children of a master-detail contract
+// These should NEVER appear as standalone menu items
+const childEntities = new Set();
+const childToParent = {};
+for (const entity of entityArtifacts) {
+  const contract = JSON.parse(readText(resolve(ARTIFACTS, entity, 'contract.json')));
+  const entities = Object.keys(contract.frontendContract.entities);
+  const primary = contract.frontendContract.window.primaryEntity;
+  for (const e of entities) {
+    if (e !== primary) {
+      childEntities.add(e);
+      childToParent[e] = { parent: entity, primaryEntity: primary };
+    }
+  }
+}
+
+// Map camelCase entity names to kebab-case slugs for menu matching
+function camelToKebab(str) {
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
 // --- Tests ---
 
 describe('Wiring completeness', () => {
@@ -115,6 +136,19 @@ describe('Wiring completeness', () => {
         assert.ok(
           existsSync(configPath),
           `Missing: artifacts/${agg}/generated/config.js`
+        );
+      });
+    }
+  });
+
+  describe('Child entities must NOT appear as standalone menu items', () => {
+    for (const [childName, info] of Object.entries(childToParent)) {
+      const slug = camelToKebab(childName);
+      it(`${childName} (child of ${info.parent}) should not be a menu item`, () => {
+        assert.ok(
+          !allMenuItems.includes(slug),
+          `Child entity '${childName}' (slug: '${slug}') is a detail of '${info.parent}' but appears as a standalone menu item. ` +
+          `It should only be accessible as a tab/detail within its parent window.`
         );
       });
     }

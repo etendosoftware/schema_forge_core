@@ -66,8 +66,7 @@
       "icon": "Users",
       "items": [
         { "name": "contacts", "label": "Overview" },
-        { "name": "business-partner", "label": "Contacts" },
-        { "name": "bp-location", "label": "Addresses" }
+        { "name": "business-partner", "label": "Contacts" }
       ]
     },
     {
