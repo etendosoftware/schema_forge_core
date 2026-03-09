@@ -1,5 +1,7 @@
-import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { useInspector } from "./InspectorProvider";
+import { AddFieldDialog } from "./AddFieldDialog.jsx";
 import {
   Sheet,
   SheetContent,
@@ -28,6 +30,8 @@ export function SchemaInspector() {
     updateField,
     removeField,
   } = useInspector();
+
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   if (!selectedField) return null;
 
@@ -125,6 +129,23 @@ export function SchemaInspector() {
             <Trash2 className="mr-2 h-4 w-4" />
             Remove Field
           </Button>
+
+          {/* Add Field */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setAddDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Field
+          </Button>
+
+          <AddFieldDialog
+            open={addDialogOpen}
+            onOpenChange={setAddDialogOpen}
+            entityName={selectedEntity}
+          />
         </div>
       </SheetContent>
     </Sheet>
