@@ -41,6 +41,7 @@ const windowLoaders = {
   'project': () => import('@generated/project/generated/web/project/index.jsx'),
   'time-tracking': () => import('@generated/time-tracking/generated/web/time-tracking/index.jsx'),
   'document': () => import('@generated/document/generated/web/document/index.jsx'),
+  'recurring-invoice': () => import('@generated/recurring-invoice/generated/web/recurring-invoice/index.jsx'),
 };
 
 /**
