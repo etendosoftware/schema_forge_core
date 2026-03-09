@@ -4,7 +4,7 @@ import App from './App.jsx';
 import './index.css';
 
 createRoot(document.getElementById('root')).render(
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
     <App />
   </ThemeProvider>
 );
