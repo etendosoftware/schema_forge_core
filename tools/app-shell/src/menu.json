@@ -73,6 +73,25 @@
       ]
     },
     {
+      "group": "HR",
+      "icon": "Users",
+      "items": [
+        { "name": "hr", "label": "Overview" },
+        { "name": "employee", "label": "Employees" },
+        { "name": "absence", "label": "Absences" }
+      ]
+    },
+    {
+      "group": "Projects",
+      "icon": "FolderKanban",
+      "items": [
+        { "name": "projects", "label": "Overview" },
+        { "name": "project", "label": "Projects" },
+        { "name": "time-tracking", "label": "Time Tracking" },
+        { "name": "document", "label": "Documents" }
+      ]
+    },
+    {
       "group": "Products",
       "icon": "Box",
       "items": [

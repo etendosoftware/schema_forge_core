@@ -1,0 +1,112 @@
+{
+  "version": "0.1.0",
+  "type": "aggregate",
+  "meta": {
+    "module": "hr",
+    "label": "HR",
+    "icon": "Users",
+    "route": "/hr"
+  },
+  "sections": [
+    {
+      "id": "kpis",
+      "type": "kpi",
+      "kpis": [
+        { "key": "totalEmployees", "label": "Total Employees", "format": "number", "icon": "Users", "trend": "up" },
+        { "key": "activeAbsences", "label": "On Leave Today", "format": "number", "icon": "Calendar", "trend": "neutral" },
+        { "key": "openPositions", "label": "Open Positions", "format": "number", "icon": "UserPlus", "trend": "up" },
+        { "key": "avgTenure", "label": "Avg. Tenure", "format": "number", "icon": "Clock", "trend": "up" }
+      ]
+    },
+    {
+      "id": "employeeDirectory",
+      "type": "data-table",
+      "title": "Employee Directory",
+      "icon": "Users",
+      "columns": [
+        { "key": "name", "label": "Name", "align": "left" },
+        { "key": "department", "label": "Department", "align": "left" },
+        { "key": "position", "label": "Position", "align": "left" },
+        { "key": "email", "label": "Email", "align": "left" },
+        { "key": "status", "label": "Status", "align": "left" }
+      ],
+      "filters": ["department", "status"]
+    },
+    {
+      "id": "absenceCalendar",
+      "type": "kanban",
+      "title": "Current Absences",
+      "icon": "Calendar",
+      "columns": [
+        { "id": "pending", "title": "Pending", "color": "yellow" },
+        { "id": "approved", "title": "Approved", "color": "green" },
+        { "id": "on-leave", "title": "On Leave", "color": "blue" },
+        { "id": "returned", "title": "Returned", "color": "gray" }
+      ]
+    },
+    {
+      "id": "hrUpdates",
+      "type": "activity-feed",
+      "title": "HR Updates",
+      "icon": "Bell",
+      "fields": {
+        "direction": "direction",
+        "label": "label",
+        "detail": "detail",
+        "time": "time"
+      }
+    }
+  ],
+  "layout": {
+    "type": "grid",
+    "areas": [
+      { "section": "kpis", "span": "full" },
+      { "section": "employeeDirectory", "span": "2/3" },
+      { "section": "absenceCalendar", "span": "1/3" },
+      { "section": "hrUpdates", "span": "full" }
+    ]
+  },
+  "actions": [
+    { "label": "Add Employee", "route": "/employee", "variant": "default" },
+    { "label": "Request Absence", "route": "/absence", "variant": "outline" }
+  ],
+  "mockData": {
+    "kpis": {
+      "totalEmployees": 156,
+      "activeAbsences": 8,
+      "openPositions": 12,
+      "avgTenure": 3.4,
+      "trends": {
+        "totalEmployees": 5,
+        "activeAbsences": 0,
+        "openPositions": 3,
+        "avgTenure": 0.2
+      }
+    },
+    "employeeDirectory": [
+      { "name": "Maria Garcia", "department": "Engineering", "position": "Senior Developer", "email": "m.garcia@company.com", "status": "Active" },
+      { "name": "Carlos Lopez", "department": "Sales", "position": "Account Executive", "email": "c.lopez@company.com", "status": "Active" },
+      { "name": "Ana Martinez", "department": "Marketing", "position": "Content Manager", "email": "a.martinez@company.com", "status": "On Leave" },
+      { "name": "Pedro Sanchez", "department": "Engineering", "position": "Tech Lead", "email": "p.sanchez@company.com", "status": "Active" },
+      { "name": "Laura Torres", "department": "HR", "position": "HR Specialist", "email": "l.torres@company.com", "status": "Active" },
+      { "name": "Diego Rivera", "department": "Finance", "position": "Financial Analyst", "email": "d.rivera@company.com", "status": "Active" },
+      { "name": "Sofia Herrera", "department": "Engineering", "position": "QA Engineer", "email": "s.herrera@company.com", "status": "On Leave" },
+      { "name": "Juan Morales", "department": "Operations", "position": "Operations Manager", "email": "j.morales@company.com", "status": "Active" }
+    ],
+    "absenceCalendar": [
+      { "id": "AB-001", "columnId": "pending", "title": "Vacation Request", "subtitle": "Juan Morales", "badges": ["5 days"] },
+      { "id": "AB-002", "columnId": "approved", "title": "Medical Leave", "subtitle": "Sofia Herrera", "badges": ["3 days"] },
+      { "id": "AB-003", "columnId": "on-leave", "title": "Parental Leave", "subtitle": "Ana Martinez", "badges": ["30 days"] },
+      { "id": "AB-004", "columnId": "pending", "title": "Personal Day", "subtitle": "Diego Rivera", "badges": ["1 day"] },
+      { "id": "AB-005", "columnId": "approved", "title": "Conference", "subtitle": "Pedro Sanchez", "badges": ["2 days"] },
+      { "id": "AB-006", "columnId": "returned", "title": "Sick Leave", "subtitle": "Carlos Lopez", "badges": ["2 days"] }
+    ],
+    "hrUpdates": [
+      { "id": 1, "direction": "in", "label": "New hire: Elena Ruiz joined Engineering", "detail": "Frontend Developer — starts Monday", "time": "2 hours ago" },
+      { "id": 2, "direction": "out", "label": "Absence approved for Sofia Herrera", "detail": "Medical leave — 3 days", "time": "3 hours ago" },
+      { "id": 3, "label": "Performance review cycle opened", "detail": "Q1 2026 reviews due by March 31", "time": "5 hours ago" },
+      { "id": 4, "direction": "in", "label": "Job posting published: Product Manager", "detail": "3 applications received", "time": "1 day ago" },
+      { "id": 5, "label": "Training completed: Data Privacy Workshop", "detail": "24 employees certified", "time": "2 days ago" }
+    ]
+  }
+}

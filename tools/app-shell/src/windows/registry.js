@@ -36,6 +36,11 @@ const windowLoaders = {
   'deal': () => import('@generated/deal/generated/web/deal/index.jsx'),
   'activity': () => import('@generated/activity/generated/web/activity/index.jsx'),
   'lead': () => import('@generated/lead/generated/web/lead/index.jsx'),
+  'employee': () => import('@generated/employee/generated/web/employee/index.jsx'),
+  'absence': () => import('@generated/absence/generated/web/absence/index.jsx'),
+  'project': () => import('@generated/project/generated/web/project/index.jsx'),
+  'time-tracking': () => import('@generated/time-tracking/generated/web/time-tracking/index.jsx'),
+  'document': () => import('@generated/document/generated/web/document/index.jsx'),
 };
 
 /**
