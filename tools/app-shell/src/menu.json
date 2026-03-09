@@ -24,6 +24,7 @@
       "group": "Purchases",
       "icon": "Truck",
       "items": [
+        { "name": "purchases", "label": "Overview" },
         { "name": "purchase-order", "label": "Purchase Orders" },
         { "name": "goods-receipt", "label": "Goods Receipt" },
         { "name": "purchase-invoice", "label": "Invoices" },
@@ -35,6 +36,7 @@
       "group": "Inventory",
       "icon": "Package",
       "items": [
+        { "name": "inventory", "label": "Overview" },
         { "name": "physical-inventory", "label": "Physical Inventory" },
         { "name": "goods-movements", "label": "Goods Movements" }
       ]
