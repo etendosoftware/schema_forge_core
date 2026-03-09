@@ -5,6 +5,9 @@ import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import SalesPage from './pages/SalesPage.jsx';
+import ContactsPage from './pages/ContactsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 
@@ -75,8 +78,6 @@ function AppRoutes({ menuGroups, windowMap }) {
     return <div className="p-8 text-muted-foreground">Loading...</div>;
   }
 
-  const firstWindow = menuGroups[0].items[0].name;
-
   return (
     <Routes>
       <Route
@@ -90,8 +91,11 @@ function AppRoutes({ menuGroups, windowMap }) {
           </AuthGuard>
         }
       >
-        <Route index element={<Navigate to={`/${firstWindow}`} replace />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="preview" element={<PreviewPage />} />
+        <Route path="sales" element={<SalesPage />} />
+        <Route path="contacts" element={<ContactsPage />} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}

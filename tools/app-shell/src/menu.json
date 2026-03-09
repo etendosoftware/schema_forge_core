@@ -1,9 +1,17 @@
 {
   "menu": [
     {
+      "group": "Home",
+      "icon": "LayoutDashboard",
+      "items": [
+        { "name": "dashboard", "label": "Dashboard" }
+      ]
+    },
+    {
       "group": "Sales",
       "icon": "ShoppingCart",
       "items": [
+        { "name": "sales", "label": "Overview" },
         { "name": "sales-quotation", "label": "Quotations" },
         { "name": "sales-order", "label": "Sales Orders" },
         { "name": "goods-shipment", "label": "Shipments" },
@@ -35,6 +43,7 @@
       "group": "Contacts",
       "icon": "Users",
       "items": [
+        { "name": "contacts", "label": "Overview" },
         { "name": "business-partner", "label": "Contacts" },
         { "name": "bp-location", "label": "Addresses" }
       ]

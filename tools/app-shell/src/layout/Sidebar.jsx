@@ -21,6 +21,7 @@ import {
 import {
   Eye,
   ChevronRight,
+  LayoutDashboard,
   ShoppingCart,
   Truck,
   Package,
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react';
 
 const ICON_MAP = {
+  LayoutDashboard,
   ShoppingCart,
   Truck,
   Package,
