@@ -9,6 +9,8 @@ const fields = [
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
   { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
+  { key: 'documentNo', label: 'Document No', type: 'text', required: true, readOnly: true },
+  { key: 'docStatus', label: 'Doc Status', type: 'text', required: true, readOnly: true },
 ];
 
 export default function GoodsReceiptForm(props) {

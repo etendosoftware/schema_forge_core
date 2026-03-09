@@ -8,6 +8,8 @@ const fields = [
   { key: 'discount', label: 'Discount', type: 'number' },
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'lineNo', label: 'Line No', type: 'number', required: true },
+  { key: 'lineNetAmount', label: 'Line Net Amount', type: 'number', readOnly: true },
+  { key: 'uom', label: 'Uom', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function QuotationLineForm(props) {

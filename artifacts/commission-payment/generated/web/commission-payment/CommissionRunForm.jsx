@@ -1,10 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
+  { key: 'documentNo', label: 'Document No', type: 'text', required: true, readOnly: true },
   { key: 'commission', label: 'Commission', type: 'selector', required: true, reference: 'Commission', inputMode: 'selector' },
   { key: 'startDate', label: 'Start Date', type: 'date', required: true },
   { key: 'endDate', label: 'End Date', type: 'date' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'grandTotal', label: 'Grand Total', type: 'number', readOnly: true },
+  { key: 'docStatus', label: 'Doc Status', type: 'text', required: true, readOnly: true },
 ];
 
 export default function CommissionRunForm(props) {

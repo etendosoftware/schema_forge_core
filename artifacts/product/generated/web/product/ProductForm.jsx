@@ -8,6 +8,7 @@ const fields = [
   { key: 'productCategory', label: 'Product Category', type: 'selector', required: true, reference: 'ProductCategory', inputMode: 'selector' },
   { key: 'listPrice', label: 'List Price', type: 'number' },
   { key: 'standardCost', label: 'Standard Cost', type: 'number' },
+  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function ProductForm(props) {

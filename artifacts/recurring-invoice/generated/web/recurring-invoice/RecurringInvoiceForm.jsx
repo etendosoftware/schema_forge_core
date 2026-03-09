@@ -10,6 +10,7 @@ const fields = [
   { key: 'status', label: 'Status', type: 'selector', required: true, reference: 'RecurringStatus', inputMode: 'selector' },
   { key: 'startDate', label: 'Start Date', type: 'date', required: true },
   { key: 'endDate', label: 'End Date', type: 'date' },
+  { key: 'lastGenerated', label: 'Last Generated', type: 'date', readOnly: true },
 ];
 
 export default function RecurringInvoiceForm(props) {

@@ -3,6 +3,9 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'locator', label: 'Locator', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
   { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+  { key: 'released', label: 'Released', type: 'number', readOnly: true },
+  { key: 'isAllocated', label: 'Is Allocated', type: 'checkbox', required: true, readOnly: true },
+  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function ReservationStockForm(props) {

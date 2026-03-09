@@ -6,6 +6,7 @@ const fields = [
   { key: 'taxId', label: 'Tax Id', type: 'text' },
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'creditLimit', label: 'Credit Limit', type: 'number' },
+  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function BusinessPartnerForm(props) {

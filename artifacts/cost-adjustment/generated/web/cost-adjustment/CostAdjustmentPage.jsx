@@ -20,7 +20,7 @@ const addLineFields = {
     { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
     { key: 'inventoryTransaction', label: 'Inventory Transaction', type: 'search', reference: 'MaterialTransaction', inputMode: 'search' },
     { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
   ],
   derived: [

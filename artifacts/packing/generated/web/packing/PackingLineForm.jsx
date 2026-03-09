@@ -6,7 +6,8 @@ const fields = [
   { key: 'quantity', label: 'Quantity', type: 'number', required: true },
   { key: 'weight', label: 'Weight', type: 'number' },
   { key: 'packageNo', label: 'Package No', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'uom', label: 'Uom', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function PackingLineForm(props) {

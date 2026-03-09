@@ -13,6 +13,11 @@ const fields = [
   { key: 'poReference', label: 'Po Reference', type: 'text' },
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
+  { key: 'documentNo', label: 'Document No', type: 'text', required: true, readOnly: true },
+  { key: 'docStatus', label: 'Doc Status', type: 'text', required: true, readOnly: true },
+  { key: 'grandTotal', label: 'Grand Total', type: 'number', readOnly: true },
+  { key: 'totalLines', label: 'Total Lines', type: 'number', readOnly: true },
+  { key: 'isPaid', label: 'Is Paid', type: 'checkbox', readOnly: true },
 ];
 
 export default function InvoiceForm(props) {

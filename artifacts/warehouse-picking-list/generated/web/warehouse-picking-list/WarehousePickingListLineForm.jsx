@@ -7,7 +7,8 @@ const fields = [
   { key: 'quantityRequired', label: 'Quantity Required', type: 'number', required: true },
   { key: 'quantityPicked', label: 'Quantity Picked', type: 'number' },
   { key: 'salesOrder', label: 'Sales Order', type: 'search', reference: 'SalesOrder', inputMode: 'search' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'uom', label: 'Uom', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function WarehousePickingListLineForm(props) {

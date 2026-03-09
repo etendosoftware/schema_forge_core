@@ -154,6 +154,42 @@ describe('Wiring completeness', () => {
     }
   });
 
+  describe('Form fields match contract (form: true fields)', () => {
+    for (const entity of entityArtifacts) {
+      const contract = JSON.parse(readText(resolve(ARTIFACTS, entity, 'contract.json')));
+      const primary = contract.frontendContract.window.primaryEntity;
+      const fields = contract.frontendContract.entities[primary].fields;
+      const contractFormFields = new Set(fields.filter(f => f.form).map(f => f.name));
+
+      const cap = primary[0].toUpperCase() + primary.slice(1);
+      const formPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, `${cap}Form.jsx`);
+      if (!existsSync(formPath)) continue;
+
+      const formSource = readText(formPath);
+      const jsxFields = new Set([...formSource.matchAll(/key:\s*'(\w+)'/g)].map(m => m[1]));
+
+      const extra = [...jsxFields].filter(f => !contractFormFields.has(f));
+      const missing = [...contractFormFields].filter(f => !jsxFields.has(f));
+
+      if (extra.length > 0) {
+        it(`${entity}: Form should not have extra fields beyond contract`, () => {
+          assert.deepEqual(extra, [],
+            `${entity} Form has fields not in contract (form: true): ${extra.join(', ')}`);
+        });
+      }
+      if (missing.length > 0) {
+        it(`${entity}: Form should not be missing contract fields`, () => {
+          assert.deepEqual(missing, [],
+            `${entity} Form is missing contract fields (form: true): ${missing.join(', ')}`);
+        });
+      }
+      it(`${entity}: Form field count should match contract`, () => {
+        assert.equal(jsxFields.size, contractFormFields.size,
+          `${entity} Form has ${jsxFields.size} fields but contract has ${contractFormFields.size}`);
+      });
+    }
+  });
+
   describe('No orphan entity windows (in registry but not in menu)', () => {
     const registeredWindows = [...registrySource.matchAll(/'([^']+)':\s*\(\)/g)]
       .map(m => m[1]);

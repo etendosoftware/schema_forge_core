@@ -2,6 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
   { key: 'name', label: 'Name', type: 'text', required: true },
+  { key: 'employeeId', label: 'Employee Id', type: 'text', required: true, readOnly: true },
   { key: 'department', label: 'Department', type: 'selector', required: true, reference: 'Department', inputMode: 'selector' },
   { key: 'position', label: 'Position', type: 'text', required: true },
   { key: 'email', label: 'Email', type: 'text', required: true },

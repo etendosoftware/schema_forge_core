@@ -10,6 +10,7 @@ const fields = [
   { key: 'regionName', label: 'Region Name', type: 'text' },
   { key: 'postalCode', label: 'Postal Code', type: 'text' },
   { key: 'country', label: 'Country', type: 'text' },
+  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function WarehouseForm(props) {

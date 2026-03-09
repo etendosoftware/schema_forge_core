@@ -5,6 +5,7 @@ const fields = [
   { key: 'listPrice', label: 'List Price', type: 'number', required: true },
   { key: 'standardPrice', label: 'Standard Price', type: 'number', required: true },
   { key: 'limitPrice', label: 'Limit Price', type: 'number' },
+  { key: 'uom', label: 'Uom', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function PriceListLineForm(props) {

@@ -12,6 +12,11 @@ const fields = [
   { key: 'poReference', label: 'Po Reference', type: 'text' },
   { key: 'salesRep', label: 'Sales Rep', type: 'search', reference: 'User', inputMode: 'search' },
   { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'documentNo', label: 'Document No', type: 'text', required: true, readOnly: true },
+  { key: 'docStatus', label: 'Doc Status', type: 'text', required: true, readOnly: true },
+  { key: 'grandTotal', label: 'Grand Total', type: 'number', readOnly: true },
+  { key: 'totalLines', label: 'Total Lines', type: 'number', readOnly: true },
+  { key: 'currency', label: 'Currency', type: 'text', required: true, readOnly: true },
 ];
 
 export default function QuotationForm(props) {

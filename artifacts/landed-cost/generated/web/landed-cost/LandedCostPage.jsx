@@ -19,7 +19,7 @@ const addLineFields = {
     { key: 'goodsReceipt', label: 'Goods Receipt', type: 'search', lookup: true, reference: 'GoodsReceipt', inputMode: 'search' },
     { key: 'goodsReceiptLine', label: 'Goods Receipt Line', type: 'dependent', reference: 'GoodsReceiptLine', inputMode: 'dependent', dependsOn: { field: 'goodsReceipt', filterKey: 'goodsReceiptId' } },
     { key: 'invoiceLine', label: 'Invoice Line', type: 'search', reference: 'InvoiceLine', inputMode: 'search' },
-    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'lineNo', label: 'Line No', type: 'number', required: true },
     { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
   ],

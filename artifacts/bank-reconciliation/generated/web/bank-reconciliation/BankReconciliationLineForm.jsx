@@ -5,6 +5,7 @@ const fields = [
   { key: 'description', label: 'Description', type: 'textarea', required: true },
   { key: 'amount', label: 'Amount', type: 'number', required: true },
   { key: 'matchedInvoice', label: 'Matched Invoice', type: 'search', reference: 'Invoice', inputMode: 'search' },
+  { key: 'matchStatus', label: 'Match Status', type: 'text', required: true, readOnly: true },
 ];
 
 export default function BankReconciliationLineForm(props) {

@@ -103,18 +103,18 @@ export default function ${compName}(props) {
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formFields = entity.fields.filter(f => f.form);
-  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
   const compName = `${capitalize(entityName)}Form`;
 
-  const fieldsArray = editableFields.map(f => {
+  const fieldsArray = formFields.map(f => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
+    const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';

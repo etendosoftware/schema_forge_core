@@ -7,6 +7,7 @@ const fields = [
   { key: 'z', label: 'Z', type: 'text' },
   { key: 'priorityNo', label: 'Priority No', type: 'number' },
   { key: 'isDefault', label: 'Is Default', type: 'checkbox', required: true },
+  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function LocatorForm(props) {
