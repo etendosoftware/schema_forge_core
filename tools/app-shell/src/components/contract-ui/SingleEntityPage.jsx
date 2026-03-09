@@ -1,5 +1,9 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.jsx';
+import { Skeleton } from '@/components/ui/skeleton.jsx';
+import { Card, CardContent } from '@/components/ui/card.jsx';
+import { Separator } from '@/components/ui/separator.jsx';
+import { X } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
 
 /**
@@ -44,12 +48,12 @@ export function SingleEntityPage({
         </div>
         <div className="flex-1 overflow-auto p-3">
           {hook.loading ? (
-            <div className="animate-pulse space-y-3">
-              <div className="h-10 bg-muted rounded" />
-              <div className="h-8 bg-muted/60 rounded" />
-              <div className="h-8 bg-muted/40 rounded" />
-              <div className="h-8 bg-muted/60 rounded" />
-              <div className="h-8 bg-muted/40 rounded" />
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
             </div>
           ) : (
             <Table
@@ -72,25 +76,32 @@ export function SingleEntityPage({
             <div className="flex items-center gap-2">
               <Button size="sm" onClick={() => hook.handleSave(hook.editing)}>Save</Button>
               {hook.selected && (
-                <Button variant="destructive" size="sm" onClick={hook.handleDelete}>Delete</Button>
+                <>
+                  <Separator orientation="vertical" className="h-5" />
+                  <Button variant="destructive" size="sm" onClick={hook.handleDelete}>Delete</Button>
+                </>
               )}
               <button
                 onClick={() => hook.handleSelect(null)}
                 className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 aria-label="Close detail"
               >
-                &times;
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          {/* Form zone */}
+          {/* Form zone wrapped in Card */}
           <div className="flex-1 overflow-auto px-5 pt-4 pb-3">
-            <Form
-              data={hook.editing}
-              onChange={hook.handleChange}
-              catalogs={catalogs}
-            />
+            <Card className="shadow-none border">
+              <CardContent className="p-5">
+                <Form
+                  data={hook.editing}
+                  onChange={hook.handleChange}
+                  catalogs={catalogs}
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}

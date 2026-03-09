@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 
 /**
@@ -77,28 +78,31 @@ function SearchInput({ field, value, onChange, catalogs }) {
 
 /**
  * Dropdown selector for FK fields with few options (inputMode: selector).
+ * Uses shadcn Select (Radix) for consistent styling.
  */
 function SelectorInput({ field, value, onChange, catalogs }) {
   const options = catalogs?.[field.reference] ?? [];
   return (
-    <select
-      id={field.key}
-      name={field.key}
+    <Select
       value={value ?? ''}
-      onChange={(e) => onChange?.(e.target.value)}
-      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:outline-none"
+      onValueChange={(val) => onChange?.(val)}
       required={field.required}
     >
-      <option value="">Select {field.label}...</option>
-      {options.map(opt => (
-        <option key={opt.id} value={opt.id}>{opt.name}</option>
-      ))}
-    </select>
+      <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
+        <SelectValue placeholder={`Select ${field.label}...`} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(opt => (
+          <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
 /**
  * Dependent dropdown that filters options by a parent field value (inputMode: dependent).
+ * Uses shadcn Select (Radix) for consistent styling.
  */
 function DependentSelect({ field, value, onChange, catalogs, formData }) {
   const parentValue = formData?.[field.dependsOn?.field];
@@ -108,22 +112,23 @@ function DependentSelect({ field, value, onChange, catalogs, formData }) {
     : [];
 
   return (
-    <select
-      id={field.key}
-      name={field.key}
+    <Select
       value={value ?? ''}
-      onChange={(e) => onChange?.(e.target.value)}
-      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:outline-none"
+      onValueChange={(val) => onChange?.(val)}
       required={field.required}
       disabled={!parentValue}
     >
-      <option value="">
-        {parentValue ? `Select ${field.label}...` : `Select ${field.dependsOn?.field} first`}
-      </option>
-      {options.map(opt => (
-        <option key={opt.id} value={opt.id}>{opt.name}</option>
-      ))}
-    </select>
+      <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
+        <SelectValue
+          placeholder={parentValue ? `Select ${field.label}...` : `Select ${field.dependsOn?.field} first`}
+        />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(opt => (
+          <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -143,14 +148,36 @@ export function EntityForm({ fields = [], data, onChange, catalogs }) {
         if (f.type === 'checkbox') {
           return (
             <div key={f.key} className="flex items-center gap-2 pt-6">
-              <input
-                type="checkbox"
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={!!data?.[f.key]}
                 id={f.key}
-                name={f.key}
-                checked={!!data?.[f.key]}
-                onChange={(e) => onChange?.(f.key, e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
+                onClick={() => onChange?.(f.key, !data?.[f.key])}
+                className={[
+                  'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
+                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                  !!data?.[f.key]
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-transparent',
+                ].join(' ')}
+              >
+                {!!data?.[f.key] && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
               <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
                 {f.label}{f.required ? ' *' : ''}
               </Label>
