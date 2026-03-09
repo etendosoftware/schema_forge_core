@@ -5,6 +5,7 @@ import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
+import ExplorerPage from './explorer/ExplorerPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 
@@ -103,6 +104,7 @@ function AppRoutes({ menuGroups, windowMap }) {
       >
         <Route index element={<Navigate to={`/${firstWindow}`} replace />} />
         <Route path="preview" element={<PreviewPage />} />
+        <Route path="explorer" element={<ExplorerPage />} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}

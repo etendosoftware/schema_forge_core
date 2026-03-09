@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Eye, ChevronRight, ShoppingCart, Truck, Database, DollarSign, Settings } from 'lucide-react';
+import { Eye, FlaskConical, ChevronRight, ShoppingCart, Truck, Database, DollarSign, Settings } from 'lucide-react';
 
 const ICON_MAP = {
   ShoppingCart,
@@ -79,7 +79,7 @@ export default function Sidebar({ menuGroups }) {
           />
         ))}
       </nav>
-      <div className="border-t border-white/10 p-3">
+      <div className="border-t border-white/10 p-3 space-y-1">
         <NavLink
           to="/preview"
           className={({ isActive }) =>
@@ -93,6 +93,20 @@ export default function Sidebar({ menuGroups }) {
         >
           <Eye className="h-3.5 w-3.5" />
           Preview
+        </NavLink>
+        <NavLink
+          to="/explorer"
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
+              isActive
+                ? 'bg-white/15 text-white'
+                : 'text-white/40 hover:bg-white/10 hover:text-white/80'
+            )
+          }
+        >
+          <FlaskConical className="h-3.5 w-3.5" />
+          API Explorer
         </NavLink>
       </div>
     </aside>
