@@ -24,8 +24,8 @@ import {
   ShoppingCart,
   Truck,
   Package,
-  Database,
-  DollarSign,
+  Box,
+  Users,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -34,13 +34,13 @@ const ICON_MAP = {
   ShoppingCart,
   Truck,
   Package,
-  Database,
-  DollarSign,
+  Box,
+  Users,
   Settings,
 };
 
 function NavMenuGroup({ group, icon, items }) {
-  const Icon = ICON_MAP[icon] || Database;
+  const Icon = ICON_MAP[icon] || Package;
 
   return (
     <Collapsible defaultOpen className="group/collapsible">

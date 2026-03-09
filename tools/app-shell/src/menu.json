@@ -4,76 +4,61 @@
       "group": "Sales",
       "icon": "ShoppingCart",
       "items": [
-        { "name": "sales-order", "label": "Sales Order" },
-        { "name": "sales-quotation", "label": "Sales Quotation" },
-        { "name": "goods-shipment", "label": "Goods Shipment" },
-        { "name": "return-from-customer", "label": "Return from Customer" },
-        { "name": "return-material-receipt", "label": "Return Material Receipt" },
-        { "name": "sales-invoice", "label": "Sales Invoice" },
-        { "name": "commission", "label": "Commission" },
-        { "name": "commission-payment", "label": "Commission Payment" }
+        { "name": "sales-quotation", "label": "Quotations" },
+        { "name": "sales-order", "label": "Sales Orders" },
+        { "name": "goods-shipment", "label": "Shipments" },
+        { "name": "sales-invoice", "label": "Invoices" },
+        { "name": "return-from-customer", "label": "Returns" },
+        { "name": "return-material-receipt", "label": "Return Receipts" }
       ]
     },
     {
-      "group": "Procurement",
+      "group": "Purchases",
       "icon": "Truck",
       "items": [
-        { "name": "purchase-order", "label": "Purchase Order" },
-        { "name": "requisition", "label": "Requisition" },
-        { "name": "manage-requisitions", "label": "Manage Requisitions" },
-        { "name": "requisition-to-order", "label": "Requisition to Order" },
+        { "name": "purchase-order", "label": "Purchase Orders" },
         { "name": "goods-receipt", "label": "Goods Receipt" },
-        { "name": "pending-goods-receipts", "label": "Pending Goods Receipts" },
-        { "name": "inbound-receipt", "label": "Inbound Receipt" },
-        { "name": "purchase-invoice", "label": "Purchase Invoice" },
-        { "name": "matched-purchase-invoices", "label": "Matched Purchase Invoices" },
-        { "name": "return-to-vendor", "label": "Return to Vendor" },
-        { "name": "return-to-vendor-shipment", "label": "Return to Vendor Shipment" },
-        { "name": "landed-cost", "label": "Landed Cost" }
+        { "name": "purchase-invoice", "label": "Invoices" },
+        { "name": "return-to-vendor", "label": "Returns" },
+        { "name": "return-to-vendor-shipment", "label": "Return Shipments" }
       ]
     },
     {
-      "group": "Warehouse",
+      "group": "Inventory",
       "icon": "Package",
       "items": [
         { "name": "physical-inventory", "label": "Physical Inventory" },
-        { "name": "goods-movements", "label": "Goods Movements" },
-        { "name": "inventory-quality-inspection", "label": "Quality Inspection" },
-        { "name": "bom-production", "label": "BOM Production" },
-        { "name": "packing", "label": "Packing" },
-        { "name": "warehouse-picking-list", "label": "Picking List" },
-        { "name": "stock-reservation", "label": "Stock Reservation" },
-        { "name": "cost-adjustment", "label": "Cost Adjustment" }
+        { "name": "goods-movements", "label": "Goods Movements" }
       ]
     },
     {
-      "group": "Master Data",
-      "icon": "Database",
+      "group": "Contacts",
+      "icon": "Users",
       "items": [
-        { "name": "business-partner", "label": "Business Partner" },
-        { "name": "bp-location", "label": "BP Location" },
-        { "name": "product", "label": "Product" },
-        { "name": "product-category", "label": "Product Category" },
-        { "name": "warehouse", "label": "Warehouse" },
-        { "name": "warehouse-storage-bins", "label": "Warehouse & Storage Bins" }
+        { "name": "business-partner", "label": "Contacts" },
+        { "name": "bp-location", "label": "Addresses" }
       ]
     },
     {
-      "group": "Finance",
-      "icon": "DollarSign",
+      "group": "Products",
+      "icon": "Box",
       "items": [
-        { "name": "price-list", "label": "Price List" },
-        { "name": "payment-term", "label": "Payment Term" },
-        { "name": "payment-method", "label": "Payment Method" },
-        { "name": "tax", "label": "Tax" }
+        { "name": "product", "label": "Products" },
+        { "name": "product-category", "label": "Categories" }
       ]
     },
     {
-      "group": "System",
+      "group": "Settings",
       "icon": "Settings",
       "items": [
-        { "name": "uom", "label": "UOM" },
-        { "name": "user", "label": "User" }
+        { "name": "warehouse", "label": "Warehouses" },
+        { "name": "warehouse-storage-bins", "label": "Storage Bins" },
+        { "name": "price-list", "label": "Price Lists" },
+        { "name": "payment-term", "label": "Payment Terms" },
+        { "name": "payment-method", "label": "Payment Methods" },
+        { "name": "tax", "label": "Taxes" },
+        { "name": "uom", "label": "Units of Measure" },
+        { "name": "user", "label": "Users" }
       ]
     }
   ]
