@@ -1,16 +1,16 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar.jsx';
 import {
@@ -24,10 +24,13 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Truck,
+  Calculator,
   Package,
   Box,
   Users,
   Settings,
+  FolderKanban,
+  Target,
   LogOut,
 } from 'lucide-react';
 
@@ -35,52 +38,53 @@ const ICON_MAP = {
   LayoutDashboard,
   ShoppingCart,
   Truck,
+  Calculator,
   Package,
   Box,
   Users,
   Settings,
+  FolderKanban,
+  Target,
 };
 
-function NavMenuGroup({ group, icon, items }) {
+function NavMenuGroup({ group, icon, items, isActive }) {
   const Icon = ICON_MAP[icon] || Package;
 
   return (
-    <Collapsible defaultOpen className="group/collapsible">
-      <SidebarGroup className="p-0">
-        <SidebarGroupLabel asChild>
-          <CollapsibleTrigger className="flex w-full items-center gap-2">
+    <Collapsible asChild defaultOpen={isActive} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton tooltip={group}>
             <Icon className="h-4 w-4" />
-            <span className="flex-1 text-left">{group}</span>
-            <ChevronRight className="h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-          </CollapsibleTrigger>
-        </SidebarGroupLabel>
+            <span>{group}</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
         <CollapsibleContent>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild tooltip={item.label}>
-                    <NavLink
-                      to={`/${item.name}`}
-                      className={({ isActive }) => (isActive ? 'font-medium' : '')}
-                    >
-                      {({ isActive }) => (
-                        <span data-active={isActive || undefined}>{item.label}</span>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarMenuSub>
+            {items.map((item) => (
+              <SidebarMenuSubItem key={item.name}>
+                <SidebarMenuSubButton asChild>
+                  <NavLink
+                    to={`/${item.name}`}
+                    className={({ isActive: active }) => (active ? 'font-medium' : '')}
+                  >
+                    {item.label}
+                  </NavLink>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
         </CollapsibleContent>
-      </SidebarGroup>
+      </SidebarMenuItem>
     </Collapsible>
   );
 }
 
 export default function AppSidebar({ menuGroups }) {
   const { username, logout } = useAuth();
+  const location = useLocation();
+  const currentPath = location.pathname.replace(/^\//, '');
 
   return (
     <Sidebar collapsible="icon">
@@ -97,14 +101,17 @@ export default function AppSidebar({ menuGroups }) {
       </SidebarHeader>
 
       <SidebarContent>
-        {menuGroups.map((g) => (
-          <NavMenuGroup
-            key={g.group}
-            group={g.group}
-            icon={g.icon}
-            items={g.items}
-          />
-        ))}
+        <SidebarMenu>
+          {menuGroups.map((g) => (
+            <NavMenuGroup
+              key={g.group}
+              group={g.group}
+              icon={g.icon}
+              items={g.items}
+              isActive={g.items.some((item) => item.name === currentPath)}
+            />
+          ))}
+        </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
