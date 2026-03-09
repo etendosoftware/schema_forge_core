@@ -60,6 +60,7 @@ function mapFormFieldType(field) {
   if (field.type === 'boolean') return 'checkbox';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
+  if (/notes|description|comments|remarks/i.test(field.name)) return 'textarea';
   return 'text';
 }
 
@@ -239,14 +240,18 @@ export default function ${compName}(props) {
  * Generate the entry point / index component.
  * Accepts { token, apiBaseUrl, window } props.
  */
-export function generateIndexComponent(headerEntity, detailEntity) {
+export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
+  const category = contract?.frontendContract?.window?.category ?? 'general';
+  const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
   if (detailEntity) {
     return `import ${headerName}Page from './${headerName}Page';
 
+const windowMeta = { category: '${category}', name: '${windowName}' };
+
 export default function App({ token, apiBaseUrl, window }) {
-  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window} />;
+  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
 }
 `;
   }
@@ -256,6 +261,8 @@ import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: '${category}', name: '${windowName}' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -264,6 +271,7 @@ export default function App(props) {
       Form={${headerName}Form}
       catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
+      window={windowMeta}
       {...props}
     />
   );
@@ -326,6 +334,11 @@ const CATALOG_DATA = {
   UOM: Array.from({ length: 5 }, (_, i) => ({
     id: `uom-${String(i + 1).padStart(3, '0')}`,
     name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
+  })),
+  StorageBin: Array.from({ length: 10 }, (_, i) => ({
+    id: `sb-${String(i + 1).padStart(3, '0')}`,
+    name: ['A-01-01', 'A-01-02', 'A-02-01', 'A-02-02', 'B-01-01', 'B-01-02', 'B-02-01', 'B-02-02', 'C-01-01', 'C-01-02'][i],
+    warehouseId: `wh-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
   })),
   ProductCategory: Array.from({ length: 9 }, (_, i) => ({
     id: `cat-${String(i + 1).padStart(3, '0')}`,
@@ -414,7 +427,7 @@ export function generateAll(contract) {
   files['mockCatalogs.js'] = generateMockCatalogs(contract);
 
   // Always generate index
-  files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity);
+  files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity, contract);
 
   return files;
 }
