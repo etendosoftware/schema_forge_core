@@ -58,6 +58,8 @@ async function loadAllMockData() {
     import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
     import('@generated/payment-in/generated/web/payment-in/mockData.js'),
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
+    import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
+    import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
   ]);
 
   const merged = {};
