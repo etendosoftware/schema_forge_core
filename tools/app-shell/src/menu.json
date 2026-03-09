@@ -33,6 +33,17 @@
       ]
     },
     {
+      "group": "Accounting",
+      "icon": "Calculator",
+      "items": [
+        { "name": "accounting", "label": "Overview" },
+        { "name": "payment-in", "label": "Payments In" },
+        { "name": "payment-out", "label": "Payments Out" },
+        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
+        { "name": "chart-of-accounts", "label": "Chart of Accounts" }
+      ]
+    },
+    {
       "group": "Inventory",
       "icon": "Package",
       "items": [
