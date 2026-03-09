@@ -6,47 +6,28 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ShoppingCart, FileText, TrendingUp } from 'lucide-react';
 
-// -- KPI data ------------------------------------------------------------------
+import { sections, actions } from '@generated/sales/generated/config';
+import * as mockData from '@generated/sales/generated/mockData';
 
-const KPIS = [
-  { label: 'Total Quoted', value: 125400, format: 'currency', trend: 15, icon: FileText },
-  { label: 'Total Invoiced', value: 98200, format: 'currency', trend: 8, icon: TrendingUp },
-  { label: 'Pending Collection', value: 27300, format: 'currency', trend: -5, icon: ShoppingCart },
-  { label: 'Orders This Month', value: 23, format: 'number', trend: 3 },
-];
+// -- Icon resolution (config stores string names) -----------------------------
 
-// -- Kanban columns & seed cards -----------------------------------------------
+const ICON_MAP = { ShoppingCart, FileText, TrendingUp };
 
-const COLUMNS = [
-  { id: 'draft', title: 'Draft', color: 'gray' },
-  { id: 'sent', title: 'Sent', color: 'blue' },
-  { id: 'negotiation', title: 'Negotiation', color: 'yellow' },
-  { id: 'won', title: 'Won', color: 'green' },
-  { id: 'lost', title: 'Lost', color: 'red' },
-];
+// -- Derived data from contract -----------------------------------------------
 
-const INITIAL_CARDS = [
-  { id: 'QT-001', columnId: 'draft', title: 'QT-2026-0089', subtitle: 'Empresa ABC S.L.', value: 8500, badges: ['Priority'] },
-  { id: 'QT-002', columnId: 'draft', title: 'QT-2026-0090', subtitle: 'Tech Solutions', value: 3200 },
-  { id: 'QT-003', columnId: 'sent', title: 'QT-2026-0085', subtitle: 'Global Trade Ltd', value: 15000, badges: ['VIP'] },
-  { id: 'QT-004', columnId: 'sent', title: 'QT-2026-0087', subtitle: 'Madrid Logistics', value: 4800 },
-  { id: 'QT-005', columnId: 'negotiation', title: 'QT-2026-0082', subtitle: 'Barcelona Foods', value: 22000, badges: ['Priority', 'VIP'], priority: 3 },
-  { id: 'QT-006', columnId: 'negotiation', title: 'QT-2026-0084', subtitle: 'Sevilla Motors', value: 6700, priority: 2 },
-  { id: 'QT-007', columnId: 'won', title: 'QT-2026-0078', subtitle: 'Valencia Exports', value: 18500 },
-  { id: 'QT-008', columnId: 'won', title: 'QT-2026-0080', subtitle: 'Bilbao Tech', value: 9200 },
-  { id: 'QT-009', columnId: 'lost', title: 'QT-2026-0076', subtitle: 'Zaragoza Industrial', value: 5400 },
-];
+const KPIS = sections.kpis.kpis.map((k) => ({
+  ...k,
+  value: mockData.kpis[k.key],
+  trend: mockData.kpis.trends?.[k.key],
+  icon: ICON_MAP[k.icon],
+}));
 
-// -- Status label / color helpers for the list view ----------------------------
+const COLUMNS = sections.pipeline.columns;
+const INITIAL_CARDS = mockData.pipeline;
 
-const STATUS_LABEL = {
-  draft: 'Draft',
-  sent: 'Sent',
-  negotiation: 'Negotiation',
-  won: 'Won',
-  lost: 'Lost',
-};
+const STATUS_LABEL = Object.fromEntries(COLUMNS.map((c) => [c.id, c.title]));
 
+// UI-presentation mapping — kept inline because it's view logic, not data.
 const STATUS_VARIANT = {
   draft: 'secondary',
   sent: 'default',
@@ -89,9 +70,11 @@ export default function SalesPage() {
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Sales</h1>
-        <Button asChild>
-          <Link to="/sales-quotation">+ New Quotation</Link>
-        </Button>
+        {actions.map((action) => (
+          <Button key={action.route} asChild>
+            <Link to={action.route}>{action.label}</Link>
+          </Button>
+        ))}
       </div>
 
       {/* KPIs */}
