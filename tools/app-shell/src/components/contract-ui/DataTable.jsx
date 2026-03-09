@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox } from 'lucide-react';
+import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 
 /**
  * Map a status string to a Badge variant and optional className override.
@@ -83,7 +84,7 @@ function EmptyState({ hasFilter, totalCount }) {
  *  - compact: boolean (reserved for narrower layout)
  *  - loading: boolean (shows skeleton when true)
  */
-export function DataTable({ columns = [], filters = [], data = [], onRowSelect, selectedId, compact, loading }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, selectedId, compact, loading }) {
   const [filterValues, setFilterValues] = useState({});
 
   const setFilter = (key, value) => {
@@ -155,7 +156,9 @@ export function DataTable({ columns = [], filters = [], data = [], onRowSelect, 
             <TableRow className="border-b-2 border-primary/20 bg-muted/40">
               {columns.map(col => (
                 <TableHead key={col.key} className="text-xs font-medium text-blue-800 uppercase tracking-wider">
-                  {col.label}
+                  <FieldHighlight entityName={entity} fieldName={col.key}>
+                    {col.label}
+                  </FieldHighlight>
                 </TableHead>
               ))}
             </TableRow>
