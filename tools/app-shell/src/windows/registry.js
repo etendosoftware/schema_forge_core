@@ -33,6 +33,9 @@ const windowLoaders = {
   'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
   'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
   'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
+  'deal': () => import('@generated/deal/generated/web/deal/index.jsx'),
+  'activity': () => import('@generated/activity/generated/web/activity/index.jsx'),
+  'lead': () => import('@generated/lead/generated/web/lead/index.jsx'),
 };
 
 /**

@@ -63,6 +63,16 @@
       ]
     },
     {
+      "group": "CRM",
+      "icon": "Target",
+      "items": [
+        { "name": "crm", "label": "Overview" },
+        { "name": "deal", "label": "Deals" },
+        { "name": "activity", "label": "Activities" },
+        { "name": "lead", "label": "Leads" }
+      ]
+    },
+    {
       "group": "Products",
       "icon": "Box",
       "items": [
