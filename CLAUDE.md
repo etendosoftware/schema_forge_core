@@ -121,89 +121,169 @@ When the Schema Forge repository (project analyzer) is on a feature branch (e.g.
 
 ## Project Overview
 
-**Schema Forge** transforms Etendo ERP metadata and business rules into complete web applications. Humans make business decisions; AI generates production code. The output is a standard Etendo module (Java backend + React SPA frontend) that runs natively on the Etendo platform.
+**Schema Forge** is the design and tooling layer for building a simplified Etendo interface. It contains documentation, CLI tools, decision UIs, templates, and per-window artifacts. Schema Forge analyzes Etendo metadata, helps humans make design decisions, and configures the runtime module.
+
+**com.etendoerp.go** (Etendo Go) is the runtime implementation — a metadata-driven REST API layer (`NEO Headless`) that runs inside Etendo. It exposes AD Windows and Processes as JSON APIs based on configuration stored in 3 database tables (`ETGO_SF_SPEC`, `ETGO_SF_ENTITY`, `ETGO_SF_FIELD`).
+
+```
+┌─────────────────────────────────┐          ┌──────────────────────────────────┐
+│         SCHEMA FORGE            │          │        com.etendoerp.go          │
+│     (design + tooling)          │          │     (runtime implementation)     │
+│                                 │          │                                  │
+│  cli/        → extractors,      │  writes  │  NeoServlet (/sws/neo/*)         │
+│                validators,      │ ──────▶  │  NeoSelectorService              │
+│                generators       │  via     │  NeoProcessService               │
+│  tools/      → decision UIs     │  webhooks│  NeoHandler (CDI hooks)          │
+│  templates/  → code templates   │          │  PopulateSpecHelper              │
+│  artifacts/  → per-window data  │          │  4 webhooks (upsert/populate)    │
+│  docs/       → PRD, TDD, AD ref │          │                                  │
+│  core-maps/  → shared metadata  │          │  Tables: ETGO_SF_SPEC            │
+│  pending/    → future proposals │          │          ETGO_SF_ENTITY           │
+│                                 │          │          ETGO_SF_FIELD            │
+└─────────────────────────────────┘          └──────────────────────────────────┘
+     This repository                          /modules/com.etendoerp.go/
+```
+
+**Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime.
+
+### Two Repositories, One System
+
+| Aspect | Schema Forge (this repo) | Etendo Go (modules/) |
+|--------|--------------------------|----------------------|
+| **Role** | Design, analysis, tooling, documentation | Runtime API engine |
+| **Language** | Node.js (CLI), React (UIs) | Java (Etendo module) |
+| **Output** | Artifacts, configs, webhook calls | Live REST endpoints |
+| **Changes** | Frequently (every design iteration) | Rarely (engine is stable) |
+| **Path** | `schema_forge/` | `modules/com.etendoerp.go/` |
+| **Docs** | `docs/architecture-overview.md` | `docs/neo-headless.md` (API reference) |
+
+See `docs/architecture-overview.md` for the full system architecture.
 
 ## Architecture
 
 ### Two-Loop System
 
 - **Fast Loop (UI, seconds):** Human <-> AI generating React components. Preview via sandboxed iframe with Babel standalone + mock data. No compilation, no backend.
-- **Validation Loop (Backend, minutes):** Generate Java + XML -> contract tests (Node.js, instant) -> compile module (gradlew) -> integration tests (JUnit/OBBaseTest).
+- **Validation Loop (Backend, minutes):** Configure via webhooks → contract tests (Node.js, instant) → verify endpoints live.
 
 ### Stack
 
-| Layer | Technology |
-|-------|-----------|
-| CLI tools | Node.js (zero-dependency) |
-| Decision tools | React web apps |
-| AI integration | Claude Code subagents + skills (no direct API) |
-| Generated backend | Java (Etendo module: OBDal, event handlers, processes, Etendo RX endpoints) |
-| Generated frontend | React SPA |
-| Contract tests | Node.js (JSON assertions) |
-| Integration tests | JUnit (extends OBBaseTest) |
+| Layer | Technology | Location |
+|-------|-----------|----------|
+| CLI tools | Node.js (zero-dependency) | Schema Forge `cli/` |
+| Decision tools | React web apps | Schema Forge `tools/` |
+| AI integration | Claude Code subagents + skills | Schema Forge |
+| Runtime API | Java (NeoServlet, OBDal, CDI) | Etendo Go |
+| Configuration | Webhooks → ETGO_SF_* tables | Etendo Go |
+| Contract tests | Node.js (JSON assertions) | Schema Forge |
+| Integration tests | JUnit (extends OBBaseTest) | Etendo Go |
 
 ### Repository Structure
 
 ```
-schema-forge/
-├── cli/                          # Node.js CLI tools (extractors, validators, generators)
-├── tools/                        # React web apps for human decisions
-│   ├── decision-editor/          # Field visibility decisions
-│   ├── rule-catalog/             # Business rule decisions (Keep/Replace/Simplify/Omit)
-│   ├── ui-generator/             # Conversational AI UI design
-│   ├── process-designer/         # Process definition (JSON in MVP)
-│   └── permission-matrix/        # Role-based access configuration
-├── templates/etendo-module/      # Java/XML templates for code generation
-├── artifacts/{window-name}/      # Per-window: schemas, rules, decisions, generated code
-├── core-maps/                    # system-columns.json, impact-messages.json
-└── docs/                         # PRD and TDD documents
-    └── etendo-ad/                # General Etendo AD reference (not window-specific)
+schema-forge/                             # THIS REPO — design + tooling
+├── cli/                                  # Node.js CLI tools
+│   └── src/
+│       ├── extract-from-db.js            # Extract fields + rules from Etendo DB
+│       ├── extract-fields.js             # Field extraction with FK resolution
+│       ├── extract-rules.js              # Rule + callout extraction
+│       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
+│       ├── validate-schema.js            # 4-level validation
+│       ├── generate-contract.js          # Frontend/backend contracts
+│       ├── generate-backend.js           # Java code generation (templates)
+│       ├── generate-frontend.js          # React SPA generation
+│       ├── generate-mock-data.js         # Mock catalogs for UI preview
+│       ├── run-contract-tests.js         # Contract test runner
+│       └── pipeline.js                   # Full extraction-to-generation pipeline
+├── tools/                                # React decision UIs
+│   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
+│   ├── decision-panel/                   # Field visibility + rule curation
+│   └── ui-preview/                       # Live preview with mock data
+├── templates/etendo-module/              # Handlebars templates for code generation
+├── artifacts/{window-name}/              # Per-window: schemas, rules, decisions, generated code
+├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
+├── pending/                              # Future proposals (callouts, OpenAPI registration)
+└── docs/                                 # All documentation
+    ├── architecture-overview.md          # System architecture (Schema Forge + Etendo Go)
+    ├── PRD.md / TDD.md                   # Product + technical design
+    ├── PRD-anex.md / TDD-anex.md         # API versioning model
+    ├── etendo-ad/                        # Etendo AD reference (schema mappings, processes, display logic)
+    └── plans/                            # Feature plans and evaluations
 ```
 
-### Key Data Flow (Pipeline)
+### Key Data Flow
 
 ```
-Etendo Metadata -> Field Extractor + Rule Extractor (auto)
-    -> Schema + Rule Catalog (AI pre-classifies ~60%, human reviews ~40%)
-    -> Decision Editor + Rule Catalog (human curates)
-    -> UI Generator + Process Designer + Permission Matrix
-    -> Contract Generator (~245 auto tests)
-    -> Generated Etendo Module (Java backend + React frontend)
+Etendo AD Metadata
+    │
+    ▼
+Schema Forge CLI (extract-from-db.js)
+    │ Extracts fields, rules, callouts, FK references
+    ▼
+Per-Window Artifacts (artifacts/{window}/)
+    │ schema-curated.json, rules-curated.json
+    ▼
+Decision UIs (tools/decision-panel/)
+    │ Human curates: visibility, rule decisions
+    ▼
+Schema Forge Webhooks → Etendo Go DB tables
+    │ ETGO_SF_SPEC, ETGO_SF_ENTITY, ETGO_SF_FIELD
+    ▼
+NEO Headless Runtime (NeoServlet at /sws/neo/*)
+    │ Serves CRUD, selectors, processes — live, no compilation
+    ▼
+React SPA (generated frontend)
+    Consumes NEO Headless API
 ```
 
-### Three Independent Versions
+## Runtime Module: com.etendoerp.go
 
-- `moduleVersion`: increments on every regeneration
-- `apiVersion`: increments when DTO shape changes (frontend cares about this)
-- `behavioralVersion`: increments when rules/processes change (tests care about this)
+The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentation: `modules/com.etendoerp.go/docs/neo-headless.md`.
+
+### Key Components
+
+| Component | Purpose |
+|-----------|---------|
+| `NeoServlet` (953 lines) | Main HTTP servlet at `/sws/neo/*`. JWT auth, path parsing, routing. |
+| `NeoSelectorService` (825 lines) | FK dropdown resolution (TableDir, Table, Search, OBUISEL). |
+| `NeoProcessService` (564 lines) | Process execution (OBUIAPP + Classic). |
+| `NeoHandler` (interface) | CDI hook for custom logic. Return `NeoResponse` or `null` to fall through. |
+| `NeoContext` / `NeoResponse` | Request context (builder) and response wrapper. |
+| `PopulateSpecHelper` | Auto-populate entities/fields from AD metadata. |
+| 4 webhooks | `SFUpsertSpec`, `SFUpsertEntity`, `SFUpsertField`, `SFPopulateSpec` |
+
+### Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `ETGO_SF_SPEC` | Top-level spec. Links to AD_Window (CRUD) or AD_Process (POST-only). |
+| `ETGO_SF_ENTITY` | Tab/entity within a spec. HTTP method flags + optional CDI hook qualifier. |
+| `ETGO_SF_FIELD` | Column/parameter within an entity. Included/excluded, read-only flag. |
+
+### URL Patterns
+
+```
+/sws/neo/{specName}/{entityName}                    # GET list / POST create
+/sws/neo/{specName}/{entityName}/{recordId}          # GET by ID / PUT / PATCH / DELETE
+/sws/neo/{specName}/{entityName}/selectors           # GET FK selector list
+/sws/neo/{specName}/{entityName}/selectors/{column}  # GET selector values
+/sws/neo/{specName}/{entityName}/{recordId}/action   # GET button actions / POST execute
+/sws/neo/{specName}                                  # Process specs (GET describe / POST execute)
+```
 
 ## Core Domain Concepts
 
 - **Schema curado**: JSON with fields classified by visibility (editable/readOnly/system/discarded) and derivation rules
 - **Rules curadas**: Business rule catalog with human decisions (Keep/Replace/Simplify/Omit)
 - **Visibility model**: editable (user input), readOnly (display), system (auto-derived, hidden), discarded (ignored)
-- **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence — executed in generated event handlers (beforeSave)
+- **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence
 - **OBDal transactions**: single DB transaction, all-or-nothing rollback. No Sagas.
-
-## Generated Module Structure
-
-```
-com.etendo.schemaforge.{window}/
-├── event/          # Event handlers (shared, not versioned)
-├── process/        # AD_Process classes (shared)
-├── callout/        # Callouts (shared)
-├── validation/     # Precondition validators (shared)
-├── dto/v{n}/       # Versioned DTOs
-├── api/v{n}/       # Versioned Etendo RX endpoints
-├── mapper/v{n}/    # OBDal entity <-> DTO mappers
-├── referencedata/  # XML dataset
-└── web/{window}/   # React SPA (targets one API version)
-```
 
 ## Testing
 
-- **Contract tests (~145, Node.js):** Run against JSON contract. No backend needed. Cover field presence, types, visibility, searchable filters, interface match.
-- **Integration/behavioral tests (~100, JUnit):** Run inside Etendo (OBBaseTest). Cover real transactions, derivations, processes, permissions, edge cases.
+- **Contract tests (Node.js):** Run against JSON contract in Schema Forge. No backend needed. Cover field presence, types, visibility, searchable filters.
+- **Unit tests (JUnit):** In Etendo Go module. Cover path parsing, context builder, tab filtering.
+- **Integration tests (JUnit):** Run inside Etendo (OBBaseTest). Cover real transactions, derivations, processes, permissions.
 - Every process must declare at least 3 edge cases.
 - Every kept rule must have a behavioral test.
 
