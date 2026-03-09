@@ -10,71 +10,38 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Users, Search, Mail, Phone, MapPin, X, Plus } from 'lucide-react';
 
-const COLUMNS = [
-  { id: 'customer', title: 'Customers', color: 'blue' },
-  { id: 'vendor', title: 'Vendors', color: 'green' },
-  { id: 'both', title: 'Customer & Vendor', color: 'purple' },
-  { id: 'prospect', title: 'Prospects', color: 'yellow' },
-];
+import { kpisConfig, sections, actions } from '@generated/contacts/generated/config';
+import * as mockData from '@generated/contacts/generated/mockData';
 
-const ALL_CONTACTS = [
-  { id: 'BP-001', columnId: 'customer', title: 'Empresa ABC S.L.', subtitle: 'Madrid, Spain', avatar: 'E', badges: ['VIP'], value: 52000 },
-  { id: 'BP-002', columnId: 'customer', title: 'Tech Solutions', subtitle: 'Barcelona, Spain', avatar: 'T', value: 28000 },
-  { id: 'BP-003', columnId: 'customer', title: 'Global Trade Ltd', subtitle: 'London, UK', avatar: 'G', badges: ['VIP'], value: 85000 },
-  { id: 'BP-004', columnId: 'vendor', title: 'Suministros Garcia', subtitle: 'Valencia, Spain', avatar: 'S' },
-  { id: 'BP-005', columnId: 'vendor', title: 'Nordic Components', subtitle: 'Stockholm, Sweden', avatar: 'N' },
-  { id: 'BP-006', columnId: 'both', title: 'Iberica Industrial', subtitle: 'Bilbao, Spain', avatar: 'I', value: 34000 },
-  { id: 'BP-007', columnId: 'both', title: 'Mediterranean Foods', subtitle: 'Sevilla, Spain', avatar: 'M', value: 15000 },
-  { id: 'BP-008', columnId: 'prospect', title: 'StartupXYZ', subtitle: 'Remote', avatar: 'S' },
-  { id: 'BP-009', columnId: 'prospect', title: 'New Retail Co', subtitle: 'Malaga, Spain', avatar: 'N' },
-  { id: 'BP-010', columnId: 'customer', title: 'Zaragoza Motors', subtitle: 'Zaragoza, Spain', avatar: 'Z', value: 19000 },
-];
+// -- Icon map (string name -> component) --------------------------------------
 
-const KPIS = [
-  { label: 'Total Contacts', value: 156, format: 'number', icon: Users },
-  { label: 'Customers', value: 89, format: 'number', trend: 5 },
-  { label: 'Vendors', value: 42, format: 'number' },
-  { label: 'Pending Balance', value: 27300, format: 'currency', trend: -8 },
-];
+const ICON_MAP = { Users };
 
-const MOCK_EMAILS = {
-  'BP-001': 'contact@empresaabc.es',
-  'BP-002': 'info@techsolutions.com',
-  'BP-003': 'sales@globaltrade.co.uk',
-  'BP-004': 'pedidos@suministrosgarcia.es',
-  'BP-005': 'order@nordiccomponents.se',
-  'BP-006': 'admin@ibericaindustrial.es',
-  'BP-007': 'hello@medfoods.es',
-  'BP-008': 'hi@startupxyz.io',
-  'BP-009': 'info@newretailco.es',
-  'BP-010': 'ventas@zaragozamotors.es',
-};
+// -- Derived data from aggregate contract -------------------------------------
 
-const MOCK_PHONES = {
-  'BP-001': '+34 91 555 1234',
-  'BP-002': '+34 93 444 5678',
-  'BP-003': '+44 20 7946 0958',
-  'BP-004': '+34 96 333 4567',
-  'BP-005': '+46 8 123 4567',
-  'BP-006': '+34 94 222 3456',
-  'BP-007': '+34 95 111 2345',
-  'BP-008': '+1 555 987 6543',
-  'BP-009': '+34 95 666 7890',
-  'BP-010': '+34 97 888 9012',
-};
+// kpisConfig is empty for contacts; KPIs live in sections.kpis.kpis
+const kpisDef = (kpisConfig.length > 0 ? kpisConfig : sections.kpis?.kpis) || [];
 
-const CHATTER_MESSAGES = [
-  { id: '1', author: 'Ana Garcia', text: 'Renewed annual contract for $52,000', timestamp: '2026-03-08T10:30:00', type: 'note' },
-  { id: '2', author: 'System', text: 'Invoice INV-0142 sent via email', timestamp: '2026-03-07T14:00:00', type: 'system' },
-  { id: '3', author: 'Pedro Lopez', text: 'Meeting scheduled for Q2 review', timestamp: '2026-03-05T09:00:00', type: 'note' },
-];
+const KPIS = kpisDef.map((k) => ({
+  ...k,
+  value: mockData.kpis[k.key],
+  trend: mockData.kpis.trends?.[k.key],
+  icon: ICON_MAP[k.icon],
+}));
 
-const CATEGORY_LABEL = {
-  customer: 'Customer',
-  vendor: 'Vendor',
-  both: 'Customer & Vendor',
-  prospect: 'Prospect',
-};
+const COLUMNS = sections.directory.columns;
+const ALL_CONTACTS = mockData.directory;
+const CHATTER_MESSAGES = mockData.notes;
+const CATEGORY_LABEL = Object.fromEntries(COLUMNS.map((c) => [c.id, c.title]));
+
+// Build email/phone maps by matching directory entries to contactList rows by name
+const contactByName = Object.fromEntries(mockData.contactList.map((c) => [c.name, c]));
+const MOCK_EMAILS = Object.fromEntries(
+  mockData.directory.map((d) => [d.id, contactByName[d.title]?.email || ''])
+);
+const MOCK_PHONES = Object.fromEntries(
+  mockData.directory.map((d) => [d.id, contactByName[d.title]?.phone || ''])
+);
 
 function formatCurrency(value) {
   if (value == null) return '-';
@@ -256,9 +223,9 @@ export default function ContactsPage() {
               />
             </div>
             <Button asChild>
-              <Link to="/business-partner">
+              <Link to={actions[0].route}>
                 <Plus className="h-4 w-4 mr-1.5" />
-                New Contact
+                {actions[0].label}
               </Link>
             </Button>
           </div>
