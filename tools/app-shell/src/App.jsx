@@ -11,6 +11,7 @@ import ContactsPage from './pages/ContactsPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PurchasesPage from './pages/PurchasesPage.jsx';
 import AccountingPage from './pages/AccountingPage.jsx';
+import ReportsPage from './pages/ReportsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 
@@ -55,6 +56,8 @@ async function loadAllMockData() {
     import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
     import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
     import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
+    import('@generated/payment-in/generated/web/payment-in/mockData.js'),
+    import('@generated/payment-out/generated/web/payment-out/mockData.js'),
   ]);
 
   const merged = {};
@@ -102,6 +105,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
