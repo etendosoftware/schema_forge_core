@@ -42,6 +42,11 @@ const windowLoaders = {
   'time-tracking': () => import('@generated/time-tracking/generated/web/time-tracking/index.jsx'),
   'document': () => import('@generated/document/generated/web/document/index.jsx'),
   'recurring-invoice': () => import('@generated/recurring-invoice/generated/web/recurring-invoice/index.jsx'),
+  'payment-in': () => import('@generated/payment-in/generated/web/payment-in/index.jsx'),
+  'payment-out': () => import('@generated/payment-out/generated/web/payment-out/index.jsx'),
+  'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
+  'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
+  'bp-location': () => import('@generated/bp-location/generated/web/bp-location/index.jsx'),
 };
 
 /**

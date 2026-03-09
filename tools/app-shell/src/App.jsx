@@ -66,6 +66,16 @@ async function loadAllMockData() {
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
+    import('@generated/deal/generated/web/deal/mockData.js'),
+    import('@generated/activity/generated/web/activity/mockData.js'),
+    import('@generated/lead/generated/web/lead/mockData.js'),
+    import('@generated/employee/generated/web/employee/mockData.js'),
+    import('@generated/time-tracking/generated/web/time-tracking/mockData.js'),
+    import('@generated/absence/generated/web/absence/mockData.js'),
+    import('@generated/project/generated/web/project/mockData.js'),
+    import('@generated/document/generated/web/document/mockData.js'),
+    import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
+    import('@generated/bp-location/generated/web/bp-location/mockData.js'),
   ]);
 
   const merged = {};
