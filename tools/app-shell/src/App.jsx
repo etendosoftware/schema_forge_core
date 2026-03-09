@@ -13,6 +13,8 @@ import PurchasesPage from './pages/PurchasesPage.jsx';
 import AccountingPage from './pages/AccountingPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import CrmPage from './pages/CrmPage.jsx';
+import HrPage from './pages/HrPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 
@@ -110,6 +112,8 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="accounting" element={<AccountingPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="crm" element={<CrmPage />} />
+        <Route path="hr" element={<HrPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}
