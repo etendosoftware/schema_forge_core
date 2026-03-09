@@ -1,16 +1,23 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
+  capitalize,
+  toLabel,
+  getProcessesForEntity,
+  getReadOnlyFields,
   generateTableComponent,
   generateFormComponent,
   generatePageComponent,
   generateIndexComponent,
-  generateAll,
-  getReadOnlyFields,
   generateMockCatalogs,
+  generateAll,
 } from '../src/generate-frontend.js';
 
-const sampleContract = {
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+const masterDetailContract = {
   frontendContract: {
     window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
     entities: {
@@ -23,6 +30,7 @@ const sampleContract = {
           { name: 'priceList', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'PriceList', inputMode: 'selector' },
           { name: 'grandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
           { name: 'docStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'adClientId', type: 'id', tsType: 'string', visibility: 'system', required: true, grid: false, form: false },
         ],
         searchableFields: ['documentNo', 'businessPartner', 'docStatus'],
         computedFields: [],
@@ -47,306 +55,747 @@ const sampleContract = {
   },
 };
 
-describe('generateTableComponent', () => {
-  it('generates thin component importing from contract-ui', () => {
-    const code = generateTableComponent('order', sampleContract);
-    assert.ok(code.includes("import { DataTable } from '@/components/contract-ui'"), 'should import DataTable from contract-ui');
-    assert.ok(code.includes('export default function OrderTable'), 'should export OrderTable');
-    assert.ok(code.includes('<DataTable'), 'should render DataTable component');
+const singleEntityContract = {
+  frontendContract: {
+    window: { id: '1', name: 'Simple Item', primaryEntity: 'item', category: 'reference' },
+    entities: {
+      item: {
+        fields: [
+          { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'description', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+          { name: 'amount', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+          { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'adClientId', type: 'id', tsType: 'string', visibility: 'system', required: true, grid: false, form: false },
+        ],
+        searchableFields: ['name'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+const booleanContract = {
+  frontendContract: {
+    window: { id: '203', name: 'Price List', primaryEntity: 'priceList', category: 'reference' },
+    entities: {
+      priceList: {
+        fields: [
+          { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'isDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: false, form: true },
+          { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['name'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+// ---------------------------------------------------------------------------
+// Helper functions
+// ---------------------------------------------------------------------------
+
+describe('capitalize', () => {
+  it('capitalizes the first letter of a string', () => {
+    assert.equal(capitalize('order'), 'Order');
   });
 
-  it('declares columns array with correct entries', () => {
-    const code = generateTableComponent('order', sampleContract);
-    assert.ok(code.includes("key: 'documentNo'"), 'should have documentNo column');
-    assert.ok(code.includes("label: 'Document No'"), 'should have Document No label');
-    assert.ok(code.includes("key: 'businessPartner'"), 'should have businessPartner column');
-    assert.ok(code.includes("key: 'grandTotal'"), 'should have grandTotal column');
-    assert.ok(code.includes("type: 'amount'"), 'should mark grandTotal as amount type');
-    assert.ok(code.includes("type: 'status'"), 'should mark docStatus as status type');
+  it('returns empty string for empty input', () => {
+    assert.equal(capitalize(''), '');
+  });
+
+  it('returns empty string for null/undefined', () => {
+    assert.equal(capitalize(null), '');
+    assert.equal(capitalize(undefined), '');
+  });
+
+  it('preserves the rest of the string as-is', () => {
+    assert.equal(capitalize('orderLine'), 'OrderLine');
+  });
+
+  it('handles single character strings', () => {
+    assert.equal(capitalize('a'), 'A');
+  });
+});
+
+describe('toLabel', () => {
+  it('converts camelCase to Title Case with spaces', () => {
+    assert.equal(toLabel('orderLine'), 'Order Line');
+  });
+
+  it('capitalizes first letter of simple names', () => {
+    assert.equal(toLabel('name'), 'Name');
+  });
+
+  it('returns empty string for empty/null input', () => {
+    assert.equal(toLabel(''), '');
+    assert.equal(toLabel(null), '');
+    assert.equal(toLabel(undefined), '');
+  });
+
+  it('handles multi-word camelCase', () => {
+    assert.equal(toLabel('lineNetAmount'), 'Line Net Amount');
+  });
+
+  it('handles already capitalized input', () => {
+    assert.equal(toLabel('Order'), 'Order');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getProcessesForEntity
+// ---------------------------------------------------------------------------
+
+describe('getProcessesForEntity', () => {
+  it('returns processes matching the entity', () => {
+    const procs = getProcessesForEntity(masterDetailContract, 'order');
+    assert.equal(procs.length, 2);
+    assert.equal(procs[0].name, 'completeOrder');
+    assert.equal(procs[1].name, 'voidOrder');
+  });
+
+  it('returns empty array when entity has no processes', () => {
+    const procs = getProcessesForEntity(masterDetailContract, 'orderLine');
+    assert.equal(procs.length, 0);
+  });
+
+  it('returns empty array when processEndpoints is missing', () => {
+    const contract = { backendContract: {} };
+    const procs = getProcessesForEntity(contract, 'order');
+    assert.equal(procs.length, 0);
+  });
+
+  it('returns empty array when backendContract is missing', () => {
+    const contract = {};
+    const procs = getProcessesForEntity(contract, 'order');
+    assert.equal(procs.length, 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getReadOnlyFields
+// ---------------------------------------------------------------------------
+
+describe('getReadOnlyFields', () => {
+  it('returns only form fields with readOnly visibility', () => {
+    const fields = getReadOnlyFields(masterDetailContract, 'order');
+    assert.ok(fields.length > 0, 'should find readOnly fields');
+    assert.ok(fields.every(f => f.visibility === 'readOnly'), 'all should be readOnly');
+    assert.ok(fields.every(f => f.form === true), 'all should be form fields');
+  });
+
+  it('includes documentNo, grandTotal, docStatus for order', () => {
+    const fields = getReadOnlyFields(masterDetailContract, 'order');
+    const names = fields.map(f => f.name);
+    assert.ok(names.includes('documentNo'));
+    assert.ok(names.includes('grandTotal'));
+    assert.ok(names.includes('docStatus'));
+  });
+
+  it('does not include editable or system fields', () => {
+    const fields = getReadOnlyFields(masterDetailContract, 'order');
+    const names = fields.map(f => f.name);
+    assert.ok(!names.includes('businessPartner'), 'editable field should not be included');
+    assert.ok(!names.includes('adClientId'), 'system field should not be included');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateTableComponent
+// ---------------------------------------------------------------------------
+
+describe('generateTableComponent', () => {
+  it('imports DataTable from contract-ui', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes("import { DataTable } from '@/components/contract-ui'"));
+  });
+
+  it('exports a named component with PascalCase entity name + Table', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes('export default function OrderTable'));
+  });
+
+  it('renders DataTable with columns, filters, and spread props', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes('<DataTable'));
+    assert.ok(code.includes('columns={columns}'));
+    assert.ok(code.includes('filters={filters}'));
+    assert.ok(code.includes('{...props}'));
+  });
+
+  it('includes only grid:true fields as columns', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    // grid:true fields
+    assert.ok(code.includes("key: 'documentNo'"));
+    assert.ok(code.includes("key: 'businessPartner'"));
+    assert.ok(code.includes("key: 'grandTotal'"));
+    assert.ok(code.includes("key: 'docStatus'"));
+    // grid:false fields
+    assert.ok(!code.includes("key: 'partnerAddress'"));
+    assert.ok(!code.includes("key: 'warehouse'"));
+    assert.ok(!code.includes("key: 'priceList'"));
+    // system fields (grid:false)
+    assert.ok(!code.includes("key: 'adClientId'"));
+  });
+
+  it('maps column types correctly', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    // grandTotal is amount
+    assert.ok(code.includes("key: 'grandTotal', label: 'Grand Total', type: 'amount'"));
+    // docStatus name includes "status" -> status type
+    assert.ok(code.includes("type: 'status'"));
+  });
+
+  it('generates correct labels from camelCase field names', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes("label: 'Document No'"));
+    assert.ok(code.includes("label: 'Business Partner'"));
+    assert.ok(code.includes("label: 'Grand Total'"));
   });
 
   it('declares filters array from searchableFields', () => {
-    const code = generateTableComponent('order', sampleContract);
-    assert.ok(code.includes("'documentNo'"), 'should include documentNo filter');
-    assert.ok(code.includes("'businessPartner'"), 'should include businessPartner filter');
-    assert.ok(code.includes("'docStatus'"), 'should include docStatus filter');
-    assert.ok(code.includes('const filters'), 'should declare filters array');
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes("'documentNo'"));
+    assert.ok(code.includes("'businessPartner'"));
+    assert.ok(code.includes("'docStatus'"));
   });
 
-  it('passes columns and filters as props to DataTable', () => {
-    const code = generateTableComponent('order', sampleContract);
-    assert.ok(code.includes('columns={columns}'), 'should pass columns prop');
-    assert.ok(code.includes('filters={filters}'), 'should pass filters prop');
-    assert.ok(code.includes('{...props}'), 'should spread remaining props');
+  it('handles entity with no searchable fields', () => {
+    const contract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generateTableComponent('test', contract);
+    assert.ok(code.includes('const filters = []'));
   });
 
-  it('does NOT contain inline CSS classes (moved to generic components)', () => {
-    const code = generateTableComponent('order', sampleContract);
-    assert.ok(!code.includes('hover:bg-primary'), 'should NOT have hover classes inline');
-    assert.ok(!code.includes('bg-muted/30'), 'should NOT have zebra classes inline');
-    assert.ok(!code.includes('rounded-lg border overflow-hidden'), 'should NOT have container classes inline');
-    assert.ok(!code.includes('text-blue-800'), 'should NOT have header classes inline');
-    assert.ok(!code.includes('pl-8'), 'should NOT have filter padding inline');
-    assert.ok(!code.includes('lucide-react'), 'should NOT import from lucide-react');
+  it('maps boolean fields to boolean type in columns', () => {
+    const code = generateTableComponent('priceList', booleanContract);
+    assert.ok(code.includes("type: 'boolean'"));
+    assert.ok(code.includes("key: 'isActive'"));
   });
 
-  it('does NOT contain inline state management', () => {
-    const code = generateTableComponent('order', sampleContract);
-    assert.ok(!code.includes('useState'), 'should NOT have useState (handled by DataTable)');
-    assert.ok(!code.includes('filteredData'), 'should NOT have filteredData logic inline');
+  it('maps number/integer fields to number type', () => {
+    const code = generateTableComponent('orderLine', masterDetailContract);
+    assert.ok(code.includes("key: 'quantity', label: 'Quantity', type: 'number'"));
+  });
+
+  it('does NOT contain inline CSS classes', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(!code.includes('hover:bg-primary'));
+    assert.ok(!code.includes('bg-muted'));
+    assert.ok(!code.includes('rounded-lg'));
+    assert.ok(!code.includes('lucide-react'));
+  });
+
+  it('does NOT contain state management hooks', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(!code.includes('useState'));
+    assert.ok(!code.includes('filteredData'));
   });
 });
+
+// ---------------------------------------------------------------------------
+// generateFormComponent
+// ---------------------------------------------------------------------------
 
 describe('generateFormComponent', () => {
-  it('generates thin component importing from contract-ui', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("import { EntityForm } from '@/components/contract-ui'"), 'should import EntityForm from contract-ui');
-    assert.ok(code.includes('export default function OrderForm'), 'should export OrderForm');
-    assert.ok(code.includes('<EntityForm'), 'should render EntityForm component');
+  it('imports EntityForm from contract-ui', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes("import { EntityForm } from '@/components/contract-ui'"));
   });
 
-  it('declares fields array with only editable fields', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("key: 'businessPartner'"), 'should include editable businessPartner');
-    assert.ok(!code.includes("key: 'documentNo'"), 'should NOT include readOnly documentNo');
-    assert.ok(!code.includes("key: 'docStatus'"), 'should NOT include readOnly docStatus');
-    assert.ok(!code.includes("key: 'grandTotal'"), 'should NOT include readOnly grandTotal');
+  it('exports a named component with PascalCase entity name + Form', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes('export default function OrderForm'));
   });
 
-  it('includes required flag on required fields', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("required: true"), 'should mark required fields');
+  it('renders EntityForm with fields and spread props', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes('<EntityForm'));
+    assert.ok(code.includes('fields={fields}'));
+    assert.ok(code.includes('{...props}'));
   });
 
-  it('includes labels for editable fields', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("label: 'Business Partner'"), 'should have Business Partner label');
+  it('includes all form:true fields (both editable and readOnly)', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    // editable fields
+    assert.ok(code.includes("key: 'businessPartner'"));
+    assert.ok(code.includes("key: 'partnerAddress'"));
+    assert.ok(code.includes("key: 'warehouse'"));
+    assert.ok(code.includes("key: 'priceList'"));
+    // readOnly fields with form:true
+    assert.ok(code.includes("key: 'documentNo'"));
+    assert.ok(code.includes("key: 'grandTotal'"));
+    assert.ok(code.includes("key: 'docStatus'"));
   });
 
-  it('does NOT contain inline CSS classes or layout', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(!code.includes('grid-cols-2'), 'should NOT have grid classes inline');
-    assert.ok(!code.includes('focus:ring'), 'should NOT have focus ring classes inline');
-    assert.ok(!code.includes('space-y-1.5'), 'should NOT have spacing classes inline');
+  it('excludes system fields (form:false)', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(!code.includes("key: 'adClientId'"));
   });
 
-  it('generates search type for search-mode FK fields with reference', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("type: 'search'"), 'should use search type for search-mode FK fields');
-    assert.ok(code.includes("reference: 'BusinessPartner'"), 'should include reference for businessPartner');
+  it('marks readOnly fields with readOnly: true', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes('readOnly: true'), 'readOnly fields should get readOnly flag');
   });
 
-  it('generates selector type for selector-mode FK fields', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("type: 'selector'"), 'should use selector type for selector-mode FK fields');
-    assert.ok(code.includes("reference: 'Warehouse'"), 'should include reference for warehouse');
-    assert.ok(code.includes("reference: 'PriceList'"), 'should include reference for priceList');
-    assert.ok(code.includes("inputMode: 'selector'"), 'should include inputMode selector');
+  it('marks required fields with required: true', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes('required: true'));
   });
 
-  it('generates dependent type for dependent-mode FK fields', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(code.includes("type: 'dependent'"), 'should use dependent type for dependent-mode FK fields');
-    assert.ok(code.includes("reference: 'BusinessPartnerLocation'"), 'should include reference for partnerAddress');
-    assert.ok(code.includes("inputMode: 'dependent'"), 'should include inputMode dependent');
-    assert.ok(code.includes("dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' }"), 'should include dependsOn config');
+  it('generates correct labels', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes("label: 'Business Partner'"));
+    assert.ok(code.includes("label: 'Partner Address'"));
+    assert.ok(code.includes("label: 'Grand Total'"));
   });
 
-  it('does not render save/delete buttons or process actions', () => {
-    const code = generateFormComponent('order', sampleContract);
-    assert.ok(!code.includes('Save'), 'should NOT have Save button');
-    assert.ok(!code.includes('completeOrder'), 'should NOT have process actions');
+  it('maps foreignKey with search inputMode to search type', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes("type: 'search'"));
+    assert.ok(code.includes("reference: 'BusinessPartner'"));
+    assert.ok(code.includes("inputMode: 'search'"));
+  });
+
+  it('maps foreignKey with selector inputMode to selector type', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes("type: 'selector'"));
+    assert.ok(code.includes("reference: 'Warehouse'"));
+    assert.ok(code.includes("inputMode: 'selector'"));
+  });
+
+  it('maps foreignKey with dependent inputMode to dependent type', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(code.includes("type: 'dependent'"));
+    assert.ok(code.includes("reference: 'BusinessPartnerLocation'"));
+    assert.ok(code.includes("inputMode: 'dependent'"));
+    assert.ok(code.includes("dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' }"));
+  });
+
+  it('maps boolean fields to checkbox type', () => {
+    const code = generateFormComponent('priceList', booleanContract);
+    assert.ok(code.includes("type: 'checkbox'"));
+    assert.ok(code.includes("key: 'isDefault'"));
+  });
+
+  it('includes readOnly boolean fields when they have form:true', () => {
+    const code = generateFormComponent('priceList', booleanContract);
+    // isActive is readOnly but form:true, so it should be included with readOnly flag
+    assert.ok(code.includes("key: 'isActive'"));
+    assert.ok(code.includes("readOnly: true"));
+  });
+
+  it('maps number tsType to number form type', () => {
+    const code = generateFormComponent('orderLine', masterDetailContract);
+    assert.ok(code.includes("key: 'quantity'"));
+    assert.ok(code.includes("type: 'number'"));
+  });
+
+  it('maps date type fields to date form type', () => {
+    const dateContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [
+              { name: 'dateOrdered', type: 'date', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generateFormComponent('test', dateContract);
+    assert.ok(code.includes("type: 'date'"));
+  });
+
+  it('maps description/notes field names to textarea type', () => {
+    const code = generateFormComponent('item', singleEntityContract);
+    assert.ok(code.includes("key: 'description'"));
+    assert.ok(code.includes("type: 'textarea'"));
+  });
+
+  it('does NOT contain inline CSS or save/delete buttons', () => {
+    const code = generateFormComponent('order', masterDetailContract);
+    assert.ok(!code.includes('grid-cols'));
+    assert.ok(!code.includes('focus:ring'));
+    assert.ok(!code.includes('Save'));
+    assert.ok(!code.includes('completeOrder'));
   });
 });
 
+// ---------------------------------------------------------------------------
+// generatePageComponent (master-detail)
+// ---------------------------------------------------------------------------
+
 describe('generatePageComponent', () => {
-  it('generates thin component importing from contract-ui', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("import { MasterDetailPage } from '@/components/contract-ui'"), 'should import MasterDetailPage from contract-ui');
-    assert.ok(code.includes('export default function OrderPage'), 'should export OrderPage');
-    assert.ok(code.includes('<MasterDetailPage'), 'should render MasterDetailPage component');
+  it('imports MasterDetailPage from contract-ui', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("import { MasterDetailPage } from '@/components/contract-ui'"));
   });
 
-  it('does NOT import useEntity or useState directly', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(!code.includes("from '@/hooks/useEntity'"), 'should NOT import useEntity (handled by MasterDetailPage)');
-    assert.ok(!code.includes('useState'), 'should NOT import useState');
-    assert.ok(!code.includes('fetch('), 'should NOT have fetch calls');
+  it('exports a named component with PascalCase header entity name + Page', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes('export default function OrderPage'));
   });
 
-  it('declares summary array from read-only fields (excluding status)', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("key: 'documentNo'"), 'should include documentNo in summary');
-    assert.ok(code.includes("label: 'Document No'"), 'should label Document No');
-    assert.ok(code.includes("key: 'grandTotal'"), 'should include grandTotal in summary');
-    assert.ok(code.includes("label: 'Grand Total'"), 'should label Grand Total');
+  it('imports header Table, Form, detail Table, and mockCatalogs', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("import OrderTable from './OrderTable'"));
+    assert.ok(code.includes("import OrderForm from './OrderForm'"));
+    assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"));
+    assert.ok(code.includes("import catalogs from './mockCatalogs'"));
   });
 
-  it('declares statusField string', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("const statusField = 'docStatus'"), 'should set statusField to docStatus');
+  it('does NOT import DetailForm (only DetailTable)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('OrderLineForm'));
   });
 
-  it('declares processes array with style flags', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("name: 'completeOrder'"), 'should include completeOrder process');
-    assert.ok(code.includes("label: 'Complete Order'"), 'should label Complete Order');
-    assert.ok(code.includes("style: 'positive'"), 'should mark complete as positive');
-    assert.ok(code.includes("name: 'voidOrder'"), 'should include voidOrder process');
-    assert.ok(code.includes("label: 'Void Order'"), 'should label Void Order');
-    assert.ok(code.includes("style: 'destructive'"), 'should mark void as destructive');
+  it('declares summary from readOnly header fields excluding status', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    // documentNo and grandTotal are readOnly, non-status
+    assert.ok(code.includes("key: 'documentNo'"));
+    assert.ok(code.includes("key: 'grandTotal'"));
+    // docStatus is the status field, should NOT be in summary
+    const summaryMatch = code.match(/const summary = \[([\s\S]*?)\];/);
+    assert.ok(summaryMatch, 'should have summary array');
+    assert.ok(!summaryMatch[1].includes("key: 'docStatus'"), 'status field should not be in summary');
   });
 
-  it('includes reference in addLineFields entry for FK fields', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("reference: 'Product'"), 'should include reference for product in addLineFields');
-    assert.ok(code.includes("type: 'search'"), 'should use search type for search FK entry fields');
+  it('declares statusField from field name containing "status"', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("const statusField = 'docStatus'"));
   });
 
-  it('includes selector type for selector FK fields in addLineFields', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("reference: 'Tax'"), 'should include reference for tax in addLineFields');
-    assert.ok(code.includes("type: 'selector'"), 'should use selector type for selector FK entry fields');
-    assert.ok(code.includes("inputMode: 'selector'"), 'should include inputMode selector in addLineFields');
+  it('sets statusField to null when no status field exists', () => {
+    const noStatusContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
+        entities: {
+          header: {
+            fields: [
+              { name: 'name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+          detail: {
+            fields: [
+              { name: 'item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('header', 'detail', noStatusContract);
+    assert.ok(code.includes('const statusField = null'));
+  });
+
+  it('declares processes array with positive/destructive styles', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("name: 'completeOrder'"));
+    assert.ok(code.includes("label: 'Complete Order'"));
+    assert.ok(code.includes("style: 'positive'"));
+    assert.ok(code.includes("name: 'voidOrder'"));
+    assert.ok(code.includes("label: 'Void Order'"));
+    assert.ok(code.includes("style: 'destructive'"));
+  });
+
+  it('generates empty processes array when no processes exist', () => {
+    const noProcsContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
+        entities: {
+          header: {
+            fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            searchableFields: [],
+            computedFields: [],
+          },
+          detail: {
+            fields: [{ name: 'item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('header', 'detail', noProcsContract);
+    assert.ok(code.includes('const processes = [\n\n]'));
   });
 
   it('declares addLineFields with entry and derived arrays', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes('addLineFields'), 'should declare addLineFields');
-    assert.ok(code.includes('entry:'), 'should have entry section');
-    assert.ok(code.includes('derived:'), 'should have derived section');
-    assert.ok(code.includes("key: 'product'"), 'should include product in entry fields');
-    assert.ok(code.includes("key: 'quantity'"), 'should include quantity in entry fields');
-    assert.ok(code.includes('lookup: true'), 'should mark first entry field with lookup');
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes('addLineFields'));
+    assert.ok(code.includes('entry:'));
+    assert.ok(code.includes('derived:'));
   });
 
-  it('passes all config props to MasterDetailPage including catalogs', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes('entity="order"'), 'should pass entity prop');
-    assert.ok(code.includes('detailEntity="orderLine"'), 'should pass detailEntity prop');
-    assert.ok(code.includes('Table={OrderTable}'), 'should pass Table component');
-    assert.ok(code.includes('Form={OrderForm}'), 'should pass Form component');
-    assert.ok(code.includes('DetailTable={OrderLineTable}'), 'should pass DetailTable component');
-    assert.ok(code.includes('summary={summary}'), 'should pass summary prop');
-    assert.ok(code.includes('statusField={statusField}'), 'should pass statusField prop');
-    assert.ok(code.includes('processes={processes}'), 'should pass processes prop');
-    assert.ok(code.includes('addLineFields={addLineFields}'), 'should pass addLineFields prop');
-    assert.ok(code.includes('catalogs={catalogs}'), 'should pass catalogs prop');
-    assert.ok(code.includes('{...props}'), 'should spread remaining props');
+  it('puts non-auto fields in entry and auto-pattern fields in derived', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    // product and quantity are entry; tax matches auto-pattern so goes to derived
+    // lineNetAmount is readOnly so excluded from addLineFields entirely
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\]/);
+    assert.ok(entryMatch);
+    assert.ok(entryMatch[1].includes("key: 'product'"));
+    assert.ok(entryMatch[1].includes("key: 'quantity'"));
+    // tax matches /tax/ auto-pattern, so it goes to derived not entry
+    assert.ok(!entryMatch[1].includes("key: 'tax'"), 'tax should be in derived, not entry');
   });
 
-  it('imports mockCatalogs and child components', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes("import OrderTable from './OrderTable'"), 'should import OrderTable');
-    assert.ok(code.includes("import OrderForm from './OrderForm'"), 'should import OrderForm');
-    assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"), 'should import OrderLineTable');
-    assert.ok(code.includes("import catalogs from './mockCatalogs'"), 'should import mockCatalogs');
+  it('marks first entry field with lookup: true', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    // product is first entry field
+    assert.ok(code.includes("key: 'product'"));
+    assert.ok(code.includes('lookup: true'));
   });
 
-  it('does NOT contain inline layout CSS (moved to generic components)', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(!code.includes('w-2/5'), 'should NOT have split view widths inline');
-    assert.ok(!code.includes('animate-pulse'), 'should NOT have loading skeleton inline');
-    assert.ok(!code.includes('bg-emerald-50'), 'should NOT have process button colors inline');
-    assert.ok(!code.includes('bg-amber-50'), 'should NOT have process button colors inline');
-    assert.ok(!code.includes('truncate'), 'should NOT have truncate class inline');
-    assert.ok(!code.includes('shadow-sm'), 'should NOT have toolbar shadow inline');
+  it('includes FK reference and inputMode in addLineFields entry', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("reference: 'Product'"));
+    assert.ok(code.includes("reference: 'Tax'"));
+    assert.ok(code.includes("inputMode: 'selector'"));
+  });
+
+  it('passes all config props to MasterDetailPage', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes('entity="order"'));
+    assert.ok(code.includes('detailEntity="orderLine"'));
+    assert.ok(code.includes('Table={OrderTable}'));
+    assert.ok(code.includes('Form={OrderForm}'));
+    assert.ok(code.includes('DetailTable={OrderLineTable}'));
+    assert.ok(code.includes('summary={summary}'));
+    assert.ok(code.includes('statusField={statusField}'));
+    assert.ok(code.includes('processes={processes}'));
+    assert.ok(code.includes('addLineFields={addLineFields}'));
+    assert.ok(code.includes('catalogs={catalogs}'));
+    assert.ok(code.includes('{...props}'));
   });
 
   it('passes entityLabel and detailLabel props', () => {
-    const code = generatePageComponent('order', 'orderLine', sampleContract);
-    assert.ok(code.includes('entityLabel="Order"'), 'should pass entityLabel');
-    assert.ok(code.includes('detailLabel="Order Line"'), 'should pass detailLabel');
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes('entityLabel="Order"'));
+    assert.ok(code.includes('detailLabel="Order Line"'));
+  });
+
+  it('does NOT contain inline CSS or state hooks', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('useState'));
+    assert.ok(!code.includes('fetch('));
+    assert.ok(!code.includes('w-2/5'));
+    assert.ok(!code.includes('animate-pulse'));
+    assert.ok(!code.includes('shadow-sm'));
   });
 });
+
+// ---------------------------------------------------------------------------
+// generateIndexComponent
+// ---------------------------------------------------------------------------
 
 describe('generateIndexComponent', () => {
-  it('generates entry point with standard props', () => {
-    const code = generateIndexComponent('order', 'orderLine');
-    assert.ok(code.includes('token'), 'should accept token prop');
-    assert.ok(code.includes('apiBaseUrl'), 'should accept apiBaseUrl prop');
-    assert.ok(code.includes('window'), 'should accept window prop');
-    assert.ok(code.includes('export default'), 'should have default export');
+  it('generates entry point with token, apiBaseUrl, window props for master-detail', () => {
+    const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes('token'));
+    assert.ok(code.includes('apiBaseUrl'));
+    assert.ok(code.includes('window'));
+    assert.ok(code.includes('export default'));
   });
 
-  it('imports page component for header-detail entity', () => {
-    const code = generateIndexComponent('order', 'orderLine');
-    assert.ok(code.includes("import OrderPage from './OrderPage'"), 'should import OrderPage');
-    assert.ok(code.includes('<OrderPage'), 'should render OrderPage');
+  it('imports Page component for master-detail', () => {
+    const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("import OrderPage from './OrderPage'"));
+    assert.ok(code.includes('<OrderPage'));
   });
 
-  it('handles single-entity with SingleEntityPage component', () => {
-    const code = generateIndexComponent('item', null);
-    assert.ok(code.includes("import ItemTable"), 'should import ItemTable');
-    assert.ok(code.includes("import ItemForm"), 'should import ItemForm');
-    assert.ok(code.includes("import { SingleEntityPage } from '@/components/contract-ui'"), 'should import SingleEntityPage');
-    assert.ok(code.includes("import catalogs from './mockCatalogs'"), 'should import mockCatalogs');
-    assert.ok(code.includes('<SingleEntityPage'), 'should render SingleEntityPage');
-    assert.ok(code.includes('entity="item"'), 'should pass entity prop');
-    assert.ok(code.includes('Table={ItemTable}'), 'should pass Table component');
-    assert.ok(code.includes('Form={ItemForm}'), 'should pass Form component');
-    assert.ok(code.includes('catalogs={catalogs}'), 'should pass catalogs prop');
-    assert.ok(code.includes('entityLabel="Item"'), 'should pass entityLabel prop');
-    assert.ok(code.includes('{...props}'), 'should spread remaining props');
+  it('includes windowMeta with category and name for master-detail', () => {
+    const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(code.includes("category: 'sales'"));
+    assert.ok(code.includes("name: 'Sales Order'"));
+  });
+
+  it('generates SingleEntityPage for single-entity (no detail)', () => {
+    const code = generateIndexComponent('item', null, singleEntityContract);
+    assert.ok(code.includes("import { SingleEntityPage } from '@/components/contract-ui'"));
+    assert.ok(code.includes("import ItemTable from './ItemTable'"));
+    assert.ok(code.includes("import ItemForm from './ItemForm'"));
+    assert.ok(code.includes("import catalogs from './mockCatalogs'"));
+    assert.ok(code.includes('<SingleEntityPage'));
+  });
+
+  it('passes correct props to SingleEntityPage', () => {
+    const code = generateIndexComponent('item', null, singleEntityContract);
+    assert.ok(code.includes('entity="item"'));
+    assert.ok(code.includes('Table={ItemTable}'));
+    assert.ok(code.includes('Form={ItemForm}'));
+    assert.ok(code.includes('catalogs={catalogs}'));
+    assert.ok(code.includes('entityLabel="Item"'));
+    assert.ok(code.includes('{...props}'));
+  });
+
+  it('includes windowMeta with category and name for single-entity', () => {
+    const code = generateIndexComponent('item', null, singleEntityContract);
+    assert.ok(code.includes("category: 'reference'"));
+    assert.ok(code.includes("name: 'Simple Item'"));
+  });
+
+  it('falls back to toLabel(headerEntity) when window name is missing', () => {
+    const code = generateIndexComponent('item', null, {});
+    assert.ok(code.includes("name: 'Item'"));
+    assert.ok(code.includes("category: 'general'"));
   });
 });
 
-describe('boolean field handling', () => {
-  const boolContract = {
-    frontendContract: {
-      window: { id: '203', name: 'Price List', primaryEntity: 'priceList', category: 'reference' },
-      entities: {
-        priceList: {
-          fields: [
-            { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
-            { name: 'isDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: false, form: true },
-            { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
-          ],
-          searchableFields: ['name'],
-          computedFields: [],
+// ---------------------------------------------------------------------------
+// generateMockCatalogs
+// ---------------------------------------------------------------------------
+
+describe('generateMockCatalogs', () => {
+  it('generates catalog entries for all FK references in the contract', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes("catalogs['BusinessPartner']"));
+    assert.ok(code.includes("catalogs['Warehouse']"));
+    assert.ok(code.includes("catalogs['PriceList']"));
+    assert.ok(code.includes("catalogs['Product']"));
+    assert.ok(code.includes("catalogs['Tax']"));
+    assert.ok(code.includes("catalogs['BusinessPartnerLocation']"));
+  });
+
+  it('exports catalogs as default export', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes('export default catalogs'));
+  });
+
+  it('starts with auto-generated comment', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.startsWith('// Auto-generated mock catalogs'));
+  });
+
+  it('catalog data contains id and name fields', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes('"id"'));
+    assert.ok(code.includes('"name"'));
+  });
+
+  it('BusinessPartner data has bp- prefix ids', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes('"bp-'));
+    assert.ok(code.includes('Acme Corp'));
+  });
+
+  it('BusinessPartnerLocation data has businessPartnerId for dependent filtering', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes('"businessPartnerId"'));
+  });
+
+  it('Tax data has rate property', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes('"rate"'));
+  });
+
+  it('Product data has price and uomId', () => {
+    const code = generateMockCatalogs(masterDetailContract);
+    assert.ok(code.includes('"price"'));
+    assert.ok(code.includes('"uomId"'));
+  });
+
+  it('handles contract with no FK references', () => {
+    const noFkContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            searchableFields: [],
+            computedFields: [],
+          },
         },
       },
-    },
-    backendContract: { processEndpoints: [] },
-  };
-
-  it('mapFieldType returns boolean for boolean fields in table columns', () => {
-    const code = generateTableComponent('priceList', boolContract);
-    assert.ok(code.includes("type: 'boolean'"), 'should map boolean fields to boolean type in table columns');
-    assert.ok(code.includes("key: 'isActive'"), 'should include isActive boolean field in grid');
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generateMockCatalogs(noFkContract);
+    assert.ok(code.includes('const catalogs = {}'));
+    assert.ok(code.includes('export default catalogs'));
+    // Should not contain any catalog assignments
+    assert.ok(!code.includes("catalogs['"));
   });
 
-  it('mapFormFieldType returns checkbox for boolean fields in form', () => {
-    const code = generateFormComponent('priceList', boolContract);
-    assert.ok(code.includes("type: 'checkbox'"), 'should map boolean fields to checkbox type in form');
-    assert.ok(code.includes("key: 'isDefault'"), 'should include editable isDefault boolean in form');
-  });
-
-  it('excludes readOnly boolean fields from form (same rule as other readOnly fields)', () => {
-    const code = generateFormComponent('priceList', boolContract);
-    assert.ok(!code.includes("key: 'isActive'"), 'should NOT include readOnly isActive in form');
+  it('skips references not found in CATALOG_DATA', () => {
+    const unknownRefContract = {
+      frontendContract: {
+        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [{ name: 'custom', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true, reference: 'UnknownEntity', inputMode: 'search' }],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generateMockCatalogs(unknownRefContract);
+    assert.ok(!code.includes("catalogs['UnknownEntity']"));
+    assert.ok(code.includes('export default catalogs'));
   });
 });
 
+// ---------------------------------------------------------------------------
+// generateAll (orchestrator)
+// ---------------------------------------------------------------------------
+
 describe('generateAll', () => {
-  it('returns map of filename to code', () => {
-    const files = generateAll(sampleContract);
-    assert.ok(files['OrderTable.jsx'], 'should produce OrderTable.jsx');
-    assert.ok(files['OrderForm.jsx'], 'should produce OrderForm.jsx');
-    assert.ok(files['OrderLineTable.jsx'], 'should produce OrderLineTable.jsx');
-    assert.ok(files['OrderPage.jsx'], 'should produce OrderPage.jsx');
-    assert.ok(files['index.jsx'], 'should produce index.jsx');
+  it('produces correct files for master-detail contract', () => {
+    const files = generateAll(masterDetailContract);
+    const names = Object.keys(files);
+    assert.ok(names.includes('OrderTable.jsx'));
+    assert.ok(names.includes('OrderForm.jsx'));
+    assert.ok(names.includes('OrderLineTable.jsx'));
+    assert.ok(names.includes('OrderLineForm.jsx'));
+    assert.ok(names.includes('OrderPage.jsx'));
+    assert.ok(names.includes('index.jsx'));
+    assert.ok(names.includes('mockCatalogs.js'));
+    assert.equal(names.length, 7);
   });
 
-  it('generates mockCatalogs.js', () => {
-    const files = generateAll(sampleContract);
-    assert.ok(files['mockCatalogs.js'], 'should produce mockCatalogs.js');
-    assert.ok(files['mockCatalogs.js'].includes('catalogs'), 'should export catalogs object');
-    assert.ok(files['mockCatalogs.js'].includes('export default catalogs'), 'should have default export');
+  it('produces correct files for single-entity contract', () => {
+    const files = generateAll(singleEntityContract);
+    const names = Object.keys(files);
+    assert.ok(names.includes('ItemTable.jsx'));
+    assert.ok(names.includes('ItemForm.jsx'));
+    assert.ok(names.includes('index.jsx'));
+    assert.ok(names.includes('mockCatalogs.js'));
+    assert.ok(!names.includes('ItemPage.jsx'), 'should NOT produce Page for single entity');
+    assert.equal(names.length, 4);
   });
 
-  it('all generated files import from contract-ui (not individual UI components)', () => {
-    const files = generateAll(sampleContract);
+  it('file names follow PascalCase entity + suffix convention', () => {
+    const files = generateAll(masterDetailContract);
+    for (const name of Object.keys(files)) {
+      if (name === 'index.jsx' || name === 'mockCatalogs.js') continue;
+      assert.ok(/^[A-Z][a-zA-Z]+(Table|Form|Page)\.jsx$/.test(name), `${name} should follow PascalCase+suffix convention`);
+    }
+  });
+
+  it('all Table/Form/Page files import from contract-ui', () => {
+    const files = generateAll(masterDetailContract);
     for (const [name, code] of Object.entries(files)) {
       if (name.endsWith('Table.jsx') || name.endsWith('Form.jsx') || name.endsWith('Page.jsx')) {
         assert.ok(code.includes('@/components/contract-ui'), `${name} should import from contract-ui`);
@@ -356,75 +805,131 @@ describe('generateAll', () => {
     }
   });
 
-  it('handles single-entity contract without detail', () => {
-    const singleEntity = {
+  it('mockCatalogs.js has correct structure', () => {
+    const files = generateAll(masterDetailContract);
+    const code = files['mockCatalogs.js'];
+    assert.ok(code.includes('const catalogs = {}'));
+    assert.ok(code.includes('export default catalogs'));
+  });
+
+  it('index.jsx has default export', () => {
+    const files = generateAll(masterDetailContract);
+    assert.ok(files['index.jsx'].includes('export default'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Field type mapping edge cases
+// ---------------------------------------------------------------------------
+
+describe('field type mapping edge cases', () => {
+  const edgeCaseContract = {
+    frontendContract: {
+      window: { id: '1', name: 'Edge Case', primaryEntity: 'test', category: 'test' },
+      entities: {
+        test: {
+          fields: [
+            { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            { name: 'count', type: 'integer', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+            { name: 'orderDate', type: 'date', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
+            { name: 'notes', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'remarks', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'comments', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'orderStatus', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
+          ],
+          searchableFields: [],
+          computedFields: [],
+        },
+      },
+    },
+    backendContract: { processEndpoints: [] },
+  };
+
+  it('maps integer type to number in table columns', () => {
+    const code = generateTableComponent('test', edgeCaseContract);
+    assert.ok(code.includes("key: 'count'"));
+    assert.ok(code.includes("type: 'number'"));
+  });
+
+  it('maps date type to date in table columns', () => {
+    const code = generateTableComponent('test', edgeCaseContract);
+    assert.ok(code.includes("key: 'orderDate'"));
+    assert.ok(code.includes("type: 'date'"));
+  });
+
+  it('maps field name containing "status" to status type in table', () => {
+    const code = generateTableComponent('test', edgeCaseContract);
+    assert.ok(code.includes("key: 'orderStatus', label: 'Order Status', type: 'status'"));
+  });
+
+  it('maps notes/remarks/comments field names to textarea in form', () => {
+    const code = generateFormComponent('test', edgeCaseContract);
+    // All three should be textarea
+    const textareaCount = (code.match(/type: 'textarea'/g) || []).length;
+    assert.equal(textareaCount, 3, 'notes, remarks, and comments should all be textarea');
+  });
+
+  it('maps date type to date in form', () => {
+    const code = generateFormComponent('test', edgeCaseContract);
+    assert.ok(code.includes("key: 'orderDate'"));
+    assert.ok(code.includes("type: 'date'"));
+  });
+
+  it('maps plain string to text in form', () => {
+    const code = generateFormComponent('test', edgeCaseContract);
+    assert.ok(code.includes("key: 'name', label: 'Name', type: 'text'"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// addLineFields derived field separation
+// ---------------------------------------------------------------------------
+
+describe('addLineFields derived field separation', () => {
+  it('puts price/tax/discount/amount pattern fields in derived array', () => {
+    const contract = {
       frontendContract: {
-        window: { id: '1', name: 'Simple', primaryEntity: 'item', category: 'test' },
+        window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
         entities: {
-          item: {
+          header: {
             fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
-            searchableFields: ['name'],
+            searchableFields: [],
+            computedFields: [],
+          },
+          detail: {
+            fields: [
+              { name: 'product', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+              { name: 'unitPrice', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+              { name: 'discount', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+              { name: 'netAmount', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+            ],
+            searchableFields: [],
             computedFields: [],
           },
         },
       },
       backendContract: { processEndpoints: [] },
     };
-    const files = generateAll(singleEntity);
-    assert.ok(files['ItemTable.jsx'], 'should produce ItemTable.jsx');
-    assert.ok(files['ItemForm.jsx'], 'should produce ItemForm.jsx');
-    assert.ok(files['index.jsx'], 'should produce index.jsx');
-    assert.ok(!files['ItemPage.jsx'], 'should NOT produce ItemPage.jsx for single entity');
-  });
-});
+    const code = generatePageComponent('header', 'detail', contract);
 
-describe('generateMockCatalogs', () => {
-  it('generates catalogs for all references in the contract', () => {
-    const code = generateMockCatalogs(sampleContract);
-    assert.ok(code.includes("catalogs['BusinessPartner']"), 'should include BusinessPartner catalog');
-    assert.ok(code.includes("catalogs['Warehouse']"), 'should include Warehouse catalog');
-    assert.ok(code.includes("catalogs['PriceList']"), 'should include PriceList catalog');
-    assert.ok(code.includes("catalogs['Product']"), 'should include Product catalog');
-    assert.ok(code.includes("catalogs['Tax']"), 'should include Tax catalog');
-    assert.ok(code.includes("catalogs['BusinessPartnerLocation']"), 'should include BusinessPartnerLocation catalog');
+    const entryMatch = code.match(/entry: \[([\s\S]*?)\],/);
+    const derivedMatch = code.match(/derived: \[([\s\S]*?)\],/);
+    assert.ok(entryMatch);
+    assert.ok(derivedMatch);
+
+    // product is in entry
+    assert.ok(entryMatch[1].includes("key: 'product'"));
+    // price/discount/amount fields are in derived
+    assert.ok(derivedMatch[1].includes("key: 'unitPrice'"));
+    assert.ok(derivedMatch[1].includes("key: 'discount'"));
+    assert.ok(derivedMatch[1].includes("key: 'netAmount'"));
   });
 
-  it('catalog data has correct structure with id and name', () => {
-    const code = generateMockCatalogs(sampleContract);
-    // BusinessPartner should have id and name
-    assert.ok(code.includes('"id"'), 'catalog items should have id');
-    assert.ok(code.includes('"name"'), 'catalog items should have name');
-    assert.ok(code.includes('bp-'), 'BusinessPartner ids should start with bp-');
-    assert.ok(code.includes('Acme Corp'), 'should have realistic company names');
-  });
-
-  it('BusinessPartnerLocation items have businessPartnerId for dependent filtering', () => {
-    const code = generateMockCatalogs(sampleContract);
-    assert.ok(code.includes('"businessPartnerId"'), 'BPLocation should have businessPartnerId for filtering');
-  });
-
-  it('Tax catalog items have rate property', () => {
-    const code = generateMockCatalogs(sampleContract);
-    assert.ok(code.includes('"rate"'), 'Tax items should have rate');
-  });
-
-  it('Product catalog items have price and uomId', () => {
-    const code = generateMockCatalogs(sampleContract);
-    assert.ok(code.includes('"price"'), 'Product items should have price');
-    assert.ok(code.includes('"uomId"'), 'Product items should have uomId');
-  });
-
-  it('exports catalogs as default export', () => {
-    const code = generateMockCatalogs(sampleContract);
-    assert.ok(code.includes('export default catalogs'), 'should export catalogs as default');
-  });
-});
-
-describe('getReadOnlyFields', () => {
-  it('returns only form fields with readOnly visibility', () => {
-    const fields = getReadOnlyFields(sampleContract, 'order');
-    assert.ok(fields.length > 0, 'should find readOnly fields');
-    assert.ok(fields.every(f => f.visibility === 'readOnly'), 'all should be readOnly');
-    assert.ok(fields.every(f => f.form === true), 'all should be form fields');
+  it('excludes readOnly detail fields from addLineFields entirely', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    // lineNetAmount is readOnly, should not appear in addLineFields
+    const addLineMatch = code.match(/const addLineFields = \{([\s\S]*?)\};/);
+    assert.ok(addLineMatch);
+    assert.ok(!addLineMatch[1].includes("key: 'lineNetAmount'"));
   });
 });
