@@ -20,7 +20,7 @@ const addLineFields = {
     { key: 'movementQty', label: 'Movement Qty', type: 'number', required: true },
     { key: 'locator', label: 'Locator', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
     { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'returnOrderLine', label: 'Return Order Line', type: 'dependent', reference: 'PurchaseOrderLine', inputMode: 'dependent', dependsOn: { field: 'returnShipment.orderReference', filterKey: 'cOrderId' } },
     { key: 'rmaLine', label: 'Rma Line', type: 'dependent', reference: 'ReturnMaterialAuthorizationLine', inputMode: 'dependent', dependsOn: { field: 'returnShipment.returnReason', filterKey: 'mRmaId' } },
   ],

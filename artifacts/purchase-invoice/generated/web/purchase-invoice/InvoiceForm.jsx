@@ -10,7 +10,7 @@ const fields = [
   { key: 'priceList', label: 'Price List', type: 'selector', required: true, reference: 'PriceList', inputMode: 'selector' },
   { key: 'currency', label: 'Currency', type: 'selector', required: true, reference: 'Currency', inputMode: 'selector' },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
 ];
 

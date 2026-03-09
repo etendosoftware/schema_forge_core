@@ -12,7 +12,7 @@ const fields = [
   { key: 'invoiceAddress', label: 'Invoice Address', type: 'dependent', required: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
   { key: 'deliveryLocation', label: 'Delivery Location', type: 'text' },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
 ];
 

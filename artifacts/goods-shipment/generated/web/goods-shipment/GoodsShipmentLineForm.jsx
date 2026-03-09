@@ -5,7 +5,7 @@ const fields = [
   { key: 'movementQty', label: 'Movement Qty', type: 'number', required: true },
   { key: 'locator', label: 'Locator', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
   { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
 ];
 
 export default function GoodsShipmentLineForm(props) {

@@ -11,7 +11,7 @@ const fields = [
   { key: 'invoiceAddress', label: 'Invoice Address', type: 'dependent', required: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
   { key: 'salesRep', label: 'Sales Rep', type: 'search', reference: 'User', inputMode: 'search' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
 ];
 
 export default function QuotationForm(props) {

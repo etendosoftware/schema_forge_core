@@ -11,7 +11,7 @@ const fields = [
   { key: 'currency', label: 'Currency', type: 'selector', required: true, reference: 'Currency', inputMode: 'selector' },
   { key: 'salesRep', label: 'Sales Rep', type: 'search', reference: 'User', inputMode: 'search' },
   { key: 'poReference', label: 'Po Reference', type: 'text' },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
 ];
 
