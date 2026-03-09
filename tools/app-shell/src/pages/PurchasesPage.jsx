@@ -4,36 +4,33 @@ import { KPIHeader, KanbanBoard } from '@/components/contract-ui';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ShoppingCart, FileText, TrendingUp } from 'lucide-react';
+import { Truck, FileText, Plus } from 'lucide-react';
 
-import { sections, actions } from '@generated/sales/generated/config';
-import * as mockData from '@generated/sales/generated/mockData';
+import { kpisConfig, sections, actions } from '@generated/purchases/generated/config';
+import * as mockData from '@generated/purchases/generated/mockData';
 
-// -- Icon resolution (config stores string names) -----------------------------
+// -- Icon map (string name -> component) --------------------------------------
 
-const ICON_MAP = { ShoppingCart, FileText, TrendingUp };
+const ICON_MAP = { FileText, Truck };
 
-// -- Derived data from contract -----------------------------------------------
+// -- Derived data from aggregate contract -------------------------------------
 
-const KPIS = sections.kpis.kpis.map((k) => ({
+const KPIS = kpisConfig.map((k) => ({
   ...k,
   value: mockData.kpis[k.key],
-  trend: mockData.kpis.trends?.[k.key],
   icon: ICON_MAP[k.icon],
 }));
 
 const COLUMNS = sections.pipeline.columns;
 const INITIAL_CARDS = mockData.pipeline;
-
 const STATUS_LABEL = Object.fromEntries(COLUMNS.map((c) => [c.id, c.title]));
 
-// UI-presentation mapping — kept inline because it's view logic, not data.
 const STATUS_VARIANT = {
   draft: 'secondary',
-  sent: 'default',
-  negotiation: 'outline',
-  won: 'default',
-  lost: 'destructive',
+  confirmed: 'default',
+  'in-transit': 'outline',
+  received: 'default',
+  invoiced: 'secondary',
 };
 
 function formatCurrency(value) {
@@ -47,7 +44,7 @@ function formatCurrency(value) {
 
 // -- Component -----------------------------------------------------------------
 
-export default function SalesPage() {
+export default function PurchasesPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('kanban');
   const [cards, setCards] = useState(INITIAL_CARDS);
@@ -60,7 +57,7 @@ export default function SalesPage() {
 
   const handleCardClick = useCallback(
     () => {
-      navigate('/sales-quotation');
+      navigate('/purchase-order');
     },
     [navigate]
   );
@@ -69,12 +66,13 @@ export default function SalesPage() {
     <div className="space-y-6">
       {/* Header bar */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Sales</h1>
-        {actions.map((action) => (
-          <Button key={action.route} asChild>
-            <Link to={action.route}>{action.label}</Link>
-          </Button>
-        ))}
+        <h1 className="text-2xl font-bold tracking-tight">Purchases</h1>
+        <Button asChild>
+          <Link to={actions[0].route}>
+            <Plus className="mr-2 h-4 w-4" />
+            {actions[0].label}
+          </Link>
+        </Button>
       </div>
 
       {/* KPIs */}
@@ -105,22 +103,22 @@ export default function SalesPage() {
           cards={cards}
           onDragEnd={handleDragEnd}
           onCardClick={handleCardClick}
-          emptyMessage="No quotations"
+          emptyMessage="No purchase orders"
         />
       )}
 
       {activeTab === 'list' && (
         <Card>
           <CardHeader>
-            <CardTitle>Quotations</CardTitle>
+            <CardTitle>Purchase Orders</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Document No</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Customer</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Doc No</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Vendor</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Amount</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
@@ -131,7 +129,7 @@ export default function SalesPage() {
                     <tr
                       key={card.id}
                       className="border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
-                      onClick={() => navigate('/sales-quotation')}
+                      onClick={() => navigate('/purchase-order')}
                     >
                       <td className="px-4 py-3 font-medium">{card.title}</td>
                       <td className="px-4 py-3 text-muted-foreground">{card.subtitle}</td>

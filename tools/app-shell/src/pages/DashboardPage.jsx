@@ -19,41 +19,34 @@ import {
   ChevronRight,
   Clock,
 } from 'lucide-react';
+import { kpisConfig, actions } from '@generated/dashboard/generated/config';
+import * as mockData from '@generated/dashboard/generated/mockData';
 
 /* ------------------------------------------------------------------
- * Mock data
+ * Data derived from aggregate contract
  * ----------------------------------------------------------------*/
 
-const kpis = [
-  { label: 'Revenue this month', value: 48250, format: 'currency', trend: 12.5, icon: DollarSign },
-  { label: 'Expenses this month', value: 31800, format: 'currency', trend: 3.2, icon: CreditCard },
-  { label: 'Net Profit', value: 16450, format: 'currency', trend: 28.7, icon: TrendingUp },
-  { label: 'Pending Invoices', value: 7, format: 'number', trend: -2, icon: Clock },
-];
+const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box };
 
-const chartMonths = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
-const chartValues = [32000, 35000, 28000, 41000, 38000, 45000, 42000, 39000, 44000, 47000, 43000, 48250];
+const kpis = kpisConfig.map((k) => ({
+  ...k,
+  value: mockData.kpis[k.key].value,
+  trend: mockData.kpis[k.key].trend,
+  icon: ICON_MAP[k.icon] || DollarSign,
+}));
 
-const quickActions = [
-  { label: '+ Invoice', to: '/sales-invoice', icon: FileText },
-  { label: '+ Order', to: '/sales-order', icon: ShoppingCart },
-  { label: '+ Contact', to: '/business-partner', icon: Users },
-  { label: '+ Product', to: '/product', icon: Box },
-];
+const chartMonths = mockData.revenueTrend.labels;
+const chartValues = mockData.revenueTrend.values;
 
-const pendingTasks = [
-  { type: 'warning', text: '3 overdue invoices', link: '/sales-invoice', amount: '$12,400' },
-  { type: 'info', text: '2 orders pending shipment', link: '/goods-shipment' },
-  { type: 'info', text: '5 purchase orders to confirm', link: '/purchase-order' },
-  { type: 'warning', text: '1 low stock alert', link: '/physical-inventory', detail: 'Cerveza Ale 0.5L' },
-];
+const quickActions = actions.map((a) => ({
+  label: a.label,
+  to: a.route,
+  icon: ICON_MAP[a.icon] || FileText,
+}));
 
-const recentMessages = [
-  { id: '1', author: 'System', text: 'Invoice INV-2026-0142 was paid by Empresa ABC', timestamp: '2026-03-09T08:30:00', type: 'system' },
-  { id: '2', author: 'Ana Garcia', text: 'New quotation QT-0089 created for $8,500', timestamp: '2026-03-09T07:15:00', type: 'note' },
-  { id: '3', author: 'System', text: 'Purchase Order PO-0234 received (15 items)', timestamp: '2026-03-08T16:45:00', type: 'system' },
-  { id: '4', author: 'Pedro Lopez', text: 'Stock adjustment completed for warehouse Madrid', timestamp: '2026-03-08T14:20:00', type: 'note' },
-];
+const pendingTasks = mockData.pendingTasks;
+
+const recentMessages = mockData.recentMessages;
 
 /* ------------------------------------------------------------------
  * SVG Revenue Chart
