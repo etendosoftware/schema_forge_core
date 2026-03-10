@@ -225,6 +225,48 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       runner: 'node',
       description: `Entity '${entityName}' should only expose visible fields in frontend`,
     });
+
+    // displayLogic validity: one per field with displayLogic
+    for (const field of visibleFields) {
+      if (field.displayLogic) {
+        tests.push({
+          id: nextId(),
+          category: 'displaylogic-valid',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Display logic for '${field.name}' in ${entityName} should be valid JS`,
+        });
+      }
+    }
+
+    // readOnlyLogic validity: one per field with readOnlyLogic
+    for (const field of visibleFields) {
+      if (field.readOnlyLogic) {
+        tests.push({
+          id: nextId(),
+          category: 'readonlylogic-valid',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Read-only logic for '${field.name}' in ${entityName} should be valid JS`,
+        });
+      }
+    }
+
+    // defaultValue type: one per field with defaultValue
+    for (const field of visibleFields) {
+      if (field.defaultValue !== undefined) {
+        tests.push({
+          id: nextId(),
+          category: 'default-value-type',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Default value for '${field.name}' in ${entityName} should be a string`,
+        });
+      }
+    }
   }
 
   // system-field tests from backend fields not in frontend
@@ -417,6 +459,52 @@ export function generateContract(schema, rules = [], processes = []) {
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
   const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
+
+  // Append apiPrediction-based tests to testManifest
+  for (const [entityName, crud] of Object.entries(apiPrediction.crud)) {
+    testManifest.tests.push({
+      id: `t-${testManifest.tests.length + 1}`,
+      category: 'crud-flags',
+      entity: entityName,
+      runner: 'node',
+      description: `CRUD flags for '${entityName}' should all be booleans`,
+    });
+  }
+
+  for (const sel of apiPrediction.selectors) {
+    testManifest.tests.push({
+      id: `t-${testManifest.tests.length + 1}`,
+      category: 'selector-endpoint',
+      entity: sel.entity,
+      field: sel.field,
+      runner: 'node',
+      description: `Selector endpoint for '${sel.field}' in ${sel.entity} should exist`,
+    });
+  }
+
+  for (const action of apiPrediction.actions) {
+    testManifest.tests.push({
+      id: `t-${testManifest.tests.length + 1}`,
+      category: 'action-endpoint',
+      entity: action.entity,
+      field: action.field,
+      runner: 'node',
+      description: `Action endpoint for '${action.field}' in ${action.entity} should exist`,
+    });
+  }
+
+  // Update summary counts after adding apiPrediction tests
+  const updatedByCategory = {};
+  const updatedByRunner = { node: 0, junit: 0 };
+  for (const t of testManifest.tests) {
+    updatedByCategory[t.category] = (updatedByCategory[t.category] ?? 0) + 1;
+    updatedByRunner[t.runner] = (updatedByRunner[t.runner] ?? 0) + 1;
+  }
+  testManifest.summary = {
+    total: testManifest.tests.length,
+    byCategory: updatedByCategory,
+    byRunner: updatedByRunner,
+  };
 
   const contractData = { frontendContract, backendContract, apiPrediction, testManifest };
   const checksum = createHash('sha256')

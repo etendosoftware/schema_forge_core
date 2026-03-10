@@ -240,3 +240,324 @@ describe('edge cases', () => {
     assert.ok(assertions[0].reason.includes('Unknown test category'));
   });
 });
+
+// ─── v2 Category Handler Tests ────────────────────────────────────────────────
+
+describe('displaylogic-valid handler', () => {
+  it('passes for field with valid JS displayLogic', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'warehouse', displayLogic: { raw: '@DocStatus@=DR', js: 'record.docStatus === "DR"' } },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'dl-1', category: 'displaylogic-valid', entity: 'order', field: 'warehouse', runner: 'node', description: 'valid JS' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails for field with invalid JS displayLogic', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'warehouse', displayLogic: { raw: '@DocStatus@=DR', js: 'record.docStatus ===' } },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'dl-2', category: 'displaylogic-valid', entity: 'order', field: 'warehouse', runner: 'node', description: 'invalid JS' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes('displayLogic.js parse error'));
+  });
+
+  it('passes for field without displayLogic (no JS translation)', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'warehouse' },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'dl-3', category: 'displaylogic-valid', entity: 'order', field: 'warehouse', runner: 'node', description: 'no displayLogic' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+});
+
+describe('readonlylogic-valid handler', () => {
+  it('passes for field with valid JS readOnlyLogic', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'priceList', readOnlyLogic: { raw: '@Processed@=Y', js: 'record.processed === true' } },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'ro-1', category: 'readonlylogic-valid', entity: 'order', field: 'priceList', runner: 'node', description: 'valid JS' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails for field with invalid JS readOnlyLogic', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'priceList', readOnlyLogic: { raw: '@Processed@=Y', js: '!!!' } },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'ro-2', category: 'readonlylogic-valid', entity: 'order', field: 'priceList', runner: 'node', description: 'invalid JS' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes('readOnlyLogic.js parse error'));
+  });
+
+  it('passes for field without readOnlyLogic', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'priceList' },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'ro-3', category: 'readonlylogic-valid', entity: 'order', field: 'priceList', runner: 'node', description: 'no readOnlyLogic' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+});
+
+describe('selector-endpoint handler', () => {
+  it('passes for FK field with matching selector in apiPrediction', () => {
+    const contract = {
+      apiPrediction: {
+        selectors: [
+          { entity: 'order', field: 'businessPartner', url: '/sws/neo/test/order/selectors/businessPartner' },
+        ],
+      },
+      testManifest: {
+        tests: [
+          { id: 'se-1', category: 'selector-endpoint', entity: 'order', field: 'businessPartner', runner: 'node', description: 'selector exists' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails for FK field without matching selector', () => {
+    const contract = {
+      apiPrediction: {
+        selectors: [],
+      },
+      testManifest: {
+        tests: [
+          { id: 'se-2', category: 'selector-endpoint', entity: 'order', field: 'businessPartner', runner: 'node', description: 'no selector' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes('No selector endpoint'));
+  });
+});
+
+describe('action-endpoint handler', () => {
+  it('passes for button field with matching action in apiPrediction', () => {
+    const contract = {
+      apiPrediction: {
+        actions: [
+          { entity: 'invoice', field: 'docAction', url: '/sws/neo/test/invoice/{id}/action/docAction' },
+        ],
+      },
+      testManifest: {
+        tests: [
+          { id: 'ae-1', category: 'action-endpoint', entity: 'invoice', field: 'docAction', runner: 'node', description: 'action exists' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails for button field without matching action', () => {
+    const contract = {
+      apiPrediction: {
+        actions: [],
+      },
+      testManifest: {
+        tests: [
+          { id: 'ae-2', category: 'action-endpoint', entity: 'invoice', field: 'docAction', runner: 'node', description: 'no action' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes('No action endpoint'));
+  });
+});
+
+describe('crud-flags handler', () => {
+  it('passes when all CRUD flags are booleans', () => {
+    const contract = {
+      apiPrediction: {
+        crud: {
+          order: { get: true, getById: true, post: true, put: true, patch: true, delete: true },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'cf-1', category: 'crud-flags', entity: 'order', runner: 'node', description: 'all booleans' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails when a CRUD flag is not boolean', () => {
+    const contract = {
+      apiPrediction: {
+        crud: {
+          order: { get: true, getById: true, post: 'yes', put: true, patch: true, delete: true },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'cf-2', category: 'crud-flags', entity: 'order', runner: 'node', description: 'non-boolean flag' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes("CRUD flag 'post' is string"));
+  });
+
+  it('fails when no CRUD entry exists for entity', () => {
+    const contract = {
+      apiPrediction: { crud: {} },
+      testManifest: {
+        tests: [
+          { id: 'cf-3', category: 'crud-flags', entity: 'order', runner: 'node', description: 'missing CRUD' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes('No CRUD entry'));
+  });
+});
+
+describe('default-value-type handler', () => {
+  it('passes when defaultValue is a string', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'grandTotal', defaultValue: '0' },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'dv-1', category: 'default-value-type', entity: 'order', field: 'grandTotal', runner: 'node', description: 'string default' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails when defaultValue is a number', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'grandTotal', defaultValue: 0 },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'dv-2', category: 'default-value-type', entity: 'order', field: 'grandTotal', runner: 'node', description: 'number default' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes('defaultValue is number'));
+  });
+
+  it('passes when defaultValue is undefined', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          order: {
+            fields: [
+              { name: 'plainField' },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          { id: 'dv-3', category: 'default-value-type', entity: 'order', field: 'plainField', runner: 'node', description: 'no default' },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+});
