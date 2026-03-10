@@ -42,6 +42,11 @@ flowchart TD
         MOCK["mockData.js\nmockCatalogs.js"]
     end
 
+    subgraph TodoTranslation["8b. TODO TRANSLATION (AI-assisted)"]
+        TT["translate-todos.js\n(interactive, AI-assisted)"]
+        TT_OUT["React components with\ntranslated callout/onchange logic"]
+    end
+
     subgraph Runtime["8. RUNTIME (NEO Headless — Java)"]
         NEO["NeoServlet\n/sws/neo/*"]
         AUTH["JWT Authentication"]
@@ -111,6 +116,10 @@ flowchart TD
     SEL --> APP
     PROC --> APP
 
+    %% TODO Translation (between frontend generation and testing)
+    REACT --> TT
+    TT --> TT_OUT
+
     %% Testing
     CONTRACT --> CT
 
@@ -132,4 +141,5 @@ flowchart TD
     class RAW_S,RAW_R,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,MOCK artifact
     class CT,IT test
     class APP client
-    class GC,PTN,GF,GM cli
+    class GC,PTN,GF,GM,TT cli
+    class TT_OUT artifact

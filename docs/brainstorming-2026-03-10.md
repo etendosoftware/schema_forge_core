@@ -182,6 +182,7 @@ F4:  human decisions     → schema-curated.json, rules-curated.json
 F6:  generate-contract   → contract.json (frontend + backend + tests)
 F7:  push-to-neo (planned) → Webhook calls → ETGO_SF_* config (replaces code generation)
 F8:  generate-frontend   → React SPA
+F8b: translate-todos     → AI translates callout/onchange TODOs in generated components
 F9:  run-contract-tests  → test execution
 ```
 

@@ -137,6 +137,7 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | `generate-contract.js` | Curated schema + rules | `contract.json` (frontend + backend contract) |
 | `push-to-neo.js` (planned) | Curated schema | Webhook calls → ETGO_SF_* tables (NEO Headless config) |
 | `generate-frontend.js` | Contract + decisions | React SPA components |
+| `translate-todos.js` | Generated React components | Components with translated callout/onchange logic (AI-assisted, interactive) |
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |
 | `pipeline.js` | Window name | Runs full pipeline: extract → validate → classify → generate |
