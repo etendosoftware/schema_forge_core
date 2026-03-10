@@ -1,14 +1,14 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'code', label: 'Code', type: 'string' },
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'accountType', label: 'Account Type', type: 'string' },
-  { key: 'parentAccount', label: 'Parent Account', type: 'string' },
-  { key: 'debit', label: 'Debit', type: 'amount' },
-  { key: 'credit', label: 'Credit', type: 'amount' },
-  { key: 'balance', label: 'Balance', type: 'amount' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'code', column: 'Code', type: 'string' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'accountType', column: 'AccountType', type: 'string' },
+  { key: 'parentAccount', column: 'Parent_ID', type: 'string' },
+  { key: 'debit', column: 'Debit', type: 'amount' },
+  { key: 'credit', column: 'Credit', type: 'amount' },
+  { key: 'balance', column: 'Balance', type: 'amount' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const filters = ['code', 'name', 'accountType'];

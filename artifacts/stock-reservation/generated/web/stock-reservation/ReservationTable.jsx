@@ -1,14 +1,14 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'product', label: 'Product', type: 'string' },
-  { key: 'warehouse', label: 'Warehouse', type: 'string' },
-  { key: 'reservedQty', label: 'Reserved Qty', type: 'number' },
-  { key: 'releasedQty', label: 'Released Qty', type: 'number' },
-  { key: 'status', label: 'Status', type: 'status' },
-  { key: 'salesOrderLine', label: 'Sales Order Line', type: 'string' },
-  { key: 'uom', label: 'Uom', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
+  { key: 'reservedQty', column: 'Quantity', type: 'number' },
+  { key: 'releasedQty', column: 'ReleasedQty', type: 'number' },
+  { key: 'status', column: 'RESStatus', type: 'status' },
+  { key: 'salesOrderLine', column: 'C_OrderLine_ID', type: 'string' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'string' },
 ];
 
 const filters = ['documentNo', 'product', 'warehouse', 'status'];

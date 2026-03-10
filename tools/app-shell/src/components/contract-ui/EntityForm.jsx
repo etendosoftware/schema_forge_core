@@ -4,12 +4,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
+import { useLabel } from '@/i18n';
 
 /**
  * Combobox-style search input for foreign key fields.
  * Filters results from catalogs when typing.
  */
-function SearchInput({ field, value, onChange, catalogs }) {
+function SearchInput({ field, value, onChange, catalogs, resolvedLabel }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value ?? '');
 
@@ -38,7 +39,7 @@ function SearchInput({ field, value, onChange, catalogs }) {
           id={field.key}
           name={field.key}
           type="text"
-          placeholder={`Search ${field.label}...`}
+          placeholder={`Search ${resolvedLabel}...`}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -81,7 +82,7 @@ function SearchInput({ field, value, onChange, catalogs }) {
  * Dropdown selector for FK fields with few options (inputMode: selector).
  * Uses shadcn Select (Radix) for consistent styling.
  */
-function SelectorInput({ field, value, onChange, catalogs }) {
+function SelectorInput({ field, value, onChange, catalogs, resolvedLabel }) {
   const options = catalogs?.[field.reference] ?? [];
   return (
     <Select
@@ -90,7 +91,7 @@ function SelectorInput({ field, value, onChange, catalogs }) {
       required={field.required}
     >
       <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
-        <SelectValue placeholder={`Select ${field.label}...`} />
+        <SelectValue placeholder={`Select ${resolvedLabel}...`} />
       </SelectTrigger>
       <SelectContent>
         {options.map(opt => (
@@ -105,7 +106,7 @@ function SelectorInput({ field, value, onChange, catalogs }) {
  * Dependent dropdown that filters options by a parent field value (inputMode: dependent).
  * Uses shadcn Select (Radix) for consistent styling.
  */
-function DependentSelect({ field, value, onChange, catalogs, formData }) {
+function DependentSelect({ field, value, onChange, catalogs, formData, resolvedLabel }) {
   const parentValue = formData?.[field.dependsOn?.field];
   const allOptions = catalogs?.[field.reference] ?? [];
   const options = parentValue
@@ -121,7 +122,7 @@ function DependentSelect({ field, value, onChange, catalogs, formData }) {
     >
       <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
         <SelectValue
-          placeholder={parentValue ? `Select ${field.label}...` : `Select ${field.dependsOn?.field} first`}
+          placeholder={parentValue ? `Select ${resolvedLabel}...` : `Select ${field.dependsOn?.field} first`}
         />
       </SelectTrigger>
       <SelectContent>
@@ -143,9 +144,11 @@ function DependentSelect({ field, value, onChange, catalogs, formData }) {
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  */
 export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
+  const t = useLabel();
   return (
     <div className="grid grid-cols-2 gap-3">
       {fields.map(f => {
+        const label = t(f.column) ?? f.label ?? f.key;
         if (f.type === 'checkbox') {
           return (
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
@@ -181,7 +184,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
                 )}
               </button>
               <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-                {f.label}{f.required ? ' *' : ''}
+                {label}{f.required ? ' *' : ''}
               </Label>
             </div>
             </FieldHighlight>
@@ -192,7 +195,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
               <div className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {f.label}{f.required ? ' *' : ''}
+                  {label}{f.required ? ' *' : ''}
                 </Label>
                 <DependentSelect
                   field={f}
@@ -200,6 +203,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
                   onChange={(val) => onChange?.(f.key, val)}
                   catalogs={catalogs}
                   formData={data}
+                  resolvedLabel={label}
                 />
               </div>
             </FieldHighlight>
@@ -210,13 +214,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
               <div className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {f.label}{f.required ? ' *' : ''}
+                  {label}{f.required ? ' *' : ''}
                 </Label>
                 <SelectorInput
                   field={f}
                   value={data?.[f.key] ?? ''}
                   onChange={(val) => onChange?.(f.key, val)}
                   catalogs={catalogs}
+                  resolvedLabel={label}
                 />
               </div>
             </FieldHighlight>
@@ -227,13 +232,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
               <div className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {f.label}{f.required ? ' *' : ''}
+                  {label}{f.required ? ' *' : ''}
                 </Label>
                 <SearchInput
                   field={f}
                   value={data?.[f.key] ?? ''}
                   onChange={(val) => onChange?.(f.key, val)}
                   catalogs={catalogs}
+                  resolvedLabel={label}
                 />
               </div>
             </FieldHighlight>
@@ -244,7 +250,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
           <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
             <div className="space-y-1.5">
               <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {f.label}{f.required ? ' *' : ''}
+                {label}{f.required ? ' *' : ''}
               </Label>
               <Input
                 id={f.key}

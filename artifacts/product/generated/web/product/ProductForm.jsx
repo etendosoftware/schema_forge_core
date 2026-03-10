@@ -1,14 +1,14 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'name', label: 'Name', type: 'text', required: true },
-  { key: 'searchKey', label: 'Search Key', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'textarea' },
-  { key: 'uom', label: 'Uom', type: 'selector', required: true, reference: 'UOM', inputMode: 'selector' },
-  { key: 'productCategory', label: 'Product Category', type: 'selector', required: true, reference: 'ProductCategory', inputMode: 'selector' },
-  { key: 'listPrice', label: 'List Price', type: 'number' },
-  { key: 'standardCost', label: 'Standard Cost', type: 'number' },
-  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
+  { key: 'name', column: 'Name', type: 'text', required: true },
+  { key: 'searchKey', column: 'Value', type: 'text', required: true },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'selector', required: true, reference: 'UOM', inputMode: 'selector' },
+  { key: 'productCategory', column: 'M_Product_Category_ID', type: 'selector', required: true, reference: 'ProductCategory', inputMode: 'selector' },
+  { key: 'listPrice', column: 'ListPrice', type: 'number' },
+  { key: 'standardCost', column: 'StandardCost', type: 'number' },
+  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function ProductForm(props) {

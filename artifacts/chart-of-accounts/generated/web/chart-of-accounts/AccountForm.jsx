@@ -1,11 +1,11 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'code', label: 'Code', type: 'text', required: true },
-  { key: 'name', label: 'Name', type: 'text', required: true },
-  { key: 'accountType', label: 'Account Type', type: 'text', required: true },
-  { key: 'parentAccount', label: 'Parent Account', type: 'search', reference: 'Account', inputMode: 'search' },
-  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
+  { key: 'code', column: 'Code', type: 'text', required: true },
+  { key: 'name', column: 'Name', type: 'text', required: true },
+  { key: 'accountType', column: 'AccountType', type: 'text', required: true },
+  { key: 'parentAccount', column: 'Parent_ID', type: 'search', reference: 'Account', inputMode: 'search' },
+  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function AccountForm(props) {

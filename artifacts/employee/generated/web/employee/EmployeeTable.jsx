@@ -1,15 +1,15 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'employeeId', label: 'Employee Id', type: 'string' },
-  { key: 'department', label: 'Department', type: 'string' },
-  { key: 'position', label: 'Position', type: 'string' },
-  { key: 'email', label: 'Email', type: 'string' },
-  { key: 'phone', label: 'Phone', type: 'string' },
-  { key: 'startDate', label: 'Start Date', type: 'date' },
-  { key: 'status', label: 'Status', type: 'status' },
-  { key: 'manager', label: 'Manager', type: 'string' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'employeeId', column: 'EmployeeId', type: 'string' },
+  { key: 'department', column: 'Department', type: 'string' },
+  { key: 'position', column: 'Position', type: 'string' },
+  { key: 'email', column: 'Email', type: 'string' },
+  { key: 'phone', column: 'Phone', type: 'string' },
+  { key: 'startDate', column: 'StartDate', type: 'date' },
+  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'manager', column: 'Manager_ID', type: 'string' },
 ];
 
 const filters = ['name', 'department', 'status'];

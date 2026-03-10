@@ -23,24 +23,24 @@ const masterDetailContract = {
     entities: {
       order: {
         fields: [
-          { name: 'documentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
-          { name: 'businessPartner', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner', inputMode: 'search' },
-          { name: 'partnerAddress', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
-          { name: 'warehouse', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'Warehouse', inputMode: 'selector' },
-          { name: 'priceList', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'PriceList', inputMode: 'selector' },
-          { name: 'grandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
-          { name: 'docStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
-          { name: 'adClientId', type: 'id', tsType: 'string', visibility: 'system', required: true, grid: false, form: false },
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner', inputMode: 'search' },
+          { name: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
+          { name: 'warehouse', column: 'M_Warehouse_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'Warehouse', inputMode: 'selector' },
+          { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: false, form: true, reference: 'PriceList', inputMode: 'selector' },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
+          { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'adClientId', column: 'AD_Client_ID', type: 'id', tsType: 'string', visibility: 'system', required: true, grid: false, form: false },
         ],
         searchableFields: ['documentNo', 'businessPartner', 'docStatus'],
         computedFields: [],
       },
       orderLine: {
         fields: [
-          { name: 'product', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product', inputMode: 'search' },
-          { name: 'quantity', type: 'number', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true },
-          { name: 'tax', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Tax', inputMode: 'selector' },
-          { name: 'lineNetAmount', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product', inputMode: 'search' },
+          { name: 'quantity', column: 'QtyOrdered', type: 'number', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'tax', column: 'C_Tax_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Tax', inputMode: 'selector' },
+          { name: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
         ],
         searchableFields: ['product'],
         computedFields: [],
@@ -61,11 +61,11 @@ const singleEntityContract = {
     entities: {
       item: {
         fields: [
-          { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
-          { name: 'description', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
-          { name: 'amount', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
-          { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
-          { name: 'adClientId', type: 'id', tsType: 'string', visibility: 'system', required: true, grid: false, form: false },
+          { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'description', column: 'Description', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+          { name: 'amount', column: 'Amount', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+          { name: 'isActive', column: 'IsActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'adClientId', column: 'AD_Client_ID', type: 'id', tsType: 'string', visibility: 'system', required: true, grid: false, form: false },
         ],
         searchableFields: ['name'],
         computedFields: [],
@@ -81,9 +81,9 @@ const booleanContract = {
     entities: {
       priceList: {
         fields: [
-          { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
-          { name: 'isDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: false, form: true },
-          { name: 'isActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'isDefault', column: 'IsDefault', type: 'boolean', tsType: 'boolean', visibility: 'editable', required: false, grid: false, form: true },
+          { name: 'isActive', column: 'IsActive', type: 'boolean', tsType: 'boolean', visibility: 'readOnly', required: true, grid: true, form: true },
         ],
         searchableFields: ['name'],
         computedFields: [],
@@ -243,16 +243,18 @@ describe('generateTableComponent', () => {
   it('maps column types correctly', () => {
     const code = generateTableComponent('order', masterDetailContract);
     // grandTotal is amount
-    assert.ok(code.includes("key: 'grandTotal', label: 'Grand Total', type: 'amount'"));
+    assert.ok(code.includes("key: 'grandTotal', column: 'GrandTotal', type: 'amount'"));
     // docStatus name includes "status" -> status type
     assert.ok(code.includes("type: 'status'"));
   });
 
-  it('generates correct labels from camelCase field names', () => {
+  it('emits column keys instead of labels for i18n resolution', () => {
     const code = generateTableComponent('order', masterDetailContract);
-    assert.ok(code.includes("label: 'Document No'"));
-    assert.ok(code.includes("label: 'Business Partner'"));
-    assert.ok(code.includes("label: 'Grand Total'"));
+    assert.ok(code.includes("column: 'DocumentNo'"));
+    assert.ok(code.includes("column: 'C_BPartner_ID'"));
+    assert.ok(code.includes("column: 'GrandTotal'"));
+    // Should NOT contain hardcoded label
+    assert.ok(!code.includes("label: 'Document No'"));
   });
 
   it('declares filters array from searchableFields', () => {
@@ -268,7 +270,7 @@ describe('generateTableComponent', () => {
         window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
         entities: {
           test: {
-            fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            fields: [{ name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
             computedFields: [],
           },
         },
@@ -287,7 +289,7 @@ describe('generateTableComponent', () => {
 
   it('maps number/integer fields to number type', () => {
     const code = generateTableComponent('orderLine', masterDetailContract);
-    assert.ok(code.includes("key: 'quantity', label: 'Quantity', type: 'number'"));
+    assert.ok(code.includes("key: 'quantity', column: 'QtyOrdered', type: 'number'"));
   });
 
   it('does NOT contain inline CSS classes', () => {
@@ -355,11 +357,13 @@ describe('generateFormComponent', () => {
     assert.ok(code.includes('required: true'));
   });
 
-  it('generates correct labels', () => {
+  it('emits column keys instead of labels for i18n resolution', () => {
     const code = generateFormComponent('order', masterDetailContract);
-    assert.ok(code.includes("label: 'Business Partner'"));
-    assert.ok(code.includes("label: 'Partner Address'"));
-    assert.ok(code.includes("label: 'Grand Total'"));
+    assert.ok(code.includes("column: 'C_BPartner_ID'"));
+    assert.ok(code.includes("column: 'C_BPartner_Location_ID'"));
+    assert.ok(code.includes("column: 'GrandTotal'"));
+    // Should NOT contain hardcoded label
+    assert.ok(!code.includes("label: 'Business Partner'"));
   });
 
   it('maps foreignKey with search inputMode to search type', () => {
@@ -410,7 +414,7 @@ describe('generateFormComponent', () => {
         entities: {
           test: {
             fields: [
-              { name: 'dateOrdered', type: 'date', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+              { name: 'dateOrdered', column: 'DateOrdered', type: 'date', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
             ],
             searchableFields: [],
             computedFields: [],
@@ -489,14 +493,14 @@ describe('generatePageComponent', () => {
         entities: {
           header: {
             fields: [
-              { name: 'name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
             ],
             searchableFields: [],
             computedFields: [],
           },
           detail: {
             fields: [
-              { name: 'item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+              { name: 'item', column: 'Item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
             ],
             searchableFields: [],
             computedFields: [],
@@ -525,12 +529,12 @@ describe('generatePageComponent', () => {
         window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
         entities: {
           header: {
-            fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            fields: [{ name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
             searchableFields: [],
             computedFields: [],
           },
           detail: {
-            fields: [{ name: 'item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            fields: [{ name: 'item', column: 'Item', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
             searchableFields: [],
             computedFields: [],
           },
@@ -829,13 +833,13 @@ describe('field type mapping edge cases', () => {
       entities: {
         test: {
           fields: [
-            { name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
-            { name: 'count', type: 'integer', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
-            { name: 'orderDate', type: 'date', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
-            { name: 'notes', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
-            { name: 'remarks', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
-            { name: 'comments', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
-            { name: 'orderStatus', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
+            { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            { name: 'count', column: 'Count', type: 'integer', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+            { name: 'orderDate', column: 'DateOrdered', type: 'date', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
+            { name: 'notes', column: 'Notes', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'remarks', column: 'Remarks', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'comments', column: 'Comments', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true },
+            { name: 'orderStatus', column: 'OrderStatus', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
           ],
           searchableFields: [],
           computedFields: [],
@@ -859,7 +863,7 @@ describe('field type mapping edge cases', () => {
 
   it('maps field name containing "status" to status type in table', () => {
     const code = generateTableComponent('test', edgeCaseContract);
-    assert.ok(code.includes("key: 'orderStatus', label: 'Order Status', type: 'status'"));
+    assert.ok(code.includes("key: 'orderStatus', column: 'OrderStatus', type: 'status'"));
   });
 
   it('maps notes/remarks/comments field names to textarea in form', () => {
@@ -877,7 +881,7 @@ describe('field type mapping edge cases', () => {
 
   it('maps plain string to text in form', () => {
     const code = generateFormComponent('test', edgeCaseContract);
-    assert.ok(code.includes("key: 'name', label: 'Name', type: 'text'"));
+    assert.ok(code.includes("key: 'name', column: 'Name', type: 'text'"));
   });
 });
 
@@ -892,16 +896,16 @@ describe('addLineFields derived field separation', () => {
         window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
         entities: {
           header: {
-            fields: [{ name: 'name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
+            fields: [{ name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true }],
             searchableFields: [],
             computedFields: [],
           },
           detail: {
             fields: [
-              { name: 'product', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
-              { name: 'unitPrice', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
-              { name: 'discount', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
-              { name: 'netAmount', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+              { name: 'product', column: 'M_Product_ID', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+              { name: 'unitPrice', column: 'PriceActual', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+              { name: 'discount', column: 'Discount', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
+              { name: 'netAmount', column: 'LineNetAmt', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true },
             ],
             searchableFields: [],
             computedFields: [],

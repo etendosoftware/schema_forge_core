@@ -1,15 +1,15 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'product', label: 'Product', type: 'string' },
-  { key: 'quantity', label: 'Quantity', type: 'number' },
-  { key: 'unitPrice', label: 'Unit Price', type: 'amount' },
-  { key: 'tax', label: 'Tax', type: 'string' },
-  { key: 'discount', label: 'Discount', type: 'number' },
-  { key: 'lineNo', label: 'Line No', type: 'number' },
-  { key: 'lineNetAmount', label: 'Line Net Amount', type: 'amount' },
-  { key: 'deliveredQty', label: 'Delivered Qty', type: 'number' },
-  { key: 'uom', label: 'Uom', type: 'string' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'quantity', column: 'QtyOrdered', type: 'number' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'amount' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string' },
+  { key: 'discount', column: 'Discount', type: 'number' },
+  { key: 'lineNo', column: 'Line', type: 'number' },
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount' },
+  { key: 'deliveredQty', column: 'QtyDelivered', type: 'number' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'string' },
 ];
 
 const filters = ['product'];

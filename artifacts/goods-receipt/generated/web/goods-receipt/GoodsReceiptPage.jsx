@@ -5,7 +5,7 @@ import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
@@ -16,11 +16,11 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'movementQty', label: 'Movement Qty', type: 'number', required: true },
-    { key: 'locator', label: 'Locator', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'textarea' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'movementQty', column: 'MovementQty', type: 'number', required: true },
+    { key: 'locator', column: 'M_Locator_ID', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
   ],
   derived: [
 

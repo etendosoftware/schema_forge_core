@@ -1,13 +1,13 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'searchKey', label: 'Search Key', type: 'string' },
-  { key: 'x', label: 'X', type: 'string' },
-  { key: 'y', label: 'Y', type: 'string' },
-  { key: 'z', label: 'Z', type: 'string' },
-  { key: 'priorityNo', label: 'Priority No', type: 'number' },
-  { key: 'isDefault', label: 'Is Default', type: 'boolean' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'searchKey', column: 'Value', type: 'string' },
+  { key: 'x', column: 'X', type: 'string' },
+  { key: 'y', column: 'Y', type: 'string' },
+  { key: 'z', column: 'Z', type: 'string' },
+  { key: 'priorityNo', column: 'PriorityNo', type: 'number' },
+  { key: 'isDefault', column: 'IsDefault', type: 'boolean' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const filters = ['searchKey'];

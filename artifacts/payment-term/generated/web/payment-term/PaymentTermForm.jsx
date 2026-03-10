@@ -1,13 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'name', label: 'Name', type: 'text', required: true },
-  { key: 'searchKey', label: 'Search Key', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'textarea' },
-  { key: 'netDays', label: 'Net Days', type: 'number', required: true },
-  { key: 'discountDays', label: 'Discount Days', type: 'number' },
-  { key: 'discount', label: 'Discount', type: 'number' },
-  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true, readOnly: true },
+  { key: 'name', column: 'Name', type: 'text', required: true },
+  { key: 'searchKey', column: 'Value', type: 'text', required: true },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'netDays', column: 'NetDays', type: 'number', required: true },
+  { key: 'discountDays', column: 'DiscountDays', type: 'number' },
+  { key: 'discount', column: 'Discount', type: 'number' },
+  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function PaymentTermForm(props) {

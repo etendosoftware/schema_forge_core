@@ -5,7 +5,7 @@ import CostAdjustmentLineTable from './CostAdjustmentLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
@@ -17,14 +17,14 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'inventoryTransaction', label: 'Inventory Transaction', type: 'search', reference: 'MaterialTransaction', inputMode: 'search' },
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'textarea' },
-    { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'inventoryTransaction', column: 'M_Transaction_ID', type: 'search', reference: 'MaterialTransaction', inputMode: 'search' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true },
   ],
   derived: [
-    { key: 'adjustmentAmount', label: 'Adjustment Amount', type: 'number' },
+    { key: 'adjustmentAmount', column: 'AdjustmentAmount', type: 'number' },
   ],
 };
 

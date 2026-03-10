@@ -1,8 +1,8 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'goodsReceipt', label: 'Goods Receipt', type: 'string' },
-  { key: 'documentNo', label: 'Document No', type: 'string' },
+  { key: 'goodsReceipt', column: 'M_InOut_ID', type: 'string' },
+  { key: 'documentNo', column: 'M_InOut_ID$DocumentNo', type: 'string' },
 ];
 
 const filters = ['goodsReceipt', 'documentNo'];

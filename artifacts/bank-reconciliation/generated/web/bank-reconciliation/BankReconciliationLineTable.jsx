@@ -1,11 +1,11 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'transactionDate', label: 'Transaction Date', type: 'date' },
-  { key: 'description', label: 'Description', type: 'string' },
-  { key: 'amount', label: 'Amount', type: 'amount' },
-  { key: 'matchedInvoice', label: 'Matched Invoice', type: 'string' },
-  { key: 'matchStatus', label: 'Match Status', type: 'status' },
+  { key: 'transactionDate', column: 'TransactionDate', type: 'date' },
+  { key: 'description', column: 'Description', type: 'string' },
+  { key: 'amount', column: 'Amount', type: 'amount' },
+  { key: 'matchedInvoice', column: 'C_Invoice_ID', type: 'string' },
+  { key: 'matchStatus', column: 'MatchStatus', type: 'status' },
 ];
 
 const filters = ['description', 'transactionDate'];

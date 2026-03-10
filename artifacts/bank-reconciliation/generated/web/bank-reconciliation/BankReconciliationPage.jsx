@@ -5,9 +5,9 @@ import BankReconciliationLineTable from './BankReconciliationLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'startingBalance', label: 'Starting Balance', type: 'amount' },
-  { key: 'difference', label: 'Difference', type: 'amount' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'startingBalance', column: 'StartingBalance', type: 'amount' },
+  { key: 'difference', column: 'Difference', type: 'amount' },
 ];
 
 const statusField = 'status';
@@ -18,12 +18,12 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'transactionDate', label: 'Transaction Date', type: 'date', required: true, lookup: true },
-    { key: 'description', label: 'Description', type: 'textarea', required: true },
-    { key: 'matchedInvoice', label: 'Matched Invoice', type: 'search', reference: 'Invoice', inputMode: 'search' },
+    { key: 'transactionDate', column: 'TransactionDate', type: 'date', required: true, lookup: true },
+    { key: 'description', column: 'Description', type: 'textarea', required: true },
+    { key: 'matchedInvoice', column: 'C_Invoice_ID', type: 'search', reference: 'Invoice', inputMode: 'search' },
   ],
   derived: [
-    { key: 'amount', label: 'Amount', type: 'number' },
+    { key: 'amount', column: 'Amount', type: 'number' },
   ],
 };
 

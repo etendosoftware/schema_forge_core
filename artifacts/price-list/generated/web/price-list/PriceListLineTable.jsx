@@ -1,11 +1,11 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'product', label: 'Product', type: 'string' },
-  { key: 'listPrice', label: 'List Price', type: 'amount' },
-  { key: 'standardPrice', label: 'Standard Price', type: 'amount' },
-  { key: 'limitPrice', label: 'Limit Price', type: 'amount' },
-  { key: 'uom', label: 'Uom', type: 'string' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'listPrice', column: 'PriceList', type: 'amount' },
+  { key: 'standardPrice', column: 'PriceStd', type: 'amount' },
+  { key: 'limitPrice', column: 'PriceLimit', type: 'amount' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'string' },
 ];
 
 const filters = ['product'];
