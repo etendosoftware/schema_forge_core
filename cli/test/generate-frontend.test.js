@@ -1211,3 +1211,106 @@ describe('generateFormComponent - TODO comments for callout and onChangeFunction
       'onChangeFunction TODO should be 1 line before grandTotal field');
   });
 });
+
+// ---------------------------------------------------------------------------
+// UI Hints in generated frontend code
+// ---------------------------------------------------------------------------
+
+const uiHintsContract = {
+  frontendContract: {
+    window: { id: '600', name: 'UI Hints', primaryEntity: 'order', category: 'test' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true,
+            defaultValue: '0', help: 'Total amount including tax', fieldGroup: 'Amounts', precision: 2, isSelectionColumn: true },
+          { name: 'dateOrdered', column: 'DateOrdered', type: 'date', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true,
+            fieldGroup: 'Dates' },
+          { name: 'plainField', column: 'PlainCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
+          { name: 'escapedHelp', column: 'EscapedCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
+            defaultValue: "it's a test", help: "don't forget" },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generateFormComponent - UI hints', () => {
+  it('field with defaultValue emits defaultValue in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("defaultValue: '0'"), 'should emit defaultValue');
+  });
+
+  it('field with help emits help in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("help: 'Total amount including tax'"), 'should emit help text');
+  });
+
+  it('field with fieldGroup emits fieldGroup in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("fieldGroup: 'Amounts'"), 'should emit fieldGroup');
+  });
+
+  it('field with precision emits precision in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes('precision: 2'), 'should emit precision');
+  });
+
+  it('field groups comment is generated when fieldGroup fields exist', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes('// Field groups: Amounts, Dates'), 'should emit field groups comment');
+  });
+
+  it('fields without hints have no hint attributes in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    const plainLine = code.split('\n').find(l => l.includes("key: 'plainField'"));
+    assert.ok(plainLine, 'plainField should exist');
+    assert.ok(!plainLine.includes('defaultValue'), 'plainField should not have defaultValue');
+    assert.ok(!plainLine.includes('help'), 'plainField should not have help');
+    assert.ok(!plainLine.includes('fieldGroup'), 'plainField should not have fieldGroup');
+    assert.ok(!plainLine.includes('precision'), 'plainField should not have precision');
+  });
+
+  it('escapes single quotes in defaultValue and help', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("defaultValue: 'it\\'s a test'"), 'should escape single quotes in defaultValue');
+    assert.ok(code.includes("help: 'don\\'t forget'"), 'should escape single quotes in help');
+  });
+
+  it('field groups comment is not generated when no fieldGroup fields exist', () => {
+    const noGroupContract = {
+      frontendContract: {
+        window: { id: '1', name: 'No Groups', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generateFormComponent('test', noGroupContract);
+    assert.ok(!code.includes('// Field groups:'), 'should not emit field groups comment');
+  });
+});
+
+describe('generateTableComponent - isSelectionColumn hint', () => {
+  it('field with isSelectionColumn emits isSelectionColumn in grid columns', () => {
+    const code = generateTableComponent('order', uiHintsContract);
+    assert.ok(code.includes('isSelectionColumn: true'), 'should emit isSelectionColumn');
+  });
+
+  it('field without isSelectionColumn does not emit the attribute', () => {
+    const code = generateTableComponent('order', uiHintsContract);
+    const plainLine = code.split('\n').find(l => l.includes("key: 'plainField'"));
+    assert.ok(plainLine, 'plainField should exist');
+    assert.ok(!plainLine.includes('isSelectionColumn'), 'plainField should not have isSelectionColumn');
+  });
+});

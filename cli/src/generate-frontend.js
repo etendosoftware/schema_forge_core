@@ -76,7 +76,8 @@ export function generateTableComponent(entityName, contract) {
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
+    const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -114,6 +115,11 @@ export function generateFormComponent(entityName, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
+    // UI hints
+    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'")}'` : '';
+    const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
+    const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
+    const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
     // Behavioral metadata: displayLogic and readOnlyLogic
     const displayLogicPart = f.displayLogic?.js
       ? `, displayLogic: (record) => ${f.displayLogic.js}`
@@ -129,13 +135,19 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       todoLines.push(`  // TODO: Translate onchangefunction logic: ${f.onChangeFunction.name}`);
     }
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...todoLines, fieldLine].join('\n');
   }).join('\n');
 
+  // Generate field groups comment if any fields have fieldGroup
+  const uniqueGroups = [...new Set(formFields.map(f => f.fieldGroup).filter(Boolean))];
+  const fieldGroupsComment = uniqueGroups.length > 0
+    ? `// Field groups: ${uniqueGroups.join(', ')}\n`
+    : '';
+
   return `import { EntityForm } from '@/components/contract-ui';
 
-const fields = [
+${fieldGroupsComment}const fields = [
 ${fieldsArray}
 ];
 

@@ -60,6 +60,16 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
 
+      // UI hints
+      if (f.defaultValue) mapped.defaultValue = f.defaultValue;
+      if (f.isIdentifier) mapped.isIdentifier = true;
+      if (f.help) mapped.help = f.help;
+      if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
+      if (f.isSelectionColumn) mapped.isSelectionColumn = true;
+      if (f.isFilterable) mapped.isFilterable = true;
+      if (f.precision) mapped.precision = f.precision;
+      if (f.isTranslated) mapped.isTranslated = true;
+
       // Behavioral metadata: callout
       if (f.callout) {
         mapped.callout = { className: f.callout };
