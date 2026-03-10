@@ -937,3 +937,195 @@ describe('addLineFields derived field separation', () => {
     assert.ok(!addLineMatch[1].includes("key: 'lineNetAmount'"));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Behavioral metadata: displayLogic, readOnlyLogic, callout
+// ---------------------------------------------------------------------------
+
+const behavioralContract = {
+  frontendContract: {
+    window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'discount', column: 'Discount', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            displayLogic: { raw: "@DocumentType@='SO'", js: "record.documentType === 'SO'" } },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true,
+            readOnlyLogic: { raw: "@Posted@='Y'", js: "record.posted === true" } },
+          { name: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            callout: { className: 'com.example.LineNetCallout', effects: ['grandTotal'] } },
+          { name: 'bothLogics', column: 'BothLogics', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
+            displayLogic: { raw: "@Active@='Y'", js: "record.active === true" },
+            readOnlyLogic: { raw: "@Processed@='Y'", js: "record.processed === true" } },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generateFormComponent - behavioral metadata', () => {
+  it('includes displayLogic as arrow function when field has displayLogic.js', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    assert.ok(code.includes("displayLogic: (record) => record.documentType === 'SO'"),
+      'should emit displayLogic arrow function from displayLogic.js');
+  });
+
+  it('includes readOnlyLogic as arrow function when field has readOnlyLogic.js', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    assert.ok(code.includes('readOnlyLogic: (record) => record.posted === true'),
+      'should emit readOnlyLogic arrow function from readOnlyLogic.js');
+  });
+
+  it('does NOT include callout in generated form field config', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    assert.ok(!code.includes('callout'), 'callout should not appear in generated form output');
+    assert.ok(!code.includes('LineNetCallout'), 'callout class name should not appear');
+  });
+
+  it('includes both displayLogic and readOnlyLogic on the same field', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    // The bothLogics field should have both
+    assert.ok(code.includes("key: 'bothLogics'"), 'bothLogics field should exist');
+    assert.ok(code.includes('displayLogic: (record) => record.active === true'),
+      'should include displayLogic on bothLogics field');
+    assert.ok(code.includes('readOnlyLogic: (record) => record.processed === true'),
+      'should include readOnlyLogic on bothLogics field');
+  });
+
+  it('does NOT emit displayLogic when displayLogic.js is absent', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    // documentNo has no displayLogic at all
+    const docNoLine = code.split('\n').find(l => l.includes("key: 'documentNo'"));
+    assert.ok(docNoLine, 'documentNo field should exist');
+    assert.ok(!docNoLine.includes('displayLogic'), 'documentNo should not have displayLogic');
+  });
+
+  it('does NOT emit readOnlyLogic when readOnlyLogic.js is absent', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    const discountLine = code.split('\n').find(l => l.includes("key: 'discount'"));
+    assert.ok(discountLine, 'discount field should exist');
+    assert.ok(!discountLine.includes('readOnlyLogic'), 'discount should not have readOnlyLogic');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// apiPrediction in Page and Index components
+// ---------------------------------------------------------------------------
+
+const contractWithApi = {
+  frontendContract: {
+    window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
+          { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+      orderLine: {
+        fields: [
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product', inputMode: 'search' },
+          { name: 'quantity', column: 'QtyOrdered', type: 'number', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['product'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+  apiPrediction: {
+    specName: 'sales-order',
+    baseUrl: '/sws/neo/sales-order',
+    crud: {
+      order: { listUrl: '/sws/neo/sales-order/order', detailUrl: '/sws/neo/sales-order/order/{id}', supportedFilters: ['documentNo'] },
+    },
+    selectors: [{ entity: 'order', field: 'businessPartner', url: '/sws/neo/sales-order/order/selectors/businessPartner' }],
+    actions: [],
+    queryParams: { pagination: { startRow: '_startRow', endRow: '_endRow' } },
+  },
+};
+
+const singleEntityContractWithApi = {
+  frontendContract: {
+    window: { id: '1', name: 'Simple Item', primaryEntity: 'item', category: 'reference' },
+    entities: {
+      item: {
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['name'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+  apiPrediction: {
+    specName: 'simple-item',
+    baseUrl: '/sws/neo/simple-item',
+    crud: { item: { listUrl: '/sws/neo/simple-item/item' } },
+    selectors: [],
+    actions: [],
+    queryParams: {},
+  },
+};
+
+describe('generatePageComponent - apiPrediction', () => {
+  it('emits api const from apiPrediction when present', () => {
+    const code = generatePageComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('const api ='), 'should declare api const');
+    assert.ok(code.includes('"specName": "sales-order"'), 'should include specName');
+    assert.ok(code.includes('"baseUrl": "/sws/neo/sales-order"'), 'should include baseUrl');
+  });
+
+  it('passes api prop to MasterDetailPage', () => {
+    const code = generatePageComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('api={api}'), 'should pass api prop');
+  });
+
+  it('does not emit api const when apiPrediction is absent', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('const api ='), 'should not declare api const without apiPrediction');
+    assert.ok(!code.includes('api={api}'), 'should not pass api prop without apiPrediction');
+  });
+});
+
+describe('generateIndexComponent - apiPrediction', () => {
+  it('emits api const in master-detail index when apiPrediction present', () => {
+    const code = generateIndexComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('const api ='), 'should declare api const');
+    assert.ok(code.includes('"specName": "sales-order"'), 'should include specName');
+  });
+
+  it('passes api prop in master-detail index', () => {
+    const code = generateIndexComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('api={api}'), 'should pass api prop to Page component');
+  });
+
+  it('emits api const in single-entity index when apiPrediction present', () => {
+    const code = generateIndexComponent('item', null, singleEntityContractWithApi);
+    assert.ok(code.includes('const api ='), 'should declare api const');
+    assert.ok(code.includes('"specName": "simple-item"'), 'should include specName');
+  });
+
+  it('passes api prop in single-entity index', () => {
+    const code = generateIndexComponent('item', null, singleEntityContractWithApi);
+    assert.ok(code.includes('api={api}'), 'should pass api prop to SingleEntityPage');
+  });
+
+  it('does not emit api const when apiPrediction is absent', () => {
+    const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('const api ='), 'should not declare api const');
+  });
+
+  it('does not emit api const for empty contract', () => {
+    const code = generateIndexComponent('item', null, {});
+    assert.ok(!code.includes('const api ='), 'should not declare api const for empty contract');
+  });
+});

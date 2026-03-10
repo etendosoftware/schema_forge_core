@@ -114,7 +114,14 @@ export function generateFormComponent(entityName, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    // Behavioral metadata: displayLogic and readOnlyLogic (callouts are omitted — not supported by NEO Headless yet)
+    const displayLogicPart = f.displayLogic?.js
+      ? `, displayLogic: (record) => ${f.displayLogic.js}`
+      : '';
+    const readOnlyLogicPart = f.readOnlyLogic?.js
+      ? `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`
+      : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${displayLogicPart}${readOnlyLogicPart} },`;
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';
@@ -189,6 +196,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
+  // API prediction config
+  const apiPrediction = contract.apiPrediction;
+  const apiBlock = apiPrediction
+    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    : '';
+  const apiProp = apiPrediction ? '\n      api={api}' : '';
+
   return `import { MasterDetailPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
@@ -213,7 +227,7 @@ ${entryArray}
 ${derivedArray}
   ],
 };
-
+${apiBlock}
 export default function ${compName}(props) {
   return (
     <MasterDetailPage
@@ -228,7 +242,7 @@ export default function ${compName}(props) {
       addLineFields={addLineFields}
       catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
-      detailLabel="${toLabel(detailEntity)}"
+      detailLabel="${toLabel(detailEntity)}"${apiProp}
       {...props}
     />
   );
@@ -244,17 +258,27 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const category = contract?.frontendContract?.window?.category ?? 'general';
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
+  const apiPrediction = contract?.apiPrediction;
 
   if (detailEntity) {
+    const apiBlock = apiPrediction
+      ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+      : '';
+    const apiProp = apiPrediction ? ' api={api}' : '';
     return `import ${headerName}Page from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-
+${apiBlock}
 export default function App({ token, apiBaseUrl, window }) {
-  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
+  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} />;
 }
 `;
   }
+
+  const apiBlock = apiPrediction
+    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    : '';
+  const apiProp = apiPrediction ? '\n      api={api}' : '';
 
   return `import { SingleEntityPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
@@ -262,7 +286,7 @@ import ${headerName}Form from './${headerName}Form';
 import catalogs from './mockCatalogs';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-
+${apiBlock}
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -271,7 +295,7 @@ export default function App(props) {
       Form={${headerName}Form}
       catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
-      window={windowMeta}
+      window={windowMeta}${apiProp}
       {...props}
     />
   );
