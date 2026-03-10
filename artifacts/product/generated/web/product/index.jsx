@@ -3,6 +3,8 @@ import ProductTable from './ProductTable';
 import ProductForm from './ProductForm';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: 'reference', name: 'Product' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -11,6 +13,7 @@ export default function App(props) {
       Form={ProductForm}
       catalogs={catalogs}
       entityLabel="Product"
+      window={windowMeta}
       {...props}
     />
   );

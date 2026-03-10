@@ -60,6 +60,7 @@ function mapFormFieldType(field) {
   if (field.type === 'boolean') return 'checkbox';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
+  if (/notes|description|comments|remarks/i.test(field.name)) return 'textarea';
   return 'text';
 }
 
@@ -75,7 +76,7 @@ export function generateTableComponent(entityName, contract) {
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -102,18 +103,18 @@ export default function ${compName}(props) {
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   const formFields = entity.fields.filter(f => f.form);
-  const editableFields = formFields.filter(f => f.visibility !== 'readOnly');
   const compName = `${capitalize(entityName)}Form`;
 
-  const fieldsArray = editableFields.map(f => {
+  const fieldsArray = formFields.map(f => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
+    const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';
@@ -150,7 +151,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   // Status field config
@@ -178,14 +179,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${referencePart}${inputModePart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
   return `import { MasterDetailPage } from '@/components/contract-ui';
@@ -239,14 +240,18 @@ export default function ${compName}(props) {
  * Generate the entry point / index component.
  * Accepts { token, apiBaseUrl, window } props.
  */
-export function generateIndexComponent(headerEntity, detailEntity) {
+export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
+  const category = contract?.frontendContract?.window?.category ?? 'general';
+  const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
   if (detailEntity) {
     return `import ${headerName}Page from './${headerName}Page';
 
+const windowMeta = { category: '${category}', name: '${windowName}' };
+
 export default function App({ token, apiBaseUrl, window }) {
-  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window} />;
+  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
 }
 `;
   }
@@ -256,6 +261,8 @@ import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: '${category}', name: '${windowName}' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -264,6 +271,7 @@ export default function App(props) {
       Form={${headerName}Form}
       catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
+      window={windowMeta}
       {...props}
     />
   );
@@ -326,6 +334,11 @@ const CATALOG_DATA = {
   UOM: Array.from({ length: 5 }, (_, i) => ({
     id: `uom-${String(i + 1).padStart(3, '0')}`,
     name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
+  })),
+  StorageBin: Array.from({ length: 10 }, (_, i) => ({
+    id: `sb-${String(i + 1).padStart(3, '0')}`,
+    name: ['A-01-01', 'A-01-02', 'A-02-01', 'A-02-02', 'B-01-01', 'B-01-02', 'B-02-01', 'B-02-02', 'C-01-01', 'C-01-02'][i],
+    warehouseId: `wh-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
   })),
   ProductCategory: Array.from({ length: 9 }, (_, i) => ({
     id: `cat-${String(i + 1).padStart(3, '0')}`,
@@ -414,7 +427,7 @@ export function generateAll(contract) {
   files['mockCatalogs.js'] = generateMockCatalogs(contract);
 
   // Always generate index
-  files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity);
+  files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity, contract);
 
   return files;
 }

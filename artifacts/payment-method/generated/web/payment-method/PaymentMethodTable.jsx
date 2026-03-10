@@ -1,8 +1,8 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const filters = ['name'];

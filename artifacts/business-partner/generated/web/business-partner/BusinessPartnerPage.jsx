@@ -5,7 +5,7 @@ import BpLocationTable from './BpLocationTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const statusField = null;
@@ -16,12 +16,12 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'name', label: 'Name', type: 'text', required: true, lookup: true },
-    { key: 'address', label: 'Address', type: 'text' },
-    { key: 'city', label: 'City', type: 'text' },
-    { key: 'postalCode', label: 'Postal Code', type: 'text' },
-    { key: 'country', label: 'Country', type: 'text' },
-    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'name', column: 'Name', type: 'text', required: true, lookup: true },
+    { key: 'address', column: 'Address1', type: 'text' },
+    { key: 'city', column: 'City', type: 'text' },
+    { key: 'postalCode', column: 'Postal', type: 'text' },
+    { key: 'country', column: 'C_Country_ID', type: 'text' },
+    { key: 'phone', column: 'Phone', type: 'text' },
   ],
   derived: [
 

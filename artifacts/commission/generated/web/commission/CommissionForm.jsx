@@ -1,12 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'name', label: 'Name', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
-  { key: 'businessPartner', label: 'Business Partner', type: 'search', required: true, reference: 'BusinessPartner', inputMode: 'search' },
-  { key: 'currency', label: 'Currency', type: 'selector', required: true, reference: 'Currency', inputMode: 'selector' },
-  { key: 'frequencyType', label: 'Frequency Type', type: 'text', required: true },
-  { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
+  { key: 'name', column: 'Name', type: 'text', required: true },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, reference: 'BusinessPartner', inputMode: 'search' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'selector', required: true, reference: 'Currency', inputMode: 'selector' },
+  { key: 'frequencyType', column: 'FrequencyType', type: 'text', required: true },
+  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true },
+  { key: 'dateLastRun', column: 'DateLastRun', type: 'date', readOnly: true },
 ];
 
 export default function CommissionForm(props) {

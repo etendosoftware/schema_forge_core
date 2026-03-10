@@ -1,16 +1,16 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'product', label: 'Product', type: 'string' },
-  { key: 'warehouse', label: 'Warehouse', type: 'string' },
-  { key: 'inspectionDate', label: 'Inspection Date', type: 'date' },
-  { key: 'result', label: 'Result', type: 'string' },
-  { key: 'inspector', label: 'Inspector', type: 'string' },
-  { key: 'quantityInspected', label: 'Quantity Inspected', type: 'number' },
-  { key: 'quantityAccepted', label: 'Quantity Accepted', type: 'number' },
-  { key: 'quantityRejected', label: 'Quantity Rejected', type: 'number' },
-  { key: 'docStatus', label: 'Doc Status', type: 'status' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
+  { key: 'inspectionDate', column: 'InspectionDate', type: 'date' },
+  { key: 'result', column: 'Result', type: 'string' },
+  { key: 'inspector', column: 'Inspector', type: 'string' },
+  { key: 'quantityInspected', column: 'QtyInspected', type: 'number' },
+  { key: 'quantityAccepted', column: 'QtyAccepted', type: 'number' },
+  { key: 'quantityRejected', column: 'QtyRejected', type: 'number' },
+  { key: 'docStatus', column: 'DocStatus', type: 'status' },
 ];
 
 const filters = ['documentNo', 'product', 'warehouse', 'inspectionDate', 'result', 'inspector', 'docStatus'];

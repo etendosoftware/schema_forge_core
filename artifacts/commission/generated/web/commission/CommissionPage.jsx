@@ -5,7 +5,7 @@ import CommissionLineTable from './CommissionLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'dateLastRun', label: 'Date Last Run', type: 'date' },
+  { key: 'dateLastRun', column: 'DateLastRun', type: 'date' },
 ];
 
 const statusField = null;
@@ -16,16 +16,16 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true, lookup: true },
-    { key: 'product', label: 'Product', type: 'search', reference: 'Product', inputMode: 'search' },
-    { key: 'productCategory', label: 'Product Category', type: 'selector', reference: 'ProductCategory', inputMode: 'selector' },
-    { key: 'bpGroup', label: 'Bp Group', type: 'selector', reference: 'BusinessPartnerGroup', inputMode: 'selector' },
-    { key: 'commissionPercentage', label: 'Commission Percentage', type: 'number' },
-    { key: 'quantityMultiplier', label: 'Quantity Multiplier', type: 'number' },
-    { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
+    { key: 'productCategory', column: 'M_Product_Category_ID', type: 'selector', reference: 'ProductCategory', inputMode: 'selector' },
+    { key: 'bpGroup', column: 'C_BP_Group_ID', type: 'selector', reference: 'BusinessPartnerGroup', inputMode: 'selector' },
+    { key: 'commissionPercentage', column: 'CommissionPercentage', type: 'number' },
+    { key: 'quantityMultiplier', column: 'QtyMultiplier', type: 'number' },
+    { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true },
   ],
   derived: [
-    { key: 'commissionAmount', label: 'Commission Amount', type: 'number' },
+    { key: 'commissionAmount', column: 'CommissionAmt', type: 'number' },
   ],
 };
 

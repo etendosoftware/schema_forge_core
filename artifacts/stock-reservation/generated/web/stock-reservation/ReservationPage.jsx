@@ -5,10 +5,10 @@ import ReservationStockTable from './ReservationStockTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'releasedQty', label: 'Released Qty', type: 'number' },
-  { key: 'uom', label: 'Uom', type: 'string' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'releasedQty', column: 'ReleasedQty', type: 'number' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'string' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const statusField = 'status';
@@ -19,8 +19,8 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'locator', label: 'Locator', type: 'selector', required: true, lookup: true, reference: 'Locator', inputMode: 'selector' },
-    { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+    { key: 'locator', column: 'M_Locator_ID', type: 'selector', required: true, lookup: true, reference: 'Locator', inputMode: 'selector' },
+    { key: 'quantity', column: 'Quantity', type: 'number', required: true },
   ],
   derived: [
 
