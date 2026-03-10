@@ -832,6 +832,91 @@ describe('generateApiPrediction', () => {
   });
 });
 
+// ─── v2 Test Manifest Entries ─────────────────────────────────────────────────
+
+describe('generateTestManifest — v2 entries (displayLogic, readOnlyLogic, defaultValue)', () => {
+  it('emits displaylogic-valid tests for fields with displayLogic', () => {
+    const fc = generateFrontendContract(behavioralSchema, behavioralRules);
+    const bc = generateBackendContract(behavioralSchema);
+    const manifest = generateTestManifest(fc, bc);
+    const dlTests = manifest.tests.filter(t => t.category === 'displaylogic-valid');
+    assert.equal(dlTests.length, 1);
+    assert.equal(dlTests[0].field, 'warehouse');
+    assert.equal(dlTests[0].runner, 'node');
+  });
+
+  it('emits readonlylogic-valid tests for fields with readOnlyLogic', () => {
+    const fc = generateFrontendContract(behavioralSchema, behavioralRules);
+    const bc = generateBackendContract(behavioralSchema);
+    const manifest = generateTestManifest(fc, bc);
+    const roTests = manifest.tests.filter(t => t.category === 'readonlylogic-valid');
+    assert.equal(roTests.length, 1);
+    assert.equal(roTests[0].field, 'priceList');
+    assert.equal(roTests[0].runner, 'node');
+  });
+
+  it('emits default-value-type tests for fields with defaultValue', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const bc = generateBackendContract(uiHintsSchema);
+    const manifest = generateTestManifest(fc, bc);
+    const dvTests = manifest.tests.filter(t => t.category === 'default-value-type');
+    assert.equal(dvTests.length, 1);
+    assert.equal(dvTests[0].field, 'grandTotal');
+    assert.equal(dvTests[0].runner, 'node');
+  });
+
+  it('does not emit displaylogic-valid tests when no fields have displayLogic', () => {
+    const fc = generateFrontendContract(minimalSchema);
+    const bc = generateBackendContract(minimalSchema);
+    const manifest = generateTestManifest(fc, bc);
+    const dlTests = manifest.tests.filter(t => t.category === 'displaylogic-valid');
+    assert.equal(dlTests.length, 0);
+  });
+});
+
+describe('generateContract — v2 apiPrediction tests in testManifest', () => {
+  it('emits crud-flags tests for each entity', () => {
+    const contract = generateContract(fkSchema);
+    const crudTests = contract.testManifest.tests.filter(t => t.category === 'crud-flags');
+    assert.equal(crudTests.length, 2); // order + orderLine
+    const entities = crudTests.map(t => t.entity);
+    assert.ok(entities.includes('order'));
+    assert.ok(entities.includes('orderLine'));
+  });
+
+  it('emits selector-endpoint tests for FK fields', () => {
+    const contract = generateContract(fkSchema);
+    const selTests = contract.testManifest.tests.filter(t => t.category === 'selector-endpoint');
+    // order has 3 visible FK fields, orderLine has 1 visible FK field
+    assert.equal(selTests.length, 4);
+    const bpTest = selTests.find(t => t.field === 'businessPartner');
+    assert.ok(bpTest);
+    assert.equal(bpTest.entity, 'order');
+  });
+
+  it('emits action-endpoint tests for button fields', () => {
+    const contract = generateContract(buttonSchema);
+    const actionTests = contract.testManifest.tests.filter(t => t.category === 'action-endpoint');
+    assert.equal(actionTests.length, 1);
+    assert.equal(actionTests[0].field, 'docAction');
+    assert.equal(actionTests[0].entity, 'invoice');
+  });
+
+  it('summary counts include v2 test categories', () => {
+    const contract = generateContract(fkSchema);
+    assert.ok(contract.testManifest.summary.byCategory['crud-flags'] >= 1);
+    assert.ok(contract.testManifest.summary.byCategory['selector-endpoint'] >= 1);
+    assert.equal(contract.testManifest.summary.total, contract.testManifest.tests.length);
+  });
+
+  it('all test IDs remain unique after v2 additions', () => {
+    const contract = generateContract(fkSchema);
+    const ids = contract.testManifest.tests.map(t => t.id);
+    const uniqueIds = new Set(ids);
+    assert.equal(ids.length, uniqueIds.size, 'all test IDs should be unique');
+  });
+});
+
 // ─── UI Hints in Frontend Contract ────────────────────────────────────────────
 
 const uiHintsSchema = {
