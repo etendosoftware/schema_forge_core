@@ -831,3 +831,69 @@ describe('generateApiPrediction', () => {
     assert.equal(prediction.specName, 'business-partner-category');
   });
 });
+
+// ─── UI Hints in Frontend Contract ────────────────────────────────────────────
+
+const uiHintsSchema = {
+  version: '0.1.0',
+  window: { id: '600', name: 'UI Hints Test', primaryEntity: 'order', category: 'test' },
+  entities: [{
+    name: 'order',
+    table: 'C_Order',
+    level: 'header',
+    fields: [
+      { name: 'grandTotal', column: 'GrandTotal', type: 'amount', visibility: 'editable',
+        required: true, searchable: false, grid: true, form: true,
+        defaultValue: '0', isIdentifier: true, help: 'Total amount including tax',
+        fieldGroup: 'Amounts', isSelectionColumn: true, isFilterable: true,
+        precision: 2, isTranslated: true },
+      { name: 'plainField', column: 'PlainCol', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true },
+    ]
+  }]
+};
+
+describe('generateFrontendContract — UI hints', () => {
+  it('field with defaultValue appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const gt = fc.entities.order.fields.find(f => f.name === 'grandTotal');
+    assert.equal(gt.defaultValue, '0');
+  });
+
+  it('field with help text appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const gt = fc.entities.order.fields.find(f => f.name === 'grandTotal');
+    assert.equal(gt.help, 'Total amount including tax');
+  });
+
+  it('field with fieldGroup appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const gt = fc.entities.order.fields.find(f => f.name === 'grandTotal');
+    assert.equal(gt.fieldGroup, 'Amounts');
+  });
+
+  it('field with precision appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const gt = fc.entities.order.fields.find(f => f.name === 'grandTotal');
+    assert.equal(gt.precision, 2);
+  });
+
+  it('field with isIdentifier appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const gt = fc.entities.order.fields.find(f => f.name === 'grandTotal');
+    assert.equal(gt.isIdentifier, true);
+  });
+
+  it('field without hints has no hint keys present', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const plain = fc.entities.order.fields.find(f => f.name === 'plainField');
+    assert.equal(plain.defaultValue, undefined);
+    assert.equal(plain.isIdentifier, undefined);
+    assert.equal(plain.help, undefined);
+    assert.equal(plain.fieldGroup, undefined);
+    assert.equal(plain.isSelectionColumn, undefined);
+    assert.equal(plain.isFilterable, undefined);
+    assert.equal(plain.precision, undefined);
+    assert.equal(plain.isTranslated, undefined);
+  });
+});
