@@ -980,10 +980,14 @@ describe('generateFormComponent - behavioral metadata', () => {
       'should emit readOnlyLogic arrow function from readOnlyLogic.js');
   });
 
-  it('does NOT include callout in generated form field config', () => {
+  it('includes TODO comment for callout in generated form field config', () => {
     const code = generateFormComponent('order', behavioralContract);
-    assert.ok(!code.includes('callout'), 'callout should not appear in generated form output');
-    assert.ok(!code.includes('LineNetCallout'), 'callout class name should not appear');
+    assert.ok(code.includes('// TODO: Translate callout logic: com.example.LineNetCallout'),
+      'should include TODO comment for callout');
+    // The callout should not appear as a config property on the field line itself
+    const lineNetLine = code.split('\n').find(l => l.includes("key: 'lineNetAmount'"));
+    assert.ok(lineNetLine, 'lineNetAmount field should exist');
+    assert.ok(!lineNetLine.includes('callout'), 'callout should not appear as field config property');
   });
 
   it('includes both displayLogic and readOnlyLogic on the same field', () => {
@@ -1127,5 +1131,83 @@ describe('generateIndexComponent - apiPrediction', () => {
   it('does not emit api const for empty contract', () => {
     const code = generateIndexComponent('item', null, {});
     assert.ok(!code.includes('const api ='), 'should not declare api const for empty contract');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TODO comments for callout and onChangeFunction
+// ---------------------------------------------------------------------------
+
+const todoContract = {
+  frontendContract: {
+    window: { id: '1', name: 'Test TODO', primaryEntity: 'invoice', category: 'test' },
+    entities: {
+      invoice: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner', inputMode: 'search',
+            callout: { className: 'org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner' } },
+          { name: 'paidOut', column: 'paid_out', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            onChangeFunction: { name: 'OB.APRM.AddPayment.glItemAmountOnChange' } },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            callout: { className: 'org.openbravo.erpCommon.ad_callouts.SL_Order_Amt' },
+            onChangeFunction: { name: 'OB.APRM.AddPayment.totalOnChange' } },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generateFormComponent - TODO comments for callout and onChangeFunction', () => {
+  it('field with callout has TODO comment with class name', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    assert.ok(code.includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner'),
+      'should include TODO for callout');
+  });
+
+  it('field with onChangeFunction has TODO comment with function name', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    assert.ok(code.includes('// TODO: Translate onchangefunction logic: OB.APRM.AddPayment.glItemAmountOnChange'),
+      'should include TODO for onChangeFunction');
+  });
+
+  it('field with both callout and onChangeFunction has both TODO comments', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    assert.ok(code.includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SL_Order_Amt'),
+      'should include callout TODO for grandTotal');
+    assert.ok(code.includes('// TODO: Translate onchangefunction logic: OB.APRM.AddPayment.totalOnChange'),
+      'should include onChangeFunction TODO for grandTotal');
+  });
+
+  it('field with neither callout nor onChangeFunction has no TODO comments', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    const lines = code.split('\n');
+    const docNoIdx = lines.findIndex(l => l.includes("key: 'documentNo'"));
+    assert.ok(docNoIdx >= 0, 'documentNo field should exist');
+    // The line before documentNo should not be a TODO comment
+    const prevLine = lines[docNoIdx - 1];
+    assert.ok(!prevLine.includes('// TODO:'), 'no TODO comment should precede documentNo');
+  });
+
+  it('TODO comments appear BEFORE the field config line', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    const lines = code.split('\n');
+
+    // For businessPartner: callout TODO should be directly before the field line
+    const bpFieldIdx = lines.findIndex(l => l.includes("key: 'businessPartner'"));
+    assert.ok(bpFieldIdx > 0, 'businessPartner field should exist');
+    assert.ok(lines[bpFieldIdx - 1].includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner'),
+      'callout TODO should be on the line before businessPartner field');
+
+    // For grandTotal: both TODOs should appear before the field line
+    const gtFieldIdx = lines.findIndex(l => l.includes("key: 'grandTotal'"));
+    assert.ok(gtFieldIdx > 1, 'grandTotal field should exist');
+    assert.ok(lines[gtFieldIdx - 2].includes('// TODO: Translate callout logic:'),
+      'callout TODO should be 2 lines before grandTotal field');
+    assert.ok(lines[gtFieldIdx - 1].includes('// TODO: Translate onchangefunction logic:'),
+      'onChangeFunction TODO should be 1 line before grandTotal field');
   });
 });

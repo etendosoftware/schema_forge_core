@@ -74,6 +74,11 @@ export function generateFrontendContract(schema, rules = []) {
         }
       }
 
+      // Behavioral metadata: onChangeFunction
+      if (f.onChangeFunction) {
+        mapped.onChangeFunction = { name: f.onChangeFunction };
+      }
+
       // Behavioral metadata: displayLogic
       if (f.displayLogic) {
         mapped.displayLogic = { raw: f.displayLogic };
