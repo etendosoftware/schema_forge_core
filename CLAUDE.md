@@ -303,6 +303,21 @@ Key files:
 - `PRD-anex.md` / `TDD-anex.md` — API versioning (conceptual + implementation)
 - `etendo-ad/` — General Etendo AD reference (schema mappings, process mechanisms)
 
+### Plans & Proposals Lifecycle
+
+Plans and proposals live in `docs/plans/` and follow a lifecycle:
+
+| Folder | Purpose |
+|--------|---------|
+| `docs/plans/` | Active plans — pending or in-progress |
+| `docs/plans/completed/` | Fully implemented plans (all phases done) |
+| `docs/plans/discarded/` | Plans that were rejected or superseded |
+
+**Rules:**
+- When a plan is fully implemented, move it to `completed/` and update its status header.
+- When a plan is discarded or superseded, move it to `discarded/` with a note explaining why.
+- Plans with mixed status (some phases done, some pending) stay in `plans/` with per-phase status markers.
+
 ## Etendo AD Reference
 
 General findings about the Etendo Application Dictionary structure live in `docs/etendo-ad/`.
