@@ -1,4 +1,9 @@
+export { CalendarView } from './CalendarView';
+export { Chatter } from './Chatter';
 export { DataTable } from './DataTable';
 export { EntityForm } from './EntityForm';
+export { FileUpload } from './FileUpload';
+export { KanbanBoard } from './KanbanBoard';
+export { KPIHeader } from './KPIHeader';
 export { MasterDetailPage } from './MasterDetailPage';
 export { SingleEntityPage } from './SingleEntityPage';

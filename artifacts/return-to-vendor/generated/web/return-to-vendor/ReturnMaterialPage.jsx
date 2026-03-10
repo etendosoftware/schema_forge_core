@@ -5,9 +5,9 @@ import ReturnMaterialLineTable from './ReturnMaterialLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'totalAmount', label: 'Total Amount', type: 'amount' },
-  { key: 'isApproved', label: 'Is Approved', type: 'boolean' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'totalAmount', column: 'Amt', type: 'amount' },
+  { key: 'isApproved', column: 'IsApproved', type: 'boolean' },
 ];
 
 const statusField = 'docStatus';
@@ -18,10 +18,10 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'originalReceiptLine', label: 'Original Receipt Line', type: 'selector', required: true, lookup: true, reference: 'MaterialReceiptLine', inputMode: 'selector' },
-    { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'originalReceiptLine', column: 'M_InOutLine_ID', type: 'selector', required: true, lookup: true, reference: 'MaterialReceiptLine', inputMode: 'selector' },
+    { key: 'quantity', column: 'Qty', type: 'number', required: true },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
   ],
   derived: [
 

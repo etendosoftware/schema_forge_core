@@ -1,0 +1,120 @@
+{
+  "version": "0.1.0",
+  "type": "aggregate",
+  "meta": {
+    "module": "projects",
+    "label": "Projects",
+    "icon": "FolderKanban",
+    "route": "/projects"
+  },
+  "sections": [
+    {
+      "id": "kpis",
+      "type": "kpi",
+      "kpis": [
+        { "key": "activeProjects", "label": "Active Projects", "format": "number", "icon": "FolderKanban", "trend": "up" },
+        { "key": "totalHoursMonth", "label": "Hours This Month", "format": "number", "icon": "Clock", "trend": "up" },
+        { "key": "budgetUtilization", "label": "Budget Used", "format": "percent", "icon": "PieChart", "trend": "neutral" },
+        { "key": "documentsCount", "label": "Documents", "format": "number", "icon": "FileText", "trend": "up" }
+      ]
+    },
+    {
+      "id": "projectBoard",
+      "type": "kanban",
+      "title": "Project Board",
+      "icon": "FolderKanban",
+      "columns": [
+        { "id": "planning", "title": "Planning", "color": "gray" },
+        { "id": "in-progress", "title": "In Progress", "color": "blue" },
+        { "id": "on-hold", "title": "On Hold", "color": "yellow" },
+        { "id": "completed", "title": "Completed", "color": "green" }
+      ]
+    },
+    {
+      "id": "recentTimeEntries",
+      "type": "data-table",
+      "title": "Recent Time Entries",
+      "icon": "Clock",
+      "columns": [
+        { "key": "employee", "label": "Employee", "align": "left" },
+        { "key": "project", "label": "Project", "align": "left" },
+        { "key": "date", "label": "Date", "align": "left" },
+        { "key": "hours", "label": "Hours", "align": "right" },
+        { "key": "category", "label": "Category", "align": "left" },
+        { "key": "status", "label": "Status", "align": "left" }
+      ],
+      "filters": ["project", "category"]
+    },
+    {
+      "id": "recentDocuments",
+      "type": "data-table",
+      "title": "Recent Documents",
+      "icon": "FileText",
+      "columns": [
+        { "key": "name", "label": "Name", "align": "left" },
+        { "key": "category", "label": "Category", "align": "left" },
+        { "key": "project", "label": "Project", "align": "left" },
+        { "key": "uploadedBy", "label": "Uploaded By", "align": "left" },
+        { "key": "uploadDate", "label": "Upload Date", "align": "left" },
+        { "key": "status", "label": "Status", "align": "left" }
+      ],
+      "filters": ["category", "status"]
+    }
+  ],
+  "layout": {
+    "type": "grid",
+    "areas": [
+      { "section": "kpis", "span": "full" },
+      { "section": "projectBoard", "span": "full" },
+      { "section": "recentTimeEntries", "span": "1/2" },
+      { "section": "recentDocuments", "span": "1/2" }
+    ]
+  },
+  "actions": [
+    { "label": "New Project", "route": "/project", "variant": "default" },
+    { "label": "Log Time", "route": "/time-tracking", "variant": "outline" },
+    { "label": "Upload Document", "route": "/document", "variant": "outline" }
+  ],
+  "mockData": {
+    "kpis": {
+      "activeProjects": 14,
+      "totalHoursMonth": 1248,
+      "budgetUtilization": 73,
+      "documentsCount": 89,
+      "trends": {
+        "activeProjects": 2,
+        "totalHoursMonth": 180,
+        "budgetUtilization": 0,
+        "documentsCount": 12
+      }
+    },
+    "projectBoard": [
+      { "id": "PJ-001", "columnId": "planning", "title": "Mobile App Redesign", "subtitle": "Q2 Initiative", "badges": ["High Priority"] },
+      { "id": "PJ-002", "columnId": "planning", "title": "API Gateway Migration", "subtitle": "Infrastructure", "badges": ["Technical"] },
+      { "id": "PJ-003", "columnId": "in-progress", "title": "ERP Integration", "subtitle": "Phase 2", "badges": ["Enterprise", "On Track"] },
+      { "id": "PJ-004", "columnId": "in-progress", "title": "Customer Portal", "subtitle": "Client-facing", "badges": ["Priority"] },
+      { "id": "PJ-005", "columnId": "on-hold", "title": "Data Warehouse", "subtitle": "Analytics", "badges": ["Blocked"] },
+      { "id": "PJ-006", "columnId": "in-progress", "title": "Security Audit", "subtitle": "Compliance", "badges": ["Urgent"] },
+      { "id": "PJ-007", "columnId": "completed", "title": "Website Refresh", "subtitle": "Marketing", "badges": ["Delivered"] },
+      { "id": "PJ-008", "columnId": "completed", "title": "CI/CD Pipeline", "subtitle": "DevOps", "badges": ["Delivered"] }
+    ],
+    "recentTimeEntries": [
+      { "employee": "Maria Garcia", "project": "ERP Integration", "date": "2026-03-09", "hours": 7.5, "category": "Development", "status": "Approved" },
+      { "employee": "Pedro Sanchez", "project": "Customer Portal", "date": "2026-03-09", "hours": 6.0, "category": "Code Review", "status": "Pending" },
+      { "employee": "Sofia Herrera", "project": "Security Audit", "date": "2026-03-08", "hours": 8.0, "category": "Testing", "status": "Approved" },
+      { "employee": "Carlos Lopez", "project": "Mobile App Redesign", "date": "2026-03-08", "hours": 4.5, "category": "Design", "status": "Approved" },
+      { "employee": "Ana Martinez", "project": "ERP Integration", "date": "2026-03-08", "hours": 5.0, "category": "Documentation", "status": "Pending" },
+      { "employee": "Diego Rivera", "project": "Customer Portal", "date": "2026-03-07", "hours": 7.0, "category": "Development", "status": "Approved" },
+      { "employee": "Laura Torres", "project": "Data Warehouse", "date": "2026-03-07", "hours": 3.5, "category": "Analysis", "status": "Rejected" },
+      { "employee": "Juan Morales", "project": "Security Audit", "date": "2026-03-07", "hours": 6.5, "category": "Development", "status": "Approved" }
+    ],
+    "recentDocuments": [
+      { "name": "ERP Phase 2 Requirements.pdf", "category": "Requirements", "project": "ERP Integration", "uploadedBy": "Maria Garcia", "uploadDate": "2026-03-09", "status": "Final" },
+      { "name": "Security Audit Report Q1.docx", "category": "Report", "project": "Security Audit", "uploadedBy": "Sofia Herrera", "uploadDate": "2026-03-08", "status": "Draft" },
+      { "name": "Customer Portal Wireframes.fig", "category": "Design", "project": "Customer Portal", "uploadedBy": "Carlos Lopez", "uploadDate": "2026-03-08", "status": "Review" },
+      { "name": "API Migration Plan.md", "category": "Technical", "project": "API Gateway Migration", "uploadedBy": "Pedro Sanchez", "uploadDate": "2026-03-07", "status": "Final" },
+      { "name": "Sprint Retrospective Notes.pdf", "category": "Meeting Notes", "project": "Mobile App Redesign", "uploadedBy": "Ana Martinez", "uploadDate": "2026-03-06", "status": "Final" },
+      { "name": "Data Model Diagram.png", "category": "Technical", "project": "Data Warehouse", "uploadedBy": "Diego Rivera", "uploadDate": "2026-03-05", "status": "Draft" }
+    ]
+  }
+}

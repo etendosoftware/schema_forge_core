@@ -1,12 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import SalesPage from './pages/SalesPage.jsx';
+import ContactsPage from './pages/ContactsPage.jsx';
+import InventoryPage from './pages/InventoryPage.jsx';
+import PurchasesPage from './pages/PurchasesPage.jsx';
+import AccountingPage from './pages/AccountingPage.jsx';
+import ReportsPage from './pages/ReportsPage.jsx';
+import CrmPage from './pages/CrmPage.jsx';
+import HrPage from './pages/HrPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
+
+import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
+
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
+const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
 
 function detectBasePath() {
   const path = window.location.pathname;
@@ -36,14 +51,11 @@ async function loadAllMockData() {
     import('@generated/tax/generated/web/tax/mockData.js'),
     import('@generated/uom/generated/web/uom/mockData.js'),
     import('@generated/user/generated/web/user/mockData.js'),
-    import('@generated/requisition/generated/web/requisition/mockData.js'),
     import('@generated/purchase-order/generated/web/purchase-order/mockData.js'),
     import('@generated/goods-receipt/generated/web/goods-receipt/mockData.js'),
     import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
-    import('@generated/manage-requisitions/generated/web/manage-requisitions/mockData.js'),
     import('@generated/return-to-vendor/generated/web/return-to-vendor/mockData.js'),
     import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/mockData.js'),
-    import('@generated/landed-cost/generated/web/landed-cost/mockData.js'),
     import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),
     import('@generated/goods-movements/generated/web/goods-movements/mockData.js'),
     import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/mockData.js'),
@@ -52,14 +64,19 @@ async function loadAllMockData() {
     import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
     import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
     import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
-    import('@generated/inventory-quality-inspection/generated/web/inventory-quality-inspection/mockData.js'),
-    import('@generated/bom-production/generated/web/bom-production/mockData.js'),
-    import('@generated/packing/generated/web/packing/mockData.js'),
-    import('@generated/warehouse-picking-list/generated/web/warehouse-picking-list/mockData.js'),
-    import('@generated/stock-reservation/generated/web/stock-reservation/mockData.js'),
-    import('@generated/cost-adjustment/generated/web/cost-adjustment/mockData.js'),
-    import('@generated/commission/generated/web/commission/mockData.js'),
-    import('@generated/commission-payment/generated/web/commission-payment/mockData.js'),
+    import('@generated/payment-in/generated/web/payment-in/mockData.js'),
+    import('@generated/payment-out/generated/web/payment-out/mockData.js'),
+    import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
+    import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
+    import('@generated/deal/generated/web/deal/mockData.js'),
+    import('@generated/activity/generated/web/activity/mockData.js'),
+    import('@generated/lead/generated/web/lead/mockData.js'),
+    import('@generated/employee/generated/web/employee/mockData.js'),
+    import('@generated/time-tracking/generated/web/time-tracking/mockData.js'),
+    import('@generated/absence/generated/web/absence/mockData.js'),
+    import('@generated/project/generated/web/project/mockData.js'),
+    import('@generated/document/generated/web/document/mockData.js'),
+    import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
   ]);
 
   const merged = {};
@@ -86,8 +103,6 @@ function AppRoutes({ menuGroups, windowMap }) {
     return <div className="p-8 text-muted-foreground">Loading...</div>;
   }
 
-  const firstWindow = menuGroups[0].items[0].name;
-
   return (
     <Routes>
       <Route
@@ -101,8 +116,22 @@ function AppRoutes({ menuGroups, windowMap }) {
           </AuthGuard>
         }
       >
-        <Route index element={<Navigate to={`/${firstWindow}`} replace />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="preview" element={<PreviewPage />} />
+        <Route path="sales" element={<SalesPage />} />
+        <Route path="contacts" element={<ContactsPage />} />
+        <Route path="inventory" element={<InventoryPage />} />
+        <Route path="purchases" element={<PurchasesPage />} />
+        <Route path="accounting" element={<AccountingPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="crm" element={<CrmPage />} />
+        <Route path="hr" element={<HrPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="onboarding" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OnboardingPage /></Suspense>} />
+        <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
+        <Route path="artifacts" element={<ArtifactViewerPage />} />
+        <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
           path=":windowName"
           element={<WindowLoader windowMap={windowMap} apiBaseUrl={API_BASE_URL} />}

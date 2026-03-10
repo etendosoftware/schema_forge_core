@@ -2,9 +2,17 @@
   "name": "schema-forge",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
-  "workspaces": ["cli", "tools/*"],
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "cli",
+    "tools/*"
+  ],
   "scripts": {
     "test": "mkdir -p artifacts && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=artifacts/test-report.xml 'cli/test/*.test.js' && node cli/src/test-report-html.js"
+  },
+  "devDependencies": {
+    "shadcn": "^4.0.2"
   }
 }

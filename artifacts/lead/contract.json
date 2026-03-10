@@ -1,0 +1,518 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-09T10:00:00.000Z",
+  "checksum": "crm-lead-001",
+  "frontendContract": {
+    "window": {
+      "id": "CRM-LEAD",
+      "name": "Lead",
+      "primaryEntity": "lead",
+      "category": "crm"
+    },
+    "entities": {
+      "lead": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "company",
+            "column": "Company",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "email",
+            "column": "Email",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "phone",
+            "column": "Phone",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "source",
+            "column": "Source",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "LeadSource",
+            "inputMode": "selector"
+          },
+          {
+            "name": "status",
+            "column": "Status",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "LeadStatus",
+            "inputMode": "selector"
+          },
+          {
+            "name": "assignedTo",
+            "column": "AssignedTo_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "User",
+            "inputMode": "selector"
+          },
+          {
+            "name": "estimatedValue",
+            "column": "EstimatedValue",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "notes",
+            "column": "Notes",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          }
+        ],
+        "searchableFields": [
+          "name",
+          "company",
+          "status"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "CRM-LEAD",
+      "name": "Lead",
+      "primaryEntity": "lead",
+      "category": "crm"
+    },
+    "entities": {
+      "lead": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "company",
+            "column": "Company",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "email",
+            "column": "Email",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "phone",
+            "column": "Phone",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "source",
+            "column": "Source",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "status",
+            "column": "Status",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "assignedTo",
+            "column": "AssignedTo_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "estimatedValue",
+            "column": "EstimatedValue",
+            "type": "amount",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "notes",
+            "column": "Notes",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "column": "CreatedBy",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "entity": "lead",
+        "method": "GET",
+        "path": "/lead",
+        "supportedFilters": [
+          "name",
+          "company",
+          "status"
+        ]
+      },
+      {
+        "entity": "lead",
+        "method": "GET",
+        "path": "/lead/:id",
+        "supportedFilters": []
+      },
+      {
+        "entity": "lead",
+        "method": "POST",
+        "path": "/lead",
+        "supportedFilters": []
+      },
+      {
+        "entity": "lead",
+        "method": "PUT",
+        "path": "/lead/:id",
+        "supportedFilters": []
+      },
+      {
+        "entity": "lead",
+        "method": "DELETE",
+        "path": "/lead/:id",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in lead"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "company",
+        "runner": "node",
+        "description": "Field 'company' should be present in lead"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "email",
+        "runner": "node",
+        "description": "Field 'email' should be present in lead"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "phone",
+        "runner": "node",
+        "description": "Field 'phone' should be present in lead"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "source",
+        "runner": "node",
+        "description": "Field 'source' should be present in lead"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should be present in lead"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "assignedTo",
+        "runner": "node",
+        "description": "Field 'assignedTo' should be present in lead"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "estimatedValue",
+        "runner": "node",
+        "description": "Field 'estimatedValue' should be present in lead"
+      },
+      {
+        "id": "t-9",
+        "category": "field-presence",
+        "entity": "lead",
+        "field": "notes",
+        "runner": "node",
+        "description": "Field 'notes' should be present in lead"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in lead"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "company",
+        "runner": "node",
+        "description": "Field 'company' should have type 'string' in lead"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "email",
+        "runner": "node",
+        "description": "Field 'email' should have type 'string' in lead"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "phone",
+        "runner": "node",
+        "description": "Field 'phone' should have type 'string' in lead"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "source",
+        "runner": "node",
+        "description": "Field 'source' should have type 'foreignKey' in lead"
+      },
+      {
+        "id": "t-15",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should have type 'foreignKey' in lead"
+      },
+      {
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "assignedTo",
+        "runner": "node",
+        "description": "Field 'assignedTo' should have type 'foreignKey' in lead"
+      },
+      {
+        "id": "t-17",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "estimatedValue",
+        "runner": "node",
+        "description": "Field 'estimatedValue' should have type 'amount' in lead"
+      },
+      {
+        "id": "t-18",
+        "category": "field-type",
+        "entity": "lead",
+        "field": "notes",
+        "runner": "node",
+        "description": "Field 'notes' should have type 'string' in lead"
+      },
+      {
+        "id": "t-19",
+        "category": "searchable-filters",
+        "entity": "lead",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for lead"
+      },
+      {
+        "id": "t-20",
+        "category": "searchable-filters",
+        "entity": "lead",
+        "field": "company",
+        "runner": "node",
+        "description": "Field 'company' should be a supported filter for lead"
+      },
+      {
+        "id": "t-21",
+        "category": "searchable-filters",
+        "entity": "lead",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should be a supported filter for lead"
+      },
+      {
+        "id": "t-22",
+        "category": "visibility",
+        "entity": "lead",
+        "runner": "node",
+        "description": "Entity 'lead' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-23",
+        "category": "system-field",
+        "entity": "lead",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for lead"
+      },
+      {
+        "id": "t-24",
+        "category": "system-field",
+        "entity": "lead",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for lead"
+      },
+      {
+        "id": "t-25",
+        "category": "system-field",
+        "entity": "lead",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for lead"
+      },
+      {
+        "id": "t-26",
+        "category": "system-field",
+        "entity": "lead",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for lead"
+      },
+      {
+        "id": "t-27",
+        "category": "system-field",
+        "entity": "lead",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for lead"
+      },
+      {
+        "id": "t-28",
+        "category": "system-field",
+        "entity": "lead",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for lead"
+      }
+    ],
+    "summary": {
+      "total": 28,
+      "byCategory": {
+        "field-presence": 9,
+        "field-type": 9,
+        "searchable-filters": 3,
+        "visibility": 1,
+        "system-field": 6
+      },
+      "byRunner": {
+        "node": 28,
+        "junit": 0
+      }
+    }
+  }
+}

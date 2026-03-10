@@ -1,9 +1,9 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'city', label: 'City', type: 'string' },
-  { key: 'country', label: 'Country', type: 'string' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'city', column: 'City', type: 'string' },
+  { key: 'country', column: 'C_Country_ID', type: 'string' },
 ];
 
 const filters = ['name', 'city'];

@@ -1,9 +1,9 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'movementDate', label: 'Movement Date', type: 'date' },
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'docStatus', label: 'Doc Status', type: 'status' },
+  { key: 'movementDate', column: 'MovementDate', type: 'date' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'docStatus', column: 'DocStatus', type: 'status' },
 ];
 
 const filters = ['movementDate', 'documentNo', 'docStatus'];

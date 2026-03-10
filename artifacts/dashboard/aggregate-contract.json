@@ -1,0 +1,86 @@
+{
+  "version": "0.1.0",
+  "type": "aggregate",
+  "meta": {
+    "module": "dashboard",
+    "label": "Dashboard",
+    "icon": "LayoutDashboard",
+    "route": "/dashboard"
+  },
+  "sections": [
+    {
+      "id": "kpi-header",
+      "type": "kpi",
+      "kpis": [
+        { "key": "revenueThisMonth", "label": "Revenue this month", "format": "currency", "icon": "DollarSign" },
+        { "key": "expensesThisMonth", "label": "Expenses this month", "format": "currency", "icon": "CreditCard" },
+        { "key": "netProfit", "label": "Net Profit", "format": "currency", "icon": "TrendingUp" },
+        { "key": "pendingInvoices", "label": "Pending Invoices", "format": "number", "icon": "Clock" }
+      ]
+    },
+    {
+      "id": "revenue-trend",
+      "type": "chart",
+      "chartType": "line",
+      "xAxis": "Month",
+      "yAxis": "Revenue ($)"
+    },
+    {
+      "id": "quick-actions",
+      "type": "quick-actions"
+    },
+    {
+      "id": "pending-tasks",
+      "type": "activity-feed",
+      "fields": {
+        "label": "text",
+        "detail": "amount",
+        "link": "link",
+        "type": "type"
+      }
+    },
+    {
+      "id": "recent-messages",
+      "type": "chatter"
+    }
+  ],
+  "layout": {
+    "areas": [
+      { "section": "kpi-header", "span": "full" },
+      { "section": "revenue-trend", "span": "2/3" },
+      { "section": "quick-actions", "span": "2/3" },
+      { "section": "pending-tasks", "span": "1/3" },
+      { "section": "recent-messages", "span": "1/3" }
+    ]
+  },
+  "actions": [
+    { "label": "+ Invoice", "route": "/sales-invoice", "icon": "FileText" },
+    { "label": "+ Order", "route": "/sales-order", "icon": "ShoppingCart" },
+    { "label": "+ Contact", "route": "/business-partner", "icon": "Users" },
+    { "label": "+ Product", "route": "/product", "icon": "Box" }
+  ],
+  "mockData": {
+    "kpi-header": {
+      "revenueThisMonth": { "value": 48250, "trend": 12.5 },
+      "expensesThisMonth": { "value": 31800, "trend": 3.2 },
+      "netProfit": { "value": 16450, "trend": 28.7 },
+      "pendingInvoices": { "value": 7, "trend": -2 }
+    },
+    "revenue-trend": {
+      "labels": ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
+      "values": [32000, 35000, 28000, 41000, 38000, 45000, 42000, 39000, 44000, 47000, 43000, 48250]
+    },
+    "pending-tasks": [
+      { "type": "warning", "text": "3 overdue invoices", "link": "/sales-invoice", "amount": "$12,400" },
+      { "type": "info", "text": "2 orders pending shipment", "link": "/goods-shipment" },
+      { "type": "info", "text": "5 purchase orders to confirm", "link": "/purchase-order" },
+      { "type": "warning", "text": "1 low stock alert", "link": "/physical-inventory", "detail": "Cerveza Ale 0.5L" }
+    ],
+    "recent-messages": [
+      { "id": "1", "author": "System", "text": "Invoice INV-2026-0142 was paid by Empresa ABC", "timestamp": "2026-03-09T08:30:00", "type": "system" },
+      { "id": "2", "author": "Ana Garcia", "text": "New quotation QT-0089 created for $8,500", "timestamp": "2026-03-09T07:15:00", "type": "note" },
+      { "id": "3", "author": "System", "text": "Purchase Order PO-0234 received (15 items)", "timestamp": "2026-03-08T16:45:00", "type": "system" },
+      { "id": "4", "author": "Pedro Lopez", "text": "Stock adjustment completed for warehouse Madrid", "timestamp": "2026-03-08T14:20:00", "type": "note" }
+    ]
+  }
+}

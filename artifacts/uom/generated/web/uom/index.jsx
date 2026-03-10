@@ -3,6 +3,8 @@ import UomTable from './UomTable';
 import UomForm from './UomForm';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: 'reference', name: 'UOM' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -11,6 +13,7 @@ export default function App(props) {
       Form={UomForm}
       catalogs={catalogs}
       entityLabel="Uom"
+      window={windowMeta}
       {...props}
     />
   );

@@ -19,9 +19,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const refresh = useCallback(() => {
     setLoading(true);
     fetch(`${apiBaseUrl}/${entity}`, { headers })
-      .then(res => res.json())
-      .then(data => { setItems(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => { setItems(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => { setItems([]); setLoading(false); });
   }, [apiBaseUrl, entity, token]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -29,8 +32,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const fetchChildren = useCallback((parentId) => {
     if (!childEntity || !parentId) { setChildren([]); return; }
     fetch(`${apiBaseUrl}/${entity}/${parentId}/${childEntity}`, { headers })
-      .then(res => res.json())
-      .then(setChildren)
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => setChildren(Array.isArray(data) ? data : []))
       .catch(() => setChildren([]));
   }, [apiBaseUrl, entity, childEntity, token]);
 

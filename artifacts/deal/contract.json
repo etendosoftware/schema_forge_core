@@ -1,0 +1,522 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-09T10:00:00.000Z",
+  "checksum": "crm-deal-001",
+  "frontendContract": {
+    "window": {
+      "id": "CRM-DEAL",
+      "name": "Deal",
+      "primaryEntity": "deal",
+      "category": "crm"
+    },
+    "entities": {
+      "deal": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "BusinessPartner",
+            "inputMode": "search"
+          },
+          {
+            "name": "stage",
+            "column": "Stage",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "DealStage",
+            "inputMode": "selector"
+          },
+          {
+            "name": "amount",
+            "column": "Amount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Currency",
+            "inputMode": "selector"
+          },
+          {
+            "name": "probability",
+            "column": "Probability",
+            "type": "number",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "expectedCloseDate",
+            "column": "ExpectedCloseDate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "assignedTo",
+            "column": "AssignedTo_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "User",
+            "inputMode": "selector"
+          },
+          {
+            "name": "source",
+            "column": "Source",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "LeadSource",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [
+          "name",
+          "businessPartner",
+          "stage"
+        ],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "CRM-DEAL",
+      "name": "Deal",
+      "primaryEntity": "deal",
+      "category": "crm"
+    },
+    "entities": {
+      "deal": {
+        "fields": [
+          {
+            "name": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "stage",
+            "column": "Stage",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "amount",
+            "column": "Amount",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "probability",
+            "column": "Probability",
+            "type": "number",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "expectedCloseDate",
+            "column": "ExpectedCloseDate",
+            "type": "date",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "assignedTo",
+            "column": "AssignedTo_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "source",
+            "column": "Source",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "adClientId",
+            "column": "AD_Client_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adOrgId",
+            "column": "AD_Org_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "column": "CreatedBy",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "created",
+            "column": "Created",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "column": "Updated",
+            "type": "datetime",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "entity": "deal",
+        "method": "GET",
+        "path": "/deal",
+        "supportedFilters": [
+          "name",
+          "businessPartner",
+          "stage"
+        ]
+      },
+      {
+        "entity": "deal",
+        "method": "GET",
+        "path": "/deal/:id",
+        "supportedFilters": []
+      },
+      {
+        "entity": "deal",
+        "method": "POST",
+        "path": "/deal",
+        "supportedFilters": []
+      },
+      {
+        "entity": "deal",
+        "method": "PUT",
+        "path": "/deal/:id",
+        "supportedFilters": []
+      },
+      {
+        "entity": "deal",
+        "method": "DELETE",
+        "path": "/deal/:id",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in deal"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in deal"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "stage",
+        "runner": "node",
+        "description": "Field 'stage' should be present in deal"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "amount",
+        "runner": "node",
+        "description": "Field 'amount' should be present in deal"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in deal"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "probability",
+        "runner": "node",
+        "description": "Field 'probability' should be present in deal"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "expectedCloseDate",
+        "runner": "node",
+        "description": "Field 'expectedCloseDate' should be present in deal"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "assignedTo",
+        "runner": "node",
+        "description": "Field 'assignedTo' should be present in deal"
+      },
+      {
+        "id": "t-9",
+        "category": "field-presence",
+        "entity": "deal",
+        "field": "source",
+        "runner": "node",
+        "description": "Field 'source' should be present in deal"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in deal"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'foreignKey' in deal"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "stage",
+        "runner": "node",
+        "description": "Field 'stage' should have type 'foreignKey' in deal"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "amount",
+        "runner": "node",
+        "description": "Field 'amount' should have type 'amount' in deal"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'foreignKey' in deal"
+      },
+      {
+        "id": "t-15",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "probability",
+        "runner": "node",
+        "description": "Field 'probability' should have type 'number' in deal"
+      },
+      {
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "expectedCloseDate",
+        "runner": "node",
+        "description": "Field 'expectedCloseDate' should have type 'date' in deal"
+      },
+      {
+        "id": "t-17",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "assignedTo",
+        "runner": "node",
+        "description": "Field 'assignedTo' should have type 'foreignKey' in deal"
+      },
+      {
+        "id": "t-18",
+        "category": "field-type",
+        "entity": "deal",
+        "field": "source",
+        "runner": "node",
+        "description": "Field 'source' should have type 'foreignKey' in deal"
+      },
+      {
+        "id": "t-19",
+        "category": "searchable-filters",
+        "entity": "deal",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for deal"
+      },
+      {
+        "id": "t-20",
+        "category": "searchable-filters",
+        "entity": "deal",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for deal"
+      },
+      {
+        "id": "t-21",
+        "category": "searchable-filters",
+        "entity": "deal",
+        "field": "stage",
+        "runner": "node",
+        "description": "Field 'stage' should be a supported filter for deal"
+      },
+      {
+        "id": "t-22",
+        "category": "visibility",
+        "entity": "deal",
+        "runner": "node",
+        "description": "Entity 'deal' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-23",
+        "category": "system-field",
+        "entity": "deal",
+        "field": "adClientId",
+        "runner": "node",
+        "description": "System field 'adClientId' should exist in backend but not frontend for deal"
+      },
+      {
+        "id": "t-24",
+        "category": "system-field",
+        "entity": "deal",
+        "field": "adOrgId",
+        "runner": "node",
+        "description": "System field 'adOrgId' should exist in backend but not frontend for deal"
+      },
+      {
+        "id": "t-25",
+        "category": "system-field",
+        "entity": "deal",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for deal"
+      },
+      {
+        "id": "t-26",
+        "category": "system-field",
+        "entity": "deal",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for deal"
+      },
+      {
+        "id": "t-27",
+        "category": "system-field",
+        "entity": "deal",
+        "field": "created",
+        "runner": "node",
+        "description": "System field 'created' should exist in backend but not frontend for deal"
+      },
+      {
+        "id": "t-28",
+        "category": "system-field",
+        "entity": "deal",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for deal"
+      }
+    ],
+    "summary": {
+      "total": 28,
+      "byCategory": {
+        "field-presence": 9,
+        "field-type": 9,
+        "searchable-filters": 3,
+        "visibility": 1,
+        "system-field": 6
+      },
+      "byRunner": {
+        "node": 28,
+        "junit": 0
+      }
+    }
+  }
+}

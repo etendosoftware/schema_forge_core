@@ -1,100 +1,157 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { Eye, ChevronRight, ShoppingCart, Truck, Database, DollarSign, Settings } from 'lucide-react';
-
-const ICON_MAP = {
+import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
+} from '@/components/ui/sidebar.jsx';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible.jsx';
+import {
+  Eye,
+  ChevronRight,
+  LayoutDashboard,
   ShoppingCart,
   Truck,
-  Database,
-  DollarSign,
+  Calculator,
+  Package,
+  Box,
+  Users,
   Settings,
+  FolderKanban,
+  Target,
+  LogOut,
+  FileJson,
+} from 'lucide-react';
+
+const ICON_MAP = {
+  LayoutDashboard,
+  ShoppingCart,
+  Truck,
+  Calculator,
+  Package,
+  Box,
+  Users,
+  Settings,
+  FolderKanban,
+  Target,
 };
 
-function MenuGroup({ group, icon, items, isOpen, onToggle }) {
-  const Icon = ICON_MAP[icon] || Database;
+function NavMenuGroup({ group, icon, items, isActive }) {
+  const Icon = ICON_MAP[icon] || Package;
 
   return (
-    <div>
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white/40 hover:text-white/60 transition-colors"
-      >
-        <Icon className="h-4 w-4" />
-        <span className="flex-1 text-left">{group}</span>
-        <ChevronRight className={cn('h-3 w-3 transition-transform', isOpen && 'rotate-90')} />
-      </button>
-      {isOpen && (
-        <div className="ml-4 space-y-0.5">
-          {items.map(item => (
-            <NavLink
-              key={item.name}
-              to={`/${item.name}`}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-white/15 text-white'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white'
-                )
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      )}
-    </div>
+    <Collapsible asChild defaultOpen={isActive} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton tooltip={group}>
+            <Icon className="h-4 w-4" />
+            <span>{group}</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {items.map((item) => (
+              <SidebarMenuSubItem key={item.name}>
+                <SidebarMenuSubButton asChild>
+                  <NavLink
+                    to={`/${item.name}`}
+                    className={({ isActive: active }) => (active ? 'font-medium' : '')}
+                  >
+                    {item.label}
+                  </NavLink>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
   );
 }
 
-export default function Sidebar({ menuGroups }) {
-  const [openGroups, setOpenGroups] = useState(() => {
-    const initial = {};
-    for (const g of menuGroups) {
-      initial[g.group] = true;
-    }
-    return initial;
-  });
-
-  const toggle = (group) => {
-    setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
-  };
+export default function AppSidebar({ menuGroups }) {
+  const { username, logout } = useAuth();
+  const location = useLocation();
+  const currentPath = location.pathname.replace(/^\//, '');
 
   return (
-    <aside className="w-60 flex flex-col" style={{ backgroundColor: 'hsl(var(--sidebar-bg))' }}>
-      <div className="px-5 py-5 border-b border-white/10">
-        <h1 className="text-lg font-bold tracking-tight text-white">Schema Forge</h1>
-        <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--sidebar-text))' }}>ERP Generator</p>
-      </div>
-      <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
-        {menuGroups.map(g => (
-          <MenuGroup
-            key={g.group}
-            group={g.group}
-            icon={g.icon}
-            items={g.items}
-            isOpen={openGroups[g.group]}
-            onToggle={() => toggle(g.group)}
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo-etendo-white.png"
+            alt="Etendo"
+            className="h-6 group-data-[collapsible=icon]:hidden"
           />
-        ))}
-      </nav>
-      <div className="border-t border-white/10 p-3">
-        <NavLink
-          to="/preview"
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
-              isActive
-                ? 'bg-white/15 text-white'
-                : 'text-white/40 hover:bg-white/10 hover:text-white/80'
-            )
-          }
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Preview
-        </NavLink>
-      </div>
-    </aside>
+          <div className="hidden group-data-[collapsible=icon]:flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+            <Package className="h-4 w-4" />
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarMenu>
+          {menuGroups.map((g) => (
+            <NavMenuGroup
+              key={g.group}
+              group={g.group}
+              icon={g.icon}
+              items={g.items}
+              isActive={g.items.some((item) => item.name === currentPath)}
+            />
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Preview">
+              <NavLink to="/preview">
+                <Eye className="h-4 w-4" />
+                <span>Preview</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Artifacts">
+              <NavLink to="/artifacts">
+                <FileJson className="h-4 w-4" />
+                <span>Artifacts</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip={username}>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary-foreground">
+                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
+              </div>
+              <span className="truncate">{username}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Logout" onClick={logout}>
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </Sidebar>
   );
 }

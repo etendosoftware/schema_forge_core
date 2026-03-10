@@ -1,11 +1,11 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'goodsReceiptLine', label: 'Goods Receipt Line', type: 'string' },
-  { key: 'product', label: 'Product', type: 'string' },
-  { key: 'amount', label: 'Amount', type: 'amount' },
-  { key: 'quantity', label: 'Quantity', type: 'number' },
-  { key: 'baseAmount', label: 'Base Amount', type: 'amount' },
+  { key: 'goodsReceiptLine', column: 'M_InOutLine_ID', type: 'string' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'amount', column: 'Amt', type: 'amount' },
+  { key: 'quantity', column: 'Qty', type: 'number' },
+  { key: 'baseAmount', column: 'Base', type: 'amount' },
 ];
 
 const filters = ['goodsReceiptLine', 'product'];

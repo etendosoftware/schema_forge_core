@@ -1,10 +1,10 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'searchKey', label: 'Search Key', type: 'string' },
-  { key: 'netDays', label: 'Net Days', type: 'number' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'searchKey', column: 'Value', type: 'string' },
+  { key: 'netDays', column: 'NetDays', type: 'number' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const filters = ['name', 'searchKey'];

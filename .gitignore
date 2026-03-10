@@ -5,3 +5,7 @@ tools/decision-panel/dist/
 .claude/
 artifacts/test-report.xml
 artifacts/test-report.html
+.DS_Store
+.mcp.json
+.worktrees/
+tools/app-shell/dist/

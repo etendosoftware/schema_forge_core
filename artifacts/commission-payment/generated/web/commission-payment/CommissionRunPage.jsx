@@ -5,8 +5,8 @@ import CommissionAmountTable from './CommissionAmountTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'grandTotal', label: 'Grand Total', type: 'amount' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
 ];
 
 const statusField = 'docStatus';

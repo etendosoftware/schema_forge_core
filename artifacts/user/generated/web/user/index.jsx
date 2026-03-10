@@ -3,6 +3,8 @@ import UserTable from './UserTable';
 import UserForm from './UserForm';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: 'reference', name: 'User' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -11,6 +13,7 @@ export default function App(props) {
       Form={UserForm}
       catalogs={catalogs}
       entityLabel="User"
+      window={windowMeta}
       {...props}
     />
   );

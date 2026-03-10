@@ -5,7 +5,7 @@ import LocatorTable from './LocatorTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const statusField = null;
@@ -16,12 +16,12 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'searchKey', label: 'Search Key', type: 'text', required: true, lookup: true },
-    { key: 'x', label: 'X', type: 'text' },
-    { key: 'y', label: 'Y', type: 'text' },
-    { key: 'z', label: 'Z', type: 'text' },
-    { key: 'priorityNo', label: 'Priority No', type: 'number' },
-    { key: 'isDefault', label: 'Is Default', type: 'checkbox', required: true },
+    { key: 'searchKey', column: 'Value', type: 'text', required: true, lookup: true },
+    { key: 'x', column: 'X', type: 'text' },
+    { key: 'y', column: 'Y', type: 'text' },
+    { key: 'z', column: 'Z', type: 'text' },
+    { key: 'priorityNo', column: 'PriorityNo', type: 'number' },
+    { key: 'isDefault', column: 'IsDefault', type: 'checkbox', required: true },
   ],
   derived: [
 
