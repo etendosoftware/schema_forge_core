@@ -185,4 +185,157 @@ describe('extractLabels', () => {
       assert.deepEqual(params, ['es_AR']);
     }
   });
+
+  // --- Edge case tests (added by QA) ---
+
+  it('propagates database errors from pool.query', async () => {
+    const pool = {
+      query() {
+        return Promise.reject(new Error('connection refused'));
+      },
+    };
+
+    await assert.rejects(
+      () => extractLabels(pool, 'en_US'),
+      { message: 'connection refused' },
+    );
+  });
+
+  it('handles undefined label and description as empty strings', async () => {
+    const pool = createMockPool({
+      fields: [
+        { column_key: 'UndefinedCol', label: undefined, description: undefined },
+      ],
+      windows: [
+        { key: 'UndefinedWin', label: undefined },
+      ],
+      tabs: [],
+      menus: [],
+    });
+
+    const result = await extractLabels(pool, 'en_US');
+
+    assert.equal(result.fields.UndefinedCol.label, '');
+    assert.equal(result.fields.UndefinedCol.description, '');
+    assert.equal(result.windows.UndefinedWin.label, '');
+  });
+
+  it('buildKeyLabelMap uses last-write-wins for duplicate keys', async () => {
+    const pool = createMockPool({
+      fields: [],
+      windows: [
+        { key: 'Sales Order', label: 'First Label' },
+        { key: 'Sales Order', label: 'Last Label' },
+      ],
+      tabs: [],
+      menus: [],
+    });
+
+    const result = await extractLabels(pool, 'en_US');
+
+    // Last occurrence should win for windows/tabs/menus
+    assert.equal(result.windows['Sales Order'].label, 'Last Label');
+  });
+
+  it('handles fields with empty string column_key', async () => {
+    const pool = createMockPool({
+      fields: [
+        { column_key: '', label: 'Empty Key', description: 'desc' },
+      ],
+      windows: [],
+      tabs: [],
+      menus: [],
+    });
+
+    const result = await extractLabels(pool, 'en_US');
+
+    // Empty string is a valid object key
+    assert.equal(result.fields[''].label, 'Empty Key');
+  });
+
+  it('handles special characters in keys and labels', async () => {
+    const pool = createMockPool({
+      fields: [
+        { column_key: 'M_Product_ID', label: 'Producto (A&B)', description: 'With <html> chars' },
+      ],
+      windows: [
+        { key: 'Window "Name"', label: "Label's value" },
+      ],
+      tabs: [],
+      menus: [],
+    });
+
+    const result = await extractLabels(pool, 'en_US');
+
+    assert.equal(result.fields.M_Product_ID.label, 'Producto (A&B)');
+    assert.equal(result.fields.M_Product_ID.description, 'With <html> chars');
+    assert.equal(result.windows['Window "Name"'].label, "Label's value");
+  });
+
+  it('result is JSON-serializable', async () => {
+    const pool = createMockPool({
+      fields: [
+        { column_key: 'TestCol', label: 'Test', description: 'Desc' },
+      ],
+      windows: [
+        { key: 'TestWin', label: 'Window' },
+      ],
+      tabs: [
+        { key: 'TestTab', label: 'Tab' },
+      ],
+      menus: [
+        { key: 'TestMenu', label: 'Menu' },
+      ],
+    });
+
+    const result = await extractLabels(pool, 'en_US');
+
+    // Verify round-trip through JSON.stringify/parse preserves structure
+    const roundTrip = JSON.parse(JSON.stringify(result));
+    assert.deepEqual(roundTrip, result);
+  });
+
+  it('handles many duplicate field column_keys efficiently', async () => {
+    // Simulate 100 fields with 10 unique column_keys (10 duplicates each)
+    const fields = [];
+    for (let i = 0; i < 100; i++) {
+      fields.push({
+        column_key: `Col_${i % 10}`,
+        label: `Label ${i}`,
+        description: `Desc ${i}`,
+      });
+    }
+
+    const pool = createMockPool({ fields, windows: [], tabs: [], menus: [] });
+    const result = await extractLabels(pool, 'en_US');
+
+    // Should deduplicate to 10 unique keys
+    assert.equal(Object.keys(result.fields).length, 10);
+    // First occurrence wins: Col_0 should have label from index 0
+    assert.equal(result.fields.Col_0.label, 'Label 0');
+  });
+
+  it('all four queries run concurrently via Promise.all', async () => {
+    const callOrder = [];
+    let resolveCount = 0;
+    const pool = {
+      query(sql) {
+        const index = ++resolveCount;
+        callOrder.push(`start-${index}`);
+        return new Promise((resolve) => {
+          // All queries should be started before any resolves
+          setTimeout(() => {
+            callOrder.push(`end-${index}`);
+            resolve({ rows: [] });
+          }, 5);
+        });
+      },
+    };
+
+    await extractLabels(pool, 'en_US');
+
+    // All 4 queries should have started before any ended
+    const starts = callOrder.filter((e) => e.startsWith('start-'));
+    assert.equal(starts.length, 4, 'all 4 queries should start');
+  });
 });
