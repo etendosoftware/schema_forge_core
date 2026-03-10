@@ -17,6 +17,8 @@ import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
+import { LocaleProvider } from './i18n/index.js';
+import { useLocaleState } from './i18n/useLocaleState.js';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -144,6 +146,7 @@ function AppRoutes({ menuGroups, windowMap }) {
 export default function App() {
   const [menuGroups] = useState(() => buildMenuGroups());
   const [windowMap] = useState(() => buildWindowMap());
+  const [locale, setLocale] = useLocaleState();
 
   useEffect(() => {
     if (import.meta.env.VITE_MOCK === 'true') {
@@ -161,9 +164,11 @@ export default function App() {
 
   return (
     <BrowserRouter basename={routerBase}>
-      <AuthProvider>
-        <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
-      </AuthProvider>
+      <LocaleProvider locale={locale} setLocale={setLocale}>
+        <AuthProvider>
+          <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+        </AuthProvider>
+      </LocaleProvider>
     </BrowserRouter>
   );
 }

@@ -4,6 +4,7 @@ import { useInspector } from '@/components/inspector/InspectorProvider.jsx';
 import { Pencil, PencilOff, Save, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 
 export default function TopBar() {
   const inspector = useInspector();
@@ -31,6 +32,7 @@ export default function TopBar() {
           <span className="text-xs">&#8984;</span>K
         </kbd>
       </Button>
+      <LocaleSwitcher />
       {inspector.editMode && inspector.dirty && (
         <Button size="sm" onClick={inspector.save} disabled={inspector.saving}>
           {inspector.saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
