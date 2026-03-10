@@ -114,14 +114,23 @@ export function generateFormComponent(entityName, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    // Behavioral metadata: displayLogic and readOnlyLogic (callouts are omitted — not supported by NEO Headless yet)
+    // Behavioral metadata: displayLogic and readOnlyLogic
     const displayLogicPart = f.displayLogic?.js
       ? `, displayLogic: (record) => ${f.displayLogic.js}`
       : '';
     const readOnlyLogicPart = f.readOnlyLogic?.js
       ? `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`
       : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    // TODO comments for callout and onChangeFunction behavioral hints
+    const todoLines = [];
+    if (f.callout) {
+      todoLines.push(`  // TODO: Translate callout logic: ${f.callout.className}`);
+    }
+    if (f.onChangeFunction) {
+      todoLines.push(`  // TODO: Translate onchangefunction logic: ${f.onChangeFunction.name}`);
+    }
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    return [...todoLines, fieldLine].join('\n');
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';

@@ -16,6 +16,7 @@ export function buildPipelineSteps() {
     { name: 'generate-contract', description: 'Generate frontend/backend contracts + test manifest', phase: 'F6' },
     { name: 'push-to-neo', description: 'Configure NEO Headless via webhooks (from contract)', phase: 'F7' },
     { name: 'generate-frontend', description: 'Generate React components from contract', phase: 'F8' },
+    { name: 'translate-todos', description: 'AI-assisted translation of callout/onchange TODO comments', phase: 'F8b', interactive: true },
     { name: 'run-tests', description: 'Run contract tests (Node.js side)', phase: 'F9' },
   ];
 }
@@ -38,9 +39,15 @@ async function main() {
   for (const step of steps) {
     if (step.interactive) {
       console.log(`\n[${step.phase}] ${step.description}`);
-      console.log('  → Open Decision Panel at http://localhost:3000');
-      console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
-      console.log('  → For AI classification, run: /sf:classify-rules');
+      if (step.name === 'translate-todos') {
+        console.log('  → Review generated TODO comments in the frontend components');
+        console.log('  → Use AI or manual translation to implement callout/onchange logic');
+        console.log('  → Re-run pipeline with --skip-to=run-tests when done');
+      } else {
+        console.log('  → Open Decision Panel at http://localhost:3000');
+        console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
+        console.log('  → For AI classification, run: /sf:classify-rules');
+      }
       break; // Stop at interactive step
     }
 

@@ -296,6 +296,9 @@ export function buildSchema(rows, systemColumns, refMap) {
       // Add callout if present
       if (row.callout_class) fieldDef.callout = row.callout_class;
 
+      // Add onChangeFunction if present (JS client-side logic from SmartClient)
+      if (row.onchangefunction) fieldDef.onChangeFunction = row.onchangefunction;
+
       // Add validation rule with parsed params if present
       if (row.val_rule_code) {
         fieldDef.validationRule = parseValidationRule(row.val_rule_code);
@@ -392,7 +395,8 @@ SELECT
   sel.Name AS ref_selector_name,
   sel_tgt.TableName AS ref_selector_target,
   sel.WhereClause AS ref_selector_filter,
-  sel.HQL AS ref_selector_hql
+  sel.HQL AS ref_selector_hql,
+  f.OnChangeFunction
 FROM AD_Field f
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
