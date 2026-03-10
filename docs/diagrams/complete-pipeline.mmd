@@ -1,66 +1,66 @@
 flowchart TD
     subgraph EtendoDB["Etendo PostgreSQL Database"]
-        AD["AD Metadata\n(Windows, Tabs, Columns,\nProcesses, References)"]
+        AD["AD Metadata<br/>(Windows, Tabs, Columns,<br/>Processes, References)"]
     end
 
     subgraph Extraction["1. EXTRACTION (CLI — Node.js)"]
-        EXT["extract-from-db.js\nextract-fields.js\nextract-rules.js"]
-        RAW_S["schema-raw.json\n(all fields, FK refs, callouts)"]
-        RAW_R["rules-raw.json\n(all business rules)"]
+        EXT["extract-from-db.js<br/>extract-fields.js<br/>extract-rules.js"]
+        RAW_S["schema-raw.json<br/>(all fields, FK refs, callouts)"]
+        RAW_R["rules-raw.json<br/>(all business rules)"]
     end
 
     subgraph PreClassify["2. PRE-CLASSIFICATION (CLI + AI)"]
         PC["pre-classify.js"]
-        CLASS_R["rules-classified.json\n(~60% auto-classified)"]
+        CLASS_R["rules-classified.json<br/>(~60% auto-classified)"]
     end
 
     subgraph Curation["3. CURATION (Human + Decision UI)"]
-        DP["Decision Panel\n(React — port 5174)"]
-        CUR_S["schema-curated.json\n(visibility decided)"]
-        CUR_R["rules-curated.json\n(disposition decided)"]
+        DP["Decision Panel<br/>(React — port 5174)"]
+        CUR_S["schema-curated.json<br/>(visibility decided)"]
+        CUR_R["rules-curated.json<br/>(disposition decided)"]
     end
 
     subgraph Validation["4. VALIDATION (CLI)"]
-        VAL["validate-schema.js\n4 levels: structural,\nsemantic, visibility,\ncross-reference"]
+        VAL["validate-schema.js<br/>4 levels: structural,<br/>semantic, visibility,<br/>cross-reference"]
     end
 
     subgraph ContractGen["5. CONTRACT GENERATION (CLI)"]
         GC["generate-contract.js"]
-        CONTRACT["contract.json\n(single source of truth)"]
+        CONTRACT["contract.json<br/>(single source of truth)"]
     end
 
     subgraph BackendConfig["6. BACKEND CONFIGURATION"]
         PTN["push-to-neo.js"]
-        WH["4 Webhooks\n(SFUpsertSpec, SFUpsertEntity,\nSFUpsertField, SFPopulateSpec)"]
-        TABLES["ETGO_SF_SPEC\nETGO_SF_ENTITY\nETGO_SF_FIELD"]
+        WH["4 Webhooks<br/>(SFUpsertSpec, SFUpsertEntity,<br/>SFUpsertField, SFPopulateSpec)"]
+        TABLES["ETGO_SF_SPEC<br/>ETGO_SF_ENTITY<br/>ETGO_SF_FIELD"]
     end
 
     subgraph FrontendGen["7. FRONTEND GENERATION (CLI)"]
         GF["generate-frontend.js"]
         GM["generate-mock-data.js"]
         REACT["React SPA components"]
-        MOCK["mockData.js\nmockCatalogs.js"]
+        MOCK["mockData.js<br/>mockCatalogs.js"]
     end
 
     subgraph TodoTranslation["8b. TODO TRANSLATION (AI-assisted)"]
-        TT["translate-todos.js\n(interactive, AI-assisted)"]
-        TT_OUT["React components with\ntranslated callout/onchange logic"]
+        TT["translate-todos.js<br/>(interactive, AI-assisted)"]
+        TT_OUT["React components with<br/>translated callout/onchange logic"]
     end
 
     subgraph Runtime["8. RUNTIME (NEO Headless — Java)"]
-        NEO["NeoServlet\n/sws/neo/*"]
+        NEO["NeoServlet<br/>/sws/neo/*"]
         AUTH["JWT Authentication"]
         RESOLVE["Spec + Entity Resolution"]
-        FILTER["NeoFieldFilter\n(CRUD field filtering)"]
-        HANDLER["NeoHandler CDI Hook\n(optional custom logic)"]
-        DS["DefaultJsonDataService\n(Etendo CRUD fallback)"]
-        SEL["NeoSelectorService\n(FK dropdowns)"]
-        PROC["NeoProcessService\n(process execution)"]
+        FILTER["NeoFieldFilter<br/>(CRUD field filtering)"]
+        HANDLER["NeoHandler CDI Hook<br/>(optional custom logic)"]
+        DS["DefaultJsonDataService<br/>(Etendo CRUD fallback)"]
+        SEL["NeoSelectorService<br/>(FK dropdowns)"]
+        PROC["NeoProcessService<br/>(process execution)"]
     end
 
     subgraph Testing["TESTING"]
-        CT["Contract Tests\n(Node.js — instant)"]
-        IT["Integration Tests\n(JUnit + OBBaseTest\nin Etendo Go)"]
+        CT["Contract Tests<br/>(Node.js — instant)"]
+        IT["Integration Tests<br/>(JUnit + OBBaseTest<br/>in Etendo Go)"]
     end
 
     subgraph Client["API Consumer"]
@@ -97,7 +97,7 @@ flowchart TD
     WH -->|idempotent HTTP| TABLES
 
     %% Frontend: contract → React SPA + mock data
-    CONTRACT -->|"types, inputMode, callouts,\ndisplayLogic, apiPrediction"| GF
+    CONTRACT -->|"types, inputMode, callouts,<br/>displayLogic, apiPrediction"| GF
     CONTRACT --> GM
     GF --> REACT
     GM --> MOCK
