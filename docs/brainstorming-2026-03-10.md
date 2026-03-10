@@ -180,7 +180,7 @@ F2:  validate-schema.js  → validation report
 F3:  pre-classify.js     → auto-classified rules
 F4:  human decisions     → schema-curated.json, rules-curated.json
 F6:  generate-contract   → contract.json (frontend + backend + tests)
-F7:  generate-backend    → Java source via Handlebars templates
+F7:  push-to-neo (planned) → Webhook calls → ETGO_SF_* config (replaces code generation)
 F8:  generate-frontend   → React SPA
 F9:  run-contract-tests  → test execution
 ```

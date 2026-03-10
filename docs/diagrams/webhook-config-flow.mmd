@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant SF as Schema Forge CLI
+    participant WH as Etendo Webhooks
+    participant DB as ETGO_SF_* Tables
+    participant RT as NeoServlet (Runtime)
+
+    Note over SF: After curation is complete
+
+    SF->>WH: SFUpsertSpec(windowId, name, type)
+    WH->>DB: INSERT/UPDATE ETGO_SF_SPEC
+    DB-->>WH: spec_id
+
+    SF->>WH: SFPopulateSpec(spec_id)
+    WH->>DB: Auto-create ETGO_SF_ENTITY + ETGO_SF_FIELD from AD metadata
+    DB-->>WH: entities + fields created
+
+    loop For each curated field
+        SF->>WH: SFUpsertField(entity_id, column, isIncluded, isReadOnly)
+        WH->>DB: UPDATE ETGO_SF_FIELD
+    end
+
+    Note over RT: No restart needed — config is live
+
+    RT->>DB: Read ETGO_SF_* on each request
+    DB-->>RT: Current config
+    RT->>RT: Serve filtered API based on config

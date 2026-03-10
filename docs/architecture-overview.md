@@ -48,12 +48,12 @@ Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 │  ├── extract-fields.js        ├── decision-panel (port 5174)        │
 │  ├── extract-rules.js         └── ui-preview (port 5175)            │
 │  ├── pre-classify.js                                                 │
-│  ├── validate-schema.js       Templates (Handlebars)                │
-│  ├── generate-contract.js     ├── RxEndpoint.java.hbs               │
-│  ├── generate-backend.js      ├── SelectorEndpoint.java.hbs         │
-│  ├── generate-frontend.js     ├── EventHandler.java.hbs             │
-│  ├── generate-mock-data.js    ├── DalProcess.java.hbs               │
-│  ├── run-contract-tests.js    └── dataset.xml.hbs                   │
+│  ├── validate-schema.js       Webhooks (NEO Headless config)        │
+│  ├── generate-contract.js     ├── SFUpsertSpec                      │
+│  ├── push-to-neo.js (planned) ├── SFUpsertEntity                    │
+│  ├── generate-frontend.js     ├── SFUpsertField                     │
+│  ├── generate-mock-data.js    └── SFPopulateSpec                    │
+│  ├── run-contract-tests.js                                          │
 │  └── pipeline.js                                                     │
 │                                                                      │
 │  Artifacts (per-window)        Documentation                         │
@@ -135,7 +135,7 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | `pre-classify.js` | `rules-raw.json` | `rules-classified.json` (AI pre-classification) |
 | `validate-schema.js` | `schema-curated.json` | Validation report (4 levels: structural, semantic, visibility, cross-reference) |
 | `generate-contract.js` | Curated schema + rules | `contract.json` (frontend + backend contract) |
-| `generate-backend.js` | Contract + templates | Java source files (via Handlebars templates) |
+| `push-to-neo.js` (planned) | Curated schema | Webhook calls → ETGO_SF_* tables (NEO Headless config) |
 | `generate-frontend.js` | Contract + decisions | React SPA components |
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |
@@ -151,19 +151,11 @@ Three React web apps (Vite + Tailwind):
 | `decision-panel` | 5174 | Field visibility + rule curation |
 | `ui-preview` | 5175 | Live preview with mock data (Babel standalone, no backend) |
 
-### Templates
+### Backend Configuration (NEO Headless)
 
-Handlebars templates in `templates/etendo-module/` for generating Java and XML:
+Backend code generation has been replaced by runtime configuration. Instead of generating Java source files via templates, Schema Forge writes configuration records directly to Etendo via webhooks. The NEO Headless runtime (NeoServlet) reads these records and serves the API dynamically — no compilation or restart needed.
 
-| Template | Generates |
-|----------|-----------|
-| `RxEndpoint.java.hbs` | Etendo RX REST endpoints (GET/POST/PUT) |
-| `SelectorEndpoint.java.hbs` | FK dropdown endpoints |
-| `EventHandler.java.hbs` | Event handlers (beforeSave derivations) |
-| `DalProcess.java.hbs` | AD_Process implementations |
-| `PreconditionValidator.java.hbs` | Process precondition validators |
-| `DTO.java.hbs` | DTO classes (versioned) |
-| `dataset.xml.hbs` | Etendo module reference data |
+See [Webhook Configuration Flow](diagrams/webhook-config-flow.mmd) for the detailed sequence.
 
 ### Core Maps
 

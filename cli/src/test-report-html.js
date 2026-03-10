@@ -5,11 +5,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const inputPath = resolve(process.argv[2] || 'artifacts/test-report.xml');
-const outputPath = resolve(process.argv[3] || 'artifacts/test-report.html');
-
-const xml = readFileSync(inputPath, 'utf8');
-
 // --- Parse JUnit XML ---
 
 function parseTestSuites(xml) {
@@ -96,16 +91,7 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-// --- Build HTML ---
-
-const suites = parseTestSuites(xml);
-
-const totalTests = suites.reduce((s, su) => s + su.tests, 0);
-const totalFailures = suites.reduce((s, su) => s + su.failures + su.errors, 0);
-const totalPassed = totalTests - totalFailures;
-const totalTime = suites.reduce((s, su) => s + su.time, 0).toFixed(3);
-const timestamp = new Date().toISOString();
-const passRate = totalTests > 0 ? ((totalPassed / totalTests) * 100).toFixed(1) : '0.0';
+// --- Render HTML ---
 
 function renderSuite(suite, index) {
   const failed = suite.failures + suite.errors;
@@ -147,39 +133,49 @@ function renderSuite(suite, index) {
   </div>`;
 }
 
-// Collect failed tests for prominent display
-const failedTests = [];
-for (const suite of suites) {
-  for (const tc of suite.testCases) {
-    if (tc.failure) {
-      failedTests.push({ suite: suite.name, ...tc });
+function generateReport(xml) {
+  const suites = parseTestSuites(xml);
+
+  const totalTests = suites.reduce((s, su) => s + su.tests, 0);
+  const totalFailures = suites.reduce((s, su) => s + su.failures + su.errors, 0);
+  const totalPassed = totalTests - totalFailures;
+  const totalTime = suites.reduce((s, su) => s + su.time, 0).toFixed(3);
+  const timestamp = new Date().toISOString();
+  const passRate = totalTests > 0 ? ((totalPassed / totalTests) * 100).toFixed(1) : '0.0';
+
+  const barWidth = totalTests > 0 ? (totalPassed / totalTests) * 100 : 100;
+
+  // Collect failed tests for prominent display
+  const failedTests = [];
+  for (const suite of suites) {
+    for (const tc of suite.testCases) {
+      if (tc.failure) {
+        failedTests.push({ suite: suite.name, ...tc });
+      }
     }
   }
-}
 
-const failedSection =
-  failedTests.length > 0
-    ? `<div class="failed-summary">
-        <h2>Failed Tests (${failedTests.length})</h2>
-        ${failedTests
-          .map(
-            (t) => `<div class="failed-item">
-            <span class="x-icon">&#x2717;</span>
-            <strong>${escapeHtml(t.name)}</strong>
-            <span class="failed-suite">in ${escapeHtml(t.suite)}</span>
-            <div class="failure-detail">
-              <div class="failure-msg">${escapeHtml(t.failure.message)}</div>
-              <pre class="failure-body">${t.failure.body}</pre>
-            </div>
-          </div>`
-          )
-          .join('\n')}
-      </div>`
-    : '';
+  const failedSection =
+    failedTests.length > 0
+      ? `<div class="failed-summary">
+          <h2>Failed Tests (${failedTests.length})</h2>
+          ${failedTests
+            .map(
+              (t) => `<div class="failed-item">
+              <span class="x-icon">&#x2717;</span>
+              <strong>${escapeHtml(t.name)}</strong>
+              <span class="failed-suite">in ${escapeHtml(t.suite)}</span>
+              <div class="failure-detail">
+                <div class="failure-msg">${escapeHtml(t.failure.message)}</div>
+                <pre class="failure-body">${t.failure.body}</pre>
+              </div>
+            </div>`
+            )
+            .join('\n')}
+        </div>`
+      : '';
 
-const barWidth = totalTests > 0 ? (totalPassed / totalTests) * 100 : 100;
-
-const html = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -280,8 +276,24 @@ const html = `<!DOCTYPE html>
 </body>
 </html>`;
 
-writeFileSync(outputPath, html, 'utf8');
+  return { html, totalTests, totalFailures, totalPassed, totalTime, passRate, suites };
+}
 
-const status = totalFailures > 0 ? 'FAIL' : 'PASS';
-console.log(`[test-report] ${status} — ${totalPassed}/${totalTests} passed (${passRate}%) in ${totalTime}s`);
-console.log(`[test-report] HTML report: ${outputPath}`);
+// Exports for testing
+export { parseTestSuites, parseTestCases, parseAttrs, escapeHtml, renderSuite, generateReport };
+
+// CLI entry point — only runs when executed directly
+const isCLI =
+  process.argv[1] &&
+  import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+
+if (isCLI) {
+  const inputPath = resolve(process.argv[2] || 'artifacts/test-report.xml');
+  const outputPath = resolve(process.argv[3] || 'artifacts/test-report.html');
+  const xml = readFileSync(inputPath, 'utf8');
+  const { html, totalPassed, totalTests, totalFailures, passRate, totalTime } = generateReport(xml);
+  writeFileSync(outputPath, html, 'utf8');
+  const status = totalFailures > 0 ? 'FAIL' : 'PASS';
+  console.log(`[test-report] ${status} — ${totalPassed}/${totalTests} passed (${passRate}%) in ${totalTime}s`);
+  console.log(`[test-report] HTML report: ${outputPath}`);
+}

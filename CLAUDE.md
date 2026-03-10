@@ -121,7 +121,7 @@ When the Schema Forge repository (project analyzer) is on a feature branch (e.g.
 
 ## Project Overview
 
-**Schema Forge** is the design and tooling layer for building a simplified Etendo interface. It contains documentation, CLI tools, decision UIs, templates, and per-window artifacts. Schema Forge analyzes Etendo metadata, helps humans make design decisions, and configures the runtime module.
+**Schema Forge** is the design and tooling layer for building a simplified Etendo interface. It contains documentation, CLI tools, decision UIs, and per-window artifacts. Schema Forge analyzes Etendo metadata, helps humans make design decisions, and configures the runtime module via webhooks (no backend code generation — NEO Headless serves APIs dynamically from configuration).
 
 **com.etendoerp.go** (Etendo Go) is the runtime implementation — a metadata-driven REST API layer (`NEO Headless`) that runs inside Etendo. It exposes AD Windows and Processes as JSON APIs based on configuration stored in 3 database tables (`ETGO_SF_SPEC`, `ETGO_SF_ENTITY`, `ETGO_SF_FIELD`).
 
@@ -134,7 +134,7 @@ When the Schema Forge repository (project analyzer) is on a feature branch (e.g.
 │                validators,      │ ──────▶  │  NeoSelectorService              │
 │                generators       │  via     │  NeoProcessService               │
 │  tools/      → decision UIs     │  webhooks│  NeoHandler (CDI hooks)          │
-│  templates/  → code templates   │          │  PopulateSpecHelper              │
+│  templates/  → legacy (unused)  │          │  PopulateSpecHelper              │
 │  artifacts/  → per-window data  │          │  4 webhooks (upsert/populate)    │
 │  docs/       → PRD, TDD, AD ref │          │                                  │
 │  core-maps/  → shared metadata  │          │  Tables: ETGO_SF_SPEC            │
@@ -190,7 +190,7 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── generate-backend.js           # Java code generation (templates)
+│       ├── push-to-neo.js (planned)      # Webhook calls → NEO Headless config
 │       ├── generate-frontend.js          # React SPA generation
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
@@ -199,7 +199,7 @@ schema-forge/                             # THIS REPO — design + tooling
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
 │   ├── decision-panel/                   # Field visibility + rule curation
 │   └── ui-preview/                       # Live preview with mock data
-├── templates/etendo-module/              # Handlebars templates for code generation
+├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
 ├── artifacts/{window-name}/              # Per-window: schemas, rules, decisions, generated code
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)

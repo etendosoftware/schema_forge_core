@@ -4,7 +4,8 @@ import {
   generateFrontendContract,
   generateBackendContract,
   generateTestManifest,
-  generateContract
+  generateContract,
+  generateApiPrediction
 } from '../src/generate-contract.js';
 
 const minimalSchema = {
@@ -76,6 +77,105 @@ describe('generateFrontendContract', () => {
     assert.equal(date.tsType, 'string'); // dates as ISO strings
     const total = fc.entities.order.fields.find(f => f.name === 'grandTotal');
     assert.equal(total.tsType, 'number');
+  });
+});
+
+const behavioralSchema = {
+  version: '0.1.0',
+  window: { id: '500', name: 'Behavioral', primaryEntity: 'order', category: 'test' },
+  entities: [{
+    name: 'order',
+    table: 'C_Order',
+    level: 'header',
+    fields: [
+      { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable',
+        required: true, searchable: true, grid: true, form: true,
+        callout: 'org.example.BPCallout' },
+      { name: 'warehouse', column: 'M_Warehouse_ID', type: 'foreignKey', visibility: 'editable',
+        required: true, searchable: false, grid: false, form: true,
+        displayLogic: '@DocStatus@=DR' },
+      { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey', visibility: 'editable',
+        required: true, searchable: false, grid: false, form: true,
+        readOnlyLogic: '@Processed@=Y' },
+      { name: 'plainField', column: 'PlainCol', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true },
+    ]
+  }]
+};
+
+const behavioralRules = [
+  { name: 'org.example.BPCallout', type: 'callout', className: 'org.example.BPCallout',
+    effects: [{ field: 'partnerAddress', action: 'setValue' }, { field: 'priceList', action: 'setValue' }],
+    complexity: 'medium' },
+  { name: '@DocStatus@=DR', type: 'displayLogic', className: '@DocStatus@=DR',
+    translated: 'record.docStatus === "DR"' },
+  { name: '@Processed@=Y', type: 'readOnlyLogic', className: '@Processed@=Y',
+    translated: 'record.processed === true' },
+];
+
+describe('generateFrontendContract — behavioral metadata', () => {
+  it('field with callout gets callout.className in frontendContract', () => {
+    const fc = generateFrontendContract(behavioralSchema);
+    const bp = fc.entities.order.fields.find(f => f.name === 'businessPartner');
+    assert.ok(bp.callout, 'callout metadata should be present');
+    assert.equal(bp.callout.className, 'org.example.BPCallout');
+  });
+
+  it('field with displayLogic gets displayLogic.raw in frontendContract', () => {
+    const fc = generateFrontendContract(behavioralSchema);
+    const wh = fc.entities.order.fields.find(f => f.name === 'warehouse');
+    assert.ok(wh.displayLogic, 'displayLogic metadata should be present');
+    assert.equal(wh.displayLogic.raw, '@DocStatus@=DR');
+  });
+
+  it('field with readOnlyLogic gets readOnlyLogic.raw in frontendContract', () => {
+    const fc = generateFrontendContract(behavioralSchema);
+    const pl = fc.entities.order.fields.find(f => f.name === 'priceList');
+    assert.ok(pl.readOnlyLogic, 'readOnlyLogic metadata should be present');
+    assert.equal(pl.readOnlyLogic.raw, '@Processed@=Y');
+  });
+
+  it('field without behavioral metadata does NOT have callout/displayLogic/readOnlyLogic keys', () => {
+    const fc = generateFrontendContract(behavioralSchema);
+    const plain = fc.entities.order.fields.find(f => f.name === 'plainField');
+    assert.equal(plain.callout, undefined, 'plain field should not have callout');
+    assert.equal(plain.displayLogic, undefined, 'plain field should not have displayLogic');
+    assert.equal(plain.readOnlyLogic, undefined, 'plain field should not have readOnlyLogic');
+  });
+
+  it('callout effects are populated from rules when available', () => {
+    const fc = generateFrontendContract(behavioralSchema, behavioralRules);
+    const bp = fc.entities.order.fields.find(f => f.name === 'businessPartner');
+    assert.ok(bp.callout.effects, 'callout effects should be present when rules match');
+    assert.deepStrictEqual(bp.callout.effects, ['partnerAddress', 'priceList']);
+    assert.equal(bp.callout.complexity, 'medium');
+  });
+
+  it('displayLogic.js is populated from rules translation when available', () => {
+    const fc = generateFrontendContract(behavioralSchema, behavioralRules);
+    const wh = fc.entities.order.fields.find(f => f.name === 'warehouse');
+    assert.equal(wh.displayLogic.js, 'record.docStatus === "DR"');
+  });
+
+  it('readOnlyLogic.js is populated from rules translation when available', () => {
+    const fc = generateFrontendContract(behavioralSchema, behavioralRules);
+    const pl = fc.entities.order.fields.find(f => f.name === 'priceList');
+    assert.equal(pl.readOnlyLogic.js, 'record.processed === true');
+  });
+
+  it('callout without matching rule has only className, no effects', () => {
+    const fc = generateFrontendContract(behavioralSchema, []);
+    const bp = fc.entities.order.fields.find(f => f.name === 'businessPartner');
+    assert.equal(bp.callout.className, 'org.example.BPCallout');
+    assert.equal(bp.callout.effects, undefined, 'no effects without matching rule');
+    assert.equal(bp.callout.complexity, undefined, 'no complexity without matching rule');
+  });
+
+  it('displayLogic without matching rule has only raw, no js translation', () => {
+    const fc = generateFrontendContract(behavioralSchema, []);
+    const wh = fc.entities.order.fields.find(f => f.name === 'warehouse');
+    assert.equal(wh.displayLogic.raw, '@DocStatus@=DR');
+    assert.equal(wh.displayLogic.js, undefined, 'no js without matching rule');
   });
 });
 
@@ -522,5 +622,212 @@ describe('generateContract — orchestrator', () => {
     assert.deepStrictEqual(contract.frontendContract.entities, {});
     assert.deepStrictEqual(contract.backendContract.entities, {});
     assert.equal(contract.testManifest.tests.length, 0);
+  });
+
+  it('includes apiPrediction in output', () => {
+    const contract = generateContract(minimalSchema, sampleRules, sampleProcesses);
+    assert.ok(contract.apiPrediction, 'should include apiPrediction');
+    assert.ok(contract.apiPrediction.specName);
+    assert.ok(contract.apiPrediction.baseUrl);
+    assert.ok(contract.apiPrediction.crud);
+    assert.ok(contract.apiPrediction.queryParams);
+  });
+});
+
+// ─── Schema with FK fields for apiPrediction tests ────────────────────────────
+
+const fkSchema = {
+  version: '0.1.0',
+  window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+  entities: [
+    {
+      name: 'order',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey',
+          reference: 'BusinessPartner', inputMode: 'search',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'warehouse', column: 'M_Warehouse_ID', type: 'foreignKey',
+          reference: 'Warehouse', inputMode: 'selector',
+          visibility: 'editable', required: true, searchable: false, grid: false, form: true },
+        { name: 'currency', column: 'C_Currency_ID', type: 'foreignKey',
+          reference: 'Currency',
+          visibility: 'readOnly', required: true, searchable: false, grid: true, form: true },
+        { name: 'documentNo', column: 'DocumentNo', type: 'string',
+          visibility: 'readOnly', required: true, searchable: true, grid: true, form: true },
+        { name: 'orderDate', column: 'DateOrdered', type: 'date',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'transactionDoc', column: 'C_DocTypeTarget_ID', type: 'foreignKey',
+          visibility: 'system', required: true, searchable: false, grid: false, form: false,
+          derivation: { type: 'fromConfig', source: 'doctype.salesOrder' } },
+      ]
+    },
+    {
+      name: 'orderLine',
+      table: 'C_OrderLine',
+      level: 'line',
+      fields: [
+        { name: 'product', column: 'M_Product_ID', type: 'foreignKey',
+          reference: 'Product', inputMode: 'search',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'qty', column: 'QtyOrdered', type: 'number',
+          visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+        { name: 'salesOrder', column: 'C_Order_ID', type: 'foreignKey',
+          visibility: 'system', required: true, searchable: false, grid: false, form: false,
+          derivation: { type: 'fromParent', source: 'order.id' } },
+      ]
+    }
+  ]
+};
+
+const buttonSchema = {
+  version: '0.1.0',
+  window: { id: '500', name: 'Purchase Invoice', primaryEntity: 'invoice', category: 'purchasing' },
+  entities: [{
+    name: 'invoice',
+    table: 'C_Invoice',
+    level: 'header',
+    fields: [
+      { name: 'documentNo', column: 'DocumentNo', type: 'string',
+        visibility: 'readOnly', required: true, searchable: true, grid: true, form: true },
+      { name: 'docAction', column: 'DocAction', type: 'button',
+        visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+    ]
+  }]
+};
+
+describe('generateApiPrediction', () => {
+  it('specName is correct kebab-case from window name', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.equal(prediction.specName, 'sales-order');
+  });
+
+  it('baseUrl follows NEO Headless pattern', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.equal(prediction.baseUrl, '/sws/neo/sales-order');
+  });
+
+  it('CRUD entries exist for each entity', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.ok(prediction.crud.order, 'order entity should have CRUD');
+    assert.ok(prediction.crud.orderLine, 'orderLine entity should have CRUD');
+    assert.equal(prediction.crud.order.get, true);
+    assert.equal(prediction.crud.order.getById, true);
+    assert.equal(prediction.crud.order.post, true);
+    assert.equal(prediction.crud.order.put, true);
+    assert.equal(prediction.crud.order.patch, true);
+    assert.equal(prediction.crud.order.delete, true);
+  });
+
+  it('CRUD URLs follow correct pattern', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.equal(prediction.crud.order.listUrl, '/sws/neo/sales-order/order');
+    assert.equal(prediction.crud.order.detailUrl, '/sws/neo/sales-order/order/{id}');
+    assert.equal(prediction.crud.orderLine.listUrl, '/sws/neo/sales-order/orderLine');
+    assert.equal(prediction.crud.orderLine.detailUrl, '/sws/neo/sales-order/orderLine/{id}');
+  });
+
+  it('supportedFilters match searchableFields from frontendContract', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.deepStrictEqual(prediction.crud.order.supportedFilters,
+      fc.entities.order.searchableFields);
+    assert.deepStrictEqual(prediction.crud.orderLine.supportedFilters,
+      fc.entities.orderLine.searchableFields);
+  });
+
+  it('selector entries match visible FK fields from frontendContract', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+
+    // order has 3 visible FK fields: businessPartner, warehouse, currency
+    // transactionDoc is system so excluded
+    const orderSelectors = prediction.selectors.filter(s => s.entity === 'order');
+    assert.equal(orderSelectors.length, 3);
+
+    const bpSelector = orderSelectors.find(s => s.field === 'businessPartner');
+    assert.ok(bpSelector);
+    assert.equal(bpSelector.column, 'C_BPartner_ID');
+    assert.equal(bpSelector.reference, 'BusinessPartner');
+    assert.equal(bpSelector.url, '/sws/neo/sales-order/order/selectors/businessPartner');
+
+    // orderLine has 1 visible FK: product (salesOrder is system)
+    const lineSelectors = prediction.selectors.filter(s => s.entity === 'orderLine');
+    assert.equal(lineSelectors.length, 1);
+    assert.equal(lineSelectors[0].field, 'product');
+  });
+
+  it('selector URLs follow correct pattern', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    for (const sel of prediction.selectors) {
+      const expected = `/sws/neo/sales-order/${sel.entity}/selectors/${sel.field}`;
+      assert.equal(sel.url, expected,
+        `selector URL for ${sel.entity}.${sel.field} should match pattern`);
+    }
+  });
+
+  it('actions include button-type fields', () => {
+    const fc = generateFrontendContract(buttonSchema);
+    const bc = generateBackendContract(buttonSchema);
+    const prediction = generateApiPrediction(buttonSchema, fc, bc);
+    assert.equal(prediction.actions.length, 1);
+    assert.equal(prediction.actions[0].field, 'docAction');
+    assert.equal(prediction.actions[0].column, 'DocAction');
+    assert.equal(prediction.actions[0].url,
+      '/sws/neo/purchase-invoice/invoice/{id}/action/docAction');
+  });
+
+  it('actions is empty array when no button fields exist', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.equal(prediction.actions.length, 0);
+  });
+
+  it('queryParams structure exists with required keys', () => {
+    const fc = generateFrontendContract(fkSchema);
+    const bc = generateBackendContract(fkSchema);
+    const prediction = generateApiPrediction(fkSchema, fc, bc);
+    assert.ok(prediction.queryParams.pagination);
+    assert.equal(prediction.queryParams.pagination.startRow, '_startRow');
+    assert.equal(prediction.queryParams.pagination.endRow, '_endRow');
+    assert.ok(prediction.queryParams.sorting);
+    assert.equal(prediction.queryParams.sorting.param, '_sortBy');
+    assert.ok(prediction.queryParams.filtering);
+    assert.ok(prediction.queryParams.parentFilter);
+  });
+
+  it('empty schema produces empty CRUD, selectors, and actions', () => {
+    const fc = generateFrontendContract(emptySchema);
+    const bc = generateBackendContract(emptySchema);
+    const prediction = generateApiPrediction(emptySchema, fc, bc);
+    assert.equal(prediction.specName, 'empty-window');
+    assert.deepStrictEqual(prediction.crud, {});
+    assert.deepStrictEqual(prediction.selectors, []);
+    assert.deepStrictEqual(prediction.actions, []);
+  });
+
+  it('specName handles multi-word names correctly', () => {
+    const schema = {
+      ...fkSchema,
+      window: { ...fkSchema.window, name: 'Business Partner Category' }
+    };
+    const fc = generateFrontendContract(schema);
+    const bc = generateBackendContract(schema);
+    const prediction = generateApiPrediction(schema, fc, bc);
+    assert.equal(prediction.specName, 'business-partner-category');
   });
 });

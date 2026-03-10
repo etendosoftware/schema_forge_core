@@ -1,0 +1,34 @@
+flowchart LR
+    subgraph SchemaForge["Schema Forge (4 states)"]
+        E["editable"]
+        RO["readOnly"]
+        SYS["system"]
+        DIS["discarded"]
+    end
+
+    subgraph NeoHeadless["NEO Headless (2 flags)"]
+        INC_W["IsIncluded=Y\nIsReadOnly=N"]
+        INC_R["IsIncluded=Y\nIsReadOnly=Y"]
+        EXC1["IsIncluded=N"]
+        EXC2["IsIncluded=N"]
+    end
+
+    subgraph API["API Behavior"]
+        RW["Read + Write"]
+        R["Read only"]
+        H1["Hidden"]
+        H2["Hidden"]
+    end
+
+    E --> INC_W --> RW
+    RO --> INC_R --> R
+    SYS --> EXC1 --> H1
+    DIS --> EXC2 --> H2
+
+    classDef edit fill:#7ed321,stroke:#5a9a18,color:white
+    classDef read fill:#4a90d9,stroke:#2c5f8a,color:white
+    classDef hidden fill:#999,stroke:#666,color:white
+
+    class E,INC_W,RW edit
+    class RO,INC_R,R read
+    class SYS,DIS,EXC1,EXC2,H1,H2 hidden
