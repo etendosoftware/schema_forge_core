@@ -316,9 +316,34 @@ and logic expressions actually work (corrected from initial TDD assumptions).
 **Rule:** Any discovery about general Etendo AD structure goes in `docs/etendo-ad/`, NOT in per-window artifacts.
 Per-window artifacts (`artifacts/{window}/`) should only contain window-specific data (extracted CSVs, curated schemas, etc.).
 
+## Etendo Local Environment
+
+Config at `/Users/futit/Workspace/etendo_develop/gradle.properties`:
+- DB: `etendo27` on port `5416` (user: `tad/tad`, system: `postgres/syspass`)
+- JDBC: `jdbc:postgresql://localhost:5416`
+- Tomcat: port `8080`, context `etendo`
+- Etendo root: `/Users/futit/Workspace/etendo_develop`
+
+## NEO Headless Research
+
+See `docs/brainstorming-2026-03-10.md` for detailed notes on:
+- NeoHandler CDI hook mechanism (custom endpoint logic via `@Named` + `JAVA_QUALIFIER`)
+- Callouts NOT in NEO Headless (deferred to v2, only classic UI)
+- Pipeline → NEO gap: webhooks ready but no `push-to-neo.js` CLI module yet
+
 ## Etendo AD Database Conventions
 
 - **All `_ID` columns are `VARCHAR` (strings)**. Legacy IDs look numeric (`'19'`, `'130'`), newer ones are UUIDs (`'95E2A8B50A254B2AAE6774B8C2F28120'`).
 - Default approach: always treat `_ID` columns as strings first. Quote values in SQL: `IN ('18', '19', '30')` not `IN (18, 19, 30)`.
 - This applies to `AD_Reference_ID`, `AD_Reference_Value_ID`, `AD_Table_ID`, `AD_Column_ID`, and all other `_ID` columns.
 - All technical conventions and discoveries about Etendo AD should be documented in this section of CLAUDE.md (committed to the repo), not in personal memory files.
+
+## Knowledge Persistence Policy
+
+**NEVER use auto-memory (`MEMORY.md` or `~/.claude/projects/.../memory/`).** All knowledge must be committable.
+
+- **Project knowledge** (conventions, architecture decisions, technical findings) → add to this `CLAUDE.md` file.
+- **Research notes, brainstorming, detailed references** → save in `docs/` as versioned markdown files.
+- **Per-window or per-feature findings** → save in the appropriate `artifacts/` or `docs/` subdirectory.
+- Reference new docs from this CLAUDE.md when relevant (e.g., "See `docs/brainstorming-2026-03-10.md`").
+- If you find yourself wanting to "remember something for next time", write it here or in `docs/`. Never in memory files.
