@@ -31,10 +31,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'hsl(var(--sidebar-bg))' }}>
       <Card className="w-full max-w-sm shadow-2xl border-0 bg-white">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-xl font-bold text-white">SF</span>
-          </div>
-          <CardTitle className="text-xl">Schema Forge</CardTitle>
+          <img src="/logo-etendo.png" alt="Etendo" className="mx-auto mb-3 h-10" />
+          <CardTitle className="text-xl">Etendo</CardTitle>
           <p className="text-sm text-muted-foreground">Sign in to your Etendo instance</p>
         </CardHeader>
         <CardContent>
