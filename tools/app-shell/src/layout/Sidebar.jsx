@@ -90,12 +90,13 @@ export default function AppSidebar({ menuGroups }) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+          <img
+            src="/logo-etendo-white.png"
+            alt="Etendo"
+            className="h-6 group-data-[collapsible=icon]:hidden"
+          />
+          <div className="hidden group-data-[collapsible=icon]:flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
             <Package className="h-4 w-4" />
-          </div>
-          <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm">Schema Forge</span>
-            <span className="text-xs text-sidebar-foreground/60">ERP Generator</span>
           </div>
         </div>
       </SidebarHeader>
