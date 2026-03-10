@@ -5,10 +5,10 @@ import RequisitionLineTable from './RequisitionLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'totalLines', label: 'Total Lines', type: 'amount' },
-  { key: 'grandTotal', label: 'Grand Total', type: 'amount' },
-  { key: 'user', label: 'User', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'totalLines', column: 'TotalLines', type: 'amount' },
+  { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
+  { key: 'user', column: 'AD_User_ID', type: 'string' },
 ];
 
 const statusField = 'docStatus';
@@ -19,15 +19,15 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'textarea' },
-    { key: 'needByDate', label: 'Need By Date', type: 'date' },
-    { key: 'businessPartner', label: 'Business Partner', type: 'search', reference: 'BusinessPartner', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'quantity', column: 'Qty', type: 'number', required: true },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'needByDate', column: 'NeedByDate', type: 'date' },
+    { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', reference: 'BusinessPartner', inputMode: 'search' },
   ],
   derived: [
-    { key: 'unitPrice', label: 'Unit Price', type: 'number' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number' },
   ],
 };
 

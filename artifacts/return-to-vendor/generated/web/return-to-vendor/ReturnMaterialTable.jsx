@@ -1,13 +1,13 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'businessPartner', label: 'Business Partner', type: 'string' },
-  { key: 'documentDate', label: 'Document Date', type: 'date' },
-  { key: 'returnDate', label: 'Return Date', type: 'date' },
-  { key: 'originalReceipt', label: 'Original Receipt', type: 'string' },
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'docStatus', label: 'Doc Status', type: 'status' },
-  { key: 'totalAmount', label: 'Total Amount', type: 'amount' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
+  { key: 'documentDate', column: 'DateOrdered', type: 'date' },
+  { key: 'returnDate', column: 'DateDelivered', type: 'date' },
+  { key: 'originalReceipt', column: 'InOut_ID', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'docStatus', column: 'DocStatus', type: 'status' },
+  { key: 'totalAmount', column: 'Amt', type: 'amount' },
 ];
 
 const filters = ['businessPartner', 'documentDate', 'originalReceipt', 'returnReason', 'documentNo', 'docStatus'];

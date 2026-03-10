@@ -5,11 +5,11 @@ import OrderLineTable from './OrderLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'grandTotal', label: 'Grand Total', type: 'amount' },
-  { key: 'totalLines', label: 'Total Lines', type: 'amount' },
-  { key: 'currency', label: 'Currency', type: 'string' },
-  { key: 'isDelivered', label: 'Is Delivered', type: 'boolean' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
+  { key: 'totalLines', column: 'TotalLines', type: 'amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'isDelivered', column: 'IsDelivered', type: 'boolean' },
 ];
 
 const statusField = 'docStatus';
@@ -20,15 +20,15 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-    { key: 'description', label: 'Description', type: 'textarea' },
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'quantity', column: 'QtyOrdered', type: 'number', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
   ],
   derived: [
-    { key: 'unitPrice', label: 'Unit Price', type: 'number' },
-    { key: 'tax', label: 'Tax', type: 'selector', reference: 'Tax', inputMode: 'selector' },
-    { key: 'discount', label: 'Discount', type: 'number' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
+    { key: 'discount', column: 'Discount', type: 'number' },
   ],
 };
 

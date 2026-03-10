@@ -1,14 +1,14 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'businessPartner', label: 'Business Partner', type: 'string' },
-  { key: 'dateRequired', label: 'Date Required', type: 'date' },
-  { key: 'warehouse', label: 'Warehouse', type: 'string' },
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'docStatus', label: 'Doc Status', type: 'status' },
-  { key: 'totalLines', label: 'Total Lines', type: 'amount' },
-  { key: 'grandTotal', label: 'Grand Total', type: 'amount' },
-  { key: 'user', label: 'User', type: 'string' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
+  { key: 'dateRequired', column: 'DateRequired', type: 'date' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'docStatus', column: 'DocStatus', type: 'status' },
+  { key: 'totalLines', column: 'TotalLines', type: 'amount' },
+  { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
+  { key: 'user', column: 'AD_User_ID', type: 'string' },
 ];
 
 const filters = ['businessPartner', 'dateRequired', 'description', 'documentNo', 'docStatus'];

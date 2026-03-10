@@ -1,9 +1,9 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'email', label: 'Email', type: 'string' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'email', column: 'EMail', type: 'string' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const filters = ['name', 'email'];

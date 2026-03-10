@@ -1,15 +1,15 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'product', label: 'Product', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-  { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-  { key: 'unitPrice', label: 'Unit Price', type: 'number', required: true },
-  { key: 'tax', label: 'Tax', type: 'selector', required: true, reference: 'Tax', inputMode: 'selector' },
-  { key: 'discount', label: 'Discount', type: 'number' },
-  { key: 'description', label: 'Description', type: 'textarea' },
-  { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-  { key: 'lineNetAmount', label: 'Line Net Amount', type: 'number', readOnly: true },
-  { key: 'uom', label: 'Uom', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
+  { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+  { key: 'quantity', column: 'QtyOrdered', type: 'number', required: true },
+  { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, reference: 'Tax', inputMode: 'selector' },
+  { key: 'discount', column: 'Discount', type: 'number' },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'lineNo', column: 'Line', type: 'number', required: true },
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', readOnly: true },
+  { key: 'uom', column: 'C_UOM_ID', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function QuotationLineForm(props) {

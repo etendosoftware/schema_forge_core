@@ -1,14 +1,14 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'company', label: 'Company', type: 'string' },
-  { key: 'email', label: 'Email', type: 'string' },
-  { key: 'phone', label: 'Phone', type: 'string' },
-  { key: 'source', label: 'Source', type: 'string' },
-  { key: 'status', label: 'Status', type: 'status' },
-  { key: 'assignedTo', label: 'Assigned To', type: 'string' },
-  { key: 'estimatedValue', label: 'Estimated Value', type: 'amount' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'company', column: 'Company', type: 'string' },
+  { key: 'email', column: 'Email', type: 'string' },
+  { key: 'phone', column: 'Phone', type: 'string' },
+  { key: 'source', column: 'Source', type: 'string' },
+  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'assignedTo', column: 'AssignedTo_ID', type: 'string' },
+  { key: 'estimatedValue', column: 'EstimatedValue', type: 'amount' },
 ];
 
 const filters = ['name', 'company', 'status'];

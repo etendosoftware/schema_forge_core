@@ -1,13 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-  { key: 'product', label: 'Product', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-  { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-  { key: 'weight', label: 'Weight', type: 'number' },
-  { key: 'packageNo', label: 'Package No', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'textarea' },
-  { key: 'uom', label: 'Uom', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
+  { key: 'lineNo', column: 'Line', type: 'number', required: true },
+  { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+  { key: 'quantity', column: 'Qty', type: 'number', required: true },
+  { key: 'weight', column: 'Weight', type: 'number' },
+  { key: 'packageNo', column: 'PackageNo', type: 'text', required: true },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function PackingLineForm(props) {

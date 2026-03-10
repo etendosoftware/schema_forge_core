@@ -1,11 +1,11 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'organization', label: 'Organization', type: 'string' },
-  { key: 'documentDate', label: 'Document Date', type: 'date' },
-  { key: 'referenceNo', label: 'Reference No', type: 'string' },
-  { key: 'documentNo', label: 'Document No', type: 'string' },
-  { key: 'docStatus', label: 'Doc Status', type: 'status' },
+  { key: 'organization', column: 'AD_Org_ID', type: 'string' },
+  { key: 'documentDate', column: 'DateAcct', type: 'date' },
+  { key: 'referenceNo', column: 'ReferenceNo', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'docStatus', column: 'DocStatus', type: 'status' },
 ];
 
 const filters = ['organization', 'documentDate', 'description', 'referenceNo', 'documentNo', 'docStatus'];

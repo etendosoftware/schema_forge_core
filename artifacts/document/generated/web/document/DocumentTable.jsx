@@ -1,15 +1,15 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'category', label: 'Category', type: 'string' },
-  { key: 'project', label: 'Project', type: 'string' },
-  { key: 'uploadedBy', label: 'Uploaded By', type: 'string' },
-  { key: 'uploadDate', label: 'Upload Date', type: 'date' },
-  { key: 'fileSize', label: 'File Size', type: 'string' },
-  { key: 'version', label: 'Version', type: 'string' },
-  { key: 'status', label: 'Status', type: 'status' },
-  { key: 'tags', label: 'Tags', type: 'string' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'category', column: 'Category', type: 'string' },
+  { key: 'project', column: 'Project_ID', type: 'string' },
+  { key: 'uploadedBy', column: 'UploadedBy_ID', type: 'string' },
+  { key: 'uploadDate', column: 'UploadDate', type: 'date' },
+  { key: 'fileSize', column: 'FileSize', type: 'string' },
+  { key: 'version', column: 'Version', type: 'string' },
+  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'tags', column: 'Tags', type: 'string' },
 ];
 
 const filters = ['name', 'category', 'status'];

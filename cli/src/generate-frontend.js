@@ -76,7 +76,7 @@ export function generateTableComponent(entityName, contract) {
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -114,7 +114,7 @@ export function generateFormComponent(entityName, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   return `import { EntityForm } from '@/components/contract-ui';
@@ -151,7 +151,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}' },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   // Status field config
@@ -179,14 +179,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-    return `    { key: '${f.name}', label: '${toLabel(f.name)}', type: '${type}'${referencePart}${inputModePart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
   return `import { MasterDetailPage } from '@/components/contract-ui';
