@@ -1,0 +1,23 @@
+{
+  "fields": {
+    "C_BPartner_ID": { "label": "Business Partner", "description": "A Business Partner is anyone with whom you transact." },
+    "DateOrdered": { "label": "Order Date", "description": "The time listed on the order." },
+    "DatePromised": { "label": "Scheduled Delivery Date", "description": "The date that a task is to be completed by." },
+    "GrandTotal": { "label": "Total Gross Amount" },
+    "TotalLines": { "label": "Total Net Amount" },
+    "DocStatus": { "label": "Document Status" },
+    "DocumentNo": { "label": "Document No." },
+    "SalesRep_ID": { "label": "Sales Representative" },
+    "POReference": { "label": "Order Reference" }
+  },
+  "windows": {
+    "Sales Order": { "label": "Sales Order" }
+  },
+  "tabs": {
+    "Header": { "label": "Header" },
+    "Lines": { "label": "Lines" }
+  },
+  "menus": {
+    "Sales Order": { "label": "Sales Order" }
+  }
+}
