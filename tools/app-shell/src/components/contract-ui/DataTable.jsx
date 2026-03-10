@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
+import { useLabel } from '@/i18n';
 
 /**
  * Map a status string to a Badge variant and optional className override.
@@ -85,6 +86,7 @@ function EmptyState({ hasFilter, totalCount }) {
  *  - loading: boolean (shows skeleton when true)
  */
 export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, selectedId, compact, loading }) {
+  const t = useLabel();
   const [filterValues, setFilterValues] = useState({});
 
   const setFilter = (key, value) => {
@@ -135,7 +137,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       <div className="flex gap-2 flex-wrap">
         {filters.map(key => {
           const col = columns.find(c => c.key === key);
-          const label = col?.label ?? key;
+          const label = t(col?.column) ?? col?.label ?? key;
           return (
             <div key={key} className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -154,13 +156,16 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         <Table>
           <TableHeader>
             <TableRow className="border-b-2 border-primary/20 bg-muted/40">
-              {columns.map(col => (
-                <TableHead key={col.key} className="text-xs font-medium text-blue-800 uppercase tracking-wider">
-                  <FieldHighlight entityName={entity} fieldName={col.key}>
-                    {col.label}
-                  </FieldHighlight>
-                </TableHead>
-              ))}
+              {columns.map(col => {
+                const colLabel = t(col.column) ?? col.label ?? col.key;
+                return (
+                  <TableHead key={col.key} className="text-xs font-medium text-blue-800 uppercase tracking-wider">
+                    <FieldHighlight entityName={entity} fieldName={col.key}>
+                      {colLabel}
+                    </FieldHighlight>
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
