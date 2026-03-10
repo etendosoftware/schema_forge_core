@@ -1,13 +1,13 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'lineNo', label: 'Line No', type: 'number' },
-  { key: 'product', label: 'Product', type: 'string' },
-  { key: 'productCategory', label: 'Product Category', type: 'string' },
-  { key: 'bpGroup', label: 'Bp Group', type: 'string' },
-  { key: 'commissionPercentage', label: 'Commission Percentage', type: 'number' },
-  { key: 'commissionAmount', label: 'Commission Amount', type: 'amount' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'lineNo', column: 'Line', type: 'number' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'productCategory', column: 'M_Product_Category_ID', type: 'string' },
+  { key: 'bpGroup', column: 'C_BP_Group_ID', type: 'string' },
+  { key: 'commissionPercentage', column: 'CommissionPercentage', type: 'number' },
+  { key: 'commissionAmount', column: 'CommissionAmt', type: 'amount' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const filters = ['product'];

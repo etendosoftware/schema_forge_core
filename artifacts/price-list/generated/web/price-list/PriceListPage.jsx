@@ -5,8 +5,8 @@ import PriceListLineTable from './PriceListLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'isSalesPrice', label: 'Is Sales Price', type: 'boolean' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
+  { key: 'isSalesPrice', column: 'IsSOPriceList', type: 'boolean' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 
 const statusField = null;
@@ -17,12 +17,12 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'product', label: 'Product', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
   ],
   derived: [
-    { key: 'listPrice', label: 'List Price', type: 'number' },
-    { key: 'standardPrice', label: 'Standard Price', type: 'number' },
-    { key: 'limitPrice', label: 'Limit Price', type: 'number' },
+    { key: 'listPrice', column: 'PriceList', type: 'number' },
+    { key: 'standardPrice', column: 'PriceStd', type: 'number' },
+    { key: 'limitPrice', column: 'PriceLimit', type: 'number' },
   ],
 };
 

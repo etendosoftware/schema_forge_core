@@ -5,7 +5,7 @@ import LandedCostCostTable from './LandedCostCostTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
@@ -16,17 +16,17 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'goodsReceipt', label: 'Goods Receipt', type: 'search', lookup: true, reference: 'GoodsReceipt', inputMode: 'search' },
-    { key: 'goodsReceiptLine', label: 'Goods Receipt Line', type: 'dependent', reference: 'GoodsReceiptLine', inputMode: 'dependent', dependsOn: { field: 'goodsReceipt', filterKey: 'goodsReceiptId' } },
-    { key: 'invoiceLine', label: 'Invoice Line', type: 'search', reference: 'InvoiceLine', inputMode: 'search' },
-    { key: 'description', label: 'Description', type: 'text' },
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-    { key: 'isActive', label: 'Is Active', type: 'checkbox', required: true },
+    { key: 'goodsReceipt', column: 'M_InOut_ID', type: 'search', lookup: true, reference: 'GoodsReceipt', inputMode: 'search' },
+    { key: 'goodsReceiptLine', column: 'M_InOutLine_ID', type: 'dependent', reference: 'GoodsReceiptLine', inputMode: 'dependent', dependsOn: { field: 'goodsReceipt', filterKey: 'goodsReceiptId' } },
+    { key: 'invoiceLine', column: 'C_InvoiceLine_ID', type: 'search', reference: 'InvoiceLine', inputMode: 'search' },
+    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true },
   ],
   derived: [
-    { key: 'landedCostType', label: 'Landed Cost Type', type: 'selector', reference: 'LandedCostType', inputMode: 'selector' },
-    { key: 'amount', label: 'Amount', type: 'number' },
-    { key: 'landedCostDistribution', label: 'Landed Cost Distribution', type: 'text' },
+    { key: 'landedCostType', column: 'M_LandedCostType_ID', type: 'selector', reference: 'LandedCostType', inputMode: 'selector' },
+    { key: 'amount', column: 'Amt', type: 'number' },
+    { key: 'landedCostDistribution', column: 'LandedCostDistribution', type: 'text' },
   ],
 };
 

@@ -1,12 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'product', label: 'Product', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-  { key: 'movementQty', label: 'Movement Qty', type: 'number', required: true },
-  { key: 'locatorFrom', label: 'Locator From', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
-  { key: 'locatorTo', label: 'Locator To', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
-  { key: 'lineNo', label: 'Line No', type: 'number', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+  { key: 'movementQty', column: 'MovementQty', type: 'number', required: true },
+  { key: 'locatorFrom', column: 'M_Locator_ID', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
+  { key: 'locatorTo', column: 'M_LocatorTo_ID', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
+  { key: 'lineNo', column: 'Line', type: 'number', required: true },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'uom', column: 'C_UOM_ID', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
 
 export default function GoodsMovementLineForm(props) {

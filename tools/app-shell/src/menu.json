@@ -1,79 +1,100 @@
 {
   "menu": [
     {
+      "group": "Home",
+      "icon": "LayoutDashboard",
+      "items": [
+        { "name": "dashboard", "label": "Dashboard" },
+        { "name": "onboarding", "label": "Setup Wizard" }
+      ]
+    },
+    {
       "group": "Sales",
       "icon": "ShoppingCart",
       "items": [
-        { "name": "sales-order", "label": "Sales Order" },
-        { "name": "sales-quotation", "label": "Sales Quotation" },
-        { "name": "goods-shipment", "label": "Goods Shipment" },
-        { "name": "return-from-customer", "label": "Return from Customer" },
-        { "name": "return-material-receipt", "label": "Return Material Receipt" },
-        { "name": "sales-invoice", "label": "Sales Invoice" },
-        { "name": "commission", "label": "Commission" },
-        { "name": "commission-payment", "label": "Commission Payment" }
+        { "name": "sales", "label": "Overview" },
+        { "name": "sales-quotation", "label": "Quotations" },
+        { "name": "sales-order", "label": "Sales Orders" },
+        { "name": "goods-shipment", "label": "Shipments" },
+        { "name": "sales-invoice", "label": "Invoices" },
+        { "name": "return-from-customer", "label": "Returns" },
+        { "name": "return-material-receipt", "label": "Return Receipts" }
       ]
     },
     {
-      "group": "Procurement",
+      "group": "Purchases",
       "icon": "Truck",
       "items": [
-        { "name": "purchase-order", "label": "Purchase Order" },
-        { "name": "requisition", "label": "Requisition" },
-        { "name": "manage-requisitions", "label": "Manage Requisitions" },
-        { "name": "requisition-to-order", "label": "Requisition to Order" },
+        { "name": "purchases", "label": "Overview" },
+        { "name": "purchase-order", "label": "Purchase Orders" },
         { "name": "goods-receipt", "label": "Goods Receipt" },
-        { "name": "pending-goods-receipts", "label": "Pending Goods Receipts" },
-        { "name": "inbound-receipt", "label": "Inbound Receipt" },
-        { "name": "purchase-invoice", "label": "Purchase Invoice" },
-        { "name": "matched-purchase-invoices", "label": "Matched Purchase Invoices" },
-        { "name": "return-to-vendor", "label": "Return to Vendor" },
-        { "name": "return-to-vendor-shipment", "label": "Return to Vendor Shipment" },
-        { "name": "landed-cost", "label": "Landed Cost" }
-      ]
-    },
-    {
-      "group": "Warehouse",
-      "icon": "Package",
-      "items": [
-        { "name": "physical-inventory", "label": "Physical Inventory" },
-        { "name": "goods-movements", "label": "Goods Movements" },
-        { "name": "inventory-quality-inspection", "label": "Quality Inspection" },
-        { "name": "bom-production", "label": "BOM Production" },
-        { "name": "packing", "label": "Packing" },
-        { "name": "warehouse-picking-list", "label": "Picking List" },
-        { "name": "stock-reservation", "label": "Stock Reservation" },
-        { "name": "cost-adjustment", "label": "Cost Adjustment" }
-      ]
-    },
-    {
-      "group": "Master Data",
-      "icon": "Database",
-      "items": [
-        { "name": "business-partner", "label": "Business Partner" },
-        { "name": "bp-location", "label": "BP Location" },
-        { "name": "product", "label": "Product" },
-        { "name": "product-category", "label": "Product Category" },
-        { "name": "warehouse", "label": "Warehouse" },
-        { "name": "warehouse-storage-bins", "label": "Warehouse & Storage Bins" }
+        { "name": "purchase-invoice", "label": "Invoices" },
+        { "name": "return-to-vendor", "label": "Returns" },
+        { "name": "return-to-vendor-shipment", "label": "Return Shipments" }
       ]
     },
     {
       "group": "Finance",
-      "icon": "DollarSign",
+      "icon": "Calculator",
       "items": [
-        { "name": "price-list", "label": "Price List" },
-        { "name": "payment-term", "label": "Payment Term" },
-        { "name": "payment-method", "label": "Payment Method" },
-        { "name": "tax", "label": "Tax" }
+        { "name": "accounting", "label": "Overview" },
+        { "name": "payment-in", "label": "Payments In" },
+        { "name": "payment-out", "label": "Payments Out" },
+        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
+        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
+        { "name": "recurring-invoice", "label": "Recurring Invoices" },
+        { "name": "reports", "label": "Reports" }
       ]
     },
     {
-      "group": "System",
+      "group": "Inventory",
+      "icon": "Package",
+      "items": [
+        { "name": "inventory", "label": "Overview" },
+        { "name": "product", "label": "Products" },
+        { "name": "product-category", "label": "Categories" },
+        { "name": "physical-inventory", "label": "Physical Inventory" },
+        { "name": "goods-movements", "label": "Goods Movements" },
+        { "name": "warehouse", "label": "Warehouses" },
+        { "name": "warehouse-storage-bins", "label": "Storage Bins" }
+      ]
+    },
+    {
+      "group": "People",
+      "icon": "Users",
+      "items": [
+        { "name": "contacts", "label": "Contacts" },
+        { "name": "business-partner", "label": "Business Partners" },
+        { "name": "crm", "label": "CRM" },
+        { "name": "deal", "label": "Deals" },
+        { "name": "activity", "label": "Activities" },
+        { "name": "lead", "label": "Leads" },
+        { "name": "hr", "label": "HR" },
+        { "name": "employee", "label": "Employees" },
+        { "name": "absence", "label": "Absences" }
+      ]
+    },
+    {
+      "group": "Projects",
+      "icon": "FolderKanban",
+      "items": [
+        { "name": "projects", "label": "Overview" },
+        { "name": "project", "label": "Projects" },
+        { "name": "time-tracking", "label": "Time Tracking" },
+        { "name": "document", "label": "Documents" }
+      ]
+    },
+    {
+      "group": "Settings",
       "icon": "Settings",
       "items": [
-        { "name": "uom", "label": "UOM" },
-        { "name": "user", "label": "User" }
+        { "name": "price-list", "label": "Price Lists" },
+        { "name": "payment-term", "label": "Payment Terms" },
+        { "name": "payment-method", "label": "Payment Methods" },
+        { "name": "tax", "label": "Taxes" },
+        { "name": "uom", "label": "Units of Measure" },
+        { "name": "user", "label": "Users" },
+        { "name": "smart-scan", "label": "Smart Scan" }
       ]
     }
   ]

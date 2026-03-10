@@ -1,8 +1,9 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'name', label: 'Name', type: 'text', required: true },
-  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'name', column: 'Name', type: 'text', required: true },
+  { key: 'description', column: 'Description', type: 'textarea' },
+  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function PaymentMethodForm(props) {

@@ -3,6 +3,8 @@ import PaymentTermTable from './PaymentTermTable';
 import PaymentTermForm from './PaymentTermForm';
 import catalogs from './mockCatalogs';
 
+const windowMeta = { category: 'reference', name: 'Payment Term' };
+
 export default function App(props) {
   return (
     <SingleEntityPage
@@ -11,6 +13,7 @@ export default function App(props) {
       Form={PaymentTermForm}
       catalogs={catalogs}
       entityLabel="Payment Term"
+      window={windowMeta}
       {...props}
     />
   );

@@ -1,12 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
 const fields = [
-  { key: 'searchKey', label: 'Search Key', type: 'text', required: true },
-  { key: 'x', label: 'X', type: 'text' },
-  { key: 'y', label: 'Y', type: 'text' },
-  { key: 'z', label: 'Z', type: 'text' },
-  { key: 'priorityNo', label: 'Priority No', type: 'number' },
-  { key: 'isDefault', label: 'Is Default', type: 'checkbox', required: true },
+  { key: 'searchKey', column: 'Value', type: 'text', required: true },
+  { key: 'x', column: 'X', type: 'text' },
+  { key: 'y', column: 'Y', type: 'text' },
+  { key: 'z', column: 'Z', type: 'text' },
+  { key: 'priorityNo', column: 'PriorityNo', type: 'number' },
+  { key: 'isDefault', column: 'IsDefault', type: 'checkbox', required: true },
+  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true, readOnly: true },
 ];
 
 export default function LocatorForm(props) {

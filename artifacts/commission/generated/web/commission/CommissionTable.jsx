@@ -1,12 +1,12 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'name', label: 'Name', type: 'string' },
-  { key: 'businessPartner', label: 'Business Partner', type: 'string' },
-  { key: 'currency', label: 'Currency', type: 'string' },
-  { key: 'frequencyType', label: 'Frequency Type', type: 'string' },
-  { key: 'isActive', label: 'Is Active', type: 'boolean' },
-  { key: 'dateLastRun', label: 'Date Last Run', type: 'date' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'frequencyType', column: 'FrequencyType', type: 'string' },
+  { key: 'isActive', column: 'IsActive', type: 'boolean' },
+  { key: 'dateLastRun', column: 'DateLastRun', type: 'date' },
 ];
 
 const filters = ['name', 'businessPartner', 'frequencyType'];

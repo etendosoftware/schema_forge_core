@@ -5,7 +5,7 @@ import PackingLineTable from './PackingLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
@@ -16,12 +16,12 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true, lookup: true },
-    { key: 'product', label: 'Product', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-    { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-    { key: 'weight', label: 'Weight', type: 'number' },
-    { key: 'packageNo', label: 'Package No', type: 'text', required: true },
-    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+    { key: 'quantity', column: 'Qty', type: 'number', required: true },
+    { key: 'weight', column: 'Weight', type: 'number' },
+    { key: 'packageNo', column: 'PackageNo', type: 'text', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
   ],
   derived: [
 

@@ -5,7 +5,7 @@ import InventoryLineTable from './InventoryLineTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
-  { key: 'documentNo', label: 'Document No', type: 'string' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
@@ -16,10 +16,10 @@ const processes = [
 
 const addLineFields = {
   entry: [
-    { key: 'lineNo', label: 'Line No', type: 'number', required: true, lookup: true },
-    { key: 'product', label: 'Product', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-    { key: 'locator', label: 'Locator', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
-    { key: 'countQuantity', label: 'Count Quantity', type: 'number', required: true },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+    { key: 'locator', column: 'M_Locator_ID', type: 'selector', required: true, reference: 'Locator', inputMode: 'selector' },
+    { key: 'countQuantity', column: 'QtyCount', type: 'number', required: true },
   ],
   derived: [
 
