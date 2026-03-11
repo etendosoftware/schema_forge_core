@@ -158,8 +158,8 @@ export default function ${compName}(props) {
 }
 
 /**
- * Generate a header-detail page component with Split View layout.
- * Produces a thin declarative component that imports MasterDetailPage from contract-ui.
+ * Generate a header-detail page component with ListView/DetailView pattern.
+ * Produces a thin declarative component that routes by recordId.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
@@ -224,7 +224,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
-  return `import { MasterDetailPage } from '@/components/contract-ui';
+  return `import { ListView, DetailView } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
@@ -249,21 +249,34 @@ ${derivedArray}
   ],
 };
 ${apiBlock}
-export default function ${compName}(props) {
+export default function ${compName}({ windowName, recordId, ...props }) {
+  if (recordId) {
+    return (
+      <DetailView
+        entity="${headerEntity}"
+        detailEntity="${detailEntity}"
+        Form={${headerName}Form}
+        DetailTable={${detailName}Table}
+        summary={summary}
+        statusField={statusField}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="${toLabel(headerEntity)}"
+        detailLabel="${toLabel(detailEntity)}"
+        windowName={windowName}
+        recordId={recordId}${apiProp}
+        {...props}
+      />
+    );
+  }
+
   return (
-    <MasterDetailPage
+    <ListView
       entity="${headerEntity}"
-      detailEntity="${detailEntity}"
       Table={${headerName}Table}
-      Form={${headerName}Form}
-      DetailTable={${detailName}Table}
-      summary={summary}
-      statusField={statusField}
-      processes={processes}
-      addLineFields={addLineFields}
-      catalogs={catalogs}
-      entityLabel="${toLabel(headerEntity)}"
-      detailLabel="${toLabel(detailEntity)}"${apiProp}
+      entityLabel="${toLabel(headerEntity)}s"
+      windowName={windowName}
       {...props}
     />
   );
@@ -301,21 +314,35 @@ export default function App({ token, apiBaseUrl, window }) {
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
-  return `import { SingleEntityPage } from '@/components/contract-ui';
+  return `import { ListView, DetailView } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import catalogs from './mockCatalogs';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
-export default function App(props) {
+export default function App({ windowName, recordId, ...props }) {
+  if (recordId) {
+    return (
+      <DetailView
+        entity="${headerEntity}"
+        Form={${headerName}Form}
+        catalogs={catalogs}
+        entityLabel="${toLabel(headerEntity)}"
+        windowName={windowName}
+        recordId={recordId}
+        window={windowMeta}${apiProp}
+        {...props}
+      />
+    );
+  }
+
   return (
-    <SingleEntityPage
+    <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      Form={${headerName}Form}
-      catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
+      windowName={windowName}
       window={windowMeta}${apiProp}
       {...props}
     />
