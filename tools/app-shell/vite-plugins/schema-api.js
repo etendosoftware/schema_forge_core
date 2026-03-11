@@ -33,6 +33,31 @@ export default function schemaApiPlugin() {
         const parsedUrl = new URL(req.url, 'http://localhost');
         const pathname = parsedUrl.pathname;
 
+        // --- Source Viewer endpoint (raw file text for preview) ---
+
+        // GET /api/source/:window/:file
+        const sourceMatch = pathname.match(/^\/api\/source\/([^/]+)\/([^/]+)$/);
+        if (sourceMatch && req.method === 'GET') {
+          const [, windowName, fileName] = sourceMatch;
+          if (!SAFE_WINDOW_RE.test(windowName) || !/^[A-Za-z0-9_-]+\.jsx$/.test(fileName)) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Invalid parameters' }));
+            return;
+          }
+          try {
+            const filePath = join(ARTIFACTS_DIR, windowName, 'generated', 'web', windowName, fileName);
+            const data = readFileSync(filePath, 'utf-8');
+            res.setHeader('Content-Type', 'text/plain');
+            res.end(data);
+          } catch (err) {
+            res.statusCode = err.code === 'ENOENT' ? 404 : 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
         // --- Artifact Viewer endpoints ---
 
         // GET /api/artifacts (list windows)

@@ -1,13 +1,8 @@
 import { useLocaleSwitch } from '@/i18n/index.js';
 
-/**
- * Dropdown component for switching between available locales.
- * Reads current locale and setter from LocaleProvider context.
- */
-
-const AVAILABLE_LOCALES = [
-  { code: 'en_US', label: 'English' },
-  { code: 'es_ES', label: 'Espanol' },
+const LOCALES = [
+  { code: 'en_US', flag: '🇺🇸', short: 'EN' },
+  { code: 'es_ES', flag: '🇪🇸', short: 'ES' },
 ];
 
 export default function LocaleSwitcher() {
@@ -15,18 +10,18 @@ export default function LocaleSwitcher() {
 
   if (!setLocale) return null;
 
+  const current = LOCALES.find((l) => l.code === locale) || LOCALES[0];
+  const next = LOCALES.find((l) => l.code !== locale) || LOCALES[1];
+
   return (
-    <select
-      value={locale}
-      onChange={(e) => setLocale(e.target.value)}
-      className="bg-background text-foreground border border-border rounded px-2 py-1 text-sm cursor-pointer hover:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-      aria-label="Select language"
+    <button
+      onClick={() => setLocale(next.code)}
+      className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+      aria-label={`Switch to ${next.short}`}
+      title={`${current.short} / ${next.short}`}
     >
-      {AVAILABLE_LOCALES.map(({ code, label }) => (
-        <option key={code} value={code}>
-          {label}
-        </option>
-      ))}
-    </select>
+      <span className="text-sm leading-none">{current.flag}</span>
+      <span className="font-medium">{current.short}</span>
+    </button>
   );
 }

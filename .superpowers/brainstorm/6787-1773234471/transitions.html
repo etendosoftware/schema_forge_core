@@ -1,0 +1,295 @@
+<h2>Transicion Grid → Form: 3 opciones</h2>
+<p class="subtitle">Click en la que te guste. Cada una tiene una animacion en vivo.</p>
+
+<style>
+  .demo-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    height: 210px;
+    position: relative;
+    cursor: pointer;
+  }
+  .demo-container:hover .play-hint {
+    opacity: 1;
+  }
+  .play-hint {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #2563eb;
+    color: white;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    z-index: 10;
+  }
+
+  /* OPTION A: Slide */
+  .slide-list, .slide-detail {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+  }
+  .slide-detail { transform: translateX(100%); opacity: 0; }
+  .demo-a.playing .slide-list { transform: translateX(-30%); opacity: 0; }
+  .demo-a.playing .slide-detail { transform: translateX(0); opacity: 1; }
+
+  /* OPTION B: Fade + Scale */
+  .fade-list, .fade-detail {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .fade-detail { opacity: 0; transform: scale(0.97); }
+  .fade-list { opacity: 1; transform: scale(1); }
+  .demo-b.playing .fade-list { opacity: 0; transform: scale(1.02); }
+  .demo-b.playing .fade-detail { opacity: 1; transform: scale(1); }
+
+  /* OPTION C: Row Expand */
+  .expand-list { position: absolute; inset: 0; transition: opacity 0.3s ease; }
+  .expand-row-highlight {
+    position: absolute;
+    left: 0; right: 0;
+    top: 72px;
+    height: 34px;
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+  }
+  .expand-detail-inner {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease 0.15s;
+  }
+  .demo-c.playing .expand-list { opacity: 0; }
+  .demo-c.playing .expand-row-highlight {
+    top: 0;
+    height: 100%;
+    background: white;
+    border-left: none;
+  }
+  .demo-c.playing .expand-detail-inner { opacity: 1; }
+
+  /* Mini table styles */
+  .mini-header {
+    display: grid;
+    grid-template-columns: 80px 1.5fr 70px 60px;
+    padding: 6px 12px;
+    font-size: 9px;
+    font-weight: 500;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .mini-row {
+    display: grid;
+    grid-template-columns: 80px 1.5fr 70px 60px;
+    padding: 7px 12px;
+    font-size: 10px;
+    color: #334155;
+    border-bottom: 1px solid #f8fafc;
+  }
+  .mini-row.selected {
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+    color: #1e40af;
+    font-weight: 500;
+  }
+  .mini-form-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+  }
+  .mini-field {
+    display: inline-block;
+  }
+  .mini-field label {
+    font-size: 8px;
+    color: #94a3b8;
+    margin-bottom: 1px;
+    display: block;
+  }
+  .mini-field .input {
+    height: 22px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    background: white;
+    padding: 0 5px;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    color: #334155;
+  }
+</style>
+
+<div class="cards">
+
+  <!-- OPTION A: Slide Left -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">A &mdash; SLIDE LEFT</div>
+      <div class="demo-container demo-a" onclick="event.stopPropagation(); this.classList.toggle('playing');">
+        <div class="play-hint">Click para ver</div>
+        <!-- List view -->
+        <div class="slide-list">
+          <div style="padding:8px 12px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:600;">Pedidos</span>
+            <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">+ Nuevo</span>
+          </div>
+          <div class="mini-header"><span>Doc</span><span>Cliente</span><span>Total</span><span>Estado</span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-001</span><span>Acme Corp</span><span>24,500</span><span><span style="background:#dcfce7;color:#166534;padding:0 4px;border-radius:8px;font-size:8px;">OK</span></span></div>
+          <div class="mini-row selected"><span>ORD-002</span><span>Beta LLC</span><span>12,800</span><span><span style="background:#fef3c7;color:#92400e;padding:0 4px;border-radius:8px;font-size:8px;">Draft</span></span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-003</span><span>Gamma SA</span><span>8,200</span><span><span style="background:#dcfce7;color:#166534;padding:0 4px;border-radius:8px;font-size:8px;">OK</span></span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-004</span><span>Delta Inc</span><span>3,100</span><span><span style="background:#fee2e2;color:#991b1b;padding:0 4px;border-radius:8px;font-size:8px;">Void</span></span></div>
+        </div>
+        <!-- Detail view -->
+        <div class="slide-detail">
+          <div class="mini-form-header">
+            <span style="color:#2563eb;cursor:pointer;">&larr; Pedidos</span>
+            <span style="flex:1;"></span>
+            <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:8px;">Draft</span>
+            <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">Guardar</span>
+          </div>
+          <div style="padding:8px 12px;">
+            <div style="font-size:13px;font-weight:700;color:#1e293b;">ORD-002 &middot; Beta LLC</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px;">Total: 12,800 USD &middot; 10 Mar 2026</div>
+          </div>
+          <div style="padding:4px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <div class="mini-field"><label>Cliente</label><div class="input">Beta LLC</div></div>
+            <div class="mini-field"><label>Fecha</label><div class="input">2026-03-10</div></div>
+            <div class="mini-field"><label>Tarifa</label><div class="input">General</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Slide Left</h3>
+      <p>La lista se desliza a la izquierda y el form entra desde la derecha. Clásico, direccional, comunica "entrar en detalle".</p>
+      <div style="margin-top:8px;font-size:12px;">
+        <span style="color:#16a34a;">+ Intuitivo, sensacion de profundidad</span><br>
+        <span style="color:#dc2626;">&minus; Puede sentirse pesado si es lento</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B: Fade + Subtle Scale -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">B &mdash; CROSSFADE</div>
+      <div class="demo-container demo-b" onclick="event.stopPropagation(); this.classList.toggle('playing');">
+        <div class="play-hint">Click para ver</div>
+        <!-- List view -->
+        <div class="fade-list">
+          <div style="padding:8px 12px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:600;">Pedidos</span>
+            <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">+ Nuevo</span>
+          </div>
+          <div class="mini-header"><span>Doc</span><span>Cliente</span><span>Total</span><span>Estado</span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-001</span><span>Acme Corp</span><span>24,500</span><span><span style="background:#dcfce7;color:#166534;padding:0 4px;border-radius:8px;font-size:8px;">OK</span></span></div>
+          <div class="mini-row selected"><span>ORD-002</span><span>Beta LLC</span><span>12,800</span><span><span style="background:#fef3c7;color:#92400e;padding:0 4px;border-radius:8px;font-size:8px;">Draft</span></span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-003</span><span>Gamma SA</span><span>8,200</span><span><span style="background:#dcfce7;color:#166534;padding:0 4px;border-radius:8px;font-size:8px;">OK</span></span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-004</span><span>Delta Inc</span><span>3,100</span><span><span style="background:#fee2e2;color:#991b1b;padding:0 4px;border-radius:8px;font-size:8px;">Void</span></span></div>
+        </div>
+        <!-- Detail view -->
+        <div class="fade-detail">
+          <div class="mini-form-header">
+            <span style="color:#2563eb;cursor:pointer;">&larr; Pedidos</span>
+            <span style="flex:1;"></span>
+            <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:8px;">Draft</span>
+            <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">Guardar</span>
+          </div>
+          <div style="padding:8px 12px;">
+            <div style="font-size:13px;font-weight:700;color:#1e293b;">ORD-002 &middot; Beta LLC</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px;">Total: 12,800 USD &middot; 10 Mar 2026</div>
+          </div>
+          <div style="padding:4px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <div class="mini-field"><label>Cliente</label><div class="input">Beta LLC</div></div>
+            <div class="mini-field"><label>Fecha</label><div class="input">2026-03-10</div></div>
+            <div class="mini-field"><label>Tarifa</label><div class="input">General</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Crossfade</h3>
+      <p>Lista se desvanece (con sutil zoom out), form aparece (con sutil zoom in). Suave, rápido, elegante. El patrón de Notion y Linear.</p>
+      <div style="margin-top:8px;font-size:12px;">
+        <span style="color:#16a34a;">+ Sutil, rapido, no distrae</span><br>
+        <span style="color:#dc2626;">&minus; Menos "fisico" que el slide</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C: Row Expand -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">C &mdash; ROW EXPAND</div>
+      <div class="demo-container demo-c" onclick="event.stopPropagation(); this.classList.toggle('playing');">
+        <div class="play-hint">Click para ver</div>
+        <!-- List view -->
+        <div class="expand-list">
+          <div style="padding:8px 12px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:600;">Pedidos</span>
+            <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">+ Nuevo</span>
+          </div>
+          <div class="mini-header"><span>Doc</span><span>Cliente</span><span>Total</span><span>Estado</span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-001</span><span>Acme Corp</span><span>24,500</span><span><span style="background:#dcfce7;color:#166534;padding:0 4px;border-radius:8px;font-size:8px;">OK</span></span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-003</span><span>Gamma SA</span><span>8,200</span><span><span style="background:#dcfce7;color:#166534;padding:0 4px;border-radius:8px;font-size:8px;">OK</span></span></div>
+          <div class="mini-row"><span style="color:#2563eb;font-weight:500;">ORD-004</span><span>Delta Inc</span><span>3,100</span><span><span style="background:#fee2e2;color:#991b1b;padding:0 4px;border-radius:8px;font-size:8px;">Void</span></span></div>
+        </div>
+        <!-- Expanding row -->
+        <div class="expand-row-highlight">
+          <div style="padding:7px 12px;font-size:10px;display:grid;grid-template-columns:80px 1.5fr 70px 60px;color:#1e40af;font-weight:500;">
+            <span>ORD-002</span><span>Beta LLC</span><span>12,800</span><span><span style="background:#fef3c7;color:#92400e;padding:0 4px;border-radius:8px;font-size:8px;">Draft</span></span>
+          </div>
+        </div>
+        <!-- Detail (appears after expand) -->
+        <div class="expand-detail-inner">
+          <div class="mini-form-header">
+            <span style="color:#2563eb;cursor:pointer;">&larr; Pedidos</span>
+            <span style="flex:1;"></span>
+            <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:8px;">Draft</span>
+            <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">Guardar</span>
+          </div>
+          <div style="padding:8px 12px;">
+            <div style="font-size:13px;font-weight:700;color:#1e293b;">ORD-002 &middot; Beta LLC</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px;">Total: 12,800 USD &middot; 10 Mar 2026</div>
+          </div>
+          <div style="padding:4px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <div class="mini-field"><label>Cliente</label><div class="input">Beta LLC</div></div>
+            <div class="mini-field"><label>Fecha</label><div class="input">2026-03-10</div></div>
+            <div class="mini-field"><label>Tarifa</label><div class="input">General</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Row Expand</h3>
+      <p>La fila seleccionada se expande hasta llenar toda la pagina, y su contenido se transforma en el form. Muy visual, conecta lista con detalle.</p>
+      <div style="margin-top:8px;font-size:12px;">
+        <span style="color:#16a34a;">+ Wow factor, conexion visual directa</span><br>
+        <span style="color:#dc2626;">&minus; Mas complejo de implementar, requiere View Transitions API o FLIP</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+  <div style="font-size:13px;font-weight:600;color:#0c4a6e;margin-bottom:4px;">Mi recomendacion: B (Crossfade)</div>
+  <div style="font-size:12px;color:#0369a1;">
+    Para "simple, buena UX, sin necesidad de explicar": el crossfade es el mas sutil y rapido. Se implementa con CSS puro (200-300ms opacity + scale).
+    No distrae, no se siente pesado, y es lo que usan Notion y Linear. El slide (A) es bueno tambien pero puede sentirse "app movil".
+    El row expand (C) es impresionante pero complejo y fragil.
+  </div>
+</div>

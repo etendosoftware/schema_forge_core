@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.page-transition {
+  animation: page-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-bg {
+  background-image:
+    radial-gradient(var(--section-accent, hsl(213 83% 48%)) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  opacity: 1;
+}
+
+.content-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background) / 0.92) 0%,
+    hsl(var(--background) / 0.97) 40%,
+    hsl(var(--background)) 100%
+  );
+  pointer-events: none;
+}
+
 @layer base {
   * {
     @apply border-border;
