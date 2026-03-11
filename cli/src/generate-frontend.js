@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { MARKERS } from './custom-section-markers.js';
 
 /**
  * Capitalize the first letter of a string.
@@ -84,15 +85,22 @@ export function generateTableComponent(entityName, contract) {
 
   return `import { DataTable } from '@/components/contract-ui';
 
+${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
 ];
+${MARKERS.GENERATED_END(`columns:${entityName}`)}
 
 const filters = [${filtersArray}];
 
+${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
+  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
+${MARKERS.GENERATED_END(`component:${compName}`)}
+
+${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -137,16 +145,17 @@ export function generateFormComponent(entityName, contract) {
         readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
       }
     }
-    // TODO comments for callout and onChangeFunction behavioral hints
-    const todoLines = [];
+    // Custom slots for callout and onChangeFunction behavioral hints
+    const slotLines = [];
     if (f.callout) {
-      todoLines.push(`  // TODO: Translate callout logic: ${f.callout.className}`);
+      const calloutId = f.callout.className.replace(/.*\./, '');
+      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`callout:${calloutId}`)}`);
     }
     if (f.onChangeFunction) {
-      todoLines.push(`  // TODO: Translate onchangefunction logic: ${f.onChangeFunction.name}`);
+      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
     const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
-    return [...todoLines, fieldLine].join('\n');
+    return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
   // Generate field groups comment if any fields have fieldGroup
@@ -157,13 +166,20 @@ export function generateFormComponent(entityName, contract) {
 
   return `import { EntityForm } from '@/components/contract-ui';
 
+${MARKERS.GENERATED_START(`fields:${entityName}`)}
 ${fieldGroupsComment}const fields = [
 ${fieldsArray}
 ];
+${MARKERS.GENERATED_END(`fields:${entityName}`)}
 
+${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
+  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <EntityForm fields={fields} {...props} />;
 }
+${MARKERS.GENERATED_END(`component:${compName}`)}
+
+${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -240,16 +256,21 @@ import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import catalogs from './mockCatalogs';
 
+${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
 ${summaryArray}
 ];
 
 const statusField = ${statusFieldLine};
+${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
+${MARKERS.GENERATED_START(`processes:${headerEntity}`)}
 const processes = [
 ${processesArray}
 ];
+${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
 
+${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
   entry: [
 ${entryArray}
@@ -258,8 +279,11 @@ ${entryArray}
 ${derivedArray}
   ],
 };
+${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}
 ${apiBlock}
+${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
+  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return (
     <MasterDetailPage
       entity="${headerEntity}"
@@ -278,6 +302,9 @@ export default function ${compName}(props) {
     />
   );
 }
+${MARKERS.GENERATED_END(`component:${compName}`)}
+
+${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -300,9 +327,14 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
+${MARKERS.GENERATED_START('component:App')}
 export default function App({ token, apiBaseUrl, window }) {
+  ${MARKERS.CUSTOM_SLOT('hooks:App')}
   return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} />;
 }
+${MARKERS.GENERATED_END('component:App')}
+
+${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
   }
 
@@ -318,7 +350,9 @@ import catalogs from './mockCatalogs';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
+${MARKERS.GENERATED_START('component:App')}
 export default function App(props) {
+  ${MARKERS.CUSTOM_SLOT('hooks:App')}
   return (
     <SingleEntityPage
       entity="${headerEntity}"
@@ -331,6 +365,9 @@ export default function App(props) {
     />
   );
 }
+${MARKERS.GENERATED_END('component:App')}
+
+${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
 }
 
