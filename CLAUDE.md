@@ -361,6 +361,40 @@ Config at `/Users/futit/Workspace/etendo_develop/gradle.properties`:
 - Tomcat: port `8080`, context `etendo`
 - Etendo root: `/Users/futit/Workspace/etendo_develop`
 
+## NEO Token Scripts
+
+Helper scripts to generate JWT tokens for testing NEO Headless endpoints. Require Etendo running.
+
+| Script | Role | Org | Use case |
+|--------|------|-----|----------|
+| `scripts/neo-token-sysadmin.sh` | System Administrator (role 0) | * (org 0) | Full access, admin operations |
+| `scripts/neo-token-groupadmin.sh` | F&B International Group Admin | F&B US, Inc. | Realistic business role with window access |
+
+**Usage:**
+```bash
+# Get token and use inline
+TOKEN=$(./scripts/neo-token-sysadmin.sh)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/etendo/sws/neo/SalesOrder/Header
+
+# Or with group admin role
+TOKEN=$(./scripts/neo-token-groupadmin.sh)
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"fieldValues":{"documentStatus":"DR"}}' \
+  http://localhost:8080/etendo/sws/neo/SalesOrder/Header/evaluate-display
+```
+
+**Env vars** (all optional): `ETENDO_URL`, `ETENDO_USER`, `ETENDO_PASSWORD`.
+
+## NEO Headless OpenAPI
+
+The OpenAPI spec for NEO Headless endpoints is served by the Etendo OpenAPI controller, **not** by `/sws/neo/` directly:
+```
+GET /etendo/ws/com.etendoerp.openapi.openAPIController?tag=EtendoGo
+```
+Requires JWT auth (`Authorization: Bearer <token>`). Returns a standard OpenAPI 3.x JSON with all registered NEO paths (CRUD, selectors, actions, evaluate-display).
+
+The `NeoOpenAPIEndpoint` class implements `com.etendoerp.openapi.model.OpenAPIEndpoint` and registers paths dynamically based on configured specs/entities in DB.
+
 ## NEO Headless Research
 
 See `docs/brainstorming-2026-03-10.md` for detailed notes on:
