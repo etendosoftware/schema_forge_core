@@ -191,6 +191,15 @@ export function translateExpression(expr) {
 
   let result = expr;
 
+  // Fix Category 1: convert !' to !=' and !@ to !=@ (Etendo shorthand for "not equal")
+  result = result.replace(/!'/g, "!='");
+  result = result.replace(/!@/g, '!=@');
+
+  // Fix Category 2: handle @#VAR@ (system preferences) and @$VAR@ (accounting dimensions)
+  result = result.replace(/@[#$](\w+)@/g, (_match, name) => {
+    return name.charAt(0).toLowerCase() + name.slice(1);
+  });
+
   // Replace @VAR@ with camelCase variable name
   result = result.replace(/@([A-Za-z_][A-Za-z0-9_]*)@/g, (_match, varName) => {
     // camelCase: lowercase first char

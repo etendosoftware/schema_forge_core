@@ -121,12 +121,22 @@ export function generateFormComponent(entityName, contract) {
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
     // Behavioral metadata: displayLogic and readOnlyLogic
-    const displayLogicPart = f.displayLogic?.js
-      ? `, displayLogic: (record) => ${f.displayLogic.js}`
-      : '';
-    const readOnlyLogicPart = f.readOnlyLogic?.js
-      ? `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`
-      : '';
+    let displayLogicPart = '';
+    if (f.displayLogic) {
+      if (f.displayLogic.evaluable === false) {
+        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
+      } else if (f.displayLogic.js) {
+        displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
+      }
+    }
+    let readOnlyLogicPart = '';
+    if (f.readOnlyLogic) {
+      if (f.readOnlyLogic.evaluable === false) {
+        readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
+      } else if (f.readOnlyLogic.js) {
+        readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
+      }
+    }
     // TODO comments for callout and onChangeFunction behavioral hints
     const todoLines = [];
     if (f.callout) {
