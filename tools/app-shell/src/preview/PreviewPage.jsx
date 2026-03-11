@@ -1,22 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
-import orderPageRaw from '@generated/sales-order/generated/web/sales-order/OrderPage.jsx?raw';
-import orderTableRaw from '@generated/sales-order/generated/web/sales-order/OrderTable.jsx?raw';
-import orderFormRaw from '@generated/sales-order/generated/web/sales-order/OrderForm.jsx?raw';
-import orderLineTableRaw from '@generated/sales-order/generated/web/sales-order/OrderLineTable.jsx?raw';
-
 import * as mockDataModule from '@generated/sales-order/generated/web/sales-order/mockData.js';
 
-// ?raw may return a string or a module with .default — normalize
-const toStr = (raw) => (typeof raw === 'string' ? raw : raw?.default ?? String(raw));
+const COMPONENT_NAMES = ['OrderPage', 'OrderTable', 'OrderForm', 'OrderLineTable'];
 
-const COMPONENTS = [
-  { name: 'OrderPage', source: toStr(orderPageRaw) },
-  { name: 'OrderTable', source: toStr(orderTableRaw) },
-  { name: 'OrderForm', source: toStr(orderFormRaw) },
-  { name: 'OrderLineTable', source: toStr(orderLineTableRaw) },
-];
+async function fetchSource(name) {
+  const resp = await fetch(`/api/source/sales-order/${name}.jsx`);
+  if (!resp.ok) return `// Failed to load ${name}`;
+  return resp.text();
+}
 
 /**
  * Strip ES module imports and convert exports so the code can run
@@ -34,27 +27,31 @@ function prepareCodeForIframe(source) {
     .replace(/\bexport\s+/g, '');
 }
 
-/**
- * Join multiple prepared source files into a single code string
- * that can be sent to the preview iframe.
- */
 function buildPreviewCode(sources) {
   return sources.map(prepareCodeForIframe).join('\n\n');
 }
 
 export default function PreviewPage() {
   const [activeComponent, setActiveComponent] = useState('OrderPage');
+  const [sources, setSources] = useState({});
+  const [loading, setLoading] = useState(true);
   const iframeRef = useRef(null);
   const [iframeReady, setIframeReady] = useState(false);
 
+  useEffect(() => {
+    Promise.all(
+      COMPONENT_NAMES.map(async (name) => [name, await fetchSource(name)]),
+    ).then((entries) => {
+      setSources(Object.fromEntries(entries));
+      setLoading(false);
+    });
+  }, []);
+
   const sendToIframe = useCallback(() => {
     const iframe = iframeRef.current;
-    if (!iframe || !iframeReady) return;
+    if (!iframe || !iframeReady || !sources[activeComponent]) return;
 
-    const selected = COMPONENTS.find((c) => c.name === activeComponent);
-    if (!selected) return;
-
-    const code = buildPreviewCode([selected]);
+    const code = buildPreviewCode([sources[activeComponent]]);
 
     iframe.contentWindow.postMessage(
       {
@@ -64,7 +61,7 @@ export default function PreviewPage() {
       },
       '*',
     );
-  }, [activeComponent, iframeReady]);
+  }, [activeComponent, iframeReady, sources]);
 
   useEffect(() => {
     sendToIframe();
@@ -74,24 +71,25 @@ export default function PreviewPage() {
     setIframeReady(true);
   }, []);
 
-  // When iframeReady flips to true, send the initial payload
   useEffect(() => {
-    if (iframeReady) {
-      sendToIframe();
-    }
+    if (iframeReady) sendToIframe();
   }, [iframeReady, sendToIframe]);
+
+  if (loading) {
+    return <div className="p-8 text-muted-foreground">Loading preview sources...</div>;
+  }
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 p-2 border-b bg-background">
-        {COMPONENTS.map((comp) => (
+        {COMPONENT_NAMES.map((name) => (
           <Button
-            key={comp.name}
-            variant={activeComponent === comp.name ? 'default' : 'outline'}
+            key={name}
+            variant={activeComponent === name ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setActiveComponent(comp.name)}
+            onClick={() => setActiveComponent(name)}
           >
-            {comp.name}
+            {name}
           </Button>
         ))}
         <div className="flex-1" />
