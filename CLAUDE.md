@@ -206,22 +206,24 @@ schema-forge/                             # THIS REPO — design + tooling
 ├── cli/                                  # Node.js CLI tools
 │   └── src/
 │       ├── extract-from-db.js            # Extract fields + rules from Etendo DB
+│       ├── extract-from-process.js      # Extract process metadata + parameters
 │       ├── extract-fields.js             # Field extraction with FK resolution
 │       ├── extract-rules.js              # Rule + callout extraction
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── push-to-neo.js                # Webhook calls → NEO Headless config
+│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows + processes)
+│       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
 │       ├── generate-frontend.js          # React SPA generation
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
-│       └── pipeline.js                   # Full extraction-to-generation pipeline
+│       └── pipeline.js                   # Full pipeline (windows + processes)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
 │   ├── decision-panel/                   # Field visibility + rule curation
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
-├── artifacts/{window-name}/              # Per-window: schemas, rules, decisions, generated code
+├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
@@ -238,10 +240,11 @@ schema-forge/                             # THIS REPO — design + tooling
 Etendo AD Metadata
     │
     ▼
-Schema Forge CLI (extract-from-db.js)
-    │ Extracts fields, rules, callouts, FK references
+Schema Forge CLI (extract-from-db.js / extract-from-process.js)
+    │ Extracts fields, rules, callouts, FK references (windows)
+    │ Extracts process metadata + parameters (standalone processes)
     ▼
-Per-Window Artifacts (artifacts/{window}/)
+Per-Window/Process Artifacts (artifacts/{name}/)
     │ schema-curated.json, rules-curated.json
     ▼
 Decision UIs (tools/decision-panel/)
@@ -400,7 +403,15 @@ The `NeoOpenAPIEndpoint` class implements `com.etendoerp.openapi.model.OpenAPIEn
 See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - NeoHandler CDI hook mechanism (custom endpoint logic via `@Named` + `JAVA_QUALIFIER`)
 - Callouts NOT in NEO Headless (deferred to v2, only classic UI)
-- Pipeline → NEO gap: webhooks ready but no `push-to-neo.js` CLI module yet
+- Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows + processes)
+
+### Discovery Webhooks (read-only, for tooling)
+
+| Webhook | Purpose |
+|---------|---------|
+| `SFListProcesses` | List available processes (GET, `?q=` search, up to 100 results) |
+| `SFListWindows` | List available windows |
+| `SFListMenu` | Full menu tree with type resolution |
 
 ## Etendo AD Database Conventions
 

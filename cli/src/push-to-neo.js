@@ -344,6 +344,117 @@ export async function pushToNeo(windowName, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Process push function
+// ---------------------------------------------------------------------------
+
+/**
+ * Push a process contract configuration to NEO Headless via direct DB writes.
+ *
+ * @param {string} processName - The process artifact folder name (e.g., "generate-invoices")
+ * @param {object} [options] - Override options
+ * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
+ * @param {string} [options.projectRoot] - Override project root path
+ * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {object} [options.dbConfig] - Override DB pool config
+ * @param {object} [options.audit] - Override audit defaults
+ * @returns {object} Result summary
+ */
+export async function pushProcessToNeo(processName, options = {}) {
+  const projectRoot = options.projectRoot || ROOT;
+  const artifactsDir = join(projectRoot, 'artifacts', processName);
+
+  // Load process contract
+  let contractRaw;
+  try {
+    contractRaw = await readFile(join(artifactsDir, 'contract.json'), 'utf-8');
+  } catch (err) {
+    throw new Error(`Cannot read contract.json for process '${processName}': ${err.message}`);
+  }
+
+  const contract = JSON.parse(contractRaw);
+
+  if (contract.type !== 'process') {
+    throw new Error(`Contract type is '${contract.type}', expected 'process'`);
+  }
+
+  const processId = contract.process.id;
+  const specName = contract.process.specName;
+  const processDisplayName = contract.process.name;
+
+  // Dry run mode
+  if (options.dryRun === true) {
+    console.log(`[DRY RUN] Push to NEO for process: ${processDisplayName} (${processName})`);
+    console.log(`  Spec name: ${specName}`);
+    console.log(`  Process ID: ${processId}`);
+    console.log(`  Method: direct DB write`);
+    console.log(`\n  Step 1: upsertSpec (specType=P)`);
+    console.log(`    Params: { name: '${specName}', specType: 'P', processId: '${processId}' }`);
+    console.log(`\n  Step 2: populateSpec (auto-creates entity + fields from AD_Process_Para)`);
+    console.log(`    Params: { specId: <from step 1> }`);
+
+    return {
+      dryRun: true,
+      specName,
+      processId,
+      plan: {
+        spec: { action: 'upsertSpec', params: { name: specName, specType: 'P', processId } },
+        populate: { action: 'populateSpec', params: { specId: '(from step 1)' } },
+      },
+    };
+  }
+
+  // Live mode — write to DB via transaction
+  const moduleId = options.moduleId || '0';
+  const auditOpts = options.audit || {};
+  const pool = createDbPool(options.dbConfig);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Step 1: Upsert spec
+    console.log(`[1/2] Upserting spec '${specName}' for process ${processId}...`);
+    const specResult = await writerUpsertSpec(client, {
+      name: specName,
+      moduleId,
+      processId,
+      specType: 'P',
+      audit: auditOpts,
+    });
+    const specId = specResult.specId;
+    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+
+    // Step 2: Populate spec from AD metadata (creates entity + fields automatically)
+    console.log(`[2/2] Populating spec from AD_Process_Para...`);
+    const popResult = await writerPopulateSpec(client, {
+      specId,
+      moduleId,
+      audit: auditOpts,
+    });
+    console.log(`       Entity: ${popResult.entities[0]?.name || 'unnamed'}, Fields: ${popResult.fieldCount}`);
+
+    await client.query('COMMIT');
+
+    console.log(`\nDone. Process spec '${specName}' configured.`);
+
+    return {
+      dryRun: false,
+      specName,
+      specId,
+      processId,
+      entityCount: popResult.entityCount,
+      fieldCount: popResult.fieldCount,
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+    await closePool(pool);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
 
