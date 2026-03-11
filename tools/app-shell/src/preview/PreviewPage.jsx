@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
-import orderPageSource from '@generated/sales-order/generated/web/sales-order/OrderPage.jsx?raw';
-import orderTableSource from '@generated/sales-order/generated/web/sales-order/OrderTable.jsx?raw';
-import orderFormSource from '@generated/sales-order/generated/web/sales-order/OrderForm.jsx?raw';
-import orderLineTableSource from '@generated/sales-order/generated/web/sales-order/OrderLineTable.jsx?raw';
+import orderPageSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderPage.jsx?raw';
+import orderTableSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderTable.jsx?raw';
+import orderFormSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderForm.jsx?raw';
+import orderLineTableSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderLineTable.jsx?raw';
 
 import * as mockDataModule from '@generated/sales-order/generated/web/sales-order/mockData.js';
 
