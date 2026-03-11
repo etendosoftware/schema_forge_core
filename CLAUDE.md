@@ -212,7 +212,9 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
 │       ├── push-to-neo.js                # Webhook calls → NEO Headless config
-│       ├── generate-frontend.js          # React SPA generation
+│       ├── custom-section-markers.js      # Delimiter constants for code preservation
+│       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
+│       ├── generate-frontend.js          # React SPA generation (emits section markers)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
 │       └── pipeline.js                   # Full extraction-to-generation pipeline
@@ -299,6 +301,23 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 - **Visibility model**: editable (user input), readOnly (display), system (auto-derived, hidden), discarded (ignored)
 - **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence
 - **OBDal transactions**: single DB transaction, all-or-nothing rollback. No Sagas.
+
+## Custom Section Preservation (Frontend Regeneration)
+
+When `generate-frontend.js` regenerates React components, custom code (callout translations, hooks, handlers) survives via section markers. The generator emits delimiter comments; the preservation module extracts custom blocks from the old file and re-injects them into the new output.
+
+**Delimiter format:**
+- `// @sf-generated-start ID` / `// @sf-generated-end ID` -- generated code (overwritten on regeneration)
+- `// @sf-custom-start ID` / `// @sf-custom-end ID` -- custom code (preserved across regenerations)
+- `// @sf-custom-slot ID` -- placeholder in generated output where custom code is injected
+
+**How it works:** Pipeline step F8 calls `preserveAndRegenerate(existingFile, newContent)` which: (1) extracts custom sections from the old file, (2) replaces matching `@sf-custom-slot` lines in new output with the preserved blocks, (3) appends unmatched sections at EOF with a warning so developers can relocate them.
+
+**Code location:**
+- `cli/src/custom-section-markers.js` -- marker constants and regex patterns
+- `cli/src/preserve-custom-sections.js` -- extract, inject, and append logic
+- `cli/src/generate-frontend.js` -- emits `GENERATED_START/END` blocks and `CUSTOM_SLOT` placeholders
+- `cli/src/pipeline.js` -- integrates preservation into the regeneration step
 
 ## Testing
 
