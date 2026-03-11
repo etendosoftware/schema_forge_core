@@ -12,7 +12,7 @@ export default function AppLayout({ menuGroups }) {
   return (
     <InspectorProvider>
       <AppSidebar menuGroups={menuGroups} />
-      <div className="ml-[60px] flex h-screen flex-col">
+      <div className="ml-[60px] flex h-screen flex-col overflow-hidden">
         <TopBar menuGroups={menuGroups} />
         <div key={location.pathname} className="flex-1 overflow-auto p-6 page-transition">
           <Outlet />
