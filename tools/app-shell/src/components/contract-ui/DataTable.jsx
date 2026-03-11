@@ -74,10 +74,100 @@ function EmptyState({ hasFilter, totalCount }) {
 }
 
 /**
+ * Inline search input for FK fields in the add row.
+ * Shows autocomplete dropdown from catalogs.
+ */
+function InlineFKSearch({ field, value, onChange, onKeyDown, catalogs, placeholder, inputRef }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const options = catalogs?.[field.reference] ?? [];
+  const filtered = useMemo(() => {
+    if (!query || query.length === 0) return options.slice(0, 8);
+    const q = query.toLowerCase();
+    return options.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
+  }, [query, options]);
+
+  // Show display name if value is an id
+  const displayName = useMemo(() => {
+    if (!value) return '';
+    const opt = options.find(o => o.id === value);
+    return opt ? opt.name : value;
+  }, [value, options]);
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={open ? query : displayName}
+          placeholder={placeholder}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => { setQuery(''); setOpen(true); }}
+          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && open) {
+              setOpen(false);
+              e.stopPropagation();
+            } else {
+              onKeyDown?.(e);
+            }
+          }}
+          className="w-full h-8 text-sm rounded-md border border-input bg-background pl-7 pr-2 focus:ring-2 focus:ring-primary focus:outline-none"
+          autoComplete="off"
+        />
+      </div>
+      {open && filtered.length > 0 && (
+        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+          {filtered.map(opt => (
+            <button
+              key={opt.id}
+              type="button"
+              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 cursor-pointer"
+              onMouseDown={() => {
+                onChange(opt.id);
+                setQuery(opt.name);
+                setOpen(false);
+              }}
+            >
+              {opt.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Inline selector dropdown for FK fields with few options.
+ */
+function InlineFKSelector({ field, value, onChange, onKeyDown, catalogs, placeholder }) {
+  const options = catalogs?.[field.reference] ?? [];
+  return (
+    <select
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={onKeyDown}
+      className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+    >
+      <option value="">{placeholder}</option>
+      {options.map(opt => (
+        <option key={opt.id} value={opt.id}>{opt.name}</option>
+      ))}
+    </select>
+  );
+}
+
+/**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -155,16 +245,51 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
         }
         const isFirst = !firstInputAssigned;
         if (isFirst) firstInputAssigned = true;
+        const placeholder = t(field.column) ?? field.label ?? field.key;
+
+        // FK search field (product, etc.)
+        if (field.type === 'search' || (field.reference && field.inputMode === 'search')) {
+          return (
+            <TableCell key={col.key} className="py-1 px-2">
+              <InlineFKSearch
+                field={field}
+                value={values[field.key] ?? ''}
+                onChange={(val) => handleChange(field.key, val)}
+                onKeyDown={handleKeyDown}
+                catalogs={catalogs}
+                placeholder={placeholder}
+                inputRef={isFirst ? firstInputRef : undefined}
+              />
+            </TableCell>
+          );
+        }
+
+        // FK selector field (tax, etc.)
+        if (field.type === 'selector' || (field.reference && field.inputMode === 'selector')) {
+          return (
+            <TableCell key={col.key} className="py-1 px-2">
+              <InlineFKSelector
+                field={field}
+                value={values[field.key] ?? ''}
+                onChange={(val) => handleChange(field.key, val)}
+                onKeyDown={handleKeyDown}
+                catalogs={catalogs}
+                placeholder={placeholder}
+              />
+            </TableCell>
+          );
+        }
+
+        // Plain input (text, number, etc.)
         return (
           <TableCell key={col.key} className="py-1 px-2">
             <input
               ref={isFirst ? firstInputRef : undefined}
               type={field.type === 'number' ? 'number' : 'text'}
-              inputMode={field.inputMode}
               value={values[field.key] ?? ''}
               onChange={(e) => handleChange(field.key, e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t(field.column) ?? field.label ?? field.key}
+              placeholder={placeholder}
               required={field.required}
               className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
             />
@@ -294,6 +419,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 onAdd={addRow.onAdd}
                 onCancel={addRow.onCancel}
                 data={data}
+                catalogs={addRow.catalogs}
               />
             )}
           </TableBody>
