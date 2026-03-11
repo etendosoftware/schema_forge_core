@@ -112,12 +112,6 @@ export default function AppSidebar({ menuGroups }) {
         {/* Footer */}
         <div className="flex flex-col items-center gap-1.5 border-t border-white/10 pt-3">
           <SidebarIcon
-            icon="Eye"
-            label="Preview"
-            to="/preview"
-            isActive={location.pathname === '/preview'}
-          />
-          <SidebarIcon
             icon="FileJson"
             label="Artifacts"
             to="/artifacts"
