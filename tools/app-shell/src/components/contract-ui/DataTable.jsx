@@ -314,11 +314,20 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, onCellEdit, editFields, catalogs: tableCatalogs }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingCell, setEditingCell] = useState(null); // { rowId, colKey }
 
   const hasActiveFilter = searchQuery.length > 0;
+
+  // Build field map for inline editing
+  const editFieldMap = useMemo(() => {
+    if (!editFields) return {};
+    const map = {};
+    for (const f of editFields) map[f.key] = f;
+    return map;
+  }, [editFields]);
 
   const filteredData = useMemo(() => {
     if (!searchQuery) return data;
@@ -399,16 +408,104 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               filteredData.map((row, idx) => (
                 <TableRow
                   key={row.id ?? idx}
-                  onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
+                  onClick={() => {
+                    if (!editingCell && onNavigate) onNavigate(row);
+                    else if (!editingCell) onRowSelect?.(row);
+                  }}
                   className={[
                     'cursor-pointer transition-colors',
                     row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
                     'hover:bg-muted/50',
                   ].filter(Boolean).join(' ')}
                 >
-                  {columns.map(col => (
-                    <TableCell key={col.key}>{renderCellValue(row, col)}</TableCell>
-                  ))}
+                  {columns.map(col => {
+                    const isEditing = editingCell?.rowId === (row.id ?? idx) && editingCell?.colKey === col.key;
+                    const editField = editFieldMap[col.key];
+                    const canEdit = onCellEdit && editField && !editField.readOnly;
+
+                    if (isEditing && canEdit) {
+                      const catalogs = tableCatalogs || addRow?.catalogs;
+                      const placeholder = t(editField.column) ?? editField.label ?? editField.key;
+
+                      // FK search
+                      if (editField.type === 'search' || (editField.reference && editField.inputMode === 'search')) {
+                        return (
+                          <TableCell key={col.key} className="py-1 px-2" onClick={(e) => e.stopPropagation()}>
+                            <InlineFKSearch
+                              field={editField}
+                              value={row[col.key]}
+                              onChange={(val) => {
+                                onCellEdit(row.id, col.key, val);
+                                setEditingCell(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                              catalogs={catalogs}
+                              placeholder={placeholder}
+                              inputRef={(el) => el?.focus()}
+                            />
+                          </TableCell>
+                        );
+                      }
+
+                      // FK selector
+                      if (editField.type === 'selector' || (editField.reference && editField.inputMode === 'selector')) {
+                        return (
+                          <TableCell key={col.key} className="py-1 px-2" onClick={(e) => e.stopPropagation()}>
+                            <InlineFKSelector
+                              field={editField}
+                              value={row[col.key]}
+                              onChange={(val) => {
+                                onCellEdit(row.id, col.key, val);
+                                setEditingCell(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                              catalogs={catalogs}
+                              placeholder={placeholder}
+                            />
+                          </TableCell>
+                        );
+                      }
+
+                      // Plain input
+                      return (
+                        <TableCell key={col.key} className="py-1 px-2" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type={editField.type === 'number' ? 'number' : 'text'}
+                            defaultValue={row[col.key] ?? ''}
+                            autoFocus
+                            onBlur={(e) => {
+                              onCellEdit(row.id, col.key, e.target.value);
+                              setEditingCell(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                onCellEdit(row.id, col.key, e.target.value);
+                                setEditingCell(null);
+                              }
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                            className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                          />
+                        </TableCell>
+                      );
+                    }
+
+                    return (
+                      <TableCell
+                        key={col.key}
+                        onDoubleClick={canEdit ? (e) => {
+                          e.stopPropagation();
+                          setEditingCell({ rowId: row.id ?? idx, colKey: col.key });
+                        } : undefined}
+                      >
+                        {renderCellValue(row, col)}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             )}
