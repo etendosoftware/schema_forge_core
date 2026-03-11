@@ -124,17 +124,18 @@ async function main() {
 
           for (const [filename, code] of Object.entries(files)) {
             const filePath = resolvePath(outDir, filename);
+
+            // Read existing content BEFORE overwriting (for .old backup)
+            const existingContent = await readFile(filePath, 'utf8').catch(() => null);
+
             const { content, preserved, unmatched } = preserveAndRegenerate(filePath, code);
             await writeFile(filePath, content, 'utf8');
             totalPreserved += preserved.length;
             totalUnmatched += unmatched.length;
 
-            // Save .old backup only when there are unmatched sections
-            if (unmatched.length > 0) {
-              const existing = await readFile(filePath, 'utf8').catch(() => null);
-              if (existing) {
-                await writeFile(`${filePath}.old`, existing, 'utf8');
-              }
+            // Save .old backup from the pre-overwrite content
+            if (unmatched.length > 0 && existingContent) {
+              await writeFile(`${filePath}.old`, existingContent, 'utf8');
             }
           }
 

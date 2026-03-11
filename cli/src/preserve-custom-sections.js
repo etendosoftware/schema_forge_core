@@ -47,6 +47,15 @@ export function extractCustomSections(fileContent) {
     }
   }
 
+  // Best-effort recovery for unclosed sections
+  if (currentId !== null) {
+    console.warn(
+      `[preserve-custom-sections] WARNING: Unclosed custom section "${currentId}" ` +
+      '(no matching @sf-custom-end found). Including content up to EOF.'
+    );
+    sections.set(currentId, currentLines.join('\n'));
+  }
+
   return sections;
 }
 

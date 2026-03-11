@@ -91,6 +91,33 @@ describe('extractCustomSections', () => {
     assert.ok(sections.get('callout:A').includes('still inside A'));
   });
 
+  it('recovers unclosed section with warning', () => {
+    const content = [
+      'const x = 1;',
+      '// @sf-custom-start callout:Orphan',
+      'function orphaned() {',
+      '  return "no end marker";',
+      '}',
+    ].join('\n');
+
+    // Capture console.warn output
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+
+    try {
+      const sections = extractCustomSections(content);
+      assert.equal(sections.size, 1);
+      assert.ok(sections.has('callout:Orphan'));
+      assert.ok(sections.get('callout:Orphan').includes('function orphaned()'));
+      assert.equal(warnings.length, 1);
+      assert.ok(warnings[0].includes('Unclosed custom section'));
+      assert.ok(warnings[0].includes('callout:Orphan'));
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
   it('extracts sections with similar ID prefixes correctly', () => {
     const content = [
       '// @sf-custom-start callout:BP_Fill',
