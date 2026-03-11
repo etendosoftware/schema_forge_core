@@ -206,22 +206,26 @@ schema-forge/                             # THIS REPO — design + tooling
 ├── cli/                                  # Node.js CLI tools
 │   └── src/
 │       ├── extract-from-db.js            # Extract fields + rules from Etendo DB
+│       ├── extract-from-process.js      # Extract process metadata + parameters
 │       ├── extract-fields.js             # Field extraction with FK resolution
 │       ├── extract-rules.js              # Rule + callout extraction
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── push-to-neo.js                # Webhook calls → NEO Headless config
-│       ├── generate-frontend.js          # React SPA generation
+│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows + processes)
+│       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
+│       ├── custom-section-markers.js      # Delimiter constants for code preservation
+│       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
+│       ├── generate-frontend.js          # React SPA generation (emits section markers)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
-│       └── pipeline.js                   # Full extraction-to-generation pipeline
+│       └── pipeline.js                   # Full pipeline (windows + processes)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
 │   ├── decision-panel/                   # Field visibility + rule curation
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
-├── artifacts/{window-name}/              # Per-window: schemas, rules, decisions, generated code
+├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
@@ -238,10 +242,11 @@ schema-forge/                             # THIS REPO — design + tooling
 Etendo AD Metadata
     │
     ▼
-Schema Forge CLI (extract-from-db.js)
-    │ Extracts fields, rules, callouts, FK references
+Schema Forge CLI (extract-from-db.js / extract-from-process.js)
+    │ Extracts fields, rules, callouts, FK references (windows)
+    │ Extracts process metadata + parameters (standalone processes)
     ▼
-Per-Window Artifacts (artifacts/{window}/)
+Per-Window/Process Artifacts (artifacts/{name}/)
     │ schema-curated.json, rules-curated.json
     ▼
 Decision UIs (tools/decision-panel/)
@@ -299,6 +304,23 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 - **Visibility model**: editable (user input), readOnly (display), system (auto-derived, hidden), discarded (ignored)
 - **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence
 - **OBDal transactions**: single DB transaction, all-or-nothing rollback. No Sagas.
+
+## Custom Section Preservation (Frontend Regeneration)
+
+When `generate-frontend.js` regenerates React components, custom code (callout translations, hooks, handlers) survives via section markers. The generator emits delimiter comments; the preservation module extracts custom blocks from the old file and re-injects them into the new output.
+
+**Delimiter format:**
+- `// @sf-generated-start ID` / `// @sf-generated-end ID` -- generated code (overwritten on regeneration)
+- `// @sf-custom-start ID` / `// @sf-custom-end ID` -- custom code (preserved across regenerations)
+- `// @sf-custom-slot ID` -- placeholder in generated output where custom code is injected
+
+**How it works:** Pipeline step F8 calls `preserveAndRegenerate(existingFile, newContent)` which: (1) extracts custom sections from the old file, (2) replaces matching `@sf-custom-slot` lines in new output with the preserved blocks, (3) appends unmatched sections at EOF with a warning so developers can relocate them.
+
+**Code location:**
+- `cli/src/custom-section-markers.js` -- marker constants and regex patterns
+- `cli/src/preserve-custom-sections.js` -- extract, inject, and append logic
+- `cli/src/generate-frontend.js` -- emits `GENERATED_START/END` blocks and `CUSTOM_SLOT` placeholders
+- `cli/src/pipeline.js` -- integrates preservation into the regeneration step
 
 ## Testing
 
@@ -400,7 +422,15 @@ The `NeoOpenAPIEndpoint` class implements `com.etendoerp.openapi.model.OpenAPIEn
 See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - NeoHandler CDI hook mechanism (custom endpoint logic via `@Named` + `JAVA_QUALIFIER`)
 - Callouts NOT in NEO Headless (deferred to v2, only classic UI)
-- Pipeline → NEO gap: webhooks ready but no `push-to-neo.js` CLI module yet
+- Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows + processes)
+
+### Discovery Webhooks (read-only, for tooling)
+
+| Webhook | Purpose |
+|---------|---------|
+| `SFListProcesses` | List available processes (GET, `?q=` search, up to 100 results) |
+| `SFListWindows` | List available windows |
+| `SFListMenu` | Full menu tree with type resolution |
 
 ## Etendo AD Database Conventions
 

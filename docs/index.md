@@ -30,8 +30,11 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 
 ## Plans & Evaluations
 
+Plans follow a lifecycle: active in `plans/`, completed in `plans/completed/YYYY-MM-DD/`, discarded in `plans/discarded/`.
+
 | File | Description |
 |------|-------------|
+| [plans/process-and-report-pipeline.md](plans/process-and-report-pipeline.md) | Process & Report Pipeline — **Phase 1 Complete** (standalone processes), Phase 2-4 deferred |
 | [plans/2026-03-05-vertical-slice-design.md](plans/2026-03-05-vertical-slice-design.md) | Vertical slice design |
 | [plans/2026-03-05-vertical-slice-plan.md](plans/2026-03-05-vertical-slice-plan.md) | Vertical slice execution plan |
 | [plans/evaluations/architecture-review.md](plans/evaluations/architecture-review.md) | Architecture review |

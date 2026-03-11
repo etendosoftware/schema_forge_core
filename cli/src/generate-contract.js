@@ -597,3 +597,146 @@ export function generateContract(schema, rules = [], processes = []) {
     ...contractData,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Process contract generation
+// ---------------------------------------------------------------------------
+
+const PROCESS_REFERENCE_MAP = {
+  '15': { type: 'date', tsType: 'string', inputMode: 'date-picker' },
+  '16': { type: 'datetime', tsType: 'string', inputMode: 'datetime-picker' },
+  '10': { type: 'string', tsType: 'string', inputMode: 'text' },
+  '14': { type: 'string', tsType: 'string', inputMode: 'text' },
+  '11': { type: 'integer', tsType: 'number', inputMode: 'number' },
+  '22': { type: 'number', tsType: 'number', inputMode: 'number' },
+  '12': { type: 'amount', tsType: 'number', inputMode: 'number' },
+  '800019': { type: 'number', tsType: 'number', inputMode: 'number' },
+  '20': { type: 'boolean', tsType: 'boolean', inputMode: 'checkbox' },
+  '17': { type: 'list', tsType: 'string', inputMode: 'select' },
+  '19': { type: 'foreignKey', tsType: 'string', inputMode: 'search' },
+  '18': { type: 'foreignKey', tsType: 'string', inputMode: 'search' },
+  '30': { type: 'foreignKey', tsType: 'string', inputMode: 'search' },
+  '800011': { type: 'foreignKey', tsType: 'string', inputMode: 'search' },
+};
+
+const DEFAULT_REFERENCE = { type: 'string', tsType: 'string', inputMode: 'text' };
+
+/**
+ * Map an AD_Reference_ID to type info for process parameters.
+ */
+export function mapProcessReference(referenceId) {
+  return PROCESS_REFERENCE_MAP[String(referenceId)] ?? DEFAULT_REFERENCE;
+}
+
+/**
+ * Generate a contract for a standalone process (not window-attached).
+ *
+ * @param {object} processRaw - The process-raw.json structure
+ * @returns {object} Process contract
+ */
+export function generateProcessContract(processRaw) {
+  const { process: proc, parameters: rawParams } = processRaw;
+  const specName = toSpecName(proc.name);
+
+  const parameters = rawParams.map(p => {
+    const ref = mapProcessReference(p.referenceId);
+    const param = {
+      name: p.name,
+      column: p.column,
+      type: ref.type,
+      tsType: ref.tsType,
+      inputMode: ref.inputMode,
+      required: p.mandatory === true,
+      isRange: p.isRange === true,
+    };
+    if (p.defaultValue) param.defaultValue = p.defaultValue;
+    if (p.referenceValueId) param.referenceValueId = p.referenceValueId;
+    return param;
+  });
+
+  const apiPrediction = {
+    specName,
+    baseUrl: `/sws/neo/${specName}`,
+    describe: `GET /sws/neo/${specName}`,
+    execute: `POST /sws/neo/${specName}`,
+  };
+
+  // Build test manifest
+  const tests = [];
+  let idCounter = 0;
+  const nextId = () => `t-${++idCounter}`;
+
+  for (const param of parameters) {
+    tests.push({
+      id: nextId(),
+      category: 'param-presence',
+      param: param.name,
+      runner: 'node',
+      description: `Parameter '${param.name}' should be present`,
+    });
+  }
+
+  for (const param of parameters) {
+    tests.push({
+      id: nextId(),
+      category: 'param-type',
+      param: param.name,
+      expectedType: param.tsType,
+      runner: 'node',
+      description: `Parameter '${param.name}' should have type '${param.tsType}'`,
+    });
+  }
+
+  tests.push({
+    id: nextId(),
+    category: 'execution-happy',
+    runner: 'junit',
+    description: `Process '${proc.name}' should execute successfully with valid parameters`,
+  });
+
+  tests.push({
+    id: nextId(),
+    category: 'execution-failure',
+    runner: 'junit',
+    description: `Process '${proc.name}' should fail with invalid parameters`,
+  });
+
+  const byCategory = {};
+  const byRunner = { node: 0, junit: 0 };
+  for (const t of tests) {
+    byCategory[t.category] = (byCategory[t.category] ?? 0) + 1;
+    byRunner[t.runner] = (byRunner[t.runner] ?? 0) + 1;
+  }
+
+  const testManifest = {
+    tests,
+    summary: { total: tests.length, byCategory, byRunner },
+  };
+
+  const contractData = {
+    type: 'process',
+    process: {
+      id: proc.id,
+      name: proc.name,
+      specName,
+      uiPattern: proc.uiPattern,
+      javaClassName: proc.javaClassName || null,
+      isReport: proc.isReport === true,
+    },
+    parameters,
+    apiPrediction,
+    testManifest,
+  };
+
+  const checksum = createHash('sha256')
+    .update(JSON.stringify(contractData))
+    .digest('hex')
+    .slice(0, 16);
+
+  return {
+    version: '0.1.0',
+    generatedAt: new Date().toISOString(),
+    checksum,
+    ...contractData,
+  };
+}

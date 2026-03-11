@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
 export function validatePipelineInput(input) {
+  if (input.processId) {
+    if (!input.processName) return { valid: false, error: 'processName is required for process mode' };
+    return { valid: true, mode: 'process' };
+  }
   if (!input.windowId) return { valid: false, error: 'windowId is required' };
   if (!input.windowName) return { valid: false, error: 'windowName is required' };
-  return { valid: true };
+  return { valid: true, mode: 'window' };
 }
 
 export function buildPipelineSteps() {
@@ -21,18 +25,136 @@ export function buildPipelineSteps() {
   ];
 }
 
+export function buildProcessPipelineSteps() {
+  return [
+    { name: 'extract-process', description: 'Extract process metadata + parameters from Etendo DB', phase: 'P1' },
+    { name: 'generate-process-contract', description: 'Generate process contract', phase: 'P2' },
+    { name: 'push-process-to-neo', description: 'Configure NEO Headless for process via DB writes', phase: 'P3' },
+    { name: 'generate-process-frontend', description: 'Generate process form component', phase: 'P4' },
+    { name: 'run-tests', description: 'Run contract tests', phase: 'P5' },
+  ];
+}
+
+/**
+ * Parse CLI arguments for both window and process modes.
+ */
+function parseArgs(argv) {
+  const args = argv.slice(2);
+  const result = {};
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--process-id' && args[i + 1]) {
+      result.processId = args[++i];
+    } else if (args[i] === '--process-name' && args[i + 1]) {
+      result.processName = args[++i];
+    } else if (args[i] === '--dry-run') {
+      result.dryRun = true;
+    } else if (args[i] === '--skip-to' && args[i + 1]) {
+      result.skipTo = args[++i];
+    } else if (!args[i].startsWith('--') && !result.windowId) {
+      result.windowId = args[i];
+    } else if (!args[i].startsWith('--') && result.windowId && !result.windowName) {
+      result.windowName = args[i];
+    }
+  }
+
+  return result;
+}
+
 // CLI entry point
 async function main() {
-  const windowId = process.argv[2];
-  const windowName = process.argv[3] || 'sales-order';
+  const parsed = parseArgs(process.argv);
 
-  const validation = validatePipelineInput({ windowId, windowName });
+  // Backwards compat: positional args for window mode
+  if (!parsed.processId && !parsed.windowName && parsed.windowId) {
+    parsed.windowName = 'sales-order';
+  }
+
+  const validation = validatePipelineInput(parsed);
   if (!validation.valid) {
     console.error(`Error: ${validation.error}`);
-    console.error('Usage: sf-pipeline <windowId> [windowName]');
+    console.error('Usage:');
+    console.error('  sf-pipeline <windowId> [windowName]                    # Window mode');
+    console.error('  sf-pipeline --process-id <id> --process-name <name>    # Process mode');
     process.exit(1);
   }
 
+  if (validation.mode === 'process') {
+    await runProcessPipeline(parsed);
+  } else {
+    await runWindowPipeline(parsed);
+  }
+}
+
+async function runProcessPipeline({ processId, processName, dryRun }) {
+  const steps = buildProcessPipelineSteps();
+  console.log(`\n=== Schema Forge Process Pipeline: ${processName} ===\n`);
+
+  for (const step of steps) {
+    console.log(`[${step.phase}] ${step.description}...`);
+
+    try {
+      switch (step.name) {
+        case 'extract-process': {
+          const { main: extractProcess } = await import('./extract-from-process.js');
+          await extractProcess(processId, processName);
+          break;
+        }
+        case 'generate-process-contract': {
+          const { generateProcessContract } = await import('./generate-contract.js');
+          const { readFile, writeFile } = await import('node:fs/promises');
+          const processRaw = JSON.parse(await readFile(`artifacts/${processName}/process-raw.json`, 'utf8'));
+          const contract = generateProcessContract(processRaw);
+          await writeFile(`artifacts/${processName}/contract.json`, JSON.stringify(contract, null, 2));
+          console.log(`  ✓ Process contract generated (${contract.testManifest.summary.total} tests)`);
+          break;
+        }
+        case 'push-process-to-neo': {
+          const { pushProcessToNeo } = await import('./push-to-neo.js');
+          const result = await pushProcessToNeo(processName, { dryRun });
+          if (dryRun) {
+            console.log(`  ✓ Dry run: push plan logged`);
+          } else {
+            console.log(`  ✓ NEO Headless configured (spec: ${result.specId})`);
+          }
+          break;
+        }
+        case 'generate-process-frontend': {
+          const { generateAllProcess } = await import('./generate-frontend.js');
+          const { readFile, writeFile, mkdir } = await import('node:fs/promises');
+          const contract = JSON.parse(await readFile(`artifacts/${processName}/contract.json`, 'utf8'));
+          const files = generateAllProcess(contract);
+          const outDir = `artifacts/${processName}/generated/web/${processName}`;
+          await mkdir(outDir, { recursive: true });
+          for (const [filename, code] of Object.entries(files)) {
+            await writeFile(`${outDir}/${filename}`, code, 'utf8');
+          }
+          console.log(`  ✓ ${Object.keys(files).length} frontend components generated`);
+          break;
+        }
+        case 'run-tests': {
+          const { runContractTests } = await import('./run-contract-tests.js');
+          const { readFile } = await import('node:fs/promises');
+          const contract = JSON.parse(await readFile(`artifacts/${processName}/contract.json`, 'utf8'));
+          const result = runContractTests(contract);
+          console.log(`  ✓ ${result.passed}/${result.total} passed, ${result.skipped} skipped`);
+          if (result.failed > 0) {
+            console.error(`  ✗ ${result.failed} tests failed`);
+            result.results.filter(r => !r.passed).forEach(r => console.error(`    - ${r.description}: ${r.reason}`));
+          }
+          break;
+        }
+      }
+    } catch (err) {
+      console.error(`  ✗ ${step.name} failed: ${err.message}`);
+      process.exit(1);
+    }
+  }
+
+  console.log('\n=== Process Pipeline complete ===\n');
+}
+
+async function runWindowPipeline({ windowId, windowName }) {
   const steps = buildPipelineSteps();
   console.log(`\n=== Schema Forge Pipeline: ${windowName} ===\n`);
 
@@ -48,13 +170,12 @@ async function main() {
         console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
         console.log('  → For AI classification, run: /sf:classify-rules');
       }
-      break; // Stop at interactive step
+      break;
     }
 
     console.log(`[${step.phase}] ${step.description}...`);
 
     try {
-      // Dynamic import and execution of each phase
       switch (step.name) {
         case 'extract-fields': {
           const { main: extractFields } = await import('./extract-fields.js');
@@ -103,23 +224,51 @@ async function main() {
           const dryRun = process.argv.includes('--dry-run');
           const result = await pushToNeo(windowName, { dryRun });
           if (dryRun) {
-            console.log(`  ✓ Dry run: ${result.actions.length} webhook calls planned`);
+            console.log(`  ✓ Dry run: ${result.summary.totalFields} fields planned`);
           } else {
-            console.log(`  ✓ NEO Headless configured (${result.fieldsConfigured} fields)`);
+            console.log(`  ✓ NEO Headless configured (${result.fieldsUpdated} fields)`);
           }
           break;
         }
         case 'generate-frontend': {
           const { generateAll } = await import('./generate-frontend.js');
+          const { preserveAndRegenerate } = await import('./preserve-custom-sections.js');
           const { readFile, writeFile, mkdir } = await import('node:fs/promises');
+          const { resolve: resolvePath } = await import('node:path');
           const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
           const files = generateAll(contract);
           const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
           await mkdir(outDir, { recursive: true });
+
+          let totalPreserved = 0;
+          let totalUnmatched = 0;
+
           for (const [filename, code] of Object.entries(files)) {
-            await writeFile(`${outDir}/${filename}`, code, 'utf8');
+            const filePath = resolvePath(outDir, filename);
+
+            // Read existing content BEFORE overwriting (for .old backup)
+            const existingContent = await readFile(filePath, 'utf8').catch(() => null);
+
+            const { content, preserved, unmatched } = preserveAndRegenerate(filePath, code);
+            await writeFile(filePath, content, 'utf8');
+            totalPreserved += preserved.length;
+            totalUnmatched += unmatched.length;
+
+            // Save .old backup from the pre-overwrite content
+            if (unmatched.length > 0 && existingContent) {
+              await writeFile(`${filePath}.old`, existingContent, 'utf8');
+            }
           }
-          console.log(`  ✓ ${Object.keys(files).length} frontend components generated`);
+
+          let summary = `  ✓ ${Object.keys(files).length} frontend components generated`;
+          if (totalPreserved > 0 || totalUnmatched > 0) {
+            summary += ` (preserved ${totalPreserved} custom sections`;
+            if (totalUnmatched > 0) {
+              summary += `, ${totalUnmatched} unmatched (saved to .old)`;
+            }
+            summary += ')';
+          }
+          console.log(summary);
           break;
         }
         case 'run-tests': {
