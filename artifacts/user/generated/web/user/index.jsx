@@ -15,6 +15,10 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="User"
         windowName={windowName}
         recordId={recordId}
+<<<<<<< HEAD
+        window={windowMeta}
+=======
+>>>>>>> origin/main
         {...props}
       />
     );
@@ -26,6 +30,10 @@ export default function App({ windowName, recordId, ...props }) {
       Table={UserTable}
       entityLabel="User"
       windowName={windowName}
+<<<<<<< HEAD
+      window={windowMeta}
+=======
+>>>>>>> origin/main
       {...props}
     />
   );
