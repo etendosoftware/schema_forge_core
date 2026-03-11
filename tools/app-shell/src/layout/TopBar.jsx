@@ -32,7 +32,7 @@ export default function TopBar({ menuGroups }) {
 
   return (
     <header
-      className="flex h-14 shrink-0 items-center border-b-[3px] bg-background"
+      className="flex h-14 shrink-0 items-center border-b-[3px] bg-background transition-[border-color] duration-300 ease-in-out"
       style={{ borderBottomColor: sectionColor.accent }}
     >
       {/* Left: section name + overview + tabs */}
@@ -64,7 +64,7 @@ export default function TopBar({ menuGroups }) {
             )}
 
             {/* Horizontal scrollable tabs */}
-            <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {tabItems.map((item) => {
                 const isTabActive = item.name === currentPath;
                 return (
