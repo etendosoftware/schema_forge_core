@@ -3,7 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Inbox } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover.jsx';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command.jsx';
+import { Search, Inbox, Check, ChevronsUpDown } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 
@@ -74,92 +76,56 @@ function EmptyState({ hasFilter, totalCount }) {
 }
 
 /**
- * Inline search input for FK fields in the add row.
- * Shows autocomplete dropdown from catalogs.
+ * Inline FK combobox using Popover + Command (portal-based, no z-index issues).
+ * Used for both search and selector FK fields in inline add/edit rows.
  */
-function InlineFKSearch({ field, value, onChange, onKeyDown, catalogs, placeholder, inputRef }) {
+function InlineFKCombobox({ field, value, onChange, onKeyDown, catalogs, placeholder, inputRef }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
   const options = catalogs?.[field.reference] ?? [];
-  const filtered = useMemo(() => {
-    if (!query || query.length === 0) return options.slice(0, 8);
-    const q = query.toLowerCase();
-    return options.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [query, options]);
-
-  // Show display name if value is an id
-  const displayName = useMemo(() => {
-    if (!value) return '';
-    const opt = options.find(o => o.id === value);
-    return opt ? opt.name : value;
-  }, [value, options]);
+  const selected = options.find(o => o.id === value);
 
   return (
-    <div className="relative">
-      <div className="relative">
-        <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <input
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
           ref={inputRef}
-          type="text"
-          value={open ? query : displayName}
-          placeholder={placeholder}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => { setQuery(''); setOpen(true); }}
-          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          type="button"
+          role="combobox"
+          aria-expanded={open}
           onKeyDown={(e) => {
-            if (e.key === 'Escape' && open) {
-              setOpen(false);
-              e.stopPropagation();
-            } else {
-              onKeyDown?.(e);
-            }
+            if (e.key === 'Escape' && !open) onKeyDown?.(e);
+            if (e.key === 'Enter' && !open) onKeyDown?.(e);
           }}
-          className="w-full h-8 text-sm rounded-md border border-input bg-background pl-7 pr-2 focus:ring-2 focus:ring-primary focus:outline-none"
-          autoComplete="off"
-        />
-      </div>
-      {open && filtered.length > 0 && (
-        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
-          {filtered.map(opt => (
-            <button
-              key={opt.id}
-              type="button"
-              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 cursor-pointer"
-              onMouseDown={() => {
-                onChange(opt.id);
-                setQuery(opt.name);
-                setOpen(false);
-              }}
-            >
-              {opt.name}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Inline selector dropdown for FK fields with few options.
- */
-function InlineFKSelector({ field, value, onChange, onKeyDown, catalogs, placeholder }) {
-  const options = catalogs?.[field.reference] ?? [];
-  return (
-    <select
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      onKeyDown={onKeyDown}
-      className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
-    >
-      <option value="">{placeholder}</option>
-      {options.map(opt => (
-        <option key={opt.id} value={opt.id}>{opt.name}</option>
-      ))}
-    </select>
+          className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 flex items-center justify-between gap-1 focus:ring-2 focus:ring-primary focus:outline-none text-left"
+        >
+          <span className={selected ? 'text-foreground truncate' : 'text-muted-foreground truncate'}>
+            {selected ? selected.name : placeholder}
+          </span>
+          <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-0" align="start">
+        <Command>
+          <CommandInput placeholder={`Search...`} />
+          <CommandList>
+            <CommandEmpty>No results.</CommandEmpty>
+            {options.map(opt => (
+              <CommandItem
+                key={opt.id}
+                value={opt.name}
+                onSelect={() => {
+                  onChange(opt.id);
+                  setOpen(false);
+                }}
+              >
+                <Check className={`mr-2 h-4 w-4 ${value === opt.id ? 'opacity-100' : 'opacity-0'}`} />
+                {opt.name}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -251,7 +217,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
         if (field.type === 'search' || (field.reference && field.inputMode === 'search')) {
           return (
             <TableCell key={col.key} className="py-1 px-2">
-              <InlineFKSearch
+              <InlineFKCombobox
                 field={field}
                 value={values[field.key] ?? ''}
                 onChange={(val) => handleChange(field.key, val)}
@@ -268,7 +234,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
         if (field.type === 'selector' || (field.reference && field.inputMode === 'selector')) {
           return (
             <TableCell key={col.key} className="py-1 px-2">
-              <InlineFKSelector
+              <InlineFKCombobox
                 field={field}
                 value={values[field.key] ?? ''}
                 onChange={(val) => handleChange(field.key, val)}
@@ -431,7 +397,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       if (editField.type === 'search' || (editField.reference && editField.inputMode === 'search')) {
                         return (
                           <TableCell key={col.key} className="py-1 px-2" onClick={(e) => e.stopPropagation()}>
-                            <InlineFKSearch
+                            <InlineFKCombobox
                               field={editField}
                               value={row[col.key]}
                               onChange={(val) => {
@@ -453,7 +419,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       if (editField.type === 'selector' || (editField.reference && editField.inputMode === 'selector')) {
                         return (
                           <TableCell key={col.key} className="py-1 px-2" onClick={(e) => e.stopPropagation()}>
-                            <InlineFKSelector
+                            <InlineFKCombobox
                               field={editField}
                               value={row[col.key]}
                               onChange={(val) => {
