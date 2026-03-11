@@ -121,6 +121,91 @@ function checkRuleDeclared(_contract, _test) {
   return { passed: true };
 }
 
+/**
+ * Check displaylogic-valid: display logic JS expression is parseable
+ */
+function checkDisplayLogicValid(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) return { passed: false, reason: `Entity '${test.entity}' not found` };
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) return { passed: false, reason: `Field '${test.field}' not found` };
+  if (!field.displayLogic?.js) return { passed: true }; // no JS translation = skip (valid)
+  try {
+    new Function('record', `return ${field.displayLogic.js}`);
+    return { passed: true };
+  } catch (e) {
+    return { passed: false, reason: `displayLogic.js parse error: ${e.message}` };
+  }
+}
+
+/**
+ * Check readonlylogic-valid: read-only logic JS expression is parseable
+ */
+function checkReadOnlyLogicValid(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) return { passed: false, reason: `Entity '${test.entity}' not found` };
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) return { passed: false, reason: `Field '${test.field}' not found` };
+  if (!field.readOnlyLogic?.js) return { passed: true }; // no JS translation = skip (valid)
+  try {
+    new Function('record', `return ${field.readOnlyLogic.js}`);
+    return { passed: true };
+  } catch (e) {
+    return { passed: false, reason: `readOnlyLogic.js parse error: ${e.message}` };
+  }
+}
+
+/**
+ * Check selector-endpoint: FK field has matching selector in apiPrediction
+ */
+function checkSelectorEndpoint(contract, test) {
+  const selectors = contract.apiPrediction?.selectors ?? [];
+  const match = selectors.find(s => s.entity === test.entity && s.field === test.field);
+  return match
+    ? { passed: true }
+    : { passed: false, reason: `No selector endpoint for FK field '${test.field}' in entity '${test.entity}'` };
+}
+
+/**
+ * Check action-endpoint: button field has matching action in apiPrediction
+ */
+function checkActionEndpoint(contract, test) {
+  const actions = contract.apiPrediction?.actions ?? [];
+  const match = actions.find(a => a.entity === test.entity && a.field === test.field);
+  return match
+    ? { passed: true }
+    : { passed: false, reason: `No action endpoint for button field '${test.field}' in entity '${test.entity}'` };
+}
+
+/**
+ * Check crud-flags: CRUD flags are all booleans
+ */
+function checkCrudFlags(contract, test) {
+  const crud = contract.apiPrediction?.crud?.[test.entity];
+  if (!crud) return { passed: false, reason: `No CRUD entry for entity '${test.entity}'` };
+  const flags = ['get', 'getById', 'post', 'put', 'patch', 'delete'];
+  for (const flag of flags) {
+    if (typeof crud[flag] !== 'boolean') {
+      return { passed: false, reason: `CRUD flag '${flag}' is ${typeof crud[flag]}, expected boolean` };
+    }
+  }
+  return { passed: true };
+}
+
+/**
+ * Check default-value-type: defaultValue is string or undefined
+ */
+function checkDefaultValueType(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) return { passed: false, reason: `Entity '${test.entity}' not found` };
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) return { passed: false, reason: `Field '${test.field}' not found` };
+  if (field.defaultValue !== undefined && typeof field.defaultValue !== 'string') {
+    return { passed: false, reason: `defaultValue is ${typeof field.defaultValue}, expected string` };
+  }
+  return { passed: true };
+}
+
 const categoryHandlers = {
   'field-presence': checkFieldPresence,
   'field-type': checkFieldType,
@@ -128,6 +213,12 @@ const categoryHandlers = {
   'searchable-filters': checkSearchableFilters,
   'visibility': checkVisibility,
   'rule-declared': checkRuleDeclared,
+  'displaylogic-valid': checkDisplayLogicValid,
+  'readonlylogic-valid': checkReadOnlyLogicValid,
+  'selector-endpoint': checkSelectorEndpoint,
+  'action-endpoint': checkActionEndpoint,
+  'crud-flags': checkCrudFlags,
+  'default-value-type': checkDefaultValueType,
 };
 
 /**

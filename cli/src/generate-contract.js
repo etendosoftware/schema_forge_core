@@ -25,9 +25,21 @@ function isSystem(field) {
 }
 
 /**
- * Generate frontend contract: visible fields, searchable fields, computed fields.
+ * Find a matching rule for a given identifier and type (callout, displayLogic, readOnlyLogic).
  */
-export function generateFrontendContract(schema) {
+function findMatchingRule(rules, identifier, type) {
+  if (!rules || !rules.length || !identifier) return null;
+  return rules.find(r => {
+    if (r.type !== type) return false;
+    return r.className === identifier || r.name === identifier;
+  }) ?? null;
+}
+
+/**
+ * Generate frontend contract: visible fields, searchable fields, computed fields.
+ * Includes behavioral metadata (callout, displayLogic, readOnlyLogic) when present.
+ */
+export function generateFrontendContract(schema, rules = []) {
   const entities = {};
 
   for (const entity of schema.entities) {
@@ -47,6 +59,54 @@ export function generateFrontendContract(schema) {
       if (f.reference) mapped.reference = f.reference;
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
+
+      // UI hints
+      if (f.defaultValue) mapped.defaultValue = f.defaultValue;
+      if (f.isIdentifier) mapped.isIdentifier = true;
+      if (f.help) mapped.help = f.help;
+      if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
+      if (f.isSelectionColumn) mapped.isSelectionColumn = true;
+      if (f.isFilterable) mapped.isFilterable = true;
+      if (f.precision) mapped.precision = f.precision;
+      if (f.isTranslated) mapped.isTranslated = true;
+
+      // Behavioral metadata: callout
+      if (f.callout) {
+        mapped.callout = { className: f.callout };
+        const matchingRule = findMatchingRule(rules, f.callout, 'callout');
+        if (matchingRule) {
+          if (matchingRule.effects && matchingRule.effects.length) {
+            mapped.callout.effects = matchingRule.effects.map(e => e.field ?? e);
+          }
+          if (matchingRule.complexity) {
+            mapped.callout.complexity = matchingRule.complexity;
+          }
+        }
+      }
+
+      // Behavioral metadata: onChangeFunction
+      if (f.onChangeFunction) {
+        mapped.onChangeFunction = { name: f.onChangeFunction };
+      }
+
+      // Behavioral metadata: displayLogic
+      if (f.displayLogic) {
+        mapped.displayLogic = { raw: f.displayLogic };
+        const matchingRule = findMatchingRule(rules, f.displayLogic, 'displayLogic');
+        if (matchingRule && matchingRule.translated) {
+          mapped.displayLogic.js = matchingRule.translated;
+        }
+      }
+
+      // Behavioral metadata: readOnlyLogic
+      if (f.readOnlyLogic) {
+        mapped.readOnlyLogic = { raw: f.readOnlyLogic };
+        const matchingRule = findMatchingRule(rules, f.readOnlyLogic, 'readOnlyLogic');
+        if (matchingRule && matchingRule.translated) {
+          mapped.readOnlyLogic.js = matchingRule.translated;
+        }
+      }
+
       return mapped;
     });
 
@@ -165,6 +225,48 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       runner: 'node',
       description: `Entity '${entityName}' should only expose visible fields in frontend`,
     });
+
+    // displayLogic validity: one per field with displayLogic
+    for (const field of visibleFields) {
+      if (field.displayLogic) {
+        tests.push({
+          id: nextId(),
+          category: 'displaylogic-valid',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Display logic for '${field.name}' in ${entityName} should be valid JS`,
+        });
+      }
+    }
+
+    // readOnlyLogic validity: one per field with readOnlyLogic
+    for (const field of visibleFields) {
+      if (field.readOnlyLogic) {
+        tests.push({
+          id: nextId(),
+          category: 'readonlylogic-valid',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Read-only logic for '${field.name}' in ${entityName} should be valid JS`,
+        });
+      }
+    }
+
+    // defaultValue type: one per field with defaultValue
+    for (const field of visibleFields) {
+      if (field.defaultValue !== undefined) {
+        tests.push({
+          id: nextId(),
+          category: 'default-value-type',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Default value for '${field.name}' in ${entityName} should be a string`,
+        });
+      }
+    }
   }
 
   // system-field tests from backend fields not in frontend
@@ -266,14 +368,145 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 }
 
 /**
+ * Convert a window display name to kebab-case spec name.
+ * "Sales Order" -> "sales-order", "Business Partner" -> "business-partner"
+ */
+function toSpecName(windowName) {
+  return windowName
+    .trim()
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+}
+
+/**
+ * Generate API prediction: predicts NEO Headless URLs, selectors, actions, and query params.
+ */
+export function generateApiPrediction(schema, frontendContract, backendContract) {
+  const specName = toSpecName(schema.window.name);
+  const baseUrl = `/sws/neo/${specName}`;
+
+  const crud = {};
+  const selectors = [];
+  const actions = [];
+
+  for (const entity of schema.entities) {
+    const entityName = entity.name;
+    const feEntity = frontendContract.entities[entityName];
+
+    // CRUD — NEO Headless enables all methods by default via PopulateSpec
+    crud[entityName] = {
+      get: true,
+      getById: true,
+      post: true,
+      put: true,
+      patch: true,
+      delete: true,
+      listUrl: `${baseUrl}/${entityName}`,
+      detailUrl: `${baseUrl}/${entityName}/{id}`,
+      supportedFilters: feEntity ? feEntity.searchableFields : [],
+    };
+
+    // Selectors — FK fields that are visible (editable or readOnly)
+    if (feEntity) {
+      for (const field of feEntity.fields) {
+        if (field.type === 'foreignKey') {
+          selectors.push({
+            entity: entityName,
+            field: field.name,
+            column: field.column,
+            reference: field.reference,
+            url: `${baseUrl}/${entityName}/selectors/${field.name}`,
+          });
+        }
+      }
+    }
+
+    // Actions — fields with type "button" (AD_Reference_ID = 28)
+    for (const field of entity.fields) {
+      if (field.type === 'button') {
+        actions.push({
+          entity: entityName,
+          field: field.name,
+          column: field.column,
+          url: `${baseUrl}/${entityName}/{id}/action/${field.name}`,
+        });
+      }
+    }
+  }
+
+  return {
+    specName,
+    baseUrl,
+    crud,
+    selectors,
+    actions,
+    queryParams: {
+      pagination: { startRow: '_startRow', endRow: '_endRow', default: '0-100' },
+      sorting: { param: '_sortBy', example: `_sortBy=${specName}Date` },
+      filtering: 'Use field name as query param: ?fieldName=value',
+      parentFilter: 'parentId={id} for child entities',
+    },
+  };
+}
+
+/**
  * Main orchestrator: generates the full contract object.
  */
 export function generateContract(schema, rules = [], processes = []) {
-  const frontendContract = generateFrontendContract(schema);
+  const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
+  const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
 
-  const contractData = { frontendContract, backendContract, testManifest };
+  // Append apiPrediction-based tests to testManifest
+  for (const [entityName, crud] of Object.entries(apiPrediction.crud)) {
+    testManifest.tests.push({
+      id: `t-${testManifest.tests.length + 1}`,
+      category: 'crud-flags',
+      entity: entityName,
+      runner: 'node',
+      description: `CRUD flags for '${entityName}' should all be booleans`,
+    });
+  }
+
+  for (const sel of apiPrediction.selectors) {
+    testManifest.tests.push({
+      id: `t-${testManifest.tests.length + 1}`,
+      category: 'selector-endpoint',
+      entity: sel.entity,
+      field: sel.field,
+      runner: 'node',
+      description: `Selector endpoint for '${sel.field}' in ${sel.entity} should exist`,
+    });
+  }
+
+  for (const action of apiPrediction.actions) {
+    testManifest.tests.push({
+      id: `t-${testManifest.tests.length + 1}`,
+      category: 'action-endpoint',
+      entity: action.entity,
+      field: action.field,
+      runner: 'node',
+      description: `Action endpoint for '${action.field}' in ${action.entity} should exist`,
+    });
+  }
+
+  // Update summary counts after adding apiPrediction tests
+  const updatedByCategory = {};
+  const updatedByRunner = { node: 0, junit: 0 };
+  for (const t of testManifest.tests) {
+    updatedByCategory[t.category] = (updatedByCategory[t.category] ?? 0) + 1;
+    updatedByRunner[t.runner] = (updatedByRunner[t.runner] ?? 0) + 1;
+  }
+  testManifest.summary = {
+    total: testManifest.tests.length,
+    byCategory: updatedByCategory,
+    byRunner: updatedByRunner,
+  };
+
+  const contractData = { frontendContract, backendContract, apiPrediction, testManifest };
   const checksum = createHash('sha256')
     .update(JSON.stringify(contractData))
     .digest('hex')

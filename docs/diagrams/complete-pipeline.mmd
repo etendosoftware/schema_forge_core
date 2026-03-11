@@ -1,0 +1,145 @@
+flowchart TD
+    subgraph EtendoDB["Etendo PostgreSQL Database"]
+        AD["AD Metadata<br/>(Windows, Tabs, Columns,<br/>Processes, References)"]
+    end
+
+    subgraph Extraction["1. EXTRACTION (CLI — Node.js)"]
+        EXT["extract-from-db.js<br/>extract-fields.js<br/>extract-rules.js"]
+        RAW_S["schema-raw.json<br/>(all fields, FK refs, callouts)"]
+        RAW_R["rules-raw.json<br/>(all business rules)"]
+    end
+
+    subgraph PreClassify["2. PRE-CLASSIFICATION (CLI + AI)"]
+        PC["pre-classify.js"]
+        CLASS_R["rules-classified.json<br/>(~60% auto-classified)"]
+    end
+
+    subgraph Curation["3. CURATION (Human + Decision UI)"]
+        DP["Decision Panel<br/>(React — port 5174)"]
+        CUR_S["schema-curated.json<br/>(visibility decided)"]
+        CUR_R["rules-curated.json<br/>(disposition decided)"]
+    end
+
+    subgraph Validation["4. VALIDATION (CLI)"]
+        VAL["validate-schema.js<br/>4 levels: structural,<br/>semantic, visibility,<br/>cross-reference"]
+    end
+
+    subgraph ContractGen["5. CONTRACT GENERATION (CLI)"]
+        GC["generate-contract.js"]
+        CONTRACT["contract.json<br/>(single source of truth)"]
+    end
+
+    subgraph BackendConfig["6. BACKEND CONFIGURATION"]
+        PTN["push-to-neo.js"]
+        WH["4 Webhooks<br/>(SFUpsertSpec, SFUpsertEntity,<br/>SFUpsertField, SFPopulateSpec)"]
+        TABLES["ETGO_SF_SPEC<br/>ETGO_SF_ENTITY<br/>ETGO_SF_FIELD"]
+    end
+
+    subgraph FrontendGen["7. FRONTEND GENERATION (CLI)"]
+        GF["generate-frontend.js"]
+        GM["generate-mock-data.js"]
+        REACT["React SPA components"]
+        MOCK["mockData.js<br/>mockCatalogs.js"]
+    end
+
+    subgraph TodoTranslation["8b. TODO TRANSLATION (AI-assisted)"]
+        TT["translate-todos.js<br/>(interactive, AI-assisted)"]
+        TT_OUT["React components with<br/>translated callout/onchange logic"]
+    end
+
+    subgraph Runtime["8. RUNTIME (NEO Headless — Java)"]
+        NEO["NeoServlet<br/>/sws/neo/*"]
+        AUTH["JWT Authentication"]
+        RESOLVE["Spec + Entity Resolution"]
+        FILTER["NeoFieldFilter<br/>(CRUD field filtering)"]
+        HANDLER["NeoHandler CDI Hook<br/>(optional custom logic)"]
+        DS["DefaultJsonDataService<br/>(Etendo CRUD fallback)"]
+        SEL["NeoSelectorService<br/>(FK dropdowns)"]
+        PROC["NeoProcessService<br/>(process execution)"]
+    end
+
+    subgraph Testing["TESTING"]
+        CT["Contract Tests<br/>(Node.js — instant)"]
+        IT["Integration Tests<br/>(JUnit + OBBaseTest<br/>in Etendo Go)"]
+    end
+
+    subgraph Client["API Consumer"]
+        APP["React SPA / Mobile App / External Client"]
+    end
+
+    %% Extraction
+    AD -->|SQL queries| EXT
+    EXT --> RAW_S
+    EXT --> RAW_R
+
+    %% Pre-classification
+    RAW_R --> PC
+    PC --> CLASS_R
+
+    %% Curation
+    RAW_S --> DP
+    CLASS_R --> DP
+    DP --> CUR_S
+    DP --> CUR_R
+
+    %% Validation
+    CUR_S --> VAL
+    VAL -->|fail| DP
+    VAL -->|pass| GC
+
+    %% Contract generation (single source of truth)
+    CUR_R --> GC
+    GC --> CONTRACT
+
+    %% Backend: contract → push-to-neo → webhooks → NEO Headless
+    CONTRACT -->|"visibility, apiPrediction"| PTN
+    PTN --> WH
+    WH -->|idempotent HTTP| TABLES
+
+    %% Frontend: contract → React SPA + mock data
+    CONTRACT -->|"types, inputMode, callouts,<br/>displayLogic, apiPrediction"| GF
+    CONTRACT --> GM
+    GF --> REACT
+    GM --> MOCK
+
+    %% Runtime
+    TABLES --> NEO
+    NEO --> AUTH
+    AUTH --> RESOLVE
+    RESOLVE --> FILTER
+    FILTER --> HANDLER
+    HANDLER -->|custom response| APP
+    HANDLER -->|null = fallthrough| DS
+    DS --> APP
+    RESOLVE --> SEL
+    RESOLVE --> PROC
+    SEL --> APP
+    PROC --> APP
+
+    %% TODO Translation (between frontend generation and testing)
+    REACT --> TT
+    TT --> TT_OUT
+
+    %% Testing
+    CONTRACT --> CT
+
+    %% Styling
+    classDef db fill:#4a90d9,stroke:#2c5f8a,color:white
+    classDef cli fill:#f5a623,stroke:#c47d0e,color:white
+    classDef human fill:#7ed321,stroke:#5a9a18,color:white
+    classDef webhook fill:#d0021b,stroke:#a00216,color:white
+    classDef runtime fill:#9013fe,stroke:#6b0ebf,color:white
+    classDef artifact fill:#e8e8e8,stroke:#999,color:#333
+    classDef test fill:#50e3c2,stroke:#2db89e,color:white
+    classDef client fill:#bd10e0,stroke:#8a0ca5,color:white
+
+    class AD db
+    class EXT,PC,VAL cli
+    class DP human
+    class WH webhook
+    class NEO,AUTH,RESOLVE,FILTER,HANDLER,DS,SEL,PROC runtime
+    class RAW_S,RAW_R,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,MOCK artifact
+    class CT,IT test
+    class APP client
+    class GC,PTN,GF,GM,TT cli
+    class TT_OUT artifact

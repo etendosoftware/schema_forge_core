@@ -1,5 +1,12 @@
 # Documentation Index
 
+## Architecture
+
+| File | Description |
+|------|-------------|
+| [architecture-overview.md](architecture-overview.md) | System architecture: Schema Forge (tooling) + Etendo Go (runtime), data flow, component inventory |
+| [NEO Headless API Reference](../modules/com.etendoerp.go/docs/neo-headless.md) | Full API reference for the runtime module (NeoServlet, selectors, processes, webhooks) |
+
 ## Design Specs
 
 | File | Description |
@@ -8,6 +15,7 @@
 | [PRD-anex.md](PRD-anex.md) | API versioning model (conceptual) |
 | [TDD.md](TDD.md) | Technical design, data models, validation rules, generator specs |
 | [TDD-anex.md](TDD-anex.md) | API versioning implementation details |
+| [conventions.md](conventions.md) | Edge case conventions (13 rules for extraction, validation, DB access) |
 
 ## Etendo AD Reference
 

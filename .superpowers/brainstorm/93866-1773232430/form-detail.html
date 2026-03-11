@@ -1,0 +1,127 @@
+<h2>Form Page: layout del detalle</h2>
+<p class="subtitle">Ya elegiste Full Page + Clean Table. Ahora: como se ve la pagina de un registro individual?</p>
+
+<div class="cards">
+
+  <!-- OPTION A: Compact header + tabs -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">A &mdash; HEADER COMPACTO + TABS</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:white;min-height:220px;">
+        <!-- Breadcrumb bar -->
+        <div style="padding:6px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;font-size:10px;">
+          <span style="color:#2563eb;cursor:pointer;">&larr; Presupuestos</span>
+          <span style="flex:1;"></span>
+          <span style="font-size:9px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">&#x25C0; Ant</span>
+          <span style="font-size:9px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">Sig &#x25B6;</span>
+        </div>
+        <!-- Header: title + status + summary inline -->
+        <div style="padding:10px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:14px;font-weight:700;color:#1e293b;">QUO-002</span>
+          <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:500;">Draft</span>
+          <span style="flex:1;"></span>
+          <span style="font-size:10px;color:#64748b;">Beta LLC</span>
+          <span style="font-size:10px;color:#94a3b8;">&middot;</span>
+          <span style="font-size:10px;color:#64748b;font-variant-numeric:tabular-nums;font-weight:500;">12,800 USD</span>
+          <span style="font-size:10px;color:#94a3b8;">&middot;</span>
+          <span style="font-size:10px;color:#64748b;">10 Mar 2026</span>
+          <div style="display:flex;gap:4px;margin-left:8px;">
+            <span style="font-size:9px;padding:3px 10px;background:#2563eb;color:white;border-radius:4px;cursor:pointer;">Guardar</span>
+          </div>
+        </div>
+        <!-- Tabs -->
+        <div style="display:flex;gap:0;border-bottom:2px solid #f1f5f9;padding:0 14px;">
+          <span style="font-size:10px;padding:8px 12px;color:#2563eb;font-weight:500;border-bottom:2px solid #2563eb;margin-bottom:-2px;">General</span>
+          <span style="font-size:10px;padding:8px 12px;color:#94a3b8;cursor:pointer;">Lineas <span style="background:#f1f5f9;padding:0 4px;border-radius:8px;font-size:8px;">3</span></span>
+          <span style="font-size:10px;padding:8px 12px;color:#94a3b8;cursor:pointer;">Notas</span>
+        </div>
+        <!-- Tab content: General (form) -->
+        <div style="padding:12px 14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Cliente</div><div style="height:26px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 6px;font-size:10px;display:flex;align-items:center;">Beta LLC</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Direccion</div><div style="height:26px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 6px;font-size:10px;display:flex;align-items:center;">Av. Libertador 1234</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Fecha pedido</div><div style="height:26px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 6px;font-size:10px;display:flex;align-items:center;">2026-03-10</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Valido hasta</div><div style="height:26px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 6px;font-size:10px;display:flex;align-items:center;">2026-04-10</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Tarifa</div><div style="height:26px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 6px;font-size:10px;display:flex;align-items:center;">General</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Plazo de pago</div><div style="height:26px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 6px;font-size:10px;display:flex;align-items:center;">30 dias</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Header Compacto + Tabs</h3>
+      <p>Todo en una linea: titulo, status, resumen, acciones. Tabs separan form de lineas. Limpio pero requiere cambiar de tab para ver lineas.</p>
+    </div>
+  </div>
+
+  <!-- OPTION B: Single scroll page -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">B &mdash; SINGLE SCROLL</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:white;min-height:220px;">
+        <!-- Breadcrumb -->
+        <div style="padding:6px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;font-size:10px;position:sticky;top:0;background:white;z-index:1;">
+          <span style="color:#2563eb;cursor:pointer;">&larr; Presupuestos</span>
+          <span style="flex:1;"></span>
+          <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:9px;">Draft</span>
+          <span style="font-size:9px;padding:3px 10px;background:#2563eb;color:white;border-radius:4px;cursor:pointer;">Guardar</span>
+          <span style="font-size:9px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">&#x25C0;</span>
+          <span style="font-size:9px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">&#x25B6;</span>
+        </div>
+        <!-- Title area -->
+        <div style="padding:10px 14px 0;">
+          <div style="font-size:15px;font-weight:700;color:#1e293b;">QUO-002 &middot; Beta LLC</div>
+          <div style="font-size:10px;color:#64748b;margin-top:2px;display:flex;gap:8px;">
+            <span>Total: <b>12,800 USD</b></span>
+            <span>&middot;</span>
+            <span>10 Mar 2026</span>
+          </div>
+        </div>
+        <!-- Form section -->
+        <div style="padding:10px 14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:1px;">Cliente</div><div style="height:24px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 5px;font-size:9px;display:flex;align-items:center;">Beta LLC</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:1px;">Direccion</div><div style="height:24px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 5px;font-size:9px;display:flex;align-items:center;">Av. Libertador 1234</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:1px;">Fecha</div><div style="height:24px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 5px;font-size:9px;display:flex;align-items:center;">2026-03-10</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:1px;">Valido hasta</div><div style="height:24px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 5px;font-size:9px;display:flex;align-items:center;">2026-04-10</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:1px;">Tarifa</div><div style="height:24px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 5px;font-size:9px;display:flex;align-items:center;">General</div></div>
+            <div><div style="font-size:8px;color:#94a3b8;margin-bottom:1px;">Plazo de pago</div><div style="height:24px;border:1px solid #cbd5e1;border-radius:4px;background:white;padding:0 5px;font-size:9px;display:flex;align-items:center;">30 dias</div></div>
+          </div>
+        </div>
+        <!-- Lines section -->
+        <div style="padding:0 14px 10px;">
+          <div style="border-top:1px solid #f1f5f9;padding-top:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:9px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Lineas</span>
+              <span style="font-size:8px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">+ Agregar</span>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:40px 2fr 60px 70px 70px 70px;gap:0;padding:4px 8px;font-size:8px;color:#94a3b8;background:#fafbfc;font-weight:500;text-transform:uppercase;">
+                <span>#</span><span>Producto</span><span>Cant.</span><span>Precio</span><span>Desc.</span><span style="text-align:right;">Subtotal</span>
+              </div>
+              <div style="display:grid;grid-template-columns:40px 2fr 60px 70px 70px 70px;gap:0;padding:5px 8px;font-size:9px;color:#334155;border-top:1px solid #f1f5f9;">
+                <span style="color:#94a3b8;">10</span><span>Laptop Pro 15"</span><span>5</span><span style="font-variant-numeric:tabular-nums;">2,400</span><span>0%</span><span style="text-align:right;font-weight:500;font-variant-numeric:tabular-nums;">12,000</span>
+              </div>
+              <div style="display:grid;grid-template-columns:40px 2fr 60px 70px 70px 70px;gap:0;padding:5px 8px;font-size:9px;color:#334155;border-top:1px solid #f8fafc;">
+                <span style="color:#94a3b8;">20</span><span>Mouse Wireless</span><span>10</span><span style="font-variant-numeric:tabular-nums;">80</span><span>0%</span><span style="text-align:right;font-weight:500;font-variant-numeric:tabular-nums;">800</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Single Scroll</h3>
+      <p>Todo en una pagina: breadcrumb sticky, titulo, form, lineas debajo. Sin tabs. Scroll natural. Todo visible a la vez. El patron mas simple posible.</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+  <div style="font-size:13px;font-weight:600;color:#0c4a6e;margin-bottom:4px;">Mi recomendacion: B (Single Scroll)</div>
+  <div style="font-size:12px;color:#0369a1;">
+    "Sin necesidad de explicar" = sin tabs. Todo visible con scroll. El breadcrumb sticky asegura que siempre podes volver.
+    Los tabs agregan un click mas y ocultan informacion. Para formularios de ERP donde form + lineas van juntos, el scroll unico es el patron mas intuitivo.
+  </div>
+</div>

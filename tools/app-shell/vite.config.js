@@ -46,6 +46,14 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/sws': {
+        target: 'http://localhost:8080/etendo',
+        changeOrigin: true,
+      },
+      '/webhooks': {
+        target: 'http://localhost:8080/etendo',
+        changeOrigin: true,
+      },
     },
   },
 });

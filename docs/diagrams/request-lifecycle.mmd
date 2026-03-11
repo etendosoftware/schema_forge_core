@@ -1,0 +1,41 @@
+sequenceDiagram
+    participant C as Client
+    participant N as NeoServlet
+    participant A as JWT Auth
+    participant S as ETGO_SF_* Tables
+    participant F as NeoFieldFilter
+    participant H as NeoHandler (CDI)
+    participant D as DataSourceServlet
+
+    C->>N: HTTP Request /sws/neo/{spec}/{entity}
+    N->>A: Validate token
+    A-->>N: User context
+
+    N->>S: Lookup ETGO_SF_SPEC + ENTITY
+    S-->>N: Spec config + entity config
+
+    N->>F: Build filter from ETGO_SF_FIELD
+
+    alt POST / PUT / PATCH (Write)
+        F->>F: Strip non-included & read-only fields from request body
+    end
+
+    alt CDI Hook configured
+        N->>H: handle(NeoContext)
+        alt Hook returns response
+            H-->>N: NeoResponse
+        else Hook returns null
+            H-->>N: null (fallthrough)
+            N->>D: Forward to DataSourceServlet
+            D-->>N: JSON response
+        end
+    else No hook
+        N->>D: Forward to DataSourceServlet
+        D-->>N: JSON response
+    end
+
+    alt GET (Read)
+        F->>F: Strip non-included fields from response
+    end
+
+    N-->>C: Filtered JSON response

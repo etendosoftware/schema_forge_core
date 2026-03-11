@@ -76,7 +76,8 @@ export function generateTableComponent(entityName, contract) {
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
+    const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -114,12 +115,39 @@ export function generateFormComponent(entityName, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    // UI hints
+    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'")}'` : '';
+    const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
+    const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
+    const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
+    // Behavioral metadata: displayLogic and readOnlyLogic
+    const displayLogicPart = f.displayLogic?.js
+      ? `, displayLogic: (record) => ${f.displayLogic.js}`
+      : '';
+    const readOnlyLogicPart = f.readOnlyLogic?.js
+      ? `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`
+      : '';
+    // TODO comments for callout and onChangeFunction behavioral hints
+    const todoLines = [];
+    if (f.callout) {
+      todoLines.push(`  // TODO: Translate callout logic: ${f.callout.className}`);
+    }
+    if (f.onChangeFunction) {
+      todoLines.push(`  // TODO: Translate onchangefunction logic: ${f.onChangeFunction.name}`);
+    }
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    return [...todoLines, fieldLine].join('\n');
   }).join('\n');
+
+  // Generate field groups comment if any fields have fieldGroup
+  const uniqueGroups = [...new Set(formFields.map(f => f.fieldGroup).filter(Boolean))];
+  const fieldGroupsComment = uniqueGroups.length > 0
+    ? `// Field groups: ${uniqueGroups.join(', ')}\n`
+    : '';
 
   return `import { EntityForm } from '@/components/contract-ui';
 
-const fields = [
+${fieldGroupsComment}const fields = [
 ${fieldsArray}
 ];
 
@@ -189,7 +217,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  return `import { ListView, DetailView } from '@/components/contract-ui';
+  // API prediction config
+  const apiPrediction = contract.apiPrediction;
+  const apiBlock = apiPrediction
+    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    : '';
+  const apiProp = apiPrediction ? '\n      api={api}' : '';
+
+  return `import { MasterDetailPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
@@ -213,34 +248,22 @@ ${entryArray}
 ${derivedArray}
   ],
 };
-
-export default function ${compName}({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="${headerEntity}"
-        detailEntity="${detailEntity}"
-        Form={${headerName}Form}
-        DetailTable={${detailName}Table}
-        summary={summary}
-        statusField={statusField}
-        processes={processes}
-        addLineFields={addLineFields}
-        catalogs={catalogs}
-        entityLabel="${toLabel(headerEntity)}"
-        detailLabel="${toLabel(detailEntity)}"
-        windowName={windowName}
-        recordId={recordId}
-        {...props}
-      />
-    );
-  }
+${apiBlock}
+export default function ${compName}(props) {
   return (
-    <ListView
+    <MasterDetailPage
       entity="${headerEntity}"
+      detailEntity="${detailEntity}"
       Table={${headerName}Table}
+      Form={${headerName}Form}
+      DetailTable={${detailName}Table}
+      summary={summary}
+      statusField={statusField}
+      processes={processes}
+      addLineFields={addLineFields}
+      catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
-      windowName={windowName}
+      detailLabel="${toLabel(detailEntity)}"${apiProp}
       {...props}
     />
   );
@@ -256,47 +279,44 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const category = contract?.frontendContract?.window?.category ?? 'general';
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
+  const apiPrediction = contract?.apiPrediction;
 
   if (detailEntity) {
+    const apiBlock = apiPrediction
+      ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+      : '';
+    const apiProp = apiPrediction ? ' api={api}' : '';
     return `import ${headerName}Page from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-
-export default function App({ token, apiBaseUrl, window, windowName, recordId }) {
-  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} windowName={windowName} recordId={recordId} />;
+${apiBlock}
+export default function App({ token, apiBaseUrl, window }) {
+  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} />;
 }
 `;
   }
 
-  return `import { ListView, DetailView } from '@/components/contract-ui';
+  const apiBlock = apiPrediction
+    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    : '';
+  const apiProp = apiPrediction ? '\n      api={api}' : '';
+
+  return `import { SingleEntityPage } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import catalogs from './mockCatalogs';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-
-export default function App({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="${headerEntity}"
-        Form={${headerName}Form}
-        catalogs={catalogs}
-        entityLabel="${toLabel(headerEntity)}"
-        window={windowMeta}
-        windowName={windowName}
-        recordId={recordId}
-        {...props}
-      />
-    );
-  }
+${apiBlock}
+export default function App(props) {
   return (
-    <ListView
+    <SingleEntityPage
       entity="${headerEntity}"
       Table={${headerName}Table}
+      Form={${headerName}Form}
+      catalogs={catalogs}
       entityLabel="${toLabel(headerEntity)}"
-      window={windowMeta}
-      windowName={windowName}
+      window={windowMeta}${apiProp}
       {...props}
     />
   );

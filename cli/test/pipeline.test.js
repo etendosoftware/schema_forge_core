@@ -67,9 +67,9 @@ describe('buildPipelineSteps', () => {
     assert.equal(humanStep.interactive, true);
   });
 
-  it('returns exactly 9 steps', () => {
+  it('returns exactly 10 steps', () => {
     const steps = buildPipelineSteps();
-    assert.equal(steps.length, 9);
+    assert.equal(steps.length, 10);
   });
 
   it('includes generate-frontend step with phase F8', () => {
@@ -114,11 +114,13 @@ describe('buildPipelineSteps', () => {
     assert.notEqual(lastStep.interactive, true, 'Last step should not be interactive');
   });
 
-  it('only human-decisions step is marked interactive', () => {
+  it('human-decisions and translate-todos steps are marked interactive', () => {
     const steps = buildPipelineSteps();
     const interactiveSteps = steps.filter(s => s.interactive === true);
-    assert.equal(interactiveSteps.length, 1, `Expected exactly 1 interactive step, found ${interactiveSteps.length}`);
-    assert.equal(interactiveSteps[0].name, 'human-decisions');
+    assert.equal(interactiveSteps.length, 2, `Expected exactly 2 interactive steps, found ${interactiveSteps.length}`);
+    const names = interactiveSteps.map(s => s.name);
+    assert.ok(names.includes('human-decisions'), 'human-decisions should be interactive');
+    assert.ok(names.includes('translate-todos'), 'translate-todos should be interactive');
   });
 });
 
