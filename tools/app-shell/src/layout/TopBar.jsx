@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator.jsx';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
+import { useMenuLabel } from '@/i18n';
 import { findActiveGroup } from './Sidebar.jsx';
 
 export default function TopBar({ menuGroups }) {
@@ -23,6 +24,7 @@ export default function TopBar({ menuGroups }) {
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
   const currentPath = location.pathname.replace(/^\//, '');
   const sectionColor = getSectionColor(activeGroup?.group);
+  const tMenu = useMenuLabel();
 
   // First item in the group is the "overview" page
   const overviewItem = activeGroup?.items[0];
@@ -39,7 +41,7 @@ export default function TopBar({ menuGroups }) {
       <div className="flex min-w-0 flex-1 items-center gap-2 px-4">
         {activeGroup && (
           <>
-            <span className="shrink-0 text-sm font-bold">{activeGroup.group}</span>
+            <span className="shrink-0 text-sm font-bold">{tMenu(activeGroup.group)}</span>
             <Separator orientation="vertical" className="mx-1 h-4" />
 
             {/* Overview badge */}
@@ -54,7 +56,7 @@ export default function TopBar({ menuGroups }) {
                       : 'bg-transparent hover:bg-muted'
                   )}
                 >
-                  Overview
+                  {tMenu('Overview')}
                 </Badge>
               </NavLink>
             )}
@@ -79,7 +81,7 @@ export default function TopBar({ menuGroups }) {
                     )}
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
-                    <span>{item.label}</span>
+                    <span>{tMenu(item.label)}</span>
                     <Plus className="h-3 w-3 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
                     {/* Active indicator */}
                     {isTabActive && (
