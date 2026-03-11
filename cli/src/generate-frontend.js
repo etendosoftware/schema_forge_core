@@ -303,8 +303,8 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
-export default function App({ token, apiBaseUrl, window }) {
-  return <${headerName}Page token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} />;
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
 }
 `;
   }

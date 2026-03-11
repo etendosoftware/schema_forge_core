@@ -2,6 +2,6 @@ import BankReconciliationPage from './BankReconciliationPage';
 
 const windowMeta = { category: 'accounting', name: 'Bank Reconciliation' };
 
-export default function App({ token, apiBaseUrl, window }) {
-  return <BankReconciliationPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <BankReconciliationPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
 }
