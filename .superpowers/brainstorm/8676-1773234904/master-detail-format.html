@@ -1,0 +1,202 @@
+<h2>Master-Detail: formato de cabecera + lineas</h2>
+<p class="subtitle">Ya tenemos full-page + single-scroll. Ahora: como organizar los campos de cabecera y las lineas. Click en la que te guste.</p>
+
+<div class="cards">
+
+  <!-- OPTION A: Grouped sections -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">A &mdash; SECCIONES AGRUPADAS</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:white;min-height:280px;">
+        <!-- Breadcrumb -->
+        <div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;font-size:10px;">
+          <span style="color:#2563eb;">&larr; Pedidos</span>
+          <span style="flex:1;"></span>
+          <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:8px;">Draft</span>
+          <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">Guardar</span>
+        </div>
+        <!-- Title -->
+        <div style="padding:8px 12px 0;">
+          <div style="font-size:14px;font-weight:700;color:#1e293b;">ORD-002 &middot; Beta LLC</div>
+          <div style="font-size:9px;color:#64748b;margin-top:1px;">Total: 12,800 USD</div>
+        </div>
+        <!-- Grouped: Partner -->
+        <div style="padding:8px 12px 0;">
+          <div style="font-size:8px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;margin-bottom:4px;">Tercero</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+            <div><div style="font-size:7px;color:#94a3b8;">Cliente</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">Beta LLC</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Direccion</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">Av. Libertador 1234</div></div>
+          </div>
+        </div>
+        <!-- Grouped: Dates + Terms -->
+        <div style="padding:6px 12px 0;">
+          <div style="font-size:8px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;margin-bottom:4px;">Condiciones</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;">
+            <div><div style="font-size:7px;color:#94a3b8;">Fecha</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">10 Mar</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Entrega</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">20 Mar</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Tarifa</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">General</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Plazo</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">30 dias</div></div>
+          </div>
+        </div>
+        <!-- Lines -->
+        <div style="padding:8px 12px;">
+          <div style="font-size:8px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;margin-bottom:4px;display:flex;justify-content:space-between;">
+            <span>Lineas</span><span style="color:#2563eb;font-weight:400;cursor:pointer;">+ Agregar</span>
+          </div>
+          <div style="border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:30px 2fr 50px 60px 60px;padding:3px 6px;font-size:7px;color:#94a3b8;background:#fafbfc;">
+              <span>#</span><span>Producto</span><span>Cant</span><span>Precio</span><span style="text-align:right;">Total</span>
+            </div>
+            <div style="display:grid;grid-template-columns:30px 2fr 50px 60px 60px;padding:4px 6px;font-size:8px;color:#334155;border-top:1px solid #f1f5f9;">
+              <span style="color:#94a3b8;">10</span><span>Laptop Pro 15"</span><span>5</span><span>2,400</span><span style="text-align:right;font-weight:500;">12,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Secciones Agrupadas</h3>
+      <p>Campos agrupados por contexto: Tercero, Condiciones, Lineas. Cada grupo tiene titulo. Organizado pero requiere definir grupos por ventana.</p>
+    </div>
+  </div>
+
+  <!-- OPTION B: Compact header card + prominent lines -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">B &mdash; CARD COMPACTA + LINEAS PROMINENTES</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#f8fafc;min-height:280px;">
+        <!-- Breadcrumb -->
+        <div style="padding:6px 12px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;font-size:10px;background:white;">
+          <span style="color:#2563eb;">&larr; Pedidos</span>
+          <span style="flex:1;"></span>
+          <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:8px;">Draft</span>
+          <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">Guardar</span>
+        </div>
+        <!-- Header card -->
+        <div style="margin:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:6px;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#1e293b;">ORD-002</div>
+              <div style="font-size:9px;color:#64748b;margin-top:1px;">Beta LLC &middot; Av. Libertador 1234</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:14px;font-weight:700;color:#1e293b;font-variant-numeric:tabular-nums;">12,800 <span style="font-size:9px;color:#64748b;font-weight:400;">USD</span></div>
+              <div style="font-size:8px;color:#94a3b8;">10 Mar 2026</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;border-top:1px solid #f1f5f9;padding-top:6px;">
+            <div><div style="font-size:7px;color:#94a3b8;">Entrega</div><div style="font-size:9px;color:#334155;">20 Mar</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Tarifa</div><div style="font-size:9px;color:#334155;">General</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Plazo</div><div style="font-size:9px;color:#334155;">30 dias</div></div>
+            <div><div style="font-size:7px;color:#94a3b8;">Metodo pago</div><div style="font-size:9px;color:#334155;">Transferencia</div></div>
+          </div>
+          <div style="margin-top:6px;text-align:right;">
+            <span style="font-size:8px;color:#2563eb;cursor:pointer;">Editar campos &rarr;</span>
+          </div>
+        </div>
+        <!-- Lines (prominent, takes most space) -->
+        <div style="margin:0 12px 8px;background:white;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:9px;font-weight:600;color:#1e293b;">Lineas</span>
+            <span style="font-size:8px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">+ Agregar</span>
+          </div>
+          <div style="display:grid;grid-template-columns:30px 2fr 50px 60px 50px 60px;padding:3px 8px;font-size:7px;color:#94a3b8;background:#fafbfc;">
+            <span>#</span><span>Producto</span><span>Cant</span><span>Precio</span><span>Dto</span><span style="text-align:right;">Total</span>
+          </div>
+          <div style="display:grid;grid-template-columns:30px 2fr 50px 60px 50px 60px;padding:5px 8px;font-size:8px;color:#334155;border-top:1px solid #f1f5f9;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+            <span style="color:#94a3b8;">10</span><span>Laptop Pro 15"</span><span>5</span><span>2,400</span><span>0%</span><span style="text-align:right;font-weight:500;">12,000</span>
+          </div>
+          <div style="display:grid;grid-template-columns:30px 2fr 50px 60px 50px 60px;padding:5px 8px;font-size:8px;color:#334155;border-top:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+            <span style="color:#94a3b8;">20</span><span>Mouse Wireless</span><span>10</span><span>80</span><span>5%</span><span style="text-align:right;font-weight:500;">760</span>
+          </div>
+          <!-- Totals row -->
+          <div style="display:grid;grid-template-columns:30px 2fr 50px 60px 50px 60px;padding:6px 8px;font-size:8px;color:#1e293b;font-weight:600;border-top:2px solid #e2e8f0;background:#fafbfc;">
+            <span></span><span></span><span></span><span></span><span>Total</span><span style="text-align:right;font-variant-numeric:tabular-nums;">12,760</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Card Compacta + Lineas Prominentes</h3>
+      <p>Cabecera colapsada en una card resumen (read-only por default, "Editar" expande). Las lineas son el protagonista — ocupan la mayor parte del espacio. Ideal para documentos donde las lineas son lo importante.</p>
+    </div>
+  </div>
+
+  <!-- OPTION C: Two-column: fields left, lines right -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">C &mdash; DOS COLUMNAS: CAMPOS | LINEAS</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:white;min-height:280px;">
+        <!-- Breadcrumb -->
+        <div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;font-size:10px;">
+          <span style="color:#2563eb;">&larr; Pedidos</span>
+          <span style="flex:1;"></span>
+          <span style="font-size:13px;font-weight:700;color:#1e293b;">ORD-002</span>
+          <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:8px;">Draft</span>
+          <span style="font-size:8px;padding:2px 8px;background:#2563eb;color:white;border-radius:3px;">Guardar</span>
+        </div>
+        <!-- Two columns -->
+        <div style="display:flex;height:calc(100% - 34px);">
+          <!-- Left: fields -->
+          <div style="width:35%;border-right:1px solid #f1f5f9;padding:8px 10px;overflow:auto;">
+            <div style="font-size:8px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Cabecera</div>
+            <div style="display:grid;grid-template-columns:1fr;gap:4px;">
+              <div><div style="font-size:7px;color:#94a3b8;">Cliente</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">Beta LLC</div></div>
+              <div><div style="font-size:7px;color:#94a3b8;">Direccion</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">Av. Libertador 1234</div></div>
+              <div><div style="font-size:7px;color:#94a3b8;">Fecha</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">10 Mar 2026</div></div>
+              <div><div style="font-size:7px;color:#94a3b8;">Entrega</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">20 Mar 2026</div></div>
+              <div><div style="font-size:7px;color:#94a3b8;">Tarifa</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">General</div></div>
+              <div><div style="font-size:7px;color:#94a3b8;">Plazo de pago</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">30 dias</div></div>
+              <div><div style="font-size:7px;color:#94a3b8;">Metodo pago</div><div style="height:20px;border:1px solid #cbd5e1;border-radius:3px;padding:0 4px;font-size:9px;display:flex;align-items:center;">Transfer.</div></div>
+            </div>
+            <!-- Totals -->
+            <div style="margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;">
+              <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;"><span>Subtotal</span><span style="font-variant-numeric:tabular-nums;">12,760</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;margin-top:2px;"><span>IVA 21%</span><span style="font-variant-numeric:tabular-nums;">2,680</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#1e293b;margin-top:4px;padding-top:4px;border-top:1px solid #e2e8f0;"><span>Total</span><span style="font-variant-numeric:tabular-nums;">15,440 USD</span></div>
+            </div>
+          </div>
+          <!-- Right: lines -->
+          <div style="flex:1;padding:8px 10px;overflow:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:8px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Lineas</span>
+              <span style="font-size:8px;padding:2px 8px;border:1px solid #e2e8f0;border-radius:3px;color:#64748b;cursor:pointer;">+ Agregar</span>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:25px 2fr 45px 55px 40px 55px;padding:3px 6px;font-size:7px;color:#94a3b8;background:#fafbfc;">
+                <span>#</span><span>Producto</span><span>Cant</span><span>Precio</span><span>Dto</span><span style="text-align:right;">Total</span>
+              </div>
+              <div style="display:grid;grid-template-columns:25px 2fr 45px 55px 40px 55px;padding:4px 6px;font-size:8px;color:#334155;border-top:1px solid #f1f5f9;">
+                <span style="color:#94a3b8;">10</span><span>Laptop Pro 15"</span><span>5</span><span>2,400</span><span>0%</span><span style="text-align:right;font-weight:500;">12,000</span>
+              </div>
+              <div style="display:grid;grid-template-columns:25px 2fr 45px 55px 40px 55px;padding:4px 6px;font-size:8px;color:#334155;border-top:1px solid #f8fafc;">
+                <span style="color:#94a3b8;">20</span><span>Mouse Wireless</span><span>10</span><span>80</span><span>5%</span><span style="text-align:right;font-weight:500;">760</span>
+              </div>
+              <div style="display:grid;grid-template-columns:25px 2fr 45px 55px 40px 55px;padding:4px 6px;font-size:8px;color:#334155;border-top:1px solid #f8fafc;">
+                <span style="color:#94a3b8;">30</span><span>Cable USB-C</span><span>20</span><span>15</span><span>0%</span><span style="text-align:right;font-weight:500;">300</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Dos Columnas: Campos | Lineas</h3>
+      <p>Campos de cabecera en columna izquierda (1-col, con totales abajo). Lineas a la derecha, siempre visibles. Todo en pantalla sin scroll. Como una factura real.</p>
+      <div style="margin-top:8px;font-size:12px;">
+        <span style="color:#16a34a;">+ Factura real, todo visible, totales integrados</span><br>
+        <span style="color:#dc2626;">&minus; Vuelve al split-view (pero invertido y con mejor proporcion)</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+  <div style="font-size:13px;font-weight:600;color:#0c4a6e;margin-bottom:4px;">Mi recomendacion: B (Card Compacta + Lineas Prominentes)</div>
+  <div style="font-size:12px;color:#0369a1;">
+    En un pedido de venta, lo que mas importa son las lineas. La cabecera (cliente, tarifa, plazo) se configura una vez y rara vez se toca.
+    La card compacta muestra todo de un vistazo y se puede expandir para editar. Las lineas ocupan el 70% del espacio.
+    Es el patron de Shopify Orders, Stripe Invoices, y Xero.
+  </div>
+</div>

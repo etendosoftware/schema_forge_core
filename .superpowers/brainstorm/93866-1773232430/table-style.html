@@ -1,0 +1,165 @@
+<h2>Estilo de tabla: listado principal</h2>
+<p class="subtitle">La tabla es la primera cosa que ves al entrar a una seccion. Click en la que prefieras.</p>
+
+<div class="cards">
+
+  <!-- OPTION A: Clean minimal -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:8px;font-weight:600;letter-spacing:0.5px;">A &mdash; CLEAN MINIMAL</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:white;">
+        <!-- Toolbar -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:12px;font-weight:600;color:#1e293b;">Presupuestos</div>
+            <span style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:1px 6px;border-radius:8px;">4</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <div style="height:24px;width:160px;border:1px solid #e2e8f0;border-radius:4px;padding:0 6px;font-size:9px;color:#94a3b8;display:flex;align-items:center;gap:4px;">
+              <span style="font-size:11px;">&#x1F50D;</span> Buscar...
+            </div>
+            <div style="height:24px;padding:0 8px;background:#2563eb;color:white;border-radius:4px;font-size:9px;display:flex;align-items:center;">+ Nuevo</div>
+          </div>
+        </div>
+        <!-- Header -->
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:6px 14px;font-size:9px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f1f5f9;">
+          <span>N Doc</span><span>Cliente</span><span>Fecha</span><span style="text-align:right;">Total</span><span style="text-align:center;">Estado</span>
+        </div>
+        <!-- Rows -->
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:8px 14px;font-size:11px;color:#334155;border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+          <span style="font-weight:500;color:#2563eb;">QUO-001</span><span>Acme Corporation</span><span style="color:#64748b;">11 Mar 2026</span><span style="text-align:right;font-variant-numeric:tabular-nums;">24,500</span><span style="text-align:center;"><span style="background:#dcfce7;color:#166534;padding:1px 8px;border-radius:10px;font-size:9px;">Complete</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:8px 14px;font-size:11px;color:#334155;border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+          <span style="font-weight:500;color:#2563eb;">QUO-002</span><span>Beta LLC</span><span style="color:#64748b;">10 Mar 2026</span><span style="text-align:right;font-variant-numeric:tabular-nums;">12,800</span><span style="text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:1px 8px;border-radius:10px;font-size:9px;">Draft</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:8px 14px;font-size:11px;color:#334155;border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+          <span style="font-weight:500;color:#2563eb;">QUO-003</span><span>Gamma SA</span><span style="color:#64748b;">09 Mar 2026</span><span style="text-align:right;font-variant-numeric:tabular-nums;">8,200</span><span style="text-align:center;"><span style="background:#dcfce7;color:#166534;padding:1px 8px;border-radius:10px;font-size:9px;">Complete</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:8px 14px;font-size:11px;color:#334155;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+          <span style="font-weight:500;color:#2563eb;">QUO-004</span><span>Delta Industries</span><span style="color:#64748b;">08 Mar 2026</span><span style="text-align:right;font-variant-numeric:tabular-nums;">3,100</span><span style="text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:1px 8px;border-radius:10px;font-size:9px;">Void</span></span>
+        </div>
+        <!-- Footer -->
+        <div style="padding:8px 14px;font-size:10px;color:#94a3b8;border-top:1px solid #f1f5f9;">
+          4 registros
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Clean Minimal</h3>
+      <p>Search bar global, sin filtros por columna. Headers sutiles, hover suave. El doc number es link azul (clickeable). Minimo ruido visual.</p>
+    </div>
+  </div>
+
+  <!-- OPTION B: Filterable + Sortable -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:8px;font-weight:600;letter-spacing:0.5px;">B &mdash; FILTERABLE + SORTABLE</div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:white;">
+        <!-- Toolbar -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:12px;font-weight:600;color:#1e293b;">Presupuestos</div>
+            <span style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:1px 6px;border-radius:8px;">4</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div style="display:flex;gap:3px;">
+              <span style="font-size:9px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;color:#64748b;background:white;">Estado: Todos &#x25BE;</span>
+              <span style="font-size:9px;padding:3px 8px;border:1px solid #dbeafe;border-radius:4px;color:#2563eb;background:#eff6ff;">Draft &#x2715;</span>
+            </div>
+            <div style="height:24px;width:140px;border:1px solid #e2e8f0;border-radius:4px;padding:0 6px;font-size:9px;color:#94a3b8;display:flex;align-items:center;gap:4px;">
+              <span style="font-size:11px;">&#x1F50D;</span> Buscar...
+            </div>
+            <div style="height:24px;padding:0 8px;background:#2563eb;color:white;border-radius:4px;font-size:9px;display:flex;align-items:center;">+ Nuevo</div>
+          </div>
+        </div>
+        <!-- Header with sort indicators -->
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:6px 14px;font-size:9px;font-weight:500;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e2e8f0;background:#fafbfc;">
+          <span style="cursor:pointer;">N Doc &#x25B4;</span><span style="cursor:pointer;">Cliente</span><span style="cursor:pointer;">Fecha &#x25BE;</span><span style="text-align:right;cursor:pointer;">Total</span><span style="text-align:center;">Estado</span>
+        </div>
+        <!-- Rows (filtered: only draft) -->
+        <div style="display:grid;grid-template-columns:100px 1.5fr 1fr 80px 80px;gap:0;padding:8px 14px;font-size:11px;color:#334155;border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+          <span style="font-weight:500;color:#2563eb;">QUO-002</span><span>Beta LLC</span><span style="color:#64748b;">10 Mar 2026</span><span style="text-align:right;font-variant-numeric:tabular-nums;">12,800</span><span style="text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:1px 8px;border-radius:10px;font-size:9px;">Draft</span></span>
+        </div>
+        <!-- Empty hint -->
+        <div style="padding:20px 14px;text-align:center;color:#94a3b8;font-size:10px;">
+          Mostrando 1 de 4 registros &middot; <span style="color:#2563eb;cursor:pointer;">Limpiar filtros</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Filterable + Sortable</h3>
+      <p>Filter chips en toolbar (un click para activar), sort por columna. Mas potente que A pero sin ser pesado. Los filtros activos se ven como pills.</p>
+    </div>
+  </div>
+
+  <!-- OPTION C: Card List (no table) -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8fafc;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:8px;font-weight:600;letter-spacing:0.5px;">C &mdash; CARD LIST</div>
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+        <!-- Toolbar -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:12px;font-weight:600;color:#1e293b;">Presupuestos</div>
+            <span style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:1px 6px;border-radius:8px;">4</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <div style="height:24px;width:160px;border:1px solid #e2e8f0;border-radius:4px;padding:0 6px;font-size:9px;color:#94a3b8;display:flex;align-items:center;gap:4px;">
+              <span style="font-size:11px;">&#x1F50D;</span> Buscar...
+            </div>
+            <div style="height:24px;padding:0 8px;background:#2563eb;color:white;border-radius:4px;font-size:9px;display:flex;align-items:center;">+ Nuevo</div>
+          </div>
+        </div>
+        <!-- Card items -->
+        <div style="padding:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.borderColor='#2563eb';this.style.background='#fafbfe'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#1e293b;">QUO-001 &middot; Acme Corporation</div>
+              <div style="font-size:9px;color:#94a3b8;margin-top:2px;">11 Mar 2026</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;font-weight:600;color:#1e293b;font-variant-numeric:tabular-nums;">24,500 <span style="font-size:9px;font-weight:400;color:#94a3b8;">USD</span></span>
+              <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:9px;">Complete</span>
+              <span style="color:#cbd5e1;font-size:14px;">&#x203A;</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #2563eb;border-radius:6px;margin-bottom:4px;background:#fafbfe;cursor:pointer;">
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#1e293b;">QUO-002 &middot; Beta LLC</div>
+              <div style="font-size:9px;color:#94a3b8;margin-top:2px;">10 Mar 2026</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;font-weight:600;color:#1e293b;font-variant-numeric:tabular-nums;">12,800 <span style="font-size:9px;font-weight:400;color:#94a3b8;">USD</span></span>
+              <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:9px;">Draft</span>
+              <span style="color:#2563eb;font-size:14px;">&#x203A;</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;cursor:pointer;" onmouseover="this.style.borderColor='#2563eb';this.style.background='#fafbfe'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#1e293b;">QUO-003 &middot; Gamma SA</div>
+              <div style="font-size:9px;color:#94a3b8;margin-top:2px;">09 Mar 2026</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;font-weight:600;color:#1e293b;font-variant-numeric:tabular-nums;">8,200 <span style="font-size:9px;font-weight:400;color:#94a3b8;">USD</span></span>
+              <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:9px;">Complete</span>
+              <span style="color:#cbd5e1;font-size:14px;">&#x203A;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Card List</h3>
+      <p>Sin tabla. Cada registro es una card con la info clave. Hover marca el borde. Mas moderno y mobile-friendly, pero menos denso.</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+  <div style="font-size:13px;font-weight:600;color:#0c4a6e;margin-bottom:4px;">Mi recomendacion: A (Clean Minimal)</div>
+  <div style="font-size:12px;color:#0369a1;">
+    Para un ERP, la tabla es el formato natural: denso, scaneable, familiar. La version minimal con search global y sin filtros por columna es la mas limpia.
+    Los filter chips (B) se pueden agregar despues si el usuario lo pide. Cards (C) pierde densidad que en un ERP importa.
+  </div>
+</div>

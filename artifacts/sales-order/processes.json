@@ -1,0 +1,297 @@
+{
+  "version": "0.1.0",
+  "processes": [
+    {
+      "name": "completeOrder",
+      "displayName": "Complete Order",
+      "entity": "Order",
+      "trigger": {
+        "type": "action",
+        "endpoint": "/api/orders/{id}/complete",
+        "method": "POST"
+      },
+      "preconditions": [
+        {
+          "id": "pre-draft-status",
+          "assertion": "order.documentStatus === 'DR'",
+          "errorMessage": "Order must be in Draft status to complete",
+          "errorCode": "COMPLETE_NOT_DRAFT"
+        },
+        {
+          "id": "pre-has-lines",
+          "assertion": "order.lines.length > 0",
+          "errorMessage": "Order must have at least one line",
+          "errorCode": "COMPLETE_NO_LINES"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "validateLines",
+          "description": "Validate all order lines have valid product and quantity",
+          "type": "validate",
+          "target": "Order",
+          "operation": {
+            "type": "validate",
+            "assertion": "order.lines.every(l => l.product && l.orderedQuantity > 0)",
+            "errorMessage": "All lines must have a product and positive quantity",
+            "errorCode": "INVALID_LINE"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "All lines validated with product and quantity",
+            "sideEffects": []
+          }
+        },
+        {
+          "order": 2,
+          "name": "validatePrices",
+          "description": "Validate all order lines have valid prices",
+          "type": "validate",
+          "target": "Order",
+          "operation": {
+            "type": "validate",
+            "assertion": "order.lines.every(l => l.unitPrice >= 0)",
+            "errorMessage": "All lines must have a non-negative unit price",
+            "errorCode": "INVALID_PRICE"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "All line prices validated",
+            "sideEffects": []
+          }
+        },
+        {
+          "order": 3,
+          "name": "updateDocumentStatus",
+          "description": "Set document status to Completed",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "documentStatus",
+            "value": "CO"
+          },
+          "ruleDecision": "keep",
+          "existingClass": "org.openbravo.erpCommon.ad_forms.DocOrder",
+          "behavioral": {
+            "postcondition": "order.documentStatus === 'CO'",
+            "sideEffects": ["documentNo is assigned if not set"]
+          }
+        },
+        {
+          "order": 4,
+          "name": "updateDocumentAction",
+          "description": "Set document action to Close",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "documentAction",
+            "value": "CL"
+          },
+          "ruleDecision": null,
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "order.documentAction === 'CL'",
+            "sideEffects": []
+          }
+        },
+        {
+          "order": 5,
+          "name": "updateLineStatus",
+          "description": "Update each order line delivered quantity tracking",
+          "type": "forEach",
+          "target": "OrderLine",
+          "operation": {
+            "type": "forEach",
+            "collection": "order.lines",
+            "as": "line",
+            "steps": [
+              {
+                "type": "mutation",
+                "entity": "OrderLine",
+                "field": "reservedQuantity",
+                "value": "line.orderedQuantity"
+              }
+            ]
+          },
+          "ruleDecision": null,
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "All lines have reservedQuantity set",
+            "sideEffects": ["Reservation records may be created"]
+          }
+        }
+      ],
+      "edgeCases": [
+        {
+          "id": "ec-complete-no-lines",
+          "description": "Completing an order with zero lines should fail precondition",
+          "setup": { "lines": [] },
+          "expectedBehavior": "Rejected by pre-has-lines precondition",
+          "assertions": ["error.code === 'COMPLETE_NO_LINES'"]
+        },
+        {
+          "id": "ec-complete-zero-qty",
+          "description": "Completing an order where a line has zero quantity should fail validation",
+          "setup": { "lines": [{ "product": "P1", "orderedQuantity": 0 }] },
+          "expectedBehavior": "Rejected by validateLines step",
+          "assertions": ["error.code === 'INVALID_LINE'"]
+        },
+        {
+          "id": "ec-complete-already-completed",
+          "description": "Completing an already-completed order should fail precondition",
+          "setup": { "documentStatus": "CO" },
+          "expectedBehavior": "Rejected by pre-draft-status precondition",
+          "assertions": ["error.code === 'COMPLETE_NOT_DRAFT'"]
+        },
+        {
+          "id": "ec-complete-negative-price",
+          "description": "Completing an order with negative unit price should fail validation",
+          "setup": { "lines": [{ "product": "P1", "orderedQuantity": 1, "unitPrice": -5 }] },
+          "expectedBehavior": "Rejected by validatePrices step",
+          "assertions": ["error.code === 'INVALID_PRICE'"]
+        }
+      ],
+      "transactional": true
+    },
+    {
+      "name": "voidOrder",
+      "displayName": "Void Order",
+      "entity": "Order",
+      "trigger": {
+        "type": "action",
+        "endpoint": "/api/orders/{id}/void",
+        "method": "POST"
+      },
+      "preconditions": [
+        {
+          "id": "pre-void-completed",
+          "assertion": "order.documentStatus === 'CO'",
+          "errorMessage": "Order must be in Completed status to void",
+          "errorCode": "VOID_NOT_COMPLETED"
+        },
+        {
+          "id": "pre-void-no-invoices",
+          "assertion": "order.invoicedLines === 0",
+          "errorMessage": "Cannot void order with existing invoices",
+          "errorCode": "VOID_HAS_INVOICES"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "validateNoDeliveries",
+          "description": "Verify no goods have been shipped for this order",
+          "type": "validate",
+          "target": "Order",
+          "operation": {
+            "type": "validate",
+            "assertion": "order.deliveredLines === 0",
+            "errorMessage": "Cannot void order with delivered lines",
+            "errorCode": "VOID_HAS_DELIVERIES"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "Confirmed no deliveries exist",
+            "sideEffects": []
+          }
+        },
+        {
+          "order": 2,
+          "name": "reverseReservations",
+          "description": "Release all stock reservations for order lines",
+          "type": "forEach",
+          "target": "OrderLine",
+          "operation": {
+            "type": "forEach",
+            "collection": "order.lines",
+            "as": "line",
+            "steps": [
+              {
+                "type": "mutation",
+                "entity": "OrderLine",
+                "field": "reservedQuantity",
+                "value": 0
+              }
+            ]
+          },
+          "ruleDecision": null,
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "All line reservations set to zero",
+            "sideEffects": ["Reservation records released"]
+          }
+        },
+        {
+          "order": 3,
+          "name": "setVoidStatus",
+          "description": "Set document status to Voided",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "documentStatus",
+            "value": "VO"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "order.documentStatus === 'VO'",
+            "sideEffects": []
+          }
+        },
+        {
+          "order": 4,
+          "name": "setProcessedFlag",
+          "description": "Mark order as processed to prevent further edits",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "processed",
+            "value": true
+          },
+          "ruleDecision": null,
+          "existingClass": null,
+          "behavioral": {
+            "postcondition": "order.processed === true",
+            "sideEffects": ["Order becomes read-only"]
+          }
+        }
+      ],
+      "edgeCases": [
+        {
+          "id": "ec-void-draft",
+          "description": "Voiding an order in Draft status should fail precondition",
+          "setup": { "documentStatus": "DR" },
+          "expectedBehavior": "Rejected by pre-void-completed precondition",
+          "assertions": ["error.code === 'VOID_NOT_COMPLETED'"]
+        },
+        {
+          "id": "ec-void-with-invoices",
+          "description": "Voiding an order that has invoices should fail precondition",
+          "setup": { "documentStatus": "CO", "invoicedLines": 3 },
+          "expectedBehavior": "Rejected by pre-void-no-invoices precondition",
+          "assertions": ["error.code === 'VOID_HAS_INVOICES'"]
+        },
+        {
+          "id": "ec-void-with-deliveries",
+          "description": "Voiding an order with delivered goods should fail validation",
+          "setup": { "documentStatus": "CO", "invoicedLines": 0, "deliveredLines": 2 },
+          "expectedBehavior": "Rejected by validateNoDeliveries step",
+          "assertions": ["error.code === 'VOID_HAS_DELIVERIES'"]
+        }
+      ],
+      "transactional": true
+    }
+  ]
+}
