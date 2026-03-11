@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Check,
   FileSpreadsheet,
-  Link2,
   Sparkles,
 } from 'lucide-react';
 
@@ -61,12 +60,6 @@ const IMPORT_OPTIONS = [
     label: 'Import from CSV',
     description: 'Upload CSV files for products, contacts, and opening balances.',
     icon: FileSpreadsheet,
-  },
-  {
-    key: 'erp',
-    label: 'Connect to ERP',
-    description: 'Migrate data from an existing ERP system via API integration.',
-    icon: Link2,
   },
 ];
 
