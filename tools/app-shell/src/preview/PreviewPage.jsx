@@ -1,18 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
-import orderPageSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderPage.jsx?raw';
-import orderTableSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderTable.jsx?raw';
-import orderFormSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderForm.jsx?raw';
-import orderLineTableSource from '../../../../artifacts/sales-order/generated/web/sales-order/OrderLineTable.jsx?raw';
+import orderPageRaw from '../../../../artifacts/sales-order/generated/web/sales-order/OrderPage.jsx?raw';
+import orderTableRaw from '../../../../artifacts/sales-order/generated/web/sales-order/OrderTable.jsx?raw';
+import orderFormRaw from '../../../../artifacts/sales-order/generated/web/sales-order/OrderForm.jsx?raw';
+import orderLineTableRaw from '../../../../artifacts/sales-order/generated/web/sales-order/OrderLineTable.jsx?raw';
 
 import * as mockDataModule from '@generated/sales-order/generated/web/sales-order/mockData.js';
 
+// ?raw may return a string or a module with .default — normalize
+const toStr = (raw) => (typeof raw === 'string' ? raw : raw?.default ?? String(raw));
+
 const COMPONENTS = [
-  { name: 'OrderPage', source: orderPageSource },
-  { name: 'OrderTable', source: orderTableSource },
-  { name: 'OrderForm', source: orderFormSource },
-  { name: 'OrderLineTable', source: orderLineTableSource },
+  { name: 'OrderPage', source: toStr(orderPageRaw) },
+  { name: 'OrderTable', source: toStr(orderTableRaw) },
+  { name: 'OrderForm', source: toStr(orderFormRaw) },
+  { name: 'OrderLineTable', source: toStr(orderLineTableRaw) },
 ];
 
 /**
