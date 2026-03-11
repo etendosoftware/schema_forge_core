@@ -2,6 +2,6 @@ import CommissionPage from './CommissionPage';
 
 const windowMeta = { category: 'sales', name: 'Commission' };
 
-export default function App({ token, apiBaseUrl, window, windowName, recordId }) {
-  return <CommissionPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} windowName={windowName} recordId={recordId} />;
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <CommissionPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
 }
