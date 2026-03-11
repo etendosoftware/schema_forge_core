@@ -328,7 +328,7 @@ describe('loadConfig', () => {
       assert.equal(cfg.password, 'env-pass');
     } finally {
       if (origUrl !== undefined) process.env.ETENDO_URL = origUrl; else delete process.env.ETENDO_URL;
-      if (origUser !== undefined) process.env.ETENDO_USER = origUser; else delete process.env.ETENDO_URL;
+      if (origUser !== undefined) process.env.ETENDO_USER = origUser; else delete process.env.ETENDO_USER;
       if (origPass !== undefined) process.env.ETENDO_PASSWORD = origPass; else delete process.env.ETENDO_PASSWORD;
     }
   });

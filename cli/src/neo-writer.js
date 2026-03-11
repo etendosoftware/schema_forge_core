@@ -415,7 +415,7 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
   // Create single POST-only entity
   const { entityId } = await upsertEntity(client, {
     specId,
-    tabId: processId, // Process specs use processId as tabId placeholder
+    tabId: null, // Process specs have no tab — ad_tab_id must be NULL
     moduleId,
     name: processName,
     isPost: 'Y',
@@ -449,6 +449,6 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
   return {
     entityCount: 1,
     fieldCount,
-    entities: [{ entityId, name: processName, tabId: processId }],
+    entities: [{ entityId, name: processName, tabId: null }],
   };
 }
