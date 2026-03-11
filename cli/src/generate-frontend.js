@@ -540,6 +540,84 @@ export function captureCurrentState(windowName, baseDir) {
   return files;
 }
 
+// ---------------------------------------------------------------------------
+// Process form generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a kebab-case string to PascalCase.
+ * "generate-invoices" -> "GenerateInvoices"
+ */
+function toPascalCase(kebab) {
+  return kebab
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+}
+
+/**
+ * Generate a process form component from a process contract.
+ */
+export function generateProcessFormComponent(contract) {
+  const proc = contract.process;
+  const compName = toPascalCase(proc.specName) + 'Process';
+
+  const paramsArray = contract.parameters.map(p => {
+    const requiredPart = p.required ? ', required: true' : '';
+    const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'")}'` : '';
+    const referencePart = p.referenceValueId ? `, reference: '${p.referenceValueId}'` : '';
+    return `  { key: '${p.name}', column: '${p.column}', type: '${p.inputMode}'${requiredPart}${defaultPart}${referencePart} },`;
+  }).join('\n');
+
+  const executeUrl = contract.apiPrediction?.baseUrl || `/sws/neo/${proc.specName}`;
+
+  return `import { ProcessForm } from '@/components/contract-ui';
+
+const parameters = [
+${paramsArray}
+];
+
+const processConfig = {
+  name: '${proc.name.replace(/'/g, "\\'")}',
+  specName: '${proc.specName}',
+  executeUrl: '${executeUrl}',
+};
+
+export default function ${compName}(props) {
+  return <ProcessForm parameters={parameters} process={processConfig} {...props} />;
+}
+`;
+}
+
+/**
+ * Generate the index/entry point for a process form.
+ */
+export function generateProcessIndex(contract) {
+  const proc = contract.process;
+  const compName = toPascalCase(proc.specName) + 'Process';
+
+  return `import ${compName} from './${compName}';
+
+const processMeta = { name: '${proc.name.replace(/'/g, "\\'")}', specName: '${proc.specName}' };
+
+export default function App({ token, apiBaseUrl }) {
+  return <${compName} token={token} apiBaseUrl={apiBaseUrl} process={processMeta} />;
+}
+`;
+}
+
+/**
+ * Generate all frontend files for a process contract.
+ * Returns { filename: code } map.
+ */
+export function generateAllProcess(contract) {
+  const compName = toPascalCase(contract.process.specName) + 'Process';
+  const files = {};
+  files[`${compName}.jsx`] = generateProcessFormComponent(contract);
+  files['index.jsx'] = generateProcessIndex(contract);
+  return files;
+}
+
 // CLI entry point -- only runs when executed directly
 const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/.*\//, ''));
 if (isDirectRun) {

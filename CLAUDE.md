@@ -206,24 +206,26 @@ schema-forge/                             # THIS REPO — design + tooling
 ├── cli/                                  # Node.js CLI tools
 │   └── src/
 │       ├── extract-from-db.js            # Extract fields + rules from Etendo DB
+│       ├── extract-from-process.js      # Extract process metadata + parameters
 │       ├── extract-fields.js             # Field extraction with FK resolution
 │       ├── extract-rules.js              # Rule + callout extraction
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── push-to-neo.js                # Webhook calls → NEO Headless config
+│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows + processes)
+│       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
 │       ├── custom-section-markers.js      # Delimiter constants for code preservation
 │       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
 │       ├── generate-frontend.js          # React SPA generation (emits section markers)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
-│       └── pipeline.js                   # Full extraction-to-generation pipeline
+│       └── pipeline.js                   # Full pipeline (windows + processes)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
 │   ├── decision-panel/                   # Field visibility + rule curation
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
-├── artifacts/{window-name}/              # Per-window: schemas, rules, decisions, generated code
+├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
@@ -240,10 +242,11 @@ schema-forge/                             # THIS REPO — design + tooling
 Etendo AD Metadata
     │
     ▼
-Schema Forge CLI (extract-from-db.js)
-    │ Extracts fields, rules, callouts, FK references
+Schema Forge CLI (extract-from-db.js / extract-from-process.js)
+    │ Extracts fields, rules, callouts, FK references (windows)
+    │ Extracts process metadata + parameters (standalone processes)
     ▼
-Per-Window Artifacts (artifacts/{window}/)
+Per-Window/Process Artifacts (artifacts/{name}/)
     │ schema-curated.json, rules-curated.json
     ▼
 Decision UIs (tools/decision-panel/)
@@ -380,12 +383,54 @@ Config at `/Users/futit/Workspace/etendo_develop/gradle.properties`:
 - Tomcat: port `8080`, context `etendo`
 - Etendo root: `/Users/futit/Workspace/etendo_develop`
 
+## NEO Token Scripts
+
+Helper scripts to generate JWT tokens for testing NEO Headless endpoints. Require Etendo running.
+
+| Script | Role | Org | Use case |
+|--------|------|-----|----------|
+| `scripts/neo-token-sysadmin.sh` | System Administrator (role 0) | * (org 0) | Full access, admin operations |
+| `scripts/neo-token-groupadmin.sh` | F&B International Group Admin | F&B US, Inc. | Realistic business role with window access |
+
+**Usage:**
+```bash
+# Get token and use inline
+TOKEN=$(./scripts/neo-token-sysadmin.sh)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/etendo/sws/neo/SalesOrder/Header
+
+# Or with group admin role
+TOKEN=$(./scripts/neo-token-groupadmin.sh)
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"fieldValues":{"documentStatus":"DR"}}' \
+  http://localhost:8080/etendo/sws/neo/SalesOrder/Header/evaluate-display
+```
+
+**Env vars** (all optional): `ETENDO_URL`, `ETENDO_USER`, `ETENDO_PASSWORD`.
+
+## NEO Headless OpenAPI
+
+The OpenAPI spec for NEO Headless endpoints is served by the Etendo OpenAPI controller, **not** by `/sws/neo/` directly:
+```
+GET /etendo/ws/com.etendoerp.openapi.openAPIController?tag=EtendoGo
+```
+Requires JWT auth (`Authorization: Bearer <token>`). Returns a standard OpenAPI 3.x JSON with all registered NEO paths (CRUD, selectors, actions, evaluate-display).
+
+The `NeoOpenAPIEndpoint` class implements `com.etendoerp.openapi.model.OpenAPIEndpoint` and registers paths dynamically based on configured specs/entities in DB.
+
 ## NEO Headless Research
 
 See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - NeoHandler CDI hook mechanism (custom endpoint logic via `@Named` + `JAVA_QUALIFIER`)
 - Callouts NOT in NEO Headless (deferred to v2, only classic UI)
-- Pipeline → NEO gap: webhooks ready but no `push-to-neo.js` CLI module yet
+- Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows + processes)
+
+### Discovery Webhooks (read-only, for tooling)
+
+| Webhook | Purpose |
+|---------|---------|
+| `SFListProcesses` | List available processes (GET, `?q=` search, up to 100 results) |
+| `SFListWindows` | List available windows |
+| `SFListMenu` | Full menu tree with type resolution |
 
 ## Etendo AD Database Conventions
 
