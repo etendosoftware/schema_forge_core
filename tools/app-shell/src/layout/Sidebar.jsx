@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
+import { useMenuLabel } from '@/i18n';
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -83,6 +84,7 @@ export default function AppSidebar({ menuGroups }) {
   const { username, logout } = useAuth();
   const location = useLocation();
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
+  const tMenu = useMenuLabel();
 
   return (
     <TooltipProvider>
@@ -102,7 +104,7 @@ export default function AppSidebar({ menuGroups }) {
             <SidebarIcon
               key={g.group}
               icon={g.icon}
-              label={g.group}
+              label={tMenu(g.group)}
               to={`/${g.items[0].name}`}
               isActive={activeGroup?.group === g.group}
             />

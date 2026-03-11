@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet.jsx';
 import { Search, X } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
+import { useLabel } from '@/i18n';
 
 /**
  * Map a status string to a Badge variant + optional className override.
@@ -69,6 +70,7 @@ export function MasterDetailPage({
   titleField = 'documentNo',
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  const t = useLabel();
   const [showAddLine, setShowAddLine] = useState(false);
 
   const allEntryFields = addLineFields.entry ?? [];
@@ -308,7 +310,7 @@ export function MasterDetailPage({
                 <CardContent className="flex items-center gap-5 px-4 py-2.5 text-xs">
                   {summary.map(field => (
                     <div key={field.key} className="flex items-center gap-1.5">
-                      <span className="text-slate-500">{field.label}:</span>
+                      <span className="text-slate-500">{t(field.column) ?? field.label ?? field.key}:</span>
                       <span className={`font-semibold text-foreground ${field.type === 'amount' || field.type === 'number' ? 'tabular-nums' : ''}`}>
                         {renderSummaryValue(field)}
                       </span>
