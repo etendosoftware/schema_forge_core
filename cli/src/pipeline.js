@@ -111,15 +111,42 @@ async function main() {
         }
         case 'generate-frontend': {
           const { generateAll } = await import('./generate-frontend.js');
+          const { preserveAndRegenerate } = await import('./preserve-custom-sections.js');
           const { readFile, writeFile, mkdir } = await import('node:fs/promises');
+          const { resolve: resolvePath } = await import('node:path');
           const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
           const files = generateAll(contract);
           const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
           await mkdir(outDir, { recursive: true });
+
+          let totalPreserved = 0;
+          let totalUnmatched = 0;
+
           for (const [filename, code] of Object.entries(files)) {
-            await writeFile(`${outDir}/${filename}`, code, 'utf8');
+            const filePath = resolvePath(outDir, filename);
+            const { content, preserved, unmatched } = preserveAndRegenerate(filePath, code);
+            await writeFile(filePath, content, 'utf8');
+            totalPreserved += preserved.length;
+            totalUnmatched += unmatched.length;
+
+            // Save .old backup only when there are unmatched sections
+            if (unmatched.length > 0) {
+              const existing = await readFile(filePath, 'utf8').catch(() => null);
+              if (existing) {
+                await writeFile(`${filePath}.old`, existing, 'utf8');
+              }
+            }
           }
-          console.log(`  ✓ ${Object.keys(files).length} frontend components generated`);
+
+          let summary = `  ✓ ${Object.keys(files).length} frontend components generated`;
+          if (totalPreserved > 0 || totalUnmatched > 0) {
+            summary += ` (preserved ${totalPreserved} custom sections`;
+            if (totalUnmatched > 0) {
+              summary += `, ${totalUnmatched} unmatched (saved to .old)`;
+            }
+            summary += ')';
+          }
+          console.log(summary);
           break;
         }
         case 'run-tests': {
