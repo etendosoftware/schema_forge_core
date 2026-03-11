@@ -579,11 +579,10 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes("inputMode: 'selector'"));
   });
 
-  it('passes all config props to MasterDetailPage', () => {
+  it('passes config props to MasterDetailPage', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('entity="order"'));
     assert.ok(code.includes('detailEntity="orderLine"'));
-    assert.ok(code.includes('Table={OrderTable}'));
     assert.ok(code.includes('Form={OrderForm}'));
     assert.ok(code.includes('DetailTable={OrderLineTable}'));
     assert.ok(code.includes('summary={summary}'));
@@ -592,6 +591,7 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('addLineFields={addLineFields}'));
     assert.ok(code.includes('catalogs={catalogs}'));
     assert.ok(code.includes('{...props}'));
+    assert.ok(code.includes('Table={OrderTable}'));
   });
 
   it('passes entityLabel and detailLabel props', () => {
@@ -635,7 +635,7 @@ describe('generateIndexComponent', () => {
     assert.ok(code.includes("name: 'Sales Order'"));
   });
 
-  it('generates SingleEntityPage for single-entity (no detail)', () => {
+  it('generates SingleEntityPage pattern for single-entity (no detail)', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
     assert.ok(code.includes("import { SingleEntityPage } from '@/components/contract-ui'"));
     assert.ok(code.includes("import ItemTable from './ItemTable'"));

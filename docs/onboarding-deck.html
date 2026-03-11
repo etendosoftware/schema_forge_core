@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva Metodologia de Desarrollo — Etendo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+  <style>
+    :root {
+      --etendo-blue: #1863DC;
+      --etendo-dark-blue: #0056A7;
+      --etendo-text: #212121;
+      --etendo-gray: #6B7280;
+      --etendo-light: #F4F4F4;
+      --etendo-border: #EBEBEB;
+      --etendo-green: #16A34A;
+      --etendo-orange: #EA580C;
+      --etendo-red: #DC2626;
+      --gradient-purple: #E1D6FF;
+      --gradient-blue: #CBE0FF;
+      --gradient-yellow: #FFF0A4;
+
+      --r-background-color: #FFFFFF;
+      --r-main-color: #212121;
+      --r-heading-color: #212121;
+      --r-link-color: #1863DC;
+    }
+
+    .reveal {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .reveal h1 {
+      font-size: 2.2em;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--etendo-text);
+    }
+    .reveal h2 {
+      font-size: 1.4em;
+      font-weight: 600;
+      letter-spacing: -1px;
+      color: var(--etendo-blue);
+      margin-bottom: 30px;
+    }
+    .reveal h3 {
+      font-size: 1em;
+      font-weight: 600;
+      color: var(--etendo-text);
+    }
+    .reveal p, .reveal li {
+      font-size: 0.75em;
+      line-height: 1.6;
+      color: var(--etendo-text);
+    }
+    .reveal table {
+      font-size: 0.65em;
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    .reveal table th {
+      background: var(--etendo-blue);
+      color: #fff;
+      padding: 10px 20px;
+      font-weight: 600;
+    }
+    .reveal table td {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--etendo-border);
+      color: var(--etendo-text);
+    }
+    .reveal pre {
+      font-size: 0.55em;
+      background: var(--etendo-light);
+      border: 1px solid var(--etendo-border);
+      border-radius: 10px;
+      box-shadow: none;
+    }
+    .reveal code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      color: var(--etendo-text);
+    }
+
+    .subtitle {
+      color: var(--etendo-gray);
+      font-size: 0.9em;
+      margin-top: 0.3em;
+    }
+    .etendo-logo {
+      font-weight: 700;
+      color: var(--etendo-blue);
+      font-size: 0.55em;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      position: absolute;
+      bottom: 30px;
+      left: 40px;
+    }
+
+    /* Gradient title slide */
+    .gradient-bg {
+      background: linear-gradient(135deg, var(--gradient-purple) 0%, var(--gradient-blue) 50%, var(--gradient-yellow) 100%) !important;
+    }
+
+    /* Pillar cards */
+    .pillar-grid {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 25px;
+    }
+    .pillar-box {
+      background: #fff;
+      border: 2px solid var(--etendo-border);
+      border-radius: 14px;
+      padding: 28px 20px;
+      width: 260px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+    .pillar-box:hover { border-color: var(--etendo-blue); }
+    .pillar-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.85em;
+      color: var(--etendo-blue);
+    }
+    .pillar-box p {
+      font-size: 0.58em;
+      color: var(--etendo-gray);
+      margin: 0;
+    }
+    .pillar-box .icon {
+      font-size: 2em;
+      margin-bottom: 10px;
+      filter: grayscale(0);
+    }
+    .arrow-between {
+      color: var(--etendo-blue);
+      font-size: 1.5em;
+      align-self: center;
+      opacity: 0.5;
+    }
+
+    /* Flow steps */
+    .flow-vertical { text-align: center; }
+    .flow-step {
+      display: inline-block;
+      background: #fff;
+      border: 2px solid var(--etendo-border);
+      border-radius: 10px;
+      padding: 12px 28px;
+      margin: 5px 0;
+      font-size: 0.65em;
+      min-width: 380px;
+      color: var(--etendo-text);
+    }
+    .flow-step.auto { border-color: var(--etendo-blue); background: #F0F7FF; }
+    .flow-step.human { border-color: var(--etendo-orange); background: #FFF7ED; }
+    .flow-step.ready { border-color: var(--etendo-green); background: #F0FDF4; }
+    .flow-step .badge {
+      font-size: 0.75em;
+      margin-left: 10px;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-weight: 600;
+    }
+    .badge.auto-badge { background: var(--etendo-blue); color: #fff; }
+    .badge.human-badge { background: var(--etendo-orange); color: #fff; }
+    .badge.ready-badge { background: var(--etendo-green); color: #fff; }
+    .flow-arrow { color: var(--etendo-blue); font-size: 1em; opacity: 0.4; }
+
+    /* Shift cards */
+    .shift-row { display: flex; gap: 15px; justify-content: center; margin: 12px 0; }
+    .shift-card {
+      background: var(--etendo-light);
+      border: 1px solid var(--etendo-border);
+      border-radius: 10px;
+      padding: 18px 24px;
+      width: 420px;
+      text-align: left;
+    }
+    .shift-card .before {
+      color: var(--etendo-red);
+      font-size: 0.6em;
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+    .shift-card .after {
+      color: var(--etendo-green);
+      font-size: 0.65em;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    /* Metric boxes */
+    .metric-grid {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 25px;
+    }
+    .metric-box {
+      background: #fff;
+      border: 2px solid var(--etendo-border);
+      border-radius: 14px;
+      padding: 24px;
+      width: 200px;
+      text-align: center;
+    }
+    .metric-box .value {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: var(--etendo-blue);
+    }
+    .metric-box .label-text {
+      font-size: 0.55em;
+      color: var(--etendo-gray);
+      margin-top: 6px;
+    }
+
+    /* Infra grid */
+    .infra-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      max-width: 720px;
+      margin: 20px auto 0;
+    }
+    .infra-card {
+      background: var(--etendo-light);
+      border: 1px solid var(--etendo-border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: left;
+    }
+    .infra-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.7em;
+      color: var(--etendo-blue);
+    }
+    .infra-card ul { margin: 0; padding-left: 16px; }
+    .infra-card li {
+      font-size: 0.55em;
+      color: var(--etendo-gray);
+      margin-bottom: 3px;
+    }
+
+    /* Week timeline */
+    .week-timeline {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 25px;
+    }
+    .week-box {
+      background: #fff;
+      border: 2px solid var(--etendo-border);
+      border-radius: 12px;
+      padding: 18px;
+      width: 190px;
+      text-align: center;
+      position: relative;
+    }
+    .week-box::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px;
+      height: 4px;
+      background: var(--etendo-blue);
+      border-radius: 12px 12px 0 0;
+    }
+    .week-box .week-num {
+      font-size: 1.4em;
+      font-weight: 700;
+      color: var(--etendo-blue);
+    }
+    .week-box .week-title {
+      font-size: 0.58em;
+      color: var(--etendo-gray);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    /* FAQ */
+    .faq-item {
+      text-align: left;
+      max-width: 650px;
+      margin: 18px auto;
+      background: var(--etendo-light);
+      border-radius: 10px;
+      padding: 14px 20px;
+    }
+    .faq-item .q {
+      font-size: 0.7em;
+      font-weight: 600;
+      color: var(--etendo-text);
+    }
+    .faq-item .a {
+      font-size: 0.6em;
+      color: var(--etendo-gray);
+      margin-top: 4px;
+    }
+
+    /* Version boxes */
+    .version-flow {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 25px;
+    }
+    .version-box {
+      background: #fff;
+      border: 2px solid var(--etendo-border);
+      border-radius: 12px;
+      padding: 18px;
+      width: 210px;
+      text-align: center;
+    }
+    .version-box code {
+      color: var(--etendo-blue);
+      font-size: 0.8em;
+      font-weight: 600;
+    }
+    .version-box .desc {
+      font-size: 0.5em;
+      color: var(--etendo-gray);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    /* Loop flow */
+    .loop-flow {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 25px;
+    }
+    .loop-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      width: 190px;
+      text-align: center;
+    }
+    .loop-box.gen { border: 2px solid var(--etendo-blue); }
+    .loop-box.fast { border: 2px solid var(--etendo-green); }
+    .loop-box.full { border: 2px solid var(--etendo-orange); }
+    .loop-box .time { font-size: 1.4em; font-weight: 700; }
+    .loop-box.fast .time { color: var(--etendo-green); }
+    .loop-box.full .time { color: var(--etendo-orange); }
+    .loop-box .count { font-size: 0.7em; font-weight: 600; color: var(--etendo-text); }
+    .loop-box .desc { font-size: 0.5em; color: var(--etendo-gray); margin-top: 6px; }
+
+    .highlight { color: var(--etendo-blue); font-weight: 600; }
+    .highlight-green { color: var(--etendo-green); font-weight: 500; }
+    .highlight-orange { color: var(--etendo-orange); font-weight: 600; }
+    .muted { color: var(--etendo-gray); }
+
+    /* Workflow steps */
+    .workflow-steps {
+      text-align: left;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .workflow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .step-num {
+      background: var(--etendo-blue);
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65em;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-num.human-step { background: var(--etendo-orange); }
+    .step-content { font-size: 0.68em; }
+    .step-content strong { color: var(--etendo-text); }
+    .step-content span { color: var(--etendo-gray); }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- SLIDE 1: Titulo -->
+      <section data-background-gradient="linear-gradient(135deg, #E1D6FF 0%, #CBE0FF 50%, #FFF0A4 100%)">
+        <h1 style="color:#212121;">Etendo SaaS</h1>
+        <p class="subtitle">Delivery Continuo &mdash; Nueva Metodologia de Desarrollo</p>
+        <div style="margin-top:40px;">
+          <span style="font-weight:700; color:#1863DC; font-size:1.1em; letter-spacing:1px;">ETENDO</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 2: Hacia donde vamos -->
+      <section>
+        <h2>Hacia Donde Vamos</h2>
+        <p style="font-size:0.75em; max-width:650px; margin:0 auto 30px; color:var(--etendo-gray);">
+          Estamos transformando Etendo en un <strong style="color:var(--etendo-text);">producto SaaS con delivery continuo</strong>.<br>
+          El camino tiene tres etapas:
+        </p>
+        <div style="display:flex; gap:16px; justify-content:center; align-items:stretch;">
+          <div style="background:#fff; border:3px solid var(--etendo-blue); border-radius:14px; padding:22px 18px; width:240px; text-align:center; position:relative;">
+            <div style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--etendo-blue); color:#fff; font-size:0.5em; font-weight:700; padding:3px 14px; border-radius:20px; letter-spacing:1px;">AHORA</div>
+            <div style="font-size:1.5em; margin:10px 0 6px;">&#9881;&#65039;</div>
+            <div style="font-size:0.85em; font-weight:700; color:var(--etendo-blue);">Validacion</div>
+            <div style="font-size:0.52em; color:var(--etendo-gray); margin-top:8px; line-height:1.5;">
+              Primera ventana generada end-to-end.<br>
+              Pipeline de generacion validado.<br>
+              <strong style="color:var(--etendo-blue);">Cobertura de tests completa.</strong>
+            </div>
+          </div>
+          <div style="color:var(--etendo-blue); align-self:center; font-size:1.5em; opacity:0.4;">&#8594;</div>
+          <div style="background:#fff; border:2px solid var(--etendo-border); border-radius:14px; padding:22px 18px; width:240px; text-align:center;">
+            <div style="font-size:1.5em; margin:10px 0 6px;">&#128230;</div>
+            <div style="font-size:0.85em; font-weight:700; color:var(--etendo-text);">Basica</div>
+            <div style="font-size:0.52em; color:var(--etendo-gray); margin-top:8px; line-height:1.5;">
+              Multiples ventanas en produccion.<br>
+              Delivery continuo operativo.<br>
+              <strong>QA automatizado en cada deploy.</strong>
+            </div>
+          </div>
+          <div style="color:var(--etendo-blue); align-self:center; font-size:1.5em; opacity:0.4;">&#8594;</div>
+          <div style="background:#fff; border:2px solid var(--etendo-border); border-radius:14px; padding:22px 18px; width:240px; text-align:center;">
+            <div style="font-size:1.5em; margin:10px 0 6px;">&#128737;&#65039;</div>
+            <div style="font-size:0.85em; font-weight:700; color:var(--etendo-text);">Enterprise</div>
+            <div style="font-size:0.52em; color:var(--etendo-gray); margin-top:8px; line-height:1.5;">
+              SLA 99.5% con SLAs por cliente.<br>
+              Multi-tenant, permisos granulares.<br>
+              <strong>Regression suite completa + DR.</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 3: QA es Critico -->
+      <section>
+        <h2>Por Que QA es Critico en SaaS</h2>
+        <p style="font-size:0.65em; max-width:600px; margin:0 auto 18px; color:var(--etendo-gray);">
+          En on-premise, un bug afecta a <strong style="color:var(--etendo-text);">un cliente</strong>.
+          En SaaS, a <strong style="color:var(--etendo-red);">todos al mismo tiempo</strong>.
+        </p>
+        <div style="display:flex; gap:14px; justify-content:center;">
+          <div style="background:#FEF2F2; border:2px solid var(--etendo-red); border-radius:12px; padding:14px 18px; width:260px; text-align:center;">
+            <div style="font-size:1em; font-weight:700; color:var(--etendo-red);">Sin Tests</div>
+            <div style="font-size:0.5em; color:var(--etendo-gray); margin-top:8px; line-height:1.5;">
+              Deploy manual con miedo.<br>
+              Bugs descubiertos por el cliente.<br>
+              Rollback tardio y doloroso.
+            </div>
+          </div>
+          <div style="background:#F0FDF4; border:2px solid var(--etendo-green); border-radius:12px; padding:14px 18px; width:260px; text-align:center;">
+            <div style="font-size:1em; font-weight:700; color:var(--etendo-green);">Con Cobertura</div>
+            <div style="font-size:0.5em; color:var(--etendo-gray); margin-top:8px; line-height:1.5;">
+              Deploy automatico con confianza.<br>
+              Bugs detectados antes de produccion.<br>
+              Delivery continuo habilitado.
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:0.6em; color:var(--etendo-text); font-weight:600;">
+          Sin cobertura de tests, no se deploya.
+        </p>
+      </section>
+
+      <!-- SLIDE 4: Estrategia de Testing -->
+      <section>
+        <h2>Estrategia de Testing</h2>
+        <div style="display:flex; gap:14px; justify-content:center; margin-top:15px;">
+          <div style="background:#fff; border:2px solid var(--etendo-border); border-radius:14px; padding:18px; width:210px; text-align:center;">
+            <div style="font-size:2em;">&#128220;</div>
+            <div style="font-size:0.8em; font-weight:700; color:var(--etendo-blue); margin:6px 0;">Contract Tests</div>
+            <div style="font-size:1.4em; font-weight:700; color:var(--etendo-text);">~145</div>
+            <div style="font-size:0.5em; color:var(--etendo-gray); margin-top:6px; line-height:1.5;">
+              Presencia de campos, tipos,<br>
+              visibilidad, filtros, interfaces.<br>
+              <strong style="color:var(--etendo-green);">Corren en segundos. Sin backend.</strong>
+            </div>
+          </div>
+          <div style="background:#fff; border:2px solid var(--etendo-border); border-radius:14px; padding:18px; width:210px; text-align:center;">
+            <div style="font-size:2em;">&#9879;&#65039;</div>
+            <div style="font-size:0.8em; font-weight:700; color:var(--etendo-blue); margin:6px 0;">Integration Tests</div>
+            <div style="font-size:1.4em; font-weight:700; color:var(--etendo-text);">~100</div>
+            <div style="font-size:0.5em; color:var(--etendo-gray); margin-top:6px; line-height:1.5;">
+              Transacciones reales, derivaciones,<br>
+              procesos, permisos, edge cases.<br>
+              <strong style="color:var(--etendo-orange);">Corren en minutos. DB real.</strong>
+            </div>
+          </div>
+          <div style="background:#fff; border:2px solid var(--etendo-border); border-radius:14px; padding:18px; width:210px; text-align:center;">
+            <div style="font-size:2em;">&#128170;</div>
+            <div style="font-size:0.8em; font-weight:700; color:var(--etendo-blue); margin:6px 0;">Reglas de Cobertura</div>
+            <div style="font-size:1.4em; font-weight:700; color:var(--etendo-text);">100%</div>
+            <div style="font-size:0.5em; color:var(--etendo-gray); margin-top:6px; line-height:1.5;">
+              Cada regla mantenida tiene test.<br>
+              Cada proceso tiene 3+ edge cases.<br>
+              <strong style="color:var(--etendo-text);">No hay codigo sin cobertura.</strong>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:22px; font-size:0.6em; color:var(--etendo-gray);">
+          Los tests se <strong style="color:var(--etendo-text);">auto-generan</strong> junto con el codigo.
+          No es trabajo extra &mdash; es parte del pipeline.
+        </p>
+      </section>
+
+      <!-- SLIDE 5: Tres Pilares -->
+      <section>
+        <h2>Vision General</h2>
+        <div class="pillar-grid">
+          <div class="pillar-box">
+            <div class="icon">&#9881;&#65039;</div>
+            <h3>Desarrollo</h3>
+            <p>Extraer logica y ventanas. Humanos deciden. IA genera.</p>
+          </div>
+          <div class="arrow-between">&#8594;</div>
+          <div class="pillar-box">
+            <div class="icon">&#128230;</div>
+            <h3>Deployment</h3>
+            <p>Modulos versionados. Dos loops de validacion. Gradle standard.</p>
+          </div>
+          <div class="arrow-between">&#8594;</div>
+          <div class="pillar-box">
+            <div class="icon">&#128737;&#65039;</div>
+            <h3>Infraestructura</h3>
+            <p>SLA 99.5% uptime. Observabilidad. Auto-recovery.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 3: Antes vs Despues -->
+      <section>
+        <h2>Desarrollo &mdash; Antes vs Despues</h2>
+        <table>
+          <thead>
+            <tr><th></th><th>Antes</th><th>Despues</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Tu rol</strong></td><td>Escribir todo el codigo</td><td class="highlight-green">Tomar decisiones, revisar codigo generado</td></tr>
+            <tr><td><strong>Tests</strong></td><td>Manuales</td><td class="highlight-green">~245 auto-generados por ventana</td></tr>
+            <tr><td><strong>Conocimiento</strong></td><td>Etendo internals profundo</td><td class="highlight-green">Dominio de negocio + decisiones</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SLIDE 4: Pipeline -->
+      <section>
+        <h2>Desarrollo &mdash; El Pipeline</h2>
+        <div class="flow-vertical">
+          <div class="flow-step auto">Extraer campos y reglas del AD de Etendo <span class="badge auto-badge">AUTOMATICO</span></div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step human">Curar schema y clasificar reglas <span class="badge human-badge">VOS DECIDIS</span></div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step auto">IA genera Java + React + Tests <span class="badge auto-badge">AUTOMATICO</span></div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step auto">Pipeline valida: DEV &rarr; REVIEW &rarr; QA &rarr; DOCS <span class="badge auto-badge">PIPELINE</span></div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step ready">com.etendo.go &mdash; modulo unico <span class="badge ready-badge">LISTO</span></div>
+        </div>
+      </section>
+
+      <!-- SLIDE 5: Tu Nuevo Workflow -->
+      <section>
+        <h2>Desarrollo &mdash; Tu Nuevo Workflow</h2>
+        <div class="workflow-steps">
+          <div class="workflow-step">
+            <div class="step-num">1</div>
+            <div class="step-content"><strong>Extraer</strong><br><span>CLI extrae metadata y reglas del Etendo AD</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num human-step">2</div>
+            <div class="step-content"><strong>Decidir</strong><br><span>Clasificas campos y reglas con herramientas web</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">3</div>
+            <div class="step-content"><strong>Generar</strong><br><span>IA produce el modulo completo (backend + frontend + tests)</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">4</div>
+            <div class="step-content"><strong>Revisar</strong><br><span>Pipeline: DEV &rarr; REVIEW &rarr; QA &rarr; DOCS</span></div>
+          </div>
+        </div>
+        <p style="margin-top:20px; font-size:0.62em; color:var(--etendo-gray);">
+          Todo se genera dentro de <strong style="color:var(--etendo-blue);">com.etendo.go</strong> (nombre WIP). Un solo modulo, mismo Java, mismo OBDal, mismo Gradle.
+        </p>
+      </section>
+
+      <!-- SLIDE 6: Modulos Versionados -->
+      <section>
+        <h2>Deployment &mdash; Modulos Versionados</h2>
+        <div class="version-flow">
+          <div class="version-box">
+            <code>moduleVersion</code>
+            <div class="desc">Se incrementa en cada regeneracion.<br>Le importa al pipeline de deploy.</div>
+          </div>
+          <div class="version-box">
+            <code>apiVersion</code>
+            <div class="desc">Se incrementa cuando cambia el DTO.<br>Le importa al frontend.</div>
+          </div>
+          <div class="version-box">
+            <code>behavioralVersion</code>
+            <div class="desc">Se incrementa cuando cambian reglas.<br>Le importa a los tests.</div>
+          </div>
+        </div>
+        <p style="margin-top:25px; font-size:0.65em; color:var(--etendo-gray);">
+          Regenerar UI sin romper APIs. Agregar una regla sin forzar update del frontend.
+        </p>
+      </section>
+
+      <!-- SLIDE 7: Dos Loops de Validacion -->
+      <section>
+        <h2>Deployment &mdash; Dos Loops de Validacion</h2>
+        <div class="loop-flow">
+          <div class="loop-box gen">
+            <div style="font-size:0.6em; color:var(--etendo-gray);">Generar</div>
+            <div style="font-size:0.9em; font-weight:600; color:var(--etendo-text);">Modulo</div>
+          </div>
+          <div class="arrow-between">&#8594;</div>
+          <div class="loop-box fast">
+            <div class="time">Segundos</div>
+            <div class="count">~145 contract tests</div>
+            <div class="desc">Sin backend. Corre contra JSON.</div>
+          </div>
+          <div class="arrow-between">&#8594;</div>
+          <div class="loop-box full">
+            <div class="time">Minutos</div>
+            <div class="count">~100 integration tests</div>
+            <div class="desc">DB real. OBBaseTest. Validacion completa.</div>
+          </div>
+        </div>
+        <p style="margin-top:25px; font-size:0.75em;">
+          <strong class="highlight-green">80% de los problemas detectados en segundos</strong><span class="muted">, antes de tocar el backend.</span>
+        </p>
+      </section>
+
+      <!-- SLIDE 8: Delivery Continuo -->
+      <section>
+        <h2>Deployment &mdash; Delivery Continuo</h2>
+        <div class="flow-vertical">
+          <div class="flow-step auto" style="min-width:440px;">
+            Cambio en schema o regla de negocio
+            <span class="badge auto-badge">TRIGGER</span>
+          </div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step auto" style="min-width:440px;">
+            Regeneracion automatica del modulo
+            <span class="badge auto-badge">SEGUNDOS</span>
+          </div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step auto" style="min-width:440px;">
+            Contract tests (~145) &rarr; pasan en segundos
+            <span class="badge" style="background:var(--etendo-green);color:#fff;">GATE 1</span>
+          </div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step auto" style="min-width:440px;">
+            Integration tests (~100) &rarr; pasan en minutos
+            <span class="badge" style="background:var(--etendo-green);color:#fff;">GATE 2</span>
+          </div>
+          <div class="flow-arrow">&#9660;</div>
+          <div class="flow-step ready" style="min-width:440px;">
+            Deploy automatico &mdash; blue-green, zero downtime
+            <span class="badge ready-badge">LIVE</span>
+          </div>
+        </div>
+        <p style="margin-top:18px; font-size:0.62em; color:var(--etendo-gray);">
+          Del cambio al deploy: <strong style="color:var(--etendo-blue);">minutos, no semanas</strong>. Cada cambio pasa por gates automaticos antes de llegar a produccion.
+        </p>
+      </section>
+
+      <!-- SLIDE 9: Que se Deploya -->
+      <section>
+        <h2>Deployment &mdash; Que se Entrega</h2>
+        <pre><code>com.etendo.go/                    # Un unico modulo (nombre WIP)
+├── event/          # Event handlers
+├── process/        # Procesos
+├── dto/v{n}/       # DTOs versionados
+├── api/v{n}/       # Endpoints REST versionados
+├── mapper/v{n}/    # OBDal ↔ DTO
+└── web/            # React SPA (todas las ventanas)</code></pre>
+        <p style="margin-top:16px; font-size:0.7em;">
+          <span class="highlight">Un solo modulo</span> contiene todas las ventanas generadas. Se instala con Gradle.
+        </p>
+        <p style="font-size:0.6em; color:var(--etendo-gray); margin-top:8px;">
+          Cada regeneracion produce un artefacto desplegable. Sin pasos manuales. Sin builds rotos.
+        </p>
+      </section>
+
+      <!-- SLIDE 10: SLA 99.5% -->
+      <section>
+        <h2>Infraestructura &mdash; 99.5% Uptime</h2>
+        <div class="metric-grid">
+          <div class="metric-box">
+            <div class="value">99.5%</div>
+            <div class="label-text">SLA de Uptime<br>(~3.65h max downtime/mes)</div>
+          </div>
+          <div class="metric-box">
+            <div class="value">&lt; 15m</div>
+            <div class="label-text">Respuesta a incidentes<br>(acknowledgment)</div>
+          </div>
+          <div class="metric-box">
+            <div class="value">&lt; 1h</div>
+            <div class="label-text">Tiempo de recuperacion<br>(incidentes criticos)</div>
+          </div>
+        </div>
+        <p style="margin-top:20px; font-size:0.6em; color:var(--etendo-gray);">
+          Mantenimiento planificado excluido del calculo de SLA.
+        </p>
+      </section>
+
+      <!-- SLIDE 11: Como lo Logramos -->
+      <section>
+        <h2>Infraestructura &mdash; Como lo Logramos</h2>
+        <div class="infra-grid">
+          <div class="infra-card">
+            <h3>Observabilidad</h3>
+            <ul>
+              <li>Monitoreo de salud (tiempos de respuesta, tasa de errores)</li>
+              <li>Logging estructurado + agregacion</li>
+              <li>Alertas con cadenas de escalamiento</li>
+            </ul>
+          </div>
+          <div class="infra-card">
+            <h3>Auto-Recovery</h3>
+            <ul>
+              <li>Orquestacion de containers + health checks</li>
+              <li>Reinicio automatico ante fallos</li>
+              <li>Degradacion elegante bajo carga</li>
+            </ul>
+          </div>
+          <div class="infra-card">
+            <h3>Deploy Seguro</h3>
+            <ul>
+              <li>Blue-green deploys (zero downtime)</li>
+              <li>Rollback automatico ante health checks fallidos</li>
+              <li>Migraciones de DB versionadas y reversibles</li>
+            </ul>
+          </div>
+          <div class="infra-card">
+            <h3>Disaster Recovery</h3>
+            <ul>
+              <li>Backups automaticos (diarios + incrementales)</li>
+              <li>Recuperacion point-in-time</li>
+              <li>Runbooks documentados + simulacros de DR</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 12: Cambio de Mentalidad -->
+      <section>
+        <h2>El Cambio de Mentalidad</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:700px; margin:15px auto 0;">
+          <div class="shift-card" style="padding:12px 16px; width:auto;">
+            <div class="before" style="font-size:0.55em;">&ldquo;Yo construyo todo desde el AD&rdquo;</div>
+            <div class="after" style="font-size:0.58em;">&ldquo;Yo decido, la IA construye, yo reviso&rdquo;</div>
+          </div>
+          <div class="shift-card" style="padding:12px 16px; width:auto;">
+            <div class="before" style="font-size:0.55em;">&ldquo;Yo escribo los tests&rdquo;</div>
+            <div class="after" style="font-size:0.58em;">&ldquo;Los tests se generan desde el contrato&rdquo;</div>
+          </div>
+          <div class="shift-card" style="padding:12px 16px; width:auto;">
+            <div class="before" style="font-size:0.55em;">&ldquo;Deployo y rezo&rdquo;</div>
+            <div class="after" style="font-size:0.58em;">&ldquo;Delivery continuo: cambio a deploy en minutos&rdquo;</div>
+          </div>
+          <div class="shift-card" style="padding:12px 16px; width:auto;">
+            <div class="before" style="font-size:0.55em;">&ldquo;QA es al final, si hay tiempo&rdquo;</div>
+            <div class="after" style="font-size:0.58em;">&ldquo;Sin cobertura, no se deploya. Punto.&rdquo;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 13: Plan de Onboarding -->
+      <section>
+        <h2>Plan de Onboarding</h2>
+        <div class="week-timeline">
+          <div class="week-box">
+            <div class="week-num">S1</div>
+            <div class="week-title">Recorrer una ventana completa: extraccion &rarr; generacion</div>
+          </div>
+          <div class="week-box">
+            <div class="week-num">S2</div>
+            <div class="week-title">Practicar con Decision Editor y Rule Catalog</div>
+          </div>
+          <div class="week-box">
+            <div class="week-num">S3</div>
+            <div class="week-title">Participar en code review de modulos generados</div>
+          </div>
+          <div class="week-box">
+            <div class="week-num">S4</div>
+            <div class="week-title">Extraer y generar una ventana de forma independiente</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 14: FAQ -->
+      <section>
+        <h2>Preguntas Frecuentes</h2>
+        <div class="faq-item">
+          <div class="q">Todavia necesito saber Java?</div>
+          <div class="a">Si. Revisas codigo generado y manejas casos borde.</div>
+        </div>
+        <div class="faq-item">
+          <div class="q">Que pasa si el codigo generado esta mal?</div>
+          <div class="a">El pipeline lo atrapa: DEV &rarr; REVIEW &rarr; QA. Los contract tests detectan problemas estructurales al instante.</div>
+        </div>
+        <div class="faq-item">
+          <div class="q">Y las ventanas existentes en produccion?</div>
+          <div class="a">Se extraen y regeneran incrementalmente. No hace falta una migracion big-bang.</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      backgroundTransition: 'fade',
+      center: true,
+      width: 1100,
+      height: 700
+    });
+  </script>
+</body>
+</html>
