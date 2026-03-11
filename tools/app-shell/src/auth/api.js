@@ -19,15 +19,21 @@ export function isTokenExpired(token) {
   return !token;
 }
 
-export async function login(baseUrl, username, password) {
+export async function login(baseUrl, username, password, roleId, orgId) {
+  const body = { username, password };
+  const headers = { 'Content-Type': 'application/json' };
+
+  if (roleId) body.role = roleId;
+  if (orgId) body.organization = orgId;
+
   const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}/sws/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    headers,
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(body || `Login failed: ${res.status}`);
+    const text = await res.text().catch(() => '');
+    throw new Error(text || `Login failed: ${res.status}`);
   }
   return res.json();
 }

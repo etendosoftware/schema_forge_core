@@ -1,11 +1,17 @@
-# NEO Headless 2.0 — Proposal
+# NEO Headless 2.0 — Proposal (SUPERSEDED)
 
 | Property | Value |
 |----------|-------|
-| Status | DRAFT |
+| Status | **SUPERSEDED** — Core implemented in `com.etendoerp.go`. See `modules/com.etendoerp.go/docs/neo-headless.md` for current reference. |
 | Created | 2026-03-06 |
-| Module | `com.etendoerp.etendorx` (evolution) |
+| Module | Implemented as `com.etendoerp.go` (not `com.etendoerp.etendorx` as originally proposed) |
 | Related | `com.etendoerp.openapi`, Schema Forge |
+
+> **Note:** This proposal was the design document for NEO Headless. The core was implemented with
+> a different table structure (`ETGO_SF_*` instead of extending `ETAPI_OPENAPI_*`) and in a new
+> module (`com.etendoerp.go`) rather than evolving `com.etendoerp.etendorx`. Items not yet
+> implemented (granular override registry, cascade selector rules, OpenAPI auto-generation,
+> callout endpoints) are listed in the "Future Considerations" section of the reference docs.
 
 ---
 

@@ -937,3 +937,380 @@ describe('addLineFields derived field separation', () => {
     assert.ok(!addLineMatch[1].includes("key: 'lineNetAmount'"));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Behavioral metadata: displayLogic, readOnlyLogic, callout
+// ---------------------------------------------------------------------------
+
+const behavioralContract = {
+  frontendContract: {
+    window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'discount', column: 'Discount', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            displayLogic: { raw: "@DocumentType@='SO'", js: "record.documentType === 'SO'" } },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true,
+            readOnlyLogic: { raw: "@Posted@='Y'", js: "record.posted === true" } },
+          { name: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            callout: { className: 'com.example.LineNetCallout', effects: ['grandTotal'] } },
+          { name: 'bothLogics', column: 'BothLogics', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
+            displayLogic: { raw: "@Active@='Y'", js: "record.active === true" },
+            readOnlyLogic: { raw: "@Processed@='Y'", js: "record.processed === true" } },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generateFormComponent - behavioral metadata', () => {
+  it('includes displayLogic as arrow function when field has displayLogic.js', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    assert.ok(code.includes("displayLogic: (record) => record.documentType === 'SO'"),
+      'should emit displayLogic arrow function from displayLogic.js');
+  });
+
+  it('includes readOnlyLogic as arrow function when field has readOnlyLogic.js', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    assert.ok(code.includes('readOnlyLogic: (record) => record.posted === true'),
+      'should emit readOnlyLogic arrow function from readOnlyLogic.js');
+  });
+
+  it('includes TODO comment for callout in generated form field config', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    assert.ok(code.includes('// TODO: Translate callout logic: com.example.LineNetCallout'),
+      'should include TODO comment for callout');
+    // The callout should not appear as a config property on the field line itself
+    const lineNetLine = code.split('\n').find(l => l.includes("key: 'lineNetAmount'"));
+    assert.ok(lineNetLine, 'lineNetAmount field should exist');
+    assert.ok(!lineNetLine.includes('callout'), 'callout should not appear as field config property');
+  });
+
+  it('includes both displayLogic and readOnlyLogic on the same field', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    // The bothLogics field should have both
+    assert.ok(code.includes("key: 'bothLogics'"), 'bothLogics field should exist');
+    assert.ok(code.includes('displayLogic: (record) => record.active === true'),
+      'should include displayLogic on bothLogics field');
+    assert.ok(code.includes('readOnlyLogic: (record) => record.processed === true'),
+      'should include readOnlyLogic on bothLogics field');
+  });
+
+  it('does NOT emit displayLogic when displayLogic.js is absent', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    // documentNo has no displayLogic at all
+    const docNoLine = code.split('\n').find(l => l.includes("key: 'documentNo'"));
+    assert.ok(docNoLine, 'documentNo field should exist');
+    assert.ok(!docNoLine.includes('displayLogic'), 'documentNo should not have displayLogic');
+  });
+
+  it('does NOT emit readOnlyLogic when readOnlyLogic.js is absent', () => {
+    const code = generateFormComponent('order', behavioralContract);
+    const discountLine = code.split('\n').find(l => l.includes("key: 'discount'"));
+    assert.ok(discountLine, 'discount field should exist');
+    assert.ok(!discountLine.includes('readOnlyLogic'), 'discount should not have readOnlyLogic');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// apiPrediction in Page and Index components
+// ---------------------------------------------------------------------------
+
+const contractWithApi = {
+  frontendContract: {
+    window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'readOnly', required: false, grid: true, form: true },
+          { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+      orderLine: {
+        fields: [
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'Product', inputMode: 'search' },
+          { name: 'quantity', column: 'QtyOrdered', type: 'number', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['product'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+  apiPrediction: {
+    specName: 'sales-order',
+    baseUrl: '/sws/neo/sales-order',
+    crud: {
+      order: { listUrl: '/sws/neo/sales-order/order', detailUrl: '/sws/neo/sales-order/order/{id}', supportedFilters: ['documentNo'] },
+    },
+    selectors: [{ entity: 'order', field: 'businessPartner', url: '/sws/neo/sales-order/order/selectors/businessPartner' }],
+    actions: [],
+    queryParams: { pagination: { startRow: '_startRow', endRow: '_endRow' } },
+  },
+};
+
+const singleEntityContractWithApi = {
+  frontendContract: {
+    window: { id: '1', name: 'Simple Item', primaryEntity: 'item', category: 'reference' },
+    entities: {
+      item: {
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['name'],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+  apiPrediction: {
+    specName: 'simple-item',
+    baseUrl: '/sws/neo/simple-item',
+    crud: { item: { listUrl: '/sws/neo/simple-item/item' } },
+    selectors: [],
+    actions: [],
+    queryParams: {},
+  },
+};
+
+describe('generatePageComponent - apiPrediction', () => {
+  it('emits api const from apiPrediction when present', () => {
+    const code = generatePageComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('const api ='), 'should declare api const');
+    assert.ok(code.includes('"specName": "sales-order"'), 'should include specName');
+    assert.ok(code.includes('"baseUrl": "/sws/neo/sales-order"'), 'should include baseUrl');
+  });
+
+  it('passes api prop to MasterDetailPage', () => {
+    const code = generatePageComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('api={api}'), 'should pass api prop');
+  });
+
+  it('does not emit api const when apiPrediction is absent', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('const api ='), 'should not declare api const without apiPrediction');
+    assert.ok(!code.includes('api={api}'), 'should not pass api prop without apiPrediction');
+  });
+});
+
+describe('generateIndexComponent - apiPrediction', () => {
+  it('emits api const in master-detail index when apiPrediction present', () => {
+    const code = generateIndexComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('const api ='), 'should declare api const');
+    assert.ok(code.includes('"specName": "sales-order"'), 'should include specName');
+  });
+
+  it('passes api prop in master-detail index', () => {
+    const code = generateIndexComponent('order', 'orderLine', contractWithApi);
+    assert.ok(code.includes('api={api}'), 'should pass api prop to Page component');
+  });
+
+  it('emits api const in single-entity index when apiPrediction present', () => {
+    const code = generateIndexComponent('item', null, singleEntityContractWithApi);
+    assert.ok(code.includes('const api ='), 'should declare api const');
+    assert.ok(code.includes('"specName": "simple-item"'), 'should include specName');
+  });
+
+  it('passes api prop in single-entity index', () => {
+    const code = generateIndexComponent('item', null, singleEntityContractWithApi);
+    assert.ok(code.includes('api={api}'), 'should pass api prop to SingleEntityPage');
+  });
+
+  it('does not emit api const when apiPrediction is absent', () => {
+    const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('const api ='), 'should not declare api const');
+  });
+
+  it('does not emit api const for empty contract', () => {
+    const code = generateIndexComponent('item', null, {});
+    assert.ok(!code.includes('const api ='), 'should not declare api const for empty contract');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TODO comments for callout and onChangeFunction
+// ---------------------------------------------------------------------------
+
+const todoContract = {
+  frontendContract: {
+    window: { id: '1', name: 'Test TODO', primaryEntity: 'invoice', category: 'test' },
+    entities: {
+      invoice: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true, reference: 'BusinessPartner', inputMode: 'search',
+            callout: { className: 'org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner' } },
+          { name: 'paidOut', column: 'paid_out', type: 'number', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            onChangeFunction: { name: 'OB.APRM.AddPayment.glItemAmountOnChange' } },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'editable', required: false, grid: true, form: true,
+            callout: { className: 'org.openbravo.erpCommon.ad_callouts.SL_Order_Amt' },
+            onChangeFunction: { name: 'OB.APRM.AddPayment.totalOnChange' } },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generateFormComponent - TODO comments for callout and onChangeFunction', () => {
+  it('field with callout has TODO comment with class name', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    assert.ok(code.includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner'),
+      'should include TODO for callout');
+  });
+
+  it('field with onChangeFunction has TODO comment with function name', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    assert.ok(code.includes('// TODO: Translate onchangefunction logic: OB.APRM.AddPayment.glItemAmountOnChange'),
+      'should include TODO for onChangeFunction');
+  });
+
+  it('field with both callout and onChangeFunction has both TODO comments', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    assert.ok(code.includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SL_Order_Amt'),
+      'should include callout TODO for grandTotal');
+    assert.ok(code.includes('// TODO: Translate onchangefunction logic: OB.APRM.AddPayment.totalOnChange'),
+      'should include onChangeFunction TODO for grandTotal');
+  });
+
+  it('field with neither callout nor onChangeFunction has no TODO comments', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    const lines = code.split('\n');
+    const docNoIdx = lines.findIndex(l => l.includes("key: 'documentNo'"));
+    assert.ok(docNoIdx >= 0, 'documentNo field should exist');
+    // The line before documentNo should not be a TODO comment
+    const prevLine = lines[docNoIdx - 1];
+    assert.ok(!prevLine.includes('// TODO:'), 'no TODO comment should precede documentNo');
+  });
+
+  it('TODO comments appear BEFORE the field config line', () => {
+    const code = generateFormComponent('invoice', todoContract);
+    const lines = code.split('\n');
+
+    // For businessPartner: callout TODO should be directly before the field line
+    const bpFieldIdx = lines.findIndex(l => l.includes("key: 'businessPartner'"));
+    assert.ok(bpFieldIdx > 0, 'businessPartner field should exist');
+    assert.ok(lines[bpFieldIdx - 1].includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner'),
+      'callout TODO should be on the line before businessPartner field');
+
+    // For grandTotal: both TODOs should appear before the field line
+    const gtFieldIdx = lines.findIndex(l => l.includes("key: 'grandTotal'"));
+    assert.ok(gtFieldIdx > 1, 'grandTotal field should exist');
+    assert.ok(lines[gtFieldIdx - 2].includes('// TODO: Translate callout logic:'),
+      'callout TODO should be 2 lines before grandTotal field');
+    assert.ok(lines[gtFieldIdx - 1].includes('// TODO: Translate onchangefunction logic:'),
+      'onChangeFunction TODO should be 1 line before grandTotal field');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UI Hints in generated frontend code
+// ---------------------------------------------------------------------------
+
+const uiHintsContract = {
+  frontendContract: {
+    window: { id: '600', name: 'UI Hints', primaryEntity: 'order', category: 'test' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', tsType: 'number', visibility: 'editable', required: true, grid: true, form: true,
+            defaultValue: '0', help: 'Total amount including tax', fieldGroup: 'Amounts', precision: 2, isSelectionColumn: true },
+          { name: 'dateOrdered', column: 'DateOrdered', type: 'date', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true,
+            fieldGroup: 'Dates' },
+          { name: 'plainField', column: 'PlainCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true },
+          { name: 'escapedHelp', column: 'EscapedCol', type: 'string', tsType: 'string', visibility: 'editable', required: false, grid: false, form: true,
+            defaultValue: "it's a test", help: "don't forget" },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generateFormComponent - UI hints', () => {
+  it('field with defaultValue emits defaultValue in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("defaultValue: '0'"), 'should emit defaultValue');
+  });
+
+  it('field with help emits help in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("help: 'Total amount including tax'"), 'should emit help text');
+  });
+
+  it('field with fieldGroup emits fieldGroup in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("fieldGroup: 'Amounts'"), 'should emit fieldGroup');
+  });
+
+  it('field with precision emits precision in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes('precision: 2'), 'should emit precision');
+  });
+
+  it('field groups comment is generated when fieldGroup fields exist', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes('// Field groups: Amounts, Dates'), 'should emit field groups comment');
+  });
+
+  it('fields without hints have no hint attributes in output', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    const plainLine = code.split('\n').find(l => l.includes("key: 'plainField'"));
+    assert.ok(plainLine, 'plainField should exist');
+    assert.ok(!plainLine.includes('defaultValue'), 'plainField should not have defaultValue');
+    assert.ok(!plainLine.includes('help'), 'plainField should not have help');
+    assert.ok(!plainLine.includes('fieldGroup'), 'plainField should not have fieldGroup');
+    assert.ok(!plainLine.includes('precision'), 'plainField should not have precision');
+  });
+
+  it('escapes single quotes in defaultValue and help', () => {
+    const code = generateFormComponent('order', uiHintsContract);
+    assert.ok(code.includes("defaultValue: 'it\\'s a test'"), 'should escape single quotes in defaultValue');
+    assert.ok(code.includes("help: 'don\\'t forget'"), 'should escape single quotes in help');
+  });
+
+  it('field groups comment is not generated when no fieldGroup fields exist', () => {
+    const noGroupContract = {
+      frontendContract: {
+        window: { id: '1', name: 'No Groups', primaryEntity: 'test', category: 'test' },
+        entities: {
+          test: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: [],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generateFormComponent('test', noGroupContract);
+    assert.ok(!code.includes('// Field groups:'), 'should not emit field groups comment');
+  });
+});
+
+describe('generateTableComponent - isSelectionColumn hint', () => {
+  it('field with isSelectionColumn emits isSelectionColumn in grid columns', () => {
+    const code = generateTableComponent('order', uiHintsContract);
+    assert.ok(code.includes('isSelectionColumn: true'), 'should emit isSelectionColumn');
+  });
+
+  it('field without isSelectionColumn does not emit the attribute', () => {
+    const code = generateTableComponent('order', uiHintsContract);
+    const plainLine = code.split('\n').find(l => l.includes("key: 'plainField'"));
+    assert.ok(plainLine, 'plainField should exist');
+    assert.ok(!plainLine.includes('isSelectionColumn'), 'plainField should not have isSelectionColumn');
+  });
+});

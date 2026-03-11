@@ -14,8 +14,9 @@ export function buildPipelineSteps() {
     { name: 'pre-classify', description: 'Pre-classify rules (deterministic + AI)', phase: 'F3' },
     { name: 'human-decisions', description: 'Open Decision Panel for human review', phase: 'F4', interactive: true },
     { name: 'generate-contract', description: 'Generate frontend/backend contracts + test manifest', phase: 'F6' },
-    { name: 'generate-backend', description: 'Generate Etendo Java module from templates', phase: 'F7' },
+    { name: 'push-to-neo', description: 'Configure NEO Headless via webhooks (from contract)', phase: 'F7' },
     { name: 'generate-frontend', description: 'Generate React components from contract', phase: 'F8' },
+    { name: 'translate-todos', description: 'AI-assisted translation of callout/onchange TODO comments', phase: 'F8b', interactive: true },
     { name: 'run-tests', description: 'Run contract tests (Node.js side)', phase: 'F9' },
   ];
 }
@@ -38,9 +39,15 @@ async function main() {
   for (const step of steps) {
     if (step.interactive) {
       console.log(`\n[${step.phase}] ${step.description}`);
-      console.log('  → Open Decision Panel at http://localhost:3000');
-      console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
-      console.log('  → For AI classification, run: /sf:classify-rules');
+      if (step.name === 'translate-todos') {
+        console.log('  → Review generated TODO comments in the frontend components');
+        console.log('  → Use AI or manual translation to implement callout/onchange logic');
+        console.log('  → Re-run pipeline with --skip-to=run-tests when done');
+      } else {
+        console.log('  → Open Decision Panel at http://localhost:3000');
+        console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
+        console.log('  → For AI classification, run: /sf:classify-rules');
+      }
       break; // Stop at interactive step
     }
 
@@ -91,15 +98,15 @@ async function main() {
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
           break;
         }
-        case 'generate-backend': {
-          const { generateBackend } = await import('./generate-backend.js');
-          const { readFile } = await import('node:fs/promises');
-          const schema = JSON.parse(await readFile(`artifacts/${windowName}/schema-curated.json`, 'utf8'));
-          const rules = JSON.parse(await readFile(`artifacts/${windowName}/rules-curated.json`, 'utf8'));
-          const processes = JSON.parse(await readFile(`artifacts/${windowName}/processes.json`, 'utf8'));
-          const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
-          await generateBackend(schema, rules.rules || [], processes.processes || [], contract, windowName);
-          console.log('  ✓ Backend module generated');
+        case 'push-to-neo': {
+          const { pushToNeo } = await import('./push-to-neo.js');
+          const dryRun = process.argv.includes('--dry-run');
+          const result = await pushToNeo(windowName, { dryRun });
+          if (dryRun) {
+            console.log(`  ✓ Dry run: ${result.actions.length} webhook calls planned`);
+          } else {
+            console.log(`  ✓ NEO Headless configured (${result.fieldsConfigured} fields)`);
+          }
           break;
         }
         case 'generate-frontend': {
