@@ -6,13 +6,13 @@ import catalogs from './mockCatalogs';
 
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
-  { key: 'totalLines', column: 'TotalLines', type: 'amount' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
   { key: 'currency', column: 'C_Currency_ID', type: 'string' },
-  { key: 'isDelivered', column: 'IsDelivered', type: 'boolean' },
+  { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
 ];
 
-const statusField = 'docStatus';
+const statusField = 'documentStatus';
 
 const processes = [
 
@@ -21,7 +21,7 @@ const processes = [
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'quantity', column: 'QtyOrdered', type: 'number', required: true },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true },
     { key: 'description', column: 'Description', type: 'textarea' },
     { key: 'lineNo', column: 'Line', type: 'number', required: true },
   ],

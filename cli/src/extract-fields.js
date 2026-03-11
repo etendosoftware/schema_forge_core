@@ -296,6 +296,19 @@ export function buildSchema(rows, systemColumns, refMap) {
       // Add callout if present
       if (row.callout_class) fieldDef.callout = row.callout_class;
 
+      // Add onChangeFunction if present (JS client-side logic from SmartClient)
+      if (row.onchangefunction) fieldDef.onChangeFunction = row.onchangefunction;
+
+      // UI hints from AD metadata
+      if (row.defaultvalue) fieldDef.defaultValue = row.defaultvalue;
+      if (row.isidentifier === 'Y') fieldDef.isIdentifier = true;
+      if (row.isselectioncolumn === 'Y') fieldDef.isSelectionColumn = true;
+      if (row.isfilterable === 'Y') fieldDef.isFilterable = true;
+      if (row.precision != null && row.precision > 0) fieldDef.precision = Number(row.precision);
+      if (row.istranslated === 'Y') fieldDef.isTranslated = true;
+      if (row.help_text) fieldDef.help = row.help_text;
+      if (row.field_group_name) fieldDef.fieldGroup = row.field_group_name;
+
       // Add validation rule with parsed params if present
       if (row.val_rule_code) {
         fieldDef.validationRule = parseValidationRule(row.val_rule_code);
@@ -392,13 +405,22 @@ SELECT
   sel.Name AS ref_selector_name,
   sel_tgt.TableName AS ref_selector_target,
   sel.WhereClause AS ref_selector_filter,
-  sel.HQL AS ref_selector_hql
+  sel.HQL AS ref_selector_hql,
+  f.OnChangeFunction,
+  c.IsIdentifier,
+  c.IsSelectionColumn,
+  c.IsFilterable,
+  c.Precision,
+  c.IsTranslated,
+  COALESCE(f.Help, c.Help) AS help_text,
+  fg.Name AS field_group_name
 FROM AD_Field f
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
 JOIN AD_Window w ON t.AD_Window_ID = w.AD_Window_ID
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
 LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
+LEFT JOIN AD_FieldGroup fg ON fg.AD_FieldGroup_ID = f.AD_FieldGroup_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
 LEFT JOIN ad_ref_table rt ON c.ad_reference_value_id = rt.ad_reference_id

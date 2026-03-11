@@ -1,154 +1,371 @@
-# Etendo OpenAPI Module (`com.etendoerp.openapi`)
+# Etendo OpenAPI Module — Integration Reference
 
-> Reference documentation for Schema Forge integration planning.
-> Source: `/modules/com.etendoerp.openapi/` — Version 2.5.0
+Module: `com.etendoerp.openapi`
+Source: `/modules/com.etendoerp.openapi/`
 
-## What It Does
+This document explains how the Etendo OpenAPI module works and how other modules integrate with it. Based on actual source code from `com.etendoerp.openapi` and `com.etendoerp.copilot`.
 
-Etendo's OpenAPI 3.0 specification generator and documentation system. It:
-- Generates OpenAPI 3.0 JSON specs dynamically for Etendo REST endpoints
-- Manages **API flows** (logical groupings of related endpoints)
-- Discovers custom endpoint definitions via CDI at runtime
-- Provides Swagger UI access at `/sws/openapi`
+---
 
-## Architecture: Plugin Discovery via CDI
+## How It Works
 
-**No annotations on endpoints.** Instead, modules implement an interface and are discovered at runtime:
+The OpenAPI module generates an OpenAPI 3.0 JSON spec at runtime by discovering all registered endpoint contributors via CDI (Weld). Any module can contribute endpoints by implementing a single interface.
 
 ```
-OpenAPIController.doGet()
-  -> getOpenAPIJson()
-    -> applyEndpoints()
-      -> WeldUtils.getInstances(OpenAPIEndpoint.class)
-        -> Discovers ALL @ApplicationScoped beans implementing OpenAPIEndpoint
-          -> endpoint.isValid(tag)
-          -> endpoint.add(openAPI)   // programmatically adds paths to OpenAPI object
+GET /sws/com.etendoerp.openapi
+    ?tag=Copilot          # optional: filter by tag
+    ?host=https://...     # optional: override host
+
+          │
+          ▼
+    OpenAPIController.doGet()
+          │
+          ├── initializeOpenAPI(baseUrl)     → empty OpenAPI object with server info
+          ├── configureSecurity()            → JWT bearer + Basic auth schemes
+          ├── applyEndpoints(openAPI, tag)   → CDI discovery loop (see below)
+          ├── addLoginEndpoint()             → /sws/login POST
+          └── serializeOpenAPI()             → JSON response
 ```
 
-## Core Interface
+**Tag filtering:** If `?tag=Copilot` is passed, only endpoints where `isValid("Copilot")` returns `true` are included. Without a tag, ALL endpoints are included.
+
+---
+
+## The Interface: OpenAPIEndpoint
+
+**File:** `com.etendoerp.openapi/src/com/etendoerp/openapi/model/OpenAPIEndpoint.java`
 
 ```java
-// com.etendoerp.openapi.model.OpenAPIEndpoint
+package com.etendoerp.openapi.model;
+
+import io.swagger.v3.oas.models.OpenAPI;
+
 public interface OpenAPIEndpoint {
-  boolean isValid(String tag);   // filter by tag (null = include all)
-  void add(OpenAPI openAPI);     // add paths/operations to the Swagger 3.0 object
+
+  /**
+   * Checks if the hook is valid for that tag.
+   * @param tag the tag to be checked
+   * @return true if the tag is valid, false otherwise
+   */
+  boolean isValid(String tag);
+
+  /**
+   * Adds the given OpenAPI object to this endpoint with the specified tag.
+   * @param openAPI the OpenAPI object to be added
+   */
+  void add(OpenAPI openAPI);
 }
 ```
 
-## How to Register an Endpoint
+This is the only interface a module needs to implement.
 
-### Option A: Direct Implementation (recommended for custom endpoints)
+---
+
+## Discovery Mechanism
+
+The core discovery happens in `OpenAPIController.applyEndpoints()`:
 
 ```java
-@ApplicationScoped
-public class MyEndpoint implements OpenAPIEndpoint {
+// OpenAPIController.java — lines 404-420
+
+private OpenAPI applyEndpoints(OpenAPI openAPI, String tag) throws OpenApiConfigurationException {
+    Set<String> resourcePackages = new HashSet<>();
+    resourcePackages.add(RESOURCE_PACKAGE);
+
+    SwaggerConfiguration oasConfig = new SwaggerConfiguration().openAPI(openAPI)
+        .resourcePackages(resourcePackages);
+
+    OpenApiContext ctx = new GenericOpenApiContext<>().openApiConfiguration(oasConfig).init();
+    OpenAPI updatedOpenAPI = ctx.read();
+
+    for (OpenAPIEndpoint endpoint : WeldUtils.getInstances(OpenAPIEndpoint.class)) {
+      if (tag == null || endpoint.isValid(tag)) {
+        endpoint.add(updatedOpenAPI);
+      }
+    }
+    return updatedOpenAPI;
+}
+```
+
+Key points:
+- `WeldUtils.getInstances(OpenAPIEndpoint.class)` discovers ALL beans implementing the interface across all modules
+- No explicit registration needed — CDI auto-discovers any class implementing `OpenAPIEndpoint`
+- The implementing class does NOT need `@ApplicationScoped` — Weld discovers it if the module has `beans.xml` with `bean-discovery-mode="all"`
+
+---
+
+## Security Configuration
+
+Two auth schemes are added to every generated spec:
+
+```java
+// OpenAPIController.java — lines 359-374
+
+private void configureSecurity(OpenAPI openAPI, String baseUrl) {
+    Components components = new Components().addSecuritySchemes("basicAuth",
+        createSecuritySchema("basic", null, BASIC_AUTH_DESCRIPTION));
+    openAPI.components(components);
+
+    SecurityScheme bearerAuthScheme = createSecuritySchema("bearer", "JWT",
+        String.format(BEARER_TOKEN_DESCRIPTION, baseUrl));
+    openAPI.components(components.addSecuritySchemes("bearerAuth", bearerAuthScheme));
+
+    SecurityRequirement securityRequirement = new SecurityRequirement().addList("bearerAuth");
+    openAPI.addSecurityItem(securityRequirement);
+}
+```
+
+All endpoints require `bearerAuth` (JWT) by default. `basicAuth` is available as an alternative.
+
+---
+
+## Real Example: How Copilot Integrates
+
+`com.etendoerp.copilot` implements `OpenAPIEndpoint` in `OpenAPIDoc.java` to register 8 custom endpoints.
+
+### Class structure
+
+```java
+// com.etendoerp.copilot/src/com/etendoerp/copilot/hook/OpenAPIDoc.java
+
+public class OpenAPIDoc implements OpenAPIEndpoint {
+  private static final List<String> COPILOT_TAG = Collections.singletonList("Copilot");
 
   @Override
   public boolean isValid(String tag) {
-    if (tag == null) return true;
-    return List.of("MyTag").contains(tag);
+    return StringUtils.equalsIgnoreCase(tag, "copilot");
   }
 
   @Override
   public void add(OpenAPI openAPI) {
-    PathItem pathItem = new PathItem();
-    Operation op = new Operation()
-        .summary("My endpoint")
-        .description("Does something");
-    pathItem.post(op);
-    openAPI.getPaths().addPathItem("/api/myendpoint", pathItem);
+    var paths = openAPI.getPaths();
+    if (paths == null) {
+      paths = new Paths();
+      openAPI.setPaths(paths);
+    }
+    addTranscriptionEndpoint(openAPI);
+    addAssistantsEndpoint(openAPI);
+    addAQuestionEndpoint(openAPI);
+    addQuestionEndpoint(openAPI);
+    addCacheQuestionEndpoint(openAPI);
+    addFileEndpoint(openAPI);
+    addConfigCheckEndpoint(openAPI);
+    addStructureEndpoint(openAPI);
   }
 }
 ```
 
-### Option B: Extend `OpenAPIDefaultRequest` (database-driven flows)
+### Pattern: GET endpoint returning a list
 
 ```java
-@ApplicationScoped
-public class MyFlowEndpoint extends OpenAPIDefaultRequest {
+// OpenAPIDoc.java — addAssistantsEndpoint()
 
-  @Override
-  protected Class<?>[] getClasses() {
-    return new Class[] { MyHandler.class };
-  }
+private static void addAssistantsEndpoint(OpenAPI openAPI) {
+    var operation = new io.swagger.v3.oas.models.Operation();
+    operation.setSummary("List available assistants for the current user");
+    operation.setTags(COPILOT_TAG);
 
-  @Override
-  protected String getEndpointPath() {
-    return "/api/myflow";
-  }
+    var itemSchema = new ObjectSchema()
+        .addProperties("id", new StringSchema().description("Assistant unique ID"))
+        .addProperties("name", new StringSchema().description("Assistant name"));
+    var arraySchema = new io.swagger.v3.oas.models.media.ArraySchema().items(itemSchema);
 
-  @Override
-  public Operation getPOSTEndpoint(OpenApiFlowPoint endpoint) { ... }
-  @Override
-  public Operation getGETEndpoint(OpenApiFlowPoint endpoint) { ... }
+    var response = new io.swagger.v3.oas.models.responses.ApiResponse()
+        .description("A list of available assistants for the current user")
+        .content(new Content().addMediaType(APPLICATION_JSON,
+            new MediaType().schema(arraySchema)));
+
+    operation.responses(new io.swagger.v3.oas.models.responses.ApiResponses()
+        .addApiResponse("200", response));
+
+    var pathItem = new io.swagger.v3.oas.models.PathItem();
+    pathItem.setGet(operation);
+    openAPI.getPaths().put("/sws/copilot/assistants", pathItem);
 }
 ```
+
+### Pattern: POST endpoint with JSON body
+
+```java
+// OpenAPIDoc.java — addQuestionEndpoint()
+
+private static void addQuestionEndpoint(OpenAPI openAPI) {
+    var operation = new io.swagger.v3.oas.models.Operation();
+    operation.setSummary("Ask a question to a selected assistant (JSON body)");
+    operation.setTags(COPILOT_TAG);
+
+    var requestSchema = new ObjectSchema()
+        .addProperties("app_id", new StringSchema().description("ID of the assistant to use"))
+        .addProperties("question", new StringSchema().description("The question to ask"))
+        .addProperties("conversation_id", new StringSchema().description("Optional conversation ID"))
+        .addProperties("file", new StringSchema().description("Optional file attachment"))
+        .required(List.of("app_id", "question"));
+
+    var requestBody = new RequestBody()
+        .description("JSON object containing the question and parameters")
+        .content(new Content().addMediaType(APPLICATION_JSON,
+            new MediaType().schema(requestSchema)));
+    operation.setRequestBody(requestBody);
+
+    var responseSchema = new ObjectSchema()
+        .addProperties("app_id", new StringSchema())
+        .addProperties("conversation_id", new StringSchema())
+        .addProperties("response", new StringSchema())
+        .addProperties("timestamp", new StringSchema().description("ISO-8601 timestamp"));
+
+    var apiResponse = new io.swagger.v3.oas.models.responses.ApiResponse()
+        .description("The answer to the user's question")
+        .content(new Content().addMediaType(APPLICATION_JSON,
+            new MediaType().schema(responseSchema)));
+
+    operation.responses(new io.swagger.v3.oas.models.responses.ApiResponses()
+        .addApiResponse("200", apiResponse));
+
+    var pathItem = new io.swagger.v3.oas.models.PathItem().post(operation);
+    openAPI.getPaths().put("/sws/copilot/question", pathItem);
+}
+```
+
+### Pattern: GET endpoint with query parameters
+
+```java
+// OpenAPIDoc.java — addAQuestionEndpoint()
+
+private static void addAQuestionEndpoint(OpenAPI openAPI) {
+    var operation = new io.swagger.v3.oas.models.Operation();
+    operation.setSummary("Ask a question to a selected assistant");
+    operation.setTags(COPILOT_TAG);
+
+    operation.addParametersItem(new io.swagger.v3.oas.models.parameters.Parameter()
+        .name("app_id").in("query").required(true)
+        .description("The ID of the assistant to use")
+        .schema(new StringSchema()));
+
+    operation.addParametersItem(new io.swagger.v3.oas.models.parameters.Parameter()
+        .name("question").in("query").required(true)
+        .description("The question to ask")
+        .schema(new StringSchema()));
+
+    operation.addParametersItem(new io.swagger.v3.oas.models.parameters.Parameter()
+        .name("conversation_id").in("query").required(false)
+        .description("Conversation ID for continuing a session")
+        .schema(new StringSchema()));
+
+    // ... response similar to POST ...
+
+    var pathItem = new io.swagger.v3.oas.models.PathItem().get(operation);
+    openAPI.getPaths().put("/sws/copilot/aquestion", pathItem);
+}
+```
+
+### Pattern: POST with multipart file upload
+
+```java
+// OpenAPIDoc.java — addTranscriptionEndpoint()
+
+private static void addTranscriptionEndpoint(OpenAPI openAPI) {
+    var transcription = new io.swagger.v3.oas.models.Operation();
+    transcription.setSummary("Transcribe an audio file to text");
+    transcription.setTags(COPILOT_TAG);
+
+    RequestBody request = new RequestBody();
+    request.setDescription("The audio file to transcribe");
+    request.content(new Content()
+        .addMediaType("multipart/form-data", new MediaType()
+            .schema(new ObjectSchema()
+                .addProperties("file", new StringSchema().format("binary")))));
+    transcription.setRequestBody(request);
+
+    var response = new io.swagger.v3.oas.models.responses.ApiResponse();
+    response.setDescription("The transcription of the audio file");
+    response.content(new Content()
+        .addMediaType(APPLICATION_JSON, new MediaType().schema(new StringSchema())));
+    transcription.responses(new io.swagger.v3.oas.models.responses.ApiResponses()
+        .addApiResponse("200", response));
+
+    var pathItem = new io.swagger.v3.oas.models.PathItem();
+    pathItem.setPost(transcription);
+    openAPI.getPaths().put("/sws/copilot/transcription", pathItem);
+}
+```
+
+---
 
 ## Database Tables (Flow System)
 
-Three tables organize endpoint documentation:
+The OpenAPI module also supports database-driven endpoint configuration:
 
-| Table | Entity | Purpose |
-|-------|--------|---------|
-| `ETAPI_OPENAPI_FLOW` | OpenApiFlow | Top-level flow container (groups endpoints) |
-| `ETAPI_OPENAPI_REQ` | OpenAPIRequest | Request definition metadata (name, type, descriptions per HTTP method) |
-| `ETAPI_OPENAPI_FLOWPOINT` | OpenApiFlowPoint | Junction: which HTTP methods (GET/POST/PUT) are enabled per request in a flow |
+| Table | Purpose |
+|-------|---------|
+| `ETAPI_OPENAPI_FLOW` | Groups endpoints by business area (used as OpenAPI tag). Fields: NAME, DESCRIPTION, OPEN_SWAGGER, ISLEGACY. |
+| `ETAPI_OPENAPI_REQ` | Individual endpoint definition. Fields: NAME (alpha only, validated by event handler), TYPE, CLASSNAME, per-method descriptions. |
+| `ETAPI_OPENAPI_FLOWPOINT` | Links a flow to a request with HTTP method flags: GET, POST, PUT, GETBYID, DELETE, PATCH. |
 
-### OpenAPIRequest Fields
-- `name` — endpoint identifier (alphabetic only, validated by event handler)
-- `type` — `"DEF"` for default, others for custom
-- `classname` — Java class this applies to
-- `gETDescription`, `getbyidDescription`, `postDescription`, `pUTDescription` — per-method docs
-- Relations: `OpenAPITab` (etendorx), `OpenAPIWebhook` (webhook events)
+These are used by `OpenAPIDefaultRequest` (abstract base class) for modules that prefer declarative configuration over programmatic registration.
 
-### OpenApiFlowPoint Fields
-- `etapiOpenapiFlow` — FK to flow
-- `etapiOpenapiReq` — FK to request
-- `get`, `getbyid`, `post`, `put` — boolean flags (which HTTP methods are enabled)
+Copilot uses BOTH approaches:
+- **Programmatic:** `OpenAPIDoc` adds 8 custom endpoints via code
+- **Database:** Copilot creates a "Copilot" flow with 2 database-driven requests
 
-## Integration Points
+Copilot sourcedata records:
 
-### SWS (Secure Web Services)
-All hardcoded endpoints use the SWS path pattern:
+```xml
+<!-- ETAPI_OPENAPI_FLOW -->
+<ETAPI_OPENAPI_FLOW>
+  <ETAPI_OPENAPI_FLOW_ID>37FF96E51341486BB25AF7EB15BE6C44</ETAPI_OPENAPI_FLOW_ID>
+  <NAME>Copilot</NAME>
+  <OPEN_SWAGGER>N</OPEN_SWAGGER>
+  <ISLEGACY>N</ISLEGACY>
+</ETAPI_OPENAPI_FLOW>
+
+<!-- Agents — GET only -->
+<ETAPI_OPENAPI_FLOWPOINT>
+  <ETAPI_OPENAPI_FLOW_ID>37FF96E51341486BB25AF7EB15BE6C44</ETAPI_OPENAPI_FLOW_ID>
+  <ETAPI_OPENAPI_REQ_ID>FAB84394CBF74B7D98C5012DCB40F5AC</ETAPI_OPENAPI_REQ_ID>
+  <GET>Y</GET><PUT>N</PUT><GETBYID>N</GETBYID><POST>N</POST>
+</ETAPI_OPENAPI_FLOWPOINT>
+
+<!-- AgentAccess — POST only -->
+<ETAPI_OPENAPI_FLOWPOINT>
+  <ETAPI_OPENAPI_FLOW_ID>37FF96E51341486BB25AF7EB15BE6C44</ETAPI_OPENAPI_FLOW_ID>
+  <ETAPI_OPENAPI_REQ_ID>6719675F2F3949C7A3B1FEF44D868217</ETAPI_OPENAPI_REQ_ID>
+  <GET>N</GET><PUT>N</PUT><GETBYID>N</GETBYID><POST>Y</POST>
+</ETAPI_OPENAPI_FLOWPOINT>
 ```
-/sws/com.smf.securewebservices.kernel/org.openbravo.client.kernel?_action=<HandlerClass>
-```
 
-Handlers include:
-- `WindowSettingsActionHandler` — window settings
-- `FormInitializationComponent` — form init + callouts
-- `com.smf.jobs.defaults` — jobs and actions
-- `BaseReportActionHandler` — reports
+---
 
-### Etendo RX
-- `OpenAPIRequest` has FK relations to `com.etendoerp.etendorx.data.OpenAPITab`
-- And to `com.etendoerp.webhookevents.data.OpenAPIWebhook`
-- Endpoints are documented here but may be implemented in the etendorx module
+## Built-in Endpoint Implementations
 
-### Security
-Two schemes configured:
-1. **basicAuth** — HTTP Basic
-2. **bearerAuth** — JWT token from `/sws/login`
-
-Default: bearerAuth required.
-
-## Existing Endpoint Implementations
-
-| Class | Tag | What it documents |
-|-------|-----|-------------------|
-| `WindowSettingEndpoint` | "Window Settings" | Window settings, form init, callouts |
+| Class | Tag | Endpoints |
+|-------|-----|-----------|
+| `WindowSettingEndpoint` | "Window Settings" | Window settings + form initialization (hardcoded SWS paths) |
 | `JobsAndActionsEndpoint` | "Jobs and Actions" | Process execution (orders, defaults) |
 | `PurchaseOrderReportEndpoint` | "Jobs and Actions" | Report generation + download |
 
-## HTTP Access
+---
 
-```
-GET /sws/openapi                          # All endpoints
-GET /sws/openapi?tag=Window%20Settings    # Filter by tag
-GET /sws/openapi?host=custom.domain.com   # Custom base URL
+## Dependencies
+
+To integrate from another module, add to `build.gradle`:
+
+```gradle
+dependencies {
+    compileOnly('com.etendoerp:openapi:[2.5.0,)')
+    compileOnly 'io.swagger.core.v3:swagger-models:2.1.13'
+}
 ```
 
-Response: OpenAPI 3.0 JSON with info, servers, paths, components, security.
+Ensure `beans.xml` exists with bean discovery enabled:
+
+```xml
+<!-- etendo-resources/META-INF/beans.xml -->
+<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+       bean-discovery-mode="all">
+</beans>
+```
+
+---
 
 ## Key File Paths
 
@@ -156,39 +373,69 @@ Response: OpenAPI 3.0 JSON with info, servers, paths, components, security.
 modules/com.etendoerp.openapi/
   src/com/etendoerp/openapi/
     OpenAPIController.java              # Main HTTP controller (WebService)
-    OpenApiProvider.java                # ComponentProvider registration
     OpenAPIDefaultRequest.java          # Abstract base for DB-driven flows
+    OpenApiProvider.java                # ComponentProvider registration
     model/
-      OpenAPIEndpoint.java              # CORE INTERFACE
-      window/WindowSettingEndpoint.java # Window settings (685 lines)
-      jobs/JobsAndActionsEndpoint.java  # Jobs endpoint
+      OpenAPIEndpoint.java              # THE INTERFACE to implement
+      window/WindowSettingEndpoint.java # Built-in: window settings
+      jobs/JobsAndActionsEndpoint.java  # Built-in: jobs and actions
       printreport/PurchaseOrderReportEndpoint.java
-    events/OpenAPIRequestNameHandler.java
-    hook/cloning/CloneFlow.java, CloneRequest.java
-  config/com.etendoerp.openapi-provider-config.xml
-  etendo-resources/META-INF/beans.xml
+    events/OpenAPIRequestNameHandler.java  # Validates REQ name is alpha-only
+    hook/cloning/CloneFlow.java            # Clone support for UI
+    hook/cloning/CloneRequest.java
 
 src-gen/com/etendoerp/openapi/data/
-  OpenAPIRequest.java                   # Entity: ETAPI_OPENAPI_REQ
-  OpenApiFlow.java                      # Entity: ETAPI_OPENAPI_FLOW
-  OpenApiFlowPoint.java                 # Entity: ETAPI_OPENAPI_FLOWPOINT
+  OpenAPIRequest.java                   # DAL entity: ETAPI_OPENAPI_REQ
+  OpenApiFlow.java                      # DAL entity: ETAPI_OPENAPI_FLOW
+  OpenApiFlowPoint.java                 # DAL entity: ETAPI_OPENAPI_FLOWPOINT
 ```
 
-## Dependencies
+---
 
-- `io.swagger.v3:swagger-models` — OpenAPI 3.0 object model
-- `io.swagger.v3:swagger-integration` — OpenAPI context
-- `com.fasterxml.jackson` — JSON serialization
-- `org.openbravo.client.kernel` — WebService, WeldUtils (CDI discovery)
-- `org.openbravo.dal` — OBDal, OBContext
+## Swagger Models Quick Reference
 
-## Relevance to Schema Forge
+Most commonly used classes from `io.swagger.v3.oas.models`:
 
-Schema Forge currently generates `RequestHandler`-based endpoints (custom routing via `HandlerRegistry`).
-To integrate with the OpenAPI module, generated code could:
+| Class | Usage |
+|-------|-------|
+| `OpenAPI` | Root object — passed to `add()` |
+| `Paths` | Map of URL path → PathItem |
+| `PathItem` | One URL path — holds GET/POST/PUT/DELETE operations |
+| `Operation` | One HTTP method — summary, tags, parameters, requestBody, responses |
+| `Parameter` | Query/path/header parameter — name, in, required, schema |
+| `RequestBody` | POST/PUT body — content type + schema |
+| `ApiResponse` / `ApiResponses` | Response definitions by status code |
+| `Content` / `MediaType` | Content type mapping + schema |
+| `ObjectSchema` | Schema with type="object" — use `addProperties()` |
+| `StringSchema` | Schema with type="string" |
+| `ArraySchema` | Schema with type="array" — use `items()` |
+| `Tag` | Grouping tag for operations |
 
-1. **Implement `OpenAPIEndpoint`** per window to auto-document generated REST endpoints
-2. **Register flows via AD** (ETAPI_OPENAPI_FLOW + REQ + FLOWPOINT) in the generated dataset.xml
-3. **Or** generate a single `@ApplicationScoped` class that programmatically adds all window endpoints to the OpenAPI spec
+---
 
-This would make all Schema Forge generated endpoints discoverable via Swagger UI at `/sws/openapi`.
+## Applying This to Etendo Go (NEO Headless)
+
+Etendo Go currently does NOT integrate with the OpenAPI module. To add it, create a single class in `com.etendoerp.go`:
+
+```java
+public class NeoOpenAPIEndpoint implements OpenAPIEndpoint {
+
+  private static final String TAG = "EtendoGo";
+
+  @Override
+  public boolean isValid(String tag) {
+    return tag == null || TAG.equalsIgnoreCase(tag);
+  }
+
+  @Override
+  public void add(OpenAPI openAPI) {
+    // Read ETGO_SF_SPEC records via OBDal
+    // For each active spec + included entity:
+    //   Build PathItem with enabled HTTP methods
+    //   Add to openAPI.getPaths()
+    // All data is already in the DB — no hardcoding needed
+  }
+}
+```
+
+This would make all NEO Headless endpoints appear in Swagger UI at `/sws/com.etendoerp.openapi?tag=EtendoGo`.

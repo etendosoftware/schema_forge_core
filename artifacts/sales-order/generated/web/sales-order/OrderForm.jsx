@@ -10,7 +10,7 @@ const fields = [
   { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', required: true, reference: 'PaymentTerm', inputMode: 'selector' },
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', reference: 'PaymentMethod', inputMode: 'selector' },
   { key: 'invoiceAddress', column: 'BillTo_ID', type: 'dependent', required: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
-  { key: 'deliveryLocation', column: 'DeliveryLocation', type: 'text' },
+  { key: 'deliveryLocation', column: 'DeliveryLocation', type: 'search', reference: 'Location' },
   { key: 'orderReference', column: 'POReference', type: 'text' },
   { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'search', reference: 'User', inputMode: 'search' },
   { key: 'description', column: 'Description', type: 'textarea' },
@@ -18,7 +18,7 @@ const fields = [
   { key: 'documentStatus', column: 'DocStatus', type: 'text', required: true, readOnly: true },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', readOnly: true },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', readOnly: true },
-  { key: 'currency', column: 'C_Currency_ID', type: 'text', required: true, readOnly: true },
+  { key: 'currency', column: 'C_Currency_ID', type: 'search', required: true, readOnly: true, reference: 'Currency' },
   { key: 'delivered', column: 'IsDelivered', type: 'checkbox', readOnly: true },
 ];
 

@@ -141,17 +141,26 @@ async function main(windowId, windowSlug) {
   }
 }
 
-// CLI entry point
-const windowId = process.argv[2];
-const windowSlug = process.argv[3];
+// Exports for testing
+export { QUERIES, rowsToCsv };
 
-if (!windowId || !windowSlug) {
-  console.error('Usage: node extract-from-db.js <windowId> <windowSlug>');
-  console.error('Example: node extract-from-db.js 143 sales-order');
-  process.exit(1);
+// CLI entry point — only runs when executed directly
+const isCLI =
+  process.argv[1] &&
+  import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+
+if (isCLI) {
+  const windowId = process.argv[2];
+  const windowSlug = process.argv[3];
+
+  if (!windowId || !windowSlug) {
+    console.error('Usage: node extract-from-db.js <windowId> <windowSlug>');
+    console.error('Example: node extract-from-db.js 143 sales-order');
+    process.exit(1);
+  }
+
+  main(windowId, windowSlug).catch((err) => {
+    console.error('Extraction failed:', err.message);
+    process.exit(1);
+  });
 }
-
-main(windowId, windowSlug).catch((err) => {
-  console.error('Extraction failed:', err.message);
-  process.exit(1);
-});
