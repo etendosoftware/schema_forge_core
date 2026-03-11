@@ -36,6 +36,44 @@ function findMatchingRule(rules, identifier, type) {
 }
 
 /**
+ * Classify whether a raw display/readOnly logic expression can be evaluated client-side.
+ * Returns { evaluable: true } or { evaluable: false, reason: string }.
+ */
+function classifyEvaluability(rawExpr) {
+  if (!rawExpr) return { evaluable: true };
+
+  // Server-expanded macro
+  if (rawExpr.includes('@ACCT_DIMENSION_DISPLAY@')) {
+    return { evaluable: false, reason: 'server-macro' };
+  }
+  // System preferences (@#VAR@)
+  if (/@#\w+@/.test(rawExpr)) {
+    return { evaluable: false, reason: 'session-preference' };
+  }
+  // Accounting dimensions (@$VAR@)
+  if (/@\$\w+@/.test(rawExpr)) {
+    return { evaluable: false, reason: 'accounting-dimension' };
+  }
+  // Known session context variables (module flags, not field values)
+  const sessionVarPatterns = [
+    'FinancialManagement', 'StockReservations', 'IsSOTrx', 'ShowAcct', 'ShowTrl',
+    'ACCS_Account_Ope', 'APRM_', 'showAddPayment', 'IsStocked',
+  ];
+  for (const pattern of sessionVarPatterns) {
+    if (rawExpr.includes(`@${pattern}`)) {
+      return { evaluable: false, reason: 'session-variable' };
+    }
+  }
+  // Auxiliary inputs (SQL-computed values — lowercase start or known patterns)
+  if (/@SQL@/i.test(rawExpr)) {
+    return { evaluable: false, reason: 'auxiliary-input' };
+  }
+  // If @ symbols remain after the known patterns, might be untranslatable
+  // But simple @FieldName@ patterns are fine — those are field references
+  return { evaluable: true };
+}
+
+/**
  * Generate frontend contract: visible fields, searchable fields, computed fields.
  * Includes behavioral metadata (callout, displayLogic, readOnlyLogic) when present.
  */
@@ -96,6 +134,12 @@ export function generateFrontendContract(schema, rules = []) {
         if (matchingRule && matchingRule.translated) {
           mapped.displayLogic.js = matchingRule.translated;
         }
+        const evalInfo = classifyEvaluability(f.displayLogic);
+        mapped.displayLogic.evaluable = evalInfo.evaluable;
+        if (!evalInfo.evaluable) {
+          mapped.displayLogic.reason = evalInfo.reason;
+          mapped.displayLogic.js = null;
+        }
       }
 
       // Behavioral metadata: readOnlyLogic
@@ -104,6 +148,12 @@ export function generateFrontendContract(schema, rules = []) {
         const matchingRule = findMatchingRule(rules, f.readOnlyLogic, 'readOnlyLogic');
         if (matchingRule && matchingRule.translated) {
           mapped.readOnlyLogic.js = matchingRule.translated;
+        }
+        const evalInfo = classifyEvaluability(f.readOnlyLogic);
+        mapped.readOnlyLogic.evaluable = evalInfo.evaluable;
+        if (!evalInfo.evaluable) {
+          mapped.readOnlyLogic.reason = evalInfo.reason;
+          mapped.readOnlyLogic.js = null;
         }
       }
 
@@ -250,6 +300,34 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
           field: field.name,
           runner: 'node',
           description: `Read-only logic for '${field.name}' in ${entityName} should be valid JS`,
+        });
+      }
+    }
+
+    // displayLogic evaluable: one per field with displayLogic
+    for (const field of visibleFields) {
+      if (field.displayLogic) {
+        tests.push({
+          id: nextId(),
+          category: 'displaylogic-evaluable',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Display logic for '${field.name}' in ${entityName} should have evaluable flag`,
+        });
+      }
+    }
+
+    // readOnlyLogic evaluable: one per field with readOnlyLogic
+    for (const field of visibleFields) {
+      if (field.readOnlyLogic) {
+        tests.push({
+          id: nextId(),
+          category: 'readonlylogic-evaluable',
+          entity: entityName,
+          field: field.name,
+          runner: 'node',
+          description: `Read-only logic for '${field.name}' in ${entityName} should have evaluable flag`,
         });
       }
     }
