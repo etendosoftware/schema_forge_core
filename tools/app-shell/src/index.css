@@ -17,6 +17,27 @@
   animation: page-enter 0.2s ease-out;
 }
 
+.content-bg {
+  background-image:
+    radial-gradient(var(--section-accent, hsl(213 83% 48%)) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  opacity: 1;
+}
+
+.content-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background) / 0.92) 0%,
+    hsl(var(--background) / 0.97) 40%,
+    hsl(var(--background)) 100%
+  );
+  pointer-events: none;
+}
+
 @layer base {
   * {
     @apply border-border;
