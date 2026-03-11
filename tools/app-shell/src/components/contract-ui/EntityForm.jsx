@@ -245,7 +245,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             </FieldHighlight>
           );
         }
-        const inputType = f.type === 'number' ? 'number' : 'text';
+        const inputType = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
         return (
           <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
             <div className="space-y-1.5">
