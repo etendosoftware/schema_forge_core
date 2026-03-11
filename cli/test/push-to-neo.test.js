@@ -8,6 +8,10 @@ import {
   pushToNeo,
   loadConfig,
 } from '../src/push-to-neo.js';
+import {
+  generateId,
+  auditDefaults,
+} from '../src/neo-writer.js';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -39,7 +43,7 @@ describe('mapVisibility', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. Webhook URL construction
+// 2. Webhook URL construction (deprecated but still exported)
 // ---------------------------------------------------------------------------
 
 describe('buildWebhookUrl', () => {
@@ -177,15 +181,9 @@ describe('pushToNeo dry run', () => {
 
     await writeFile(join(artifactsDir, 'schema-curated.json'), JSON.stringify(schema));
     await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify(contract));
-
-    // Write a minimal properties file
-    await writeFile(
-      join(tmpDir, 'schema_forge.properties'),
-      'etendo.url=http://localhost:8080/etendo\netendo.user=admin\netendo.password=admin\n',
-    );
   });
 
-  it('returns plan without making HTTP calls', async () => {
+  it('returns plan without writing to DB', async () => {
     const result = await pushToNeo('sales-order', {
       dryRun: true,
       projectRoot: tmpDir,
@@ -215,15 +213,15 @@ describe('pushToNeo dry run', () => {
     assert.equal(result.summary.totalFields, 4);
   });
 
-  it('builds correct webhook URLs in plan', async () => {
+  it('uses direct DB action names in plan', async () => {
     const result = await pushToNeo('sales-order', {
       dryRun: true,
       projectRoot: tmpDir,
     });
 
-    assert.equal(result.plan.spec.url, 'http://localhost:8080/etendo/sws/webhooks/SFUpsertSpec');
-    assert.equal(result.plan.populate.url, 'http://localhost:8080/etendo/sws/webhooks/SFPopulateSpec');
-    assert.equal(result.plan.fields[0].url, 'http://localhost:8080/etendo/sws/webhooks/SFUpsertField');
+    assert.equal(result.plan.spec.action, 'upsertSpec');
+    assert.equal(result.plan.populate.action, 'populateSpec');
+    assert.equal(result.plan.fields[0].action, 'upsertField');
   });
 
   it('derives spec name from schema window name', async () => {
@@ -233,7 +231,7 @@ describe('pushToNeo dry run', () => {
     });
 
     assert.equal(result.plan.spec.params.name, 'sales-order');
-    assert.equal(result.plan.spec.params.type, 'W');
+    assert.equal(result.plan.spec.params.specType, 'W');
     assert.equal(result.plan.spec.params.windowId, '143');
   });
 });
@@ -252,9 +250,6 @@ describe('pushToNeo error handling', () => {
       () => pushToNeo('nonexistent', {
         dryRun: true,
         projectRoot: tmpDir,
-        etendoUrl: 'http://localhost:8080/etendo',
-        user: 'admin',
-        password: 'admin',
       }),
       /Cannot read contract\.json/,
     );
@@ -272,48 +267,14 @@ describe('pushToNeo error handling', () => {
       () => pushToNeo('partial', {
         dryRun: true,
         projectRoot: tmpDir,
-        etendoUrl: 'http://localhost:8080/etendo',
-        user: 'admin',
-        password: 'admin',
       }),
       /Cannot read schema-curated\.json/,
     );
   });
-
-  it('throws on missing config when no options provided', async () => {
-    const tmpDir = join(tmpdir(), `push-to-neo-err3-${Date.now()}`);
-    const artifactsDir = join(tmpDir, 'artifacts', 'test-win');
-    await mkdir(artifactsDir, { recursive: true });
-
-    const schema = { window: { id: '1', name: 'Test' }, entities: [] };
-    const contract = { backendContract: { entities: {} } };
-    await writeFile(join(artifactsDir, 'schema-curated.json'), JSON.stringify(schema));
-    await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify(contract));
-
-    // Clear env vars for this test
-    const origUrl = process.env.ETENDO_URL;
-    const origUser = process.env.ETENDO_USER;
-    const origPass = process.env.ETENDO_PASSWORD;
-    delete process.env.ETENDO_URL;
-    delete process.env.ETENDO_USER;
-    delete process.env.ETENDO_PASSWORD;
-
-    try {
-      await assert.rejects(
-        () => pushToNeo('test-win', { projectRoot: tmpDir }),
-        /Missing Etendo URL/,
-      );
-    } finally {
-      // Restore env vars
-      if (origUrl !== undefined) process.env.ETENDO_URL = origUrl;
-      if (origUser !== undefined) process.env.ETENDO_USER = origUser;
-      if (origPass !== undefined) process.env.ETENDO_PASSWORD = origPass;
-    }
-  });
 });
 
 // ---------------------------------------------------------------------------
-// 7. loadConfig
+// 7. loadConfig (deprecated but still tested for backwards compat)
 // ---------------------------------------------------------------------------
 
 describe('loadConfig', () => {
@@ -367,8 +328,46 @@ describe('loadConfig', () => {
       assert.equal(cfg.password, 'env-pass');
     } finally {
       if (origUrl !== undefined) process.env.ETENDO_URL = origUrl; else delete process.env.ETENDO_URL;
-      if (origUser !== undefined) process.env.ETENDO_USER = origUser; else delete process.env.ETENDO_USER;
+      if (origUser !== undefined) process.env.ETENDO_USER = origUser; else delete process.env.ETENDO_URL;
       if (origPass !== undefined) process.env.ETENDO_PASSWORD = origPass; else delete process.env.ETENDO_PASSWORD;
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. neo-writer.js pure function tests
+// ---------------------------------------------------------------------------
+
+describe('generateId', () => {
+  it('returns a 32-character uppercase hex string', () => {
+    const id = generateId();
+    assert.equal(id.length, 32);
+    assert.match(id, /^[0-9A-F]{32}$/);
+  });
+
+  it('generates unique IDs', () => {
+    const ids = new Set(Array.from({ length: 100 }, () => generateId()));
+    assert.equal(ids.size, 100);
+  });
+});
+
+describe('auditDefaults', () => {
+  it('returns all required audit columns', () => {
+    const audit = auditDefaults();
+    assert.equal(audit.ad_client_id, '0');
+    assert.equal(audit.ad_org_id, '0');
+    assert.equal(audit.isactive, 'Y');
+    assert.equal(audit.createdby, '0');
+    assert.equal(audit.updatedby, '0');
+    assert.ok(audit.created instanceof Date);
+    assert.ok(audit.updated instanceof Date);
+  });
+
+  it('accepts custom clientId, orgId, userId', () => {
+    const audit = auditDefaults({ clientId: 'ABC', orgId: 'DEF', userId: 'GHI' });
+    assert.equal(audit.ad_client_id, 'ABC');
+    assert.equal(audit.ad_org_id, 'DEF');
+    assert.equal(audit.createdby, 'GHI');
+    assert.equal(audit.updatedby, 'GHI');
   });
 });
