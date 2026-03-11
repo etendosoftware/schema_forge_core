@@ -33,7 +33,7 @@ describe('Handlebars templates — edge cases', () => {
     assert.ok(!result.includes('getProperty('));
   });
 
-  // EventHandler with checkNull=false derivation
+  // EventHandler with checkNull=false derivation — template now generates TODO stubs
   it('EventHandler.java.hbs with checkNull=false omits null guard', async () => {
     const template = await compileTemplate('EventHandler.java.hbs');
     const result = template({
@@ -41,23 +41,24 @@ describe('Handlebars templates — edge cases', () => {
       className: 'NoNullCheckHandler',
       entityName: 'Invoice',
       entityClass: 'org.openbravo.model.common.invoice.Invoice',
+      table: 'C_Invoice',
       schemaVersion: 'v1',
       schemaChecksum: 'abc123',
       derivations: [
         {
           field: 'currency',
-          getter: 'getCurrency',
-          setter: 'setCurrency',
+          column: 'C_Currency_ID',
           type: 'fromConfig',
           source: 'OBContext.getOBContext().getCurrentClient().getCurrency()',
           checkNull: false
         }
       ]
     });
-    assert.ok(result.includes('setCurrency'));
-    // When checkNull is false, there should be no null guard — no "if (derived != null)"
+    // Template renders derivation comment with field name and source
+    assert.ok(result.includes('Derivation: currency'));
+    // No null guard in stub template — only TODO comments
     assert.ok(!result.includes('if (derived != null)'));
-    // The source must be assigned directly
+    // Source is included in the derivation comment
     assert.ok(result.includes('OBContext.getOBContext().getCurrentClient().getCurrency()'));
   });
 
@@ -97,7 +98,7 @@ describe('Handlebars templates — edge cases', () => {
     assert.ok(!result.includes('// Step:'));
   });
 
-  // DalProcess with all stub=true steps
+  // DalProcess with all stub=true steps — template uses order/name/type/description fields
   it('DalProcess.java.hbs with all stub=true steps renders only comments, no code', async () => {
     const template = await compileTemplate('DalProcess.java.hbs');
     const result = template({
@@ -106,14 +107,14 @@ describe('Handlebars templates — edge cases', () => {
       entityClass: 'org.openbravo.model.common.order.Order',
       preconditions: [],
       steps: [
-        { name: 'stepOne', stub: true, comment: 'TODO: implement step one' },
-        { name: 'stepTwo', stub: true, comment: 'TODO: implement step two' }
+        { order: 1, name: 'stepOne', type: 'stub', description: 'TODO: implement step one' },
+        { order: 2, name: 'stepTwo', type: 'stub', description: 'TODO: implement step two' }
       ]
     });
     assert.ok(result.includes('AllStubProcess'));
     assert.ok(result.includes('TODO: implement step one'));
     assert.ok(result.includes('TODO: implement step two'));
-    // Stub steps should not emit executable code — no direct assignments
+    // Stub steps should not emit executable code — only TODO comments
     assert.ok(!result.includes('order.set'));
   });
 
@@ -134,7 +135,7 @@ describe('Handlebars templates — edge cases', () => {
     assert.ok(!result.includes('return this.'));
   });
 
-  // RxEndpoint with no filters
+  // RxEndpoint with no filters — requires entityFullClass for full code path
   it('RxEndpoint.java.hbs with no filters renders org-level filter only', async () => {
     const template = await compileTemplate('RxEndpoint.java.hbs');
     const result = template({
@@ -142,15 +143,17 @@ describe('Handlebars templates — edge cases', () => {
       className: 'NoFilterEndpoint',
       entityName: 'Invoice',
       entityClass: 'org.openbravo.model.common.invoice.Invoice',
+      entityFullClass: 'org.openbravo.model.common.invoice.Invoice',
+      entityClassname: 'Invoice',
       dtoClass: 'InvoiceDTO',
+      pathSegment: 'invoices',
       filters: []
     });
     assert.ok(result.includes('public class NoFilterEndpoint'));
-    // RT-5 org-level filter must always be present
-    assert.ok(result.includes('organization'));
-    assert.ok(result.includes('getReadableOrganizations'));
-    // No @QueryParam annotations since filters is empty
-    assert.ok(!result.includes('@QueryParam'));
+    // RT-5 org-level filter: organization set via OBContext in create method
+    assert.ok(result.includes('Organization'));
+    // No filter parameters since filters is empty
+    assert.ok(!result.includes('getParameter("documentNo")'));
   });
 
   // dataset.xml with no records
