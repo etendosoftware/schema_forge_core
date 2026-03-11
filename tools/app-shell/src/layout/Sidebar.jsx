@@ -1,13 +1,26 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip.jsx';
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
+} from '@/components/ui/sidebar.jsx';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible.jsx';
 import {
   Eye,
+  ChevronRight,
   LayoutDashboard,
   ShoppingCart,
   Truck,
@@ -20,8 +33,6 @@ import {
   LogOut,
   FileJson,
 } from 'lucide-react';
-import { cn } from '@/lib/utils.js';
-import { getSectionColor } from '@/lib/sectionColors.js';
 import { useMenuLabel } from '@/i18n';
 
 const ICON_MAP = {
@@ -40,7 +51,6 @@ const ICON_MAP = {
 
 /**
  * Determines which menu group is active based on current route.
- * Returns the group object or null.
  */
 export function findActiveGroup(menuGroups, pathname) {
   const currentPath = pathname.replace(/^\//, '');
@@ -49,106 +59,105 @@ export function findActiveGroup(menuGroups, pathname) {
   ) || null;
 }
 
-function SidebarIcon({ icon, label, to, isActive }) {
+function NavMenuGroup({ group, icon, items, isActive, tMenu }) {
   const Icon = ICON_MAP[icon] || Package;
-  const color = getSectionColor(label);
 
   return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>
-        <NavLink
-          to={to}
-          className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-            isActive
-              ? 'text-white'
-              : 'text-white/60 hover:bg-white/10 hover:text-white'
-          )}
-          style={isActive ? {
-            borderLeft: `3px solid ${color.accent}`,
-            backgroundColor: color.accent + '25',
-          } : undefined}
-        >
-          <Icon className="h-5 w-5" />
-          <span className="sr-only">{label}</span>
-        </NavLink>
-      </TooltipTrigger>
-      <TooltipContent side="right">
-        {label}
-      </TooltipContent>
-    </Tooltip>
+    <Collapsible asChild defaultOpen={isActive} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton tooltip={tMenu(group)}>
+            <Icon className="h-4 w-4" />
+            <span>{tMenu(group)}</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {items.map((item) => (
+              <SidebarMenuSubItem key={item.name}>
+                <SidebarMenuSubButton asChild>
+                  <NavLink
+                    to={`/${item.name}`}
+                    className={({ isActive: active }) => (active ? 'font-medium' : '')}
+                  >
+                    {tMenu(item.label)}
+                  </NavLink>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
   );
 }
 
 export default function AppSidebar({ menuGroups }) {
   const { username, logout } = useAuth();
   const location = useLocation();
-  const activeGroup = findActiveGroup(menuGroups, location.pathname);
+  const currentPath = location.pathname.replace(/^\//, '');
   const tMenu = useMenuLabel();
 
   return (
-    <TooltipProvider>
-      <nav className="fixed inset-y-0 left-0 z-50 flex w-[60px] flex-col items-center bg-[hsl(222,47%,11%)] py-3">
-        {/* Logo */}
-        <div className="mb-4 flex h-10 w-10 shrink-0 items-center justify-center">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+        <div className="flex items-center gap-2">
           <img
             src="/favicon.png"
             alt="Etendo"
-            className="h-9 w-9 rounded-lg"
+            className="h-7 w-7 shrink-0 rounded-md"
           />
+          <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
+            <span className="font-semibold text-sm">Schema Forge</span>
+            <span className="text-xs text-sidebar-foreground/60">ERP Generator</span>
+          </div>
         </div>
+      </SidebarHeader>
 
-        {/* Menu groups */}
-        <div className="flex flex-1 flex-col items-center gap-1.5">
+      <SidebarContent>
+        <SidebarMenu>
           {menuGroups.map((g) => (
-            <SidebarIcon
+            <NavMenuGroup
               key={g.group}
+              group={g.group}
               icon={g.icon}
-              label={tMenu(g.group)}
-              to={`/${g.items[0].name}`}
-              isActive={activeGroup?.group === g.group}
+              items={g.items}
+              isActive={g.items.some((item) => item.name === currentPath)}
+              tMenu={tMenu}
             />
           ))}
-        </div>
+        </SidebarMenu>
+      </SidebarContent>
 
-        {/* Footer */}
-        <div className="flex flex-col items-center gap-1.5 border-t border-white/10 pt-3">
-          <SidebarIcon
-            icon="FileJson"
-            label="Artifacts"
-            to="/artifacts"
-            isActive={location.pathname.startsWith('/artifacts')}
-          />
-
-          {/* User avatar */}
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <div className="flex h-10 w-10 items-center justify-center">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
-                  <span className="text-xs font-semibold">
-                    {username?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+      <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Artifacts">
+              <NavLink to="/artifacts">
+                <FileJson className="h-4 w-4" />
+                <span>Artifacts</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip={username}>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary-foreground">
+                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
               </div>
-            </TooltipTrigger>
-            <TooltipContent side="right">{username}</TooltipContent>
-          </Tooltip>
+              <span className="truncate">{username}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Logout" onClick={logout}>
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
 
-          {/* Logout */}
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={logout}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Logout</span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Logout</TooltipContent>
-          </Tooltip>
-        </div>
-      </nav>
-    </TooltipProvider>
+      <SidebarRail />
+    </Sidebar>
   );
 }

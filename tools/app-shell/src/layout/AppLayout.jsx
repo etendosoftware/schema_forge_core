@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar.jsx';
 import AppSidebar from './Sidebar.jsx';
 import TopBar from './TopBar.jsx';
 import { CopilotWidget } from '@/components/CopilotWidget.jsx';
@@ -15,19 +16,21 @@ export default function AppLayout({ menuGroups }) {
 
   return (
     <InspectorProvider>
-      <AppSidebar menuGroups={menuGroups} />
-      <div className="ml-[60px] flex h-screen flex-col overflow-hidden">
-        <TopBar menuGroups={menuGroups} />
-        <div
-          key={location.pathname}
-          className="relative flex-1 overflow-auto p-6 page-transition content-bg"
-          style={{ '--section-accent': sectionColor.accent }}
-        >
-          <div className="relative z-10">
-            <Outlet />
+      <SidebarProvider defaultOpen={false}>
+        <AppSidebar menuGroups={menuGroups} />
+        <SidebarInset>
+          <TopBar menuGroups={menuGroups} />
+          <div
+            key={location.pathname}
+            className="relative flex-1 overflow-auto p-6 page-transition content-bg"
+            style={{ '--section-accent': sectionColor.accent }}
+          >
+            <div className="relative z-10">
+              <Outlet />
+            </div>
           </div>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
       <CopilotWidget />
       <CommandPalette />
       <SchemaInspector />
