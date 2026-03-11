@@ -60,7 +60,10 @@ Every task passes through the active phases IN ORDER. No exceptions.
 
 ## Worktree Isolation (MANDATORY)
 Every task runs in an isolated git worktree. No exceptions.
+The worktree branch is created FROM the current branch, and PRs target that same branch.
 ```
+# Detect current branch, then create worktree from it
+CURRENT_BRANCH=$(git branch --show-current)
 git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
 ```
 All agents work ONLY in that worktree — never in the main repo.
@@ -80,16 +83,33 @@ The coordinator creates the worktree and passes the path to each agent.
 ## Pull Requests (MANDATORY)
 After DEV completes, the coordinator creates a PR:
 1. DEV pushes branch to remote: `git push -u origin feat/<task-name>`
-2. Coordinator creates PR via `gh pr create` targeting `main`
+2. Coordinator creates PR via `gh pr create` **targeting the branch the worktree was created from** (NEVER `main`)
 3. REVIEW and QA phases happen on the PR (agents comment their verdicts on the PR)
 4. On rejection: DEV fixes, pushes, cycle restarts from rejecting phase
 5. After all phases APPROVE: coordinator merges via `gh pr merge --squash`
 6. Remove worktree and delete branch
 
-**No direct merges to main.** Every change goes through a PR.
+**PR target rules:**
+- If working from `feature/ETP-XXXX` → PR targets `feature/ETP-XXXX`
+- If working from `develop` → PR targets `develop`
+- **NEVER target `main` directly.** The highest allowed target is `develop`.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
+
+## Commit Conventions (MANDATORY)
+All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
+**This skill MUST be installed.** If it is not available, ask the user to install it before proceeding with any commits.
+
+Summary of commit formats (see skill for full details):
+- **Feature:** `Feature ETP-1234: Description` (max 80 chars first line)
+- **Hotfix:** `Issue #N: Description` + second `-m "ETP-1234"` (always "Issue" format)
+- **Epic:** `Epic ETP-1234: Description`
+- **No `Co-Authored-By`** — Git Police rejects it.
+- Always validate first line length (`<= 80 chars`) before committing.
+
+Branch naming also follows Git Police patterns:
+- `feature/ETP-1234`, `hotfix/#N-ETP-1234`, `epic/ETP-1234`
 
 </pipeline_rules>
 
@@ -109,7 +129,8 @@ When the Schema Forge repository (project analyzer) is on a feature branch (e.g.
 - Make product decisions without the user
 - Approve work that skipped pipeline phases
 - Let agents work outside their assigned worktree
-- Commit, merge, or work directly on the main branch — ALL work happens on feature branches via PRs
+- Commit, merge, or work directly on `main` or `develop` — ALL work happens on feature branches via PRs
+- Create PRs targeting `main` — the highest allowed PR target is `develop`; `main` is only updated via publish/release merges from `develop`
 </what_i_never_do>
 
 <communication>
@@ -190,7 +211,7 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── push-to-neo.js (planned)      # Webhook calls → NEO Headless config
+│       ├── push-to-neo.js                # Webhook calls → NEO Headless config
 │       ├── generate-frontend.js          # React SPA generation
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
@@ -314,9 +335,10 @@ Plans and proposals live in `docs/plans/` and follow a lifecycle:
 | `docs/plans/discarded/` | Plans that were rejected or superseded |
 
 **Rules:**
-- When a plan is fully implemented, move it to `completed/` and update its status header.
+- When a plan is fully implemented, move it to `completed/YYYY-MM-DD/` (using the completion date) and update its status header. This groups completed plans by day for easy tracking.
 - When a plan is discarded or superseded, move it to `discarded/` with a note explaining why.
 - Plans with mixed status (some phases done, some pending) stay in `plans/` with per-phase status markers.
+- If multiple plans complete on the same day, they all go into the same date folder.
 
 ## Etendo AD Reference
 
