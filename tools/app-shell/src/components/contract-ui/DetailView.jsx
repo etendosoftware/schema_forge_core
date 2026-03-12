@@ -221,9 +221,6 @@ export function DetailView({
                     onCancel: () => setAddingLine(false),
                     catalogs,
                   }}
-                  onCellEdit={(childId, field, value) => hook.handleUpdateChild?.(childId, field, value)}
-                  editFields={allEntryFields}
-                  catalogs={catalogs}
                 />
               </div>
             </>
