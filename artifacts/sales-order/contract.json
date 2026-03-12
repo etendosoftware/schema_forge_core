@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-12T11:59:14.525Z",
-  "checksum": "0d81edcb2d1c68a1",
+  "version": "0.1.1",
+  "generatedAt": "2026-03-12T13:07:45.694Z",
+  "checksum": "727bef98f674aff6",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -633,13 +633,6 @@
           {
             "name": "documentAction",
             "column": "DocAction",
-            "type": "string",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "documentStatus",
-            "column": "DocStatus",
             "type": "string",
             "visibility": "system",
             "required": true
@@ -1948,6 +1941,13 @@
       },
       {
         "id": "t-107",
+        "category": "rule-declared",
+        "rule": "PriceList_SetCurrency",
+        "runner": "node",
+        "description": "Rule 'PriceList_SetCurrency' (callout) should be declared"
+      },
+      {
+        "id": "t-108",
         "category": "process-happy",
         "process": "completeOrder",
         "entity": "Order",
@@ -1955,20 +1955,12 @@
         "description": "Process 'completeOrder' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-108",
+        "id": "t-109",
         "category": "process-failure",
         "process": "completeOrder",
         "entity": "Order",
         "runner": "junit",
         "description": "Process 'completeOrder' should fail when preconditions are not met"
-      },
-      {
-        "id": "t-109",
-        "category": "process-edge",
-        "process": "completeOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'completeOrder' edge case 'undefined': undefined -> undefined"
       },
       {
         "id": "t-110",
@@ -1996,6 +1988,14 @@
       },
       {
         "id": "t-113",
+        "category": "process-edge",
+        "process": "completeOrder",
+        "entity": "Order",
+        "runner": "junit",
+        "description": "Process 'completeOrder' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-114",
         "category": "process-rollback",
         "process": "completeOrder",
         "entity": "Order",
@@ -2003,7 +2003,7 @@
         "description": "Process 'completeOrder' should rollback on failure"
       },
       {
-        "id": "t-114",
+        "id": "t-115",
         "category": "process-happy",
         "process": "voidOrder",
         "entity": "Order",
@@ -2011,20 +2011,12 @@
         "description": "Process 'voidOrder' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-115",
+        "id": "t-116",
         "category": "process-failure",
         "process": "voidOrder",
         "entity": "Order",
         "runner": "junit",
         "description": "Process 'voidOrder' should fail when preconditions are not met"
-      },
-      {
-        "id": "t-116",
-        "category": "process-edge",
-        "process": "voidOrder",
-        "entity": "Order",
-        "runner": "junit",
-        "description": "Process 'voidOrder' edge case 'undefined': undefined -> undefined"
       },
       {
         "id": "t-117",
@@ -2044,6 +2036,14 @@
       },
       {
         "id": "t-119",
+        "category": "process-edge",
+        "process": "voidOrder",
+        "entity": "Order",
+        "runner": "junit",
+        "description": "Process 'voidOrder' edge case 'undefined': undefined -> undefined"
+      },
+      {
+        "id": "t-120",
         "category": "process-rollback",
         "process": "voidOrder",
         "entity": "Order",
@@ -2051,21 +2051,21 @@
         "description": "Process 'voidOrder' should rollback on failure"
       },
       {
-        "id": "t-120",
+        "id": "t-121",
         "category": "crud-flags",
         "entity": "order",
         "runner": "node",
         "description": "CRUD flags for 'order' should all be booleans"
       },
       {
-        "id": "t-121",
+        "id": "t-122",
         "category": "crud-flags",
         "entity": "orderLine",
         "runner": "node",
         "description": "CRUD flags for 'orderLine' should all be booleans"
       },
       {
-        "id": "t-122",
+        "id": "t-123",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "businessPartner",
@@ -2073,7 +2073,7 @@
         "description": "Selector endpoint for 'businessPartner' in order should exist"
       },
       {
-        "id": "t-123",
+        "id": "t-124",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "partnerAddress",
@@ -2081,7 +2081,7 @@
         "description": "Selector endpoint for 'partnerAddress' in order should exist"
       },
       {
-        "id": "t-124",
+        "id": "t-125",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "warehouse",
@@ -2089,7 +2089,7 @@
         "description": "Selector endpoint for 'warehouse' in order should exist"
       },
       {
-        "id": "t-125",
+        "id": "t-126",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "priceList",
@@ -2097,7 +2097,7 @@
         "description": "Selector endpoint for 'priceList' in order should exist"
       },
       {
-        "id": "t-126",
+        "id": "t-127",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "paymentTerms",
@@ -2105,7 +2105,7 @@
         "description": "Selector endpoint for 'paymentTerms' in order should exist"
       },
       {
-        "id": "t-127",
+        "id": "t-128",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "paymentMethod",
@@ -2113,7 +2113,7 @@
         "description": "Selector endpoint for 'paymentMethod' in order should exist"
       },
       {
-        "id": "t-128",
+        "id": "t-129",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "invoiceAddress",
@@ -2121,7 +2121,7 @@
         "description": "Selector endpoint for 'invoiceAddress' in order should exist"
       },
       {
-        "id": "t-129",
+        "id": "t-130",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "deliveryLocation",
@@ -2129,7 +2129,7 @@
         "description": "Selector endpoint for 'deliveryLocation' in order should exist"
       },
       {
-        "id": "t-130",
+        "id": "t-131",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "salesRepresentative",
@@ -2137,7 +2137,7 @@
         "description": "Selector endpoint for 'salesRepresentative' in order should exist"
       },
       {
-        "id": "t-131",
+        "id": "t-132",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "currency",
@@ -2145,7 +2145,7 @@
         "description": "Selector endpoint for 'currency' in order should exist"
       },
       {
-        "id": "t-132",
+        "id": "t-133",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "quotation",
@@ -2153,7 +2153,7 @@
         "description": "Selector endpoint for 'quotation' in order should exist"
       },
       {
-        "id": "t-133",
+        "id": "t-134",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "product",
@@ -2161,7 +2161,7 @@
         "description": "Selector endpoint for 'product' in orderLine should exist"
       },
       {
-        "id": "t-134",
+        "id": "t-135",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "tax",
@@ -2169,7 +2169,7 @@
         "description": "Selector endpoint for 'tax' in orderLine should exist"
       },
       {
-        "id": "t-135",
+        "id": "t-136",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "uOM",
@@ -2178,14 +2178,14 @@
       }
     ],
     "summary": {
-      "total": 135,
+      "total": 136,
       "byCategory": {
         "field-presence": 31,
         "field-type": 31,
         "searchable-filters": 5,
         "visibility": 2,
         "system-field": 32,
-        "rule-declared": 5,
+        "rule-declared": 6,
         "process-happy": 2,
         "process-failure": 2,
         "process-edge": 7,
@@ -2194,7 +2194,7 @@
         "selector-endpoint": 14
       },
       "byRunner": {
-        "node": 122,
+        "node": 123,
         "junit": 13
       }
     }

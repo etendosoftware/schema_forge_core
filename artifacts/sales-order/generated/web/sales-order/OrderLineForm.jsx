@@ -1,5 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
+// @sf-generated-start fields:orderLine
 const fields = [
   { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true },
@@ -12,7 +13,13 @@ const fields = [
   { key: 'deliveredQuantity', column: 'QtyDelivered', type: 'number', readOnly: true },
   { key: 'uOM', column: 'C_UOM_ID', type: 'selector', readOnly: true, reference: 'UOM', inputMode: 'selector' },
 ];
+// @sf-generated-end fields:orderLine
 
+// @sf-generated-start component:OrderLineForm
 export default function OrderLineForm(props) {
+  // @sf-custom-slot hooks:OrderLineForm
   return <EntityForm fields={fields} {...props} />;
 }
+// @sf-generated-end component:OrderLineForm
+
+// @sf-custom-slot section:OrderLineForm-custom
