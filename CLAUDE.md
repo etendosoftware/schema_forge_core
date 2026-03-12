@@ -93,6 +93,8 @@ After DEV completes, the coordinator creates a PR:
 - If working from `feature/ETP-XXXX` → PR targets `feature/ETP-XXXX`
 - If working from `develop` → PR targets `develop`
 - **NEVER target `main` directly.** The highest allowed target is `develop`.
+- **Always assign the PR to the current user** (`gh api repos/{owner}/{repo}/issues/{pr}/assignees --method POST -f "assignees[]={username}"`).
+- **GitHub usernames must be stored in MEMORY.md** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to MEMORY.md for future use.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
@@ -377,11 +379,10 @@ Per-window artifacts (`artifacts/{window}/`) should only contain window-specific
 
 ## Etendo Local Environment
 
-Config at `/Users/futit/Workspace/etendo_develop/gradle.properties`:
-- DB: `etendo27` on port `5416` (user: `tad/tad`, system: `postgres/syspass`)
-- JDBC: `jdbc:postgresql://localhost:5416`
-- Tomcat: port `8080`, context `etendo`
-- Etendo root: `/Users/futit/Workspace/etendo_develop`
+**Do NOT hardcode DB credentials here.** Read them from the Etendo project's `gradle.properties`:
+- Path: `{etendo_root}/gradle.properties`
+- Keys: `bbdd.host`, `bbdd.port`, `bbdd.user`, `bbdd.password`, `bbdd.sid`
+- Etendo root: parent directory of this repo (e.g., `../` relative to schema_forge)
 
 ## NEO Token Scripts
 

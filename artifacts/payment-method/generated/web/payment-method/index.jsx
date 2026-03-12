@@ -15,10 +15,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Payment Method"
         windowName={windowName}
         recordId={recordId}
-<<<<<<< HEAD
         window={windowMeta}
-=======
->>>>>>> origin/main
         {...props}
       />
     );
@@ -30,10 +27,7 @@ export default function App({ windowName, recordId, ...props }) {
       Table={PaymentMethodTable}
       entityLabel="Payment Method"
       windowName={windowName}
-<<<<<<< HEAD
       window={windowMeta}
-=======
->>>>>>> origin/main
       {...props}
     />
   );
