@@ -4,8 +4,9 @@ flowchart TD
     end
 
     subgraph EntryPoint["0. ENTRY POINT (CLI — Node.js)"]
-        MENU["resolve-menu.js<br/>(--menu-id / --menu-name)"]
-        PIPE["pipeline.js<br/>(orchestrator)"]
+        CACHE["menu-cache.js<br/>(ad-menu-cache.json)<br/>search / refresh / list"]
+        MENU["resolve-menu.js<br/>(--menu-id / --menu-name)<br/>cache-first, DB fallback"]
+        PIPE["pipeline.js<br/>(orchestrator)<br/>--skip-interactive / --skip-to"]
         FORM_INFO["Form detected (action X)<br/>Shows Java + HTML source paths<br/>(manual build required)"]
     end
 
@@ -75,8 +76,9 @@ flowchart TD
         APP["React SPA / Mobile App / External Client"]
     end
 
-    %% Entry point: menu resolution → pipeline orchestrator
-    AD -->|SQL query| MENU
+    %% Entry point: cache → menu resolution → pipeline orchestrator
+    AD -->|"refresh (on miss)"| CACHE
+    CACHE -->|cached entries| MENU
     MENU -->|"action W"| PIPE
     MENU -->|"action P"| PIPE
     MENU -->|"action R"| PIPE
@@ -171,5 +173,5 @@ flowchart TD
     class APP client
     class GC,PTN,GF,GM,TT cli
     class TT_OUT artifact
-    class MENU,PIPE entry
+    class CACHE,MENU,PIPE entry
     class FORM_INFO human

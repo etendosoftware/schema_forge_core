@@ -55,6 +55,16 @@ Max rejection cycles per phase: 3
 
 <pipeline_rules>
 
+## Orientation Before Action (MANDATORY)
+Before starting ANY task, agents MUST investigate their environment:
+1. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
+2. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
+3. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
+4. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
+5. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
+
+This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broken connections).
+
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
@@ -225,7 +235,8 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── generate-frontend.js          # React SPA generation (emits section markers)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
-│       ├── resolve-menu.js               # AD_Menu resolver (auto-detect type from menu ID or name)
+│       ├── resolve-menu.js               # AD_Menu resolver (auto-detect type from menu ID or name, uses cache)
+│       ├── menu-cache.js                # AD_Menu cache: refresh, search, list (CLI: sf-menu)
 │       └── pipeline.js                   # Full pipeline (windows, processes, reports, or auto-detect via menu ID/name)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
@@ -233,7 +244,7 @@ schema-forge/                             # THIS REPO — design + tooling
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
 ├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
-├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
+├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json, ad-menu-cache.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
     ├── architecture-overview.md          # System architecture (Schema Forge + Etendo Go)
@@ -246,6 +257,9 @@ schema-forge/                             # THIS REPO — design + tooling
 ### Key Data Flow
 
 ```
+AD_Menu Cache (core-maps/ad-menu-cache.json)
+    │ Resolves menu name → type + IDs (cache-first, auto-refresh on miss)
+    ▼
 Etendo AD Metadata
     │
     ▼
@@ -256,8 +270,8 @@ Schema Forge CLI (extract-from-db.js / extract-from-process.js)
 Per-Window/Process Artifacts (artifacts/{name}/)
     │ schema-curated.json, rules-curated.json
     ▼
-Decision UIs (tools/decision-panel/)
-    │ Human curates: visibility, rule decisions
+Decision UIs (tools/decision-panel/) or AI classification (/classify)
+    │ Human or AI curates: visibility, rule decisions
     ▼
 Schema Forge Webhooks → Etendo Go DB tables
     │ ETGO_SF_SPEC, ETGO_SF_ENTITY, ETGO_SF_FIELD
@@ -305,6 +319,28 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 /sws/neo/{specName}                                  # Process specs (GET describe / POST execute)
 /sws/neo/{specName}                                  # Report specs (GET describe / POST generateReport)
 ```
+
+## AD_Menu Cache and Discovery
+
+The menu cache (`core-maps/ad-menu-cache.json`) stores all AD_Menu entries locally for fast lookup without DB queries on every run.
+
+**CLI usage:**
+```bash
+node cli/src/menu-cache.js refresh                     # Rebuild from DB
+node cli/src/menu-cache.js search "sales order"        # Fuzzy search by name
+node cli/src/menu-cache.js search "invoice" --type window  # Filter by type
+node cli/src/menu-cache.js list window                 # List all windows
+node cli/src/menu-cache.js list process                # List all processes
+node cli/src/menu-cache.js list report                 # List all reports
+```
+
+**How it works:**
+- `resolve-menu.js` checks the cache first, falls back to DB if needed
+- If a search returns 0 results, the cache auto-refreshes from DB and retries
+- Cache stores: id, name, type (window/process/report/form/folder), windowId, processId
+- Agents should ALWAYS use `menu-cache.js search` or `--menu-name` to find entries — never guess IDs
+
+**Types:** `window`, `process`, `report`, `form`, `folder`
 
 ## Menu Entry Types and Pipeline Modes
 

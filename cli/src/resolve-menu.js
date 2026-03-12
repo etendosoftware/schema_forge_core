@@ -1,4 +1,5 @@
 import { createDbPool, closePool } from './db.js';
+import { searchMenu } from './menu-cache.js';
 
 /**
  * SQL query to resolve a menu entry from AD_Menu by ID.
@@ -40,18 +41,25 @@ export function toKebabCase(name) {
 }
 
 /**
+ * Map cache entry type to AD_Menu action code.
+ */
+const TYPE_TO_ACTION = { window: 'W', process: 'P', report: 'R', form: 'X', folder: null };
+
+/**
  * Resolve a single menu row into a result object.
- * Shared logic for both resolveMenuEntry and resolveMenuByName.
+ * Accepts both DB rows (from MENU_QUERY) and cache entries (from menu-cache.js).
  *
- * @param {object} row - Database row from MENU_QUERY or MENU_QUERY_BY_NAME
+ * @param {object} row - DB row or cache entry
  * @returns {{action: string, menuName: string, windowId: string|null, processId: string|null, resolvedMode: string, resolvedName: string}}
  */
 export function resolveFromRow(row) {
-  const action = row.action;
+  // Normalize: support both DB row format and cache entry format
+  const action = row.action || TYPE_TO_ACTION[row.type] || null;
   const menuName = row.name;
-  const windowId = row.ad_window_id || null;
-  const processId = row.ad_process_id || null;
-  const isSummary = row.issummary;
+  const windowId = row.ad_window_id || row.windowId || null;
+  const processId = row.ad_process_id || row.processId || null;
+  const isSummary = row.issummary || (row.type === 'folder' ? 'Y' : 'N');
+
   if (isSummary === 'Y') {
     throw new Error('Menu entry is a folder, not an actionable item');
   }
@@ -103,12 +111,20 @@ export function resolveFromRow(row) {
 
 /**
  * Resolve a menu entry from AD_Menu by ID.
- * Returns the action type, linked IDs, resolved mode, and kebab-cased name.
+ * Tries cache first, falls back to DB.
  *
  * @param {string} menuId - AD_Menu_ID to look up
- * @returns {Promise<{action: string, menuName: string, windowId: string|null, processId: string|null, resolvedMode: string, resolvedName: string}>}
  */
 export async function resolveMenuEntry(menuId) {
+  // Try cache first (search by ID is an exact match on the id field)
+  const { loadCache } = await import('./menu-cache.js');
+  const cache = await loadCache();
+  if (cache) {
+    const entry = cache.entries.find(e => e.id === menuId);
+    if (entry) return resolveFromRow(entry);
+  }
+
+  // Fall back to DB
   const pool = createDbPool();
   try {
     const { rows } = await pool.query(MENU_QUERY, [menuId]);
@@ -124,19 +140,39 @@ export async function resolveMenuEntry(menuId) {
 }
 
 /**
- * Resolve a menu entry from AD_Menu by name (case-insensitive).
- * Throws if no results or multiple results found.
+ * Resolve a menu entry from AD_Menu by name.
+ * Uses the menu cache with fuzzy search and auto-refresh.
+ * Falls back to exact DB match if cache produces ambiguous results.
  *
  * @param {string} menuName - Menu name to look up
- * @returns {Promise<{action: string, menuName: string, windowId: string|null, processId: string|null, resolvedMode: string, resolvedName: string}>}
  */
 export async function resolveMenuByName(menuName) {
+  // Use cache with fuzzy search (auto-refreshes on miss)
+  const results = await searchMenu(menuName);
+
+  if (results.length === 1) {
+    return resolveFromRow(results[0]);
+  }
+
+  if (results.length > 1) {
+    // Check for exact match first
+    const exact = results.find(r => r.name.toLowerCase() === menuName.toLowerCase());
+    if (exact) return resolveFromRow(exact);
+
+    // Multiple fuzzy matches — show them to the user
+    const list = results.slice(0, 10).map(r => `  [${r.type}] ${r.name} (ID: ${r.id})`).join('\n');
+    throw new Error(
+      `Multiple menu entries match '${menuName}':\n${list}\n\nUse --menu-id with a specific ID, or use the exact name.`
+    );
+  }
+
+  // Cache miss even after refresh — try DB as last resort
   const pool = createDbPool();
   try {
     const { rows } = await pool.query(MENU_QUERY_BY_NAME, [menuName]);
 
     if (rows.length === 0) {
-      throw new Error(`Menu entry not found by name: ${menuName}`);
+      throw new Error(`Menu entry not found: '${menuName}'. Use 'node cli/src/menu-cache.js search <term>' to browse available entries.`);
     }
 
     if (rows.length > 1) {

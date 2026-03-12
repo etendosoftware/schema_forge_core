@@ -67,6 +67,8 @@ export function parseArgs(argv) {
       result.dryRun = true;
     } else if (args[i] === '--skip-to' && args[i + 1]) {
       result.skipTo = args[++i];
+    } else if (args[i] === '--skip-interactive') {
+      result.skipInteractive = true;
     } else if (!args[i].startsWith('--') && !result.windowId) {
       result.windowId = args[i];
     } else if (!args[i].startsWith('--') && result.windowId && !result.windowName) {
@@ -106,7 +108,7 @@ async function main() {
     console.log(`Menu entry '${resolved.menuName}' resolved as ${resolved.resolvedMode} (${resolved.resolvedName})`);
 
     if (resolved.resolvedMode === 'window') {
-      await runWindowPipeline({ windowId: resolved.windowId, windowName: resolved.resolvedName, dryRun: parsed.dryRun });
+      await runWindowPipeline({ windowId: resolved.windowId, windowName: resolved.resolvedName, dryRun: parsed.dryRun, skipTo: parsed.skipTo, skipInteractive: parsed.skipInteractive });
     } else if (resolved.resolvedMode === 'process') {
       await runProcessPipeline({ processId: resolved.processId, processName: resolved.resolvedName, dryRun: parsed.dryRun });
     } else if (resolved.resolvedMode === 'report') {
@@ -117,7 +119,7 @@ async function main() {
   } else if (validation.mode === 'process') {
     await runProcessPipeline(parsed);
   } else {
-    await runWindowPipeline(parsed);
+    await runWindowPipeline({ ...parsed, skipTo: parsed.skipTo, skipInteractive: parsed.skipInteractive });
   }
 }
 
@@ -214,12 +216,39 @@ async function runReportPipeline({ reportId, reportName, dryRun }) {
   console.log('\n=== Report Pipeline complete ===\n');
 }
 
-async function runWindowPipeline({ windowId, windowName }) {
+async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive }) {
   const steps = buildPipelineSteps();
   console.log(`\n=== Schema Forge Pipeline: ${windowName} ===\n`);
 
+  let skipping = !!skipTo;
+
   for (const step of steps) {
+    // --skip-to: skip steps until we reach the target
+    if (skipping) {
+      if (step.name === skipTo) {
+        skipping = false;
+        console.log(`  (skipped to ${step.name})`);
+      } else {
+        continue;
+      }
+    }
+
     if (step.interactive) {
+      if (skipInteractive) {
+        // Check if curated files exist to skip safely
+        const { access } = await import('node:fs/promises');
+        const curatedPath = `artifacts/${windowName}/schema-curated.json`;
+        try {
+          await access(curatedPath);
+          console.log(`[${step.phase}] ${step.description} — skipped (curated files exist, --skip-interactive)`);
+          continue;
+        } catch {
+          console.error(`[${step.phase}] Cannot skip: ${curatedPath} not found.`);
+          console.error('  Run /classify first to generate curated files, or remove --skip-interactive.');
+          process.exit(1);
+        }
+      }
+
       console.log(`\n[${step.phase}] ${step.description}`);
       if (step.name === 'translate-todos') {
         console.log('  → Review generated TODO comments in the frontend components');
@@ -228,7 +257,7 @@ async function runWindowPipeline({ windowId, windowName }) {
       } else {
         console.log('  → Open Decision Panel at http://localhost:3000');
         console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
-        console.log('  → For AI classification, run: /sf:classify-rules');
+        console.log('  → For AI classification, run: /classify');
       }
       break;
     }
@@ -251,10 +280,10 @@ async function runWindowPipeline({ windowId, windowName }) {
           const { validateSchema } = await import('./validate-schema.js');
           const { readFile } = await import('node:fs/promises');
           const schema = JSON.parse(await readFile(`artifacts/${windowName}/schema-raw.json`, 'utf8'));
-          const result = validateSchema(schema);
+          const result = await validateSchema(schema);
           if (result.errors.length > 0) {
             console.error('  ✗ Schema validation failed');
-            result.errors.forEach(e => console.error(`    - ${e}`));
+            result.errors.forEach(e => console.error(`    - [L${e.level}] ${e.code}: ${e.message} (${e.path})`));
             process.exit(1);
           }
           console.log(`  ✓ Validation passed (${result.warnings.length} warnings)`);
