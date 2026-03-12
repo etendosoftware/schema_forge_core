@@ -80,6 +80,8 @@ export function extractFieldsFromContract(backendContract) {
     for (const field of entityData.fields) {
       fields.push({
         entityName,
+        tabId: entityData.tabId || null,
+        tableName: entityData.tableName || null,
         fieldName: field.name,
         column: field.column,
         visibility: field.visibility,
@@ -267,10 +269,14 @@ export async function pushToNeo(windowName, options = {}) {
       audit: auditOpts,
     });
 
-    // Build entity name -> entityId map from populate result
-    const entityMap = {};
+    // Build entity lookup maps from populate result
+    // Primary: by tabId (exact match, safe for tabs sharing same table)
+    // Fallback: by tab name
+    const entityMapByTabId = {};
+    const entityMapByName = {};
     for (const ent of popResult.entities) {
-      entityMap[ent.name] = ent.entityId;
+      if (ent.tabId) entityMapByTabId[ent.tabId] = ent.entityId;
+      entityMapByName[ent.name] = ent.entityId;
     }
     console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
 
@@ -281,7 +287,8 @@ export async function pushToNeo(windowName, options = {}) {
     const fieldResults = [];
 
     for (const f of allFields) {
-      const entityId = entityMap[f.entityName];
+      // Match by tabId first (exact, handles same-table tabs), then by name
+      const entityId = (f.tabId && entityMapByTabId[f.tabId]) || entityMapByName[f.entityName];
       if (!entityId) {
         console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
         errorCount++;

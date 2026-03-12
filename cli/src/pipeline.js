@@ -274,6 +274,26 @@ async function runWindowPipeline({ windowId, windowName }) {
           const schema = JSON.parse(await readFile(`artifacts/${windowName}/schema-curated.json`, 'utf8'));
           const rules = JSON.parse(await readFile(`artifacts/${windowName}/rules-curated.json`, 'utf8'));
           const processes = JSON.parse(await readFile(`artifacts/${windowName}/processes.json`, 'utf8'));
+
+          // Enrich curated entities with tabId/tableName from schema-raw (needed by push-to-neo)
+          try {
+            const schemaRaw = JSON.parse(await readFile(`artifacts/${windowName}/schema-raw.json`, 'utf8'));
+            for (const entity of schema.entities) {
+              // Match by tableName (most reliable) or by name similarity
+              const rawEntity = schemaRaw.entities.find(re =>
+                re.tableName === entity.tableName ||
+                re.name.toLowerCase() === entity.name.toLowerCase(),
+              );
+              if (rawEntity) {
+                if (!entity.tabId && rawEntity.tabId) entity.tabId = rawEntity.tabId;
+                if (!entity.tabName && rawEntity.tabName) entity.tabName = rawEntity.tabName;
+                if (!entity.tableName && rawEntity.tableName) entity.tableName = rawEntity.tableName;
+              }
+            }
+          } catch {
+            // schema-raw not available — proceed without enrichment
+          }
+
           const contract = generateContract(schema, rules.rules || [], processes.processes || []);
           // Snapshot current contract as prev for version diffing
           try {

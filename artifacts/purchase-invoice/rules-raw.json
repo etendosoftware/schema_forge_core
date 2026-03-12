@@ -1,68 +1,8 @@
 {
   "windowId": "183",
   "windowName": "purchase-invoice",
-  "extractedAt": "2026-03-12T12:30:33.093Z",
+  "extractedAt": "2026-03-12T19:22:44.131Z",
   "rules": [
-    {
-      "type": "callout",
-      "source": "AD_Callout",
-      "id": "C3C0F857758A4D1698913BEE2E82969F",
-      "name": "AddDefaultInfo",
-      "className": "com.etendoerp.verifactu.ad_callouts.AddDefaultInfo",
-      "triggerColumn": "C_DocTypeTarget_ID",
-      "effects": [],
-      "complexity": "unknown",
-      "confidence": "low",
-      "warning": "Source not found"
-    },
-    {
-      "type": "callout",
-      "source": "AD_Callout",
-      "id": "7C03CEC0EB4C4AE999E4EFEEEE38702D",
-      "name": "SiiAuthorizationCallout",
-      "className": "org.openbravo.module.sii.callouts.SiiAuthorizationCallout",
-      "triggerColumn": "EM_Aeatsii_Isauthorization",
-      "effects": [],
-      "complexity": "unknown",
-      "confidence": "low",
-      "warning": "Source not found"
-    },
-    {
-      "type": "callout",
-      "source": "AD_Callout",
-      "id": "4F14D562BB0F48AF92EA6D769B734A0A",
-      "name": "SiiDescriptionCallout",
-      "className": "org.openbravo.module.sii.callouts.SiiDescriptionCallout",
-      "triggerColumn": "EM_Aeatsii_Pur_Description_ID",
-      "effects": [],
-      "complexity": "unknown",
-      "confidence": "low",
-      "warning": "Source not found"
-    },
-    {
-      "type": "callout",
-      "source": "AD_Callout",
-      "id": "4F14D562BB0F48AF92EA6D769B734A0A",
-      "name": "SiiDescriptionCallout",
-      "className": "org.openbravo.module.sii.callouts.SiiDescriptionCallout",
-      "triggerColumn": "EM_Aeatsii_Description_ID",
-      "effects": [],
-      "complexity": "unknown",
-      "confidence": "low",
-      "warning": "Source not found"
-    },
-    {
-      "type": "callout",
-      "source": "AD_Callout",
-      "id": "323C7EF38A754A5980DABC1482680EE3",
-      "name": "SiiAutoinvoiceCallout",
-      "className": "org.openbravo.module.sii.callouts.SiiAutoInvoiceCallout",
-      "triggerColumn": "EM_Aeatsii_Autofactura",
-      "effects": [],
-      "complexity": "unknown",
-      "confidence": "low",
-      "warning": "Source not found"
-    },
     {
       "type": "callout",
       "source": "AD_Callout",
@@ -118,6 +58,18 @@
       "name": "SE_Invoice_Project",
       "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_Project",
       "triggerColumn": "C_Project_ID",
+      "effects": [],
+      "complexity": "unknown",
+      "confidence": "low",
+      "warning": "Source not found"
+    },
+    {
+      "type": "callout",
+      "source": "AD_Callout",
+      "id": "130",
+      "name": "SL_Invoice_DocType",
+      "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_DocType",
+      "triggerColumn": "C_DocTypeTarget_ID",
       "effects": [],
       "complexity": "unknown",
       "confidence": "low",
@@ -342,18 +294,6 @@
     {
       "type": "callout",
       "source": "AD_Callout",
-      "id": "2E6FBBBAB13C4A66A36D5D0774522C3C",
-      "name": "PaymentWarning",
-      "className": "com.etendoerp.verifactu.ad_callouts.PaymentWarning",
-      "triggerColumn": "Reversed_C_Invoice_ID",
-      "effects": [],
-      "complexity": "unknown",
-      "confidence": "low",
-      "warning": "Source not found"
-    },
-    {
-      "type": "callout",
-      "source": "AD_Callout",
       "id": "FF80818130BD09B60130BD15FF1C000F",
       "name": "SE_CalculateExchangeRate",
       "className": "org.openbravo.erpCommon.ad_callouts.SE_CalculateExchangeRate",
@@ -374,15 +314,6 @@
       "complexity": "unknown",
       "confidence": "low",
       "warning": "Source not found"
-    },
-    {
-      "type": "validation",
-      "source": "AD_Val_Rule",
-      "id": "124",
-      "name": "C_DocType AR/AP Invoices and Credit Memos",
-      "column": "C_DocTypeTarget_ID",
-      "code": "C_DocType.DocBaseType IN ('ARI', 'API','ARC','APC','ARI_RM') AND C_DocType.IsSOTrx='@IsSOTrx@' AND (AD_ISORGINCLUDED(@AD_Org_ID@,C_DocType.AD_Org_ID, @#AD_Client_ID@) <> '-1' OR COALESCE(@AD_Org_ID@,'-1')='-1')",
-      "isSimple": true
     },
     {
       "type": "validation",
@@ -427,6 +358,15 @@
       "name": "AD_User C_BPartner User/Contacts",
       "column": "AD_User_ID",
       "code": "AD_User.C_BPartner_ID=@C_BPartner_ID@",
+      "isSimple": true
+    },
+    {
+      "type": "validation",
+      "source": "AD_Val_Rule",
+      "id": "124",
+      "name": "C_DocType AR/AP Invoices and Credit Memos",
+      "column": "C_DocTypeTarget_ID",
+      "code": "C_DocType.DocBaseType IN ('ARI', 'API','ARC','APC','ARI_RM') AND C_DocType.IsSOTrx='@IsSOTrx@' AND (AD_ISORGINCLUDED(@AD_Org_ID@,C_DocType.AD_Org_ID, @#AD_Client_ID@) <> '-1' OR COALESCE(@AD_Org_ID@,'-1')='-1')",
       "isSimple": true
     },
     {
@@ -646,48 +586,6 @@
       "isSimple": true
     },
     {
-      "type": "validation",
-      "source": "AD_Val_Rule",
-      "id": "103",
-      "name": "AD_Client Security validation",
-      "column": "AD_Client_ID",
-      "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
-      "isSimple": true
-    },
-    {
-      "type": "validation",
-      "source": "AD_Val_Rule",
-      "id": "104",
-      "name": "AD_Org Security validation",
-      "column": "AD_Org_ID",
-      "code": "(@AD_Client_ID@='0' AND AD_Org.AD_Org_ID='0') OR (@AD_Client_ID@!='0' AND ((AD_Org.AD_Client_ID IN (@#User_Client@) AND AD_Org.AD_Org_ID IN (@#User_Org@)) OR AD_Org.AD_Org_ID='0' AND AD_Org.IsSummary='N'))",
-      "isSimple": true
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Statical Value",
-      "column": "Statical_Amt",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Active",
-      "column": "IsActive",
-      "rawExpression": "@DocStatus@='DR'",
-      "translated": "docStatus=='DR'"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Charge",
-      "column": "C_Charge_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Client",
@@ -708,6 +606,30 @@
       "source": "AD_Column",
       "fieldName": "Organization",
       "column": "AD_Org_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Activity",
+      "column": "C_Activity_ID",
+      "rawExpression": "@$Element_AY@='Y'",
+      "translated": "element_AY==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Activity",
+      "column": "C_Activity_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "User/Contact",
+      "column": "AD_User_ID",
       "rawExpression": "@Processed@='Y'",
       "translated": "processed==true"
     },
@@ -776,30 +698,6 @@
       "translated": "posted==true"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Activity",
-      "column": "C_Activity_ID",
-      "rawExpression": "@$Element_AY@='Y'",
-      "translated": "element_AY==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Activity",
-      "column": "C_Activity_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "User/Contact",
-      "column": "AD_User_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Accounting Date",
@@ -854,6 +752,246 @@
       "column": "M_PriceList_ID",
       "rawExpression": "@Processed@='Y'",
       "translated": "processed==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Charge",
+      "column": "C_Charge_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Posted",
+      "column": "Posted",
+      "rawExpression": "@Processed@='Y' & @#ShowAcct@='Y'",
+      "translated": "processed==true && showAcct==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Generate Receipt from Invoice",
+      "column": "GenerateTo",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Copy Lines",
+      "column": "CopyFrom",
+      "rawExpression": "@Processed@='N'",
+      "translated": "processed==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Trx Organization",
+      "column": "AD_OrgTrx_ID",
+      "rawExpression": "@$Element_OT@='Y'",
+      "translated": "element_OT==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Trx Organization",
+      "column": "AD_OrgTrx_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "2nd Dimension",
+      "column": "User2_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "2nd Dimension",
+      "column": "User2_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "1st Dimension",
+      "column": "User1_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "1st Dimension",
+      "column": "User1_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Withholdingamount",
+      "column": "Withholdingamount",
+      "rawExpression": "@FinancialManagement@=''",
+      "translated": "financialManagement==''"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Amount Currently Due",
+      "column": "DueAmt",
+      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
+      "translated": "processed==true && ispaid==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Total Outstanding",
+      "column": "OutstandingAmt",
+      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
+      "translated": "processed==true && ispaid==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Payment Complete",
+      "column": "Ispaid",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Cost Center",
+      "column": "C_Costcenter_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Cost Center",
+      "column": "C_Costcenter_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Total Paid",
+      "column": "Totalpaid",
+      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
+      "translated": "processed==true && ispaid==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Days Till Next Due",
+      "column": "DaysTillDue",
+      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
+      "translated": "processed==true && ispaid==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Last Calculated on Date",
+      "column": "LastCalculatedOnDate",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Paid In Full Date",
+      "column": "Finalsettlement",
+      "rawExpression": "@Processed@='Y' & @Ispaid@='Y'",
+      "translated": "processed==true && ispaid==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Days to Pay in Full",
+      "column": "Daysoutstanding",
+      "rawExpression": "@Processed@='Y' & @Ispaid@='Y'",
+      "translated": "processed==true && ispaid==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Percentage Paid Late",
+      "column": "Percentageoverdue",
+      "rawExpression": "@Processed@='Y' & @Totalpaid@!0 & @Percentageoverdue@!0",
+      "translated": "processed==true && totalpaid!0 && percentageoverdue!0"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Create Lines From Receipt",
+      "column": "Createfrominouts",
+      "rawExpression": "@Processed@='N' & @IsReversalDocument@='N'",
+      "translated": "processed==false && isReversalDocument==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Create Lines From Order",
+      "column": "Createfromorders",
+      "rawExpression": "@Processed@='N' & @IsReversalDocument@='N'",
+      "translated": "processed==false && isReversalDocument==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Asset",
+      "column": "A_Asset_ID",
+      "rawExpression": "@$Element_AS@='Y'",
+      "translated": "element_AS==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Asset",
+      "column": "A_Asset_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Add Payment",
+      "column": "EM_APRM_Addpayment",
+      "rawExpression": "@DocStatus@='CO'& @IsPaid@='N' & (@showAddPayment@='Y' | @showAddPayment@ ='')",
+      "translated": "docStatus=='CO'&& isPaid==false && (showAddPayment==true || showAddPayment =='')"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Payment Method",
+      "column": "FIN_Paymentmethod_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Process Invoices",
+      "column": "EM_APRM_Processinvoice",
+      "rawExpression": "@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='Y'",
+      "translated": "docStatus!='CL'&&docStatus!='VO'&&invoiceProcessButton==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Withholding",
+      "column": "C_Withholding_ID",
+      "rawExpression": "@FinancialManagement@='' ",
+      "translated": "financialManagement==''"
     },
     {
       "type": "readOnlyLogic",
@@ -978,6 +1116,374 @@
     {
       "type": "readOnlyLogic",
       "source": "AD_Column",
+      "fieldName": "Price Limit",
+      "column": "PriceLimit",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Attribute Set Value",
+      "column": "M_AttributeSetInstance_ID",
+      "rawExpression": "(@ATTRIBUTESET@!''&@ATTRSETVALUETYPE@!'F')|(@M_AttributeSetInstance_ID@!''&@M_AttributeSetInstance_ID@!'0')",
+      "translated": "(aTTRIBUTESET!=''&&aTTRSETVALUETYPE!='F')||(m_AttributeSetInstance_ID!=''&&m_AttributeSetInstance_ID!='0')"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Attribute Set Value",
+      "column": "M_AttributeSetInstance_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Order Quantity",
+      "column": "QuantityOrder",
+      "rawExpression": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
+      "translated": "(hASSECONDUOM==1 && uomManagement!=true)  || (uomManagement==true && m_Product_Uom_Id!='')"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Order Quantity",
+      "column": "QuantityOrder",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Order UOM",
+      "column": "M_Product_Uom_Id",
+      "rawExpression": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
+      "translated": "(hASSECONDUOM==1 && uomManagement!=true)  || (uomManagement==true && m_Product_Uom_Id!='')"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Order UOM",
+      "column": "M_Product_Uom_Id",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Base Net Unit Price",
+      "column": "PriceStd",
+      "rawExpression": "@GROSSPRICE@='N'",
+      "translated": "gROSSPRICE==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Account",
+      "column": "Account_ID",
+      "rawExpression": "@Financial_Invoice_Line@='Y'",
+      "translated": "financial_Invoice_Line==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Account",
+      "column": "Account_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Match LC Costs",
+      "column": "Match_Lccosts",
+      "rawExpression": " @Processed@='Y' & @LC_MATCHED@ = 'N'",
+      "translated": "processed==true && lC_MATCHED == false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Period Number",
+      "column": "Periodnumber",
+      "rawExpression": "@isdeferred@='Y'",
+      "translated": "isdeferred==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Period Number",
+      "column": "Periodnumber",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Expense Plan Type",
+      "column": "DefPlanType",
+      "rawExpression": "@isdeferred@='Y'",
+      "translated": "isdeferred==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Expense Plan Type",
+      "column": "DefPlanType",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Alternative UOM",
+      "column": "C_Aum",
+      "rawExpression": "@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N'",
+      "translated": "m_Product_Uom_Id=='' && financial_Invoice_Line==false"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Alternative UOM",
+      "column": "C_Aum",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Period",
+      "column": "C_Period_ID",
+      "rawExpression": "@isdeferred@='Y'",
+      "translated": "isdeferred==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Period",
+      "column": "C_Period_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Project",
+      "column": "C_Project_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Project",
+      "column": "C_Project_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Operative Quantity",
+      "column": "Aumqty",
+      "rawExpression": "@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N'",
+      "translated": "m_Product_Uom_Id=='' && financial_Invoice_Line==false"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Operative Quantity",
+      "column": "Aumqty",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Financial Invoice Line",
+      "column": "Financial_Invoice_Line",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Alternate Taxable Amount",
+      "column": "Taxbaseamt",
+      "rawExpression": "@UsesAlternate@='Y'",
+      "translated": "usesAlternate==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Alternate Taxable Amount",
+      "column": "Taxbaseamt",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Base Gross Unit Price",
+      "column": "grosspricestd",
+      "rawExpression": "@GROSSPRICE@='Y'",
+      "translated": "gROSSPRICE==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Business Partner",
+      "column": "C_Bpartner_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Business Partner",
+      "column": "C_Bpartner_ID",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Asset",
+      "column": "A_Asset_ID",
+      "rawExpression": "@$Element_AS@='Y'",
+      "translated": "element_AS==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Asset",
+      "column": "A_Asset_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Deferred Expense",
+      "column": "IsDeferred",
+      "rawExpression": "@M_PRODUCT_ID@!''",
+      "translated": "m_PRODUCT_ID!=''"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Deferred Expense",
+      "column": "IsDeferred",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Cost Center",
+      "column": "C_Costcenter_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Cost Center",
+      "column": "C_Costcenter_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "1st Dimension",
+      "column": "User1_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "1st Dimension",
+      "column": "User1_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Gross List Price",
+      "column": "Grosspricelist",
+      "rawExpression": "@GROSSPRICE@='Y'",
+      "translated": "gROSSPRICE==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Gross List Price",
+      "column": "Grosspricelist",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Explode",
+      "column": "Explode",
+      "rawExpression": "@IsStocked@='N' & @isBOM@='Y' & @explode@!'Y' & @Processed@='N'",
+      "translated": "isStocked==false && isBOM==true && explode!=true && processed==false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Line Gross Amount",
+      "column": "Line_Gross_Amount",
+      "rawExpression": "@GROSSPRICE@='Y'",
+      "translated": "gROSSPRICE==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "2nd Dimension",
+      "column": "User2_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "2nd Dimension",
+      "column": "User2_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Gross Unit Price",
+      "column": "Gross_Unit_Price",
+      "rawExpression": "@GROSSPRICE@='Y'",
+      "translated": "gROSSPRICE==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Gross Unit Price",
+      "column": "Gross_Unit_Price",
+      "rawExpression": "@Processed@='Y'|@GROSSPRICE@='N'",
+      "translated": "processed==true||gROSSPRICE==false"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Edit Line Net Amount",
+      "column": "Iseditlinenetamt",
+      "rawExpression": "@Processed@='Y'",
+      "translated": "processed==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
       "fieldName": "Client",
       "column": "AD_Client_ID",
       "rawExpression": "@Processed@='Y'",
@@ -1014,150 +1520,6 @@
       "column": "TaxBaseAmt",
       "rawExpression": "@Processed@='Y' | @Recalculate@='Y'",
       "translated": "processed==true || recalculate==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Authorization No.",
-      "column": "EM_Aeatsii_Authorizationno",
-      "rawExpression": "@EM_Aeatsii_Isauthorization@='Y'",
-      "translated": "eM_Aeatsii_Isauthorization==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Authorization No.",
-      "column": "EM_Aeatsii_Authorizationno",
-      "rawExpression": "true",
-      "translated": "true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Price Limit",
-      "column": "PriceLimit",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Posted",
-      "column": "Posted",
-      "rawExpression": "@Processed@='Y' & @#ShowAcct@='Y'",
-      "translated": "processed==true && showAcct==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Generate Receipt from Invoice",
-      "column": "GenerateTo",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Copy Lines",
-      "column": "CopyFrom",
-      "rawExpression": "@Processed@='N'",
-      "translated": "processed==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Attribute Set Value",
-      "column": "M_AttributeSetInstance_ID",
-      "rawExpression": "(@ATTRIBUTESET@!''&@ATTRSETVALUETYPE@!'F')|(@M_AttributeSetInstance_ID@!''&@M_AttributeSetInstance_ID@!'0')",
-      "translated": "(aTTRIBUTESET!=''&&aTTRSETVALUETYPE!='F')||(m_AttributeSetInstance_ID!=''&&m_AttributeSetInstance_ID!='0')"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Attribute Set Value",
-      "column": "M_AttributeSetInstance_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Trx Organization",
-      "column": "AD_OrgTrx_ID",
-      "rawExpression": "@$Element_OT@='Y'",
-      "translated": "element_OT==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Trx Organization",
-      "column": "AD_OrgTrx_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "2nd Dimension",
-      "column": "User2_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "2nd Dimension",
-      "column": "User2_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "1st Dimension",
-      "column": "User1_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "1st Dimension",
-      "column": "User1_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Order Quantity",
-      "column": "QuantityOrder",
-      "rawExpression": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
-      "translated": "(hASSECONDUOM==1 && uomManagement!=true)  || (uomManagement==true && m_Product_Uom_Id!='')"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Order Quantity",
-      "column": "QuantityOrder",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Order UOM",
-      "column": "M_Product_Uom_Id",
-      "rawExpression": "(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!'')",
-      "translated": "(hASSECONDUOM==1 && uomManagement!=true)  || (uomManagement==true && m_Product_Uom_Id!='')"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Order UOM",
-      "column": "M_Product_Uom_Id",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
     },
     {
       "type": "readOnlyLogic",
@@ -1274,26 +1636,82 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Año",
-      "column": "EM_AEAT349_C_Year_ID",
-      "rawExpression": "@EM_Aeat349_Iscorrective@='Y'",
-      "translated": "eM_Aeat349_Iscorrective==true"
+      "fieldName": "Cost Center",
+      "column": "C_Costcenter_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
     },
     {
       "type": "readOnlyLogic",
       "source": "AD_Column",
-      "fieldName": "Año",
-      "column": "EM_AEAT349_C_Year_ID",
-      "rawExpression": "@Processed@='Y' & @DocStatus@!'VO'",
-      "translated": "processed==true && docStatus!='VO'"
+      "fieldName": "Cost Center",
+      "column": "C_Costcenter_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
     },
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Base Net Unit Price",
-      "column": "PriceStd",
-      "rawExpression": "@GROSSPRICE@='N'",
-      "translated": "gROSSPRICE==false"
+      "fieldName": "Business Partner",
+      "column": "C_Bpartner_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Business Partner",
+      "column": "C_Bpartner_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Product",
+      "column": "M_Product_ID",
+      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
+      "translated": "aCCT_DIMENSION_DISPLAY"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Product",
+      "column": "M_Product_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Asset",
+      "column": "A_Asset_ID",
+      "rawExpression": "@$Element_AS@='Y'",
+      "translated": "element_AS==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Asset",
+      "column": "A_Asset_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Activity",
+      "column": "C_Activity_ID",
+      "rawExpression": "@$Element_AY@='Y'",
+      "translated": "element_AY==true"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Activity",
+      "column": "C_Activity_ID",
+      "rawExpression": "@Posted@='Y'",
+      "translated": "posted==true"
     },
     {
       "type": "readOnlyLogic",
@@ -1338,266 +1756,10 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Withholdingamount",
-      "column": "Withholdingamount",
-      "rawExpression": "@FinancialManagement@=''",
-      "translated": "financialManagement==''"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Account",
-      "column": "Account_ID",
-      "rawExpression": "@Financial_Invoice_Line@='Y'",
-      "translated": "financial_Invoice_Line==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Account",
-      "column": "Account_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Match LC Costs",
-      "column": "Match_Lccosts",
-      "rawExpression": " @Processed@='Y' & @LC_MATCHED@ = 'N'",
-      "translated": "processed==true && lC_MATCHED == false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Period Number",
-      "column": "Periodnumber",
-      "rawExpression": "@isdeferred@='Y'",
-      "translated": "isdeferred==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Period Number",
-      "column": "Periodnumber",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Organization",
-      "column": "AD_Org_ID",
-      "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
-      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Amount Currently Due",
-      "column": "DueAmt",
-      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
-      "translated": "processed==true && ispaid==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Expected (Account Currency)",
-      "column": "ExpectedConverted",
-      "rawExpression": "@C_Currency_ID@!@FinAcc_Currency_ID@",
-      "translated": "c_Currency_ID!=finAcc_Currency_ID"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Total Outstanding",
-      "column": "OutstandingAmt",
-      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
-      "translated": "processed==true && ispaid==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Cost Center",
-      "column": "C_Costcenter_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Cost Center",
-      "column": "C_Costcenter_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Expense Plan Type",
-      "column": "DefPlanType",
-      "rawExpression": "@isdeferred@='Y'",
-      "translated": "isdeferred==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Expense Plan Type",
-      "column": "DefPlanType",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "C_Conversion_Rate_Document_ID",
-      "column": "C_Conversion_Rate_Document_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Payment Complete",
-      "column": "Ispaid",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Cost Center",
-      "column": "C_Costcenter_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Cost Center",
-      "column": "C_Costcenter_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Alternative UOM",
-      "column": "C_Aum",
-      "rawExpression": "@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N'",
-      "translated": "m_Product_Uom_Id=='' && financial_Invoice_Line==false"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Alternative UOM",
-      "column": "C_Aum",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Active",
-      "column": "Isactive",
-      "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
-      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
       "fieldName": "Base Gross Unit Price",
       "column": "Priceoffergross",
       "rawExpression": "@GROSSPRICE@='Y'",
       "translated": "gROSSPRICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Period",
-      "column": "C_Period_ID",
-      "rawExpression": "@isdeferred@='Y'",
-      "translated": "isdeferred==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Period",
-      "column": "C_Period_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Project",
-      "column": "C_Project_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Project",
-      "column": "C_Project_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "DUA date",
-      "column": "EM_Aeatsii_Fecha_Dua",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC') & @EM_Aeatsii_Multi_Dua@='N'",
-      "translated": "aEATSII_AcogidaSII2==true && (eM_Aeatsii_Clave_Tipo_Fc=='F5' || eM_Aeatsii_Clave_Tipo_Fc=='LC') && eM_Aeatsii_Multi_Dua==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Business Partner",
-      "column": "C_Bpartner_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Business Partner",
-      "column": "C_Bpartner_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Operative Quantity",
-      "column": "Aumqty",
-      "rawExpression": "@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N'",
-      "translated": "m_Product_Uom_Id=='' && financial_Invoice_Line==false"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Operative Quantity",
-      "column": "Aumqty",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Foreign  Amount",
-      "column": "Foreign_Amount",
-      "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
-      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Financial Invoice Line",
-      "column": "Financial_Invoice_Line",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
     },
     {
       "type": "readOnlyLogic",
@@ -1616,68 +1778,36 @@
       "translated": "processed==true"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Total Paid",
-      "column": "Totalpaid",
-      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
-      "translated": "processed==true && ispaid==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Alternate Taxable Amount",
-      "column": "Taxbaseamt",
-      "rawExpression": "@UsesAlternate@='Y'",
-      "translated": "usesAlternate==true"
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Organization",
+      "column": "AD_Org_ID",
+      "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
       "type": "readOnlyLogic",
       "source": "AD_Column",
-      "fieldName": "Alternate Taxable Amount",
-      "column": "Taxbaseamt",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Base Gross Unit Price",
-      "column": "grosspricestd",
-      "rawExpression": "@GROSSPRICE@='Y'",
-      "translated": "gROSSPRICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Product",
-      "column": "M_Product_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Product",
-      "column": "M_Product_ID",
+      "fieldName": "C_Conversion_Rate_Document_ID",
+      "column": "C_Conversion_Rate_Document_ID",
       "rawExpression": "@Posted@='Y'",
       "translated": "posted==true"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Business Partner",
-      "column": "C_Bpartner_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Active",
+      "column": "Isactive",
+      "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
       "type": "readOnlyLogic",
       "source": "AD_Column",
-      "fieldName": "Business Partner",
-      "column": "C_Bpartner_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
+      "fieldName": "Foreign  Amount",
+      "column": "Foreign_Amount",
+      "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
+      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
       "type": "readOnlyLogic",
@@ -1688,70 +1818,6 @@
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Days Till Next Due",
-      "column": "DaysTillDue",
-      "rawExpression": "@Processed@='Y' & @Ispaid@='N'",
-      "translated": "processed==true && ispaid==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Asset",
-      "column": "A_Asset_ID",
-      "rawExpression": "@$Element_AS@='Y'",
-      "translated": "element_AS==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Asset",
-      "column": "A_Asset_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Asset",
-      "column": "A_Asset_ID",
-      "rawExpression": "@$Element_AS@='Y'",
-      "translated": "element_AS==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Asset",
-      "column": "A_Asset_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Last Calculated on Date",
-      "column": "LastCalculatedOnDate",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Sent to SII",
-      "column": "EM_Aeatsii_Issent",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Sent to SII",
-      "column": "EM_Aeatsii_Issent",
-      "rawExpression": "true",
-      "translated": "true"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Payment",
@@ -1760,108 +1826,12 @@
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Deferred Expense",
-      "column": "IsDeferred",
-      "rawExpression": "@M_PRODUCT_ID@!''",
-      "translated": "m_PRODUCT_ID!=''"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Deferred Expense",
-      "column": "IsDeferred",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Currency",
       "column": "C_Currency_ID",
       "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Paid In Full Date",
-      "column": "Finalsettlement",
-      "rawExpression": "@Processed@='Y' & @Ispaid@='Y'",
-      "translated": "processed==true && ispaid==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Days to Pay in Full",
-      "column": "Daysoutstanding",
-      "rawExpression": "@Processed@='Y' & @Ispaid@='Y'",
-      "translated": "processed==true && ispaid==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Percentage Paid Late",
-      "column": "Percentageoverdue",
-      "rawExpression": "@Processed@='Y' & @Totalpaid@!0 & @Percentageoverdue@!0",
-      "translated": "processed==true && totalpaid!0 && percentageoverdue!0"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Create Lines From Receipt",
-      "column": "Createfrominouts",
-      "rawExpression": "@Processed@='N' & @IsReversalDocument@='N'",
-      "translated": "processed==false && isReversalDocument==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Cost Center",
-      "column": "C_Costcenter_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Cost Center",
-      "column": "C_Costcenter_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "1st Dimension",
-      "column": "User1_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "1st Dimension",
-      "column": "User1_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Gross List Price",
-      "column": "Grosspricelist",
-      "rawExpression": "@GROSSPRICE@='Y'",
-      "translated": "gROSSPRICE==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Gross List Price",
-      "column": "Grosspricelist",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
     },
     {
       "type": "readOnlyLogic",
@@ -1880,92 +1850,12 @@
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Activity",
-      "column": "C_Activity_ID",
-      "rawExpression": "@$Element_AY@='Y'",
-      "translated": "element_AY==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Activity",
-      "column": "C_Activity_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Explode",
-      "column": "Explode",
-      "rawExpression": "@IsStocked@='N' & @isBOM@='Y' & @explode@!'Y' & @Processed@='N'",
-      "translated": "isStocked==false && isBOM==true && explode!=true && processed==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Line Gross Amount",
-      "column": "Line_Gross_Amount",
-      "rawExpression": "@GROSSPRICE@='Y'",
-      "translated": "gROSSPRICE==true"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "To Currency",
       "column": "C_Currency_Id_To",
       "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "2nd Dimension",
-      "column": "User2_ID",
-      "rawExpression": "@ACCT_DIMENSION_DISPLAY@",
-      "translated": "aCCT_DIMENSION_DISPLAY"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "2nd Dimension",
-      "column": "User2_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Create Lines From Order",
-      "column": "Createfromorders",
-      "rawExpression": "@Processed@='N' & @IsReversalDocument@='N'",
-      "translated": "processed==false && isReversalDocument==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Paid (Account Currency)",
-      "column": "PaidConverted",
-      "rawExpression": "@C_Currency_ID@!@FinAcc_Currency_ID@",
-      "translated": "c_Currency_ID!=finAcc_Currency_ID"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Modified in SII",
-      "column": "EM_Aeatsii_Modified",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true && eM_Aeatsii_Error_Registral==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Modified in SII",
-      "column": "EM_Aeatsii_Modified",
-      "rawExpression": "true",
-      "translated": "true"
     },
     {
       "type": "readOnlyLogic",
@@ -1978,42 +1868,10 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Exchange Rate",
-      "column": "Finacc_Txn_Convert_Rate",
-      "rawExpression": "@C_Currency_ID@!@FinAcc_Currency_ID@",
-      "translated": "c_Currency_ID!=finAcc_Currency_ID"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Gross Unit Price",
-      "column": "Gross_Unit_Price",
-      "rawExpression": "@GROSSPRICE@='Y'",
-      "translated": "gROSSPRICE==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Gross Unit Price",
-      "column": "Gross_Unit_Price",
-      "rawExpression": "@Processed@='Y'|@GROSSPRICE@='N'",
-      "translated": "processed==true||gROSSPRICE==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Asset",
-      "column": "A_Asset_ID",
-      "rawExpression": "@$Element_AS@='Y'",
-      "translated": "element_AS==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Asset",
-      "column": "A_Asset_ID",
-      "rawExpression": "@Posted@='Y'",
-      "translated": "posted==true"
+      "fieldName": "Modify Payment Plan",
+      "column": "EM_Aprm_Modif_Paym_Out_Sched",
+      "rawExpression": "@DocStatus@='CO'&@IsPaid@='N'",
+      "translated": "docStatus=='CO'&&isPaid==false"
     },
     {
       "type": "readOnlyLogic",
@@ -2024,14 +1882,6 @@
       "translated": "processed==true && status!='RPAE'"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Modify Payment Plan",
-      "column": "EM_Aprm_Modif_Paym_Out_Sched",
-      "rawExpression": "@DocStatus@='CO'&@IsPaid@='N'",
-      "translated": "docStatus=='CO'&&isPaid==false"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Financial Account",
@@ -2040,36 +1890,12 @@
       "translated": "processed==true && status!='RPAE'"
     },
     {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Add Payment",
-      "column": "EM_APRM_Addpayment",
-      "rawExpression": "@DocStatus@='CO'& @IsPaid@='N' & (@showAddPayment@='Y' | @showAddPayment@ ='')",
-      "translated": "docStatus=='CO'&& isPaid==false && (showAddPayment==true || showAddPayment =='')"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Payment Method",
-      "column": "FIN_Paymentmethod_ID",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Document No.",
       "column": "DocumentNo",
       "rawExpression": "@Processed@='Y'",
       "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Process Invoices",
-      "column": "EM_APRM_Processinvoice",
-      "rawExpression": "@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='Y'",
-      "translated": "docStatus!='CL'&&docStatus!='VO'&&invoiceProcessButton==true"
     },
     {
       "type": "readOnlyLogic",
@@ -2082,10 +1908,10 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Payment No.",
-      "column": "Paymentno",
-      "rawExpression": "false",
-      "translated": "false"
+      "fieldName": "Invoice Paid",
+      "column": "Isinvoicepaid",
+      "rawExpression": "@InvoicePaidStatus@='Y'",
+      "translated": "invoicePaidStatus==true"
     },
     {
       "type": "displayLogic",
@@ -2098,466 +1924,34 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Invoice Paid",
-      "column": "Isinvoicepaid",
-      "rawExpression": "@InvoicePaidStatus@='Y'",
-      "translated": "invoicePaidStatus==true"
+      "fieldName": "Expected (Account Currency)",
+      "column": "ExpectedConverted",
+      "rawExpression": "@C_Currency_ID@!@FinAcc_Currency_ID@",
+      "translated": "c_Currency_ID!=finAcc_Currency_ID"
     },
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Withholding",
-      "column": "C_Withholding_ID",
-      "rawExpression": "@FinancialManagement@='' ",
-      "translated": "financialManagement==''"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Edit Line Net Amount",
-      "column": "Iseditlinenetamt",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
+      "fieldName": "Paid (Account Currency)",
+      "column": "PaidConverted",
+      "rawExpression": "@C_Currency_ID@!@FinAcc_Currency_ID@",
+      "translated": "c_Currency_ID!=finAcc_Currency_ID"
     },
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Conversion Rate",
-      "column": "Conversion",
-      "rawExpression": "@Hasunit@='Y'",
-      "translated": "hasunit==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Conversion Rate",
-      "column": "Conversion",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Incoterms",
-      "column": "C_Incoterms_ID",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
+      "fieldName": "Exchange Rate",
+      "column": "Finacc_Txn_Convert_Rate",
+      "rawExpression": "@C_Currency_ID@!@FinAcc_Currency_ID@",
+      "translated": "c_Currency_ID!=finAcc_Currency_ID"
     },
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "SII exercise",
-      "column": "EM_Aeatsii_Ejercicio",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "SII exercise",
-      "column": "EM_Aeatsii_Ejercicio",
-      "rawExpression": "true",
-      "translated": "true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Operation date",
-      "column": "EM_Aeatsii_Fecha_Operacion",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Operation date",
-      "column": "EM_Aeatsii_Fecha_Operacion",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y'",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || (docStatus=='VO' && em_aeatsii_issent==true)) && processed==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Cash VAT",
-      "column": "Iscashvat",
-      "rawExpression": "@Processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "SII Description",
-      "column": "EM_Aeatsii_Descripcion_Sii",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "SII Description",
-      "column": "EM_Aeatsii_Descripcion_Sii",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y'",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || (docStatus=='VO' && em_aeatsii_issent==true)) && processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Fecha operación",
-      "column": "EM_Etsg_Date_Operation",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' | @TBAI_ExistConfigAndIsAvailable@",
-      "translated": "aEATSII_AcogidaSII2==true || tBAI_ExistConfigAndIsAvailable"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Fecha operación",
-      "column": "EM_Etsg_Date_Operation",
-      "rawExpression": "@processed@='Y'",
-      "translated": "processed==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Net Mass (Kg)",
-      "column": "Netmass_Kg",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Register Error Modified",
-      "column": "EM_Aeatsii_Error_Registral",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & @em_aeatsii_issent@='Y' & (@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@!'VO')",
-      "translated": "aEATSII_AcogidaSII2==true && em_aeatsii_issent==true && (em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || docStatus!='VO')"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Register Error Modified",
-      "column": "EM_Aeatsii_Error_Registral",
-      "rawExpression": "(@em_aeatsii_estado@!'CO' & @em_aeatsii_estado@!'AE') | @em_aeatsii_modified@='Y' | @DocStatus@='VO'",
-      "translated": "(em_aeatsii_estado!='CO' && em_aeatsii_estado!='AE') || em_aeatsii_modified==true || docStatus=='VO'"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Commodity Code",
-      "column": "NC8_Code",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "DUA date",
-      "column": "EM_Aeatsii_Fecha_Dua",
-      "rawExpression": "@AEATSII_Multidua@='Y'",
-      "translated": "aEATSII_Multidua==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "SII Registration Status",
-      "column": "EM_Aeatsii_Estado",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "SII Registration Status",
-      "column": "EM_Aeatsii_Estado",
-      "rawExpression": "true",
-      "translated": "true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Autoinvoice",
-      "column": "EM_Aeatsii_Autofactura",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Autoinvoice",
-      "column": "EM_Aeatsii_Autofactura",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y'",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || docStatus=='VO') && processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Base Imponible del 349 Servicios",
-      "column": "EM_AEAT349_BP_BaseAmount_S",
-      "rawExpression": "@EM_Aeat349_Iscorrective@='Y'",
-      "translated": "eM_Aeat349_Iscorrective==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Base Imponible del 349 Servicios",
-      "column": "EM_AEAT349_BP_BaseAmount_S",
-      "rawExpression": "@Processed@='Y' & @DocStatus@!'VO'",
-      "translated": "processed==true && docStatus!='VO'"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Accounting register date",
-      "column": "EM_Aeatsii_Fecha_Reg_Cont",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Accounting register date",
-      "column": "EM_Aeatsii_Fecha_Reg_Cont",
-      "rawExpression": "@AEATSII_InSIIAndPostedInvoices@='Y'",
-      "translated": "aEATSII_InSIIAndPostedInvoices==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Country of Origin",
-      "column": "Orig_C_Country_ID",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Has Suplementary Unit",
-      "column": "Hasunit",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "SII period",
-      "column": "EM_Aeatsii_Periodo",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "SII period",
-      "column": "EM_Aeatsii_Periodo",
-      "rawExpression": "true",
-      "translated": "true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Registrar Factura en Batuz",
-      "column": "EM_Tbai_Xmlgenerator",
-      "rawExpression": "@EM_Tbai_Issent@='N' & (@docstatus@='CO') & @TBAI_ExistConfigAndIsAvailable@",
-      "translated": "eM_Tbai_Issent==false && (docstatus=='CO') && tBAI_ExistConfigAndIsAvailable"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "SII purchase description master",
-      "column": "EM_Aeatsii_Pur_Description_ID",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "SII purchase description master",
-      "column": "EM_Aeatsii_Pur_Description_ID",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='N')) & @Processed@='Y'",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || (docStatus=='VO' && em_aeatsii_issent==false)) && processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Invoice type key",
-      "column": "EM_Aeatsii_Clave_Tipo_Fc",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Invoice type key",
-      "column": "EM_Aeatsii_Clave_Tipo_Fc",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y'",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || docStatus=='VO') && processed==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Transportation Type",
-      "column": "Transportation_Type",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Correctiva del 349",
-      "column": "EM_AEAT349_IsCorrective",
-      "rawExpression": "@Processed@='Y' & @DocStatus@!'VO'",
-      "translated": "processed==true && docStatus!='VO'"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Multiple DUA",
-      "column": "EM_Aeatsii_Multi_Dua",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC')",
-      "translated": "aEATSII_AcogidaSII2==true && (eM_Aeatsii_Clave_Tipo_Fc=='F5' || eM_Aeatsii_Clave_Tipo_Fc=='LC')"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Multiple DUA",
-      "column": "EM_Aeatsii_Multi_Dua",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y'",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || docStatus=='VO') && processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "DUA",
-      "column": "EM_Aeatsii_Dua",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC') & @EM_Aeatsii_Multi_Dua@='N'",
-      "translated": "aEATSII_AcogidaSII2==true && (eM_Aeatsii_Clave_Tipo_Fc=='F5' || eM_Aeatsii_Clave_Tipo_Fc=='LC') && eM_Aeatsii_Multi_Dua==false"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Send to SII",
-      "column": "EM_Aeatsii_Send",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='N'",
-      "translated": "aEATSII_AcogidaSII2==true && eM_Aeatsii_Error_Registral==false"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Send to SII",
-      "column": "EM_Aeatsii_Send",
-      "rawExpression": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @em_aeatsii_estado@='BA' | (@DocStatus@!'CO' & @DocStatus@!'VO')) | (@IsSOTrx@='N' & @AEATSII_PreSII_Invoice@='N' &(@EM_Aeatsii_Fecha_Reg_Cont@=null | @EM_Aeatsii_Fecha_Reg_Cont@='' | @EM_Aeatsii_Fecha_Reg_Cont@='null'))",
-      "translated": "(em_aeatsii_estado=='CO' || em_aeatsii_estado=='AE' || em_aeatsii_estado=='BA' || (docStatus!='CO' && docStatus!='VO')) || (isSOTrx==false && aEATSII_PreSII_Invoice==false &&(eM_Aeatsii_Fecha_Reg_Cont==null || eM_Aeatsii_Fecha_Reg_Cont=='' || eM_Aeatsii_Fecha_Reg_Cont=='null'))"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Periodo",
-      "column": "EM_AEAT349_Period",
-      "rawExpression": "@EM_Aeat349_Iscorrective@='Y'",
-      "translated": "eM_Aeat349_Iscorrective==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Periodo",
-      "column": "EM_AEAT349_Period",
-      "rawExpression": "@Processed@='Y' & @DocStatus@!'VO'",
-      "translated": "processed==true && docStatus!='VO'"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Statistical Regime",
-      "column": "Statistical_Regime",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Transaction Type",
-      "column": "Transaction_Type",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Supplementary UOM",
-      "column": "Intr_C_Uom_ID",
-      "rawExpression": "@Hasunit@='Y'",
-      "translated": "hasunit==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Supplementary UOM",
-      "column": "Intr_C_Uom_ID",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Port/Airport",
-      "column": "Port",
-      "rawExpression": "@Transportation_Type@='1' | @Transportation_Type@='4'",
-      "translated": "transportation_Type=='1' || transportation_Type=='4'"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Port/Airport",
-      "column": "Port",
-      "rawExpression": "@INTR_INVOICE@='Y'",
-      "translated": "iNTR_INVOICE==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Business Partner",
-      "column": "EM_AEAT349_C_Bpartner_ID",
-      "rawExpression": "@EM_Aeat349_Iscorrective@='Y'",
-      "translated": "eM_Aeat349_Iscorrective==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Business Partner",
-      "column": "EM_AEAT349_C_Bpartner_ID",
-      "rawExpression": "@Processed@='Y' & @DocStatus@!'VO'",
-      "translated": "processed==true && docStatus!='VO'"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "DUA",
-      "column": "EM_Aeatsii_Dua",
-      "rawExpression": "@AEATSII_Multidua@='Y'",
-      "translated": "aEATSII_Multidua==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Base Imponible del 349 Productos",
-      "column": "EM_AEAT349_BP_BaseAmount",
-      "rawExpression": "@EM_Aeat349_Iscorrective@='Y'",
-      "translated": "eM_Aeat349_Iscorrective==true"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Base Imponible del 349 Productos",
-      "column": "EM_AEAT349_BP_BaseAmount",
-      "rawExpression": "@Processed@='Y' & @DocStatus@!'VO'",
-      "translated": "processed==true && docStatus!='VO'"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Modification in SII",
-      "column": "EM_Aeatsii_Modif",
-      "rawExpression": "@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='Y'",
-      "translated": "aEATSII_AcogidaSII2==true && eM_Aeatsii_Error_Registral==true"
+      "fieldName": "Payment No.",
+      "column": "Paymentno",
+      "rawExpression": "false",
+      "translated": "false"
     },
     {
       "type": "process",
@@ -2680,33 +2074,6 @@
       "type": "process",
       "source": "OBUIAPP_Process",
       "mechanism": "obuiapp_process",
-      "id": "535A8BAE44A34759A7C8FF40D62A5070",
-      "name": "Creación de anulación XML desde Factura",
-      "className": "com.smf.ticketbai.process.XMLVoidConversionFromInvoice",
-      "column": "EM_Tbai_Voidxmlgenerator"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "BE2486102F2C41779B760609FD69A225",
-      "name": "Creación de fichero XML desde Factura",
-      "className": "com.smf.ticketbai.process.XMLConvertionFromInvoice",
-      "column": "EM_Tbai_Xmlgenerator"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
-      "name": "Creación de URL para QR",
-      "className": "com.smf.ticketbai.process.QRCodeURLCreationProcess",
-      "column": "em_tbai_qrcode"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
       "id": "AB2EFCAABB7B4EC0A9B30CFB82963FB6",
       "name": "Create Lines From Order",
       "className": "org.openbravo.common.actionhandler.createlinesfromprocess.CreateInvoiceLinesFromOrderLines",
@@ -2720,15 +2087,6 @@
       "name": "Create Lines From Shipment/Receipt",
       "className": "org.openbravo.common.actionhandler.createlinesfromprocess.CreateInvoiceLinesFromInOutLines",
       "column": "Createfrominouts"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "E36A8BA259164E78AFDDC760172C18F5",
-      "name": "Create Rectification",
-      "className": "com.etendoerp.verifactu.process.CreateRectification",
-      "column": "EM_Etvfac_Rect_Create"
     },
     {
       "type": "process",
@@ -2777,42 +2135,6 @@
     },
     {
       "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "92C02F9A367140C085D1EE3BD27C4E96",
-      "name": "SII duplicated invoice correction",
-      "className": "OB.AEATSII.correction",
-      "column": "EM_Aeatsii_Dup"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
-      "name": "SII Invoice Modification",
-      "className": "OB.AEATSII.modify",
-      "column": "EM_Aeatsii_Modif"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "2ECF46DAAEEB486EAF79D3594D50DE5F",
-      "name": "SII Invoice Sender",
-      "className": "OB.AEATSII.send",
-      "column": "EM_Aeatsii_Send"
-    },
-    {
-      "type": "process",
-      "source": "OBUIAPP_Process",
-      "mechanism": "obuiapp_process",
-      "id": "BE564945CB2D4892AC0EE51204C5DB7D",
-      "name": "SII Unsubscribe Invoice",
-      "className": "OB.AEATSII.unsubscribe",
-      "column": "EM_Aeatsii_Unsubscribe"
-    },
-    {
-      "type": "process",
       "source": "AD_Process",
       "mechanism": "tab_process",
       "id": "1000500003",
@@ -2822,24 +2144,6 @@
     }
   ],
   "auxiliaryInputs": [
-    {
-      "name": "AEATSII_AcogidaSII2",
-      "code": "@SQL=(SELECT COALESCE((SELECT conf.insiisystem FROM aeatsii_config conf WHERE conf.ad_org_id = (SELECT AD_GET_ORG_LE_BU(@AD_Org_ID@,'LE') FROM dual)),'N') FROM dual)",
-      "tabName": "Header",
-      "tabId": "290"
-    },
-    {
-      "name": "AEATSII_InSIIAndPostedInvoices",
-      "code": "@SQL=(SELECT COALESCE((CASE WHEN (SELECT conf.insiisystem FROM aeatsii_config conf WHERE conf.ad_org_id = (SELECT AD_GET_ORG_LE_BU(@AD_Org_ID@,'LE') FROM dual)) = 'N' THEN 'Y' ELSE (SELECT conf.posted_invoices FROM aeatsii_config conf WHERE conf.ad_org_id = (SELECT AD_GET_ORG_LE_BU(@AD_Org_ID@,'LE') FROM dual)) END),'Y') FROM dual)",
-      "tabName": "Header",
-      "tabId": "290"
-    },
-    {
-      "name": "AEATSII_PreSII_Invoice",
-      "code": "@SQL=(SELECT (CASE WHEN to_date(to_char((SELECT i.dateacct from c_invoice i where i.c_invoice_id = @C_Invoice_ID@),'YYYY-MM-DD'),'YYYY-MM-DD') < to_date(to_char((SELECT conf.insiisystemdate FROM aeatsii_config conf WHERE conf.ad_org_id = (SELECT AD_GET_ORG_LE_BU(@AD_Org_ID@,'LE') FROM dual)),'YYYY-MM-DD'),'YYYY-MM-DD') THEN 'Y' ELSE 'N' END) FROM dual)",
-      "tabName": "Header",
-      "tabId": "290"
-    },
     {
       "name": "DOCBASETYPE",
       "code": "@SQL=select coalesce(max(docbasetype), 'API') from c_doctype where c_doctype_id = @c_doctypetarget_id@",
@@ -2861,12 +2165,6 @@
     {
       "name": "showAddPayment",
       "code": "@SQL=select case when sum(fpsd.amount)=ci.GrandTotal then 'N' else 'Y' end \n          from fin_payment_scheduledetail fpsd\n                 join fin_payment_detail fpd on fpsd.fin_payment_detail_id=fpd.fin_payment_detail_id\n                join fin_payment fp on fpd.fin_payment_id=fp.fin_payment_id\n                join fin_payment_schedule ps ON ps.fin_payment_schedule_id = fpsd.fin_payment_schedule_invoice\n                join c_invoice ci on ci.c_invoice_id=ps.c_invoice_id\n                WHERE ps.c_invoice_id =@c_invoice_id@\n                and to_number(aprm_seqnumberpaymentstatus(fp.status)) >= 40\n                group by ci.GrandTotal",
-      "tabName": "Header",
-      "tabId": "290"
-    },
-    {
-      "name": "TBAI_ExistConfigAndIsAvailable",
-      "code": "@SQL=SELECT CASE WHEN EXISTS (SELECT 1 FROM tbai_config conf WHERE TO_TIMESTAMP(@DateInvoiced@, 'DD-MM-YYYY') >= conf.tbaisystemdate AND ad_isorgincluded(@AD_Org_ID@, conf.ad_org_id, @AD_Client_ID@) <> -1 AND conf.isactive = 'Y') THEN 1 ELSE 0 END AS exists_result FROM DUAL",
       "tabName": "Header",
       "tabId": "290"
     },
@@ -2961,18 +2259,6 @@
       "tabId": "800224"
     },
     {
-      "name": "INTR_INVOICE",
-      "code": "@SQL=SELECT processed FROM C_INVOICE WHERE C_INVOICE_ID IN (SELECT C_INVOICE_ID FROM C_INVOICELINE WHERE C_INVOICELINE_ID=@C_Invoiceline_ID@)",
-      "tabName": "Intrastat",
-      "tabId": "5EDC9769561142ED9DA1C45C35ED5EBA"
-    },
-    {
-      "name": "AEATSII_Multidua",
-      "code": "@SQL=(SELECT i.em_aeatsii_multi_dua FROM c_invoice i WHERE i.c_invoice_id = @C_Invoice_ID@)",
-      "tabName": "Tax",
-      "tabId": "292"
-    },
-    {
       "name": "Processed",
       "code": "@SQL=SELECT PROCESSED FROM C_INVOICE WHERE C_INVOICE_ID = @C_INVOICE_ID@",
       "tabName": "Tax",
@@ -3004,12 +2290,12 @@
     }
   ],
   "summary": {
-    "callouts": 31,
-    "validations": 32,
-    "displayLogic": 106,
-    "readOnlyLogic": 131,
-    "processes": 29,
-    "auxiliaryInputs": 30,
-    "total": 329
+    "callouts": 26,
+    "validations": 30,
+    "displayLogic": 75,
+    "readOnlyLogic": 96,
+    "processes": 21,
+    "auxiliaryInputs": 24,
+    "total": 248
   }
 }

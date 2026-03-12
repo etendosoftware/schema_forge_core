@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-12T12:35:41.224Z",
-  "checksum": "c68589f99b3885af",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-12T19:22:44.142Z",
+  "checksum": "cc45dce71c75eab9",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -11,6 +11,9 @@
     },
     "entities": {
       "invoice": {
+        "tableName": "C_Invoice",
+        "tabId": "290",
+        "tabName": "Header",
         "fields": [
           {
             "name": "businessPartner",
@@ -255,6 +258,9 @@
         "computedFields": []
       },
       "invoiceLine": {
+        "tableName": "C_InvoiceLine",
+        "tabId": "291",
+        "tabName": "Lines",
         "fields": [
           {
             "name": "product",
@@ -506,6 +512,9 @@
         "computedFields": []
       },
       "invoiceTax": {
+        "tableName": "C_InvoiceTax",
+        "tabId": "292",
+        "tabName": "Tax",
         "fields": [
           {
             "name": "tax",
@@ -564,6 +573,9 @@
         "computedFields": []
       },
       "invoiceDiscount": {
+        "tableName": "C_Invoice_Discount",
+        "tabId": "800211",
+        "tabName": "Basic Discounts",
         "fields": [
           {
             "name": "lineNo",
@@ -602,6 +614,9 @@
         "computedFields": []
       },
       "paymentSchedule": {
+        "tableName": "FIN_Payment_Schedule",
+        "tabId": "7A8D43541F8C49F1BD8A431A0041BF89",
+        "tabName": "Payment Plan",
         "fields": [
           {
             "name": "dueDate",
@@ -731,6 +746,9 @@
     },
     "entities": {
       "invoice": {
+        "tableName": "C_Invoice",
+        "tabId": "290",
+        "tabName": "Header",
         "fields": [
           {
             "name": "businessPartner",
@@ -1085,6 +1103,9 @@
         ]
       },
       "invoiceLine": {
+        "tableName": "C_InvoiceLine",
+        "tabId": "291",
+        "tabName": "Lines",
         "fields": [
           {
             "name": "product",
@@ -1390,6 +1411,9 @@
         ]
       },
       "invoiceTax": {
+        "tableName": "C_InvoiceTax",
+        "tabId": "292",
+        "tabName": "Tax",
         "fields": [
           {
             "name": "tax",
@@ -1457,6 +1481,9 @@
         ]
       },
       "invoiceDiscount": {
+        "tableName": "C_Invoice_Discount",
+        "tabId": "800211",
+        "tabName": "Basic Discounts",
         "fields": [
           {
             "name": "lineNo",
@@ -1510,6 +1537,9 @@
         ]
       },
       "paymentSchedule": {
+        "tableName": "FIN_Payment_Schedule",
+        "tabId": "7A8D43541F8C49F1BD8A431A0041BF89",
+        "tabName": "Payment Plan",
         "fields": [
           {
             "name": "dueDate",

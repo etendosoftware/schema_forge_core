@@ -86,8 +86,21 @@ export async function upsertSpec(client, params) {
   );
   if (dupCheck.rows.length > 0) {
     const foundId = dupCheck.rows[0].etgo_sf_spec_id;
-    if (!existingId || foundId !== existingId) {
-      throw new Error(`Spec with name '${name}' already exists (id: ${foundId})`);
+    if (!existingId) {
+      // Spec already exists — treat as update (idempotent upsert)
+      const auditUpd = auditDefaults(audit);
+      await client.query(
+        `UPDATE etgo_sf_spec
+         SET name = $1, spec_type = $2, ad_window_id = $3, ad_process_id = $4,
+             ad_module_id = $5, description = $6, updated = $7, updatedby = $8
+         WHERE etgo_sf_spec_id = $9`,
+        [name, specType, windowId, processId, moduleId, description,
+         auditUpd.updated, auditUpd.updatedby, foundId],
+      );
+      return { specId: foundId, created: false };
+    }
+    if (foundId !== existingId) {
+      throw new Error(`Spec with name '${name}' already exists under a different id (${foundId})`);
     }
   }
 
@@ -341,10 +354,11 @@ export async function populateSpec(client, params) {
 async function populateWindowSpec(client, { specId, windowId, moduleId, excludeSystemColumns, includeAllMethods, audit }) {
   // Get active tabs ordered by seqno
   const tabsResult = await client.query(
-    `SELECT ad_tab_id, name, ad_table_id, seqno
-     FROM ad_tab
-     WHERE ad_window_id = $1 AND isactive = 'Y'
-     ORDER BY seqno`,
+    `SELECT t.ad_tab_id, t.name, t.ad_table_id, t.seqno, tbl.tablename
+     FROM ad_tab t
+     JOIN ad_table tbl ON tbl.ad_table_id = t.ad_table_id
+     WHERE t.ad_window_id = $1 AND t.isactive = 'Y'
+     ORDER BY t.seqno`,
     [windowId],
   );
 
@@ -396,7 +410,7 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       fieldCount++;
     }
 
-    entities.push({ entityId, name: tab.name, tabId: tab.ad_tab_id });
+    entities.push({ entityId, name: tab.name, tableName: tab.tablename, tabId: tab.ad_tab_id });
   }
 
   return { entityCount, fieldCount, entities };

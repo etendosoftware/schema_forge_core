@@ -97,7 +97,7 @@ After DEV completes, the coordinator creates a PR:
 - If working from `develop` → PR targets `develop`
 - **NEVER target `main` directly.** The highest allowed target is `develop`.
 - **Always assign the PR to the current user** (`gh api repos/{owner}/{repo}/issues/{pr}/assignees --method POST -f "assignees[]={username}"`).
-- **GitHub usernames must be stored in MEMORY.md** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to MEMORY.md for future use.
+- **GitHub usernames must be stored in MEMORY.md** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to MEMORY.md for future use. **CRITICAL:** Before ANY GitHub operation (locking windows, creating PRs, assigning issues), read `memory/github-usernames.md` to get the correct username. NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
