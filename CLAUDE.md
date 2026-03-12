@@ -432,6 +432,8 @@ See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - Callouts NOT in NEO Headless (deferred to v2, only classic UI)
 - Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows, processes + reports)
 
+**IMPORTANT:** After running `push-to-neo.js`, always remind the developer to run `./gradlew export.database` in the Etendo root so the DB changes are persisted to the XML sourcedata files in `com.etendoerp.go`. Without this step, the NEO configuration only lives in the database and won't survive a rebuild or be committed to the repo.
+
 ### Discovery Webhooks (read-only, for tooling)
 
 | Webhook | Purpose |
