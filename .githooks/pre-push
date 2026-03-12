@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # .githooks/pre-push
-# Validates window locks before push.
+# Validates window locks (GitHub Issues) before push.
 # Skip with: git push --no-verify (CI is the final enforcer)
 
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
-LOCKS_FILE="$ROOT/window-locks.json"
 
-# Get the git user as owner identifier
-OWNER=$(git config user.name 2>/dev/null || echo "unknown")
+# Get the GitHub username
+OWNER=$(gh api user --jq '.login' 2>/dev/null || git config user.name 2>/dev/null || echo "unknown")
 
 # Find which artifact windows are touched in commits being pushed
 CHANGED_WINDOWS=()
@@ -37,12 +36,7 @@ if [ ${#UNIQUE_WINDOWS[@]} -eq 0 ]; then
   exit 0
 fi
 
-# Check locks
-if [ ! -f "$LOCKS_FILE" ]; then
-  echo "WARNING: window-locks.json not found — skipping lock validation"
-  exit 0
-fi
-
+# Check locks via lock-window.js (which uses GitHub Issues)
 ERRORS=0
 for window in "${UNIQUE_WINDOWS[@]}"; do
   result=$(node "$ROOT/cli/src/lock-window.js" check --window "$window" --owner "$OWNER" 2>&1) || {
