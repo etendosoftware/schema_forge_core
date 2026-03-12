@@ -168,7 +168,7 @@ export function generateFrontendContract(schema, rules = []) {
       .filter(f => f.derivation)
       .map(f => ({ name: f.name, derivation: f.derivation }));
 
-    entities[entity.name] = { fields, searchableFields, computedFields };
+    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
   }
 
   return { window: schema.window, entities };
@@ -190,7 +190,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
       required: f.required,
     }));
 
-    entities[entity.name] = { fields };
+    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
 
     const searchableFields = entity.fields
       .filter(f => f.searchable)

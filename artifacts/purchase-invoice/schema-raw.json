@@ -1,16 +1,20 @@
 {
+  "version": "0.1.0",
   "window": {
     "id": "183",
-    "name": "Purchase Invoice"
+    "name": "Purchase Invoice",
+    "primaryEntity": "cInvoice",
+    "category": "purchasing"
   },
   "entities": [
     {
       "name": "cInvoice",
       "tableName": "C_Invoice",
+      "tabId": "290",
       "entityClassname": "Invoice",
       "entityJavaPackage": "org.openbravo.model.common.invoice",
       "tabName": "Header",
-      "level": "0",
+      "level": "header",
       "sequence": "10",
       "fields": [
         {
@@ -60,7 +64,7 @@
           },
           "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y'",
-          "callout": "com.etendoerp.verifactu.ad_callouts.AddDefaultInfo",
+          "callout": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_DocType",
           "isSelectionColumn": true,
           "isFilterable": true,
           "help": "Specifies document subtype (eg. POS Order, Return Material, etc.) that each document (such as Sales Invoice, Purchase Order, etc.). Various document subtypes usually differ on the consequences they have. You can convert document types (e.g. from Offer to Order).  The conversion is then reflected in the current type.",
@@ -475,17 +479,6 @@
           "fieldGroup": "Payment monitor"
         },
         {
-          "name": "dateOrdered",
-          "columnName": "DateOrdered",
-          "label": "Order Date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "10",
-          "isFilterable": true,
-          "help": "Indicates the Date an item was ordered."
-        },
-        {
           "name": "dueAmt",
           "columnName": "DueAmt",
           "label": "Amount Currently Due",
@@ -503,6 +496,17 @@
           "isFilterable": true,
           "help": "Total amount due",
           "fieldGroup": "Payment monitor"
+        },
+        {
+          "name": "dateOrdered",
+          "columnName": "DateOrdered",
+          "label": "Order Date",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10",
+          "isFilterable": true,
+          "help": "Indicates the Date an item was ordered."
         },
         {
           "name": "daysTillDue",
@@ -696,7 +700,6 @@
             "source": "true"
           },
           "maxLength": "1",
-          "displayLogic": "@DocStatus@='DR'",
           "isFilterable": true,
           "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         },
@@ -876,36 +879,6 @@
           "help": "Copy lines (products) from an existing Invoice. By selecting any existing past  invoice, the process will copy all lines (products) from it to the one currently  being edited. This process can be used repetitively to copy lines (products) from several invoices into a new one."
         },
         {
-          "name": "iscashvat",
-          "columnName": "Iscashvat",
-          "label": "Cash VAT",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "readOnlyLogic": "@Processed@='Y'",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Cash VAT tax rate",
-          "fieldGroup": "More Information"
-        },
-        {
-          "name": "emEtafInvTraceability",
-          "columnName": "EM_Etaf_Inv_Traceability",
-          "label": "Datos de Trazabilidad de factura",
-          "type": "text",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "1000000",
-          "isFilterable": true,
-          "help": "Este campo se rellenará automáticamente con los datos de la factura en el estado borrador previo a ser emitida, además de los datos de los albaranes y pedidos relacionados a la misma.",
-          "fieldGroup": "More Information"
-        },
-        {
           "name": "cProjectId",
           "columnName": "C_Project_ID",
           "label": "Project",
@@ -1047,6 +1020,18 @@
           }
         },
         {
+          "name": "emEtcopagCopFeedback",
+          "columnName": "EM_Etcopag_Cop_Feedback",
+          "label": "Copilot Feedback",
+          "type": "enum",
+          "mandatory": false,
+          "visibility": "editable",
+          "maxLength": "60",
+          "isFilterable": true,
+          "help": "Status informed by Copilot.",
+          "fieldGroup": "Copilot"
+        },
+        {
           "name": "prepaymentamt",
           "columnName": "Prepaymentamt",
           "label": "Prepayment Amount",
@@ -1062,405 +1047,21 @@
           "isFilterable": true
         },
         {
-          "name": "emEtsgDateOperation",
-          "columnName": "EM_Etsg_Date_Operation",
-          "label": "Fecha operación",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
+          "name": "isSotrx",
+          "columnName": "IsSOTrx",
+          "label": "Sales Transaction",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
           "derivation": {
             "type": "fromConfig",
-            "source": "context.dateInvoiced"
-          },
-          "maxLength": "19",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' | @TBAI_ExistConfigAndIsAvailable@",
-          "readOnlyLogic": "@processed@='Y'",
-          "defaultValue": "@DateInvoiced@",
-          "isFilterable": true,
-          "help": "Fecha en la que se ha realizado la operación de la factura.",
-          "fieldGroup": "Datos para Sistemas de Facturación"
-        },
-        {
-          "name": "emAeatsiiSend",
-          "columnName": "EM_Aeatsii_Send",
-          "label": "Send to SII",
-          "type": "image",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
+            "source": "context.isSotrx"
           },
           "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='N'",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @em_aeatsii_estado@='BA' | (@DocStatus@!'CO' & @DocStatus@!'VO')) | (@IsSOTrx@='N' & @AEATSII_PreSII_Invoice@='N' &(@EM_Aeatsii_Fecha_Reg_Cont@=null | @EM_Aeatsii_Fecha_Reg_Cont@='' | @EM_Aeatsii_Fecha_Reg_Cont@='null'))",
-          "defaultValue": "N",
+          "defaultValue": "@IsSOTrx@",
           "isFilterable": true,
-          "help": "Button than executes the SII sending process.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiModif",
-          "columnName": "EM_Aeatsii_Modif",
-          "label": "Modification in SII",
-          "type": "image",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='Y'",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Modification in SII",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiIssent",
-          "columnName": "EM_Aeatsii_Issent",
-          "label": "Sent to SII",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "true",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Check that indicates if invoice is sent to SII.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiModified",
-          "columnName": "EM_Aeatsii_Modified",
-          "label": "Modified in SII",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='Y'",
-          "readOnlyLogic": "true",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Modified in SII",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiFechaOperacion",
-          "columnName": "EM_Aeatsii_Fecha_Operacion",
-          "label": "Operation date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.dateInvoiced"
-          },
-          "maxLength": "19",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y'",
-          "defaultValue": "@DateInvoiced@",
-          "isFilterable": true,
-          "help": "Operation date",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiFechaRegCont",
-          "columnName": "EM_Aeatsii_Fecha_Reg_Cont",
-          "label": "Accounting register date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "derivation": {
-            "type": "lookup",
-            "source": "SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y' AND (SELECT c.posted_invoices FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN null ELSE now() END FROM dual"
-          },
-          "maxLength": "19",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "@AEATSII_InSIIAndPostedInvoices@='Y'",
-          "defaultValue": "@SQL=SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y' AND (SELECT c.posted_invoices FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN null ELSE now() END FROM dual",
-          "isFilterable": true,
-          "help": "Accounting register date",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiClaveTipoFc",
-          "columnName": "EM_Aeatsii_Clave_Tipo_Fc",
-          "label": "Invoice type key",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "derivation": {
-            "type": "lookup",
-            "source": "SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN 'F1' ELSE null END FROM dual"
-          },
-          "maxLength": "60",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y'",
-          "defaultValue": "@SQL=SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN 'F1' ELSE null END FROM dual",
-          "isFilterable": true,
-          "help": "Purchase invoice type key to send to AEAT SII.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiPurDescriptionId",
-          "columnName": "EM_Aeatsii_Pur_Description_ID",
-          "label": "SII purchase description master",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "derivation": {
-            "type": "lookup",
-            "source": "\n\tSELECT\n\t\tCASE\n\t\t\tWHEN\n\t\t\t\t(\n\t\t\t\t\t(\n\t\t\t\t\t\tSELECT c.insiisystem\n\t\t\t\t\t\tFROM aeatsii_config c\n\t\t\t\t\t\tWHERE c.ad_org_id = (\n\t\t\t\t\t\t\tSELECT ad_get_org_le_bu(@AD_Org_ID@,'LE')\n\t\t\t\t\t\t\tFROM dual\n\t\t\t\t\t\t)\n\t\t\t\t\t)='Y'\n\t\t\t\t)\n\t\t\tTHEN\n\t\t\t\t(\n\t\t\t\t\tSELECT\n\t\t\t\t\t\t(\n\t\t\t\t\t\t\tCASE\n\t\t\t\t\t\t\t\tWHEN (@issotrx@ = 'Y')\n\t\t\t\t\t\t\t\tTHEN (null)\n\t\t\t\t\t\t\t\tELSE (\n\t\t\t\t\t\t\t\t\tSELECT aeatsii_description_id\n\t\t\t\t\t\t\t\t\tFROM aeatsii_description\n\t\t\t\t\t\t\t\t\tWHERE isdefault = 'Y'\n\t\t\t\t\t\t\t\t\tAND ispurchase = 'Y'\n\t\t\t\t\t\t\t\t\tAND ad_org_id = @AD_Org_ID@\n\t\t\t\t\t\t\t\t\tAND ad_client_id = @ad_client_id@\n\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\tEND\n\t\t\t\t\t\t)\n\t\t\t\t\tFROM dual\n\t\t\t\t)\n\t\t\tELSE null\n\t\tEND\n\tFROM dual"
-          },
-          "maxLength": "32",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='N')) & @Processed@='Y'",
-          "callout": "org.openbravo.module.sii.callouts.SiiDescriptionCallout",
-          "defaultValue": "@SQL=\n\tSELECT\n\t\tCASE\n\t\t\tWHEN\n\t\t\t\t(\n\t\t\t\t\t(\n\t\t\t\t\t\tSELECT c.insiisystem\n\t\t\t\t\t\tFROM aeatsii_config c\n\t\t\t\t\t\tWHERE c.ad_org_id = (\n\t\t\t\t\t\t\tSELECT ad_get_org_le_bu(@AD_Org_ID@,'LE')\n\t\t\t\t\t\t\tFROM dual\n\t\t\t\t\t\t)\n\t\t\t\t\t)='Y'\n\t\t\t\t)\n\t\t\tTHEN\n\t\t\t\t(\n\t\t\t\t\tSELECT\n\t\t\t\t\t\t(\n\t\t\t\t\t\t\tCASE\n\t\t\t\t\t\t\t\tWHEN (@issotrx@ = 'Y')\n\t\t\t\t\t\t\t\tTHEN (null)\n\t\t\t\t\t\t\t\tELSE (\n\t\t\t\t\t\t\t\t\tSELECT aeatsii_description_id\n\t\t\t\t\t\t\t\t\tFROM aeatsii_description\n\t\t\t\t\t\t\t\t\tWHERE isdefault = 'Y'\n\t\t\t\t\t\t\t\t\tAND ispurchase = 'Y'\n\t\t\t\t\t\t\t\t\tAND ad_org_id = @AD_Org_ID@\n\t\t\t\t\t\t\t\t\tAND ad_client_id = @ad_client_id@\n\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\tEND\n\t\t\t\t\t\t)\n\t\t\t\t\tFROM dual\n\t\t\t\t)\n\t\t\tELSE null\n\t\tEND\n\tFROM dual",
-          "isFilterable": true,
-          "help": "Operation description in SII descriptions master.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)",
-          "reference": {
-            "type": "Selector",
-            "targetTable": "aeatsii_description",
-            "selectorName": "SII purchase descriptions selector",
-            "filterExpression": "e.ispurchase='Y'",
-            "hql": null,
-            "displayColumn": null
-          }
-        },
-        {
-          "name": "emAeatsiiDescripcionSii",
-          "columnName": "EM_Aeatsii_Descripcion_Sii",
-          "label": "SII Description",
-          "type": "text",
-          "mandatory": false,
-          "visibility": "editable",
-          "derivation": {
-            "type": "lookup",
-            "source": "\n\tSELECT\n\t\tCASE\n\t\t\tWHEN\n\t\t\t\t(\n\t\t\t\t\t(\n\t\t\t\t\t\tSELECT c.insiisystem\n\t\t\t\t\t\tFROM aeatsii_config c\n\t\t\t\t\t\tWHERE c.ad_org_id = (\n\t\t\t\t\t\t\tSELECT ad_get_org_le_bu(@AD_Org_ID@,'LE')\n\t\t\t\t\t\t\tFROM dual\n\t\t\t\t\t\t)\n\t\t\t\t\t)='Y'\n\t\t\t\t)\n\t\t\tTHEN\n\t\t\t\t(\n\t\t\t\t\tSELECT\n\t\t\t\t\t\t(\n\t\t\t\t\t\t\tCASE\n\t\t\t\t\t\t\t\tWHEN(@issotrx@ = 'Y')\n\t\t\t\t\t\t\t\tTHEN (\n\t\t\t\t\t\t\t\t\tSELECT description\n\t\t\t\t\t\t\t\t\tFROM aeatsii_description\n\t\t\t\t\t\t\t\t\tWHERE isdefault = 'Y'\n\t\t\t\t\t\t\t\t\tAND issales = 'Y'\n\t\t\t\t\t\t\t\t\tAND ad_org_id = @AD_Org_ID@\n\t\t\t\t\t\t\t\t\tAND ad_client_id = @ad_client_id@\n\t\t\t\t\t\t\t\t) ELSE (\n\t\t\t\t\t\t\t\t\tSELECT description\n\t\t\t\t\t\t\t\t\tFROM aeatsii_description\n\t\t\t\t\t\t\t\t\tWHERE isdefault = 'Y'\n\t\t\t\t\t\t\t\t\tAND ispurchase = 'Y'\n\t\t\t\t\t\t\t\t\tAND ad_org_id = @AD_Org_ID@\n\t\t\t\t\t\t\t\t\tAND ad_client_id = @ad_client_id@\n\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\tEND\n\t\t\t\t\t\t)\n\t\t\t\t\tFROM dual\n\t\t\t\t)\n\t\t\tELSE null\n\t\tEND\n\tFROM dual"
-          },
-          "maxLength": "500",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y'",
-          "defaultValue": "@SQL=\n\tSELECT\n\t\tCASE\n\t\t\tWHEN\n\t\t\t\t(\n\t\t\t\t\t(\n\t\t\t\t\t\tSELECT c.insiisystem\n\t\t\t\t\t\tFROM aeatsii_config c\n\t\t\t\t\t\tWHERE c.ad_org_id = (\n\t\t\t\t\t\t\tSELECT ad_get_org_le_bu(@AD_Org_ID@,'LE')\n\t\t\t\t\t\t\tFROM dual\n\t\t\t\t\t\t)\n\t\t\t\t\t)='Y'\n\t\t\t\t)\n\t\t\tTHEN\n\t\t\t\t(\n\t\t\t\t\tSELECT\n\t\t\t\t\t\t(\n\t\t\t\t\t\t\tCASE\n\t\t\t\t\t\t\t\tWHEN(@issotrx@ = 'Y')\n\t\t\t\t\t\t\t\tTHEN (\n\t\t\t\t\t\t\t\t\tSELECT description\n\t\t\t\t\t\t\t\t\tFROM aeatsii_description\n\t\t\t\t\t\t\t\t\tWHERE isdefault = 'Y'\n\t\t\t\t\t\t\t\t\tAND issales = 'Y'\n\t\t\t\t\t\t\t\t\tAND ad_org_id = @AD_Org_ID@\n\t\t\t\t\t\t\t\t\tAND ad_client_id = @ad_client_id@\n\t\t\t\t\t\t\t\t) ELSE (\n\t\t\t\t\t\t\t\t\tSELECT description\n\t\t\t\t\t\t\t\t\tFROM aeatsii_description\n\t\t\t\t\t\t\t\t\tWHERE isdefault = 'Y'\n\t\t\t\t\t\t\t\t\tAND ispurchase = 'Y'\n\t\t\t\t\t\t\t\t\tAND ad_org_id = @AD_Org_ID@\n\t\t\t\t\t\t\t\t\tAND ad_client_id = @ad_client_id@\n\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\tEND\n\t\t\t\t\t\t)\n\t\t\t\t\tFROM dual\n\t\t\t\t)\n\t\t\tELSE null\n\t\tEND\n\tFROM dual",
-          "isFilterable": true,
-          "help": "Operation description to send to SII.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiEstado",
-          "columnName": "EM_Aeatsii_Estado",
-          "label": "SII Registration Status",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "derivation": {
-            "type": "lookup",
-            "source": "SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN 'PE' ELSE null END FROM dual"
-          },
-          "maxLength": "60",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "true",
-          "defaultValue": "@SQL=SELECT CASE WHEN ((SELECT c.insiisystem FROM aeatsii_config c WHERE c.ad_org_id = (SELECT ad_get_org_le_bu(@AD_Org_ID@,'LE') FROM dual))='Y') THEN 'PE' ELSE null END FROM dual",
-          "isFilterable": true,
-          "help": "SII Registration Status",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiErrorRegistral",
-          "columnName": "EM_Aeatsii_Error_Registral",
-          "label": "Register Error Modified",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & @em_aeatsii_issent@='Y' & (@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@!'VO')",
-          "readOnlyLogic": "(@em_aeatsii_estado@!'CO' & @em_aeatsii_estado@!'AE') | @em_aeatsii_modified@='Y' | @DocStatus@='VO'",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Check indicating invoice has been modified because of a register error.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiAutofactura",
-          "columnName": "EM_Aeatsii_Autofactura",
-          "label": "Autoinvoice",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y'",
-          "callout": "org.openbravo.module.sii.callouts.SiiAutoInvoiceCallout",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Autoinvoice",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiEjercicio",
-          "columnName": "EM_Aeatsii_Ejercicio",
-          "label": "SII exercise",
-          "type": "integer",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "maxLength": "4",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "true",
-          "isFilterable": true,
-          "help": "Year when invoice is sent to SII.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiPeriodo",
-          "columnName": "EM_Aeatsii_Periodo",
-          "label": "SII period",
-          "type": "integer",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "maxLength": "2",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y'",
-          "readOnlyLogic": "true",
-          "isFilterable": true,
-          "help": "Month when invoice is sent to SII",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiIsauthorization",
-          "columnName": "EM_Aeatsii_Isauthorization",
-          "label": "Authorization",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "callout": "org.openbravo.module.sii.callouts.SiiAuthorizationCallout",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Authorization: if true, authorization no. field is shown.",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiAuthorizationno",
-          "columnName": "EM_Aeatsii_Authorizationno",
-          "label": "Authorization No.",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "15",
-          "displayLogic": "@EM_Aeatsii_Isauthorization@='Y'",
-          "readOnlyLogic": "true",
-          "isFilterable": true,
-          "help": "Authorization number",
-          "fieldGroup": "Suministro Inmediato de Información (SII)"
-        },
-        {
-          "name": "emAeatsiiDua",
-          "columnName": "EM_Aeatsii_Dua",
-          "label": "DUA",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "255",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC') & @EM_Aeatsii_Multi_Dua@='N'",
-          "isFilterable": true,
-          "help": "Import (DUA)",
-          "fieldGroup": "Import (DUA)"
-        },
-        {
-          "name": "emAeatsiiFechaDua",
-          "columnName": "EM_Aeatsii_Fecha_Dua",
-          "label": "DUA date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "19",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC') & @EM_Aeatsii_Multi_Dua@='N'",
-          "isFilterable": true,
-          "help": "DUA date",
-          "fieldGroup": "Import (DUA)"
-        },
-        {
-          "name": "emAeatsiiMultiDua",
-          "columnName": "EM_Aeatsii_Multi_Dua",
-          "label": "Multiple DUA",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "displayLogic": "@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC')",
-          "readOnlyLogic": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y'",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Multiple DUA",
-          "fieldGroup": "Import (DUA)"
-        },
-        {
-          "name": "emTbaiXmlgenerator",
-          "columnName": "EM_Tbai_Xmlgenerator",
-          "label": "Registrar Factura en Batuz",
-          "type": "image",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "displayLogic": "@EM_Tbai_Issent@='N' & (@docstatus@='CO') & @TBAI_ExistConfigAndIsAvailable@",
-          "isFilterable": true,
-          "help": "Active esta opción para registrar la factura en el sistema de TicketBAI."
-        },
-        {
-          "name": "emTbaiIssent",
-          "columnName": "EM_Tbai_Issent",
-          "label": "Enviada a Batuz",
-          "type": "boolean",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "Este campo se actualiza automáticamente cuando la factura es enviada."
-        },
-        {
-          "name": "emTbaiIssueDate",
-          "columnName": "EM_Tbai_Issue_Date",
-          "label": "Fecha registro contable",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "@#Date@"
-          },
-          "maxLength": "19",
-          "defaultValue": "@#Date@",
-          "isFilterable": true,
-          "help": "Este campo se completa automáticamente con la fecha de registro contable.",
-          "fieldGroup": "Integración TicketBAI"
+          "help": "The Sales Transaction checkbox indicates if this item is a Sales Transaction."
         },
         {
           "name": "datePrinted",
@@ -1506,6 +1107,21 @@
           "help": "The Processed checkbox indicates that a document has been processed."
         },
         {
+          "name": "cInvoiceId",
+          "columnName": "C_Invoice_ID",
+          "label": "Invoice",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Invoice ID uniquely identifies an Invoice Document."
+        },
+        {
           "name": "adClientId",
           "columnName": "AD_Client_ID",
           "label": "Client",
@@ -1531,25 +1147,10 @@
           }
         },
         {
-          "name": "cInvoiceId",
-          "columnName": "C_Invoice_ID",
-          "label": "Invoice",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The Invoice ID uniquely identifies an Invoice Document."
-        },
-        {
           "name": "created",
           "columnName": "Created",
           "label": "Creation Date",
-          "type": "datetime",
+          "type": "dateTime",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "audit",
@@ -1584,36 +1185,20 @@
           "maxLength": "1",
           "isFilterable": true,
           "help": "The Printed checkbox indicates if this document or line will included when printing."
-        },
-        {
-          "name": "isSotrx",
-          "columnName": "IsSOTrx",
-          "label": "Sales Transaction",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.isSotrx"
-          },
-          "maxLength": "1",
-          "defaultValue": "@IsSOTrx@",
-          "isFilterable": true,
-          "help": "The Sales Transaction checkbox indicates if this item is a Sales Transaction."
         }
       ],
       "entityFullClass": "org.openbravo.model.common.invoice.Invoice",
-      "whereClause": "C_Invoice.IsSOTrx='N' and C_Invoice.IsActive = 'Y'",
-      "hqlWhereClause": "e.salesTransaction=false and e.documentStatus <> 'TEMP' and e.active = 'Y'"
+      "whereClause": "C_Invoice.IsSOTrx='N'",
+      "hqlWhereClause": "e.salesTransaction=false and e.documentStatus <> 'TEMP'"
     },
     {
       "name": "cInvoiceLine",
       "tableName": "C_InvoiceLine",
+      "tabId": "291",
       "entityClassname": "InvoiceLine",
       "entityJavaPackage": "org.openbravo.model.common.invoice",
       "tabName": "Lines",
-      "level": "1",
+      "level": "line",
       "sequence": "20",
       "fields": [
         {
@@ -2359,27 +1944,30 @@
           "isFilterable": true
         },
         {
-          "name": "isDescription",
-          "columnName": "IsDescription",
-          "label": "Description Only",
-          "type": "boolean",
+          "name": "cInvoiceId",
+          "columnName": "C_Invoice_ID",
+          "label": "Invoice",
+          "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "defaultValue": "N",
+          "maxLength": "60",
+          "isIdentifier": true,
           "isFilterable": true,
-          "help": "If a line is Description Only, e.g. Product Inventory is not corrected. No accounting transactions are created and the amount or totals are not included in the document.  This for including descriptional detail lines, e.g. for an Work Order."
+          "help": "The Invoice ID uniquely identifies an Invoice Document.",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Invoice",
+            "keyColumn": "C_Invoice_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "created",
           "columnName": "Created",
           "label": "Creation Date",
-          "type": "datetime",
+          "type": "dateTime",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "audit",
@@ -2390,6 +1978,64 @@
           "maxLength": "19",
           "isFilterable": true,
           "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "mOfferId",
+          "columnName": "M_Offer_ID",
+          "label": "Promotion/Discount",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "10",
+          "isFilterable": true,
+          "help": "Promotion or Discount applied to a particular line (product) automatically by the system.",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_Offer",
+            "selectorName": "M_Offer no combo",
+            "filterExpression": null,
+            "hql": null,
+            "displayColumn": null
+          }
+        },
+        {
+          "name": "cProjectlineId",
+          "columnName": "C_Projectline_ID",
+          "label": "Project Line",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "60",
+          "isFilterable": true,
+          "help": "The Project Line indicates a unique project line.",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Projectline",
+            "keyColumn": "C_Projectline_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "cInvoiceDiscountId",
+          "columnName": "C_Invoice_Discount_ID",
+          "label": "Invoice discount",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "60",
+          "isFilterable": true,
+          "help": "The ID identifies a unique discount for the invoice",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Invoice_Discount",
+            "keyColumn": "C_Invoice_Discount_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adClientId",
@@ -2417,39 +2063,33 @@
           }
         },
         {
-          "name": "cInvoiceLineId",
-          "columnName": "C_InvoiceLine_ID",
-          "label": "Invoice Line",
-          "type": "id",
+          "name": "isDescription",
+          "columnName": "IsDescription",
+          "label": "Description Only",
+          "type": "boolean",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
           "derivation": {
-            "type": "sequence"
+            "type": "computed",
+            "source": "N"
           },
-          "maxLength": "32",
+          "maxLength": "1",
+          "defaultValue": "N",
           "isFilterable": true,
-          "help": "The Invoice Line uniquely identifies a single line of an Invoice."
+          "help": "If a line is Description Only, e.g. Product Inventory is not corrected. No accounting transactions are created and the amount or totals are not included in the document.  This for including descriptional detail lines, e.g. for an Work Order."
         },
         {
-          "name": "mOfferId",
-          "columnName": "M_Offer_ID",
-          "label": "Promotion/Discount",
-          "type": "foreignKey",
+          "name": "sResourceAssignmentId",
+          "columnName": "S_ResourceAssignment_ID",
+          "label": "Resource Assignment",
+          "type": "string",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "10",
+          "maxLength": "22",
           "isFilterable": true,
-          "help": "Promotion or Discount applied to a particular line (product) automatically by the system.",
-          "reference": {
-            "type": "Selector",
-            "targetTable": "M_Offer",
-            "selectorName": "M_Offer no combo",
-            "filterExpression": null,
-            "hql": null,
-            "displayColumn": null
-          }
+          "help": "The ID identifies a unique record"
         },
         {
           "name": "priceLimit",
@@ -2464,36 +2104,19 @@
           "help": "The Net Price Limit indicates the lowest price for a product stated in the Price List Currency."
         },
         {
-          "name": "cInvoiceId",
-          "columnName": "C_Invoice_ID",
-          "label": "Invoice",
-          "type": "foreignKey",
+          "name": "cInvoiceLineId",
+          "columnName": "C_InvoiceLine_ID",
+          "label": "Invoice Line",
+          "type": "id",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "60",
-          "isIdentifier": true,
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
           "isFilterable": true,
-          "help": "The Invoice ID uniquely identifies an Invoice Document.",
-          "reference": {
-            "type": "Search",
-            "targetTable": "C_Invoice",
-            "keyColumn": "C_Invoice_ID",
-            "displayColumn": null,
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "cProjectlineId",
-          "columnName": "C_Projectline_ID",
-          "label": "Project Line",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "The Project Line indicates a unique project line."
+          "help": "The Invoice Line uniquely identifies a single line of an Invoice."
         },
         {
           "name": "isActive",
@@ -2510,30 +2133,6 @@
           "maxLength": "1",
           "isFilterable": true,
           "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
-        },
-        {
-          "name": "cInvoiceDiscountId",
-          "columnName": "C_Invoice_Discount_ID",
-          "label": "Invoice discount",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "The ID identifies a unique discount for the invoice"
-        },
-        {
-          "name": "sResourceAssignmentId",
-          "columnName": "S_ResourceAssignment_ID",
-          "label": "Resource Assignment",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The ID identifies a unique record"
         }
       ],
       "entityFullClass": "org.openbravo.model.common.invoice.InvoiceLine",
@@ -2542,10 +2141,11 @@
     {
       "name": "cInvoiceLineTax",
       "tableName": "C_InvoiceLineTax",
+      "tabId": "27456D8A387F4580B30EA784C63831BB",
       "entityClassname": "InvoiceLineTax",
       "entityJavaPackage": "org.openbravo.model.ad.access",
       "tabName": "Line Tax",
-      "level": "2",
+      "level": "subline",
       "sequence": "27",
       "fields": [
         {
@@ -2632,40 +2232,6 @@
           "help": "The Tax Amount displays the total tax amount for a document."
         },
         {
-          "name": "adOrgId",
-          "columnName": "AD_Org_ID",
-          "label": "Organization",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.organization"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_ORG_ID@",
-          "isFilterable": true,
-          "help": "An organization is a unit of your client or legal entity - examples are store, department. You can share data between organizations.",
-          "validationRule": {
-            "code": "(@AD_Client_ID@='0' AND AD_Org.AD_Org_ID='0') OR (@AD_Client_ID@!='0' AND ((AD_Org.AD_Client_ID IN (@#User_Client@) AND AD_Org.AD_Org_ID IN (@#User_Org@)) OR AD_Org.AD_Org_ID='0' AND AD_Org.IsSummary='N'))",
-            "contextParams": [
-              "User_Client",
-              "User_Org"
-            ],
-            "cascadeParams": [
-              "AD_Client_ID"
-            ]
-          },
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Org",
-            "keyColumn": "AD_Org_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
           "name": "cInvoiceLineTaxId",
           "columnName": "C_InvoiceLineTax_ID",
           "label": "InvoiceLineTax",
@@ -2679,6 +2245,26 @@
           "maxLength": "32",
           "isFilterable": true,
           "help": "Refers to the tax related to a given invoice line."
+        },
+        {
+          "name": "cInvoicelineId",
+          "columnName": "C_Invoiceline_ID",
+          "label": "Invoice Line",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "isIdentifier": true,
+          "isFilterable": true,
+          "help": "The Invoice Line uniquely identifies a single line of an Invoice.",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_Invoiceline",
+            "keyColumn": "C_Invoiceline_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "cInvoiceId",
@@ -2732,80 +2318,6 @@
           }
         },
         {
-          "name": "cInvoicelineId",
-          "columnName": "C_Invoiceline_ID",
-          "label": "Invoice Line",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isIdentifier": true,
-          "isFilterable": true,
-          "help": "The Invoice Line uniquely identifies a single line of an Invoice."
-        },
-        {
-          "name": "recalculate",
-          "columnName": "Recalculate",
-          "label": "Recalculate",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "derivation": {
-            "type": "computed",
-            "source": "N"
-          },
-          "maxLength": "1",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "Recalculate tax when Order or Invoice is processed. Usually taxes are recalculated when the document they are associated to is processed, so if the amounts are manually edited it has any effect. If tax is checked as no recalculate, manually edited amounts will be directly applied."
-        }
-      ],
-      "entityFullClass": "org.openbravo.model.ad.access.InvoiceLineTax",
-      "orderByClause": "C_InvoiceLineTax.Line",
-      "hqlOrderByClause": "lineNo"
-    },
-    {
-      "name": "intrCInvoiceline",
-      "tableName": "INTR_C_INVOICELINE",
-      "entityClassname": "IntrastatInvoiceLine",
-      "entityJavaPackage": "org.openbravo.module.intrastat",
-      "tabName": "Intrastat",
-      "level": "2",
-      "sequence": "28",
-      "fields": [
-        {
-          "name": "adClientId",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_CLIENT_ID@",
-          "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "validationRule": {
-            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
-            "contextParams": [
-              "User_Client"
-            ],
-            "cascadeParams": []
-          },
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
           "name": "adOrgId",
           "columnName": "AD_Org_ID",
           "label": "Organization",
@@ -2840,256 +2352,34 @@
           }
         },
         {
-          "name": "cInvoicelineId",
-          "columnName": "C_Invoiceline_ID",
-          "label": "Invoice Line",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The Invoice Line uniquely identifies a single line of an Invoice.",
-          "reference": {
-            "type": "Search",
-            "targetTable": "C_InvoiceLine",
-            "keyColumn": "C_InvoiceLine_ID",
-            "displayColumn": null,
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "mProductId",
-          "columnName": "M_Product_ID",
-          "label": "Product",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Identifies an item which is either purchased or sold in this organization.",
-          "reference": {
-            "type": "Search",
-            "targetTable": "M_Product",
-            "keyColumn": "M_Product_ID",
-            "displayColumn": null,
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "cIncotermsId",
-          "columnName": "C_Incoterms_ID",
-          "label": "Incoterms",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "32",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "help": "The ID identifies a unique Incoterm",
-          "fieldGroup": "Business Partner",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Incoterms",
-            "keyColumn": "C_Incoterms_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "transactionType",
-          "columnName": "Transaction_Type",
-          "label": "Transaction Type",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Business Partner"
-        },
-        {
-          "name": "transportationType",
-          "columnName": "Transportation_Type",
-          "label": "Transportation Type",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Business Partner"
-        },
-        {
-          "name": "port",
-          "columnName": "Port",
-          "label": "Port/Airport",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "displayLogic": "@Transportation_Type@='1' | @Transportation_Type@='4'",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Business Partner"
-        },
-        {
-          "name": "statisticalRegime",
-          "columnName": "Statistical_Regime",
-          "label": "Statistical Regime",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Business Partner"
-        },
-        {
-          "name": "origCCountryId",
-          "columnName": "Orig_C_Country_ID",
-          "label": "Country of Origin",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "32",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Business Partner",
-          "reference": {
-            "type": "Table",
-            "targetTable": "C_Country",
-            "keyColumn": "C_Country_ID",
-            "displayColumn": "Name",
-            "filterExpression": null,
-            "orderBy": "2"
-          }
-        },
-        {
-          "name": "nc8Code",
-          "columnName": "NC8_Code",
-          "label": "Commodity Code",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "8",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "help": "You must classify goods by using the correct commodity code in the Intrastat Classification Nomenclature (ICN).",
-          "fieldGroup": "Product"
-        },
-        {
-          "name": "netmassKg",
-          "columnName": "Netmass_Kg",
-          "label": "Net Mass (Kg)",
-          "type": "decimal",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Product"
-        },
-        {
-          "name": "hasunit",
-          "columnName": "Hasunit",
-          "label": "Has Suplementary Unit",
+          "name": "recalculate",
+          "columnName": "Recalculate",
+          "label": "Recalculate",
           "type": "boolean",
           "mandatory": true,
-          "visibility": "editable",
+          "visibility": "system",
           "derivation": {
             "type": "computed",
             "source": "N"
           },
           "maxLength": "1",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
           "defaultValue": "N",
           "isFilterable": true,
-          "fieldGroup": "Product"
-        },
-        {
-          "name": "conversion",
-          "columnName": "Conversion",
-          "label": "Conversion Rate",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "displayLogic": "@Hasunit@='Y'",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "fieldGroup": "Product"
-        },
-        {
-          "name": "staticalAmt",
-          "columnName": "Statical_Amt",
-          "label": "Statical Value",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true
-        },
-        {
-          "name": "intrCUomId",
-          "columnName": "Intr_C_Uom_ID",
-          "label": "Supplementary UOM",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "32",
-          "displayLogic": "@Hasunit@='Y'",
-          "readOnlyLogic": "@INTR_INVOICE@='Y'",
-          "isFilterable": true,
-          "help": "Supplementary Unit of Measure for Intrastat",
-          "fieldGroup": "Product",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "Intr_C_Uom",
-            "keyColumn": "Intr_C_Uom_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "isactive",
-          "columnName": "Isactive",
-          "label": "Active",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "Y"
-          },
-          "maxLength": "1",
-          "defaultValue": "Y",
-          "isFilterable": true,
-          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
-        },
-        {
-          "name": "intrCInvoicelineId",
-          "columnName": "Intr_C_Invoiceline_ID",
-          "label": "Intr_C_Invoiceline_ID",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isIdentifier": true,
-          "isFilterable": true
+          "help": "Recalculate tax when Order or Invoice is processed. Usually taxes are recalculated when the document they are associated to is processed, so if the amounts are manually edited it has any effect. If tax is checked as no recalculate, manually edited amounts will be directly applied."
         }
       ],
-      "entityFullClass": "org.openbravo.module.intrastat.IntrastatInvoiceLine"
+      "entityFullClass": "org.openbravo.model.ad.access.InvoiceLineTax",
+      "orderByClause": "C_InvoiceLineTax.Line",
+      "hqlOrderByClause": "lineNo"
     },
     {
       "name": "cInvoiceTax",
       "tableName": "C_InvoiceTax",
+      "tabId": "292",
       "entityClassname": "InvoiceTax",
       "entityJavaPackage": "org.openbravo.model.common.invoice",
       "tabName": "Tax",
-      "level": "1",
+      "level": "line",
       "sequence": "30",
       "fields": [
         {
@@ -3171,30 +2461,6 @@
           "help": "Recalculate tax when Order or Invoice is processed. Usually taxes are recalculated when the document they are associated to is processed, so if the amounts are manually edited it has any effect. If tax is checked as no recalculate, manually edited amounts will be directly applied."
         },
         {
-          "name": "emAeatsiiDua",
-          "columnName": "EM_Aeatsii_Dua",
-          "label": "DUA",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "255",
-          "displayLogic": "@AEATSII_Multidua@='Y'",
-          "isFilterable": true,
-          "help": "Import (DUA)"
-        },
-        {
-          "name": "emAeatsiiFechaDua",
-          "columnName": "EM_Aeatsii_Fecha_Dua",
-          "label": "DUA date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "19",
-          "displayLogic": "@AEATSII_Multidua@='Y'",
-          "isFilterable": true,
-          "help": "DUA date"
-        },
-        {
           "name": "adOrgId",
           "columnName": "AD_Org_ID",
           "label": "Organization",
@@ -3218,6 +2484,22 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
+        },
+        {
+          "name": "isActive",
+          "columnName": "IsActive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          },
+          "maxLength": "1",
+          "isFilterable": true,
+          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         },
         {
           "name": "cInvoiceId",
@@ -3277,22 +2559,6 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
-        },
-        {
-          "name": "isActive",
-          "columnName": "IsActive",
-          "label": "Active",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "true"
-          },
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         }
       ],
       "entityFullClass": "org.openbravo.model.common.invoice.InvoiceTax",
@@ -3302,10 +2568,11 @@
     {
       "name": "cInvoiceDiscount",
       "tableName": "C_Invoice_Discount",
+      "tabId": "800211",
       "entityClassname": "InvoiceDiscount",
       "entityJavaPackage": "org.openbravo.model.common.invoice",
       "tabName": "Basic Discounts",
-      "level": "1",
+      "level": "line",
       "sequence": "31",
       "fields": [
         {
@@ -3379,17 +2646,43 @@
           "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         },
         {
-          "name": "cInvoiceId",
-          "columnName": "C_Invoice_ID",
-          "label": "Invoice",
+          "name": "cInvoiceDiscountId",
+          "columnName": "C_Invoice_Discount_ID",
+          "label": "Invoice discount",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The ID identifies a unique discount for the invoice"
+        },
+        {
+          "name": "adClientId",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "maxLength": "60",
-          "isIdentifier": true,
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "12",
+          "defaultValue": "@AD_CLIENT_ID@",
           "isFilterable": true,
-          "help": "The Invoice ID uniquely identifies an Invoice Document."
+          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "adOrgId",
@@ -3417,362 +2710,37 @@
           }
         },
         {
-          "name": "adClientId",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
+          "name": "cInvoiceId",
+          "columnName": "C_Invoice_ID",
+          "label": "Invoice",
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
-          "maxLength": "12",
-          "defaultValue": "@AD_CLIENT_ID@",
+          "maxLength": "60",
+          "isIdentifier": true,
           "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "help": "The Invoice ID uniquely identifies an Invoice Document.",
           "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
+            "type": "Search",
+            "targetTable": "C_Invoice",
+            "keyColumn": "C_Invoice_ID",
             "displayColumn": "Name",
             "filterExpression": null
           }
-        },
-        {
-          "name": "cInvoiceDiscountId",
-          "columnName": "C_Invoice_Discount_ID",
-          "label": "Invoice discount",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The ID identifies a unique discount for the invoice"
         }
       ],
       "entityFullClass": "org.openbravo.model.common.invoice.InvoiceDiscount",
       "hqlOrderByClause": "lineNo"
     },
     {
-      "name": "cInvoiceTaxCashVatV",
-      "tableName": "C_InvoiceTax_CashVAT_V",
-      "entityClassname": "InvoiceTaxCashVAT_V",
-      "entityJavaPackage": "org.openbravo.model.common.invoice",
-      "tabName": "Cash VAT",
-      "level": "2",
-      "sequence": "31",
-      "fields": [
-        {
-          "name": "adOrgId",
-          "columnName": "AD_Org_ID",
-          "label": "Organization",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.organization"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_ORG_ID@",
-          "isFilterable": true,
-          "help": "An organization is a unit of your client or legal entity - examples are store, department. You can share data between organizations.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Org",
-            "keyColumn": "AD_Org_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "isactive",
-          "columnName": "Isactive",
-          "label": "Active",
-          "type": "boolean",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
-        },
-        {
-          "name": "paymentdate",
-          "columnName": "Paymentdate",
-          "label": "Payment Date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "19",
-          "isFilterable": true
-        },
-        {
-          "name": "percentage",
-          "columnName": "Percentage",
-          "label": "Percentage",
-          "type": "decimal",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "isIdentifier": true,
-          "isFilterable": true
-        },
-        {
-          "name": "taxamt",
-          "columnName": "Taxamt",
-          "label": "Tax Amount",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Tax Amount displays the total tax amount for a document."
-        },
-        {
-          "name": "taxbaseamt",
-          "columnName": "Taxbaseamt",
-          "label": "Taxable Amount",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Tax Base Amount indicates the base amount used for calculating the tax amount."
-        },
-        {
-          "name": "iscanceled",
-          "columnName": "Iscanceled",
-          "label": "Canceled",
-          "type": "boolean",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "1",
-          "isFilterable": true
-        },
-        {
-          "name": "finPaymentId",
-          "columnName": "FIN_Payment_ID",
-          "label": "Payment",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Payment event",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "FIN_Payment",
-            "keyColumn": "FIN_Payment_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "finPaymentDetailId",
-          "columnName": "FIN_Payment_Detail_ID",
-          "label": "Payment Details",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "FIN_Payment_Detail",
-            "keyColumn": "FIN_Payment_Detail_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "isreceipt",
-          "columnName": "Isreceipt",
-          "label": "Receipt",
-          "type": "boolean",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "Indicated a sales transaction (Accounts Receivable if Receipt=Y) or a purchase transaction (Accounts Payable if Receipt=N)."
-        },
-        {
-          "name": "cBpartnerId",
-          "columnName": "C_Bpartner_ID",
-          "label": "Business Partner",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "A Business Partner is anyone with whom you transact.  This can include a customer, vendor, employee or any combination of these.",
-          "reference": {
-            "type": "Search",
-            "targetTable": "C_BPartner",
-            "keyColumn": "C_BPartner_ID",
-            "displayColumn": null,
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "finPaymentmethodId",
-          "columnName": "FIN_Paymentmethod_ID",
-          "label": "Payment Method",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "FIN_Paymentmethod",
-            "keyColumn": "FIN_Paymentmethod_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "status",
-          "columnName": "Status",
-          "label": "Status",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "Identifies the Status of the document"
-        },
-        {
-          "name": "amount",
-          "columnName": "Amount",
-          "label": "Amount",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "22",
-          "isFilterable": true
-        },
-        {
-          "name": "cCurrencyId",
-          "columnName": "C_Currency_ID",
-          "label": "Currency",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Indicates the currency to be used when processing this document.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Currency",
-            "keyColumn": "C_Currency_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "isManualSettlement",
-          "columnName": "IsManualSettlement",
-          "label": "Manual Settlement",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "Indicates whether this line has been created from a Manual Cash VAT Settlement"
-        },
-        {
-          "name": "emObcvatManualsettlementlineId",
-          "columnName": "EM_OBCVAT_MANUALSETTLEMENTLINE_ID",
-          "label": "Manual Cash VAT Settlement Line",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "maxLength": "32",
-          "isFilterable": true,
-          "reference": {
-            "type": "Selector",
-            "targetTable": "OBCVAT_ManualSettlementLine",
-            "selectorName": "OBCVAT_ManualSettlementLine",
-            "filterExpression": null,
-            "hql": null,
-            "displayColumn": null
-          }
-        },
-        {
-          "name": "dateacct",
-          "columnName": "Dateacct",
-          "label": "Manual Cash VAT Settlement Date",
-          "type": "date",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "derivation": {
-            "type": "computed",
-            "source": "@#Date@"
-          },
-          "maxLength": "19",
-          "defaultValue": "@#Date@",
-          "isFilterable": true,
-          "help": "The date this transaction is recorded on in the general ledger. This date also indicates which accounting period within the fiscal year this transaction will be part of."
-        },
-        {
-          "name": "cInvoicetaxCashvatVId",
-          "columnName": "C_Invoicetax_Cashvat_V_ID",
-          "label": "Invoice Cash VAT",
-          "type": "id",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Invoice Cash VAT View that sums the percentage, tax amount and taxable amount per payment detail"
-        },
-        {
-          "name": "adClientId",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_CLIENT_ID@",
-          "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        }
-      ],
-      "entityFullClass": "org.openbravo.model.common.invoice.InvoiceTaxCashVAT_V"
-    },
-    {
       "name": "finPaymentSchedule",
       "tableName": "FIN_Payment_Schedule",
+      "tabId": "7A8D43541F8C49F1BD8A431A0041BF89",
       "entityClassname": "FIN_PaymentSchedule",
       "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
       "tabName": "Payment Plan",
-      "level": "1",
+      "level": "line",
       "sequence": "40",
       "fields": [
         {
@@ -4032,17 +3000,6 @@
           "isFilterable": true
         },
         {
-          "name": "finPaymentScheduleId",
-          "columnName": "Fin_Payment_Schedule_ID",
-          "label": "Fin_Payment_Schedule_ID",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true
-        },
-        {
           "name": "adClientId",
           "columnName": "AD_Client_ID",
           "label": "Client",
@@ -4072,6 +3029,17 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
+        },
+        {
+          "name": "finPaymentScheduleId",
+          "columnName": "Fin_Payment_Schedule_ID",
+          "label": "Fin_Payment_Schedule_ID",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "isFilterable": true
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentSchedule"
@@ -4079,10 +3047,11 @@
     {
       "name": "finPaymentScheduleDetail",
       "tableName": "FIN_Payment_ScheduleDetail",
+      "tabId": "9817E22E2536417F8C9AEC8D5FA33E18",
       "entityClassname": "FIN_PaymentScheduleDetail",
       "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
       "tabName": "Payment Details",
-      "level": "2",
+      "level": "subline",
       "sequence": "50",
       "fields": [
         {
@@ -4408,7 +3377,7 @@
           }
         },
         {
-          "name": "amount",
+          "name": "amount2",
           "columnName": "Amount",
           "label": "Amount",
           "type": "amount",
@@ -4527,6 +3496,17 @@
           "help": "A flag indicating whether this document type is consider paid or not."
         },
         {
+          "name": "finPaymentScheduledetailId",
+          "columnName": "FIN_Payment_Scheduledetail_ID",
+          "label": "Payment Schedule Detail",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "isFilterable": true
+        },
+        {
           "name": "adClientId",
           "columnName": "AD_Client_ID",
           "label": "Client",
@@ -4556,17 +3536,6 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
-        },
-        {
-          "name": "finPaymentScheduledetailId",
-          "columnName": "FIN_Payment_Scheduledetail_ID",
-          "label": "Payment Schedule Detail",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentScheduleDetail",
@@ -4576,10 +3545,11 @@
     {
       "name": "cInvoiceReverse",
       "tableName": "C_Invoice_Reverse",
+      "tabId": "3ED38B380CD849B38F0AC1B52F992C34",
       "entityClassname": "ReversedInvoice",
       "entityJavaPackage": "org.openbravo.model.common.invoice",
       "tabName": "Reversed Invoices",
-      "level": "1",
+      "level": "line",
       "sequence": "80",
       "fields": [
         {
@@ -4591,7 +3561,6 @@
           "visibility": "editable",
           "maxLength": "32",
           "readOnlyLogic": "@Processed@='Y'",
-          "callout": "com.etendoerp.verifactu.ad_callouts.PaymentWarning",
           "isFilterable": true,
           "help": "Reversed Invoice",
           "reference": {
@@ -4601,103 +3570,6 @@
             "displayColumn": null,
             "filterExpression": null
           }
-        },
-        {
-          "name": "emAeat349IsCorrective",
-          "columnName": "EM_AEAT349_IsCorrective",
-          "label": "Correctiva del 349",
-          "type": "boolean",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "1",
-          "readOnlyLogic": "@Processed@='Y' & @DocStatus@!'VO'",
-          "isFilterable": true,
-          "help": "Al marcar esta casilla, el usuario está indicando que se trata de una factura correctiva de un periodo anterior y que, por lo tanto,  se debe declarar como tal en el modelo oficial 349."
-        },
-        {
-          "name": "emAeat349CYearId",
-          "columnName": "EM_AEAT349_C_Year_ID",
-          "label": "Año",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "32",
-          "displayLogic": "@EM_Aeat349_Iscorrective@='Y'",
-          "readOnlyLogic": "@Processed@='Y' & @DocStatus@!'VO'",
-          "isFilterable": true,
-          "help": "Seleccionar el año en caso de que la factura rectificada haya sido declarada anteriormente en el modelo 349. Esta corrección se tendrá en cuenta al generar el modelo 349 para el nuevo periodo.",
-          "reference": {
-            "type": "Table",
-            "targetTable": "C_Year",
-            "keyColumn": "C_Year_ID",
-            "displayColumn": "Year",
-            "filterExpression": null,
-            "orderBy": "Year ASC"
-          }
-        },
-        {
-          "name": "emAeat349Period",
-          "columnName": "EM_AEAT349_Period",
-          "label": "Periodo",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "displayLogic": "@EM_Aeat349_Iscorrective@='Y'",
-          "readOnlyLogic": "@Processed@='Y' & @DocStatus@!'VO'",
-          "isFilterable": true,
-          "help": "Seleccionar el periodo en caso de que la factura rectificada haya sido declarada anteriormente en el modelo 349. Los valores disponibles son: 1T, 2T, 3T y 4T en caso de declaración trimestral, y 0A en caso de declaración anual.\nEsta corrección se tendrá en cuenta al generar el modelo 349 para el nuevo periodo."
-        },
-        {
-          "name": "emAeat349BpBaseAmount",
-          "columnName": "EM_AEAT349_BP_BaseAmount",
-          "label": "Base Imponible del 349 Productos",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "displayLogic": "@EM_Aeat349_Iscorrective@='Y'",
-          "readOnlyLogic": "@Processed@='Y' & @DocStatus@!'VO'",
-          "isFilterable": true,
-          "help": "Base Imponible del tercero declarada en el modelo 349 para Productos correspondiente al periodo anterior de la factura"
-        },
-        {
-          "name": "emAeat349CBpartnerId",
-          "columnName": "EM_AEAT349_C_Bpartner_ID",
-          "label": "Business Partner",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.cBpartnerId"
-          },
-          "maxLength": "32",
-          "displayLogic": "@EM_Aeat349_Iscorrective@='Y'",
-          "readOnlyLogic": "@Processed@='Y' & @DocStatus@!'VO'",
-          "defaultValue": "@C_BPartner_ID@",
-          "isFilterable": true,
-          "help": "A Business Partner is anyone with whom you transact.  This can include a customer, vendor, employee or any combination of these.",
-          "reference": {
-            "type": "Search",
-            "targetTable": "C_BPartner",
-            "keyColumn": "C_BPartner_ID",
-            "displayColumn": null,
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "emAeat349BpBaseAmountS",
-          "columnName": "EM_AEAT349_BP_BaseAmount_S",
-          "label": "Base Imponible del 349 Servicios",
-          "type": "amount",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "22",
-          "displayLogic": "@EM_Aeat349_Iscorrective@='Y'",
-          "readOnlyLogic": "@Processed@='Y' & @DocStatus@!'VO'",
-          "isFilterable": true,
-          "help": "Base Imponible del tercero declarada en el modelo 349 para Servicios correspondiente al periodo anterior de la factura"
         },
         {
           "name": "cInvoiceId",
@@ -4823,10 +3695,11 @@
     {
       "name": "cConversionRateDocument",
       "tableName": "C_Conversion_Rate_Document",
+      "tabId": "FF808181308EA4230130901AB2C60090",
       "entityClassname": "ConversionRateDoc",
       "entityJavaPackage": "org.openbravo.model.common.currency",
       "tabName": "Exchange rates",
-      "level": "1",
+      "level": "line",
       "sequence": "90",
       "fields": [
         {
@@ -4977,7 +3850,14 @@
           "visibility": "system",
           "maxLength": "32",
           "readOnlyLogic": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
-          "isFilterable": true
+          "isFilterable": true,
+          "reference": {
+            "type": "Search",
+            "targetTable": "aprm_finacc_transaction_v",
+            "keyColumn": "aprm_finacc_transaction_v_id",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
           "name": "rate",
@@ -5010,6 +3890,21 @@
           "isFilterable": true
         },
         {
+          "name": "cConversionRateDocumentId",
+          "columnName": "C_Conversion_Rate_Document_ID",
+          "label": "C_Conversion_Rate_Document_ID",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "readOnlyLogic": "@Posted@='Y'",
+          "isFilterable": true
+        },
+        {
           "name": "adClientId",
           "columnName": "AD_Client_ID",
           "label": "Client",
@@ -5033,21 +3928,6 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
-        },
-        {
-          "name": "cConversionRateDocumentId",
-          "columnName": "C_Conversion_Rate_Document_ID",
-          "label": "C_Conversion_Rate_Document_ID",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "readOnlyLogic": "@Posted@='Y'",
-          "isFilterable": true
         }
       ],
       "entityFullClass": "org.openbravo.model.common.currency.ConversionRateDoc"
@@ -5055,10 +3935,11 @@
     {
       "name": "factAcct",
       "tableName": "Fact_Acct",
+      "tabId": "6EE02C9681A74406A129F1D96D022BA4",
       "entityClassname": "AccountingFact",
       "entityJavaPackage": "org.openbravo.model.financialmgmt.accounting",
       "tabName": "Accounting",
-      "level": "1",
+      "level": "line",
       "sequence": "100",
       "fields": [
         {
@@ -5424,20 +4305,20 @@
           }
         },
         {
-          "name": "cUomId",
-          "columnName": "C_UOM_ID",
-          "label": "UOM",
+          "name": "cTaxId",
+          "columnName": "C_Tax_ID",
+          "label": "Tax",
           "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
           "maxLength": "22",
           "isFilterable": true,
-          "help": "The UOM defines a unique non monetary unit of measure",
+          "help": "The Tax indicates the type of tax for this document line.",
           "reference": {
             "type": "TableDir",
-            "targetTable": "C_UOM",
-            "keyColumn": "C_UOM_ID",
+            "targetTable": "C_Tax",
+            "keyColumn": "C_Tax_ID",
             "displayColumn": "Name",
             "filterExpression": null
           }
@@ -5462,123 +4343,15 @@
           }
         },
         {
-          "name": "cTaxId",
-          "columnName": "C_Tax_ID",
-          "label": "Tax",
-          "type": "foreignKey",
-          "mandatory": false,
+          "name": "amtSourceDr",
+          "columnName": "AmtSourceDr",
+          "label": "Foreign Currency Debit",
+          "type": "amount",
+          "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
           "maxLength": "22",
           "isFilterable": true,
-          "help": "The Tax indicates the type of tax for this document line.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Tax",
-            "keyColumn": "C_Tax_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "cWithholdingId",
-          "columnName": "C_Withholding_ID",
-          "label": "Withholding",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The Withholding indicates the type of withholding to be calculated.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Withholding",
-            "keyColumn": "C_Withholding_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "mLocatorId",
-          "columnName": "M_Locator_ID",
-          "label": "Storage Bin",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Locator ID indicates where in a Warehouse a product is located.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "M_Locator",
-            "keyColumn": "M_Locator_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "lineId",
-          "columnName": "Line_ID",
-          "label": "Line ID",
-          "type": "id",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Internal link"
-        },
-        {
-          "name": "cSalesRegionId",
-          "columnName": "C_SalesRegion_ID",
-          "label": "Sales Region",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Sales Region indicates a specific area of sales coverage.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_SalesRegion",
-            "keyColumn": "C_SalesRegion_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "qty",
-          "columnName": "Qty",
-          "label": "Quantity",
-          "type": "quantity",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "10",
-          "isFilterable": true,
-          "help": "The Quantity indicates the number of a specific product or item for this document."
-        },
-        {
-          "name": "adOrgTrxId",
-          "columnName": "AD_OrgTrx_ID",
-          "label": "Trx Organization",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The organization which performs or initiates this transaction (for another organization).  The owning Organization may not be the transaction organization in a service bureau environment, with centralized services, and inter-organization transactions.",
-          "reference": {
-            "type": "Table",
-            "targetTable": "AD_Org",
-            "keyColumn": "AD_Org_ID",
-            "displayColumn": "Name",
-            "filterExpression": "AD_Org.IsSummary='N' AND AD_Org_ID <> '0'",
-            "orderBy": "AD_Org.Name"
-          }
+          "help": "The Source Debit Amount indicates the credit amount for this line in the source currency."
         },
         {
           "name": "factAcctType",
@@ -5597,131 +4370,15 @@
           "help": "Type of entry (Normal, Closing, Opening, Regularization)"
         },
         {
-          "name": "factAcctId",
-          "columnName": "Fact_Acct_ID",
-          "label": "Accounting Fact",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "isFilterable": true
-        },
-        {
-          "name": "dateTrx",
-          "columnName": "DateTrx",
-          "label": "Transaction Date",
-          "type": "date",
-          "mandatory": true,
-          "visibility": "system",
-          "maxLength": "10",
-          "isFilterable": true,
-          "help": "The Transaction Date indicates the date of the transaction."
-        },
-        {
-          "name": "docBaseType",
-          "columnName": "DocBaseType",
-          "label": "Document Category",
+          "name": "recordId2",
+          "columnName": "Record_ID2",
+          "label": "Record ID 2",
           "type": "string",
           "mandatory": false,
           "visibility": "system",
-          "maxLength": "40",
-          "isFilterable": true,
-          "help": "The Document Base Type identifies the base or starting point for a document.  Multiple document types may share a single document base type."
-        },
-        {
-          "name": "glCategoryId",
-          "columnName": "GL_Category_ID",
-          "label": "G/L Category",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The General Ledger Category is an optional, user defined method of grouping journal lines.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "GL_Category",
-            "keyColumn": "GL_Category_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "postingType",
-          "columnName": "PostingType",
-          "label": "Posting Type",
-          "type": "enum",
-          "mandatory": true,
-          "visibility": "system",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "The Posting Type indicates the type of amount (Actual, Encumbrance, Budget) this journal updated."
-        },
-        {
-          "name": "adTableId",
-          "columnName": "AD_Table_ID",
-          "label": "Table",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Table indicates the table in which a field or fields reside.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Table",
-            "keyColumn": "AD_Table_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "factAcctGroupId",
-          "columnName": "Fact_Acct_Group_ID",
-          "label": "Group ID",
-          "type": "string",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
           "maxLength": "32",
           "isFilterable": true,
-          "help": "Accounting entry group ID. Used to group a set of entries"
-        },
-        {
-          "name": "amtSourceCr",
-          "columnName": "AmtSourceCr",
-          "label": "Foreign Currency Credit",
-          "type": "amount",
-          "mandatory": true,
-          "visibility": "system",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Source Credit Amount indicates the credit amount for this line in the source currency."
-        },
-        {
-          "name": "cDoctypeId",
-          "columnName": "C_Doctype_ID",
-          "label": "Document Type",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The Document Type determines document sequence and processing rules",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Doctype",
-            "keyColumn": "C_Doctype_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
+          "help": "Payment the fact refers to."
         },
         {
           "name": "cActivityId",
@@ -5743,26 +4400,34 @@
           }
         },
         {
-          "name": "recordId2",
-          "columnName": "Record_ID2",
-          "label": "Record ID 2",
-          "type": "string",
+          "name": "cDoctypeId",
+          "columnName": "C_Doctype_ID",
+          "label": "Document Type",
+          "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
+          "systemCategory": "internal",
           "maxLength": "32",
           "isFilterable": true,
-          "help": "Payment the fact refers to."
+          "help": "The Document Type determines document sequence and processing rules",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Doctype",
+            "keyColumn": "C_Doctype_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
-          "name": "amtSourceDr",
-          "columnName": "AmtSourceDr",
-          "label": "Foreign Currency Debit",
+          "name": "amtSourceCr",
+          "columnName": "AmtSourceCr",
+          "label": "Foreign Currency Credit",
           "type": "amount",
           "mandatory": true,
           "visibility": "system",
           "maxLength": "22",
           "isFilterable": true,
-          "help": "The Source Debit Amount indicates the credit amount for this line in the source currency."
+          "help": "The Source Credit Amount indicates the credit amount for this line in the source currency."
         },
         {
           "name": "cLocToId",
@@ -5785,6 +4450,78 @@
           }
         },
         {
+          "name": "factAcctGroupId",
+          "columnName": "Fact_Acct_Group_ID",
+          "label": "Group ID",
+          "type": "string",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "Accounting entry group ID. Used to group a set of entries"
+        },
+        {
+          "name": "adTableId",
+          "columnName": "AD_Table_ID",
+          "label": "Table",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Table indicates the table in which a field or fields reside.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Table",
+            "keyColumn": "AD_Table_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "glCategoryId",
+          "columnName": "GL_Category_ID",
+          "label": "G/L Category",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The General Ledger Category is an optional, user defined method of grouping journal lines.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "GL_Category",
+            "keyColumn": "GL_Category_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "docBaseType",
+          "columnName": "DocBaseType",
+          "label": "Document Category",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "40",
+          "isFilterable": true,
+          "help": "The Document Base Type identifies the base or starting point for a document.  Multiple document types may share a single document base type."
+        },
+        {
+          "name": "dateTrx",
+          "columnName": "DateTrx",
+          "label": "Transaction Date",
+          "type": "date",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "10",
+          "isFilterable": true,
+          "help": "The Transaction Date indicates the date of the transaction."
+        },
+        {
           "name": "cLocFromId",
           "columnName": "C_LocFrom_ID",
           "label": "Location from Address",
@@ -5803,359 +4540,160 @@
             "filterExpression": null,
             "orderBy": null
           }
+        },
+        {
+          "name": "factAcctId",
+          "columnName": "Fact_Acct_ID",
+          "label": "Accounting Fact",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "isFilterable": true
+        },
+        {
+          "name": "adOrgTrxId",
+          "columnName": "AD_OrgTrx_ID",
+          "label": "Trx Organization",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The organization which performs or initiates this transaction (for another organization).  The owning Organization may not be the transaction organization in a service bureau environment, with centralized services, and inter-organization transactions.",
+          "reference": {
+            "type": "Table",
+            "targetTable": "AD_Org",
+            "keyColumn": "AD_Org_ID",
+            "displayColumn": "Name",
+            "filterExpression": "AD_Org.IsSummary='N' AND AD_Org_ID <> '0'",
+            "orderBy": "AD_Org.Name"
+          }
+        },
+        {
+          "name": "qty",
+          "columnName": "Qty",
+          "label": "Quantity",
+          "type": "quantity",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10",
+          "isFilterable": true,
+          "help": "The Quantity indicates the number of a specific product or item for this document."
+        },
+        {
+          "name": "cSalesRegionId",
+          "columnName": "C_SalesRegion_ID",
+          "label": "Sales Region",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Sales Region indicates a specific area of sales coverage.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_SalesRegion",
+            "keyColumn": "C_SalesRegion_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "lineId",
+          "columnName": "Line_ID",
+          "label": "Line ID",
+          "type": "id",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "Internal link"
+        },
+        {
+          "name": "mLocatorId",
+          "columnName": "M_Locator_ID",
+          "label": "Storage Bin",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Locator ID indicates where in a Warehouse a product is located.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_Locator",
+            "keyColumn": "M_Locator_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "cUomId",
+          "columnName": "C_UOM_ID",
+          "label": "UOM",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The UOM defines a unique non monetary unit of measure",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_UOM",
+            "keyColumn": "C_UOM_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "postingType",
+          "columnName": "PostingType",
+          "label": "Posting Type",
+          "type": "enum",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "60",
+          "isFilterable": true,
+          "help": "The Posting Type indicates the type of amount (Actual, Encumbrance, Budget) this journal updated."
+        },
+        {
+          "name": "cWithholdingId",
+          "columnName": "C_Withholding_ID",
+          "label": "Withholding",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Withholding indicates the type of withholding to be calculated.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "C_Withholding",
+            "keyColumn": "C_Withholding_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.accounting.AccountingFact",
       "hqlWhereClause": "e.table.id = '318' and e.recordID = @Invoice.id@",
       "hqlOrderByClause": "accountingSchema.name, accountingDate, abs(debit) desc, credit desc, value"
-    },
-    {
-      "name": "aeatsiiFacturas",
-      "tableName": "aeatsii_facturas",
-      "entityClassname": "AEATSIIFacturas",
-      "entityJavaPackage": "org.openbravo.module.sii.data",
-      "tabName": "SII Data",
-      "level": "1",
-      "sequence": "110",
-      "fields": [
-        {
-          "name": "adOrgId",
-          "columnName": "AD_Org_ID",
-          "label": "Organization",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.organization"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_ORG_ID@",
-          "isFilterable": true,
-          "help": "An organization is a unit of your client or legal entity - examples are store, department. You can share data between organizations.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Org",
-            "keyColumn": "AD_Org_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "isactive",
-          "columnName": "Isactive",
-          "label": "Active",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
-        },
-        {
-          "name": "cInvoiceId",
-          "columnName": "C_Invoice_ID",
-          "label": "Invoice",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isIdentifier": true,
-          "isFilterable": true,
-          "help": "The Invoice ID uniquely identifies an Invoice Document.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Invoice",
-            "keyColumn": "C_Invoice_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "aeatsiiConexionId",
-          "columnName": "Aeatsii_Conexion_ID",
-          "label": "SII Connection",
-          "type": "foreignKey",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "AEAT SII Connection",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "Aeatsii_Conexion",
-            "keyColumn": "Aeatsii_Conexion_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "codigoCsv",
-          "columnName": "Codigo_Csv",
-          "label": "CSV code",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "16",
-          "isFilterable": true,
-          "help": "Security code sent by AEAT."
-        },
-        {
-          "name": "estado",
-          "columnName": "Estado",
-          "label": "SII Registration Status",
-          "type": "enum",
-          "mandatory": true,
-          "visibility": "editable",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "SII Registration Status"
-        },
-        {
-          "name": "comunicacion",
-          "columnName": "Comunicacion",
-          "label": "Communication type",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "Communication type: A0 (send to SII at first time) or A1 (modification to SII)."
-        },
-        {
-          "name": "motivo",
-          "columnName": "Motivo",
-          "label": "SII error reason",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "255",
-          "isFilterable": true,
-          "help": "SII error reason"
-        },
-        {
-          "name": "estadoCuadre",
-          "columnName": "Estado_Cuadre",
-          "label": "SII assort status",
-          "type": "enum",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "SII assort status"
-        },
-        {
-          "name": "fechaCuadre",
-          "columnName": "Fecha_Cuadre",
-          "label": "SII assort date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "19",
-          "isFilterable": true,
-          "help": "SII assort date"
-        },
-        {
-          "name": "fechaUltimaModifSii",
-          "columnName": "Fecha_Ultima_Modif_Sii",
-          "label": "SII last modification date",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "editable",
-          "maxLength": "19",
-          "isFilterable": true,
-          "help": "SII last modification date"
-        },
-        {
-          "name": "created",
-          "columnName": "Created",
-          "label": "Creation Date",
-          "type": "datetime",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "audit",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "new Date()"
-          },
-          "maxLength": "19",
-          "isFilterable": true,
-          "help": "The Created field indicates the date that this record was created."
-        },
-        {
-          "name": "adClientId",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_CLIENT_ID@",
-          "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "aeatsiiFacturasId",
-          "columnName": "Aeatsii_Facturas_ID",
-          "label": "SII Invoice",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "SII data about an invoice."
-        }
-      ],
-      "entityFullClass": "org.openbravo.module.sii.data.AEATSIIFacturas"
-    },
-    {
-      "name": "tbaiSyncInvoice",
-      "tableName": "TBAI_SyncInvoice",
-      "entityClassname": "TbaiSyncinvoice",
-      "entityJavaPackage": "com.smf.ticketbai.data",
-      "tabName": "Batuz",
-      "level": "1",
-      "sequence": "120",
-      "fields": [
-        {
-          "name": "adOrgId",
-          "columnName": "AD_Org_ID",
-          "label": "Organización",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.organization"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_ORG_ID@",
-          "isFilterable": true,
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Org",
-            "keyColumn": "AD_Org_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "isactive",
-          "columnName": "Isactive",
-          "label": "Activo",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "editable",
-          "derivation": {
-            "type": "computed",
-            "source": "Y"
-          },
-          "maxLength": "1",
-          "defaultValue": "Y",
-          "isFilterable": true,
-          "help": "Existen dos formas de conseguir que un registro no esté disponible: Una es borrarlo, la otra es desactivarlo. Un registro desactivado no está disponible para poder ser seleccionado, pero si para verlo en informes. Hay dos razones para desactivar un registro pero no borrarlo:<BR>(1)-El sistema requiere el registro para su propio funcionamiento. <BR>(2)-El registro es utilizado por otros registros. <BR>Por ejemplo, no se puede borrar un tercero si existen facturas del mismo. Desactivando el tercero se asegura que en un futuro puedan existir más entradas para ese tercero."
-        },
-        {
-          "name": "estado",
-          "columnName": "Estado",
-          "label": "Estado",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "maxLength": "10",
-          "isIdentifier": true,
-          "isFilterable": true,
-          "help": "Indica si la factura está en proceso, completada, o si ha ocurrido un error durante el registro."
-        },
-        {
-          "name": "descripcion",
-          "columnName": "Descripcion",
-          "label": "Descripción",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "readOnly",
-          "maxLength": "20",
-          "isFilterable": true,
-          "help": "Use este campo para agregar información relevante sobre el contenido de la factura."
-        },
-        {
-          "name": "cInvoiceId",
-          "columnName": "C_Invoice_ID",
-          "label": "Factura",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "readOnly",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Es el identificador único de la factura. Permite hacer referencia a esta referencia desde cualquier ventana de la aplicación.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "C_Invoice",
-            "keyColumn": "C_Invoice_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "tbaiSyncinvoiceId",
-          "columnName": "Tbai_Syncinvoice_ID",
-          "label": "Syncronized Invoice ID",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "Este campo almacena el identificador único de la factura sincronizada en el sistema."
-        },
-        {
-          "name": "adClientId",
-          "columnName": "AD_Client_ID",
-          "label": "Entidad",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
-          "maxLength": "32",
-          "defaultValue": "@AD_CLIENT_ID@",
-          "isFilterable": true,
-          "help": "Un cliente es una empresa o entidad legal. No se puede compartir información entre empresas. Permite compartir la misma instalación a varias empresas. ",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        }
-      ],
-      "entityFullClass": "com.smf.ticketbai.data.TbaiSyncinvoice"
     }
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "48475fdc",
-    "extractedAt": "2026-03-12T12:30:28.171Z"
+    "checksum": "6760fbbe",
+    "extractedAt": "2026-03-12T19:22:44.006Z"
   }
 }

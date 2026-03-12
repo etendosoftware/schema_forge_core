@@ -207,7 +207,7 @@ export function buildReference(row) {
 
   // Convention fallback: infer from column name ({TableName}_ID pattern).
   // Applies to any FK type (TableDir, Search, etc.) when no explicit config exists.
-  if (row.columnname?.endsWith('_ID')) {
+  if (row.columnname?.toUpperCase().endsWith('_ID')) {
     return {
       type: refName || 'TableDir',
       targetTable: row.columnname.slice(0, -3),  // Strip '_ID'
@@ -386,6 +386,7 @@ export function buildSchema(rows, systemColumns, refMap) {
     const entity = {
       name: toCamelCase(tab.tableName),
       tableName: tab.tableName,
+      tabId: tab.tabId,
       entityClassname,
       entityJavaPackage,
       tabName: tab.tabName,
