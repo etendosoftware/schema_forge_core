@@ -147,8 +147,8 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | `translate-todos.js` | Generated React components | Components with translated callout/onchange logic (AI-assisted, interactive) |
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |
-| `resolve-menu.js` | AD_Menu_ID | Resolves menu entry type (W/P/R/X) and linked ID |
-| `pipeline.js` | Window ID, process ID, or menu ID | Runs full pipeline: window, process, or auto-detect mode |
+| `resolve-menu.js` | AD_Menu_ID or menu name | Resolves menu entry type (W/P/R/X) and linked ID by ID or name |
+| `pipeline.js` | Window ID, process ID, menu ID, or menu name | Runs full pipeline: window, process, or auto-detect mode |
 
 ### Decision UIs
 
