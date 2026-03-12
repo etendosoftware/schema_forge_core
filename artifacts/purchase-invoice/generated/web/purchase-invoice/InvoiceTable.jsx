@@ -1,19 +1,24 @@
 import { DataTable } from '@/components/contract-ui';
 
+// @sf-generated-start columns:invoice
 const columns = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: 'dateInvoiced', column: 'DateInvoiced', type: 'date' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
-  { key: 'poReference', column: 'POReference', type: 'string' },
+  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
+  { key: 'supplierReference', column: 'POReference', type: 'string' },
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'docStatus', column: 'DocStatus', type: 'status' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
-  { key: 'totalLines', column: 'TotalLines', type: 'amount' },
-  { key: 'isPaid', column: 'IsPaid', type: 'boolean' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
+// @sf-generated-end columns:invoice
 
-const filters = ['businessPartner', 'dateInvoiced', 'poReference', 'documentNo', 'docStatus'];
+const filters = ['businessPartner', 'invoiceDate', 'supplierReference', 'documentNo', 'documentStatus', 'paymentComplete'];
 
+// @sf-generated-start component:InvoiceTable
 export default function InvoiceTable(props) {
+  // @sf-custom-slot hooks:InvoiceTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
+// @sf-generated-end component:InvoiceTable
+
+// @sf-custom-slot section:InvoiceTable-custom
