@@ -306,6 +306,21 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 /sws/neo/{specName}                                  # Report specs (GET describe / POST generateReport)
 ```
 
+## Menu Entry Types and Pipeline Modes
+
+The pipeline supports all AD_Menu action types via `resolve-menu.js` (`--menu-id` or `--menu-name`):
+
+| AD_Menu.action | Type | Pipeline Mode | Runtime Support |
+|----------------|------|---------------|-----------------|
+| `W` | Window | Full (extract → curate → contract → push → frontend) | CRUD + selectors + actions |
+| `P` | Process | Simplified (extract → contract → push → frontend) | GET describe + POST execute |
+| `R` | Report | Simplified (extract → contract → push → frontend) | GET describe + POST generateReport (binary) |
+| `X` | Form | Detection only — shows Java + HTML source file paths | None (forms are custom-built) |
+
+Folders (`isSummary='Y'`) are grouping nodes — the pipeline reports them as non-actionable.
+
+**Form detection:** When `resolve-menu.js` encounters an AD_Form, it resolves the `AD_Form.ClassName` to show the developer the exact source paths (e.g., `src/.../MyForm.java` and `web/.../myForm.html`). The pipeline does not fail — it provides actionable information for manual implementation.
+
 ## Core Domain Concepts
 
 - **Schema curado**: JSON with fields classified by visibility (editable/readOnly/system/discarded) and derivation rules
