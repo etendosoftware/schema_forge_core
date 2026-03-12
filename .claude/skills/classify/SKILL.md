@@ -10,41 +10,80 @@ Unified classification skill for Schema Forge. You ARE the classifier — no ext
 ## Invocation
 
 ```
-/sf:classify <windowName>
-/sf:classify sales-order
-/sf:classify product --schema-only
-/sf:classify sales-order --rules-only
+/classify <windowName>                  # Auto-detects mode (incremental or full)
+/classify sales-order --schema-only     # Only schema, skip rules
+/classify sales-order --rules-only      # Only rules, skip schema
+/classify sales-order --full            # Force full re-classification from scratch
 ```
 
 If no window name provided, ask the user which window to classify.
 
+## Mode Detection
+
+**Check if `artifacts/{window}/schema-curated.json` exists:**
+
+| Exists? | User said `--full`? | Mode |
+|---------|-------------------|------|
+| No | - | **Full** — classify from scratch |
+| Yes | Yes | **Full** — re-classify from scratch |
+| Yes | No | **Incremental** — ask user what to change |
+
+### Incremental Mode (default when curated exists)
+
+When `schema-curated.json` already exists, the user wants to **modify** it, not redo everything.
+
+1. Read the existing `schema-curated.json` and `rules-curated.json`
+2. Ask the user: "What do you want to change?" (e.g. add a field, change visibility, add an entity, modify a rule)
+3. Apply ONLY the requested changes to the existing curated files
+4. Run the rest of the pipeline (contract → version → frontend → tests)
+
+**Examples of incremental changes:**
+- "Add the `costCenter` field to the header as editable"
+- "Change `paymentMethod` from optional to required"
+- "Add the Tax entity from schema-raw"
+- "Discard all SII-related fields"
+- "Mark `totalPaid` as grid:true"
+- "Add a rule for BP address cascade"
+
+Do NOT re-classify fields that the user didn't ask to change.
+
+### Full Mode (no curated file, or `--full`)
+
+Full classification from scratch — extract, classify all fields, all rules, write new curated files.
+Follow the complete Phase 1 + Phase 2 + Phase 3 pipeline below.
+
 ## Full Pipeline
 
-Classification is NOT a standalone step. It triggers a full pipeline:
+Classification (full or incremental) ALWAYS ends with the generation pipeline:
 
 ```
-LOCK → CLASSIFY → CONTRACT → CHECK-VERSION → GENERATE-FRONTEND → TESTS
+LOCK → CLASSIFY → CONTRACT → CHECK-VERSION → GENERATE-FRONTEND → TESTS → PR
 ```
 
-Every `/classify` invocation ends with generated, tested, version-checked code.
+Every `/classify` invocation ends with generated, tested, version-checked code on a PR targeting `develop`.
 
 ## Prerequisites
 
-### Step 0: Window Lock (MANDATORY)
+### Step 0: Window Lock via GitHub Issues (MANDATORY)
+
+Locks are GitHub Issues with title `🔒 LOCK: {windowName} #` and label `window-lock`.
+The owner is the GitHub username (issue assignee). The `--owner` param must be the **GitHub username**.
 
 Before ANY classification work, verify the window is locked by the current user:
 
 ```bash
-node cli/src/lock-window.js check --window {windowName} --owner {gitUser}
+node cli/src/lock-window.js check --window {windowName} --owner {ghUsername}
 ```
 
 If NOT locked → STOP. Tell the user:
 ```
 Window "{windowName}" is not locked. Lock it first:
-  node cli/src/lock-window.js lock --window {windowName} --owner {yourName} --reason "Classifying fields and rules"
+  node cli/src/lock-window.js lock --window {windowName} --owner {ghUsername} --reason "Classifying fields and rules"
 ```
 
 Do NOT proceed without a lock. This prevents two people classifying the same window simultaneously.
+
+**IMPORTANT:** Save the lock issue number — you'll need it to auto-close via PR.
 
 ### Step 0b: Verify input files exist
 
@@ -430,7 +469,42 @@ Files written:
   - artifacts/{window}/generated/web/{window}/*.jsx
 ```
 
-Ask the user: "Do you want to commit these changes?"
+### Step 7: Branch, commit, and PR (MANDATORY)
+
+Classification work MUST go through a PR targeting `develop` (NEVER `main`).
+The PR body MUST include `Closes #N` (where N is the lock issue number) to auto-unlock the window on merge.
+
+```bash
+# 1. Create feature branch
+git checkout -b feature/classify-{windowName}
+
+# 2. Stage and commit
+git add artifacts/{window}/ cli/src/  # only changed files
+git commit -m "feat: classify {windowName} schema fields and rules"
+
+# 3. Push and create PR targeting develop
+git push -u origin feature/classify-{windowName}
+gh pr create --base develop --title "feat: classify {windowName} schema and rules" --body "$(cat <<'PREOF'
+## Summary
+- Classify {N} fields across {M} entities for {WindowName}
+- {K} rules curated ({kept} Keep, {omitted} Omit)
+- Contract v{version}, {tests} tests passing, {components} components generated
+
+Closes #{lockIssueNumber}
+
+## Test plan
+- [ ] Contract tests pass
+- [ ] CLI test suite passes (no regressions)
+- [ ] Review curated schema field decisions
+- [ ] Review curated rules decisions
+PREOF
+)"
+```
+
+**Rules:**
+- PR ALWAYS targets `develop`, NEVER `main`
+- `Closes #N` auto-closes the lock issue when PR is merged
+- Do NOT manually unlock — let the PR close handle it
 
 ---
 
