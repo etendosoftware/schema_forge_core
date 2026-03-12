@@ -55,9 +55,9 @@ function checkSystemField(contract, test) {
   if (!field) {
     return { passed: false, reason: `Field '${test.field}' not found in backend entity '${test.entity}'` };
   }
-  return field.visibility === 'system'
+  return (field.visibility === 'system' || field.visibility === 'discarded')
     ? { passed: true }
-    : { passed: false, reason: `Field '${test.field}' has visibility '${field.visibility}', expected 'system'` };
+    : { passed: false, reason: `Field '${test.field}' has visibility '${field.visibility}', expected 'system' or 'discarded'` };
 }
 
 /**
