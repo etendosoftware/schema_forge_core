@@ -80,6 +80,9 @@ The coordinator creates the worktree and passes the path to each agent.
 4. Returns to the phase that rejected (no skipping phases)
 5. Max 3 cycles per phase, then escalate to user
 
+## Documentation Freshness (MANDATORY)
+Any PR that modifies the pipeline, CLI tools, data flow, repository structure, or architecture MUST include updates to all documentation and diagrams that reference the changed component. **Code change + doc update = one atomic unit.** See `<self_documentation>` section for the full checklist and list of files to verify. REVIEW must reject PRs that change documented behavior without updating the docs.
+
 ## Pull Requests (MANDATORY)
 After DEV completes, the coordinator creates a PR:
 1. DEV pushes branch to remote: `git push -u origin feat/<task-name>`
@@ -93,6 +96,8 @@ After DEV completes, the coordinator creates a PR:
 - If working from `feature/ETP-XXXX` → PR targets `feature/ETP-XXXX`
 - If working from `develop` → PR targets `develop`
 - **NEVER target `main` directly.** The highest allowed target is `develop`.
+- **Always assign the PR to the current user** (`gh api repos/{owner}/{repo}/issues/{pr}/assignees --method POST -f "assignees[]={username}"`).
+- **GitHub usernames must be stored in MEMORY.md** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to MEMORY.md for future use.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
@@ -154,7 +159,8 @@ Branch naming also follows Git Police patterns:
 │  cli/        → extractors,      │  writes  │  NeoServlet (/sws/neo/*)         │
 │                validators,      │ ──────▶  │  NeoSelectorService              │
 │                generators       │  via     │  NeoProcessService               │
-│  tools/      → decision UIs     │  webhooks│  NeoHandler (CDI hooks)          │
+│                                 │  webhooks│  NeoReportService                │
+│  tools/      → decision UIs     │          │  NeoHandler (CDI hooks)          │
 │  templates/  → legacy (unused)  │          │  PopulateSpecHelper              │
 │  artifacts/  → per-window data  │          │  4 webhooks (upsert/populate)    │
 │  docs/       → PRD, TDD, AD ref │          │                                  │
@@ -212,14 +218,15 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows + processes)
+│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows, processes + reports)
 │       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
 │       ├── custom-section-markers.js      # Delimiter constants for code preservation
 │       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
 │       ├── generate-frontend.js          # React SPA generation (emits section markers)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
-│       └── pipeline.js                   # Full pipeline (windows + processes)
+│       ├── resolve-menu.js               # AD_Menu resolver (auto-detect type from menu ID or name)
+│       └── pipeline.js                   # Full pipeline (windows, processes, reports, or auto-detect via menu ID/name)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
 │   ├── decision-panel/                   # Field visibility + rule curation
@@ -256,7 +263,7 @@ Schema Forge Webhooks → Etendo Go DB tables
     │ ETGO_SF_SPEC, ETGO_SF_ENTITY, ETGO_SF_FIELD
     ▼
 NEO Headless Runtime (NeoServlet at /sws/neo/*)
-    │ Serves CRUD, selectors, processes — live, no compilation
+    │ Serves CRUD, selectors, processes, reports — live, no compilation
     ▼
 React SPA (generated frontend)
     Consumes NEO Headless API
@@ -270,9 +277,10 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 
 | Component | Purpose |
 |-----------|---------|
-| `NeoServlet` (953 lines) | Main HTTP servlet at `/sws/neo/*`. JWT auth, path parsing, routing. |
-| `NeoSelectorService` (825 lines) | FK dropdown resolution (TableDir, Table, Search, OBUISEL). |
-| `NeoProcessService` (564 lines) | Process execution (OBUIAPP + Classic). |
+| `NeoServlet` | Main HTTP servlet at `/sws/neo/*`. JWT auth, path parsing, routing. |
+| `NeoSelectorService` | FK dropdown resolution (TableDir, Table, Search, OBUISEL). |
+| `NeoProcessService` | Process execution (OBUIAPP + Classic). |
+| `NeoReportService` | Report generation (Jasper via ReportingUtils). |
 | `NeoHandler` (interface) | CDI hook for custom logic. Return `NeoResponse` or `null` to fall through. |
 | `NeoContext` / `NeoResponse` | Request context (builder) and response wrapper. |
 | `PopulateSpecHelper` | Auto-populate entities/fields from AD metadata. |
@@ -282,7 +290,7 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 
 | Table | Purpose |
 |-------|---------|
-| `ETGO_SF_SPEC` | Top-level spec. Links to AD_Window (CRUD) or AD_Process (POST-only). |
+| `ETGO_SF_SPEC` | Top-level spec. Links to AD_Window (CRUD), AD_Process (POST-only), or AD_Process with IsReport (report generation). |
 | `ETGO_SF_ENTITY` | Tab/entity within a spec. HTTP method flags + optional CDI hook qualifier. |
 | `ETGO_SF_FIELD` | Column/parameter within an entity. Included/excluded, read-only flag. |
 
@@ -295,6 +303,7 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 /sws/neo/{specName}/{entityName}/selectors/{column}  # GET selector values
 /sws/neo/{specName}/{entityName}/{recordId}/action   # GET button actions / POST execute
 /sws/neo/{specName}                                  # Process specs (GET describe / POST execute)
+/sws/neo/{specName}                                  # Report specs (GET describe / POST generateReport)
 ```
 
 ## Core Domain Concepts
@@ -377,11 +386,10 @@ Per-window artifacts (`artifacts/{window}/`) should only contain window-specific
 
 ## Etendo Local Environment
 
-Config at `/Users/futit/Workspace/etendo_develop/gradle.properties`:
-- DB: `etendo27` on port `5416` (user: `tad/tad`, system: `postgres/syspass`)
-- JDBC: `jdbc:postgresql://localhost:5416`
-- Tomcat: port `8080`, context `etendo`
-- Etendo root: `/Users/futit/Workspace/etendo_develop`
+**Do NOT hardcode DB credentials here.** Read them from the Etendo project's `gradle.properties`:
+- Path: `{etendo_root}/gradle.properties`
+- Keys: `bbdd.host`, `bbdd.port`, `bbdd.user`, `bbdd.password`, `bbdd.sid`
+- Etendo root: parent directory of this repo (e.g., `../` relative to schema_forge)
 
 ## NEO Token Scripts
 
@@ -422,7 +430,9 @@ The `NeoOpenAPIEndpoint` class implements `com.etendoerp.openapi.model.OpenAPIEn
 See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - NeoHandler CDI hook mechanism (custom endpoint logic via `@Named` + `JAVA_QUALIFIER`)
 - Callouts NOT in NEO Headless (deferred to v2, only classic UI)
-- Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows + processes)
+- Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows, processes + reports)
+
+**IMPORTANT:** After running `push-to-neo.js`, always remind the developer to run `./gradlew export.database` in the Etendo root so the DB changes are persisted to the XML sourcedata files in `com.etendoerp.go`. Without this step, the NEO configuration only lives in the database and won't survive a rebuild or be committed to the repo.
 
 ### Discovery Webhooks (read-only, for tooling)
 
@@ -448,3 +458,69 @@ See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - **Per-window or per-feature findings** → save in the appropriate `artifacts/` or `docs/` subdirectory.
 - Reference new docs from this CLAUDE.md when relevant (e.g., "See `docs/brainstorming-2026-03-10.md`").
 - If you find yourself wanting to "remember something for next time", write it here or in `docs/`. Never in memory files.
+
+<self_documentation>
+
+## Self-Documentation Policy (MANDATORY)
+
+**Core rule: code changes and documentation updates are a single atomic unit.** A PR that modifies the pipeline, CLI tools, data flow, or repository structure MUST include updates to ALL documentation and diagrams that reference the changed component. No PR is complete until the docs reflect reality.
+
+### What triggers a documentation update
+
+Any change to:
+- **Pipeline steps** (new step, removed step, reordered steps, changed step behavior) in `cli/src/pipeline.js`
+- **CLI tools** (new tool, renamed tool, changed inputs/outputs, removed tool) in `cli/src/`
+- **Repository structure** (new directories, moved files, renamed folders)
+- **Data flow** (new data sources, changed artifact formats, new webhook endpoints)
+- **Runtime components** (new NeoHandler, changed URL patterns, new DB tables)
+- **Architecture** (new loops, changed integration points, new external dependencies)
+
+### What must be updated
+
+When a trigger fires, check and update **all** of the following that reference the changed component:
+
+**Always check:**
+| Document | What it contains |
+|----------|-----------------|
+| `CLAUDE.md` — Repository Structure | Directory tree, file descriptions |
+| `CLAUDE.md` — Key Data Flow | ASCII flow diagram |
+| `CLAUDE.md` — Key Components table | Component names, purposes, descriptions |
+| `docs/architecture-overview.md` | System overview, ASCII diagrams, CLI tools inventory, data flow |
+| `docs/TDD.md` | Technical design, repository structure layout |
+| `docs/PRD.md` | Pipeline diagram, tool references |
+
+**Check if relevant:**
+| Document | When to check |
+|----------|--------------|
+| `docs/flow-diagram.md` | If pipeline flow changed |
+| `docs/diagrams/complete-pipeline.mmd` | If pipeline steps changed |
+| `docs/diagrams/webhook-config-flow.mmd` | If webhook/config flow changed |
+| `docs/diagrams/request-lifecycle.mmd` | If request handling changed |
+| `docs/conventions.md` | If CLI behavior or edge cases changed |
+| `docs/plans/process-and-report-pipeline.md` | If process pipeline changed |
+| `docs/index.md` | If new docs were added |
+
+### Rules for volatile data
+
+- **Do NOT hardcode line counts** (e.g., "NeoServlet (953 lines)"). These go stale instantly. Describe purpose instead.
+- **Do NOT duplicate information across docs.** Use cross-references (e.g., "See `docs/architecture-overview.md`") instead of copying content that will diverge.
+- **ASCII diagrams must match the code.** If you add a pipeline step, the diagram gets a new box. If you remove a CLI tool, it disappears from the tree.
+
+### Pipeline phase responsibilities
+
+- **DEV phase**: The developer making the change MUST update all affected documentation in the same PR. This is not optional — incomplete docs = incomplete work.
+- **REVIEW phase**: The reviewer MUST verify that documentation was updated. If the PR changes something documented in CLAUDE.md or docs/, and the docs were NOT updated, this is a **rejection reason**.
+- **DOCS phase**: Sage validates that cross-references are consistent, diagrams match reality, and no stale data remains.
+
+### Checklist for PRs that modify pipeline/tools/structure
+
+Before marking a PR as ready:
+- [ ] CLAUDE.md sections updated (Repository Structure, Data Flow, Components)
+- [ ] `docs/architecture-overview.md` updated if architecture changed
+- [ ] Mermaid diagrams in `docs/diagrams/` updated if flow changed
+- [ ] `docs/TDD.md` updated if technical design changed
+- [ ] No hardcoded line counts or stale snapshot data
+- [ ] Cross-references between docs are still valid
+- [ ] New files/tools are referenced in the appropriate index (`docs/index.md`, CLAUDE.md tree)
+
+</self_documentation>

@@ -15,10 +15,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Bp Location"
         windowName={windowName}
         recordId={recordId}
-<<<<<<< HEAD
         window={windowMeta}
-=======
->>>>>>> origin/main
         {...props}
       />
     );
@@ -30,10 +27,7 @@ export default function App({ windowName, recordId, ...props }) {
       Table={BpLocationTable}
       entityLabel="Bp Location"
       windowName={windowName}
-<<<<<<< HEAD
       window={windowMeta}
-=======
->>>>>>> origin/main
       {...props}
     />
   );

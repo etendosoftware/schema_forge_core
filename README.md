@@ -39,10 +39,10 @@ Edit `.env` with your Etendo database credentials:
 
 ```env
 ETENDO_DB_HOST=localhost
-ETENDO_DB_PORT=5416
+ETENDO_DB_PORT=5432
 ETENDO_DB_USER=tad
 ETENDO_DB_PASSWORD=tad
-ETENDO_DB_NAME=etendo27
+ETENDO_DB_NAME=etendo
 ETENDO_SOURCE_DIR=/path/to/your/etendo/src
 ```
 

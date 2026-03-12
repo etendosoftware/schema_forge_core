@@ -4,6 +4,7 @@ import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
 import catalogs from './mockCatalogs';
 
+// @sf-generated-start summary:order
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
@@ -15,11 +16,15 @@ const summary = [
 ];
 
 const statusField = 'documentStatus';
+// @sf-generated-end summary:order
 
+// @sf-generated-start processes:order
 const processes = [
 
 ];
+// @sf-generated-end processes:order
 
+// @sf-generated-start addLineFields:orderLine
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
@@ -33,6 +38,7 @@ const addLineFields = {
     { key: 'discount', column: 'Discount', type: 'number' },
   ],
 };
+// @sf-generated-end addLineFields:orderLine
 
 const api = {
   "specName": "sales-order",
@@ -184,7 +190,9 @@ const api = {
   }
 };
 
+// @sf-generated-start component:OrderPage
 export default function OrderPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:OrderPage
   if (recordId) {
     return (
       <DetailView
@@ -217,3 +225,6 @@ export default function OrderPage({ windowName, recordId, ...props }) {
     />
   );
 }
+// @sf-generated-end component:OrderPage
+
+// @sf-custom-slot section:OrderPage-custom

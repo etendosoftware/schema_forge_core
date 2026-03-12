@@ -54,7 +54,6 @@
         { "name": "updated", "column": "Updated", "type": "datetime", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "now()" } },
 
         { "name": "documentAction", "column": "DocAction", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'CO'" } },
-        { "name": "documentStatus", "column": "DocStatus", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'DR'" } },
         { "name": "freightAmount", "column": "FreightAmt", "type": "amount", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "0" } },
         { "name": "discountPrinted", "column": "IsDiscountPrinted", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "false" } },
         { "name": "invoiced", "column": "IsInvoiced", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "false" } },
