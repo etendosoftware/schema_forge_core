@@ -67,9 +67,9 @@ describe('buildPipelineSteps', () => {
     assert.equal(humanStep.interactive, true);
   });
 
-  it('returns exactly 11 steps', () => {
+  it('returns exactly 10 steps', () => {
     const steps = buildPipelineSteps();
-    assert.equal(steps.length, 11);
+    assert.equal(steps.length, 10);
   });
 
   it('includes generate-frontend step with phase F8', () => {

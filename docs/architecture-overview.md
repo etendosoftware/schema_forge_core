@@ -45,17 +45,16 @@ Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 │                                                                      │
 │  CLI Tools (Node.js)          Decision UIs (React)                   │
 │  ├── extract-from-db.js       ├── app-shell (port 5173)             │
-│  ├── extract-from-process.js  ├── decision-panel (port 5174)        │
-│  ├── extract-fields.js        └── ui-preview (port 5175)            │
-│  ├── extract-rules.js                                                │
-│  ├── pre-classify.js          DB Writers (direct PostgreSQL)         │
-│  ├── validate-schema.js       ├── neo-writer.js (ETGO_SF_* tables)  │
-│  ├── generate-contract.js     └── push-to-neo.js (orchestrator)     │
-│  ├── generate-frontend.js                                            │
-│  ├── generate-mock-data.js    Webhooks (legacy, still available)    │
-│  ├── run-contract-tests.js    ├── SFUpsertSpec / SFUpsertEntity     │
-│  └── pipeline.js              ├── SFUpsertField / SFPopulateSpec    │
-│                                └── SFListProcesses / SFListWindows  │
+│  ├── extract-fields.js        ├── decision-panel (port 5174)        │
+│  ├── extract-rules.js         └── ui-preview (port 5175)            │
+│  ├── pre-classify.js                                                 │
+│  ├── validate-schema.js       Webhooks (NEO Headless config)        │
+│  ├── generate-contract.js     ├── SFUpsertSpec                      │
+│  ├── push-to-neo.js (planned) ├── SFUpsertEntity                    │
+│  ├── generate-frontend.js     ├── SFUpsertField                     │
+│  ├── generate-mock-data.js    └── SFPopulateSpec                    │
+│  ├── run-contract-tests.js                                          │
+│  └── pipeline.js                                                     │
 │                                                                      │
 │  Artifacts (per-window)        Documentation                         │
 │  ├── sales-order/              ├── PRD.md, TDD.md                   │
@@ -76,9 +75,6 @@ Etendo DB ──SQL──▶ extract-from-db.js ──▶ artifacts/{window}/
                                               ├── schema-raw.json      (all fields, FK refs, callouts)
                                               ├── rules-raw.json       (all business rules)
                                               └── schema-curated.json  (after human decisions)
-
-Etendo DB ──SQL──▶ extract-from-process.js ──▶ artifacts/{process}/
-                                                    └── process-raw.json   (metadata + parameters)
 ```
 
 The extraction connects to the Etendo PostgreSQL database and queries AD_Window, AD_Tab, AD_Column, AD_Field, AD_Reference, and related tables. It resolves FK types (TableDir, Table, Search, OBUISEL) and captures callout references, display logic, and validation rules.
@@ -95,12 +91,12 @@ Humans classify each field's visibility (editable, readOnly, system, discarded) 
 ### 3. Configuration (Schema Forge writes to Etendo Go)
 
 ```
-contract.json ──▶ push-to-neo.js ──▶ neo-writer.js ──▶ ETGO_SF_SPEC
-                                                       ETGO_SF_ENTITY
-                                                       ETGO_SF_FIELD
+schema-curated.json ──▶ Webhooks ──▶ ETGO_SF_SPEC
+                                     ETGO_SF_ENTITY
+                                     ETGO_SF_FIELD
 ```
 
-Schema Forge writes configuration directly to the Etendo PostgreSQL database via `neo-writer.js` (transactional, all-or-nothing). The legacy webhook approach is still available but deprecated. The 4 webhooks on the Etendo instance are:
+Schema Forge calls 4 webhooks on the running Etendo instance:
 
 | Webhook | Purpose |
 |---------|---------|
@@ -136,17 +132,15 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | Tool | Input | Output |
 |------|-------|--------|
 | `extract-from-db.js` | Etendo DB (windowId) | `schema-raw.json`, `rules-raw.json` |
-| `extract-from-process.js` | Etendo DB (processId) | `process-raw.json` (metadata + parameters) |
 | `pre-classify.js` | `rules-raw.json` | `rules-classified.json` (AI pre-classification) |
 | `validate-schema.js` | `schema-curated.json` | Validation report (4 levels: structural, semantic, visibility, cross-reference) |
-| `generate-contract.js` | Curated schema + rules (windows) or `process-raw.json` (processes) | `contract.json` (frontend + backend contract, or process contract) |
-| `neo-writer.js` | DB client + params | Direct INSERT/UPDATE to ETGO_SF_* tables (transactional) |
-| `push-to-neo.js` | Contract + schema artifacts | Orchestrates neo-writer: spec → populate → field updates |
-| `generate-frontend.js` | Contract | React SPA components (window entities or process forms) |
+| `generate-contract.js` | Curated schema + rules | `contract.json` (frontend + backend contract) |
+| `push-to-neo.js` (planned) | Curated schema | Webhook calls → ETGO_SF_* tables (NEO Headless config) |
+| `generate-frontend.js` | Contract + decisions | React SPA components |
 | `translate-todos.js` | Generated React components | Components with translated callout/onchange logic (AI-assisted, interactive) |
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |
-| `pipeline.js` | Window or process ID | Runs full pipeline: window mode or process mode |
+| `pipeline.js` | Window name | Runs full pipeline: extract → validate → classify → generate |
 
 ### Decision UIs
 
@@ -196,25 +190,6 @@ artifacts/sales-order/
 ```
 
 36 windows are currently in the artifacts directory.
-
-### Per-Process Artifacts
-
-Standalone processes (AD_Menu.action = 'P') produce a simpler artifact structure:
-
-```
-artifacts/generate-invoices/
-├── raw-query-results/
-│   ├── process-metadata.csv    # Process info from AD_Process
-│   └── process-parameters.csv  # Parameters from AD_Process_Para
-├── process-raw.json            # Structured extraction
-├── contract.json               # Process contract (type: "process")
-└── generated/
-    └── web/generate-invoices/
-        ├── GenerateInvoicesProcess.jsx  # Process form component
-        └── index.jsx                   # Entry point
-```
-
-Key differences from window artifacts: no tabs, no curation step, no rules, single POST-only entity.
 
 ---
 

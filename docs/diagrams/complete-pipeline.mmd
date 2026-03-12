@@ -5,10 +5,8 @@ flowchart TD
 
     subgraph Extraction["1. EXTRACTION (CLI — Node.js)"]
         EXT["extract-from-db.js<br/>extract-fields.js<br/>extract-rules.js"]
-        PEXT["extract-from-process.js"]
         RAW_S["schema-raw.json<br/>(all fields, FK refs, callouts)"]
         RAW_R["rules-raw.json<br/>(all business rules)"]
-        RAW_P["process-raw.json<br/>(metadata + parameters)"]
     end
 
     subgraph PreClassify["2. PRE-CLASSIFICATION (CLI + AI)"]
@@ -32,7 +30,8 @@ flowchart TD
     end
 
     subgraph BackendConfig["6. BACKEND CONFIGURATION"]
-        PTN["push-to-neo.js<br/>+ neo-writer.js"]
+        PTN["push-to-neo.js"]
+        WH["4 Webhooks<br/>(SFUpsertSpec, SFUpsertEntity,<br/>SFUpsertField, SFPopulateSpec)"]
         TABLES["ETGO_SF_SPEC<br/>ETGO_SF_ENTITY<br/>ETGO_SF_FIELD"]
     end
 
@@ -68,18 +67,10 @@ flowchart TD
         APP["React SPA / Mobile App / External Client"]
     end
 
-    %% Extraction (Windows)
+    %% Extraction
     AD -->|SQL queries| EXT
     EXT --> RAW_S
     EXT --> RAW_R
-
-    %% Extraction (Processes)
-    AD -->|SQL queries| PEXT
-    PEXT --> RAW_P
-
-    %% Process pipeline (simplified: extract → contract → push → frontend)
-    RAW_P -->|process mode| GC
-    GC -->|process contract| CONTRACT
 
     %% Pre-classification
     RAW_R --> PC
@@ -100,9 +91,10 @@ flowchart TD
     CUR_R --> GC
     GC --> CONTRACT
 
-    %% Backend: contract → push-to-neo → direct DB → NEO Headless
+    %% Backend: contract → push-to-neo → webhooks → NEO Headless
     CONTRACT -->|"visibility, apiPrediction"| PTN
-    PTN -->|direct SQL INSERT/UPDATE| TABLES
+    PTN --> WH
+    WH -->|idempotent HTTP| TABLES
 
     %% Frontend: contract → React SPA + mock data
     CONTRACT -->|"types, inputMode, callouts,<br/>displayLogic, apiPrediction"| GF
@@ -142,11 +134,11 @@ flowchart TD
     classDef client fill:#bd10e0,stroke:#8a0ca5,color:white
 
     class AD db
-    class EXT,PEXT,PC,VAL cli
+    class EXT,PC,VAL cli
     class DP human
     class WH webhook
     class NEO,AUTH,RESOLVE,FILTER,HANDLER,DS,SEL,PROC runtime
-    class RAW_S,RAW_R,RAW_P,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,MOCK artifact
+    class RAW_S,RAW_R,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,MOCK artifact
     class CT,IT test
     class APP client
     class GC,PTN,GF,GM,TT cli

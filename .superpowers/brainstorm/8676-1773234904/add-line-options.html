@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Line — Options</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #1a1a2e; padding: 32px; }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: #6b7280; margin-bottom: 32px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1100px; }
+  .option { background: white; border-radius: 12px; border: 2px solid #e5e7eb; padding: 0; overflow: hidden; transition: border-color 0.2s; }
+  .option:hover { border-color: #3b82f6; }
+  .option-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 10px; }
+  .option-letter { width: 28px; height: 28px; border-radius: 6px; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .option-title { font-weight: 600; font-size: 15px; }
+  .option-desc { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .mockup { padding: 16px; background: #fafbfc; }
+  .rec { position: absolute; top: 12px; right: 16px; background: #10b981; color: white; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .option-header { position: relative; }
+
+  /* Shared mockup styles */
+  .mock-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .mock-table th { text-align: left; padding: 6px 10px; color: #6b7280; font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; }
+  .mock-table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
+  .mock-table tr:hover td { background: #f9fafb; }
+  .mock-input { border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 8px; font-size: 12px; width: 100%; background: white; color: #374151; }
+  .mock-input:focus { outline: 2px solid #3b82f6; outline-offset: -1px; }
+  .mock-input::placeholder { color: #9ca3af; }
+  .mock-btn { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; border: none; }
+  .mock-btn-primary { background: #1a1a2e; color: white; }
+  .mock-btn-outline { background: white; border: 1px solid #d1d5db; color: #374151; }
+  .mock-btn-ghost { background: transparent; color: #3b82f6; border: none; }
+  .mock-label { font-size: 10px; color: #6b7280; margin-bottom: 3px; display: block; }
+
+  /* Option A - Inline row */
+  .inline-row td { background: #eff6ff; }
+  .inline-row .mock-input { border-color: #93c5fd; }
+
+  /* Option B - Slide panel */
+  .slide-panel { background: white; border-top: 2px solid #e5e7eb; padding: 12px 16px; margin-top: 8px; border-radius: 0 0 8px 8px; }
+
+  /* Option C - Modal */
+  .modal-overlay { background: rgba(0,0,0,0.15); border-radius: 8px; padding: 24px; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+  .modal-card { background: white; border-radius: 10px; padding: 16px 20px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+
+  /* Option D - Popover */
+  .popover-container { position: relative; }
+  .popover-card { position: absolute; right: 0; top: 4px; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; width: 320px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); z-index: 10; }
+  .popover-arrow { position: absolute; top: -6px; right: 24px; width: 12px; height: 12px; background: white; border-left: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; transform: rotate(45deg); }
+</style>
+</head>
+<body>
+
+<h1>Add Line — Options</h1>
+<p class="subtitle">How should adding a new line to a document (e.g., Sales Order Line) work?</p>
+
+<div class="grid">
+
+  <!-- Option A: Inline Row -->
+  <div class="option">
+    <div class="option-header">
+      <div class="option-letter">A</div>
+      <div>
+        <div class="option-title">Inline Row</div>
+        <div class="option-desc">Empty editable row at the bottom of the table. Tab through fields, Enter to confirm.</div>
+      </div>
+      <span class="rec">Recommended</span>
+    </div>
+    <div class="mockup">
+      <table class="mock-table">
+        <thead>
+          <tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>10</td><td>Laptop Pro 15"</td><td>5</td><td>2,400</td><td>12,000</td></tr>
+          <tr><td>20</td><td>Mouse Wireless</td><td>10</td><td>80</td><td>800</td></tr>
+          <tr class="inline-row">
+            <td><input class="mock-input" value="30" style="width:40px"></td>
+            <td><input class="mock-input" placeholder="Search product..."></td>
+            <td><input class="mock-input" placeholder="0" style="width:50px"></td>
+            <td style="color:#9ca3af">—</td>
+            <td style="color:#9ca3af">—</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 8px; display: flex; justify-content: flex-end; gap: 6px;">
+        <span style="font-size: 10px; color: #9ca3af; padding-top: 4px;">Enter to add · Esc to cancel</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Bottom Sheet (current) -->
+  <div class="option">
+    <div class="option-header">
+      <div class="option-letter">B</div>
+      <div>
+        <div class="option-title">Bottom Sheet (actual)</div>
+        <div class="option-desc">Panel que sube desde abajo con form de 3 columnas. Funciona pero oculta las lineas.</div>
+      </div>
+    </div>
+    <div class="mockup">
+      <table class="mock-table">
+        <thead>
+          <tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>10</td><td>Laptop Pro 15"</td><td>5</td><td>2,400</td><td>12,000</td></tr>
+          <tr><td>20</td><td style="color:#d1d5db">Hidden by sheet...</td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="slide-panel">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">Add Order Line</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div><label class="mock-label">Product *</label><input class="mock-input" placeholder="Search..."></div>
+          <div><label class="mock-label">Quantity *</label><input class="mock-input" placeholder="0"></div>
+          <div><label class="mock-label">Line # *</label><input class="mock-input" value="30"></div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+          <button class="mock-btn mock-btn-primary">Add Line</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Popover -->
+  <div class="option">
+    <div class="option-header">
+      <div class="option-letter">C</div>
+      <div>
+        <div class="option-title">Popover</div>
+        <div class="option-desc">Small floating card attached to the "+ Add" button. Compact, doesn't cover the table.</div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Lines</span>
+        <button class="mock-btn mock-btn-outline" style="background: #eff6ff; border-color: #93c5fd; color: #3b82f6;">+ Add</button>
+      </div>
+      <div class="popover-container">
+        <table class="mock-table">
+          <thead>
+            <tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>10</td><td>Laptop Pro 15"</td><td>5</td><td>2,400</td><td>12,000</td></tr>
+            <tr><td>20</td><td>Mouse Wireless</td><td>10</td><td>80</td><td>800</td></tr>
+          </tbody>
+        </table>
+        <div class="popover-card" style="top: -60px;">
+          <div class="popover-arrow"></div>
+          <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">New Line</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div><label class="mock-label">Product *</label><input class="mock-input" placeholder="Search..."></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <div><label class="mock-label">Qty *</label><input class="mock-input" placeholder="0"></div>
+              <div><label class="mock-label">Line #</label><input class="mock-input" value="30"></div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;">
+            <button class="mock-btn mock-btn-outline" style="font-size: 10px;">Cancel</button>
+            <button class="mock-btn mock-btn-primary" style="font-size: 10px;">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option D: Expand below table -->
+  <div class="option">
+    <div class="option-header">
+      <div class="option-letter">D</div>
+      <div>
+        <div class="option-title">Expand Below</div>
+        <div class="option-desc">Form appears below the table with a smooth expand. Table stays fully visible.</div>
+      </div>
+    </div>
+    <div class="mockup">
+      <table class="mock-table">
+        <thead>
+          <tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>10</td><td>Laptop Pro 15"</td><td>5</td><td>2,400</td><td>12,000</td></tr>
+          <tr><td>20</td><td>Mouse Wireless</td><td>10</td><td>80</td><td>800</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 10px; border: 1px dashed #93c5fd; border-radius: 8px; padding: 12px; background: #eff6ff;">
+        <div style="font-size: 12px; font-weight: 600; color: #1e40af; margin-bottom: 8px;">New Line</div>
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px;">
+          <div><label class="mock-label">Product *</label><input class="mock-input" placeholder="Search..."></div>
+          <div><label class="mock-label">Qty *</label><input class="mock-input" placeholder="0"></div>
+          <div><label class="mock-label">Line #</label><input class="mock-input" value="30"></div>
+          <div style="display:flex;align-items:flex-end;gap:4px;">
+            <button class="mock-btn mock-btn-primary" style="height:26px;">Add</button>
+            <button class="mock-btn mock-btn-ghost" style="height:26px; font-size:10px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { MARKERS } from './custom-section-markers.js';
 
 /**
  * Capitalize the first letter of a string.
@@ -85,22 +84,15 @@ export function generateTableComponent(entityName, contract) {
 
   return `import { DataTable } from '@/components/contract-ui';
 
-${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
 ];
-${MARKERS.GENERATED_END(`columns:${entityName}`)}
 
 const filters = [${filtersArray}];
 
-${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
-${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -129,33 +121,22 @@ export function generateFormComponent(entityName, contract) {
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
     // Behavioral metadata: displayLogic and readOnlyLogic
-    let displayLogicPart = '';
-    if (f.displayLogic) {
-      if (f.displayLogic.evaluable === false) {
-        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
-      } else if (f.displayLogic.js) {
-        displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
-      }
-    }
-    let readOnlyLogicPart = '';
-    if (f.readOnlyLogic) {
-      if (f.readOnlyLogic.evaluable === false) {
-        readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
-      } else if (f.readOnlyLogic.js) {
-        readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
-      }
-    }
-    // Custom slots for callout and onChangeFunction behavioral hints
-    const slotLines = [];
+    const displayLogicPart = f.displayLogic?.js
+      ? `, displayLogic: (record) => ${f.displayLogic.js}`
+      : '';
+    const readOnlyLogicPart = f.readOnlyLogic?.js
+      ? `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`
+      : '';
+    // TODO comments for callout and onChangeFunction behavioral hints
+    const todoLines = [];
     if (f.callout) {
-      const calloutId = f.callout.className.replace(/.*\./, '');
-      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`callout:${calloutId}`)}`);
+      todoLines.push(`  // TODO: Translate callout logic: ${f.callout.className}`);
     }
     if (f.onChangeFunction) {
-      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
+      todoLines.push(`  // TODO: Translate onchangefunction logic: ${f.onChangeFunction.name}`);
     }
     const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
-    return [...slotLines, fieldLine].join('\n');
+    return [...todoLines, fieldLine].join('\n');
   }).join('\n');
 
   // Generate field groups comment if any fields have fieldGroup
@@ -166,20 +147,13 @@ export function generateFormComponent(entityName, contract) {
 
   return `import { EntityForm } from '@/components/contract-ui';
 
-${MARKERS.GENERATED_START(`fields:${entityName}`)}
 ${fieldGroupsComment}const fields = [
 ${fieldsArray}
 ];
-${MARKERS.GENERATED_END(`fields:${entityName}`)}
 
-${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <EntityForm fields={fields} {...props} />;
 }
-${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -256,21 +230,16 @@ import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import catalogs from './mockCatalogs';
 
-${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
 ${summaryArray}
 ];
 
 const statusField = ${statusFieldLine};
-${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
-${MARKERS.GENERATED_START(`processes:${headerEntity}`)}
 const processes = [
 ${processesArray}
 ];
-${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
 
-${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
   entry: [
 ${entryArray}
@@ -279,11 +248,8 @@ ${entryArray}
 ${derivedArray}
   ],
 };
-${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}
 ${apiBlock}
-${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   if (recordId) {
     return (
       <DetailView
@@ -315,9 +281,6 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     />
   );
 }
-${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -340,14 +303,9 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
-${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  ${MARKERS.CUSTOM_SLOT('hooks:App')}
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
 }
-${MARKERS.GENERATED_END('component:App')}
-
-${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
   }
 
@@ -363,9 +321,7 @@ import catalogs from './mockCatalogs';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
-${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, ...props }) {
-  ${MARKERS.CUSTOM_SLOT('hooks:App')}
   if (recordId) {
     return (
       <DetailView
@@ -392,9 +348,6 @@ export default function App({ windowName, recordId, ...props }) {
     />
   );
 }
-${MARKERS.GENERATED_END('component:App')}
-
-${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
 }
 
@@ -564,84 +517,6 @@ export function captureCurrentState(windowName, baseDir) {
       files[filename] = readFileSync(resolve(webDir, filename), 'utf-8');
     }
   }
-  return files;
-}
-
-// ---------------------------------------------------------------------------
-// Process form generation
-// ---------------------------------------------------------------------------
-
-/**
- * Convert a kebab-case string to PascalCase.
- * "generate-invoices" -> "GenerateInvoices"
- */
-function toPascalCase(kebab) {
-  return kebab
-    .split('-')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}
-
-/**
- * Generate a process form component from a process contract.
- */
-export function generateProcessFormComponent(contract) {
-  const proc = contract.process;
-  const compName = toPascalCase(proc.specName) + 'Process';
-
-  const paramsArray = contract.parameters.map(p => {
-    const requiredPart = p.required ? ', required: true' : '';
-    const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'")}'` : '';
-    const referencePart = p.referenceValueId ? `, reference: '${p.referenceValueId}'` : '';
-    return `  { key: '${p.name}', column: '${p.column}', type: '${p.inputMode}'${requiredPart}${defaultPart}${referencePart} },`;
-  }).join('\n');
-
-  const executeUrl = contract.apiPrediction?.baseUrl || `/sws/neo/${proc.specName}`;
-
-  return `import { ProcessForm } from '@/components/contract-ui';
-
-const parameters = [
-${paramsArray}
-];
-
-const processConfig = {
-  name: '${proc.name.replace(/'/g, "\\'")}',
-  specName: '${proc.specName}',
-  executeUrl: '${executeUrl}',
-};
-
-export default function ${compName}(props) {
-  return <ProcessForm parameters={parameters} process={processConfig} {...props} />;
-}
-`;
-}
-
-/**
- * Generate the index/entry point for a process form.
- */
-export function generateProcessIndex(contract) {
-  const proc = contract.process;
-  const compName = toPascalCase(proc.specName) + 'Process';
-
-  return `import ${compName} from './${compName}';
-
-const processMeta = { name: '${proc.name.replace(/'/g, "\\'")}', specName: '${proc.specName}' };
-
-export default function App({ token, apiBaseUrl }) {
-  return <${compName} token={token} apiBaseUrl={apiBaseUrl} process={processMeta} />;
-}
-`;
-}
-
-/**
- * Generate all frontend files for a process contract.
- * Returns { filename: code } map.
- */
-export function generateAllProcess(contract) {
-  const compName = toPascalCase(contract.process.specName) + 'Process';
-  const files = {};
-  files[`${compName}.jsx`] = generateProcessFormComponent(contract);
-  files['index.jsx'] = generateProcessIndex(contract);
   return files;
 }
 
