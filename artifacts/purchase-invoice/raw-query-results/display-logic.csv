@@ -1,0 +1,173 @@
+name,displaylogic,displaylogic_server,displaylogicgrid,readonlylogic,columnname
+Statical Value,,,,@INTR_INVOICE@='Y',Statical_Amt
+Active,@DocStatus@='DR',,,,IsActive
+Charge,,,,@Processed@='Y',C_Charge_ID
+Client,,,,@Processed@='Y',AD_Client_ID
+Organization,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',AD_Org_ID
+Business Partner,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y' | @HAS_C_INVOICELINES@='Y',C_BPartner_ID
+Partner Address,,,,@Processed@='Y',C_BPartner_Location_ID
+Sales Campaign,@$Element_MC@='Y',,,@Posted@='Y',C_Campaign_ID
+Payment Terms,,,,@Processed@='Y',C_PaymentTerm_ID
+Project,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Project_ID
+Activity,@$Element_AY@='Y',,,@Posted@='Y',C_Activity_ID
+User/Contact,,,,@Processed@='Y',AD_User_ID
+Accounting Date,,,,@Posted@='Y',DateAcct
+Process Invoice,@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='',,,,DocAction
+Document No.,,,,@Processed@='Y',DocumentNo
+Transaction Document,,,,@Processed@='Y',C_DocTypeTarget_ID
+Charge Amount,,,,@Processed@='Y',ChargeAmt
+Invoice Date,,,,@Posted@='Y' | (@Processed@='Y' & (@DocStatus@!'VO')),DateInvoiced
+Price List,,,,@Processed@='Y',M_PriceList_ID
+Charge,,,,@Processed@='Y',C_Charge_ID
+Client,,,,@Processed@='Y',AD_Client_ID
+Organization,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',AD_Org_ID
+Tax,,,,@Processed@='Y',C_Tax_ID
+UOM,,,,@Processed@='Y' | (@UomManagement@='Y' & @Financial_Invoice_Line@='N'),C_UOM_ID
+Line No.,,,,@Processed@='Y',Line
+Line Net Amount,,,,@Iseditlinenetamt@='N' | @Processed@='Y',LineNetAmt
+Product,@Financial_Invoice_Line@='N',,,@Processed@='Y',M_Product_ID
+Net Unit Price,,,,@Processed@='Y'|@GROSSPRICE@='Y',PriceActual
+List Price,@GROSSPRICE@='N',,,@Processed@='Y',PriceList
+Invoiced Quantity,,,,@Processed@='Y' | (@UomManagement@='Y' & @Financial_Invoice_Line@='N'),QtyInvoiced
+Charge Amount,,,,@Processed@='Y',ChargeAmt
+Client,,,,@Processed@='Y',AD_Client_ID
+Organization,,,,@Processed@='Y',AD_Org_ID
+Tax,,,,@Processed@='Y' | @Recalculate@='Y',C_Tax_ID
+Tax Amount,,,,@Processed@='Y' | @Recalculate@='Y',TaxAmt
+Taxable Amount,,,,@Processed@='Y' | @Recalculate@='Y',TaxBaseAmt
+Authorization No.,@EM_Aeatsii_Isauthorization@='Y',,,true,EM_Aeatsii_Authorizationno
+Price Limit,,,,@Processed@='Y',PriceLimit
+Posted,@Processed@='Y' & @#ShowAcct@='Y',,,,Posted
+Generate Receipt from Invoice,@Processed@='Y',,,,GenerateTo
+Copy Lines,@Processed@='N',,,,CopyFrom
+Attribute Set Value,(@ATTRIBUTESET@!''&@ATTRSETVALUETYPE@!'F')|(@M_AttributeSetInstance_ID@!''&@M_AttributeSetInstance_ID@!'0'),,,@Processed@='Y',M_AttributeSetInstance_ID
+Trx Organization,@$Element_OT@='Y',,,@Processed@='Y',AD_OrgTrx_ID
+2nd Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User2_ID
+1st Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User1_ID
+Order Quantity,(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!''),,,@Processed@='Y',QuantityOrder
+Order UOM,(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!''),,,@Processed@='Y',M_Product_Uom_Id
+Currency,,,,@IsValid@='Y',C_Currency_ID
+Amount,,,,@IsValid@='Y',Amount
+Manual,,,,@IsValid@='Y',IsManual
+Organization,@ACCT_DIMENSION_DISPLAY@,,,,AD_Org_ID
+Active,,,,@Posted@='Y',IsActive
+Amount,,,,@Posted@='Y',Amt
+Project,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Project_ID
+Sales Campaign,@$Element_MC@='Y',,,@Posted@='Y',C_Campaign_ID
+1st Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User1_ID
+2nd Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User2_ID
+Año,@EM_Aeat349_Iscorrective@='Y',,,@Processed@='Y' & @DocStatus@!'VO',EM_AEAT349_C_Year_ID
+Base Net Unit Price,@GROSSPRICE@='N',,,,PriceStd
+Organization,,,,@Processed@='Y',AD_Org_ID
+Active,,,,@Processed@='Y',IsActive
+Basic Discount,,,,@Processed@='Y',C_Discount_ID
+Line No.,,,,@Processed@='Y',Line
+Base Net Unit Price,@GROSSPRICE@='N',,,,Priceoffer
+Withholdingamount,@FinancialManagement@='',,,,Withholdingamount
+Account,@Financial_Invoice_Line@='Y',,,@Processed@='Y',Account_ID
+Match LC Costs, @Processed@='Y' & @LC_MATCHED@ = 'N',,,,Match_Lccosts
+Period Number,@isdeferred@='Y',,,@Posted@='Y',Periodnumber
+Organization,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',AD_Org_ID
+Amount Currently Due,@Processed@='Y' & @Ispaid@='N',,,,DueAmt
+Expected (Account Currency),@C_Currency_ID@!@FinAcc_Currency_ID@,,,,ExpectedConverted
+Total Outstanding,@Processed@='Y' & @Ispaid@='N',,,,OutstandingAmt
+Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+Expense Plan Type,@isdeferred@='Y',,,@Posted@='Y',DefPlanType
+C_Conversion_Rate_Document_ID,,,,@Posted@='Y',C_Conversion_Rate_Document_ID
+Payment Complete,@Processed@='Y',,,,Ispaid
+Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+Alternative UOM,@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N',@UomManagement@='Y',,@Processed@='Y',C_Aum
+Active,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',Isactive
+Base Gross Unit Price,@GROSSPRICE@='Y',,,,Priceoffergross
+Period,@isdeferred@='Y',,,@Posted@='Y',C_Period_ID
+Project,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Project_ID
+DUA date,@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC') & @EM_Aeatsii_Multi_Dua@='N',,,,EM_Aeatsii_Fecha_Dua
+Business Partner,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Bpartner_ID
+Operative Quantity,@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N',@UomManagement@='Y',,@Processed@='Y',Aumqty
+Foreign  Amount,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',Foreign_Amount
+Financial Invoice Line,,,,@Processed@='Y',Financial_Invoice_Line
+Reversed Invoice,,,,@Processed@='Y',Reversed_C_Invoice_ID
+Active,,,,@Processed@='Y',Isactive
+Total Paid,@Processed@='Y' & @Ispaid@='N',,,,Totalpaid
+Alternate Taxable Amount,@UsesAlternate@='Y',,,@Processed@='Y',Taxbaseamt
+Base Gross Unit Price,@GROSSPRICE@='Y',,,,grosspricestd
+Product,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',M_Product_ID
+Business Partner,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',C_Bpartner_ID
+Rate,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',Rate
+Days Till Next Due,@Processed@='Y' & @Ispaid@='N',,,,DaysTillDue
+Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
+Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
+Last Calculated on Date,@Processed@='Y',,,,LastCalculatedOnDate
+Sent to SII,@AEATSII_AcogidaSII2@='Y',,,true,EM_Aeatsii_Issent
+Payment,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',FIN_Payment_ID
+Deferred Expense,@M_PRODUCT_ID@!'',,,@Posted@='Y',IsDeferred
+Currency,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',C_Currency_ID
+Paid In Full Date,@Processed@='Y' & @Ispaid@='Y',,,,Finalsettlement
+Days to Pay in Full,@Processed@='Y' & @Ispaid@='Y',,,,Daysoutstanding
+Percentage Paid Late,@Processed@='Y' & @Totalpaid@!0 & @Percentageoverdue@!0,,,,Percentageoverdue
+Create Lines From Receipt,@Processed@='N' & @IsReversalDocument@='N',,,,Createfrominouts
+Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+1st Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User1_ID
+Gross List Price,@GROSSPRICE@='Y',,,@Processed@='Y',Grosspricelist
+Financial Account Transaction,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',aprm_finacc_transaction_v_id
+Invoice,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',C_Invoice_ID
+Activity,@$Element_AY@='Y',,,@Posted@='Y',C_Activity_ID
+Explode,@IsStocked@='N' & @isBOM@='Y' & @explode@!'Y' & @Processed@='N',,,,Explode
+Line Gross Amount,@GROSSPRICE@='Y',,,,Line_Gross_Amount
+To Currency,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',C_Currency_Id_To
+2nd Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User2_ID
+Create Lines From Order,@Processed@='N' & @IsReversalDocument@='N',,,,Createfromorders
+Paid (Account Currency),@C_Currency_ID@!@FinAcc_Currency_ID@,,,,PaidConverted
+Modified in SII,@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='Y',,,true,EM_Aeatsii_Modified
+Client,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',AD_Client_ID
+Exchange Rate,@C_Currency_ID@!@FinAcc_Currency_ID@,,,,Finacc_Txn_Convert_Rate
+Gross Unit Price,@GROSSPRICE@='Y',,,@Processed@='Y'|@GROSSPRICE@='N',Gross_Unit_Price
+Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
+Payment Date,,,,@Processed@='Y' & @status@!'RPAE',Paymentdate
+Modify Payment Plan,@DocStatus@='CO'&@IsPaid@='N',,,,EM_Aprm_Modif_Paym_Out_Sched
+Financial Account,,,,@Processed@='Y' & @status@!'RPAE',Fin_Financial_Account_ID
+Add Payment,@DocStatus@='CO'& @IsPaid@='N' & (@showAddPayment@='Y' | @showAddPayment@ =''),,,,EM_APRM_Addpayment
+Payment Method,,,,@Processed@='Y',FIN_Paymentmethod_ID
+Document No.,,,,@Processed@='Y',DocumentNo
+Process Invoices,@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='Y',,,,EM_APRM_Processinvoice
+Payment Method,,,,@Processed@='Y' & @status@!'RPAE',Fin_Paymentmethod_ID
+Payment No.,false,,,,Paymentno
+Modify Payment Plan,@DocStatus@='CO'&@IsPaid@='N',,,,EM_Aprm_Modif_Paym_Out_Sched
+Invoice Paid,@InvoicePaidStatus@='Y',,,,Isinvoicepaid
+Withholding,@FinancialManagement@='' ,,,,C_Withholding_ID
+Edit Line Net Amount,,,,@Processed@='Y',Iseditlinenetamt
+Conversion Rate,@Hasunit@='Y',,,@INTR_INVOICE@='Y',Conversion
+Incoterms,,,,@INTR_INVOICE@='Y',C_Incoterms_ID
+SII exercise,@AEATSII_AcogidaSII2@='Y',,,true,EM_Aeatsii_Ejercicio
+Operation date,@AEATSII_AcogidaSII2@='Y',,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y',EM_Aeatsii_Fecha_Operacion
+Cash VAT,,,,@Processed@='Y',Iscashvat
+SII Description,@AEATSII_AcogidaSII2@='Y',,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y',EM_Aeatsii_Descripcion_Sii
+Fecha operación,@AEATSII_AcogidaSII2@='Y' | @TBAI_ExistConfigAndIsAvailable@,,,@processed@='Y',EM_Etsg_Date_Operation
+Net Mass (Kg),,,,@INTR_INVOICE@='Y',Netmass_Kg
+Register Error Modified,@AEATSII_AcogidaSII2@='Y' & @em_aeatsii_issent@='Y' & (@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@!'VO'),,,(@em_aeatsii_estado@!'CO' & @em_aeatsii_estado@!'AE') | @em_aeatsii_modified@='Y' | @DocStatus@='VO',EM_Aeatsii_Error_Registral
+Commodity Code,,,,@INTR_INVOICE@='Y',NC8_Code
+DUA date,@AEATSII_Multidua@='Y',,,,EM_Aeatsii_Fecha_Dua
+SII Registration Status,@AEATSII_AcogidaSII2@='Y',,,true,EM_Aeatsii_Estado
+Autoinvoice,@AEATSII_AcogidaSII2@='Y',,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y',EM_Aeatsii_Autofactura
+Base Imponible del 349 Servicios,@EM_Aeat349_Iscorrective@='Y',,,@Processed@='Y' & @DocStatus@!'VO',EM_AEAT349_BP_BaseAmount_S
+Accounting register date,@AEATSII_AcogidaSII2@='Y',,,@AEATSII_InSIIAndPostedInvoices@='Y',EM_Aeatsii_Fecha_Reg_Cont
+Country of Origin,,,,@INTR_INVOICE@='Y',Orig_C_Country_ID
+Has Suplementary Unit,,,,@INTR_INVOICE@='Y',Hasunit
+SII period,@AEATSII_AcogidaSII2@='Y',,,true,EM_Aeatsii_Periodo
+Registrar Factura en Batuz,@EM_Tbai_Issent@='N' & (@docstatus@='CO') & @TBAI_ExistConfigAndIsAvailable@,,,,EM_Tbai_Xmlgenerator
+SII purchase description master,@AEATSII_AcogidaSII2@='Y',,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='N')) & @Processed@='Y',EM_Aeatsii_Pur_Description_ID
+Invoice type key,@AEATSII_AcogidaSII2@='Y',,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y',EM_Aeatsii_Clave_Tipo_Fc
+Transportation Type,,,,@INTR_INVOICE@='Y',Transportation_Type
+Correctiva del 349,,,,@Processed@='Y' & @DocStatus@!'VO',EM_AEAT349_IsCorrective
+Multiple DUA,@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC'),,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @DocStatus@='VO') & @Processed@='Y',EM_Aeatsii_Multi_Dua
+DUA,@AEATSII_AcogidaSII2@='Y' & (@EM_Aeatsii_Clave_Tipo_Fc@='F5' | @EM_Aeatsii_Clave_Tipo_Fc@='LC') & @EM_Aeatsii_Multi_Dua@='N',,,,EM_Aeatsii_Dua
+Send to SII,@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='N',,,(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | @em_aeatsii_estado@='BA' | (@DocStatus@!'CO' & @DocStatus@!'VO')) | (@IsSOTrx@='N' & @AEATSII_PreSII_Invoice@='N' &(@EM_Aeatsii_Fecha_Reg_Cont@=null | @EM_Aeatsii_Fecha_Reg_Cont@='' | @EM_Aeatsii_Fecha_Reg_Cont@='null')),EM_Aeatsii_Send
+Periodo,@EM_Aeat349_Iscorrective@='Y',,,@Processed@='Y' & @DocStatus@!'VO',EM_AEAT349_Period
+Statistical Regime,,,,@INTR_INVOICE@='Y',Statistical_Regime
+Transaction Type,,,,@INTR_INVOICE@='Y',Transaction_Type
+Supplementary UOM,@Hasunit@='Y',,,@INTR_INVOICE@='Y',Intr_C_Uom_ID
+Port/Airport,@Transportation_Type@='1' | @Transportation_Type@='4',,,@INTR_INVOICE@='Y',Port
+Business Partner,@EM_Aeat349_Iscorrective@='Y',,,@Processed@='Y' & @DocStatus@!'VO',EM_AEAT349_C_Bpartner_ID
+DUA,@AEATSII_Multidua@='Y',,,,EM_Aeatsii_Dua
+Base Imponible del 349 Productos,@EM_Aeat349_Iscorrective@='Y',,,@Processed@='Y' & @DocStatus@!'VO',EM_AEAT349_BP_BaseAmount
+Modification in SII,@AEATSII_AcogidaSII2@='Y' & @EM_Aeatsii_Error_Registral@='Y',,,,EM_Aeatsii_Modif
