@@ -46,10 +46,6 @@ describe('MENU_QUERY', () => {
     assert.ok(MENU_QUERY.includes("IsActive = 'Y'"));
   });
 
-  it('LEFT JOINs AD_Form for form classname', () => {
-    assert.ok(MENU_QUERY.includes('LEFT JOIN AD_Form'));
-    assert.ok(MENU_QUERY.includes('form_classname'));
-  });
 });
 
 describe('MENU_QUERY_BY_NAME', () => {
@@ -65,11 +61,6 @@ describe('MENU_QUERY_BY_NAME', () => {
   it('filters by IsActive', () => {
     assert.ok(MENU_QUERY_BY_NAME.includes("IsActive = 'Y'"));
   });
-
-  it('LEFT JOINs AD_Form for form classname', () => {
-    assert.ok(MENU_QUERY_BY_NAME.includes('LEFT JOIN AD_Form'));
-    assert.ok(MENU_QUERY_BY_NAME.includes('form_classname'));
-  });
 });
 
 describe('resolveFromRow', () => {
@@ -80,7 +71,6 @@ describe('resolveFromRow', () => {
       ad_window_id: 'WIN123',
       ad_process_id: null,
       issummary: 'N',
-      form_classname: null,
     });
     assert.equal(result.resolvedMode, 'window');
     assert.equal(result.windowId, 'WIN123');
@@ -94,13 +84,12 @@ describe('resolveFromRow', () => {
       ad_window_id: null,
       ad_process_id: 'PROC456',
       issummary: 'N',
-      form_classname: null,
     });
     assert.equal(result.resolvedMode, 'process');
     assert.equal(result.processId, 'PROC456');
   });
 
-  it('action X throws error containing form-migration-guide.md', () => {
+  it('action X throws error indicating manual build required', () => {
     assert.throws(
       () => resolveFromRow({
         action: 'X',
@@ -108,18 +97,20 @@ describe('resolveFromRow', () => {
         ad_window_id: null,
         ad_process_id: null,
         issummary: 'N',
-        form_classname: 'GenerateInvoicesmanual',
+        form_classname: 'org.openbravo.erpCommon.ad_forms.GenerateInvoicesmanual',
       }),
       (err) => {
-        assert.ok(err.message.includes('form-migration-guide.md'));
-        assert.ok(err.message.includes("Form detected"));
-        assert.ok(err.message.includes('GenerateInvoicesmanual'));
+        assert.ok(err.message.includes('AD_Form'));
+        assert.ok(err.message.includes('manually'));
+        assert.ok(err.message.includes('Create Invoices'));
+        assert.ok(err.message.includes('GenerateInvoicesmanual.java'));
+        assert.ok(err.message.includes('GenerateInvoicesmanual.html'));
         return true;
       }
     );
   });
 
-  it('action X without classname shows unknown hint', () => {
+  it('action X without classname omits source file hints', () => {
     assert.throws(
       () => resolveFromRow({
         action: 'X',
@@ -130,8 +121,9 @@ describe('resolveFromRow', () => {
         form_classname: null,
       }),
       (err) => {
-        assert.ok(err.message.includes('form-migration-guide.md'));
-        assert.ok(err.message.includes('unknown'));
+        assert.ok(err.message.includes('AD_Form'));
+        assert.ok(err.message.includes('manually'));
+        assert.ok(!err.message.includes('.java'));
         return true;
       }
     );
@@ -145,8 +137,7 @@ describe('resolveFromRow', () => {
         ad_window_id: null,
         ad_process_id: null,
         issummary: 'Y',
-        form_classname: null,
-      }),
+        }),
       (err) => {
         assert.ok(err.message.includes('folder'));
         return true;
@@ -162,8 +153,7 @@ describe('resolveFromRow', () => {
         ad_window_id: null,
         ad_process_id: null,
         issummary: 'N',
-        form_classname: null,
-      }),
+        }),
       (err) => {
         assert.ok(err.message.includes('Report'));
         return true;
@@ -179,8 +169,7 @@ describe('resolveFromRow', () => {
         ad_window_id: null,
         ad_process_id: null,
         issummary: 'N',
-        form_classname: null,
-      }),
+        }),
       (err) => {
         assert.ok(err.message.includes("Unsupported menu action"));
         return true;
