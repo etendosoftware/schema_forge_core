@@ -60,7 +60,10 @@ Every task passes through the active phases IN ORDER. No exceptions.
 
 ## Worktree Isolation (MANDATORY)
 Every task runs in an isolated git worktree. No exceptions.
+The worktree branch is created FROM the current branch, and PRs target that same branch.
 ```
+# Detect current branch, then create worktree from it
+CURRENT_BRANCH=$(git branch --show-current)
 git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
 ```
 All agents work ONLY in that worktree — never in the main repo.
@@ -80,16 +83,33 @@ The coordinator creates the worktree and passes the path to each agent.
 ## Pull Requests (MANDATORY)
 After DEV completes, the coordinator creates a PR:
 1. DEV pushes branch to remote: `git push -u origin feat/<task-name>`
-2. Coordinator creates PR via `gh pr create` targeting `main`
+2. Coordinator creates PR via `gh pr create` **targeting the branch the worktree was created from** (NEVER `main`)
 3. REVIEW and QA phases happen on the PR (agents comment their verdicts on the PR)
 4. On rejection: DEV fixes, pushes, cycle restarts from rejecting phase
 5. After all phases APPROVE: coordinator merges via `gh pr merge --squash`
 6. Remove worktree and delete branch
 
-**No direct merges to main.** Every change goes through a PR.
+**PR target rules:**
+- If working from `feature/ETP-XXXX` → PR targets `feature/ETP-XXXX`
+- If working from `develop` → PR targets `develop`
+- **NEVER target `main` directly.** The highest allowed target is `develop`.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
+
+## Commit Conventions (MANDATORY)
+All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
+**This skill MUST be installed.** If it is not available, ask the user to install it before proceeding with any commits.
+
+Summary of commit formats (see skill for full details):
+- **Feature:** `Feature ETP-1234: Description` (max 80 chars first line)
+- **Hotfix:** `Issue #N: Description` + second `-m "ETP-1234"` (always "Issue" format)
+- **Epic:** `Epic ETP-1234: Description`
+- **No `Co-Authored-By`** — Git Police rejects it.
+- Always validate first line length (`<= 80 chars`) before committing.
+
+Branch naming also follows Git Police patterns:
+- `feature/ETP-1234`, `hotfix/#N-ETP-1234`, `epic/ETP-1234`
 
 </pipeline_rules>
 
@@ -109,7 +129,8 @@ When the Schema Forge repository (project analyzer) is on a feature branch (e.g.
 - Make product decisions without the user
 - Approve work that skipped pipeline phases
 - Let agents work outside their assigned worktree
-- Commit, merge, or work directly on the main branch — ALL work happens on feature branches via PRs
+- Commit, merge, or work directly on `main` or `develop` — ALL work happens on feature branches via PRs
+- Create PRs targeting `main` — the highest allowed PR target is `develop`; `main` is only updated via publish/release merges from `develop`
 </what_i_never_do>
 
 <communication>
@@ -185,22 +206,26 @@ schema-forge/                             # THIS REPO — design + tooling
 ├── cli/                                  # Node.js CLI tools
 │   └── src/
 │       ├── extract-from-db.js            # Extract fields + rules from Etendo DB
+│       ├── extract-from-process.js      # Extract process metadata + parameters
 │       ├── extract-fields.js             # Field extraction with FK resolution
 │       ├── extract-rules.js              # Rule + callout extraction
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
-│       ├── push-to-neo.js (planned)      # Webhook calls → NEO Headless config
-│       ├── generate-frontend.js          # React SPA generation
+│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows + processes)
+│       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
+│       ├── custom-section-markers.js      # Delimiter constants for code preservation
+│       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
+│       ├── generate-frontend.js          # React SPA generation (emits section markers)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
-│       └── pipeline.js                   # Full extraction-to-generation pipeline
+│       └── pipeline.js                   # Full pipeline (windows + processes)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
 │   ├── decision-panel/                   # Field visibility + rule curation
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
-├── artifacts/{window-name}/              # Per-window: schemas, rules, decisions, generated code
+├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
@@ -217,10 +242,11 @@ schema-forge/                             # THIS REPO — design + tooling
 Etendo AD Metadata
     │
     ▼
-Schema Forge CLI (extract-from-db.js)
-    │ Extracts fields, rules, callouts, FK references
+Schema Forge CLI (extract-from-db.js / extract-from-process.js)
+    │ Extracts fields, rules, callouts, FK references (windows)
+    │ Extracts process metadata + parameters (standalone processes)
     ▼
-Per-Window Artifacts (artifacts/{window}/)
+Per-Window/Process Artifacts (artifacts/{name}/)
     │ schema-curated.json, rules-curated.json
     ▼
 Decision UIs (tools/decision-panel/)
@@ -279,6 +305,23 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 - **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence
 - **OBDal transactions**: single DB transaction, all-or-nothing rollback. No Sagas.
 
+## Custom Section Preservation (Frontend Regeneration)
+
+When `generate-frontend.js` regenerates React components, custom code (callout translations, hooks, handlers) survives via section markers. The generator emits delimiter comments; the preservation module extracts custom blocks from the old file and re-injects them into the new output.
+
+**Delimiter format:**
+- `// @sf-generated-start ID` / `// @sf-generated-end ID` -- generated code (overwritten on regeneration)
+- `// @sf-custom-start ID` / `// @sf-custom-end ID` -- custom code (preserved across regenerations)
+- `// @sf-custom-slot ID` -- placeholder in generated output where custom code is injected
+
+**How it works:** Pipeline step F8 calls `preserveAndRegenerate(existingFile, newContent)` which: (1) extracts custom sections from the old file, (2) replaces matching `@sf-custom-slot` lines in new output with the preserved blocks, (3) appends unmatched sections at EOF with a warning so developers can relocate them.
+
+**Code location:**
+- `cli/src/custom-section-markers.js` -- marker constants and regex patterns
+- `cli/src/preserve-custom-sections.js` -- extract, inject, and append logic
+- `cli/src/generate-frontend.js` -- emits `GENERATED_START/END` blocks and `CUSTOM_SLOT` placeholders
+- `cli/src/pipeline.js` -- integrates preservation into the regeneration step
+
 ## Testing
 
 - **Contract tests (Node.js):** Run against JSON contract in Schema Forge. No backend needed. Cover field presence, types, visibility, searchable filters.
@@ -314,9 +357,10 @@ Plans and proposals live in `docs/plans/` and follow a lifecycle:
 | `docs/plans/discarded/` | Plans that were rejected or superseded |
 
 **Rules:**
-- When a plan is fully implemented, move it to `completed/` and update its status header.
+- When a plan is fully implemented, move it to `completed/YYYY-MM-DD/` (using the completion date) and update its status header. This groups completed plans by day for easy tracking.
 - When a plan is discarded or superseded, move it to `discarded/` with a note explaining why.
 - Plans with mixed status (some phases done, some pending) stay in `plans/` with per-phase status markers.
+- If multiple plans complete on the same day, they all go into the same date folder.
 
 ## Etendo AD Reference
 
@@ -339,12 +383,54 @@ Config at `/Users/futit/Workspace/etendo_develop/gradle.properties`:
 - Tomcat: port `8080`, context `etendo`
 - Etendo root: `/Users/futit/Workspace/etendo_develop`
 
+## NEO Token Scripts
+
+Helper scripts to generate JWT tokens for testing NEO Headless endpoints. Require Etendo running.
+
+| Script | Role | Org | Use case |
+|--------|------|-----|----------|
+| `scripts/neo-token-sysadmin.sh` | System Administrator (role 0) | * (org 0) | Full access, admin operations |
+| `scripts/neo-token-groupadmin.sh` | F&B International Group Admin | F&B US, Inc. | Realistic business role with window access |
+
+**Usage:**
+```bash
+# Get token and use inline
+TOKEN=$(./scripts/neo-token-sysadmin.sh)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/etendo/sws/neo/SalesOrder/Header
+
+# Or with group admin role
+TOKEN=$(./scripts/neo-token-groupadmin.sh)
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"fieldValues":{"documentStatus":"DR"}}' \
+  http://localhost:8080/etendo/sws/neo/SalesOrder/Header/evaluate-display
+```
+
+**Env vars** (all optional): `ETENDO_URL`, `ETENDO_USER`, `ETENDO_PASSWORD`.
+
+## NEO Headless OpenAPI
+
+The OpenAPI spec for NEO Headless endpoints is served by the Etendo OpenAPI controller, **not** by `/sws/neo/` directly:
+```
+GET /etendo/ws/com.etendoerp.openapi.openAPIController?tag=EtendoGo
+```
+Requires JWT auth (`Authorization: Bearer <token>`). Returns a standard OpenAPI 3.x JSON with all registered NEO paths (CRUD, selectors, actions, evaluate-display).
+
+The `NeoOpenAPIEndpoint` class implements `com.etendoerp.openapi.model.OpenAPIEndpoint` and registers paths dynamically based on configured specs/entities in DB.
+
 ## NEO Headless Research
 
 See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 - NeoHandler CDI hook mechanism (custom endpoint logic via `@Named` + `JAVA_QUALIFIER`)
 - Callouts NOT in NEO Headless (deferred to v2, only classic UI)
-- Pipeline → NEO gap: webhooks ready but no `push-to-neo.js` CLI module yet
+- Pipeline → NEO: fully integrated via `push-to-neo.js` + `neo-writer.js` (direct DB writes, supports windows + processes)
+
+### Discovery Webhooks (read-only, for tooling)
+
+| Webhook | Purpose |
+|---------|---------|
+| `SFListProcesses` | List available processes (GET, `?q=` search, up to 100 results) |
+| `SFListWindows` | List available windows |
+| `SFListMenu` | Full menu tree with type resolution |
 
 ## Etendo AD Database Conventions
 

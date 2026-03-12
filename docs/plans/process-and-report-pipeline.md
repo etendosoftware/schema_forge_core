@@ -1,11 +1,21 @@
 # Plan: Process & Report Pipeline Support
 
-**Status:** PLAN ONLY — not yet implemented
+**Status:** Phase 1 COMPLETE — Standalone Process Pipeline Implemented
 **Date:** 2026-03-10
+**Phase 1 completed:** 2026-03-11
+
+### Implementation Status
+
+| Phase | Scope | Status | Date |
+|-------|-------|--------|------|
+| **Phase 1** | Standalone Processes | **Complete** | 2026-03-11 |
+| **Phase 2** | Reports | Deferred — requires NEO Headless changes | — |
+| **Phase 3** | Forms | Not planned — inherently custom | — |
+| **Phase 4** | Unified entry point | Deferred — after Phase 1 proven | — |
 
 ## Context
 
-The Schema Forge pipeline currently supports **only AD_Window entries**. The Etendo AD_Menu links to 4 types of actionable entries:
+The Schema Forge pipeline originally supported **only AD_Window entries**. Phase 1 added standalone process support. The Etendo AD_Menu links to 4 types of actionable entries:
 
 | AD_Menu.action | Type | Count (approx) | Pipeline Support | NEO Runtime Support |
 |----------------|------|-----------------|------------------|---------------------|
