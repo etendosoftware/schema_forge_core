@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 export function validatePipelineInput(input) {
-  if (input.menuId) {
+  if (input.menuId || input.menuName) {
     return { valid: true, mode: 'menu' };
   }
   if (input.processId) {
@@ -49,6 +49,8 @@ export function parseArgs(argv) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--menu-id' && args[i + 1]) {
       result.menuId = args[++i];
+    } else if (args[i] === '--menu-name' && args[i + 1]) {
+      result.menuName = args[++i];
     } else if (args[i] === '--process-id' && args[i + 1]) {
       result.processId = args[++i];
     } else if (args[i] === '--process-name' && args[i + 1]) {
@@ -83,12 +85,15 @@ async function main() {
     console.error('  sf-pipeline <windowId> [windowName]                    # Window mode');
     console.error('  sf-pipeline --process-id <id> --process-name <name>    # Process mode');
     console.error('  sf-pipeline --menu-id <id>                             # Auto-detect from AD_Menu');
+    console.error('  sf-pipeline --menu-name <name>                         # Auto-detect from AD_Menu by name');
     process.exit(1);
   }
 
   if (validation.mode === 'menu') {
-    const { resolveMenuEntry } = await import('./resolve-menu.js');
-    const resolved = await resolveMenuEntry(parsed.menuId);
+    const { resolveMenuEntry, resolveMenuByName } = await import('./resolve-menu.js');
+    const resolved = parsed.menuId
+      ? await resolveMenuEntry(parsed.menuId)
+      : await resolveMenuByName(parsed.menuName);
     console.log(`Menu entry '${resolved.menuName}' resolved as ${resolved.resolvedMode} (${resolved.resolvedName})`);
 
     if (resolved.resolvedMode === 'window') {
