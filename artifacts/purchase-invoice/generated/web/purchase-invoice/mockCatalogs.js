@@ -168,6 +168,25 @@ catalogs['BusinessPartnerLocation'] = [
   }
 ];
 
+catalogs['PriceList'] = [
+  {
+    "id": "pl-001",
+    "name": "Standard Price List"
+  },
+  {
+    "id": "pl-002",
+    "name": "Wholesale Prices"
+  },
+  {
+    "id": "pl-003",
+    "name": "Retail Prices"
+  },
+  {
+    "id": "pl-004",
+    "name": "VIP Pricing"
+  }
+];
+
 catalogs['PaymentTerm'] = [
   {
     "id": "pt-001",
@@ -207,25 +226,6 @@ catalogs['PaymentMethod'] = [
   {
     "id": "pm-004",
     "name": "Cash"
-  }
-];
-
-catalogs['PriceList'] = [
-  {
-    "id": "pl-001",
-    "name": "Standard Price List"
-  },
-  {
-    "id": "pl-002",
-    "name": "Wholesale Prices"
-  },
-  {
-    "id": "pl-003",
-    "name": "Retail Prices"
-  },
-  {
-    "id": "pl-004",
-    "name": "VIP Pricing"
   }
 ];
 

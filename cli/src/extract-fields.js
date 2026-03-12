@@ -409,8 +409,8 @@ SELECT
   f.OnChangeFunction,
   c.IsIdentifier,
   c.IsSelectionColumn,
-  c.IsFilterable,
-  c.Precision,
+  c.AllowFiltering AS IsFilterable,
+  NULL AS Precision,
   c.IsTranslated,
   COALESCE(f.Help, c.Help) AS help_text,
   fg.Name AS field_group_name
