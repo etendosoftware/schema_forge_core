@@ -18,9 +18,35 @@ Unified classification skill for Schema Forge. You ARE the classifier — no ext
 
 If no window name provided, ask the user which window to classify.
 
+## Full Pipeline
+
+Classification is NOT a standalone step. It triggers a full pipeline:
+
+```
+LOCK → CLASSIFY → CONTRACT → CHECK-VERSION → GENERATE-FRONTEND → TESTS
+```
+
+Every `/classify` invocation ends with generated, tested, version-checked code.
+
 ## Prerequisites
 
-Before starting, verify these files exist:
+### Step 0: Window Lock (MANDATORY)
+
+Before ANY classification work, verify the window is locked by the current user:
+
+```bash
+node cli/src/lock-window.js check --window {windowName} --owner {gitUser}
+```
+
+If NOT locked → STOP. Tell the user:
+```
+Window "{windowName}" is not locked. Lock it first:
+  node cli/src/lock-window.js lock --window {windowName} --owner {yourName} --reason "Classifying fields and rules"
+```
+
+Do NOT proceed without a lock. This prevents two people classifying the same window simultaneously.
+
+### Step 0b: Verify input files exist
 
 | File | Required for | What if missing |
 |------|-------------|-----------------|
@@ -312,9 +338,11 @@ Write to `artifacts/{window}/rules-curated.json`.
 
 ---
 
-## Phase 3: Summary Report
+## Phase 3: Post-Classification Pipeline
 
-After both phases, print:
+After writing schema-curated.json and rules-curated.json, run the FULL generation pipeline. Do NOT stop at classification.
+
+### Step 1: Summary report
 
 ```
 === Classification Complete: {windowName} ===
@@ -322,19 +350,87 @@ After both phases, print:
 Schema: {totalFields} fields
   - {N} editable, {N} readOnly, {N} system, {N} discarded
   - {N} grid columns, {N} searchable filters
-  - {N} auto-classified, {N} AI-classified, {N} human-reviewed
 
 Rules: {totalRules} rules
   - {N} Keep, {N} Replace, {N} Simplify, {N} Omit
-  - {N} auto-classified, {N} AI-classified, {N} human-reviewed
+```
 
-Output:
+### Step 2: Generate contract
+
+```bash
+# Ensure processes.json exists (create empty if not)
+# { "processes": [] }
+
+node -e "
+import { generateContract } from './cli/src/generate-contract.js';
+import { readFileSync, writeFileSync } from 'node:fs';
+const schema = JSON.parse(readFileSync('artifacts/{window}/schema-curated.json','utf8'));
+const rules = JSON.parse(readFileSync('artifacts/{window}/rules-curated.json','utf8'));
+const procs = JSON.parse(readFileSync('artifacts/{window}/processes.json','utf8'));
+// Snapshot prev contract for version diffing
+try { const prev = readFileSync('artifacts/{window}/contract.json','utf8'); writeFileSync('artifacts/{window}/contract.prev.json', prev); } catch {}
+const contract = generateContract(schema, rules.rules || [], procs.processes || []);
+writeFileSync('artifacts/{window}/contract.json', JSON.stringify(contract, null, 2));
+console.log('Contract generated:', contract.testManifest.summary.total, 'tests');
+"
+```
+
+### Step 3: Check version
+
+```bash
+node cli/src/check-version.js {windowName} {owner}
+```
+
+Report the version bump (if any) and classification (breaking/additive/patch).
+If BREAKING: warn the user before continuing.
+
+### Step 4: Generate frontend
+
+```bash
+node -e "
+import { generateAll } from './cli/src/generate-frontend.js';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+const contract = JSON.parse(readFileSync('artifacts/{window}/contract.json','utf8'));
+const files = generateAll(contract);
+const outDir = 'artifacts/{window}/generated/web/{window}';
+mkdirSync(outDir, { recursive: true });
+for (const [name, code] of Object.entries(files)) writeFileSync(outDir+'/'+name, code);
+console.log(Object.keys(files).length, 'components generated');
+"
+```
+
+### Step 5: Run contract tests
+
+```bash
+node -e "
+import { runContractTests } from './cli/src/run-contract-tests.js';
+import { readFileSync } from 'node:fs';
+const contract = JSON.parse(readFileSync('artifacts/{window}/contract.json','utf8'));
+const r = runContractTests(contract);
+console.log(r.passed+'/'+r.total+' passed, '+r.failed+' failed');
+if (r.failed > 0) { r.results.filter(t=>!t.passed).forEach(t=>console.log('  FAIL:', t.description)); process.exit(1); }
+"
+```
+
+### Step 6: Final report
+
+```
+=== Pipeline Complete: {windowName} ===
+
+Classification: {N} fields, {N} rules
+Contract: v{version} ({changeLevel})
+Frontend: {N} components generated
+Tests: {passed}/{total} passed
+
+Files written:
   - artifacts/{window}/schema-curated.json
   - artifacts/{window}/rules-curated.json
-
-Next step: Generate contract
-  node cli/src/generate-contract.js (or /sf:pipeline)
+  - artifacts/{window}/contract.json
+  - artifacts/{window}/contract-changelog.json
+  - artifacts/{window}/generated/web/{window}/*.jsx
 ```
+
+Ask the user: "Do you want to commit these changes?"
 
 ---
 
