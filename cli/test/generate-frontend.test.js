@@ -645,7 +645,7 @@ describe('generateIndexComponent', () => {
     assert.ok(code.includes('<DetailView'));
   });
 
-  it('passes correct props to SingleEntityPage', () => {
+  it('passes correct props to ListView and DetailView', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
     assert.ok(code.includes('entity="item"'));
     assert.ok(code.includes('Table={ItemTable}'));
@@ -981,10 +981,10 @@ describe('generateFormComponent - behavioral metadata', () => {
       'should emit readOnlyLogic arrow function from readOnlyLogic.js');
   });
 
-  it('includes TODO comment for callout in generated form field config', () => {
+  it('includes custom slot for callout in generated form field config', () => {
     const code = generateFormComponent('order', behavioralContract);
-    assert.ok(code.includes('// TODO: Translate callout logic: com.example.LineNetCallout'),
-      'should include TODO comment for callout');
+    assert.ok(code.includes('// @sf-custom-slot callout:LineNetCallout'),
+      'should include custom slot for callout');
     // The callout should not appear as a config property on the field line itself
     const lineNetLine = code.split('\n').find(l => l.includes("key: 'lineNetAmount'"));
     assert.ok(lineNetLine, 'lineNetAmount field should exist');
@@ -1162,54 +1162,55 @@ const todoContract = {
   backendContract: { processEndpoints: [] },
 };
 
-describe('generateFormComponent - TODO comments for callout and onChangeFunction', () => {
-  it('field with callout has TODO comment with class name', () => {
+describe('generateFormComponent - custom slots for callout and onChangeFunction', () => {
+  it('field with callout has custom slot with short class name', () => {
     const code = generateFormComponent('invoice', todoContract);
-    assert.ok(code.includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner'),
-      'should include TODO for callout');
+    assert.ok(code.includes('// @sf-custom-slot callout:SE_Invoice_BPartner'),
+      'should include custom slot for callout');
   });
 
-  it('field with onChangeFunction has TODO comment with function name', () => {
+  it('field with onChangeFunction has custom slot with function name', () => {
     const code = generateFormComponent('invoice', todoContract);
-    assert.ok(code.includes('// TODO: Translate onchangefunction logic: OB.APRM.AddPayment.glItemAmountOnChange'),
-      'should include TODO for onChangeFunction');
+    assert.ok(code.includes('// @sf-custom-slot onchange:OB.APRM.AddPayment.glItemAmountOnChange'),
+      'should include custom slot for onChangeFunction');
   });
 
-  it('field with both callout and onChangeFunction has both TODO comments', () => {
+  it('field with both callout and onChangeFunction has both custom slots', () => {
     const code = generateFormComponent('invoice', todoContract);
-    assert.ok(code.includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SL_Order_Amt'),
-      'should include callout TODO for grandTotal');
-    assert.ok(code.includes('// TODO: Translate onchangefunction logic: OB.APRM.AddPayment.totalOnChange'),
-      'should include onChangeFunction TODO for grandTotal');
+    assert.ok(code.includes('// @sf-custom-slot callout:SL_Order_Amt'),
+      'should include callout custom slot for grandTotal');
+    assert.ok(code.includes('// @sf-custom-slot onchange:OB.APRM.AddPayment.totalOnChange'),
+      'should include onChangeFunction custom slot for grandTotal');
   });
 
-  it('field with neither callout nor onChangeFunction has no TODO comments', () => {
+  it('field with neither callout nor onChangeFunction has no custom slots', () => {
     const code = generateFormComponent('invoice', todoContract);
     const lines = code.split('\n');
     const docNoIdx = lines.findIndex(l => l.includes("key: 'documentNo'"));
     assert.ok(docNoIdx >= 0, 'documentNo field should exist');
-    // The line before documentNo should not be a TODO comment
+    // The line before documentNo should not be a custom slot for callout/onchange
     const prevLine = lines[docNoIdx - 1];
-    assert.ok(!prevLine.includes('// TODO:'), 'no TODO comment should precede documentNo');
+    assert.ok(!prevLine.includes('// @sf-custom-slot callout:') && !prevLine.includes('// @sf-custom-slot onchange:'),
+      'no callout/onchange custom slot should precede documentNo');
   });
 
-  it('TODO comments appear BEFORE the field config line', () => {
+  it('custom slots appear BEFORE the field config line', () => {
     const code = generateFormComponent('invoice', todoContract);
     const lines = code.split('\n');
 
-    // For businessPartner: callout TODO should be directly before the field line
+    // For businessPartner: callout slot should be directly before the field line
     const bpFieldIdx = lines.findIndex(l => l.includes("key: 'businessPartner'"));
     assert.ok(bpFieldIdx > 0, 'businessPartner field should exist');
-    assert.ok(lines[bpFieldIdx - 1].includes('// TODO: Translate callout logic: org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner'),
-      'callout TODO should be on the line before businessPartner field');
+    assert.ok(lines[bpFieldIdx - 1].includes('// @sf-custom-slot callout:SE_Invoice_BPartner'),
+      'callout custom slot should be on the line before businessPartner field');
 
-    // For grandTotal: both TODOs should appear before the field line
+    // For grandTotal: both slots should appear before the field line
     const gtFieldIdx = lines.findIndex(l => l.includes("key: 'grandTotal'"));
     assert.ok(gtFieldIdx > 1, 'grandTotal field should exist');
-    assert.ok(lines[gtFieldIdx - 2].includes('// TODO: Translate callout logic:'),
-      'callout TODO should be 2 lines before grandTotal field');
-    assert.ok(lines[gtFieldIdx - 1].includes('// TODO: Translate onchangefunction logic:'),
-      'onChangeFunction TODO should be 1 line before grandTotal field');
+    assert.ok(lines[gtFieldIdx - 2].includes('// @sf-custom-slot callout:'),
+      'callout custom slot should be 2 lines before grandTotal field');
+    assert.ok(lines[gtFieldIdx - 1].includes('// @sf-custom-slot onchange:'),
+      'onchange custom slot should be 1 line before grandTotal field');
   });
 });
 
