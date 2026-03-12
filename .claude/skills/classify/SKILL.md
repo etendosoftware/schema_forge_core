@@ -1,6 +1,6 @@
 ---
 name: classify
-description: "Classify schema fields and business rules for a window. Use when: /sf:classify, classify window, classify fields, classify rules, curate schema, curate rules. Replaces manual Decision Panel curation with AI-guided classification."
+description: Use when classifying schema fields or business rules for a window. Triggers on classify window, classify fields, classify rules, curate schema, curate rules, pre-classify. AI-guided replacement for manual Decision Panel.
 ---
 
 # Schema & Rules Classification
