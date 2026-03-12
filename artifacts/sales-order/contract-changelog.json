@@ -1,0 +1,14 @@
+[
+  {
+    "from": "0.1.0",
+    "to": "0.2.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"currency\" property \"visibility\" changed from \"readOnly\" to \"editable\" in frontend (patch)",
+      "Field \"currency\" property \"inputMode\" changed from \"undefined\" to \"selector\" in frontend (additive)",
+      "Field \"currency\" property \"visibility\" changed from \"readOnly\" to \"editable\" in backend (patch)"
+    ],
+    "author": "sebastianbarrozo",
+    "date": "2026-03-12"
+  }
+]

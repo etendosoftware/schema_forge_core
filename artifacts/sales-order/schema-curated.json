@@ -33,7 +33,7 @@
         { "name": "documentStatus", "column": "DocStatus", "type": "string", "visibility": "readOnly", "required": true, "grid": true, "form": true, "searchable": true },
         { "name": "grandTotalAmount", "column": "GrandTotal", "type": "amount", "visibility": "readOnly", "required": false, "grid": true, "form": true, "searchable": false },
         { "name": "summedLineAmount", "column": "TotalLines", "type": "amount", "visibility": "readOnly", "required": false, "grid": true, "form": true, "searchable": false },
-        { "name": "currency", "column": "C_Currency_ID", "type": "foreignKey", "reference": "Currency", "visibility": "readOnly", "required": true, "grid": true, "form": true, "searchable": false },
+        { "name": "currency", "column": "C_Currency_ID", "type": "foreignKey", "reference": "Currency", "inputMode": "selector", "visibility": "editable", "required": true, "grid": true, "form": true, "searchable": false },
         { "name": "delivered", "column": "IsDelivered", "type": "boolean", "visibility": "readOnly", "required": false, "grid": false, "form": true, "searchable": false },
         { "name": "quotation", "column": "Quotation_ID", "type": "foreignKey", "reference": "Order", "inputMode": "search", "visibility": "readOnly", "required": false, "grid": false, "form": true, "searchable": false },
 

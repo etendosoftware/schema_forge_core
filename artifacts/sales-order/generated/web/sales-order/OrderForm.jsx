@@ -1,5 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
+// @sf-generated-start fields:order
 const fields = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, reference: 'BusinessPartner', inputMode: 'search' },
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
@@ -17,13 +18,19 @@ const fields = [
   { key: 'documentStatus', column: 'DocStatus', type: 'text', required: true, readOnly: true },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', readOnly: true },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', readOnly: true },
-  { key: 'currency', column: 'C_Currency_ID', type: 'search', required: true, readOnly: true, reference: 'Currency' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'selector', required: true, reference: 'Currency', inputMode: 'selector' },
   { key: 'delivered', column: 'IsDelivered', type: 'checkbox', readOnly: true },
   { key: 'quotation', column: 'Quotation_ID', type: 'search', readOnly: true, reference: 'Order', inputMode: 'search' },
   { key: 'invoiceTerms', column: 'InvoiceRule', type: 'text', required: true },
   { key: 'cancelled', column: 'Iscancelled', type: 'checkbox', readOnly: true },
 ];
+// @sf-generated-end fields:order
 
+// @sf-generated-start component:OrderForm
 export default function OrderForm(props) {
+  // @sf-custom-slot hooks:OrderForm
   return <EntityForm fields={fields} {...props} />;
 }
+// @sf-generated-end component:OrderForm
+
+// @sf-custom-slot section:OrderForm-custom

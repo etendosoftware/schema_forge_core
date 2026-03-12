@@ -38,12 +38,7 @@ Before ANY classification work, verify the window is locked by the current user:
 node cli/src/lock-window.js check --window {windowName} --owner {gitUser}
 ```
 
-If NOT locked → STOP. Tell the user:
-```
-Window "{windowName}" is not locked. Lock it first:
-  node cli/src/lock-window.js lock --window {windowName} --owner {yourName} --reason "Classifying fields and rules"
-```
-
+If NOT locked → offer to lock it automatically (use `git config user.name` as owner).
 Do NOT proceed without a lock. This prevents two people classifying the same window simultaneously.
 
 ### Step 0b: Verify input files exist
@@ -56,7 +51,158 @@ Do NOT proceed without a lock. This prevents two people classifying the same win
 
 Read all required files before starting classification.
 
-## Phase 1: Schema Classification
+### Step 0c: Detect Mode (MANDATORY)
+
+Check if `schema-curated.json` and/or `rules-curated.json` already exist:
+
+```
+IF schema-curated.json EXISTS → mode = "modify"
+ELSE → mode = "fresh"
+```
+
+- **Fresh mode**: proceed to Phase 1 (full classification from scratch)
+- **Modify mode**: proceed to **Modification Mode** (interactive guided changes)
+
+NEVER ask "overwrite? y/n". If curated files exist, ALWAYS enter Modification Mode.
+
+---
+
+## Modification Mode (when curated files exist)
+
+When the user invokes `/classify` on an already-classified window, they want to MODIFY the existing curation — not redo it from scratch. Guide them interactively.
+
+### Step M1: Load and summarize current state
+
+Read `schema-curated.json` and `rules-curated.json`. Present a compact summary:
+
+```
+=== sales-order (already classified) ===
+
+Schema: {N} fields across {M} entities
+  Editable: field1, field2, field3...
+  ReadOnly: field4, field5...
+  System: {N} fields (hidden)
+  Discarded: {N} fields
+
+Rules: {N} rules
+  Keep: rule1, rule2...
+  Omit: rule3...
+
+What would you like to change?
+  [F] Modify a field (visibility, grid, form, searchable)
+  [R] Modify a rule (decision, description)
+  [A] Add a discarded/system field back as editable or readOnly
+  [D] Discard a currently visible field
+  [N] Add a new rule
+  [X] Remove an existing rule
+  [B] Bulk changes (describe what you want in plain language)
+```
+
+Wait for user to pick an action.
+
+### Step M2: Guide the specific change
+
+Based on user's choice, enter the appropriate sub-flow:
+
+**[F] Modify a field:**
+1. Ask: "Which entity?" (if multi-entity) — skip if only one
+2. List fields of the chosen entity with current settings, numbered:
+   ```
+   Entity: order
+    1. businessPartner  │ editable │ grid ✓ │ form ✓ │ search ✓ │ FK→BusinessPartner
+    2. orderDate        │ editable │ grid ✓ │ form ✓ │ search ✓ │ date
+    3. documentNo       │ readOnly │ grid ✓ │ form ✓ │ search ✓ │ string
+    ...
+   Which field? (number or name)
+   ```
+3. Show current field config and ask what to change:
+   ```
+   businessPartner:
+     visibility: editable → ?  (editable / readOnly / system / discarded)
+     grid: true → ?
+     form: true → ?
+     searchable: true → ?
+   Enter only what you want to change (or "skip" to keep current):
+   ```
+4. Confirm the change before applying
+
+**[R] Modify a rule:**
+1. List rules numbered with current decision:
+   ```
+    1. BP_AutoFill_Address  │ callout │ Keep  │ Auto-fill address from BP
+    2. Line_Recalc_Totals   │ event   │ Keep  │ Recalculate header totals
+    ...
+   Which rule? (number or name)
+   ```
+2. Show current config, ask what to change:
+   ```
+   BP_AutoFill_Address:
+     decision: Keep → ? (Keep / Replace / Simplify / Omit)
+     description: "Auto-fill address and price list from business partner"
+     → new description? (or "skip")
+   ```
+
+**[A] Add a field back (from discarded/system):**
+1. List discarded and system fields (excluding true system columns from system-columns.json):
+   ```
+   Available to restore:
+    1. scheduledDeliveryDate │ system  │ DatePromised │ date
+    2. freightCostRule       │ system  │ FreightCostRule │ string
+    ...
+   Which field?
+   ```
+2. Ask: visibility (editable/readOnly), grid, form, searchable
+3. For FK fields, confirm reference and inputMode
+
+**[D] Discard a visible field:**
+1. List editable + readOnly fields
+2. User picks one → set visibility: "discarded", grid/form/searchable: false
+3. Warn if field is required (mandatory) — confirm with user
+
+**[N] Add a new rule:**
+1. Ask: name, type (callout/displayLogic/validation/eventHandler), entity, decision, description
+2. Validate the rule references a known entity
+
+**[X] Remove a rule:**
+1. List rules, user picks one → remove from array
+
+**[B] Bulk changes (natural language):**
+1. User describes what they want (e.g., "make warehouse show in grid", "discard all freight fields")
+2. Parse the intent, show a diff of proposed changes:
+   ```
+   Proposed changes:
+     warehouse: grid false → true
+     freightCostRule: visibility system → discarded
+   Apply? (y/n)
+   ```
+
+### Step M3: Apply changes
+
+After user confirms:
+1. Modify the in-memory JSON
+2. Write updated `schema-curated.json` and/or `rules-curated.json`
+3. Show a compact diff of what changed:
+   ```
+   Changed in schema-curated.json:
+     ~ order.warehouse: grid false → true
+   ```
+
+### Step M4: Ask for more changes
+
+```
+Change applied. More changes? (y/n)
+```
+
+If yes → loop back to Step M1 (but skip the full summary, just show the menu).
+If no → proceed to Phase 3 (Post-Classification Pipeline).
+
+### Step M5: Run pipeline
+
+Proceed to **Phase 3: Post-Classification Pipeline** (contract → version → frontend → tests).
+
+---
+
+## Phase 1: Schema Classification (fresh mode only — skip if Modification Mode)
 
 Transform `schema-raw.json` into `schema-curated.json`.
 
@@ -448,6 +594,8 @@ Ask the user: "Do you want to commit these changes?"
 ## Edge Cases
 
 - **Window with no rules-raw.json**: Skip Phase 2, only classify schema
-- **Window with schema-curated.json already**: Ask user "Overwrite existing curation? (y/n)"
+- **Window with curated files already**: Enter Modification Mode (NEVER ask "overwrite?")
 - **Very large windows (100+ fields)**: Process in batches, show progress
 - **Multi-entity windows**: Classify each entity separately, entity names must be unique
+- **Modification Mode with only schema-curated**: Allow field changes; rules section shows "no rules classified yet — classify rules first?"
+- **Modification Mode with only rules-curated**: Allow rule changes; schema section shows "no schema classified yet — classify schema first?"
