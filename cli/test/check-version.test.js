@@ -62,8 +62,8 @@ describe('diffFields', () => {
     assert.equal(result.added.length, 0);
     assert.equal(result.removed.length, 0);
     assert.equal(result.changed.length, 1);
-    assert.equal(result.changed[0].name, 'documentNo');
-    const props = result.changed[0].properties;
+    assert.equal(result.changed[0].field, 'documentNo');
+    const props = result.changed[0].changes;
     assert.ok(props.find(p => p.property === 'type' && p.from === 'string' && p.to === 'integer'));
     assert.ok(props.find(p => p.property === 'required' && p.from === false && p.to === true));
     // grid did not change, should not be listed
@@ -164,7 +164,7 @@ describe('diffContract', () => {
     );
     const result = diffContract(oldContract, newContract);
     assert.notEqual(result, null);
-    assert.equal(result.endpoints.removed.length, 1);
+    assert.equal(result.endpointsRemoved.length, 1);
   });
 });
 
@@ -177,7 +177,7 @@ describe('classifyChanges', () => {
         order: { added: [], removed: [{ name: 'price' }], changed: [] }
       }},
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [] },
+      endpointsAdded: [], endpointsRemoved: [],
     };
     const result = classifyChanges(diff);
     assert.equal(result.level, 'breaking');
@@ -190,7 +190,7 @@ describe('classifyChanges', () => {
         order: { added: [{ name: 'discount' }], removed: [], changed: [] }
       }},
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [] },
+      endpointsAdded: [], endpointsRemoved: [],
     };
     const result = classifyChanges(diff);
     assert.equal(result.level, 'additive');
@@ -200,7 +200,7 @@ describe('classifyChanges', () => {
     const diff = {
       frontend: { addedEntities: [], removedEntities: ['line'], entityDiffs: {} },
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [] },
+      endpointsAdded: [], endpointsRemoved: [],
     };
     const result = classifyChanges(diff);
     assert.equal(result.level, 'breaking');
@@ -210,7 +210,7 @@ describe('classifyChanges', () => {
     const diff = {
       frontend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [{ method: 'GET', path: '/order' }] },
+      endpointsAdded: [], endpointsRemoved: [{ method: 'GET', path: '/order' }],
     };
     const result = classifyChanges(diff);
     assert.equal(result.level, 'breaking');
@@ -220,11 +220,11 @@ describe('classifyChanges', () => {
     const diff = {
       frontend: { addedEntities: [], removedEntities: [], entityDiffs: {
         order: { added: [], removed: [], changed: [
-          { name: 'amount', properties: [{ property: 'type', from: 'string', to: 'integer' }] }
+          { field: 'amount', changes: [{ property: 'type', from: 'string', to: 'integer' }] }
         ]}
       }},
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [] },
+      endpointsAdded: [], endpointsRemoved: [],
     };
     const result = classifyChanges(diff);
     assert.equal(result.level, 'breaking');
@@ -234,11 +234,11 @@ describe('classifyChanges', () => {
     const diff = {
       frontend: { addedEntities: [], removedEntities: [], entityDiffs: {
         order: { added: [], removed: [], changed: [
-          { name: 'notes', properties: [{ property: 'grid', from: true, to: false }] }
+          { field: 'notes', changes: [{ property: 'grid', from: true, to: false }] }
         ]}
       }},
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [] },
+      endpointsAdded: [], endpointsRemoved: [],
     };
     const result = classifyChanges(diff);
     assert.equal(result.level, 'patch');
@@ -248,11 +248,11 @@ describe('classifyChanges', () => {
     const diff = {
       frontend: { addedEntities: ['newEntity'], removedEntities: [], entityDiffs: {
         order: { added: [], removed: [{ name: 'price' }], changed: [
-          { name: 'notes', properties: [{ property: 'grid', from: true, to: false }] }
+          { field: 'notes', changes: [{ property: 'grid', from: true, to: false }] }
         ]}
       }},
       backend: { addedEntities: [], removedEntities: [], entityDiffs: {} },
-      endpoints: { added: [], removed: [] },
+      endpointsAdded: [], endpointsRemoved: [],
     };
     const result = classifyChanges(diff);
     // field removal (breaking) + entity addition (additive) + grid change (patch) = breaking wins
@@ -297,8 +297,8 @@ describe('buildChangelogEntry', () => {
     assert.deepEqual(entry.reasons, ['Field "discount" added to entity "order"']);
     assert.equal(entry.author, 'catalyst');
     assert.ok(entry.date);
-    // date should be ISO format
-    assert.ok(entry.date.match(/^\d{4}-\d{2}-\d{2}/));
+    // date should be date-only format (YYYY-MM-DD)
+    assert.ok(entry.date.match(/^\d{4}-\d{2}-\d{2}$/));
   });
 
   it('defaults author to "system" when not provided', () => {
@@ -349,8 +349,10 @@ describe('checkVersion (integration)', () => {
 
     const result = await checkVersion(testWindow, 'test-author');
     assert.notEqual(result, null);
-    assert.equal(result.level, 'additive');
+    assert.equal(result.classification.level, 'additive');
     assert.equal(result.newVersion, '0.2.0');
+    assert.ok(result.diff);
+    assert.ok(result.changelog);
 
     // Verify contract.json was updated with new version
     const { readFile } = await import('node:fs/promises');

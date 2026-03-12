@@ -8,7 +8,7 @@ const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..', '..');
 
 // Properties whose changes are considered breaking (structural contract changes)
-const BREAKING_PROPERTIES = new Set(['type', 'tsType', 'column']);
+const BREAKING_PROPERTIES = new Set(['name', 'type', 'tsType', 'column']);
 
 // Properties whose changes are considered additive (behavioral changes)
 const ADDITIVE_PROPERTIES = new Set(['required', 'reference', 'inputMode', 'dependsOn']);
@@ -32,18 +32,18 @@ export function diffFields(oldFields, newFields) {
     const newField = newMap.get(name);
     if (!newField) continue;
 
-    const properties = [];
+    const changes = [];
     const allKeys = new Set([...Object.keys(oldField), ...Object.keys(newField)]);
     for (const key of allKeys) {
       if (key === 'name') continue;
       const oldVal = oldField[key];
       const newVal = newField[key];
       if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
-        properties.push({ property: key, from: oldVal, to: newVal });
+        changes.push({ property: key, from: oldVal, to: newVal });
       }
     }
-    if (properties.length > 0) {
-      changed.push({ name, properties });
+    if (changes.length > 0) {
+      changed.push({ field: name, changes });
     }
   }
 
@@ -120,7 +120,7 @@ export function diffContract(oldContract, newContract) {
 
   if (!hasChanges) return null;
 
-  return { frontend, backend, endpoints };
+  return { frontend, backend, endpointsAdded: endpoints.added, endpointsRemoved: endpoints.removed };
 }
 
 /**
@@ -171,21 +171,21 @@ export function classifyChanges(diff) {
         reasons.push(`Field "${field.name}" added to entity "${entityName}" in ${section}`);
       }
       for (const change of fieldDiff.changed || []) {
-        for (const prop of change.properties) {
+        for (const prop of change.changes) {
           const level = classifyProperty(prop.property);
           maxSeverity = Math.max(maxSeverity, severityOrder[level]);
-          reasons.push(`Field "${change.name}" property "${prop.property}" changed from "${prop.from}" to "${prop.to}" in ${section} (${level})`);
+          reasons.push(`Field "${change.field}" property "${prop.property}" changed from "${prop.from}" to "${prop.to}" in ${section} (${level})`);
         }
       }
     }
   }
 
   // Endpoint changes
-  for (const ep of diff.endpoints?.removed || []) {
+  for (const ep of diff.endpointsRemoved || []) {
     maxSeverity = Math.max(maxSeverity, severityOrder.breaking);
     reasons.push(`Endpoint ${ep.method} ${ep.path} removed`);
   }
-  for (const ep of diff.endpoints?.added || []) {
+  for (const ep of diff.endpointsAdded || []) {
     maxSeverity = Math.max(maxSeverity, severityOrder.additive);
     reasons.push(`Endpoint ${ep.method} ${ep.path} added`);
   }
@@ -241,7 +241,7 @@ export function buildChangelogEntry(fromVersion, toVersion, classification, auth
     level: classification.level,
     reasons: classification.reasons,
     author: author || 'system',
-    date: new Date().toISOString(),
+    date: new Date().toISOString().split('T')[0],
   };
 }
 
@@ -277,8 +277,8 @@ export async function checkVersion(windowName, author) {
   // Classify
   const classification = classifyChanges(diff);
 
-  // Bump version
-  const oldVersion = currentContract.version || '0.1.0';
+  // Bump version (base from previous contract)
+  const oldVersion = prevContract.version || '0.1.0';
   const newVersion = bumpVersion(oldVersion, classification.level);
 
   // Update contract.json with new version
@@ -306,11 +306,10 @@ export async function checkVersion(windowName, author) {
   );
 
   return {
-    level: classification.level,
-    reasons: classification.reasons,
-    oldVersion,
+    diff,
+    classification,
     newVersion,
-    entry,
+    changelog: entry,
   };
 }
 
@@ -332,14 +331,14 @@ if (isCLI) {
       process.exit(0);
     }
 
-    console.log(`Change level: ${result.level}`);
-    console.log(`Version bump: ${result.oldVersion} -> ${result.newVersion}`);
+    console.log(`Change level: ${result.classification.level}`);
+    console.log(`Version bump: ${result.changelog.from} -> ${result.newVersion}`);
     console.log('Reasons:');
-    for (const reason of result.reasons) {
+    for (const reason of result.classification.reasons) {
       console.log(`  - ${reason}`);
     }
 
-    if (result.level === 'breaking') {
+    if (result.classification.level === 'breaking') {
       process.exit(2);
     }
   } catch (err) {
