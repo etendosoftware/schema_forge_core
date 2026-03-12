@@ -1,14 +1,21 @@
 flowchart TD
     subgraph EtendoDB["Etendo PostgreSQL Database"]
-        AD["AD Metadata<br/>(Windows, Tabs, Columns,<br/>Processes, References)"]
+        AD["AD Metadata<br/>(Windows, Tabs, Columns,<br/>Processes, Reports, References)"]
+    end
+
+    subgraph EntryPoint["0. ENTRY POINT (CLI — Node.js)"]
+        CACHE["menu-cache.js<br/>(ad-menu-cache.json)<br/>search / refresh / list"]
+        MENU["resolve-menu.js<br/>(--menu-id / --menu-name)<br/>cache-first, DB fallback"]
+        PIPE["pipeline.js<br/>(orchestrator)<br/>--skip-interactive / --skip-to"]
+        FORM_INFO["Form detected (action X)<br/>Shows Java + HTML source paths<br/>(manual build required)"]
     end
 
     subgraph Extraction["1. EXTRACTION (CLI — Node.js)"]
         EXT["extract-from-db.js<br/>extract-fields.js<br/>extract-rules.js"]
-        PEXT["extract-from-process.js"]
+        PEXT["extract-from-process.js<br/>(processes + reports)"]
         RAW_S["schema-raw.json<br/>(all fields, FK refs, callouts)"]
         RAW_R["rules-raw.json<br/>(all business rules)"]
-        RAW_P["process-raw.json<br/>(metadata + parameters)"]
+        RAW_P["process-raw.json / report-raw.json<br/>(metadata + parameters)"]
     end
 
     subgraph PreClassify["2. PRE-CLASSIFICATION (CLI + AI)"]
@@ -27,23 +34,23 @@ flowchart TD
     end
 
     subgraph ContractGen["5. CONTRACT GENERATION (CLI)"]
-        GC["generate-contract.js"]
+        GC["generate-contract.js<br/>(windows, processes, reports)"]
         CONTRACT["contract.json<br/>(single source of truth)"]
     end
 
     subgraph BackendConfig["6. BACKEND CONFIGURATION"]
-        PTN["push-to-neo.js<br/>+ neo-writer.js"]
+        PTN["push-to-neo.js<br/>+ neo-writer.js<br/>(specType W / P / R)"]
         TABLES["ETGO_SF_SPEC<br/>ETGO_SF_ENTITY<br/>ETGO_SF_FIELD"]
     end
 
     subgraph FrontendGen["7. FRONTEND GENERATION (CLI)"]
-        GF["generate-frontend.js"]
+        GF["generate-frontend.js<br/>(windows, processes, reports)"]
         GM["generate-mock-data.js"]
         REACT["React SPA components"]
         MOCK["mockData.js<br/>mockCatalogs.js"]
     end
 
-    subgraph TodoTranslation["8b. TODO TRANSLATION (AI-assisted)"]
+    subgraph TodoTranslation["7b. TODO TRANSLATION (AI-assisted)"]
         TT["translate-todos.js<br/>(interactive, AI-assisted)"]
         TT_OUT["React components with<br/>translated callout/onchange logic"]
     end
@@ -57,6 +64,7 @@ flowchart TD
         DS["DefaultJsonDataService<br/>(Etendo CRUD fallback)"]
         SEL["NeoSelectorService<br/>(FK dropdowns)"]
         PROC["NeoProcessService<br/>(process execution)"]
+        RPT["NeoReportService<br/>(Jasper report generation:<br/>PDF, XLS, CSV, HTML)"]
     end
 
     subgraph Testing["TESTING"]
@@ -68,30 +76,42 @@ flowchart TD
         APP["React SPA / Mobile App / External Client"]
     end
 
-    %% Extraction (Windows)
+    %% Entry point: cache → menu resolution → pipeline orchestrator
+    AD -->|"refresh (on miss)"| CACHE
+    CACHE -->|cached entries| MENU
+    MENU -->|"action W"| PIPE
+    MENU -->|"action P"| PIPE
+    MENU -->|"action R"| PIPE
+    MENU -->|"action X (form)"| FORM_INFO
+
+    %% Pipeline dispatches to correct extraction
+    PIPE -->|window mode| EXT
+    PIPE -->|process mode| PEXT
+    PIPE -->|report mode| PEXT
+
+    %% Window extraction
     AD -->|SQL queries| EXT
     EXT --> RAW_S
     EXT --> RAW_R
 
-    %% Extraction (Processes)
+    %% Process/report extraction
     AD -->|SQL queries| PEXT
     PEXT --> RAW_P
 
-    %% Process pipeline (simplified: extract → contract → push → frontend)
-    RAW_P -->|process mode| GC
-    GC -->|process contract| CONTRACT
+    %% Process/report pipeline (simplified: extract → contract → push → frontend)
+    RAW_P -->|process/report mode| GC
 
-    %% Pre-classification
+    %% Pre-classification (windows only)
     RAW_R --> PC
     PC --> CLASS_R
 
-    %% Curation
+    %% Curation (windows only)
     RAW_S --> DP
     CLASS_R --> DP
     DP --> CUR_S
     DP --> CUR_R
 
-    %% Validation
+    %% Validation (windows only)
     CUR_S --> VAL
     VAL -->|fail| DP
     VAL -->|pass| GC
@@ -101,7 +121,7 @@ flowchart TD
     GC --> CONTRACT
 
     %% Backend: contract → push-to-neo → direct DB → NEO Headless
-    CONTRACT -->|"visibility, apiPrediction"| PTN
+    CONTRACT -->|"visibility, apiPrediction,<br/>specType (W/P/R)"| PTN
     PTN -->|direct SQL INSERT/UPDATE| TABLES
 
     %% Frontend: contract → React SPA + mock data
@@ -109,6 +129,10 @@ flowchart TD
     CONTRACT --> GM
     GF --> REACT
     GM --> MOCK
+
+    %% TODO Translation (windows only, after frontend generation)
+    REACT --> TT
+    TT --> TT_OUT
 
     %% Runtime
     TABLES --> NEO
@@ -121,12 +145,10 @@ flowchart TD
     DS --> APP
     RESOLVE --> SEL
     RESOLVE --> PROC
+    RESOLVE --> RPT
     SEL --> APP
     PROC --> APP
-
-    %% TODO Translation (between frontend generation and testing)
-    REACT --> TT
-    TT --> TT_OUT
+    RPT -->|binary PDF/XLS/CSV/HTML| APP
 
     %% Testing
     CONTRACT --> CT
@@ -140,14 +162,16 @@ flowchart TD
     classDef artifact fill:#e8e8e8,stroke:#999,color:#333
     classDef test fill:#50e3c2,stroke:#2db89e,color:white
     classDef client fill:#bd10e0,stroke:#8a0ca5,color:white
+    classDef entry fill:#ff6b6b,stroke:#c0392b,color:white
 
     class AD db
     class EXT,PEXT,PC,VAL cli
     class DP human
-    class WH webhook
-    class NEO,AUTH,RESOLVE,FILTER,HANDLER,DS,SEL,PROC runtime
+    class NEO,AUTH,RESOLVE,FILTER,HANDLER,DS,SEL,PROC,RPT runtime
     class RAW_S,RAW_R,RAW_P,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,MOCK artifact
     class CT,IT test
     class APP client
     class GC,PTN,GF,GM,TT cli
     class TT_OUT artifact
+    class CACHE,MENU,PIPE entry
+    class FORM_INFO human

@@ -215,6 +215,59 @@ if (isCLI) {
       }
       break;
     }
+    case 'list': {
+      // Alias for status — list all active locks in compact format
+      const locks = getLockStatus();
+      if (locks.length === 0) {
+        console.log('No windows are currently locked.');
+      } else {
+        console.log(`${locks.length} active lock(s):\n`);
+        for (const entry of locks) {
+          console.log(`  ${entry.window.padEnd(30)} @${entry.owner.padEnd(20)} #${entry.issue}  (${entry.since})`);
+        }
+      }
+      break;
+    }
+    case 'free': {
+      // Show which windows from the menu cache are NOT locked
+      const locks = getLockStatus();
+      const lockedNames = new Set(locks.map(l => l.window));
+      let cacheEntries;
+      try {
+        const { loadCache } = await import('./menu-cache.js');
+        const cache = await loadCache();
+        if (!cache) {
+          console.error('No menu cache found. Run: node cli/src/menu-cache.js refresh');
+          process.exit(1);
+        }
+        cacheEntries = cache.entries;
+      } catch (err) {
+        console.error(`Failed to load menu cache: ${err.message}`);
+        process.exit(1);
+      }
+
+      const typeFilter = getArg('type');
+      let candidates = cacheEntries.filter(e => e.type !== 'folder' && e.type !== 'other');
+      if (typeFilter) {
+        candidates = candidates.filter(e => e.type === typeFilter);
+      }
+
+      const free = candidates.filter(e => {
+        // Check both the raw name and kebab-case version
+        const kebab = e.name.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        return !lockedNames.has(e.name) && !lockedNames.has(kebab);
+      });
+
+      console.log(`${free.length} free entries${typeFilter ? ` (${typeFilter})` : ''} (${locks.length} locked):\n`);
+      const typeLabel = { window: 'W', process: 'P', report: 'R', form: 'F' };
+      for (const entry of free.slice(0, 50)) {
+        console.log(`  [${typeLabel[entry.type] || '?'}] ${entry.name.padEnd(45)} ${entry.id}`);
+      }
+      if (free.length > 50) {
+        console.log(`  ... and ${free.length - 50} more. Use --type to filter.`);
+      }
+      break;
+    }
     case 'help':
     default:
       console.log(`Usage: lock-window.js <command> [options]
@@ -222,8 +275,10 @@ if (isCLI) {
 Commands:
   lock    --window <name> --owner <ghUser> [--reason <reason>]
   unlock  --window <name> --owner <ghUser>
-  status  Show all current locks
+  status  Show all current locks (detailed)
+  list    Show all current locks (compact)
   check   --window <name> --owner <ghUser>  Validate lock (exit 1 if invalid)
+  free    [--type window|process|report]    Show unlocked entries from menu cache
   help    Show this help message
 
 Locks are GitHub Issues with label "${LABEL}" and title "🔒 LOCK: <window> #".

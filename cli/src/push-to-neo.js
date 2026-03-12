@@ -149,7 +149,7 @@ export async function loadConfig(projectRoot) {
  * @param {object} [options] - Override options
  * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
  * @param {string} [options.projectRoot] - Override project root path
- * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {string} [options.moduleId='94E1B433CF55451EABB764750AC5902A'] - AD_Module_ID for new rows (defaults to com.etendoerp.go)
  * @param {object} [options.dbConfig] - Override DB pool config (passed to createDbPool)
  * @param {object} [options.audit] - Override audit defaults
  * @param {string} [options.etendoUrl] - Kept for backwards compat (dry-run plan display)
@@ -241,7 +241,7 @@ export async function pushToNeo(windowName, options = {}) {
   }
 
   // Live mode — write to DB via transaction
-  const moduleId = options.moduleId || '0';
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
   const auditOpts = options.audit || {};
   const pool = createDbPool(options.dbConfig);
   const client = await pool.connect();
@@ -361,7 +361,7 @@ export async function pushToNeo(windowName, options = {}) {
  * @param {object} [options] - Override options
  * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
  * @param {string} [options.projectRoot] - Override project root path
- * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {string} [options.moduleId='94E1B433CF55451EABB764750AC5902A'] - AD_Module_ID for new rows (defaults to com.etendoerp.go)
  * @param {object} [options.dbConfig] - Override DB pool config
  * @param {object} [options.audit] - Override audit defaults
  * @param {string} [options.specType='P'] - Spec type: 'P' (process) or 'R' (report)
@@ -415,7 +415,7 @@ export async function pushProcessToNeo(processName, options = {}) {
   }
 
   // Live mode — write to DB via transaction
-  const moduleId = options.moduleId || '0';
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
   const auditOpts = options.audit || {};
   const pool = createDbPool(options.dbConfig);
   const client = await pool.connect();

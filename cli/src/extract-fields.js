@@ -221,6 +221,49 @@ export function buildReference(row) {
 }
 
 /**
+ * Map a raw tab level string to a semantic level name.
+ * '0' -> 'header', '1' -> 'line', anything else -> 'subline'
+ */
+function mapTabLevel(rawLevel) {
+  const level = String(rawLevel);
+  if (level === '0') return 'header';
+  if (level === '1') return 'line';
+  return 'subline';
+}
+
+/**
+ * Infer a window category from its name using keyword matching.
+ */
+function inferWindowCategory(windowName) {
+  const name = windowName || '';
+  if (/Sales|Order/i.test(name)) return 'sales';
+  if (/Purchase/i.test(name)) return 'purchasing';
+  if (/Invoice/i.test(name)) return 'finance';
+  if (/Inventory|Stock|Warehouse/i.test(name)) return 'inventory';
+  if (/Account|Journal|Ledger/i.test(name)) return 'accounting';
+  if (/Product|Price|BOM/i.test(name)) return 'master';
+  if (/Project/i.test(name)) return 'project';
+  return 'general';
+}
+
+/**
+ * Disambiguate duplicate field names within a single entity.
+ * Appends a numeric suffix (2, 3, ...) to repeated camelCase names.
+ */
+function deduplicateFieldNames(fields) {
+  const seen = new Map();
+  for (const field of fields) {
+    const base = field.name;
+    const count = (seen.get(base) || 0) + 1;
+    seen.set(base, count);
+    if (count > 1) {
+      field.name = `${base}${count}`;
+    }
+  }
+  return fields;
+}
+
+/**
  * Build the full schema structure from DB rows.
  *
  * Groups rows by tab, maps AD_Reference_IDs to schema types, and produces
@@ -262,6 +305,8 @@ export function buildSchema(rows, systemColumns, refMap) {
 
   // Convert tabs to entities
   const entities = [];
+  let primaryEntity = null;
+
   for (const tab of tabMap.values()) {
     const fields = tab.fields.map((row) => {
       const classification = classifyField(row, systemColumns);
@@ -326,8 +371,17 @@ export function buildSchema(rows, systemColumns, refMap) {
       return fieldDef;
     });
 
+    // Disambiguate duplicate camelCase field names within this entity
+    deduplicateFieldNames(fields);
+
     const entityClassname = tab.entityClassname || tab.entityAlias || toCamelCase(tab.tableName);
     const entityJavaPackage = tab.entityJavaPackage || null;
+    const semanticLevel = mapTabLevel(tab.tabLevel);
+
+    // Track the primary entity (first header-level tab)
+    if (semanticLevel === 'header' && !primaryEntity) {
+      primaryEntity = toCamelCase(tab.tableName);
+    }
 
     const entity = {
       name: toCamelCase(tab.tableName),
@@ -336,7 +390,7 @@ export function buildSchema(rows, systemColumns, refMap) {
       entityClassname,
       entityJavaPackage,
       tabName: tab.tabName,
-      level: tab.tabLevel,
+      level: semanticLevel,
       sequence: tab.tabSeq,
       fields,
     };
@@ -357,14 +411,19 @@ export function buildSchema(rows, systemColumns, refMap) {
     entities.push(entity);
   }
 
+  const version = generateVersion();
+
   return {
+    version,
     window: {
       id: windowId,
       name: windowName,
+      primaryEntity: primaryEntity || null,
+      category: inferWindowCategory(windowName),
     },
     entities,
     meta: {
-      version: generateVersion(),
+      version,
       checksum: computeChecksum({ windowId, entities }),
       extractedAt: new Date().toISOString(),
     },

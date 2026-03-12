@@ -81,6 +81,12 @@ Etendo DB ──SQL──▶ extract-from-db.js ──▶ artifacts/{window}/
 
 Etendo DB ──SQL──▶ extract-from-process.js ──▶ artifacts/{process}/
                                                     └── process-raw.json   (metadata + parameters)
+
+AD_Menu ──SQL──▶ resolve-menu.js ──▶ auto-detect type (W/P/R/X)
+                                         ├── W → window pipeline
+                                         ├── P → process pipeline
+                                         ├── R → report pipeline (specType=R)
+                                         └── X → form detection (show source paths)
 ```
 
 The extraction connects to the Etendo PostgreSQL database and queries AD_Window, AD_Tab, AD_Column, AD_Field, AD_Reference, and related tables. It resolves FK types (TableDir, Table, Search, OBUISEL) and captures callout references, display logic, and validation rules.
@@ -149,8 +155,23 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | `translate-todos.js` | Generated React components | Components with translated callout/onchange logic (AI-assisted, interactive) |
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |
-| `resolve-menu.js` | AD_Menu_ID or menu name | Resolves menu entry type (W/P/R/X) and linked ID by ID or name |
+| `resolve-menu.js` | AD_Menu_ID or menu name | Resolves menu entry type (W/P/R/X) and linked ID by ID or name. For forms (X), shows Java + HTML source paths instead of failing. |
 | `pipeline.js` | Window ID, process ID, report ID, menu ID, or menu name | Runs full pipeline: window, process, report, or auto-detect mode |
+
+### Menu Entry Types (AD_Menu)
+
+The pipeline supports all actionable menu entry types via `resolve-menu.js`:
+
+| AD_Menu.action | Type | Pipeline Support | NEO Runtime Support |
+|----------------|------|------------------|---------------------|
+| `W` | Window | Full (extract → curate → contract → push → frontend) | Full (CRUD + selectors + actions) |
+| `P` | Process | Full (extract → contract → push → frontend) | Full (GET describe + POST execute) |
+| `R` | Report | Full (extract → contract → push → frontend) | Full (GET describe + POST generateReport) |
+| `X` | Form | Detection only — shows Java + HTML source paths | None (forms are custom-built) |
+
+Folders (`isSummary='Y'`) are grouping nodes — the pipeline reports them as non-actionable.
+
+When a form is detected, the pipeline does not fail. Instead, it resolves the `AD_Form.ClassName` to show the developer the exact source file paths (Java class and HTML template) so they know where to build the form manually.
 
 ### Decision UIs
 
@@ -219,6 +240,22 @@ artifacts/generate-invoices/
 ```
 
 Key differences from window artifacts: no tabs, no curation step, no rules, single POST-only entity.
+
+### Per-Report Artifacts
+
+Reports (AD_Menu.action = 'R') reuse the process pipeline with `specType = 'R'`:
+
+```
+artifacts/financial-report/
+├── process-raw.json            # Extracted from AD_Process (isReport=Y)
+├── contract.json               # Report contract (type: "report")
+└── generated/
+    └── web/financial-report/
+        ├── FinancialReportReport.jsx  # Report form component
+        └── index.jsx                  # Entry point
+```
+
+Reports share the same extraction and push-to-neo logic as processes, but use `specType = 'R'` so NEO Headless routes them to `NeoReportService` (Jasper generation with binary PDF/XLS/CSV/HTML response).
 
 ---
 

@@ -34,7 +34,8 @@ Plans follow a lifecycle: active in `plans/`, completed in `plans/completed/YYYY
 
 | File | Description |
 |------|-------------|
-| [plans/process-and-report-pipeline.md](plans/process-and-report-pipeline.md) | Process & Report Pipeline — **Phase 1 Complete** (standalone processes), Phase 2-4 deferred |
+| [plans/completed/2026-03-12/process-and-report-pipeline.md](plans/completed/2026-03-12/process-and-report-pipeline.md) | Process & Report Pipeline — **All 4 phases complete** (processes, reports, form detection, unified entry point) |
+| [plans/neo-report-endpoint.md](plans/neo-report-endpoint.md) | NEO Headless Report Endpoint — **Implemented** (NeoReportService, binary responses, OpenAPI docs) |
 | [plans/2026-03-05-vertical-slice-design.md](plans/2026-03-05-vertical-slice-design.md) | Vertical slice design |
 | [plans/2026-03-05-vertical-slice-plan.md](plans/2026-03-05-vertical-slice-plan.md) | Vertical slice execution plan |
 | [plans/evaluations/architecture-review.md](plans/evaluations/architecture-review.md) | Architecture review |
