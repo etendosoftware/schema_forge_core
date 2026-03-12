@@ -15,25 +15,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Recurring Invoice"
         windowName={windowName}
         recordId={recordId}
-<<<<<<< HEAD
         window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="recurringInvoice"
-      Table={RecurringInvoiceTable}
-      entityLabel="Recurring Invoice"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
       {...props}
     />
   );

@@ -15,25 +15,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Quality Check"
         windowName={windowName}
         recordId={recordId}
-<<<<<<< HEAD
         window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="qualityCheck"
-      Table={QualityCheckTable}
-      entityLabel="Quality Check"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
       {...props}
     />
   );

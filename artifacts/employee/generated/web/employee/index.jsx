@@ -15,25 +15,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Employee"
         windowName={windowName}
         recordId={recordId}
-<<<<<<< HEAD
         window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="employee"
-      Table={EmployeeTable}
-      entityLabel="Employee"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
       {...props}
     />
   );
