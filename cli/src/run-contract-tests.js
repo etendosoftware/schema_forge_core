@@ -156,6 +156,48 @@ function checkReadOnlyLogicValid(contract, test) {
 }
 
 /**
+ * Check displaylogic-evaluable: displayLogic has evaluable flag and reason when false
+ */
+function checkDisplayLogicEvaluable(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) return { passed: false, reason: `Entity '${test.entity}' not found` };
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) return { passed: false, reason: `Field '${test.field}' not found` };
+  if (!field.displayLogic) return { passed: true };
+  if (typeof field.displayLogic.evaluable !== 'boolean') {
+    return { passed: false, reason: `displayLogic.evaluable is missing or not boolean` };
+  }
+  if (field.displayLogic.evaluable === false && !field.displayLogic.reason) {
+    return { passed: false, reason: `displayLogic.evaluable is false but no reason provided` };
+  }
+  if (field.displayLogic.evaluable === false && field.displayLogic.js !== null) {
+    return { passed: false, reason: `displayLogic.evaluable is false but js is not null` };
+  }
+  return { passed: true };
+}
+
+/**
+ * Check readonlylogic-evaluable: readOnlyLogic has evaluable flag and reason when false
+ */
+function checkReadOnlyLogicEvaluable(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) return { passed: false, reason: `Entity '${test.entity}' not found` };
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) return { passed: false, reason: `Field '${test.field}' not found` };
+  if (!field.readOnlyLogic) return { passed: true };
+  if (typeof field.readOnlyLogic.evaluable !== 'boolean') {
+    return { passed: false, reason: `readOnlyLogic.evaluable is missing or not boolean` };
+  }
+  if (field.readOnlyLogic.evaluable === false && !field.readOnlyLogic.reason) {
+    return { passed: false, reason: `readOnlyLogic.evaluable is false but no reason provided` };
+  }
+  if (field.readOnlyLogic.evaluable === false && field.readOnlyLogic.js !== null) {
+    return { passed: false, reason: `readOnlyLogic.evaluable is false but js is not null` };
+  }
+  return { passed: true };
+}
+
+/**
  * Check selector-endpoint: FK field has matching selector in apiPrediction
  */
 function checkSelectorEndpoint(contract, test) {
@@ -215,6 +257,8 @@ const categoryHandlers = {
   'rule-declared': checkRuleDeclared,
   'displaylogic-valid': checkDisplayLogicValid,
   'readonlylogic-valid': checkReadOnlyLogicValid,
+  'displaylogic-evaluable': checkDisplayLogicEvaluable,
+  'readonlylogic-evaluable': checkReadOnlyLogicEvaluable,
   'selector-endpoint': checkSelectorEndpoint,
   'action-endpoint': checkActionEndpoint,
   'crud-flags': checkCrudFlags,

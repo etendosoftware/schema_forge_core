@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * push-to-neo.js — Configure NEO Headless via webhooks from contract + schema artifacts.
+ * push-to-neo.js — Configure NEO Headless via direct DB writes from contract + schema artifacts.
  *
- * Reads contract.json and schema-curated.json for a given window, then calls
- * Etendo webhooks (SFUpsertSpec, SFPopulateSpec, SFUpsertField) to configure
- * the NEO Headless runtime.
+ * Reads contract.json and schema-curated.json for a given window, then writes
+ * configuration directly to the ETGO_SF_* tables via PostgreSQL.
  *
  * Usage:
  *   node cli/src/push-to-neo.js <windowName>
@@ -16,6 +15,12 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createDbPool, closePool } from './db.js';
+import {
+  upsertSpec as writerUpsertSpec,
+  populateSpec as writerPopulateSpec,
+  upsertField as writerUpsertField,
+} from './neo-writer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,7 +44,7 @@ export function toSpecName(windowName) {
 }
 
 /**
- * Map a field visibility value to NEO webhook params.
+ * Map a field visibility value to NEO params.
  * Returns { isIncluded: "Y"|"N", isReadOnly: "Y"|"N" }.
  */
 export function mapVisibility(visibility) {
@@ -58,6 +63,7 @@ export function mapVisibility(visibility) {
 
 /**
  * Build the full webhook URL from a base Etendo URL and webhook name.
+ * @deprecated Use direct DB writes via neo-writer.js instead.
  */
 export function buildWebhookUrl(etendoUrl, webhookName) {
   const base = etendoUrl.replace(/\/+$/, '');
@@ -105,6 +111,8 @@ function parseProperties(content) {
 /**
  * Load Etendo connection config from env vars or schema_forge.properties.
  * Env vars take precedence.
+ * @deprecated HTTP config is no longer needed for live mode. DB config comes from db.js.
+ *             Kept for backwards compatibility with dry-run display and existing tests.
  */
 export async function loadConfig(projectRoot) {
   const env = process.env;
@@ -129,58 +137,22 @@ export async function loadConfig(projectRoot) {
 }
 
 // ---------------------------------------------------------------------------
-// Webhook callers
-// ---------------------------------------------------------------------------
-
-/**
- * Build Basic auth header value.
- */
-function basicAuth(user, password) {
-  return 'Basic ' + Buffer.from(`${user}:${password}`).toString('base64');
-}
-
-/**
- * Call a webhook. Returns the parsed JSON response.
- * Throws on non-2xx status.
- */
-async function callWebhook(url, params, authHeader) {
-  const searchParams = new URLSearchParams(params);
-  const fullUrl = `${url}?${searchParams.toString()}`;
-
-  const response = await fetch(fullUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': authHeader,
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`Webhook ${url} failed with status ${response.status}: ${body}`);
-  }
-
-  const text = await response.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { raw: text };
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Main push function
 // ---------------------------------------------------------------------------
 
 /**
- * Push a window's contract configuration to NEO Headless via webhooks.
+ * Push a window's contract configuration to NEO Headless via direct DB writes.
  *
  * @param {string} windowName - The window artifact folder name (e.g., "sales-order")
  * @param {object} [options] - Override options
- * @param {string} [options.etendoUrl] - Override Etendo base URL
- * @param {string} [options.user] - Override auth user
- * @param {string} [options.password] - Override auth password
- * @param {boolean} [options.dryRun] - If true, log planned actions without calling webhooks
+ * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
  * @param {string} [options.projectRoot] - Override project root path
+ * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {object} [options.dbConfig] - Override DB pool config (passed to createDbPool)
+ * @param {object} [options.audit] - Override audit defaults
+ * @param {string} [options.etendoUrl] - Kept for backwards compat (dry-run plan display)
+ * @param {string} [options.user] - Kept for backwards compat
+ * @param {string} [options.password] - Kept for backwards compat
  * @returns {object} Result summary with spec, entities, and field updates
  */
 export async function pushToNeo(windowName, options = {}) {
@@ -207,63 +179,44 @@ export async function pushToNeo(windowName, options = {}) {
   const windowDisplayName = schema.window.name;
   const specName = toSpecName(windowDisplayName);
 
-  // Load connection config (options override file/env)
-  let config;
-  if (options.etendoUrl && options.user && options.password) {
-    config = { url: options.etendoUrl, user: options.user, password: options.password };
-  } else {
-    config = await loadConfig(projectRoot);
-    if (options.etendoUrl) config.url = options.etendoUrl;
-    if (options.user) config.user = options.user;
-    if (options.password) config.password = options.password;
-  }
-
-  const authHeader = basicAuth(config.user, config.password);
-  const dryRun = options.dryRun === true;
-
-  // Extract all fields from backend contract (has all visibility levels)
+  // Extract all fields from backend contract
   const allFields = extractFieldsFromContract(contract.backendContract);
 
-  // Build planned actions
-  const plan = {
-    spec: {
-      webhook: 'SFUpsertSpec',
-      url: buildWebhookUrl(config.url, 'SFUpsertSpec'),
-      params: { windowId, name: specName, type: 'W' },
-    },
-    populate: {
-      webhook: 'SFPopulateSpec',
-      url: buildWebhookUrl(config.url, 'SFPopulateSpec'),
-      params: { specId: '(from step 1)' },
-    },
-    fields: allFields.map(f => {
-      const vis = mapVisibility(f.visibility);
-      return {
-        webhook: 'SFUpsertField',
-        url: buildWebhookUrl(config.url, 'SFUpsertField'),
-        entityName: f.entityName,
-        params: {
-          entityId: '(from populate)',
-          column: f.column,
-          isIncluded: vis.isIncluded,
-          isReadOnly: vis.isReadOnly,
-        },
-      };
-    }),
-  };
+  // Dry run mode — plan generation without DB writes
+  if (options.dryRun === true) {
+    const plan = {
+      spec: {
+        action: 'upsertSpec',
+        params: { windowId, name: specName, specType: 'W' },
+      },
+      populate: {
+        action: 'populateSpec',
+        params: { specId: '(from step 1)' },
+      },
+      fields: allFields.map(f => {
+        const vis = mapVisibility(f.visibility);
+        return {
+          action: 'upsertField',
+          entityName: f.entityName,
+          params: {
+            entityId: '(from populate)',
+            column: f.column,
+            isIncluded: vis.isIncluded,
+            isReadOnly: vis.isReadOnly,
+          },
+        };
+      }),
+    };
 
-  if (dryRun) {
     console.log(`[DRY RUN] Push to NEO for window: ${windowDisplayName} (${windowName})`);
     console.log(`  Spec name: ${specName}`);
     console.log(`  Window ID: ${windowId}`);
-    console.log(`  Etendo URL: ${config.url}`);
-    console.log(`\n  Step 1: ${plan.spec.webhook}`);
-    console.log(`    URL: ${plan.spec.url}`);
+    console.log(`  Method: direct DB write`);
+    console.log(`\n  Step 1: upsertSpec`);
     console.log(`    Params:`, plan.spec.params);
-    console.log(`\n  Step 2: ${plan.populate.webhook}`);
-    console.log(`    URL: ${plan.populate.url}`);
+    console.log(`\n  Step 2: populateSpec`);
     console.log(`    Params: { specId: <returned from step 1> }`);
-    console.log(`\n  Step 3: ${plan.fields.length} field updates via ${plan.fields[0]?.webhook || 'SFUpsertField'}`);
+    console.log(`\n  Step 3: ${plan.fields.length} field updates via upsertField`);
 
     const included = plan.fields.filter(f => f.params.isIncluded === 'Y');
     const excluded = plan.fields.filter(f => f.params.isIncluded === 'N');
@@ -285,72 +238,220 @@ export async function pushToNeo(windowName, options = {}) {
     };
   }
 
-  // Step 1: Upsert spec
-  console.log(`[1/3] Upserting spec '${specName}' for window ${windowId}...`);
-  const specResult = await callWebhook(plan.spec.url, plan.spec.params, authHeader);
-  const specId = specResult.specId || specResult.id || specResult.data?.id;
-  if (!specId) {
-    throw new Error(`SFUpsertSpec did not return a specId. Response: ${JSON.stringify(specResult)}`);
-  }
-  console.log(`       Spec ID: ${specId}`);
+  // Live mode — write to DB via transaction
+  const moduleId = options.moduleId || '0';
+  const auditOpts = options.audit || {};
+  const pool = createDbPool(options.dbConfig);
+  const client = await pool.connect();
 
-  // Step 2: Populate spec (auto-creates entities + fields from AD metadata)
-  console.log(`[2/3] Populating spec from AD metadata...`);
-  const populateResult = await callWebhook(
-    plan.populate.url,
-    { specId },
-    authHeader,
-  );
-  // Extract entity IDs from populate result
-  const entityMap = {};
-  if (populateResult.entities) {
-    for (const ent of populateResult.entities) {
-      entityMap[ent.name] = ent.id || ent.entityId;
+  try {
+    await client.query('BEGIN');
+
+    // Step 1: Upsert spec
+    console.log(`[1/3] Upserting spec '${specName}' for window ${windowId}...`);
+    const specResult = await writerUpsertSpec(client, {
+      name: specName,
+      moduleId,
+      windowId,
+      specType: 'W',
+      audit: auditOpts,
+    });
+    const specId = specResult.specId;
+    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+
+    // Step 2: Populate spec from AD metadata
+    console.log(`[2/3] Populating spec from AD metadata...`);
+    const popResult = await writerPopulateSpec(client, {
+      specId,
+      moduleId,
+      audit: auditOpts,
+    });
+
+    // Build entity name -> entityId map from populate result
+    const entityMap = {};
+    for (const ent of popResult.entities) {
+      entityMap[ent.name] = ent.entityId;
     }
-  }
-  console.log(`       Entities populated: ${Object.keys(entityMap).length}`);
+    console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
 
-  // Step 3: Update fields based on contract visibility
-  console.log(`[3/3] Updating ${allFields.length} fields...`);
-  const fieldResults = [];
-  let successCount = 0;
-  let errorCount = 0;
+    // Step 3: Update field visibility from contract
+    console.log(`[3/3] Updating ${allFields.length} fields from contract visibility...`);
+    let successCount = 0;
+    let errorCount = 0;
+    const fieldResults = [];
 
-  for (const fieldPlan of plan.fields) {
-    const entityId = entityMap[fieldPlan.entityName];
-    if (!entityId) {
-      console.warn(`  Warning: No entity ID found for '${fieldPlan.entityName}', skipping field '${fieldPlan.params.column}'`);
-      errorCount++;
-      continue;
-    }
+    for (const f of allFields) {
+      const entityId = entityMap[f.entityName];
+      if (!entityId) {
+        console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
+        errorCount++;
+        fieldResults.push({ column: f.column, entityName: f.entityName, success: false, error: 'no entity' });
+        continue;
+      }
 
-    try {
-      const result = await callWebhook(
-        fieldPlan.url,
-        { ...fieldPlan.params, entityId },
-        authHeader,
+      const vis = mapVisibility(f.visibility);
+
+      // Find the field by entity + column name (look up column ID first)
+      const colLookup = await client.query(
+        `SELECT sf.etgo_sf_field_id
+         FROM etgo_sf_field sf
+         JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
+         WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2`,
+        [entityId, f.column],
       );
-      fieldResults.push({ ...fieldPlan.params, entityId, success: true });
+
+      if (colLookup.rows.length === 0) {
+        // Field might have been excluded as a system column — skip silently
+        fieldResults.push({ column: f.column, entityName: f.entityName, success: true, skipped: true });
+        successCount++;
+        continue;
+      }
+
+      const fieldId = colLookup.rows[0].etgo_sf_field_id;
+      await writerUpsertField(client, {
+        entityId,
+        fieldId,
+        moduleId,
+        isIncluded: vis.isIncluded,
+        isReadOnly: vis.isReadOnly,
+        audit: auditOpts,
+      });
+      fieldResults.push({ column: f.column, entityName: f.entityName, success: true });
       successCount++;
-    } catch (err) {
-      console.warn(`  Warning: Failed to update field '${fieldPlan.params.column}': ${err.message}`);
-      fieldResults.push({ ...fieldPlan.params, entityId, success: false, error: err.message });
-      errorCount++;
     }
+
+    await client.query('COMMIT');
+
+    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors.`);
+
+    return {
+      dryRun: false,
+      specName,
+      specId,
+      windowId,
+      entitiesPopulated: popResult.entityCount,
+      fieldsUpdated: successCount,
+      fieldsErrored: errorCount,
+      fieldResults,
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+    await closePool(pool);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Process push function
+// ---------------------------------------------------------------------------
+
+/**
+ * Push a process contract configuration to NEO Headless via direct DB writes.
+ *
+ * @param {string} processName - The process artifact folder name (e.g., "generate-invoices")
+ * @param {object} [options] - Override options
+ * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
+ * @param {string} [options.projectRoot] - Override project root path
+ * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {object} [options.dbConfig] - Override DB pool config
+ * @param {object} [options.audit] - Override audit defaults
+ * @returns {object} Result summary
+ */
+export async function pushProcessToNeo(processName, options = {}) {
+  const projectRoot = options.projectRoot || ROOT;
+  const artifactsDir = join(projectRoot, 'artifacts', processName);
+
+  // Load process contract
+  let contractRaw;
+  try {
+    contractRaw = await readFile(join(artifactsDir, 'contract.json'), 'utf-8');
+  } catch (err) {
+    throw new Error(`Cannot read contract.json for process '${processName}': ${err.message}`);
   }
 
-  console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors.`);
+  const contract = JSON.parse(contractRaw);
 
-  return {
-    dryRun: false,
-    specName,
-    specId,
-    windowId,
-    entitiesPopulated: Object.keys(entityMap).length,
-    fieldsUpdated: successCount,
-    fieldsErrored: errorCount,
-    fieldResults,
-  };
+  if (contract.type !== 'process') {
+    throw new Error(`Contract type is '${contract.type}', expected 'process'`);
+  }
+
+  const processId = contract.process.id;
+  const specName = contract.process.specName;
+  const processDisplayName = contract.process.name;
+
+  // Dry run mode
+  if (options.dryRun === true) {
+    console.log(`[DRY RUN] Push to NEO for process: ${processDisplayName} (${processName})`);
+    console.log(`  Spec name: ${specName}`);
+    console.log(`  Process ID: ${processId}`);
+    console.log(`  Method: direct DB write`);
+    console.log(`\n  Step 1: upsertSpec (specType=P)`);
+    console.log(`    Params: { name: '${specName}', specType: 'P', processId: '${processId}' }`);
+    console.log(`\n  Step 2: populateSpec (auto-creates entity + fields from AD_Process_Para)`);
+    console.log(`    Params: { specId: <from step 1> }`);
+
+    return {
+      dryRun: true,
+      specName,
+      processId,
+      plan: {
+        spec: { action: 'upsertSpec', params: { name: specName, specType: 'P', processId } },
+        populate: { action: 'populateSpec', params: { specId: '(from step 1)' } },
+      },
+    };
+  }
+
+  // Live mode — write to DB via transaction
+  const moduleId = options.moduleId || '0';
+  const auditOpts = options.audit || {};
+  const pool = createDbPool(options.dbConfig);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Step 1: Upsert spec
+    console.log(`[1/2] Upserting spec '${specName}' for process ${processId}...`);
+    const specResult = await writerUpsertSpec(client, {
+      name: specName,
+      moduleId,
+      processId,
+      specType: 'P',
+      audit: auditOpts,
+    });
+    const specId = specResult.specId;
+    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+
+    // Step 2: Populate spec from AD metadata (creates entity + fields automatically)
+    console.log(`[2/2] Populating spec from AD_Process_Para...`);
+    const popResult = await writerPopulateSpec(client, {
+      specId,
+      moduleId,
+      audit: auditOpts,
+    });
+    console.log(`       Entity: ${popResult.entities[0]?.name || 'unnamed'}, Fields: ${popResult.fieldCount}`);
+
+    await client.query('COMMIT');
+
+    console.log(`\nDone. Process spec '${specName}' configured.`);
+
+    return {
+      dryRun: false,
+      specName,
+      specId,
+      processId,
+      entityCount: popResult.entityCount,
+      fieldCount: popResult.fieldCount,
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+    await closePool(pool);
+  }
 }
 
 // ---------------------------------------------------------------------------
