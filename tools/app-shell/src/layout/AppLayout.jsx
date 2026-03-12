@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './Sidebar.jsx';
 import TopBar from './TopBar.jsx';
@@ -12,11 +13,27 @@ export default function AppLayout({ menuGroups }) {
   const location = useLocation();
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
   const sectionColor = getSectionColor(activeGroup?.group);
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    try { return localStorage.getItem('sidebar-expanded') === 'true'; } catch { return false; }
+  });
+
+  const marginLeft = sidebarExpanded ? 240 : 60;
 
   return (
     <InspectorProvider>
-      <AppSidebar menuGroups={menuGroups} />
-      <div className="ml-[60px] flex h-screen flex-col overflow-hidden">
+      <AppSidebar
+        menuGroups={menuGroups}
+        expanded={sidebarExpanded}
+        onToggle={() => setSidebarExpanded(prev => {
+          const next = !prev;
+          try { localStorage.setItem('sidebar-expanded', String(next)); } catch {}
+          return next;
+        })}
+      />
+      <div
+        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out"
+        style={{ marginLeft }}
+      >
         <TopBar menuGroups={menuGroups} />
         <div
           key={location.pathname}

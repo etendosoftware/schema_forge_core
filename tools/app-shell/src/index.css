@@ -72,16 +72,13 @@
     --ring: 213 83% 48%;
     --radius: 0.5rem;
 
-    --sidebar-bg: 222 47% 11%;
-    --sidebar-text: 213 31% 91%;
-    --sidebar-active: 213 83% 48%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 213 83% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 222 30% 20%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 

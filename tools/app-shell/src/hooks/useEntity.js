@@ -82,6 +82,21 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     } catch { /* caller handles */ }
   }, [selected, apiBaseUrl, entity, token, refresh]);
 
+  const handleAddChild = useCallback((childData) => {
+    const newChild = { id: `new-${Date.now()}`, ...childData };
+    setChildren(prev => [...prev, newChild]);
+  }, []);
+
+  const handleUpdateChild = useCallback((childId, field, value) => {
+    setChildren(prev => prev.map(c =>
+      String(c.id) === String(childId) ? { ...c, [field]: value } : c
+    ));
+  }, []);
+
+  const handleDeleteChild = useCallback((childId) => {
+    setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
+  }, []);
+
   const handleProcess = useCallback(async (processName) => {
     if (!selected?.id) return;
     await fetch(`${apiBaseUrl}/process/${processName}`, {
@@ -95,6 +110,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   return {
     items, selected, editing, children, loading,
     handleSelect, handleNew, handleChange, handleSave, handleDelete, handleProcess,
+    handleAddChild, handleUpdateChild, handleDeleteChild,
     refresh,
   };
 }

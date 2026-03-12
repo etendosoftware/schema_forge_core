@@ -18,7 +18,7 @@
         { "name": "businessPartner", "column": "C_BPartner_ID", "type": "foreignKey", "reference": "BusinessPartner", "inputMode": "search", "visibility": "editable", "required": true, "grid": true, "form": true, "searchable": true },
         { "name": "partnerAddress", "column": "C_BPartner_Location_ID", "type": "foreignKey", "reference": "BusinessPartnerLocation", "inputMode": "dependent", "dependsOn": { "field": "businessPartner", "filterKey": "businessPartnerId" }, "visibility": "editable", "required": true, "grid": false, "form": true, "searchable": false },
         { "name": "orderDate", "column": "DateOrdered", "type": "date", "visibility": "editable", "required": true, "grid": true, "form": true, "searchable": true },
-        { "name": "scheduledDeliveryDate", "column": "DatePromised", "type": "date", "visibility": "editable", "required": true, "grid": false, "form": true, "searchable": false },
+        { "name": "scheduledDeliveryDate", "column": "DatePromised", "type": "date", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "orderDate" } },
         { "name": "warehouse", "column": "M_Warehouse_ID", "type": "foreignKey", "reference": "Warehouse", "inputMode": "selector", "visibility": "editable", "required": true, "grid": false, "form": true, "searchable": false },
         { "name": "priceList", "column": "M_PriceList_ID", "type": "foreignKey", "reference": "PriceList", "inputMode": "selector", "visibility": "editable", "required": true, "grid": false, "form": true, "searchable": false },
         { "name": "paymentTerms", "column": "C_PaymentTerm_ID", "type": "foreignKey", "reference": "PaymentTerm", "inputMode": "selector", "visibility": "editable", "required": true, "grid": false, "form": true, "searchable": false },
@@ -35,6 +35,7 @@
         { "name": "summedLineAmount", "column": "TotalLines", "type": "amount", "visibility": "readOnly", "required": false, "grid": true, "form": true, "searchable": false },
         { "name": "currency", "column": "C_Currency_ID", "type": "foreignKey", "reference": "Currency", "visibility": "readOnly", "required": true, "grid": true, "form": true, "searchable": false },
         { "name": "delivered", "column": "IsDelivered", "type": "boolean", "visibility": "readOnly", "required": false, "grid": false, "form": true, "searchable": false },
+        { "name": "quotation", "column": "Quotation_ID", "type": "foreignKey", "reference": "Order", "inputMode": "search", "visibility": "readOnly", "required": false, "grid": false, "form": true, "searchable": false },
 
         { "name": "adClientId", "column": "AD_Client_ID", "type": "id", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "context.client" } },
         { "name": "adOrgId", "column": "AD_Org_ID", "type": "id", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "context.organization" } },
@@ -43,7 +44,7 @@
         { "name": "salesTransaction", "column": "IsSOTrx", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "fromConfig", "source": "context.salesTransaction" } },
         { "name": "processed", "column": "Processed", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "docStatus === 'CO' ? true : false" } },
         { "name": "accountingDate", "column": "DateAcct", "type": "date", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "orderDate" } },
-        { "name": "invoiceTerms", "column": "InvoiceRule", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'D'" } },
+        { "name": "invoiceTerms", "column": "InvoiceRule", "type": "string", "visibility": "editable", "required": true, "grid": false, "form": true, "searchable": false },
         { "name": "deliveryTerms", "column": "DeliveryRule", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'A'" } },
         { "name": "deliveryMethod", "column": "DeliveryViaRule", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'D'" } },
         { "name": "freightCostRule", "column": "FreightCostRule", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'I'" } },
@@ -61,7 +62,7 @@
         { "name": "selected", "column": "IsSelected", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "false" } },
         { "name": "selfService", "column": "IsSelfService", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "false" } },
         { "name": "posted", "column": "Posted", "type": "string", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "'N'" } },
-        { "name": "cancelled", "column": "Iscancelled", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "false" } },
+        { "name": "cancelled", "column": "Iscancelled", "type": "boolean", "visibility": "readOnly", "required": false, "grid": false, "form": true, "searchable": false },
         { "name": "cashVAT", "column": "Iscashvat", "type": "boolean", "visibility": "system", "required": true, "grid": false, "form": false, "searchable": false, "derivation": { "type": "computed", "expression": "false" } }
       ]
     },
