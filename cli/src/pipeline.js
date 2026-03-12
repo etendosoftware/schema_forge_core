@@ -14,6 +14,7 @@ export function buildPipelineSteps() {
     { name: 'pre-classify', description: 'Pre-classify rules (deterministic + AI)', phase: 'F3' },
     { name: 'human-decisions', description: 'Open Decision Panel for human review', phase: 'F4', interactive: true },
     { name: 'generate-contract', description: 'Generate frontend/backend contracts + test manifest', phase: 'F6' },
+    { name: 'check-version', description: 'Check contract version and classify changes', phase: 'F6b' },
     { name: 'push-to-neo', description: 'Configure NEO Headless via webhooks (from contract)', phase: 'F7' },
     { name: 'generate-frontend', description: 'Generate React components from contract', phase: 'F8' },
     { name: 'translate-todos', description: 'AI-assisted translation of callout/onchange TODO comments', phase: 'F8b', interactive: true },
@@ -94,8 +95,29 @@ async function main() {
           const rules = JSON.parse(await readFile(`artifacts/${windowName}/rules-curated.json`, 'utf8'));
           const processes = JSON.parse(await readFile(`artifacts/${windowName}/processes.json`, 'utf8'));
           const contract = generateContract(schema, rules.rules || [], processes.processes || []);
+          // Snapshot current contract as prev for version diffing
+          try {
+            const existingContract = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
+            await writeFile(`artifacts/${windowName}/contract.prev.json`, existingContract, 'utf-8');
+          } catch {
+            // No existing contract — first generation, no prev needed
+          }
           await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2));
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
+          // Version check
+          try {
+            const { checkVersion } = await import('./check-version.js');
+            const versionResult = await checkVersion(windowName, 'pipeline');
+            if (versionResult) {
+              console.log(`  ✓ Version: ${versionResult.changelog.from} → ${versionResult.newVersion} (${versionResult.classification.level})`);
+              if (versionResult.classification.level === 'breaking') {
+                console.warn('  ⚠ BREAKING CHANGE detected. Review contract-changelog.json before proceeding.');
+              }
+            }
+          } catch (err) {
+            // Version check is advisory, don't fail the pipeline
+            console.log(`  → Version check skipped: ${err.message}`);
+          }
           break;
         }
         case 'push-to-neo': {
