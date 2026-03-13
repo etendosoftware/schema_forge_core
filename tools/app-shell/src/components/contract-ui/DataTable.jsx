@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -217,6 +217,20 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     );
   }, [data, filters, searchQuery]);
 
+  const amountColumns = useMemo(
+    () => columns.filter(col => col.type === 'amount'),
+    [columns]
+  );
+
+  const totals = useMemo(() => {
+    if (amountColumns.length === 0) return null;
+    const sums = {};
+    for (const col of amountColumns) {
+      sums[col.key] = filteredData.reduce((sum, row) => sum + (Number(row[col.key]) || 0), 0);
+    }
+    return sums;
+  }, [filteredData, amountColumns]);
+
   const renderCellValue = (row, col) => {
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
@@ -323,6 +337,19 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               />
             )}
           </TableBody>
+          {totals && (
+            <TableFooter>
+              <TableRow className="bg-muted/30 font-medium">
+                {columns.map((col, idx) => (
+                  <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right' : ''}>
+                    {col.type === 'amount'
+                      ? totals[col.key]?.toLocaleString()
+                      : idx === 0 ? '' : ''}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </div>
       {addRow?.active && (
