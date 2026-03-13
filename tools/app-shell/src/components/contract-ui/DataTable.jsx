@@ -359,7 +359,9 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           Enter to add &middot; Esc to cancel
         </p>
       )}
-      <p className="text-xs text-muted-foreground">{filteredData.length} of {data.length} records</p>
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+        <span>{filteredData.length} of {data.length} records</span>
+      </div>
     </div>
   );
 }
