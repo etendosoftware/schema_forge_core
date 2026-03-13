@@ -392,7 +392,7 @@ When `generate-frontend.js` regenerates React components, custom code (callout t
 
 ## Project Management
 
-All project management is handled in **GitHub** (repo: `etendosoftware/project_analyzer`).
+All project management is handled in **GitHub** (repo: `etendosoftware/etendo_schema_forge`).
 - Issues track all work items, organized by wave labels (wave-0 through wave-4)
 - Use GitHub issues for task assignment, progress tracking, and discussions
 - Milestones map to vertical slice phases
