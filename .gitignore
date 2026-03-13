@@ -1,4 +1,5 @@
 etendo_core
+.env
 app.log
 node_modules/
 tools/decision-panel/dist/
