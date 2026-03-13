@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,6 +25,20 @@ function getStatusBadgeProps(status) {
     return { variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-700', children: status };
   }
   return { variant: 'outline', children: status };
+}
+
+/**
+ * Return a colored dot class based on whether a date is past, future, or today.
+ * Green = future (not yet due), Red = past (overdue), null = today or empty.
+ */
+function getDateDotColor(dateValue) {
+  if (!dateValue) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateValue);
+  d.setHours(0, 0, 0, 0);
+  if (d.getTime() === today.getTime()) return null;
+  return d > today ? 'bg-emerald-500' : 'bg-red-500';
 }
 
 /**
@@ -203,6 +217,20 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     );
   }, [data, filters, searchQuery]);
 
+  const amountColumns = useMemo(
+    () => columns.filter(col => col.type === 'amount'),
+    [columns]
+  );
+
+  const totals = useMemo(() => {
+    if (amountColumns.length === 0) return null;
+    const sums = {};
+    for (const col of amountColumns) {
+      sums[col.key] = filteredData.reduce((sum, row) => sum + (Number(row[col.key]) || 0), 0);
+    }
+    return sums;
+  }, [filteredData, amountColumns]);
+
   const renderCellValue = (row, col) => {
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
@@ -217,6 +245,18 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       if (val === true || val === 'Y') return <span className="text-emerald-600">Yes</span>;
       if (val === false || val === 'N') return <span className="text-slate-400">No</span>;
       return <span className="text-slate-300">&mdash;</span>;
+    }
+    if (col.type === 'date') {
+      const dotColor = getDateDotColor(row[col.key]);
+      const formatted = row[col.key]
+        ? new Date(row[col.key]).toLocaleDateString()
+        : '\u2014';
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          {formatted}
+          {dotColor && <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />}
+        </span>
+      );
     }
     if (col.type === 'amount') {
       return <span className="tabular-nums">{row[col.key]?.toLocaleString()}</span>;
@@ -254,7 +294,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
                 return (
-                  <TableHead key={col.key} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <TableHead key={col.key} className={`text-xs font-medium text-muted-foreground/70 tracking-wide ${col.type === 'amount' ? 'text-right' : ''}`}>
                     <FieldHighlight entityName={entity} fieldName={col.key}>
                       {colLabel}
                     </FieldHighlight>
@@ -276,13 +316,15 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                   key={row.id ?? idx}
                   onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
                   className={[
-                    'cursor-pointer transition-colors',
+                    'cursor-pointer transition-colors h-12',
                     row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
                     'hover:bg-muted/50',
                   ].filter(Boolean).join(' ')}
                 >
                   {columns.map(col => (
-                    <TableCell key={col.key}>{renderCellValue(row, col)}</TableCell>
+                    <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                      {renderCellValue(row, col)}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
@@ -297,6 +339,19 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               />
             )}
           </TableBody>
+          {totals && (
+            <TableFooter>
+              <TableRow className="bg-muted/30 font-medium">
+                {columns.map((col, idx) => (
+                  <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right' : ''}>
+                    {col.type === 'amount'
+                      ? totals[col.key]?.toLocaleString()
+                      : idx === 0 ? '' : ''}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </div>
       {addRow?.active && (
@@ -304,7 +359,9 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           Enter to add &middot; Esc to cancel
         </p>
       )}
-      <p className="text-xs text-muted-foreground">{filteredData.length} of {data.length} records</p>
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+        <span>{filteredData.length} of {data.length} records</span>
+      </div>
     </div>
   );
 }

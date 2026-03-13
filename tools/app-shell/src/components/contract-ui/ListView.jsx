@@ -32,16 +32,17 @@ export function ListView({
     <div className="h-[calc(100vh-7.5rem)] flex flex-col">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-1 pb-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-foreground">{label}</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold text-foreground">{label}</h2>
           {!hook.loading && (
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-1.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
               {hook.items.length}
             </span>
           )}
         </div>
         <Button
           size="sm"
+          className="gap-1"
           onClick={() => navigate(`/${windowName}/new`)}
         >
           + New
