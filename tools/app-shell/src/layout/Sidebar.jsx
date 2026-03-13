@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import faviconUrl from '/favicon.png?url';
 import {
   Tooltip,
   TooltipContent,
@@ -83,7 +84,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
           expanded ? 'px-4 gap-3' : 'justify-center'
         )}>
           <img
-            src="./favicon.png"
+            src={faviconUrl}
             alt="Etendo"
             className="h-9 w-9 shrink-0 rounded-lg"
           />
