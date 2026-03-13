@@ -143,11 +143,25 @@ function DependentSelect({ field, value, onChange, catalogs, formData, resolvedL
  *  - onChange: (fieldKey, value) => void
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section }) {
   const t = useLabel();
+  let displayFields;
+  if (section) {
+    // When filtering by section, include all fields (editable + readOnly) for that section
+    displayFields = fields.filter(f => f.section === section);
+  } else if (layout === 'horizontal') {
+    displayFields = fields.filter(f => !f.readOnly);
+  } else {
+    displayFields = fields;
+  }
+
+  const gridClass = layout === 'horizontal'
+    ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4'
+    : 'grid grid-cols-2 gap-3 md:grid-cols-3';
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-      {fields.map(f => {
+    <div className={gridClass}>
+      {displayFields.map(f => {
         const label = t(f.column) ?? f.label ?? f.key;
         if (f.type === 'checkbox') {
           return (
@@ -184,7 +198,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
                 )}
               </button>
               <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-                {label}{f.required ? ' *' : ''}
+                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
               </Label>
             </div>
             </FieldHighlight>
@@ -195,7 +209,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
               <div className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required ? ' *' : ''}
+                  {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
                 </Label>
                 <DependentSelect
                   field={f}
@@ -214,7 +228,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
               <div className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required ? ' *' : ''}
+                  {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
                 </Label>
                 <SelectorInput
                   field={f}
@@ -232,7 +246,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
               <div className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required ? ' *' : ''}
+                  {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
                 </Label>
                 <SearchInput
                   field={f}
@@ -250,7 +264,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
           <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
             <div className="space-y-1.5">
               <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {label}{f.required ? ' *' : ''}
+                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
               </Label>
               <Input
                 id={f.key}

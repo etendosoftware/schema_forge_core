@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useInspector } from '@/components/inspector/InspectorProvider.jsx';
 import {
   Pencil,
@@ -6,15 +6,13 @@ import {
   Save,
   Loader2,
   Search,
-  LayoutGrid,
+  Sparkles,
   Plus,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { Separator } from '@/components/ui/separator.jsx';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { cn } from '@/lib/utils.js';
-import { getSectionColor } from '@/lib/sectionColors.js';
 import { useMenuLabel } from '@/i18n';
 import { findActiveGroup } from './Sidebar.jsx';
 
@@ -23,77 +21,15 @@ export default function TopBar({ menuGroups }) {
   const location = useLocation();
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
   const currentPath = location.pathname.replace(/^\//, '');
-  const sectionColor = getSectionColor(activeGroup?.group);
   const tMenu = useMenuLabel();
 
-  // First item in the group is the "overview" page
-  const overviewItem = activeGroup?.items[0];
-  const isOnOverview = overviewItem?.name === currentPath;
-  // Remaining items become tabs
-  const tabItems = activeGroup?.items.slice(1) || [];
-
   return (
-    <header
-      className="flex h-14 shrink-0 items-center border-b-[3px] bg-background transition-[border-color] duration-300 ease-in-out"
-      style={{ borderBottomColor: sectionColor.accent }}
-    >
-      {/* Left: section name + overview + tabs */}
-      <div className="flex min-w-0 flex-1 items-center gap-2 px-4">
+    <header className="flex h-14 shrink-0 items-center border-b border-border/50 bg-white">
+      {/* Left: section context */}
+      <div className="flex min-w-0 items-center gap-2 px-4">
         {activeGroup && (
-          <>
-            <span className="shrink-0 text-sm font-bold">{tMenu(activeGroup.group)}</span>
-            <Separator orientation="vertical" className="mx-1 h-4" />
-
-            {/* Overview badge */}
-            {overviewItem && (
-              <NavLink to={`/${overviewItem.name}`}>
-                <Badge
-                  variant={isOnOverview ? 'default' : 'outline'}
-                  className={cn(
-                    'shrink-0 cursor-pointer',
-                    isOnOverview
-                      ? ''
-                      : 'bg-transparent hover:bg-muted'
-                  )}
-                >
-                  {tMenu('Overview')}
-                </Badge>
-              </NavLink>
-            )}
-
-            {tabItems.length > 0 && (
-              <Separator orientation="vertical" className="mx-1 h-4" />
-            )}
-
-            {/* Horizontal scrollable tabs */}
-            <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {tabItems.map((item) => {
-                const isTabActive = item.name === currentPath;
-                return (
-                  <NavLink
-                    key={item.name}
-                    to={`/${item.name}`}
-                    className={cn(
-                      'group relative flex shrink-0 items-center gap-1.5 px-3 py-1 text-sm transition-colors',
-                      isTabActive
-                        ? 'text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    <span>{tMenu(item.label)}</span>
-                    <Plus className="h-3 w-3 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
-                    {/* Active indicator */}
-                    {isTabActive && (
-                      <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary" />
-                    )}
-                  </NavLink>
-                );
-              })}
-            </div>
-          </>
+          <span className="text-sm font-semibold text-foreground">{tMenu(activeGroup.group)}</span>
         )}
-
         {!activeGroup && (
           <span className="text-sm text-muted-foreground">
             {currentPath || 'Home'}
@@ -101,16 +37,11 @@ export default function TopBar({ menuGroups }) {
         )}
       </div>
 
-      {/* Right: inspector controls, search, locale */}
-      <div className="flex shrink-0 items-center gap-2 px-4">
-        {inspector.editMode && (
-          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-            Edit Mode
-          </Badge>
-        )}
+      {/* Center: global search */}
+      <div className="flex flex-1 justify-center px-4">
         <Button
           variant="outline"
-          className="relative h-8 w-full justify-start rounded-[0.5rem] bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-40 lg:w-64"
+          className="relative h-9 w-full max-w-md justify-start rounded-lg border-border/50 bg-muted/30 text-sm font-normal text-muted-foreground shadow-none"
           onClick={() => {
             document.dispatchEvent(
               new KeyboardEvent('keydown', { key: 'k', metaKey: true })
@@ -119,30 +50,61 @@ export default function TopBar({ menuGroups }) {
         >
           <Search className="mr-2 h-4 w-4" />
           Search...
-          <kbd className="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+          <kbd className="pointer-events-none absolute right-2 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium sm:flex">
             <span className="text-xs">&#8984;</span>K
           </kbd>
         </Button>
-        <LocaleSwitcher />
+      </div>
+
+      {/* Right: action icons */}
+      <div className="flex shrink-0 items-center gap-1 px-4">
+        {inspector.editMode && (
+          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 mr-1">
+            Edit Mode
+          </Badge>
+        )}
         {inspector.editMode && inspector.dirty && (
-          <Button size="sm" onClick={inspector.save} disabled={inspector.saving}>
+          <Button size="sm" variant="outline" onClick={inspector.save} disabled={inspector.saving} className="mr-1">
             {inspector.saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
             ) : (
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-1" />
             )}
-            Save &amp; Regenerate
+            Save
           </Button>
         )}
         <Button
-          variant={inspector.editMode ? 'default' : 'outline'}
+          variant="ghost"
           size="icon"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+        >
+          <Sparkles className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+        >
+          <Bell className="h-4 w-4" />
+        </Button>
+        <LocaleSwitcher />
+        <Button
+          variant={inspector.editMode ? 'default' : 'ghost'}
+          size="icon"
+          className="h-9 w-9"
           onClick={() => inspector.setEditMode(!inspector.editMode)}
         >
           {inspector.editMode ? (
             <PencilOff className="h-4 w-4" />
           ) : (
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="sr-only">Toggle edit mode</span>
         </Button>

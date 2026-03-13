@@ -114,7 +114,21 @@ export function generateFormComponent(entityName, contract) {
   const formFields = entity.fields.filter(f => f.form);
   const compName = `${capitalize(entityName)}Form`;
 
-  const fieldsArray = formFields.map(f => {
+  // Classify fields into sections: first N editable non-readOnly fields are 'principal', rest are 'other'.
+  // Fields with explicit section in the contract take precedence.
+  const MAX_PRINCIPAL = 4;
+  let principalCount = 0;
+  const fieldSections = formFields.map(f => {
+    if (f.section) return f.section;
+    if (f.visibility === 'readOnly') return 'other';
+    if (principalCount < MAX_PRINCIPAL) {
+      principalCount++;
+      return 'principal';
+    }
+    return 'other';
+  });
+
+  const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
     const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
@@ -123,6 +137,8 @@ export function generateFormComponent(entityName, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
+    // Section classification
+    const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
     const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'")}'` : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
@@ -154,7 +170,7 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -250,11 +266,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
+  const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
+  const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
+
   return `import { ListView, DetailView } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import catalogs from './mockCatalogs';
+
+const breadcrumb = '${windowCategory} / ${windowLabel}';
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -299,7 +320,8 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         entityLabel="${toLabel(headerEntity)}"
         detailLabel="${toLabel(detailEntity)}"
         windowName={windowName}
-        recordId={recordId}${apiProp}
+        recordId={recordId}
+        breadcrumb={breadcrumb}${apiProp}
         {...props}
       />
     );
@@ -311,6 +333,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       Table={${headerName}Table}
       entityLabel="${toLabel(headerEntity)}s"
       windowName={windowName}
+      breadcrumb={breadcrumb}
       {...props}
     />
   );

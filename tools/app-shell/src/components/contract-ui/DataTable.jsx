@@ -3,28 +3,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Inbox } from 'lucide-react';
+import { Search, Inbox, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 
 /**
- * Map a status string to a Badge variant and optional className override.
+ * Format a number as currency with $ prefix and locale-aware separators.
+ * e.g. 324000 → "$324.000,00"
  */
-function getStatusBadgeProps(status) {
-  const s = String(status ?? '').toLowerCase();
-  if (s === 'draft' || s === 'dr') {
-    return { variant: 'secondary', children: status };
-  }
-  if (s === 'completed' || s === 'complete' || s === 'booked' || s === 'co') {
-    return { variant: 'default', className: 'bg-emerald-600 hover:bg-emerald-700 border-transparent text-white', children: status };
-  }
-  if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo') {
-    return { variant: 'destructive', children: status };
-  }
-  if (s === 'in process' || s === 'ip') {
-    return { variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-700', children: status };
-  }
-  return { variant: 'outline', children: status };
+function formatCurrency(value) {
+  if (value == null || value === '') return '\u2014';
+  const num = Number(value);
+  if (isNaN(num)) return value;
+  return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**
@@ -203,9 +195,10 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRows, setSelectedRows] = useState(new Set());
 
   const hasActiveFilter = searchQuery.length > 0;
 
@@ -234,11 +227,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   const renderCellValue = (row, col) => {
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
-      return <span className="font-medium text-primary">{row[col.key]}</span>;
+      return <span className="font-medium text-blue-600">{row[col.key]}</span>;
     }
     if (col.type === 'status') {
       const badgeProps = getStatusBadgeProps(row[col.key]);
-      return <Badge {...badgeProps} />;
+      return <Badge {...badgeProps}>{statusLabel(row[col.key])}</Badge>;
     }
     if (col.type === 'boolean') {
       const val = row[col.key];
@@ -259,9 +252,14 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'amount') {
-      return <span className="tabular-nums">{row[col.key]?.toLocaleString()}</span>;
+      return <span className="tabular-nums">{formatCurrency(row[col.key])}</span>;
     }
-    return row[col.key];
+    // Truncate long text values
+    const val = row[col.key];
+    if (typeof val === 'string' && val.length > 30) {
+      return <span className="block max-w-[200px] truncate" title={val}>{val}</span>;
+    }
+    return val;
   };
 
   if (loading) {
@@ -272,25 +270,52 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     );
   }
 
+  const allSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
+  const someSelected = selectedRows.size > 0 && !allSelected;
+
+  const toggleAll = (e) => {
+    e.stopPropagation();
+    if (allSelected) {
+      setSelectedRows(new Set());
+      onSelectionChange?.([]);
+    } else {
+      const allIds = new Set(filteredData.map(r => r.id));
+      setSelectedRows(allIds);
+      onSelectionChange?.(filteredData);
+    }
+  };
+
+  const toggleRow = (e, row) => {
+    e.stopPropagation();
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(row.id)) next.delete(row.id);
+      else next.add(row.id);
+      onSelectionChange?.(filteredData.filter(r => next.has(r.id)));
+      return next;
+    });
+  };
+
+  const colSpan = columns.length + (selectable ? 1 : 0);
+
   return (
-    <div className="space-y-4">
-      {/* Global search input */}
-      {filters.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 focus:ring-2 focus:ring-primary focus:outline-none transition-colors duration-200"
-            aria-label="Search records"
-          />
-        </div>
-      )}
-      <div className="rounded-lg border overflow-hidden">
+    <div className="space-y-0">
+      <div className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/50">
+            <TableRow className="border-b border-border/40">
+              {selectable && (
+                <TableHead className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                    onChange={toggleAll}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
+                </TableHead>
+              )}
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
                 return (
@@ -306,28 +331,43 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           <TableBody>
             {filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length || 1} className="p-0">
+                <TableCell colSpan={colSpan} className="p-0">
                   <EmptyState hasFilter={hasActiveFilter} totalCount={data.length} />
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((row, idx) => (
-                <TableRow
-                  key={row.id ?? idx}
-                  onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
-                  className={[
-                    'cursor-pointer transition-colors h-12',
-                    row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
-                    'hover:bg-muted/50',
-                  ].filter(Boolean).join(' ')}
-                >
-                  {columns.map(col => (
-                    <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
-                      {renderCellValue(row, col)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              filteredData.map((row, idx) => {
+                const isChecked = selectedRows.has(row.id);
+                return (
+                  <TableRow
+                    key={row.id ?? idx}
+                    onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
+                    className={[
+                      'cursor-pointer transition-colors h-12',
+                      isChecked ? 'bg-primary/5' : '',
+                      row.id === selectedId ? 'bg-primary/10' : '',
+                      'hover:bg-muted/50',
+                    ].filter(Boolean).join(' ')}
+                  >
+                    {selectable && (
+                      <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => toggleRow(e, row)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                      </TableCell>
+                    )}
+                    {columns.map(col => (
+                      <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                        {renderCellValue(row, col)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             )}
             {addRow?.active && (
               <InlineAddRow
@@ -341,12 +381,13 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </TableBody>
           {totals && (
             <TableFooter>
-              <TableRow className="bg-muted/30 font-medium">
+              <TableRow className="font-medium">
+                {selectable && <TableCell />}
                 {columns.map((col, idx) => (
-                  <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right' : ''}>
+                  <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}>
                     {col.type === 'amount'
-                      ? totals[col.key]?.toLocaleString()
-                      : idx === 0 ? '' : ''}
+                      ? formatCurrency(totals[col.key])
+                      : ''}
                   </TableCell>
                 ))}
               </TableRow>
@@ -359,9 +400,6 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           Enter to add &middot; Esc to cancel
         </p>
       )}
-      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-        <span>{filteredData.length} of {data.length} records</span>
-      </div>
     </div>
   );
 }
