@@ -110,6 +110,14 @@ http://localhost:8080/etendo/web/com.etendoerp.go/
 
 No Tomcat restart needed -- static files are picked up automatically.
 
+After deploying, if NEO configuration changed or this is the first deploy, rebuild Etendo:
+
+```bash
+cd <etendo_root> && ./gradlew smartbuild export.database --info
+```
+
+If not using Docker, restart Tomcat manually. Docker environments auto-restart after a few seconds.
+
 Use this when:
 - Testing with real Etendo data
 - Verifying API integration (CRUD, selectors, processes)

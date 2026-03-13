@@ -79,6 +79,30 @@ export function parseArgs(argv) {
   return result;
 }
 
+/**
+ * Print context-sensitive next steps based on what the pipeline executed.
+ */
+function printNextSteps({ pushToNeoRan, frontendGenerated }) {
+  if (!pushToNeoRan && !frontendGenerated) return;
+
+  console.log('Next steps:');
+
+  if (pushToNeoRan && frontendGenerated) {
+    console.log('  → Deploy UI, rebuild, and export config in one step:');
+    console.log('    make deploy');
+    console.log('    cd <etendo_root> && ./gradlew smartbuild export.database --info');
+    console.log('  → Restart Tomcat (if not using Docker — Docker auto-restarts after a few seconds)');
+  } else if (pushToNeoRan) {
+    console.log('  → Run export.database to persist NEO config to XML sourcedata:');
+    console.log('    cd <etendo_root> && ./gradlew export.database --info');
+  } else if (frontendGenerated) {
+    console.log('  → Deploy the UI and rebuild:');
+    console.log('    make deploy');
+    console.log('    cd <etendo_root> && ./gradlew smartbuild --info');
+    console.log('  → Restart Tomcat (if not using Docker — Docker auto-restarts after a few seconds)');
+  }
+}
+
 // CLI entry point
 async function main() {
   const parsed = parseArgs(process.argv);
@@ -125,6 +149,8 @@ async function main() {
 
 async function runProcessPipeline({ processId, processName, dryRun, isReport, specType }) {
   const steps = buildProcessPipelineSteps();
+  let pushToNeoRan = false;
+  let frontendGenerated = false;
   const pipelineLabel = isReport ? 'Report' : 'Process';
   console.log(`\n=== Schema Forge ${pipelineLabel} Pipeline: ${processName} ===\n`);
 
@@ -155,6 +181,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
             console.log(`  ✓ Dry run: push plan logged`);
           } else {
             console.log(`  ✓ NEO Headless configured (spec: ${result.specId})`);
+            pushToNeoRan = true;
           }
           break;
         }
@@ -170,6 +197,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
             await writeFile(`${outDir}/${filename}`, code, 'utf8');
           }
           console.log(`  ✓ ${Object.keys(files).length} frontend components generated`);
+          frontendGenerated = true;
           break;
         }
         case 'run-tests': {
@@ -192,6 +220,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
   }
 
   console.log(`\n=== ${pipelineLabel} Pipeline complete ===\n`);
+  printNextSteps({ pushToNeoRan, frontendGenerated });
 }
 
 /**
@@ -218,6 +247,8 @@ async function runReportPipeline({ reportId, reportName, dryRun }) {
 
 async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive }) {
   const steps = buildPipelineSteps();
+  let pushToNeoRan = false;
+  let frontendGenerated = false;
   console.log(`\n=== Schema Forge Pipeline: ${windowName} ===\n`);
 
   let skipping = !!skipTo;
@@ -357,6 +388,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             console.log(`  ✓ Dry run: ${result.summary.totalFields} fields planned`);
           } else {
             console.log(`  ✓ NEO Headless configured (${result.fieldsUpdated} fields)`);
+            pushToNeoRan = true;
           }
           break;
         }
@@ -399,6 +431,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             summary += ')';
           }
           console.log(summary);
+          frontendGenerated = true;
           break;
         }
         case 'run-tests': {
@@ -421,6 +454,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
   }
 
   console.log('\n=== Pipeline complete ===\n');
+  printNextSteps({ pushToNeoRan, frontendGenerated });
 }
 
 // Only run main if executed directly
