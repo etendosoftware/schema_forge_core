@@ -251,6 +251,28 @@ schema-forge/
 └── .env                          # Local config (not committed)
 ```
 
+## Building and Deploying
+
+After the pipeline generates frontend components and pushes NEO config, you need to build and deploy the UI into the Etendo module so it is served by Tomcat.
+
+```bash
+# Build and deploy in one step
+make deploy
+
+# Override Etendo root if needed
+make deploy MODULE_WEB=<etendo_root>/modules/com.etendoerp.go/web/com.etendoerp.go
+```
+
+After deploying, if this is the first time or if NEO configuration changed, rebuild and restart:
+
+```bash
+cd <etendo_root> && ./gradlew smartbuild export.database --info
+```
+
+If not using Docker, restart Tomcat manually. Docker environments auto-restart after a few seconds.
+
+The pipeline prints contextual "Next steps" after completion to remind you which commands are needed based on what ran.
+
 ## Documentation
 
 Full documentation lives in `docs/`. Start with [docs/index.md](docs/index.md).
