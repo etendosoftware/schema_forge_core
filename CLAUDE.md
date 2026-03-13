@@ -392,7 +392,7 @@ When `generate-frontend.js` regenerates React components, custom code (callout t
 
 ## Project Management
 
-All project management is handled in **GitHub** (repo: `etendosoftware/project_analyzer`).
+All project management is handled in **GitHub** (repo: `etendosoftware/etendo_schema_forge`).
 - Issues track all work items, organized by wave labels (wave-0 through wave-4)
 - Use GitHub issues for task assignment, progress tracking, and discussions
 - Milestones map to vertical slice phases
@@ -441,6 +441,38 @@ Per-window artifacts (`artifacts/{window}/`) should only contain window-specific
 - Path: `{etendo_root}/gradle.properties`
 - Keys: `bbdd.host`, `bbdd.port`, `bbdd.user`, `bbdd.password`, `bbdd.sid`
 - Etendo root: parent directory of this repo (e.g., `../` relative to schema_forge)
+
+## Frontend Build & Deploy (MANDATORY final step)
+
+After generating frontend components and pushing NEO config, the UI must be built and deployed into the Etendo module's web directory so it is served by Tomcat at runtime.
+
+**Build & deploy commands** (from schema_forge root):
+```bash
+# One-step: build + copy to Etendo module
+make deploy
+
+# Override Etendo root if it differs from default:
+make deploy MODULE_WEB={etendo_root}/modules/com.etendoerp.go/web/com.etendoerp.go
+
+# Build only (output: tools/app-shell/dist/)
+make build
+
+# Dev server with hot reload (http://localhost:3100)
+make dev
+```
+
+**How it works:**
+1. `make build` runs `vite build` in `tools/app-shell/`, producing optimized static files in `tools/app-shell/dist/`
+2. `make deploy` copies `dist/*` to `{etendo_root}/modules/com.etendoerp.go/web/com.etendoerp.go/`
+3. Tomcat serves the SPA from `/etendo/web/com.etendoerp.go/`
+4. No Tomcat restart needed — static files are picked up immediately
+
+**Default path:** The Makefile defaults to `etendo_core/modules/com.etendoerp.go/web/com.etendoerp.go`. Override `MODULE_WEB` if your Etendo root directory has a different name.
+
+**Pipeline integration:** This is the LAST step in the full workflow:
+```
+Extract → Classify → Contract → Push to NEO → export.database → Generate Frontend → make deploy
+```
 
 ## NEO Token Scripts
 
@@ -502,13 +534,23 @@ See `docs/brainstorming-2026-03-10.md` for detailed notes on:
 
 ## Knowledge Persistence Policy
 
-**NEVER use auto-memory (`MEMORY.md` or `~/.claude/projects/.../memory/`).** All knowledge must be committable.
+Knowledge is split between **committed files** (shared with all devs) and **auto-memory** (personal, per-developer).
 
-- **Project knowledge** (conventions, architecture decisions, technical findings) → add to this `CLAUDE.md` file.
-- **Research notes, brainstorming, detailed references** → save in `docs/` as versioned markdown files.
-- **Per-window or per-feature findings** → save in the appropriate `artifacts/` or `docs/` subdirectory.
+### Committed (shared with the team)
+- **Project knowledge** (conventions, architecture decisions, technical findings) → this `CLAUDE.md` file.
+- **Documentation, research, plans, brainstorming** → `docs/` as versioned markdown files.
+- **Per-window or per-feature findings** → the appropriate `artifacts/` or `docs/` subdirectory.
+- **Errors, bugs found, problems to improve** → `feedback.md` (root, append-only log of issues discovered during development).
 - Reference new docs from this CLAUDE.md when relevant (e.g., "See `docs/brainstorming-2026-03-10.md`").
-- If you find yourself wanting to "remember something for next time", write it here or in `docs/`. Never in memory files.
+
+### Auto-memory (personal, NOT committed)
+Use `MEMORY.md` / `~/.claude/projects/.../memory/` **only** for data that is personal to the developer and should NOT be in the repo:
+- **GitHub usernames** (for PR assignees/reviewers)
+- **Local machine paths** (e.g., custom Etendo root location)
+- **Developer-specific configurations** (editor preferences, env overrides)
+- **Personal workflow preferences**
+
+**Rule of thumb:** If another developer on the team would benefit from the information → commit it. If it's only useful to you on your machine → auto-memory.
 
 <self_documentation>
 
