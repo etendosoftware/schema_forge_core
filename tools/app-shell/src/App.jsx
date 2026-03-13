@@ -40,7 +40,9 @@ function detectBasePath() {
 }
 
 const { apiBase, routerBase } = detectBasePath();
-const API_BASE_URL = `${apiBase}/api`;
+const API_BASE_URL = import.meta.env.VITE_MOCK === 'true'
+  ? `${apiBase}/api`
+  : `${apiBase}/sws/neo`;
 
 async function loadAllMockData() {
   const modules = await Promise.all([

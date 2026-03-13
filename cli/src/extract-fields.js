@@ -3,7 +3,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createDbPool, closePool } from './db.js';
-import { toCamelCase, computeChecksum, generateVersion } from './utils.js';
+import { toCamelCase, toPropertyName, computeChecksum, generateVersion } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -312,7 +312,7 @@ export function buildSchema(rows, systemColumns, refMap) {
       const classification = classifyField(row, systemColumns);
       const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
       const fieldDef = {
-        name: toCamelCase(row.columnname),
+        name: toPropertyName(row.obdal_name),
         columnName: row.columnname,
         label: row.field_name,
         type: schemaType,
@@ -445,7 +445,7 @@ SELECT
   f.IsDisplayed, f.IsReadOnly,
   f.DisplayLogic, f.DisplayLogic_Server, f.DisplayLogicGrid,
   f.SeqNo AS field_seq,
-  c.ColumnName, c.AD_Reference_ID, c.IsMandatory, c.IsUpdateable,
+  c.ColumnName, c.Name AS obdal_name, c.AD_Reference_ID, c.IsMandatory, c.IsUpdateable,
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,

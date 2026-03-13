@@ -5,18 +5,19 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Search } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 
 /**
  * Combobox-style search input for foreign key fields.
  * Filters results from catalogs when typing.
  */
-function SearchInput({ field, value, onChange, catalogs, resolvedLabel }) {
+function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState(value ?? '');
+  const [query, setQuery] = useState(displayValue || value || '');
 
   React.useEffect(() => {
-    setQuery(value ?? '');
-  }, [value]);
+    setQuery(displayValue || value || '');
+  }, [value, displayValue]);
 
   const options = catalogs?.[field.reference] ?? [];
   const filtered = useMemo(() => {
@@ -82,8 +83,14 @@ function SearchInput({ field, value, onChange, catalogs, resolvedLabel }) {
  * Dropdown selector for FK fields with few options (inputMode: selector).
  * Uses shadcn Select (Radix) for consistent styling.
  */
-function SelectorInput({ field, value, onChange, catalogs, resolvedLabel }) {
-  const options = catalogs?.[field.reference] ?? [];
+function SelectorInput({ field, value, displayValue, onChange, catalogs, resolvedLabel }) {
+  const catalogOptions = catalogs?.[field.reference] ?? [];
+  // If the current value isn't in the catalog (real data vs mock), add it
+  const hasValue = value && catalogOptions.some(opt => opt.id === value);
+  const options = (!hasValue && value && displayValue)
+    ? [{ id: value, name: displayValue }, ...catalogOptions]
+    : catalogOptions;
+
   return (
     <Select
       value={value ?? ''}
@@ -106,19 +113,24 @@ function SelectorInput({ field, value, onChange, catalogs, resolvedLabel }) {
  * Dependent dropdown that filters options by a parent field value (inputMode: dependent).
  * Uses shadcn Select (Radix) for consistent styling.
  */
-function DependentSelect({ field, value, onChange, catalogs, formData, resolvedLabel }) {
+function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel }) {
   const parentValue = formData?.[field.dependsOn?.field];
   const allOptions = catalogs?.[field.reference] ?? [];
-  const options = parentValue
+  const filtered = parentValue
     ? allOptions.filter(opt => opt[field.dependsOn?.filterKey] === parentValue)
     : [];
+  // If the current value isn't in filtered options (real data), add it
+  const hasValue = value && filtered.some(opt => opt.id === value);
+  const options = (!hasValue && value && displayValue)
+    ? [{ id: value, name: displayValue }, ...filtered]
+    : filtered;
 
   return (
     <Select
       value={value ?? ''}
       onValueChange={(val) => onChange?.(val)}
       required={field.required}
-      disabled={!parentValue}
+      disabled={!parentValue && !value}
     >
       <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
         <SelectValue
@@ -200,6 +212,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
                 <DependentSelect
                   field={f}
                   value={data?.[f.key] ?? ''}
+                  displayValue={resolveIdentifier(data, f.key)}
                   onChange={(val) => onChange?.(f.key, val)}
                   catalogs={catalogs}
                   formData={data}
@@ -219,6 +232,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
                 <SelectorInput
                   field={f}
                   value={data?.[f.key] ?? ''}
+                  displayValue={resolveIdentifier(data, f.key)}
                   onChange={(val) => onChange?.(f.key, val)}
                   catalogs={catalogs}
                   resolvedLabel={label}
@@ -237,6 +251,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs }) {
                 <SearchInput
                   field={f}
                   value={data?.[f.key] ?? ''}
+                  displayValue={resolveIdentifier(data, f.key)}
                   onChange={(val) => onChange?.(f.key, val)}
                   catalogs={catalogs}
                   resolvedLabel={label}

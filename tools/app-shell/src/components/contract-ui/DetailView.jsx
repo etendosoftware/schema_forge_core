@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
+import { useCatalogs } from '@/hooks/useCatalogs';
 import { SummaryBar } from './SummaryBar.jsx';
 import { CompactHeader } from './CompactHeader.jsx';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 
 function getStatusBadgeProps(status) {
   if (!status) return { variant: 'outline' };
@@ -44,7 +46,8 @@ export function DetailView({
   statusField,
   processes = [],
   addLineFields = { entry: [], derived: [] },
-  catalogs,
+  catalogs: staticCatalogs,
+  api,
   entityLabel,
   detailLabel,
   titleField = 'documentNo',
@@ -54,8 +57,10 @@ export function DetailView({
   apiBaseUrl,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const navigate = useNavigate();
   const [addingLine, setAddingLine] = useState(false);
+  const [directFetched, setDirectFetched] = useState(false);
 
   // Select the record once items are loaded
   const isNew = recordId === 'new';
@@ -71,12 +76,17 @@ export function DetailView({
     }
   }, [isNew]);
 
-  // Select item when loaded
+  // Select item when loaded, or fetch directly by ID if not in list
   useEffect(() => {
+    if (isNew) return;
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
+      setDirectFetched(false);
+    } else if (!currentItem && !hook.loading && recordId && !directFetched) {
+      setDirectFetched(true);
+      hook.fetchById(recordId);
     }
-  }, [currentItem, recordId]);
+  }, [currentItem, recordId, hook.loading, isNew, directFetched]);
 
   // Prev/Next navigation
   const currentIdx = hook.items.findIndex(item => String(item.id) === String(recordId));
@@ -86,11 +96,11 @@ export function DetailView({
   const data = hook.editing || currentItem || {};
   const title = isNew
     ? `New ${entityLabel || entity}`
-    : `${data[titleField] || data.id || ''}`;
+    : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
 
   // Subtitle: first non-titleField summary field value (e.g., business partner name)
   const subtitleField = summary.find(f => f.key !== titleField);
-  const subtitle = subtitleField ? data[subtitleField.key] : null;
+  const subtitle = subtitleField ? resolveIdentifier(data, subtitleField.key) : null;
 
   // Add-line support
   const allEntryFields = addLineFields.entry ?? [];

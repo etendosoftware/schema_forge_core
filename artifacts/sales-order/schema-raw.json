@@ -10,6 +10,7 @@
     {
       "name": "cOrder",
       "tableName": "C_Order",
+      "tabId": "186",
       "entityClassname": "Order",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Header",
@@ -1468,6 +1469,7 @@
     {
       "name": "cOrderLine",
       "tableName": "C_OrderLine",
+      "tabId": "187",
       "entityClassname": "OrderLine",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Lines",
@@ -2604,6 +2606,7 @@
     {
       "name": "cOrderLineTax",
       "tableName": "C_OrderLineTax",
+      "tabId": "25C70617A7964B479BDA71197E7E88E9",
       "entityClassname": "OrderLineTax",
       "entityJavaPackage": "org.openbravo.model.ad.access",
       "tabName": "Line Tax",
@@ -2799,6 +2802,7 @@
     {
       "name": "mSolReservedStockV",
       "tableName": "M_SOL_Reserved_Stock_V",
+      "tabId": "38D83B9AB72D42F1BFED48911E49F6CD",
       "entityClassname": "SOLReservedStock",
       "entityJavaPackage": "org.openbravo.model.materialmgmt.onhandquantity",
       "tabName": "Reserved Stock",
@@ -3036,6 +3040,7 @@
     {
       "name": "cOrderlineServicerelation",
       "tableName": "C_Orderline_Servicerelation",
+      "tabId": "673F978C60704C4289893EE1691784F1",
       "entityClassname": "OrderlineServiceRelation",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Related Products",
@@ -3269,6 +3274,7 @@
     {
       "name": "cOrderlineProductrelation",
       "tableName": "C_Orderline_Productrelation",
+      "tabId": "652123A308954FE8AA072DE90EE7C988",
       "entityClassname": "olpr",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Related Services",
@@ -3356,6 +3362,7 @@
     {
       "name": "cOrderDiscount",
       "tableName": "C_Order_Discount",
+      "tabId": "1011100000",
       "entityClassname": "OrderDiscount",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Basic Discounts",
@@ -3540,6 +3547,7 @@
     {
       "name": "cOrderTax",
       "tableName": "C_OrderTax",
+      "tabId": "236",
       "entityClassname": "OrderTax",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Tax",
@@ -3714,6 +3722,7 @@
     {
       "name": "finPaymentSchedOrdV",
       "tableName": "FIN_Payment_Sched_Ord_V",
+      "tabId": "EB0E0C5A58344F7FA345097E7365CD22",
       "entityClassname": "FIN_PaymentSchedOrdV",
       "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
       "tabName": "Payment Plan",
@@ -3945,6 +3954,7 @@
     {
       "name": "finPaymentDetailV",
       "tableName": "FIN_Payment_Detail_V",
+      "tabId": "B82C02920AA84E8DB57D553185BD2F06",
       "entityClassname": "FIN_PaymentDetailV",
       "entityJavaPackage": "org.openbravo.model.financialmgmt.payment",
       "tabName": "Payment Details",
@@ -4360,6 +4370,7 @@
     {
       "name": "cOrderReplacement",
       "tableName": "C_Order_Replacement",
+      "tabId": "5A3B6D4D50444C94B2A2B99E6FD2FB0A",
       "entityClassname": "OrderReplacement",
       "entityJavaPackage": "org.openbravo.model.common.order",
       "tabName": "Replacement Orders",
@@ -4490,7 +4501,7 @@
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "1748fdff",
-    "extractedAt": "2026-03-12T18:59:25.372Z"
+    "checksum": "0a370a45",
+    "extractedAt": "2026-03-13T16:10:20.364Z"
   }
 }

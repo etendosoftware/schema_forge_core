@@ -23,7 +23,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
-      .then(data => { setItems(Array.isArray(data) ? data : []); setLoading(false); })
+      .then(data => { const rows = data?.response?.data ?? (Array.isArray(data) ? data : []); setItems(rows); setLoading(false); })
       .catch(() => { setItems([]); setLoading(false); });
   }, [apiBaseUrl, entity, token]);
 
@@ -31,14 +31,36 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
 
   const fetchChildren = useCallback((parentId) => {
     if (!childEntity || !parentId) { setChildren([]); return; }
-    fetch(`${apiBaseUrl}/${entity}/${parentId}/${childEntity}`, { headers })
+    // NEO Headless uses ?parentId= to filter child entity records
+    fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
-      .then(data => setChildren(Array.isArray(data) ? data : []))
+      .then(data => {
+        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        setChildren(rows);
+      })
       .catch(() => setChildren([]));
-  }, [apiBaseUrl, entity, childEntity, token]);
+  }, [apiBaseUrl, childEntity, token]);
+
+  const fetchById = useCallback((id) => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`${apiBaseUrl}/${entity}/${id}`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const row = data?.response?.data?.[0] ?? data;
+        setSelected(row);
+        setEditing({ ...row });
+        fetchChildren(row?.id);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [apiBaseUrl, entity, token, fetchChildren]);
 
   const handleSelect = useCallback((row) => {
     setSelected(row);
@@ -59,17 +81,33 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     if (!editing) return;
     const isNew = !editing.id;
     const url = isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
-    const method = isNew ? 'POST' : 'PUT';
+    // Use PATCH for existing records (partial update), POST for new
+    const method = isNew ? 'POST' : 'PATCH';
+    // For PATCH, only send changed fields
+    let payload;
+    if (!isNew && selected) {
+      const changes = {};
+      for (const [key, value] of Object.entries(editing)) {
+        if (key === 'id') continue;
+        if (value !== selected[key]) changes[key] = value;
+      }
+      payload = changes;
+    } else {
+      payload = editing;
+    }
+    // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
+    const body = JSON.stringify(payload);
     try {
-      const res = await fetch(url, { method, headers, body: JSON.stringify(editing) });
+      const res = await fetch(url, { method, headers, body });
       if (res.ok) {
-        const saved = await res.json();
+        const data = await res.json();
+        const saved = data?.response?.data?.[0] ?? data;
         setSelected(saved);
         setEditing({ ...saved });
         refresh();
       }
     } catch { /* caller handles */ }
-  }, [editing, apiBaseUrl, entity, token, refresh]);
+  }, [editing, selected, apiBaseUrl, entity, token, refresh]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;
@@ -111,6 +149,6 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     items, selected, editing, children, loading,
     handleSelect, handleNew, handleChange, handleSave, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
-    refresh,
+    refresh, fetchById,
   };
 }

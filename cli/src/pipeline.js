@@ -287,7 +287,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
         console.log('  → Re-run pipeline with --skip-to=run-tests when done');
       } else {
         console.log('  → Open Decision Panel at http://localhost:3000');
-        console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract');
+        console.log('  → Save curated artifacts, then re-run pipeline with --skip-to=generate-contract --skip-interactive');
         console.log('  → For AI classification, run: /classify');
       }
       break;
@@ -330,10 +330,17 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
         }
         case 'generate-contract': {
           const { generateContract } = await import('./generate-contract.js');
-          const { readFile, writeFile } = await import('node:fs/promises');
+          const { readFile, writeFile, access, mkdir } = await import('node:fs/promises');
+          const processesPath = `artifacts/${windowName}/processes.json`;
+          try {
+            await access(processesPath);
+          } catch {
+            await mkdir(`artifacts/${windowName}`, { recursive: true });
+            await writeFile(processesPath, JSON.stringify({ processes: [] }, null, 2));
+          }
           const schema = JSON.parse(await readFile(`artifacts/${windowName}/schema-curated.json`, 'utf8'));
           const rules = JSON.parse(await readFile(`artifacts/${windowName}/rules-curated.json`, 'utf8'));
-          const processes = JSON.parse(await readFile(`artifacts/${windowName}/processes.json`, 'utf8'));
+          const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
           // Enrich curated entities with tabId/tableName from schema-raw (needed by push-to-neo)
           try {

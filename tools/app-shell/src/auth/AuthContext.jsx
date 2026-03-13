@@ -74,10 +74,11 @@ export function AuthProvider({ children, baseUrl }) {
     return jwt;
   }, [baseUrl, acquireAdminToken]);
 
-  const switchContext = useCallback(async (roleId, orgId) => {
+  const switchContext = useCallback(async (roleId, orgId, password) => {
     const user = localStorage.getItem(USERNAME_KEY);
-    const pass = passwordRef.current;
-    if (!user || !pass) return;
+    const pass = password || passwordRef.current;
+    if (!user || !pass) throw new Error('SESSION_EXPIRED');
+    if (password) passwordRef.current = password;
 
     const data = await apiLogin(baseUrl, user, pass, roleId, orgId);
     const jwt = data.token;

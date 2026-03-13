@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import {
@@ -23,6 +24,11 @@ import {
   PanelLeftOpen,
   PanelLeftClose,
   ChevronRight,
+  Shield,
+  Building2,
+  RefreshCw,
+  Check,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
@@ -52,6 +58,158 @@ export function findActiveGroup(menuGroups, pathname) {
 const COLLAPSED_W = 60;
 const EXPANDED_W = 240;
 
+function UserPopover({ onClose }) {
+  const { username, roleList, selectedRole, selectedOrg, switchContext, logout } = useAuth();
+
+  const [pendingRoleId, setPendingRoleId] = useState(selectedRole?.id || '');
+  const [pendingOrgId, setPendingOrgId] = useState(selectedOrg?.id || '');
+  const [password, setPassword] = useState('');
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const pendingRole = roleList.find(r => r.id === pendingRoleId);
+  const orgOptions = pendingRole?.orgList || [];
+
+  const hasChanges = pendingRoleId !== (selectedRole?.id || '') ||
+                     pendingOrgId !== (selectedOrg?.id || '');
+
+  const handleRoleChange = (e) => {
+    const roleId = e.target.value;
+    setPendingRoleId(roleId);
+    const role = roleList.find(r => r.id === roleId);
+    setPendingOrgId(role?.orgList?.[0]?.id || '');
+    setSuccess(false);
+    setError(null);
+  };
+
+  const handleApply = async () => {
+    if (!pendingRoleId || !pendingOrgId) return;
+    setSwitching(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      await switchContext(pendingRoleId, pendingOrgId, needsPassword ? password : undefined);
+      setSuccess(true);
+      setNeedsPassword(false);
+      setPassword('');
+    } catch (e) {
+      if (e.message === 'SESSION_EXPIRED') {
+        setNeedsPassword(true);
+        setError('Enter password to switch.');
+      } else {
+        setError(e.message || 'Failed to switch context.');
+      }
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  return createPortal(
+    <>
+    {/* Invisible backdrop — closes popover on click outside */}
+    <div className="fixed inset-0 z-[100]" onClick={onClose} />
+    <div
+      className="fixed bottom-3 left-[68px] z-[101] w-72 rounded-lg border bg-popover text-popover-foreground shadow-xl"
+    >
+      {/* Header */}
+      <div className="border-b px-4 py-3">
+        <p className="text-sm font-semibold">{username}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {selectedRole?.name || selectedRole?.id || 'No role'} &middot; {selectedOrg?.name || selectedOrg?.id || 'No org'}
+        </p>
+      </div>
+
+      {/* Context switcher */}
+      <div className="px-4 py-3 space-y-3">
+        <div>
+          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+            <Shield className="h-3 w-3" /> Role
+          </label>
+          <select
+            value={pendingRoleId}
+            onChange={handleRoleChange}
+            className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="" disabled>Select role...</option>
+            {roleList.map(r => (
+              <option key={r.id} value={r.id}>{r.name || r.id}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+            <Building2 className="h-3 w-3" /> Organization
+          </label>
+          <select
+            value={pendingOrgId}
+            onChange={(e) => { setPendingOrgId(e.target.value); setSuccess(false); setError(null); }}
+            disabled={orgOptions.length === 0}
+            className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+          >
+            <option value="" disabled>Select org...</option>
+            {orgOptions.map(o => (
+              <option key={o.id} value={o.id}>{o.name || o.id}</option>
+            ))}
+          </select>
+        </div>
+
+        {needsPassword && (
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+              <KeyRound className="h-3 w-3" /> Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+              placeholder="Your password..."
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+        )}
+
+        {hasChanges && (
+          <button
+            onClick={handleApply}
+            disabled={switching || !pendingRoleId || !pendingOrgId || (needsPassword && !password)}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {switching ? (
+              <><RefreshCw className="h-3 w-3 animate-spin" /> Switching...</>
+            ) : (
+              'Apply'
+            )}
+          </button>
+        )}
+
+        {success && (
+          <p className="flex items-center gap-1 text-xs text-green-600">
+            <Check className="h-3 w-3" /> Context updated
+          </p>
+        )}
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
+
+      {/* Logout */}
+      <div className="border-t px-4 py-2">
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Logout
+        </button>
+      </div>
+    </div>
+    </>,
+    document.body
+  );
+}
+
 export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   const { username, logout } = useAuth();
   const location = useLocation();
@@ -64,6 +222,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
     if (activeGroup) initial[activeGroup.group] = true;
     return initial;
   });
+  const [showUserPopover, setShowUserPopover] = useState(false);
 
   const toggleGroup = (group) => {
     setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
@@ -205,7 +364,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
 
         {/* Footer */}
         <div className={cn(
-          'flex flex-col border-t border-white/10 pt-3 pb-3',
+          'relative flex flex-col border-t border-white/10 pt-3 pb-3',
           expanded ? 'px-2 gap-1' : 'items-center gap-1.5'
         )}>
           {/* Artifacts */}
@@ -241,48 +400,42 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             </NavLink>
           )}
 
-          {/* User */}
-          {!expanded ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <div className="flex h-10 w-10 items-center justify-center">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
-                    <span className="text-xs font-semibold">{username?.charAt(0).toUpperCase()}</span>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">{username}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/60">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
-                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
-              </div>
-              <span className="truncate">{username}</span>
-            </div>
-          )}
-
-          {/* Logout */}
+          {/* User avatar — click to open popover */}
           {!expanded ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <button
-                  onClick={logout}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                  onClick={() => setShowUserPopover(v => !v)}
+                  className="flex h-10 w-10 items-center justify-center cursor-pointer"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <div className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded-full text-white transition-colors',
+                    showUserPopover ? 'bg-white/30 ring-2 ring-white/40' : 'bg-white/20 hover:bg-white/30'
+                  )}>
+                    <span className="text-xs font-semibold">{username?.charAt(0).toUpperCase()}</span>
+                  </div>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Logout</TooltipContent>
+              {!showUserPopover && <TooltipContent side="right">{username}</TooltipContent>}
             </Tooltip>
           ) : (
             <button
-              onClick={logout}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/60 rounded-md hover:text-white hover:bg-white/5 transition-colors"
+              onClick={() => setShowUserPopover(v => !v)}
+              className={cn(
+                'flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors cursor-pointer',
+                showUserPopover ? 'text-white bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
+              )}
             >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
+                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
+              </div>
+              <span className="truncate">{username}</span>
             </button>
+          )}
+
+          {/* User popover */}
+          {showUserPopover && (
+            <UserPopover onClose={() => setShowUserPopover(false)} />
           )}
         </div>
       </nav>

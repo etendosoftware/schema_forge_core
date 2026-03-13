@@ -1,4 +1,5 @@
 import { useLabel } from '@/i18n';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 
 /**
  * Inline summary of read-only reference fields.
@@ -16,7 +17,7 @@ export function SummaryBar({ fields = [], data }) {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
       {fields.map((field, idx) => {
         const label = t(field.column) ?? field.label ?? field.key;
-        const val = data[field.key];
+        const val = resolveIdentifier(data, field.key);
         const display = val == null
           ? '\u2014'
           : (field.type === 'amount' || field.type === 'number') && typeof val === 'number'

@@ -1,18 +1,23 @@
 import { DataTable } from '@/components/contract-ui';
 
+// @sf-generated-start columns:order
 const columns = [
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'orderDate', column: 'DateOrdered', type: 'date' },
-  { key: 'poReference', column: 'POReference', type: 'string' },
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'docStatus', column: 'DocStatus', type: 'status' },
-  { key: 'grandTotal', column: 'GrandTotal', type: 'amount' },
-  { key: 'totalLines', column: 'TotalLines', type: 'amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
+  { key: 'priceList', column: 'M_PriceList_ID', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
 ];
+// @sf-generated-end columns:order
 
-const filters = ['businessPartner', 'orderDate', 'poReference', 'documentNo', 'docStatus'];
+const filters = ['documentStatus', 'orderDate', 'businessPartner', 'orderReference'];
 
+// @sf-generated-start component:OrderTable
 export default function OrderTable(props) {
+  // @sf-custom-slot hooks:OrderTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
+// @sf-generated-end component:OrderTable
+
+// @sf-custom-slot section:OrderTable-custom

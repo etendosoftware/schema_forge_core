@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 
 /**
  * Map a status string to a Badge variant and optional className override.
@@ -199,14 +200,18 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (!searchQuery) return data;
     const q = searchQuery.toLowerCase();
     return data.filter(row =>
-      filters.some(key => String(row[key] ?? '').toLowerCase().includes(q))
+      filters.some(key => {
+        const val = resolveIdentifier(row, key);
+        return String(val ?? '').toLowerCase().includes(q);
+      })
     );
   }, [data, filters, searchQuery]);
 
   const renderCellValue = (row, col) => {
+    const display = resolveIdentifier(row, col.key);
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
-      return <span className="font-medium text-primary">{row[col.key]}</span>;
+      return <span className="font-medium text-primary">{display}</span>;
     }
     if (col.type === 'status') {
       const badgeProps = getStatusBadgeProps(row[col.key]);
@@ -221,7 +226,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (col.type === 'amount') {
       return <span className="tabular-nums">{row[col.key]?.toLocaleString()}</span>;
     }
-    return row[col.key];
+    return display;
   };
 
   if (loading) {

@@ -62,7 +62,7 @@ export default function WindowLoader({ windowMap, apiBaseUrl }) {
   return (
     <Component
       token={token}
-      apiBaseUrl={apiBaseUrl}
+      apiBaseUrl={`${apiBaseUrl}/${windowName}`}
       window={windowMap[windowName]}
       windowName={windowName}
       recordId={recordId}

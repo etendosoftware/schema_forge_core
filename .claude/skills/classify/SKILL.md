@@ -238,6 +238,7 @@ Build the curated schema with this structure:
     {
       "name": "{simplified entity name — e.g., 'order' not 'cOrder'}",
       "tableName": "{from schema-raw}",
+      "tabName": "{from schema-raw — AD tab display name, e.g. 'Header', 'Lines'. REQUIRED}",
       "fields": [
         {
           "name": "{camelCase field name}",
