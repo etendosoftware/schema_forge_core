@@ -28,9 +28,12 @@ install: ## Install all workspace dependencies
 
 # --- Deploy ---
 
-# Etendo root defaults to parent directory (same convention as gradle.properties lookup).
-# Override with: make deploy ETENDO_ROOT=/path/to/etendo
-ETENDO_ROOT := ..
+# Load local config from .env (not committed)
+-include .env
+export
+
+# Etendo root: set in .env, override with make deploy ETENDO_ROOT=/path, or fallback to ..
+ETENDO_ROOT ?= ..
 MODULE_WEB := $(ETENDO_ROOT)/modules/com.etendoerp.go/web/com.etendoerp.go
 
 deploy: build ## Build app-shell and deploy to Etendo module web dir

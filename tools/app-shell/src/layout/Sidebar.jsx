@@ -233,29 +233,31 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   return (
     <TooltipProvider>
       <nav
-        className="fixed inset-y-0 left-0 z-50 flex flex-col bg-[hsl(222,47%,11%)] transition-[width] duration-200 ease-in-out overflow-hidden"
+        className="fixed inset-y-0 left-0 z-50 flex flex-col bg-background transition-[width] duration-200 ease-in-out overflow-hidden border-l-[3px] border-l-blue-500"
         style={{ width }}
       >
         {/* Header: logo + toggle */}
         <div className={cn(
-          'flex shrink-0 items-center py-3 border-b border-white/10',
+          'flex shrink-0 items-center h-14',
           expanded ? 'px-4 gap-3' : 'justify-center'
         )}>
           <img
-            src="./favicon.png"
+            src="/favicon.png"
             alt="Etendo"
             className="h-9 w-9 shrink-0 rounded-lg"
           />
           {expanded && (
-            <div className="flex flex-col leading-none min-w-0">
-              <span className="text-sm font-semibold text-white truncate">Schema Forge</span>
-              <span className="text-[10px] text-white/50">ERP Generator</span>
+            <div className="flex flex-col leading-none min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-foreground truncate">Your company</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground rotate-90" />
+              </div>
             </div>
           )}
           <button
             onClick={onToggle}
             className={cn(
-              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white transition-colors',
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors',
               expanded ? 'ml-auto' : 'hidden'
             )}
           >
@@ -270,7 +272,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={onToggle}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <PanelLeftOpen className="h-4 w-4" />
                 </button>
@@ -282,7 +284,10 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
 
         {/* Menu groups */}
         <div className="flex-1 overflow-auto py-2">
-          {menuGroups.map((g) => {
+          {menuGroups.map((g, gIdx) => {
+            // Show section label if this group starts a new section
+            const prevSection = gIdx > 0 ? menuGroups[gIdx - 1].section : null;
+            const showSectionLabel = expanded && g.section && g.section !== prevSection;
             const Icon = ICON_MAP[g.icon] || Package;
             const isGroupActive = activeGroup?.group === g.group;
             const color = getSectionColor(tMenu(g.group));
@@ -292,20 +297,17 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
               // Collapsed: icon only
               return (
                 <div key={g.group} className="flex justify-center py-0.5">
+
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <NavLink
                         to={`/${g.items[0].name}`}
                         className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                          'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
                           isGroupActive
-                            ? 'text-white'
-                            : 'text-white/60 hover:bg-white/10 hover:text-white'
+                            ? 'bg-foreground text-white shadow-sm'
+                            : 'text-muted-foreground hover:bg-white hover:text-foreground'
                         )}
-                        style={isGroupActive ? {
-                          borderLeft: `3px solid ${color.accent}`,
-                          backgroundColor: color.accent + '25',
-                        } : undefined}
                       >
                         <Icon className="h-5 w-5" />
                       </NavLink>
@@ -319,13 +321,18 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             // Expanded: group with collapsible items
             return (
               <div key={g.group}>
+                {showSectionLabel && (
+                  <div className="px-4 pt-4 pb-1">
+                    <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">{g.section}</span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleGroup(g.group)}
                   className={cn(
                     'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors',
                     isGroupActive
-                      ? 'text-white'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
                   style={isGroupActive ? { borderLeft: `3px solid ${color.accent}` } : undefined}
                 >
@@ -337,7 +344,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                   )} />
                 </button>
                 {isOpen && (
-                  <div className="ml-7 border-l border-white/10 pl-2 py-0.5">
+                  <div className="ml-7 border-l border-border/50 pl-2 py-0.5">
                     {g.items.map((item) => {
                       const isItemActive = item.name === currentPath;
                       return (
@@ -345,10 +352,10 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                           key={item.name}
                           to={`/${item.name}`}
                           className={cn(
-                            'block px-3 py-1.5 text-xs rounded-md transition-colors',
+                            'block px-3 py-1.5 text-sm rounded-md transition-colors',
                             isItemActive
-                              ? 'text-white bg-white/10 font-medium'
-                              : 'text-white/50 hover:text-white hover:bg-white/5'
+                              ? 'text-foreground font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           )}
                         >
                           {tMenu(item.label)}
@@ -364,7 +371,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
 
         {/* Footer */}
         <div className={cn(
-          'relative flex flex-col border-t border-white/10 pt-3 pb-3',
+          'flex flex-col border-t border-border/50 pt-3 pb-3',
           expanded ? 'px-2 gap-1' : 'items-center gap-1.5'
         )}>
           {/* Artifacts */}
@@ -376,8 +383,8 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
                     location.pathname.startsWith('/artifacts')
-                      ? 'text-white bg-white/10'
-                      : 'text-white/60 hover:bg-white/10 hover:text-white'
+                      ? 'text-foreground bg-muted'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
                   <FileJson className="h-5 w-5" />
@@ -391,8 +398,8 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors',
                 location.pathname.startsWith('/artifacts')
-                  ? 'text-white bg-white/10'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                  ? 'text-foreground bg-muted'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               )}
             >
               <FileJson className="h-4 w-4" />
@@ -400,13 +407,34 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             </NavLink>
           )}
 
-          {/* User avatar — click to open popover */}
+          {/* User */}
+          {!expanded ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <div className="flex h-10 w-10 items-center justify-center">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-foreground">
+                    <span className="text-xs font-semibold">{username?.charAt(0).toUpperCase()}</span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">{username}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-foreground">
+                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
+              </div>
+              <span className="truncate">{username}</span>
+            </div>
+          )}
+
+          {/* Logout */}
           {!expanded ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setShowUserPopover(v => !v)}
-                  className="flex h-10 w-10 items-center justify-center cursor-pointer"
+                  onClick={logout}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <div className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-full text-white transition-colors',
@@ -420,11 +448,8 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             </Tooltip>
           ) : (
             <button
-              onClick={() => setShowUserPopover(v => !v)}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors cursor-pointer',
-                showUserPopover ? 'text-white bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
-              )}
+              onClick={logout}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground rounded-md hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
                 <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>

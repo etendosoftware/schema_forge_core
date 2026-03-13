@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './Sidebar.jsx';
-import TopBar from './TopBar.jsx';
-import { CopilotWidget } from '@/components/CopilotWidget.jsx';
 import { CommandPalette } from '@/components/CommandPalette.jsx';
 import { InspectorProvider } from '@/components/inspector/InspectorProvider.jsx';
 import { SchemaInspector } from '@/components/inspector/SchemaInspector.jsx';
@@ -31,21 +29,18 @@ export default function AppLayout({ menuGroups }) {
         })}
       />
       <div
-        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out"
+        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-background"
         style={{ marginLeft }}
       >
-        <TopBar menuGroups={menuGroups} />
         <div
           key={location.pathname}
-          className="relative flex-1 overflow-auto p-6 page-transition content-bg"
-          style={{ '--section-accent': sectionColor.accent }}
+          className="relative flex-1 flex flex-col overflow-hidden page-transition"
         >
-          <div className="relative z-10">
+          <div className="relative z-10 flex-1 flex flex-col min-h-0">
             <Outlet />
           </div>
         </div>
       </div>
-      <CopilotWidget />
       <CommandPalette />
       <SchemaInspector />
     </InspectorProvider>

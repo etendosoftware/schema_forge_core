@@ -2,11 +2,11 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:invoiceTax
 const fields = [
-  { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, readOnly: true, reference: 'Tax', inputMode: 'selector' },
-  { key: 'taxableAmount', column: 'TaxBaseAmt', type: 'number', required: true, readOnly: true },
-  { key: 'taxAmount', column: 'TaxAmt', type: 'number', required: true, readOnly: true },
-  { key: 'lineNo', column: 'Line', type: 'number', readOnly: true },
-  { key: 'recalculate', column: 'Recalculate', type: 'checkbox', required: true, readOnly: true },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, readOnly: true, section: 'other', reference: 'Tax', inputMode: 'selector' },
+  { key: 'taxableAmount', column: 'TaxBaseAmt', type: 'number', required: true, readOnly: true, section: 'other' },
+  { key: 'taxAmount', column: 'TaxAmt', type: 'number', required: true, readOnly: true, section: 'other' },
+  { key: 'lineNo', column: 'Line', type: 'number', readOnly: true, section: 'other' },
+  { key: 'recalculate', column: 'Recalculate', type: 'checkbox', required: true, readOnly: true, section: 'other' },
 ];
 // @sf-generated-end fields:invoiceTax
 
