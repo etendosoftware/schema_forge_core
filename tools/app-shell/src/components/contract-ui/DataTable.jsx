@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 
 /**
  * Format a number as currency with $ prefix and locale-aware separators.
@@ -16,26 +17,6 @@ function formatCurrency(value) {
   const num = Number(value);
   if (isNaN(num)) return value;
   return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-/**
- * Map a status string to a Badge variant and optional className override.
- */
-function getStatusBadgeProps(status) {
-  const s = String(status ?? '').toLowerCase();
-  if (s === 'draft' || s === 'dr') {
-    return { variant: 'secondary', children: status };
-  }
-  if (s === 'completed' || s === 'complete' || s === 'booked' || s === 'co') {
-    return { variant: 'default', className: 'bg-emerald-600 hover:bg-emerald-700 border-transparent text-white', children: status };
-  }
-  if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo') {
-    return { variant: 'destructive', children: status };
-  }
-  if (s === 'in process' || s === 'ip') {
-    return { variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-700', children: status };
-  }
-  return { variant: 'outline', children: status };
 }
 
 /**
@@ -250,7 +231,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
     if (col.type === 'status') {
       const badgeProps = getStatusBadgeProps(row[col.key]);
-      return <Badge {...badgeProps} />;
+      return <Badge {...badgeProps}>{statusLabel(row[col.key])}</Badge>;
     }
     if (col.type === 'boolean') {
       const val = row[col.key];

@@ -145,12 +145,14 @@ function DependentSelect({ field, value, onChange, catalogs, formData, resolvedL
  */
 export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section }) {
   const t = useLabel();
-  const editableFields = fields.filter(f => !f.readOnly);
-  const readOnlyFields = fields.filter(f => f.readOnly);
-  let displayFields = layout === 'horizontal' ? editableFields : fields;
-  // Filter by section if provided
+  let displayFields;
   if (section) {
-    displayFields = displayFields.filter(f => f.section === section);
+    // When filtering by section, include all fields (editable + readOnly) for that section
+    displayFields = fields.filter(f => f.section === section);
+  } else if (layout === 'horizontal') {
+    displayFields = fields.filter(f => !f.readOnly);
+  } else {
+    displayFields = fields;
   }
 
   const gridClass = layout === 'horizontal'

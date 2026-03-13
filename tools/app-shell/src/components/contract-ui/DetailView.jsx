@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -6,23 +6,9 @@ import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic }
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel } from '@/i18n';
 import { SummaryBar } from './SummaryBar.jsx';
+import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
+import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-
-function getStatusBadgeProps(status) {
-  if (!status) return { variant: 'outline' };
-  const s = String(status).toLowerCase();
-  if (s === 'draft' || s === 'dr') return { variant: 'secondary' };
-  if (s === 'completed' || s === 'complete' || s === 'booked' || s === 'co')
-    return { variant: 'default', className: 'bg-emerald-600 hover:bg-emerald-500 text-white border-transparent' };
-  if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo')
-    return { variant: 'destructive' };
-  return { variant: 'outline' };
-}
-
-function statusLabel(status) {
-  const MAP = { DR: 'Draft', CO: 'Complete', VO: 'Void', IP: 'In Process' };
-  return MAP[status] || status;
-}
 
 /**
  * Full-page detail view for a single entity record.
@@ -63,13 +49,13 @@ export function DetailView({
     if (isNew && !hook.editing) {
       hook.handleNew();
     }
-  }, [isNew]);
+  }, [isNew, hook.editing, hook.handleNew]);
 
   useEffect(() => {
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
     }
-  }, [currentItem, recordId]);
+  }, [currentItem, recordId, hook.selected, hook.handleSelect]);
 
   const data = hook.editing || currentItem || {};
   const title = isNew
@@ -122,7 +108,9 @@ export function DetailView({
               <input
                 type="text"
                 placeholder="Search clients, orders, invoices..."
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                readOnly
+                tabIndex={-1}
+                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
               />
               <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
             </div>
@@ -159,7 +147,10 @@ export function DetailView({
               Cancel
             </Button>
             {statusField && data[statusField] && (
-              <Badge {...getStatusBadgeProps(data[statusField])} className="ml-1">
+              <Badge
+                {...getStatusBadgeProps(data[statusField])}
+                className={cn('ml-1', getStatusBadgeProps(data[statusField]).className)}
+              >
                 {statusLabel(data[statusField])}
               </Badge>
             )}
