@@ -281,8 +281,10 @@ export async function upsertField(client, params) {
 // ---------------------------------------------------------------------------
 
 /**
- * Populate a spec by reading AD metadata and creating entities + fields.
- * Deletes existing entities/fields first, then recreates from AD.
+ * Populate a spec by reading AD metadata and creating/updating entities + fields.
+ * Incremental: matches existing records by AD key (tab/column/qualifier) and
+ * reuses their IDs. Only genuinely new records get new UUIDs. Stale records
+ * (present in DB but absent from AD) are deleted.
  *
  * @param {import('pg').PoolClient} client
  * @param {object} params
@@ -291,7 +293,7 @@ export async function upsertField(client, params) {
  * @param {boolean} [params.excludeSystemColumns=true]
  * @param {boolean} [params.includeAllMethods=false]
  * @param {object} [params.audit] - Override audit defaults
- * @returns {{ entityCount: number, fieldCount: number, entities: Array }}
+ * @returns {{ entityCount: number, fieldCount: number, entities: Array, changes: object }}
  */
 export async function populateSpec(client, params) {
   const {
@@ -312,22 +314,10 @@ export async function populateSpec(client, params) {
   }
   const spec = specResult.rows[0];
 
-  // Delete existing fields for this spec's entities, then delete entities
-  await client.query(
-    `DELETE FROM etgo_sf_field
-     WHERE etgo_sf_entity_id IN (
-       SELECT etgo_sf_entity_id FROM etgo_sf_entity WHERE etgo_sf_spec_id = $1
-     )`,
-    [specId],
-  );
-  await client.query(
-    'DELETE FROM etgo_sf_entity WHERE etgo_sf_spec_id = $1',
-    [specId],
-  );
-
   if (spec.spec_type === 'W') {
     return populateWindowSpec(client, { specId, windowId: spec.ad_window_id, moduleId, excludeSystemColumns, includeAllMethods, audit });
-  } else if (spec.spec_type === 'P') {
+  } else if (spec.spec_type === 'P' || spec.spec_type === 'R') {
+    // Reports use the same AD_Process_Para structure as processes
     return populateProcessSpec(client, { specId, processId: spec.ad_process_id, moduleId, audit });
   }
 
@@ -336,6 +326,7 @@ export async function populateSpec(client, params) {
 
 /**
  * Populate entities + fields for a Window-type spec from AD_Tab/AD_Column.
+ * Incremental: matches entities by ad_tab_id, fields by ad_column_id.
  */
 async function populateWindowSpec(client, { specId, windowId, moduleId, excludeSystemColumns, includeAllMethods, audit }) {
   // Get active tabs ordered by seqno
@@ -347,6 +338,18 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
     [windowId],
   );
 
+  // Load existing entities for this spec, indexed by ad_tab_id
+  const existingEntitiesResult = await client.query(
+    `SELECT etgo_sf_entity_id, ad_tab_id FROM etgo_sf_entity WHERE etgo_sf_spec_id = $1`,
+    [specId],
+  );
+  const existingEntityByTab = new Map();
+  for (const row of existingEntitiesResult.rows) {
+    if (row.ad_tab_id) {
+      existingEntityByTab.set(row.ad_tab_id, row.etgo_sf_entity_id);
+    }
+  }
+
   const methodFlags = includeAllMethods
     ? { isGet: 'Y', isGetbyid: 'Y', isPost: 'Y', isPut: 'Y', isPatch: 'Y', isDelete: 'Y' }
     : {};
@@ -354,19 +357,44 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
   let entityCount = 0;
   let fieldCount = 0;
   const entities = [];
+  const changes = {
+    entities: { created: 0, updated: 0, deleted: 0 },
+    fields: { created: 0, updated: 0, deleted: 0 },
+  };
+
+  // Track which existing entity IDs we visit (to detect stale ones)
+  const visitedEntityIds = new Set();
 
   for (const tab of tabsResult.rows) {
     const entitySeqNo = (entityCount + 1) * 10;
-    const { entityId } = await upsertEntity(client, {
+    const existingEntityId = existingEntityByTab.get(tab.ad_tab_id) || null;
+
+    const { entityId, created: entityCreated } = await upsertEntity(client, {
       specId,
       tabId: tab.ad_tab_id,
       moduleId,
       name: tab.name,
       seqNo: entitySeqNo,
+      entityId: existingEntityId,
       ...methodFlags,
       audit,
     });
     entityCount++;
+    visitedEntityIds.add(entityId);
+    if (entityCreated) changes.entities.created++;
+    else changes.entities.updated++;
+
+    // Load existing fields for this entity, indexed by ad_column_id
+    const existingFieldsResult = await client.query(
+      `SELECT etgo_sf_field_id, ad_column_id FROM etgo_sf_field WHERE etgo_sf_entity_id = $1`,
+      [entityId],
+    );
+    const existingFieldByColumn = new Map();
+    for (const row of existingFieldsResult.rows) {
+      if (row.ad_column_id) {
+        existingFieldByColumn.set(row.ad_column_id, row.etgo_sf_field_id);
+      }
+    }
 
     // Get active columns for this tab's table
     const colsResult = await client.query(
@@ -377,32 +405,73 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
       [tab.ad_table_id],
     );
 
+    const visitedFieldIds = new Set();
     let fieldSeqCounter = 0;
     for (const col of colsResult.rows) {
-      // Skip system columns if flag is set
       if (excludeSystemColumns && SYSTEM_COLUMNS.includes(col.columnname.toLowerCase())) {
         continue;
       }
 
       fieldSeqCounter++;
-      await upsertField(client, {
+      const existingFieldId = existingFieldByColumn.get(col.ad_column_id) || null;
+
+      const { fieldId, created: fieldCreated } = await upsertField(client, {
         entityId,
         columnId: col.ad_column_id,
         moduleId,
+        fieldId: existingFieldId,
         seqNo: fieldSeqCounter * 10,
         audit,
       });
       fieldCount++;
+      visitedFieldIds.add(fieldId);
+      if (fieldCreated) changes.fields.created++;
+      else changes.fields.updated++;
+    }
+
+    // Delete stale fields (exist in DB but column no longer in AD)
+    for (const [, existingFieldId] of existingFieldByColumn) {
+      if (!visitedFieldIds.has(existingFieldId)) {
+        await client.query(
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_field_id = $1',
+          [existingFieldId],
+        );
+        changes.fields.deleted++;
+      }
     }
 
     entities.push({ entityId, name: tab.name, tabId: tab.ad_tab_id });
   }
 
-  return { entityCount, fieldCount, entities };
+  // Delete stale entities (exist in DB but tab no longer in AD)
+  for (const [, existingEntityId] of existingEntityByTab) {
+    if (!visitedEntityIds.has(existingEntityId)) {
+      // Delete fields for stale entity first
+      const staleFieldsResult = await client.query(
+        'SELECT COUNT(*) as cnt FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+        [existingEntityId],
+      );
+      const staleFieldCount = parseInt(staleFieldsResult.rows[0].cnt, 10);
+      await client.query(
+        'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+        [existingEntityId],
+      );
+      changes.fields.deleted += staleFieldCount;
+
+      await client.query(
+        'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
+        [existingEntityId],
+      );
+      changes.entities.deleted++;
+    }
+  }
+
+  return { entityCount, fieldCount, entities, changes };
 }
 
 /**
  * Populate entity + fields for a Process-type spec from AD_Process_Para.
+ * Incremental: matches the single entity by spec, fields by java_qualifier.
  */
 async function populateProcessSpec(client, { specId, processId, moduleId, audit }) {
   // Get process name
@@ -412,16 +481,59 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
   );
   const processName = procResult.rows[0]?.name || 'unnamed-process';
 
-  // Create single POST-only entity
-  const { entityId } = await upsertEntity(client, {
+  const changes = {
+    entities: { created: 0, updated: 0, deleted: 0 },
+    fields: { created: 0, updated: 0, deleted: 0 },
+  };
+
+  // Check for existing entity (process specs have exactly 1)
+  const existingEntityResult = await client.query(
+    `SELECT etgo_sf_entity_id FROM etgo_sf_entity WHERE etgo_sf_spec_id = $1`,
+    [specId],
+  );
+  const existingEntityId = existingEntityResult.rows[0]?.etgo_sf_entity_id || null;
+
+  const { entityId, created: entityCreated } = await upsertEntity(client, {
     specId,
-    tabId: null, // Process specs have no tab — ad_tab_id must be NULL
+    tabId: null,
     moduleId,
     name: processName,
+    entityId: existingEntityId,
     isPost: 'Y',
     seqNo: 10,
     audit,
   });
+  if (entityCreated) changes.entities.created++;
+  else changes.entities.updated++;
+
+  // Delete any extra entities beyond the one we just upserted (shouldn't happen, but be safe)
+  if (existingEntityResult.rows.length > 1) {
+    for (const row of existingEntityResult.rows) {
+      if (row.etgo_sf_entity_id !== entityId) {
+        await client.query(
+          'DELETE FROM etgo_sf_field WHERE etgo_sf_entity_id = $1',
+          [row.etgo_sf_entity_id],
+        );
+        await client.query(
+          'DELETE FROM etgo_sf_entity WHERE etgo_sf_entity_id = $1',
+          [row.etgo_sf_entity_id],
+        );
+        changes.entities.deleted++;
+      }
+    }
+  }
+
+  // Load existing fields indexed by java_qualifier
+  const existingFieldsResult = await client.query(
+    `SELECT etgo_sf_field_id, java_qualifier FROM etgo_sf_field WHERE etgo_sf_entity_id = $1`,
+    [entityId],
+  );
+  const existingFieldByQualifier = new Map();
+  for (const row of existingFieldsResult.rows) {
+    if (row.java_qualifier) {
+      existingFieldByQualifier.set(row.java_qualifier, row.etgo_sf_field_id);
+    }
+  }
 
   // Get active process parameters
   const parasResult = await client.query(
@@ -432,23 +544,42 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
     [processId],
   );
 
+  const visitedFieldIds = new Set();
   let fieldCount = 0;
   for (const para of parasResult.rows) {
     fieldCount++;
-    await upsertField(client, {
+    const existingFieldId = existingFieldByQualifier.get(para.name) || null;
+
+    const { fieldId, created: fieldCreated } = await upsertField(client, {
       entityId,
-      columnId: null, // Process params have no AD_Column
+      columnId: null,
       moduleId,
+      fieldId: existingFieldId,
       javaQualifier: para.name,
       defaultValue: para.defaultvalue || null,
       seqNo: fieldCount * 10,
       audit,
     });
+    visitedFieldIds.add(fieldId);
+    if (fieldCreated) changes.fields.created++;
+    else changes.fields.updated++;
+  }
+
+  // Delete stale fields (exist in DB but param removed from AD)
+  for (const [, existingFieldId] of existingFieldByQualifier) {
+    if (!visitedFieldIds.has(existingFieldId)) {
+      await client.query(
+        'DELETE FROM etgo_sf_field WHERE etgo_sf_field_id = $1',
+        [existingFieldId],
+      );
+      changes.fields.deleted++;
+    }
   }
 
   return {
     entityCount: 1,
     fieldCount,
     entities: [{ entityId, name: processName, tabId: null }],
+    changes,
   };
 }
