@@ -271,13 +271,45 @@ export async function pushToNeo(windowName, options = {}) {
 
     // Build entity lookup maps from populate result
     // Primary: by tabId (exact match, safe for tabs sharing same table)
-    // Fallback: by tab name
+    // Fallback 1: by tab name (AD tab display name, e.g. "Header", "Lines")
+    // Fallback 2: by tableName (e.g. "C_Order") — bridges curated names to AD tab names
     const entityMapByTabId = {};
     const entityMapByName = {};
+    const entityMapByTableName = {};
     for (const ent of popResult.entities) {
       if (ent.tabId) entityMapByTabId[ent.tabId] = ent.entityId;
       entityMapByName[ent.name] = ent.entityId;
     }
+
+    // Query DB to map populated entities to their table names (via ad_tab -> ad_table)
+    if (popResult.entities.length > 0) {
+      const tableNameQuery = await client.query(
+        `SELECT e.etgo_sf_entity_id, t.tablename, tab.seqno
+         FROM etgo_sf_entity e
+         JOIN ad_tab tab ON tab.ad_tab_id = e.ad_tab_id
+         JOIN ad_table t ON t.ad_table_id = tab.ad_table_id
+         WHERE e.etgo_sf_spec_id = $1
+         ORDER BY tab.seqno`,
+        [specId],
+      );
+      for (const row of tableNameQuery.rows) {
+        // If multiple entities share a table, keep the first one (lowest seqno)
+        if (!entityMapByTableName[row.tablename]) {
+          entityMapByTableName[row.tablename] = row.etgo_sf_entity_id;
+        }
+      }
+    }
+
+    // Build curated entity name -> tableName map from schema
+    const curatedToTable = {};
+    if (schema.entities) {
+      for (const ent of schema.entities) {
+        if (ent.name && ent.tableName) {
+          curatedToTable[ent.name] = ent.tableName;
+        }
+      }
+    }
+
     console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
 
     // Step 3: Update field visibility from contract
@@ -287,8 +319,13 @@ export async function pushToNeo(windowName, options = {}) {
     const fieldResults = [];
 
     for (const f of allFields) {
-      // Match by tabId first (exact, handles same-table tabs), then by name
-      const entityId = (f.tabId && entityMapByTabId[f.tabId]) || entityMapByName[f.entityName];
+      // Match by tabId first (exact, handles same-table tabs),
+      // then by curated name (if AD tab name matches),
+      // then by tableName (bridges curated name -> table -> populated entity)
+      const tableForEntity = f.tableName || curatedToTable[f.entityName];
+      const entityId = (f.tabId && entityMapByTabId[f.tabId])
+        || entityMapByName[f.entityName]
+        || (tableForEntity && entityMapByTableName[tableForEntity]);
       if (!entityId) {
         console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
         errorCount++;
