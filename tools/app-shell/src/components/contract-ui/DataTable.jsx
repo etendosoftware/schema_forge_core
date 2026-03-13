@@ -1,11 +1,22 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Inbox } from 'lucide-react';
+import { Search, Inbox, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+
+/**
+ * Format a number as currency with $ prefix and locale-aware separators.
+ * e.g. 324000 → "$324.000,00"
+ */
+function formatCurrency(value) {
+  if (value == null || value === '') return '\u2014';
+  const num = Number(value);
+  if (isNaN(num)) return value;
+  return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 /**
  * Map a status string to a Badge variant and optional className override.
@@ -25,6 +36,20 @@ function getStatusBadgeProps(status) {
     return { variant: 'outline', className: 'border-amber-300 bg-amber-50 text-amber-700', children: status };
   }
   return { variant: 'outline', children: status };
+}
+
+/**
+ * Return a colored dot class based on whether a date is past, future, or today.
+ * Green = future (not yet due), Red = past (overdue), null = today or empty.
+ */
+function getDateDotColor(dateValue) {
+  if (!dateValue) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateValue);
+  d.setHours(0, 0, 0, 0);
+  if (d.getTime() === today.getTime()) return null;
+  return d > today ? 'bg-emerald-500' : 'bg-red-500';
 }
 
 /**
@@ -189,9 +214,10 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRows, setSelectedRows] = useState(new Set());
 
   const hasActiveFilter = searchQuery.length > 0;
 
@@ -203,10 +229,24 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     );
   }, [data, filters, searchQuery]);
 
+  const amountColumns = useMemo(
+    () => columns.filter(col => col.type === 'amount'),
+    [columns]
+  );
+
+  const totals = useMemo(() => {
+    if (amountColumns.length === 0) return null;
+    const sums = {};
+    for (const col of amountColumns) {
+      sums[col.key] = filteredData.reduce((sum, row) => sum + (Number(row[col.key]) || 0), 0);
+    }
+    return sums;
+  }, [filteredData, amountColumns]);
+
   const renderCellValue = (row, col) => {
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
-      return <span className="font-medium text-primary">{row[col.key]}</span>;
+      return <span className="font-medium text-blue-600">{row[col.key]}</span>;
     }
     if (col.type === 'status') {
       const badgeProps = getStatusBadgeProps(row[col.key]);
@@ -218,10 +258,27 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       if (val === false || val === 'N') return <span className="text-slate-400">No</span>;
       return <span className="text-slate-300">&mdash;</span>;
     }
-    if (col.type === 'amount') {
-      return <span className="tabular-nums">{row[col.key]?.toLocaleString()}</span>;
+    if (col.type === 'date') {
+      const dotColor = getDateDotColor(row[col.key]);
+      const formatted = row[col.key]
+        ? new Date(row[col.key]).toLocaleDateString()
+        : '\u2014';
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          {formatted}
+          {dotColor && <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />}
+        </span>
+      );
     }
-    return row[col.key];
+    if (col.type === 'amount') {
+      return <span className="tabular-nums">{formatCurrency(row[col.key])}</span>;
+    }
+    // Truncate long text values
+    const val = row[col.key];
+    if (typeof val === 'string' && val.length > 30) {
+      return <span className="block max-w-[200px] truncate" title={val}>{val}</span>;
+    }
+    return val;
   };
 
   if (loading) {
@@ -232,29 +289,56 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     );
   }
 
+  const allSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
+  const someSelected = selectedRows.size > 0 && !allSelected;
+
+  const toggleAll = (e) => {
+    e.stopPropagation();
+    if (allSelected) {
+      setSelectedRows(new Set());
+      onSelectionChange?.([]);
+    } else {
+      const allIds = new Set(filteredData.map(r => r.id));
+      setSelectedRows(allIds);
+      onSelectionChange?.(filteredData);
+    }
+  };
+
+  const toggleRow = (e, row) => {
+    e.stopPropagation();
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(row.id)) next.delete(row.id);
+      else next.add(row.id);
+      onSelectionChange?.(filteredData.filter(r => next.has(r.id)));
+      return next;
+    });
+  };
+
+  const colSpan = columns.length + (selectable ? 1 : 0);
+
   return (
-    <div className="space-y-4">
-      {/* Global search input */}
-      {filters.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 focus:ring-2 focus:ring-primary focus:outline-none transition-colors duration-200"
-            aria-label="Search records"
-          />
-        </div>
-      )}
-      <div className="rounded-lg border overflow-hidden">
+    <div className="space-y-0">
+      <div className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/50">
+            <TableRow className="border-b border-border/40">
+              {selectable && (
+                <TableHead className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                    onChange={toggleAll}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
+                </TableHead>
+              )}
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
                 return (
-                  <TableHead key={col.key} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <TableHead key={col.key} className={`text-xs font-medium text-muted-foreground/70 tracking-wide ${col.type === 'amount' ? 'text-right' : ''}`}>
                     <FieldHighlight entityName={entity} fieldName={col.key}>
                       {colLabel}
                     </FieldHighlight>
@@ -266,26 +350,43 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           <TableBody>
             {filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length || 1} className="p-0">
+                <TableCell colSpan={colSpan} className="p-0">
                   <EmptyState hasFilter={hasActiveFilter} totalCount={data.length} />
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((row, idx) => (
-                <TableRow
-                  key={row.id ?? idx}
-                  onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
-                  className={[
-                    'cursor-pointer transition-colors',
-                    row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
-                    'hover:bg-muted/50',
-                  ].filter(Boolean).join(' ')}
-                >
-                  {columns.map(col => (
-                    <TableCell key={col.key}>{renderCellValue(row, col)}</TableCell>
-                  ))}
-                </TableRow>
-              ))
+              filteredData.map((row, idx) => {
+                const isChecked = selectedRows.has(row.id);
+                return (
+                  <TableRow
+                    key={row.id ?? idx}
+                    onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
+                    className={[
+                      'cursor-pointer transition-colors h-12',
+                      isChecked ? 'bg-primary/5' : '',
+                      row.id === selectedId ? 'bg-primary/10' : '',
+                      'hover:bg-muted/50',
+                    ].filter(Boolean).join(' ')}
+                  >
+                    {selectable && (
+                      <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => toggleRow(e, row)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                      </TableCell>
+                    )}
+                    {columns.map(col => (
+                      <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                        {renderCellValue(row, col)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             )}
             {addRow?.active && (
               <InlineAddRow
@@ -297,6 +398,20 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               />
             )}
           </TableBody>
+          {totals && (
+            <TableFooter>
+              <TableRow className="font-medium">
+                {selectable && <TableCell />}
+                {columns.map((col, idx) => (
+                  <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}>
+                    {col.type === 'amount'
+                      ? formatCurrency(totals[col.key])
+                      : ''}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </div>
       {addRow?.active && (
@@ -304,7 +419,6 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           Enter to add &middot; Esc to cancel
         </p>
       )}
-      <p className="text-xs text-muted-foreground">{filteredData.length} of {data.length} records</p>
     </div>
   );
 }

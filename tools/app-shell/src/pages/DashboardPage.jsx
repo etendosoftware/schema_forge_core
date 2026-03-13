@@ -258,7 +258,7 @@ function PendingTasks() {
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-white rounded-tl-2xl min-h-full">
       {/* KPI Row */}
       <KPIHeader kpis={kpis} />
 
