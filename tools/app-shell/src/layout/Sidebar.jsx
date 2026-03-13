@@ -83,7 +83,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
           expanded ? 'px-4 gap-3' : 'justify-center'
         )}>
           <img
-            src="/favicon.png"
+            src="./favicon.png"
             alt="Etendo"
             className="h-9 w-9 shrink-0 rounded-lg"
           />
