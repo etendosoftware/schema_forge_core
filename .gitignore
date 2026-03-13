@@ -11,3 +11,4 @@ artifacts/test-report.html
 .worktrees/
 window-locks.json
 tools/app-shell/dist/
+tools/app-shell/.env.local
