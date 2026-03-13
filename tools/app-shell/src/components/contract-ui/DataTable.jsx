@@ -28,6 +28,20 @@ function getStatusBadgeProps(status) {
 }
 
 /**
+ * Return a colored dot class based on whether a date is past, future, or today.
+ * Green = future (not yet due), Red = past (overdue), null = today or empty.
+ */
+function getDateDotColor(dateValue) {
+  if (!dateValue) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateValue);
+  d.setHours(0, 0, 0, 0);
+  if (d.getTime() === today.getTime()) return null;
+  return d > today ? 'bg-emerald-500' : 'bg-red-500';
+}
+
+/**
  * Loading skeleton that mimics a table layout.
  */
 function TableSkeleton({ columns }) {
@@ -217,6 +231,18 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       if (val === true || val === 'Y') return <span className="text-emerald-600">Yes</span>;
       if (val === false || val === 'N') return <span className="text-slate-400">No</span>;
       return <span className="text-slate-300">&mdash;</span>;
+    }
+    if (col.type === 'date') {
+      const dotColor = getDateDotColor(row[col.key]);
+      const formatted = row[col.key]
+        ? new Date(row[col.key]).toLocaleDateString()
+        : '\u2014';
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          {formatted}
+          {dotColor && <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />}
+        </span>
+      );
     }
     if (col.type === 'amount') {
       return <span className="tabular-nums">{row[col.key]?.toLocaleString()}</span>;
