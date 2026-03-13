@@ -294,7 +294,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
                 return (
-                  <TableHead key={col.key} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <TableHead key={col.key} className={`text-xs font-medium text-muted-foreground/70 tracking-wide ${col.type === 'amount' ? 'text-right' : ''}`}>
                     <FieldHighlight entityName={entity} fieldName={col.key}>
                       {colLabel}
                     </FieldHighlight>
@@ -316,13 +316,15 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                   key={row.id ?? idx}
                   onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
                   className={[
-                    'cursor-pointer transition-colors',
+                    'cursor-pointer transition-colors h-12',
                     row.id === selectedId ? 'bg-primary/10 border-l-2 border-l-primary' : '',
                     'hover:bg-muted/50',
                   ].filter(Boolean).join(' ')}
                 >
                   {columns.map(col => (
-                    <TableCell key={col.key}>{renderCellValue(row, col)}</TableCell>
+                    <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                      {renderCellValue(row, col)}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
