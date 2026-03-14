@@ -382,6 +382,10 @@ When `generate-frontend.js` regenerates React components, custom code (callout t
 - `cli/src/generate-frontend.js` -- emits `GENERATED_START/END` blocks and `CUSTOM_SLOT` placeholders
 - `cli/src/pipeline.js` -- integrates preservation into the regeneration step
 
+## Generated Files Policy
+
+**NEVER manually edit generated output files** (e.g., files in `artifacts/*/generated/`). All fixes must be made at the **pipeline level** — generators (`cli/src/generate-*.js`), extractors (`cli/src/extract-*.js`), or shared components (`tools/app-shell/src/`) — so they apply to ALL windows, not just the current one. Generated files are outputs, not sources.
+
 ## Testing
 
 - **Contract tests (Node.js):** Run against JSON contract in Schema Forge. No backend needed. Cover field presence, types, visibility, searchable filters.
