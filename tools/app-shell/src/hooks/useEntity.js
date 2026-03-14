@@ -68,10 +68,21 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     fetchChildren(row?.id);
   }, [fetchChildren]);
 
-  const handleNew = useCallback(() => {
+  const handleNew = useCallback(async () => {
     setSelected(null);
-    setEditing({});
-  }, []);
+    setEditing({}); // Start with empty so UI is responsive
+    try {
+      const res = await fetch(`${apiBaseUrl}/${entity}/defaults`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.defaults) {
+          setEditing(prev => ({ ...prev, ...data.defaults }));
+        }
+      }
+    } catch {
+      // Defaults are best-effort; proceed with empty form if endpoint fails
+    }
+  }, [apiBaseUrl, entity, token]);
 
   const handleChange = useCallback((field, value) => {
     setEditing(prev => ({ ...prev, [field]: value }));
