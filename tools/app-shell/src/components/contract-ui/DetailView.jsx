@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
+import { useCatalogs } from '@/hooks/useCatalogs';
 import { useMenuLabel } from '@/i18n';
 import { SummaryBar } from './SummaryBar.jsx';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
@@ -40,6 +42,7 @@ export function DetailView({
   const tMenu = useMenuLabel();
   const [addingLine, setAddingLine] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [directFetched, setDirectFetched] = useState(false);
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
