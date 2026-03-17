@@ -4,9 +4,6 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'product', column: 'M_Product_ID', type: 'string' },
   { key: 'movementQty', column: 'MovementQty', type: 'number' },
-  { key: 'locator', column: 'M_Locator_ID', type: 'string' },
-  { key: 'lineNo', column: 'Line', type: 'number' },
-  { key: 'uom', column: 'C_UOM_ID', type: 'string' },
 ];
 // @sf-generated-end columns:goodsReceiptLine
 

@@ -1,0 +1,31 @@
+[
+  {
+    "from": "0.1.0",
+    "to": "0.2.0",
+    "level": "breaking",
+    "reasons": [
+      "Field \"partnerAddress\" removed from entity \"goodsReceipt\" in frontend",
+      "Field \"dateAcct\" removed from entity \"goodsReceipt\" in frontend",
+      "Field \"warehouse\" removed from entity \"goodsReceipt\" in frontend",
+      "Field \"description\" removed from entity \"goodsReceipt\" in frontend",
+      "Field \"poReference\" removed from entity \"goodsReceipt\" in frontend",
+      "Field \"isActive\" removed from entity \"goodsReceipt\" in frontend",
+      "Field \"locator\" removed from entity \"goodsReceiptLine\" in frontend",
+      "Field \"lineNo\" removed from entity \"goodsReceiptLine\" in frontend",
+      "Field \"description\" removed from entity \"goodsReceiptLine\" in frontend",
+      "Field \"uom\" removed from entity \"goodsReceiptLine\" in frontend",
+      "Field \"description\" removed from entity \"goodsReceipt\" in backend",
+      "Field \"poReference\" removed from entity \"goodsReceipt\" in backend",
+      "Field \"isActive\" removed from entity \"goodsReceipt\" in backend",
+      "Field \"partnerAddress\" property \"visibility\" changed from \"editable\" to \"system\" in backend (patch)",
+      "Field \"dateAcct\" property \"visibility\" changed from \"editable\" to \"system\" in backend (patch)",
+      "Field \"warehouse\" property \"visibility\" changed from \"editable\" to \"system\" in backend (patch)",
+      "Field \"description\" removed from entity \"goodsReceiptLine\" in backend",
+      "Field \"locator\" property \"visibility\" changed from \"editable\" to \"system\" in backend (patch)",
+      "Field \"lineNo\" property \"visibility\" changed from \"editable\" to \"system\" in backend (patch)",
+      "Field \"uom\" property \"visibility\" changed from \"readOnly\" to \"system\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-03-17"
+  }
+]

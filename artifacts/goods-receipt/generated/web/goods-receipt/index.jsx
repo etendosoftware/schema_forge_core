@@ -18,8 +18,6 @@ const api = {
       "supportedFilters": [
         "businessPartner",
         "movementDate",
-        "warehouse",
-        "poReference",
         "documentNo",
         "docStatus"
       ]
@@ -47,39 +45,11 @@ const api = {
       "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/businessPartner"
     },
     {
-      "entity": "goodsReceipt",
-      "field": "partnerAddress",
-      "column": "C_BPartner_Location_ID",
-      "reference": "BusinessPartnerLocation",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress"
-    },
-    {
-      "entity": "goodsReceipt",
-      "field": "warehouse",
-      "column": "M_Warehouse_ID",
-      "reference": "Warehouse",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/warehouse"
-    },
-    {
       "entity": "goodsReceiptLine",
       "field": "product",
       "column": "M_Product_ID",
       "reference": "Product",
       "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/product"
-    },
-    {
-      "entity": "goodsReceiptLine",
-      "field": "locator",
-      "column": "M_Locator_ID",
-      "reference": "Locator",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/locator"
-    },
-    {
-      "entity": "goodsReceiptLine",
-      "field": "uom",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/uom"
     }
   ],
   "actions": [],

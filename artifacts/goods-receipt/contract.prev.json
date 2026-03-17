@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-06T17:45:58.497Z",
-  "checksum": "e01f24446f7fccc7",
+  "generatedAt": "2026-03-17T18:41:30.913Z",
+  "checksum": "6610df65204c9356",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -11,6 +11,9 @@
     },
     "entities": {
       "goodsReceipt": {
+        "tableName": "M_InOut",
+        "tabId": "296",
+        "tabName": "Header",
         "fields": [
           {
             "name": "businessPartner",
@@ -134,6 +137,9 @@
         "computedFields": []
       },
       "goodsReceiptLine": {
+        "tableName": "M_InOutLine",
+        "tabId": "297",
+        "tabName": "Lines",
         "fields": [
           {
             "name": "product",
@@ -218,6 +224,9 @@
     },
     "entities": {
       "goodsReceipt": {
+        "tableName": "M_InOut",
+        "tabId": "296",
+        "tabName": "Header",
         "fields": [
           {
             "name": "businessPartner",
@@ -348,6 +357,9 @@
         ]
       },
       "goodsReceiptLine": {
+        "tableName": "M_InOutLine",
+        "tabId": "297",
+        "tabName": "Lines",
         "fields": [
           {
             "name": "product",
@@ -508,6 +520,101 @@
       }
     ],
     "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "goods-receipt",
+    "baseUrl": "/sws/neo/goods-receipt",
+    "crud": {
+      "goodsReceipt": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/goods-receipt/goodsReceipt",
+        "detailUrl": "/sws/neo/goods-receipt/goodsReceipt/{id}",
+        "supportedFilters": [
+          "businessPartner",
+          "movementDate",
+          "warehouse",
+          "poReference",
+          "documentNo",
+          "docStatus"
+        ]
+      },
+      "goodsReceiptLine": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/goods-receipt/goodsReceiptLine",
+        "detailUrl": "/sws/neo/goods-receipt/goodsReceiptLine/{id}",
+        "supportedFilters": [
+          "product"
+        ]
+      }
+    },
+    "selectors": [
+      {
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BusinessPartner",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/businessPartner"
+      },
+      {
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "column": "C_BPartner_Location_ID",
+        "reference": "BusinessPartnerLocation",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress"
+      },
+      {
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "column": "M_Warehouse_ID",
+        "reference": "Warehouse",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/warehouse"
+      },
+      {
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/product"
+      },
+      {
+        "entity": "goodsReceiptLine",
+        "field": "locator",
+        "column": "M_Locator_ID",
+        "reference": "Locator",
+        "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/locator"
+      },
+      {
+        "entity": "goodsReceiptLine",
+        "field": "uom",
+        "column": "C_UOM_ID",
+        "reference": "UOM",
+        "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/uom"
+      }
+    ],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=goods-receiptDate"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    }
   },
   "testManifest": {
     "tests": [
@@ -948,19 +1055,83 @@
         "field": "warehouse",
         "runner": "node",
         "description": "System field 'warehouse' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-56",
+        "category": "crud-flags",
+        "entity": "goodsReceipt",
+        "runner": "node",
+        "description": "CRUD flags for 'goodsReceipt' should all be booleans"
+      },
+      {
+        "id": "t-57",
+        "category": "crud-flags",
+        "entity": "goodsReceiptLine",
+        "runner": "node",
+        "description": "CRUD flags for 'goodsReceiptLine' should all be booleans"
+      },
+      {
+        "id": "t-58",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-59",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-60",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'warehouse' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-61",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-62",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "locator",
+        "runner": "node",
+        "description": "Selector endpoint for 'locator' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-63",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "Selector endpoint for 'uom' in goodsReceiptLine should exist"
       }
     ],
     "summary": {
-      "total": 55,
+      "total": 63,
       "byCategory": {
         "field-presence": 16,
         "field-type": 16,
         "searchable-filters": 7,
         "visibility": 2,
-        "system-field": 14
+        "system-field": 14,
+        "crud-flags": 2,
+        "selector-endpoint": 6
       },
       "byRunner": {
-        "node": 55,
+        "node": 63,
         "junit": 0
       }
     }
