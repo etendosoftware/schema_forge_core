@@ -4,7 +4,6 @@ import { login as apiLogin } from './api.js';
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = 'sf_auth_token';
-const ADMIN_TOKEN_KEY = 'sf_admin_token';
 const USERNAME_KEY = 'sf_auth_user';
 const ROLELIST_KEY = 'sf_auth_rolelist';
 const SELECTED_ROLE_KEY = 'sf_auth_selected_role';
@@ -19,25 +18,11 @@ function safeJsonParse(key) {
 
 export function AuthProvider({ children, baseUrl }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
-  const [adminToken, setAdminToken] = useState(() => localStorage.getItem(ADMIN_TOKEN_KEY));
   const [username, setUsername] = useState(() => localStorage.getItem(USERNAME_KEY));
   const [roleList, setRoleList] = useState(() => safeJsonParse(ROLELIST_KEY) || []);
   const [selectedRole, setSelectedRole] = useState(() => safeJsonParse(SELECTED_ROLE_KEY));
   const [selectedOrg, setSelectedOrg] = useState(() => safeJsonParse(SELECTED_ORG_KEY));
   const passwordRef = useRef(null);
-
-  const acquireAdminToken = useCallback(async (base, user, pass) => {
-    try {
-      const data = await apiLogin(base, user, pass, '0', '0');
-      const jwt = data.token;
-      setAdminToken(jwt);
-      localStorage.setItem(ADMIN_TOKEN_KEY, jwt);
-      return jwt;
-    } catch (e) {
-      console.warn('Could not acquire admin token:', e.message);
-      return null;
-    }
-  }, []);
 
   const login = useCallback(async (user, password, roleId, orgId) => {
     const data = await apiLogin(baseUrl, user, password, roleId, orgId);
@@ -68,16 +53,14 @@ export function AuthProvider({ children, baseUrl }) {
       }
     }
 
-    // Acquire a separate admin token (role=0, org=0) for Explorer management
-    acquireAdminToken(baseUrl, user, password);
-
     return jwt;
-  }, [baseUrl, acquireAdminToken]);
+  }, [baseUrl]);
 
-  const switchContext = useCallback(async (roleId, orgId) => {
+  const switchContext = useCallback(async (roleId, orgId, password) => {
     const user = localStorage.getItem(USERNAME_KEY);
-    const pass = passwordRef.current;
-    if (!user || !pass) return;
+    const pass = password || passwordRef.current;
+    if (!user || !pass) throw new Error('SESSION_EXPIRED');
+    if (password) passwordRef.current = password;
 
     const data = await apiLogin(baseUrl, user, pass, roleId, orgId);
     const jwt = data.token;
@@ -101,14 +84,12 @@ export function AuthProvider({ children, baseUrl }) {
 
   const logout = useCallback(() => {
     setToken(null);
-    setAdminToken(null);
     setUsername(null);
     setRoleList([]);
     setSelectedRole(null);
     setSelectedOrg(null);
     passwordRef.current = null;
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
     localStorage.removeItem(USERNAME_KEY);
     localStorage.removeItem(ROLELIST_KEY);
     localStorage.removeItem(SELECTED_ROLE_KEY);
@@ -117,7 +98,6 @@ export function AuthProvider({ children, baseUrl }) {
 
   const value = useMemo(() => ({
     token,
-    adminToken,
     username,
     isAuthenticated: !!token,
     roleList,
@@ -126,7 +106,7 @@ export function AuthProvider({ children, baseUrl }) {
     login,
     logout,
     switchContext,
-  }), [token, adminToken, username, roleList, selectedRole, selectedOrg, login, logout, switchContext]);
+  }), [token, username, roleList, selectedRole, selectedOrg, login, logout, switchContext]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

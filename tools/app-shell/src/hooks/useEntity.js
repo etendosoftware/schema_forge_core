@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 
 function buildHeaders(token) {
   return {
@@ -7,38 +8,126 @@ function buildHeaders(token) {
   };
 }
 
+/**
+ * Extract a human-readable error message from a NEO Headless error response.
+ */
+async function extractErrorMessage(res) {
+  try {
+    const data = await res.json();
+    // Etendo JsonDataService wraps errors in response.error
+    const err = data?.response?.error;
+    if (err?.message) return err.message;
+    if (typeof err === 'string') return err;
+    if (data?.message) return data.message;
+  } catch { /* body not JSON */ }
+  return `Error ${res.status}`;
+}
+
+const BATCH_SIZE = 75;
+
+/**
+ * Resolve the backend sort key for a given column.
+ * FK columns have a companion `col$_identifier` in the response — sorting by that
+ * produces alphabetical order instead of sorting by the raw UUID.
+ */
+function resolveSortKey(sortColumn, sampleRow) {
+  if (!sampleRow) return sortColumn;
+  const identifierKey = `${sortColumn}$_identifier`;
+  if (identifierKey in sampleRow) return identifierKey;
+  return sortColumn;
+}
+
 export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [saveError, setSaveError] = useState(null);
+  const [sortColumn, setSortColumn] = useState('creationDate');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const startRowRef = useRef(0);
+  const sampleRowRef = useRef(null);
 
   const headers = buildHeaders(token);
 
   const refresh = useCallback(() => {
+    startRowRef.current = 0;
+    setHasMore(true);
     setLoading(true);
-    fetch(`${apiBaseUrl}/${entity}`, { headers })
+    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
-      .then(data => { setItems(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => { setItems([]); setLoading(false); });
-  }, [apiBaseUrl, entity, token]);
+      .then(data => {
+        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        if (rows.length > 0) sampleRowRef.current = rows[0];
+        setItems(rows);
+        startRowRef.current = rows.length;
+        if (rows.length < BATCH_SIZE) setHasMore(false);
+        setLoading(false);
+      })
+      .catch(() => { setItems([]); setHasMore(false); setLoading(false); });
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore || loading) return;
+    setLoadingMore(true);
+    const start = startRowRef.current;
+    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        setItems(prev => [...prev, ...rows]);
+        startRowRef.current = start + rows.length;
+        if (rows.length < BATCH_SIZE) setHasMore(false);
+        setLoadingMore(false);
+      })
+      .catch(() => { setLoadingMore(false); setHasMore(false); });
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
   const fetchChildren = useCallback((parentId) => {
     if (!childEntity || !parentId) { setChildren([]); return; }
-    fetch(`${apiBaseUrl}/${entity}/${parentId}/${childEntity}`, { headers })
+    // NEO Headless uses ?parentId= to filter child entity records
+    fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
-      .then(data => setChildren(Array.isArray(data) ? data : []))
+      .then(data => {
+        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        setChildren(rows);
+      })
       .catch(() => setChildren([]));
-  }, [apiBaseUrl, entity, childEntity, token]);
+  }, [apiBaseUrl, childEntity, token]);
+
+  const fetchById = useCallback((id) => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`${apiBaseUrl}/${entity}/${id}`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const row = data?.response?.data?.[0] ?? data;
+        setSelected(row);
+        setEditing({ ...row });
+        fetchChildren(row?.id);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [apiBaseUrl, entity, token, fetchChildren]);
 
   const handleSelect = useCallback((row) => {
     setSelected(row);
@@ -46,10 +135,29 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     fetchChildren(row?.id);
   }, [fetchChildren]);
 
-  const handleNew = useCallback(() => {
+  const handleNew = useCallback(async () => {
     setSelected(null);
-    setEditing({});
-  }, []);
+    setEditing({}); // Start with empty so UI is responsive
+    try {
+      const res = await fetch(`${apiBaseUrl}/${entity}/defaults`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.defaults) {
+          // Normalize date values from Etendo format (dd-MM-yyyy) to HTML date input (yyyy-MM-dd)
+          const normalized = { ...data.defaults };
+          for (const [key, val] of Object.entries(normalized)) {
+            if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
+              const [dd, mm, yyyy] = val.split('-');
+              normalized[key] = `${yyyy}-${mm}-${dd}`;
+            }
+          }
+          setEditing(prev => ({ ...prev, ...normalized }));
+        }
+      }
+    } catch {
+      // Defaults are best-effort; proceed with empty form if endpoint fails
+    }
+  }, [apiBaseUrl, entity, token]);
 
   const handleChange = useCallback((field, value) => {
     setEditing(prev => ({ ...prev, [field]: value }));
@@ -57,35 +165,107 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
 
   const handleSave = useCallback(async () => {
     if (!editing) return;
+    setSaveError(null);
     const isNew = !editing.id;
     const url = isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
-    const method = isNew ? 'POST' : 'PUT';
+    // Use PATCH for existing records (partial update), POST for new
+    const method = isNew ? 'POST' : 'PATCH';
+    // For PATCH, only send changed fields
+    let payload;
+    if (!isNew && selected) {
+      const changes = {};
+      for (const [key, value] of Object.entries(editing)) {
+        if (key === 'id') continue;
+        if (value !== selected[key]) changes[key] = value;
+      }
+      payload = changes;
+    } else {
+      payload = editing;
+    }
+    // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
+    const body = JSON.stringify(payload);
     try {
-      const res = await fetch(url, { method, headers, body: JSON.stringify(editing) });
+      const res = await fetch(url, { method, headers, body });
       if (res.ok) {
-        const saved = await res.json();
+        const data = await res.json();
+        const saved = data?.response?.data?.[0] ?? data;
         setSelected(saved);
         setEditing({ ...saved });
+        setSaveError(null);
+        toast.success(isNew ? 'Record created' : 'Record saved');
         refresh();
+        return saved;
+      } else {
+        const msg = await extractErrorMessage(res);
+        setSaveError(msg);
+        toast.error(msg);
+        return null;
       }
-    } catch { /* caller handles */ }
-  }, [editing, apiBaseUrl, entity, token, refresh]);
+    } catch (err) {
+      const msg = err?.message || 'Network error';
+      setSaveError(msg);
+      toast.error(msg);
+      return null;
+    }
+  }, [editing, selected, apiBaseUrl, entity, token, refresh]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;
     try {
-      await fetch(`${apiBaseUrl}/${entity}/${selected.id}`, { method: 'DELETE', headers });
-      setSelected(null);
-      setEditing(null);
-      setChildren([]);
-      refresh();
-    } catch { /* caller handles */ }
+      const res = await fetch(`${apiBaseUrl}/${entity}/${selected.id}`, { method: 'DELETE', headers });
+      if (res.ok) {
+        setSelected(null);
+        setEditing(null);
+        setChildren([]);
+        toast.success('Record deleted');
+        refresh();
+      } else {
+        const msg = await extractErrorMessage(res);
+        toast.error(msg);
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Network error');
+    }
   }, [selected, apiBaseUrl, entity, token, refresh]);
 
-  const handleAddChild = useCallback((childData) => {
-    const newChild = { id: `new-${Date.now()}`, ...childData };
-    setChildren(prev => [...prev, newChild]);
-  }, []);
+  const handleAddChild = useCallback(async (childData) => {
+    if (!childEntity || !apiBaseUrl || !token || !selected?.id) return;
+    try {
+      const body = {};
+      // Only include fields that are valid for the entity (from addLineFields entry + derived keys)
+      // and convert numeric strings to numbers for BigDecimal compatibility
+      for (const [key, val] of Object.entries(childData)) {
+        // Skip internal/companion keys
+        if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
+        // Skip callout internal fields
+        if (key === 'CURSOR_FIELD' || key.startsWith('has')) continue;
+        // Skip empty values — let backend defaults handle them
+        if (val === '' || val == null) continue;
+        // Convert numeric strings to numbers
+        if (typeof val === 'string' && val.match(/^-?\d+(\.\d+)?$/)) {
+          body[key] = Number(val);
+        } else {
+          body[key] = val;
+        }
+      }
+      // Include parentId in the body — the backend resolves it to the correct FK field name
+      body.parentId = selected.id;
+      const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error('Failed to save line:', text);
+        return;
+      }
+      // Refresh children from backend
+      fetchChildren(selected.id);
+    } catch (err) {
+      console.error('Error adding child:', err);
+    }
+  }, [childEntity, apiBaseUrl, token, selected, headers, fetchChildren]);
 
   const handleUpdateChild = useCallback((childId, field, value) => {
     setChildren(prev => prev.map(c =>
@@ -108,9 +288,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   }, [selected, apiBaseUrl, token, refresh]);
 
   return {
-    items, selected, editing, children, loading,
+    items, selected, editing, children, loading, loadingMore, hasMore, saveError,
     handleSelect, handleNew, handleChange, handleSave, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
-    refresh,
+    refresh, fetchById, loadMore,
+    sortColumn, sortDirection, setSortColumn, setSortDirection,
   };
 }

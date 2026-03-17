@@ -40,7 +40,9 @@ function detectBasePath() {
 }
 
 const { apiBase, routerBase } = detectBasePath();
-const API_BASE_URL = `${apiBase}/api`;
+const API_BASE_URL = import.meta.env.VITE_MOCK === 'true'
+  ? `${apiBase}/api`
+  : `${apiBase}/sws/neo`;
 
 async function loadAllMockData() {
   const modules = await Promise.all([
@@ -57,7 +59,6 @@ async function loadAllMockData() {
     import('@generated/user/generated/web/user/mockData.js'),
     import('@generated/purchase-order/generated/web/purchase-order/mockData.js'),
     import('@generated/goods-receipt/generated/web/goods-receipt/mockData.js'),
-    import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
     import('@generated/return-to-vendor/generated/web/return-to-vendor/mockData.js'),
     import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/mockData.js'),
     import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),

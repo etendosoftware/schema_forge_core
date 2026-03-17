@@ -27,6 +27,7 @@ import {
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
 import { useMenuLabel } from '@/i18n';
+import { UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -53,7 +54,8 @@ const COLLAPSED_W = 60;
 const EXPANDED_W = 240;
 
 export default function AppSidebar({ menuGroups, expanded, onToggle }) {
-  const { username, logout } = useAuth();
+  const { username, logout, selectedOrg } = useAuth();
+  const [showUserPopover, setShowUserPopover] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname.replace(/^\//, '');
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
@@ -64,7 +66,6 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
     if (activeGroup) initial[activeGroup.group] = true;
     return initial;
   });
-
   const toggleGroup = (group) => {
     setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
@@ -82,18 +83,34 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
           'flex shrink-0 items-center h-14',
           expanded ? 'px-4 gap-3' : 'justify-center'
         )}>
-          <img
-            src="/favicon.png"
-            alt="Etendo"
-            className="h-9 w-9 shrink-0 rounded-lg"
-          />
+          {!expanded ? (
+            <button
+              onClick={() => setShowUserPopover(v => !v)}
+              className="h-9 w-9 shrink-0 rounded-lg overflow-hidden"
+            >
+              <img
+                src="/favicon.png"
+                alt="Etendo"
+                className="h-9 w-9"
+              />
+            </button>
+          ) : (
+            <img
+              src="/favicon.png"
+              alt="Etendo"
+              className="h-9 w-9 shrink-0 rounded-lg"
+            />
+          )}
           {expanded && (
-            <div className="flex flex-col leading-none min-w-0 flex-1">
+            <button
+              onClick={() => setShowUserPopover(v => !v)}
+              className="flex flex-col leading-none min-w-0 flex-1 text-left"
+            >
               <div className="flex items-center gap-1">
-                <span className="text-sm font-semibold text-foreground truncate">Your company</span>
-                <ChevronRight className="h-3 w-3 text-muted-foreground rotate-90" />
+                <span className="text-sm font-semibold text-foreground truncate">{selectedOrg?.name || 'Your company'}</span>
+                <ChevronRight className={cn('h-3 w-3 text-muted-foreground transition-transform', showUserPopover && 'rotate-90')} />
               </div>
-            </div>
+            </button>
           )}
           <button
             onClick={onToggle}
@@ -105,6 +122,14 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             <PanelLeftClose className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Context switcher popover */}
+        {showUserPopover && (
+          <UserContextSwitcher
+            onClose={() => setShowUserPopover(false)}
+            positionClassName={expanded ? 'top-14 left-4' : 'top-14 left-[68px]'}
+          />
+        )}
 
         {/* Expand button (only when collapsed) */}
         {!expanded && (
@@ -248,28 +273,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             </NavLink>
           )}
 
-          {/* User */}
-          {!expanded ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <div className="flex h-10 w-10 items-center justify-center">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-foreground">
-                    <span className="text-xs font-semibold">{username?.charAt(0).toUpperCase()}</span>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">{username}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-foreground">
-                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
-              </div>
-              <span className="truncate">{username}</span>
-            </div>
-          )}
-
-          {/* Logout */}
+          {/* User + Logout */}
           {!expanded ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -277,19 +281,25 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                   onClick={logout}
                   className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Logout</TooltipContent>
+              <TooltipContent side="right">Logout ({username})</TooltipContent>
             </Tooltip>
           ) : (
-            <button
-              onClick={logout}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground rounded-md hover:text-foreground hover:bg-muted/50 transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-foreground">
+                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
+              </div>
+              <span className="truncate flex-1">{username}</span>
+              <button
+                onClick={logout}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Logout"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
           )}
         </div>
       </nav>

@@ -234,32 +234,62 @@ export async function upsertEntity(client, params) {
 export async function upsertField(client, params) {
   const {
     entityId,
-    columnId = null,
     moduleId,
     fieldId: existingId = null,
     isIncluded = 'Y',
     isReadOnly = 'N',
-    defaultValue = null,
-    javaQualifier = null,
-    seqNo = null,
     audit = {},
   } = params;
 
   const auditVals = auditDefaults(audit);
 
   if (existingId) {
+    // Build a partial UPDATE: only set columns that were explicitly provided.
+    // This prevents overwriting ad_column_id, seqno, etc. with null when the
+    // caller only wants to change isIncluded/isReadOnly.
+    const setClauses = [
+      'etgo_sf_entity_id = $1',
+      'ad_module_id = $2',
+      'isincluded = $3',
+      'isreadonly = $4',
+    ];
+    const values = [entityId, moduleId, isIncluded, isReadOnly];
+    let paramIndex = 5;
+
+    if ('columnId' in params) {
+      setClauses.push(`ad_column_id = $${paramIndex++}`);
+      values.push(params.columnId ?? null);
+    }
+    if ('defaultValue' in params) {
+      setClauses.push(`defaultvalue = $${paramIndex++}`);
+      values.push(params.defaultValue ?? null);
+    }
+    if ('javaQualifier' in params) {
+      setClauses.push(`java_qualifier = $${paramIndex++}`);
+      values.push(params.javaQualifier ?? null);
+    }
+    if ('seqNo' in params) {
+      setClauses.push(`seqno = $${paramIndex++}`);
+      values.push(params.seqNo ?? null);
+    }
+
+    setClauses.push(`updated = $${paramIndex++}`);
+    values.push(auditVals.updated);
+    setClauses.push(`updatedby = $${paramIndex++}`);
+    values.push(auditVals.updatedby);
+    values.push(existingId);
+
     await client.query(
-      `UPDATE etgo_sf_field
-       SET etgo_sf_entity_id = $1, ad_column_id = $2, ad_module_id = $3,
-           isincluded = $4, isreadonly = $5, defaultvalue = $6,
-           java_qualifier = $7, seqno = $8, updated = $9, updatedby = $10
-       WHERE etgo_sf_field_id = $11`,
-      [entityId, columnId, moduleId,
-       isIncluded, isReadOnly, defaultValue,
-       javaQualifier, seqNo, auditVals.updated, auditVals.updatedby, existingId],
+      `UPDATE etgo_sf_field SET ${setClauses.join(', ')} WHERE etgo_sf_field_id = $${paramIndex}`,
+      values,
     );
     return { fieldId: existingId, created: false };
   }
+
+  const columnId = params.columnId ?? null;
+  const defaultValue = params.defaultValue ?? null;
+  const javaQualifier = params.javaQualifier ?? null;
+  const seqNo = params.seqNo ?? null;
 
   const fieldId = generateId();
   await client.query(

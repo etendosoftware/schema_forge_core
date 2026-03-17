@@ -11,7 +11,7 @@ const VALID_VISIBILITY = ['editable', 'readOnly', 'system', 'discarded'];
 const VALID_TYPES = [
   'string', 'integer', 'decimal', 'boolean', 'date', 'dateTime',
   'id', 'foreignKey', 'enum', 'text', 'binary', 'image', 'button',
-  'amount', 'quantity', 'price', 'number',
+  'amount', 'quantity', 'price', 'number', 'productAttribute',
 ];
 const VALID_LEVELS = ['header', 'line', 'subline'];
 const VALID_CATEGORIES = [

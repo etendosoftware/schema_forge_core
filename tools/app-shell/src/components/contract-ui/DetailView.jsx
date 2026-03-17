@@ -1,11 +1,15 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
+import { useCatalogs } from '@/hooks/useCatalogs';
+import { useDisplayLogic } from '@/hooks/useDisplayLogic';
+import { useCallout } from '@/hooks/useCallout';
 import { useMenuLabel } from '@/i18n';
 import { SummaryBar } from './SummaryBar.jsx';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
@@ -23,7 +27,8 @@ export function DetailView({
   statusField,
   processes = [],
   addLineFields = { entry: [], derived: [] },
-  catalogs,
+  catalogs: staticCatalogs,
+  api,
   entityLabel,
   detailLabel,
   titleField = 'documentNo',
@@ -34,10 +39,17 @@ export function DetailView({
   breadcrumb,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
+  const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
+  const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
   const [addingLine, setAddingLine] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [directFetched, setDirectFetched] = useState(false);
+
+  // Track fields whose values were set by a callout response to avoid re-triggering
+  const calloutAppliedRef = useRef(new Set());
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
@@ -51,16 +63,157 @@ export function DetailView({
     }
   }, [isNew, hook.editing, hook.handleNew]);
 
+  // Resolve $_identifier for default FK values using already-loaded catalogs.
+  // If a default ID isn't in the selector options (e.g., generic preference doesn't match
+  // this window's filtered list), clear it — the callout will set the correct value later.
   useEffect(() => {
+    if (!isNew || !hook.editing || !catalogs || !api?.selectors) return;
+    for (const sel of api.selectors) {
+      const val = hook.editing[sel.field];
+      if (!val || hook.editing[sel.field + '$_identifier']) continue;
+      const options = catalogs[sel.reference];
+      if (!Array.isArray(options) || options.length === 0) continue;
+      const match = options.find(o => o.id === val);
+      if (match) {
+        hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
+      } else {
+        // Default ID not in filtered options — clear it to avoid showing a raw UUID
+        hook.handleChange(sel.field, '');
+      }
+    }
+  }, [isNew, hook.editing, catalogs, api]);
+
+  useEffect(() => {
+    if (isNew) return;
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
+      setDirectFetched(false);
+    } else if (!currentItem && !hook.loading && recordId && !directFetched) {
+      setDirectFetched(true);
+      hook.fetchById(recordId);
     }
   }, [currentItem, recordId, hook.selected, hook.handleSelect]);
+
+  // Apply callout results to the form when they arrive
+  useEffect(() => {
+    if (!calloutResult) return;
+    const { updates, combos } = calloutResult;
+    const appliedFields = new Set();
+
+    if (updates) {
+      for (const [key, entry] of Object.entries(updates)) {
+        // Skip empty callout values if the field already has a non-empty value
+        // (e.g., callout clears warehouse but defaults already set it)
+        const currentVal = data[key];
+        if ((entry.value === '' || entry.value == null) && currentVal && currentVal !== '') {
+          continue;
+        }
+        appliedFields.add(key);
+        hook.handleChange(key, entry.value);
+        if (entry._identifier) {
+          hook.handleChange(key + '$_identifier', entry._identifier);
+        }
+      }
+    }
+    if (combos) {
+      for (const [key, combo] of Object.entries(combos)) {
+        if (combo.selected != null) {
+          appliedFields.add(key);
+          hook.handleChange(key, combo.selected);
+          if (combo._identifier) {
+            hook.handleChange(key + '$_identifier', combo._identifier);
+          }
+        }
+      }
+    }
+
+    // Mark these fields so the next onChange doesn't re-trigger callout
+    calloutAppliedRef.current = appliedFields;
+  }, [calloutResult]);
+
+  // Wrapped onChange that triggers callout for user-initiated FK changes
+  const handleChangeWithCallout = useCallback((field, value) => {
+    hook.handleChange(field, value);
+
+    // Skip companion/auxiliary fields — they don't have callouts
+    if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
+
+    // If this field was just set by a callout response, don't re-trigger
+    if (calloutAppliedRef.current.has(field)) {
+      calloutAppliedRef.current.delete(field);
+      return;
+    }
+
+    // Only trigger callout for meaningful value changes (not empty/typing artifacts)
+    if (!value || value === '') return;
+
+    // Trigger callout — the backend returns empty if no callout is registered
+    executeCallout(field, value, hook.editing);
+  }, [hook.handleChange, hook.editing, executeCallout]);
+
+  // Execute callout for child entity (line-level) fields and apply results via callback.
+  // Merges parent header data into formState so callouts have full context (e.g., priceList).
+  const handleLineFieldChange = useCallback(async (field, value, rowValues, applyUpdates) => {
+    if (!field || !value || value === '' || !token || !apiBaseUrl || !detailEntity) return;
+    if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
+    try {
+      // Build formState: line row values + parent header fields for context
+      const headerData = hook.editing || hook.selected || {};
+      const formState = { ...rowValues };
+      // Include header fields that callouts typically need (priceList, businessPartner, org, etc.)
+      for (const [k, v] of Object.entries(headerData)) {
+        if (!(k in formState) && v != null && v !== '') {
+          formState[k] = v;
+        }
+      }
+      // Extract auxiliary values (e.g., product_PSTD, product_UOM from selector _aux)
+      const auxiliaryValues = {};
+      for (const [k, v] of Object.entries(formState)) {
+        if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(k) && v != null && v !== '') {
+          auxiliaryValues[k] = String(v);
+        }
+      }
+      const payload = {
+        field,
+        value,
+        formState,
+        ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+      };
+      const res = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return;
+      const calloutData = await res.json();
+      const result = {};
+      if (calloutData.updates) {
+        for (const [k, entry] of Object.entries(calloutData.updates)) {
+          result[k] = entry.value;
+          if (entry._identifier) result[k + '$_identifier'] = entry._identifier;
+        }
+      }
+      if (calloutData.combos) {
+        for (const [k, combo] of Object.entries(calloutData.combos)) {
+          if (combo.selected != null) {
+            result[k] = combo.selected;
+            if (combo._identifier) result[k + '$_identifier'] = combo._identifier;
+          }
+        }
+      }
+      if (Object.keys(result).length > 0) applyUpdates?.(result);
+    } catch {
+      // Callout is best-effort
+    }
+  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected]);
 
   const data = hook.editing || currentItem || {};
   const title = isNew
     ? `New ${entityLabel || entity}`
-    : `${data[titleField] || data.id || ''}`;
+    : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
 
   const allEntryFields = addLineFields.entry ?? [];
 
@@ -179,11 +332,17 @@ export function DetailView({
               );
             })}
 
-            <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => hook.handleSave(data)}>
+            <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" onClick={async () => {
+              const saved = await hook.handleSave(data);
+              if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+            }}>
               <Save className="h-3.5 w-3.5" />
               Save draft
             </Button>
-            <Button size="sm" className="gap-1.5" onClick={() => hook.handleSave(data)}>
+            <Button size="sm" className="gap-1.5" onClick={async () => {
+              const saved = await hook.handleSave(data);
+              if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+            }}>
               <Check className="h-3.5 w-3.5" />
               Save
             </Button>
@@ -198,10 +357,14 @@ export function DetailView({
               <Form
                 entity={entity}
                 data={data}
-                onChange={hook.handleChange}
+                onChange={handleChangeWithCallout}
                 catalogs={catalogs}
                 layout="horizontal"
                 section="principal"
+                displayLogic={displayLogic}
+                api={api}
+                token={token}
+                apiBaseUrl={apiBaseUrl}
               />
             </div>
 
@@ -244,10 +407,17 @@ export function DetailView({
                         active: addingLine,
                         fields: allEntryFields,
                         onAdd: (lineData) => {
-                          hook.handleAddChild?.(lineData);
+                          // Only send entry field keys to the API — exclude callout-derived values
+                          const entryKeys = new Set(allEntryFields.map(f => f.key));
+                          const filtered = {};
+                          for (const [k, v] of Object.entries(lineData)) {
+                            if (entryKeys.has(k)) filtered[k] = v;
+                          }
+                          hook.handleAddChild?.(filtered);
                         },
                         onCancel: () => setAddingLine(false),
                         catalogs,
+                        onFieldChange: handleLineFieldChange,
                       }}
                     />
                     <button
@@ -265,10 +435,14 @@ export function DetailView({
                     <Form
                       entity={entity}
                       data={data}
-                      onChange={hook.handleChange}
+                      onChange={handleChangeWithCallout}
                       catalogs={catalogs}
                       layout="horizontal"
                       section="other"
+                      displayLogic={displayLogic}
+                      api={api}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
                     />
                   </div>
                 )}
@@ -286,8 +460,8 @@ export function DetailView({
               </>
             )}
 
-            {/* Footer totals */}
-            {DetailTable && (
+            {/* Footer totals (only when summary has amount fields) */}
+            {DetailTable && summary.some(f => f.type === 'amount') && (
               <div className="flex justify-end pt-2 border-t border-border/50">
                 <div className="w-72 space-y-1.5">
                   {summary.filter(f => f.type === 'amount').map(f => {

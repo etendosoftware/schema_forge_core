@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
-import { useMenuLabel } from '@/i18n';
+import { useMenuLabel, useLabel } from '@/i18n';
 import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic } from 'lucide-react';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
+import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -22,8 +23,53 @@ export function ListView({
   const hook = useEntity(entity, null, { token, apiBaseUrl });
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
+  const t = useLabel();
   const label = tMenu(entityLabel) || entityLabel || entity;
   const [selectedRows, setSelectedRows] = useState([]);
+  const [showUserContext, setShowUserContext] = useState(false);
+  const [showSortPopover, setShowSortPopover] = useState(false);
+  const [tableColumns, setTableColumns] = useState([]);
+  const sortBtnRef = useRef(null);
+  const scrollRef = useRef(null);
+
+  const isDefaultSort = hook.sortColumn === 'creationDate' && hook.sortDirection === 'desc';
+
+  // Close sort popover on outside click
+  useEffect(() => {
+    if (!showSortPopover) return;
+    const handleClick = (e) => {
+      if (sortBtnRef.current && !sortBtnRef.current.contains(e.target)) {
+        setShowSortPopover(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showSortPopover]);
+
+  const handleSortSelect = useCallback((colKey) => {
+    if (hook.sortColumn === colKey) {
+      // Toggle direction
+      hook.setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      hook.setSortColumn(colKey);
+      hook.setSortDirection('asc');
+    }
+    setShowSortPopover(false);
+  }, [hook.sortColumn, hook.setSortColumn, hook.setSortDirection]);
+
+  const handleClearSort = useCallback(() => {
+    hook.setSortColumn('creationDate');
+    hook.setSortDirection('desc');
+    setShowSortPopover(false);
+  }, [hook.setSortColumn, hook.setSortDirection]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 200 && hook.hasMore && !hook.loadingMore) {
+      hook.loadMore();
+    }
+  }, [hook.hasMore, hook.loadingMore, hook.loadMore]);
 
   return (
     <div className="h-full flex flex-col">
@@ -76,6 +122,8 @@ export function ListView({
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
+            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
+            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
           </div>
         </div>
       </div>
@@ -117,9 +165,57 @@ export function ListView({
               <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                 <Link2 className="h-4 w-4" />
               </button>
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowUpDown className="h-4 w-4" />
-              </button>
+              <div className="relative" ref={sortBtnRef}>
+                <button
+                  onClick={() => setShowSortPopover(v => !v)}
+                  className={[
+                    'h-9 w-9 flex items-center justify-center rounded-lg border transition-colors',
+                    isDefaultSort
+                      ? 'border-border text-muted-foreground hover:text-foreground'
+                      : 'border-primary/40 bg-primary/10 text-primary',
+                  ].join(' ')}
+                >
+                  <ArrowUpDown className="h-4 w-4" />
+                </button>
+                {showSortPopover && tableColumns.length > 0 && (
+                  <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-card shadow-lg py-1">
+                    <div className="px-3 py-2 text-xs font-medium text-muted-foreground tracking-wide">
+                      Sort by
+                    </div>
+                    {tableColumns.map(col => {
+                      const colLabel = t(col.column) ?? col.label ?? col.key;
+                      const isActive = hook.sortColumn === col.key;
+                      return (
+                        <button
+                          key={col.key}
+                          onClick={() => handleSortSelect(col.key)}
+                          className={[
+                            'w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                            isActive ? 'bg-primary/5 text-foreground font-medium' : 'text-foreground hover:bg-muted/50',
+                          ].join(' ')}
+                        >
+                          <span className="w-4 text-center text-xs">
+                            {isActive ? (hook.sortDirection === 'asc' ? '\u25B2' : '\u25BC') : ''}
+                          </span>
+                          <span className="flex-1 text-left">{colLabel}</span>
+                        </button>
+                      );
+                    })}
+                    {!isDefaultSort && (
+                      <>
+                        <div className="border-t border-border/50 my-1" />
+                        <button
+                          onClick={handleClearSort}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                        >
+                          <span className="w-4" />
+                          <span className="flex-1 text-left">Clear sort</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 ml-1">
                 <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                   <Eye className="h-4 w-4" />
@@ -151,7 +247,7 @@ export function ListView({
         )}
 
         {/* Table */}
-        <div className="flex-1 overflow-auto px-6 pb-6">
+        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-auto px-6 pb-6">
           {hook.loading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -160,13 +256,27 @@ export function ListView({
               <Skeleton className="h-8 w-full" />
             </div>
           ) : (
-            <Table
-              entity={entity}
-              data={hook.items}
-              onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
-              onSelectionChange={setSelectedRows}
-              compact={false}
-            />
+            <>
+              <Table
+                entity={entity}
+                data={hook.items}
+                onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
+                onSelectionChange={setSelectedRows}
+                compact={false}
+                sortColumn={hook.sortColumn}
+                sortDirection={hook.sortDirection}
+                onColumnsReady={setTableColumns}
+              />
+              {hook.loadingMore && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading more...</span>
+                </div>
+              )}
+              {!hook.hasMore && hook.items.length > 0 && !hook.loadingMore && (
+                <p className="text-center text-xs text-muted-foreground/60 py-3">All records loaded</p>
+              )}
+            </>
           )}
         </div>
       </div>

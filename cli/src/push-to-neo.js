@@ -179,7 +179,8 @@ export async function pushToNeo(windowName, options = {}) {
 
   const windowId = schema.window.id;
   const windowDisplayName = schema.window.name;
-  const specName = toSpecName(windowDisplayName);
+  // Use the artifact slug (windowName) as spec name so it matches the frontend route
+  const specName = windowName;
 
   // Extract all fields from backend contract
   const allFields = extractFieldsFromContract(contract.backendContract);
@@ -249,23 +250,32 @@ export async function pushToNeo(windowName, options = {}) {
   try {
     await client.query('BEGIN');
 
-    // Step 1: Upsert spec
-    console.log(`[1/3] Upserting spec '${specName}' for window ${windowId}...`);
+    // Step 1: Upsert spec (look up existing spec first for idempotent updates)
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
+    console.log(`[1/4] Upserting spec '${specName}' for window ${windowId}...`);
     const specResult = await writerUpsertSpec(client, {
       name: specName,
       moduleId,
       windowId,
       specType: 'W',
+      specId: existingSpecId,
       audit: auditOpts,
     });
     const specId = specResult.specId;
     console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
 
     // Step 2: Populate spec from AD metadata
-    console.log(`[2/3] Populating spec from AD metadata...`);
+    console.log(`[2/4] Populating spec from AD metadata...`);
     const popResult = await writerPopulateSpec(client, {
       specId,
       moduleId,
+      includeAllMethods: true,
       audit: auditOpts,
     });
 
@@ -312,8 +322,25 @@ export async function pushToNeo(windowName, options = {}) {
 
     console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
 
+    // Rename entities to match curated/contract names (e.g. "Header" → "order")
+    // Uses tabName (AD tab display name) as the primary key — unique within a window
+    // and handles tabs that share the same DB table correctly.
+    if (schema.entities) {
+      for (const ent of schema.entities) {
+        const entityId = (ent.tabName && entityMapByName[ent.tabName])
+          || (ent.tableName && entityMapByTableName[ent.tableName]);
+        if (entityId) {
+          await client.query(
+            'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
+            [ent.name, entityId],
+          );
+        }
+      }
+      console.log(`       Entity names updated to contract names`);
+    }
+
     // Step 3: Update field visibility from contract
-    console.log(`[3/3] Updating ${allFields.length} fields from contract visibility...`);
+    console.log(`[3/4] Updating ${allFields.length} fields from contract visibility...`);
     let successCount = 0;
     let errorCount = 0;
     const fieldResults = [];
@@ -364,9 +391,36 @@ export async function pushToNeo(windowName, options = {}) {
       successCount++;
     }
 
+    // Step 4: Exclude all fields NOT in the contract
+    console.log(`[4/4] Excluding non-contract fields...`);
+    const contractColumns = new Set(allFields.map(f => f.column));
+    let excludedCount = 0;
+
+    for (const ent of popResult.entities) {
+      const entityId = ent.entityId;
+      const allEntityFields = await client.query(
+        `SELECT sf.etgo_sf_field_id, c.columnname
+         FROM etgo_sf_field sf
+         JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
+         WHERE sf.etgo_sf_entity_id = $1 AND sf.isincluded = 'Y'`,
+        [entityId],
+      );
+
+      for (const row of allEntityFields.rows) {
+        if (!contractColumns.has(row.columnname)) {
+          await client.query(
+            `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
+            [row.etgo_sf_field_id],
+          );
+          excludedCount++;
+        }
+      }
+    }
+    console.log(`       ${excludedCount} non-contract fields excluded.`);
+
     await client.query('COMMIT');
 
-    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors.`);
+    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors, ${excludedCount} excluded.`);
 
     return {
       dryRun: false,
@@ -376,6 +430,7 @@ export async function pushToNeo(windowName, options = {}) {
       entitiesPopulated: popResult.entityCount,
       fieldsUpdated: successCount,
       fieldsErrored: errorCount,
+      fieldsExcluded: excludedCount,
       fieldResults,
     };
   } catch (err) {
@@ -460,13 +515,21 @@ export async function pushProcessToNeo(processName, options = {}) {
   try {
     await client.query('BEGIN');
 
-    // Step 1: Upsert spec
+    // Step 1: Upsert spec (look up existing spec first for idempotent updates)
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
     console.log(`[1/2] Upserting spec '${specName}' for process ${processId}...`);
     const specResult = await writerUpsertSpec(client, {
       name: specName,
       moduleId,
       processId,
       specType,
+      specId: existingSpecId,
       audit: auditOpts,
     });
     const specId = specResult.specId;

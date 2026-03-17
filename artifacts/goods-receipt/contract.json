@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-06T17:45:58.497Z",
-  "checksum": "e01f24446f7fccc7",
+  "version": "0.2.0",
+  "generatedAt": "2026-03-17T19:07:10.482Z",
+  "checksum": "b8bab08d487c2cd7",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -11,6 +11,9 @@
     },
     "entities": {
       "goodsReceipt": {
+        "tableName": "M_InOut",
+        "tabId": "296",
+        "tabName": "Header",
         "fields": [
           {
             "name": "businessPartner",
@@ -25,22 +28,6 @@
             "inputMode": "search"
           },
           {
-            "name": "partnerAddress",
-            "column": "C_BPartner_Location_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "reference": "BusinessPartnerLocation",
-            "inputMode": "dependent",
-            "dependsOn": {
-              "field": "businessPartner",
-              "filterKey": "businessPartnerId"
-            }
-          },
-          {
             "name": "movementDate",
             "column": "MovementDate",
             "type": "date",
@@ -48,58 +35,6 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
-          },
-          {
-            "name": "dateAcct",
-            "column": "DateAcct",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "warehouse",
-            "column": "M_Warehouse_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true,
-            "reference": "Warehouse",
-            "inputMode": "selector"
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "poReference",
-            "column": "POReference",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
-            "tsType": "boolean",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
             "form": true
           },
           {
@@ -126,14 +61,15 @@
         "searchableFields": [
           "businessPartner",
           "movementDate",
-          "warehouse",
-          "poReference",
           "documentNo",
           "docStatus"
         ],
         "computedFields": []
       },
       "goodsReceiptLine": {
+        "tableName": "M_InOutLine",
+        "tabId": "297",
+        "tabName": "Lines",
         "fields": [
           {
             "name": "product",
@@ -156,50 +92,6 @@
             "required": true,
             "grid": true,
             "form": true
-          },
-          {
-            "name": "locator",
-            "column": "M_Locator_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true,
-            "reference": "Locator",
-            "inputMode": "selector"
-          },
-          {
-            "name": "lineNo",
-            "column": "Line",
-            "type": "integer",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "uom",
-            "column": "C_UOM_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true,
-            "reference": "UOM",
-            "inputMode": "selector"
           }
         ],
         "searchableFields": [
@@ -218,6 +110,9 @@
     },
     "entities": {
       "goodsReceipt": {
+        "tableName": "M_InOut",
+        "tabId": "296",
+        "tabName": "Header",
         "fields": [
           {
             "name": "businessPartner",
@@ -227,51 +122,9 @@
             "required": true
           },
           {
-            "name": "partnerAddress",
-            "column": "C_BPartner_Location_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
             "name": "movementDate",
             "column": "MovementDate",
             "type": "date",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "dateAcct",
-            "column": "DateAcct",
-            "type": "date",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "warehouse",
-            "column": "M_Warehouse_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "poReference",
-            "column": "POReference",
-            "type": "string",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
             "visibility": "editable",
             "required": true
           },
@@ -344,10 +197,34 @@
             "type": "datetime",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dateAcct",
+            "column": "DateAcct",
+            "type": "date",
+            "visibility": "system",
+            "required": true
           }
         ]
       },
       "goodsReceiptLine": {
+        "tableName": "M_InOutLine",
+        "tabId": "297",
+        "tabName": "Lines",
         "fields": [
           {
             "name": "product",
@@ -362,34 +239,6 @@
             "type": "number",
             "visibility": "editable",
             "required": true
-          },
-          {
-            "name": "locator",
-            "column": "M_Locator_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "lineNo",
-            "column": "Line",
-            "type": "integer",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "uom",
-            "column": "C_UOM_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": false
           },
           {
             "name": "adClientId",
@@ -432,6 +281,27 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "locator",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "uom",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           }
         ]
       }
@@ -444,8 +314,6 @@
         "supportedFilters": [
           "businessPartner",
           "movementDate",
-          "warehouse",
-          "poReference",
           "documentNo",
           "docStatus"
         ]
@@ -509,6 +377,71 @@
     ],
     "processEndpoints": []
   },
+  "apiPrediction": {
+    "specName": "goods-receipt",
+    "baseUrl": "/sws/neo/goods-receipt",
+    "crud": {
+      "goodsReceipt": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/goods-receipt/goodsReceipt",
+        "detailUrl": "/sws/neo/goods-receipt/goodsReceipt/{id}",
+        "supportedFilters": [
+          "businessPartner",
+          "movementDate",
+          "documentNo",
+          "docStatus"
+        ]
+      },
+      "goodsReceiptLine": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/goods-receipt/goodsReceiptLine",
+        "detailUrl": "/sws/neo/goods-receipt/goodsReceiptLine/{id}",
+        "supportedFilters": [
+          "product"
+        ]
+      }
+    },
+    "selectors": [
+      {
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BusinessPartner",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/businessPartner"
+      },
+      {
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/product"
+      }
+    ],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=goods-receiptDate"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    }
+  },
   "testManifest": {
     "tests": [
       {
@@ -523,60 +456,12 @@
         "id": "t-2",
         "category": "field-presence",
         "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Field 'partnerAddress' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
         "field": "movementDate",
         "runner": "node",
         "description": "Field 'movementDate' should be present in goodsReceipt"
       },
       {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "dateAcct",
-        "runner": "node",
-        "description": "Field 'dateAcct' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "poReference",
-        "runner": "node",
-        "description": "Field 'poReference' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "isActive",
-        "runner": "node",
-        "description": "Field 'isActive' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-9",
+        "id": "t-3",
         "category": "field-presence",
         "entity": "goodsReceipt",
         "field": "documentNo",
@@ -584,7 +469,7 @@
         "description": "Field 'documentNo' should be present in goodsReceipt"
       },
       {
-        "id": "t-10",
+        "id": "t-4",
         "category": "field-presence",
         "entity": "goodsReceipt",
         "field": "docStatus",
@@ -592,7 +477,7 @@
         "description": "Field 'docStatus' should be present in goodsReceipt"
       },
       {
-        "id": "t-11",
+        "id": "t-5",
         "category": "field-type",
         "entity": "goodsReceipt",
         "field": "businessPartner",
@@ -600,15 +485,7 @@
         "description": "Field 'businessPartner' should have type 'string' in goodsReceipt"
       },
       {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Field 'partnerAddress' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-13",
+        "id": "t-6",
         "category": "field-type",
         "entity": "goodsReceipt",
         "field": "movementDate",
@@ -616,47 +493,7 @@
         "description": "Field 'movementDate' should have type 'string' in goodsReceipt"
       },
       {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "dateAcct",
-        "runner": "node",
-        "description": "Field 'dateAcct' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-15",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-16",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-17",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "poReference",
-        "runner": "node",
-        "description": "Field 'poReference' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-18",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "isActive",
-        "runner": "node",
-        "description": "Field 'isActive' should have type 'boolean' in goodsReceipt"
-      },
-      {
-        "id": "t-19",
+        "id": "t-7",
         "category": "field-type",
         "entity": "goodsReceipt",
         "field": "documentNo",
@@ -664,7 +501,7 @@
         "description": "Field 'documentNo' should have type 'string' in goodsReceipt"
       },
       {
-        "id": "t-20",
+        "id": "t-8",
         "category": "field-type",
         "entity": "goodsReceipt",
         "field": "docStatus",
@@ -672,7 +509,7 @@
         "description": "Field 'docStatus' should have type 'string' in goodsReceipt"
       },
       {
-        "id": "t-21",
+        "id": "t-9",
         "category": "searchable-filters",
         "entity": "goodsReceipt",
         "field": "businessPartner",
@@ -680,7 +517,7 @@
         "description": "Field 'businessPartner' should be a supported filter for goodsReceipt"
       },
       {
-        "id": "t-22",
+        "id": "t-10",
         "category": "searchable-filters",
         "entity": "goodsReceipt",
         "field": "movementDate",
@@ -688,23 +525,7 @@
         "description": "Field 'movementDate' should be a supported filter for goodsReceipt"
       },
       {
-        "id": "t-23",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-24",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "poReference",
-        "runner": "node",
-        "description": "Field 'poReference' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-25",
+        "id": "t-11",
         "category": "searchable-filters",
         "entity": "goodsReceipt",
         "field": "documentNo",
@@ -712,7 +533,7 @@
         "description": "Field 'documentNo' should be a supported filter for goodsReceipt"
       },
       {
-        "id": "t-26",
+        "id": "t-12",
         "category": "searchable-filters",
         "entity": "goodsReceipt",
         "field": "docStatus",
@@ -720,14 +541,14 @@
         "description": "Field 'docStatus' should be a supported filter for goodsReceipt"
       },
       {
-        "id": "t-27",
+        "id": "t-13",
         "category": "visibility",
         "entity": "goodsReceipt",
         "runner": "node",
         "description": "Entity 'goodsReceipt' should only expose visible fields in frontend"
       },
       {
-        "id": "t-28",
+        "id": "t-14",
         "category": "field-presence",
         "entity": "goodsReceiptLine",
         "field": "product",
@@ -735,7 +556,7 @@
         "description": "Field 'product' should be present in goodsReceiptLine"
       },
       {
-        "id": "t-29",
+        "id": "t-15",
         "category": "field-presence",
         "entity": "goodsReceiptLine",
         "field": "movementQty",
@@ -743,39 +564,7 @@
         "description": "Field 'movementQty' should be present in goodsReceiptLine"
       },
       {
-        "id": "t-30",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "locator",
-        "runner": "node",
-        "description": "Field 'locator' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-31",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-32",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-33",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "uom",
-        "runner": "node",
-        "description": "Field 'uom' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-34",
+        "id": "t-16",
         "category": "field-type",
         "entity": "goodsReceiptLine",
         "field": "product",
@@ -783,7 +572,7 @@
         "description": "Field 'product' should have type 'string' in goodsReceiptLine"
       },
       {
-        "id": "t-35",
+        "id": "t-17",
         "category": "field-type",
         "entity": "goodsReceiptLine",
         "field": "movementQty",
@@ -791,39 +580,7 @@
         "description": "Field 'movementQty' should have type 'number' in goodsReceiptLine"
       },
       {
-        "id": "t-36",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "locator",
-        "runner": "node",
-        "description": "Field 'locator' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-37",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should have type 'number' in goodsReceiptLine"
-      },
-      {
-        "id": "t-38",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-39",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "uom",
-        "runner": "node",
-        "description": "Field 'uom' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-40",
+        "id": "t-18",
         "category": "searchable-filters",
         "entity": "goodsReceiptLine",
         "field": "product",
@@ -831,14 +588,14 @@
         "description": "Field 'product' should be a supported filter for goodsReceiptLine"
       },
       {
-        "id": "t-41",
+        "id": "t-19",
         "category": "visibility",
         "entity": "goodsReceiptLine",
         "runner": "node",
         "description": "Entity 'goodsReceiptLine' should only expose visible fields in frontend"
       },
       {
-        "id": "t-42",
+        "id": "t-20",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "adClientId",
@@ -846,7 +603,7 @@
         "description": "System field 'adClientId' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-43",
+        "id": "t-21",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "adOrgId",
@@ -854,7 +611,7 @@
         "description": "System field 'adOrgId' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-44",
+        "id": "t-22",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "isSotrx",
@@ -862,7 +619,7 @@
         "description": "System field 'isSotrx' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-45",
+        "id": "t-23",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "movementType",
@@ -870,7 +627,7 @@
         "description": "System field 'movementType' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-46",
+        "id": "t-24",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "cDocTypeId",
@@ -878,7 +635,7 @@
         "description": "System field 'cDocTypeId' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-47",
+        "id": "t-25",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "processed",
@@ -886,7 +643,7 @@
         "description": "System field 'processed' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-48",
+        "id": "t-26",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "created",
@@ -894,7 +651,7 @@
         "description": "System field 'created' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-49",
+        "id": "t-27",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "updated",
@@ -902,7 +659,31 @@
         "description": "System field 'updated' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-50",
+        "id": "t-28",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "System field 'warehouse' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-29",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "System field 'partnerAddress' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-30",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "dateAcct",
+        "runner": "node",
+        "description": "System field 'dateAcct' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-31",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "adClientId",
@@ -910,7 +691,7 @@
         "description": "System field 'adClientId' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-51",
+        "id": "t-32",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "adOrgId",
@@ -918,7 +699,7 @@
         "description": "System field 'adOrgId' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-52",
+        "id": "t-33",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "mInoutId",
@@ -926,7 +707,7 @@
         "description": "System field 'mInoutId' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-53",
+        "id": "t-34",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "movementDate",
@@ -934,7 +715,7 @@
         "description": "System field 'movementDate' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-54",
+        "id": "t-35",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "cBpartnerId",
@@ -942,25 +723,81 @@
         "description": "System field 'cBpartnerId' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-55",
+        "id": "t-36",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "warehouse",
         "runner": "node",
         "description": "System field 'warehouse' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-37",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "locator",
+        "runner": "node",
+        "description": "System field 'locator' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-38",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "System field 'lineNo' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-39",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "uom",
+        "runner": "node",
+        "description": "System field 'uom' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-40",
+        "category": "crud-flags",
+        "entity": "goodsReceipt",
+        "runner": "node",
+        "description": "CRUD flags for 'goodsReceipt' should all be booleans"
+      },
+      {
+        "id": "t-41",
+        "category": "crud-flags",
+        "entity": "goodsReceiptLine",
+        "runner": "node",
+        "description": "CRUD flags for 'goodsReceiptLine' should all be booleans"
+      },
+      {
+        "id": "t-42",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-43",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in goodsReceiptLine should exist"
       }
     ],
     "summary": {
-      "total": 55,
+      "total": 43,
       "byCategory": {
-        "field-presence": 16,
-        "field-type": 16,
-        "searchable-filters": 7,
+        "field-presence": 6,
+        "field-type": 6,
+        "searchable-filters": 5,
         "visibility": 2,
-        "system-field": 14
+        "system-field": 20,
+        "crud-flags": 2,
+        "selector-endpoint": 2
       },
       "byRunner": {
-        "node": 55,
+        "node": 43,
         "junit": 0
       }
     }

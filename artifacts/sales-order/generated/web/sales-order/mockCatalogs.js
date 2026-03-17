@@ -168,29 +168,6 @@ catalogs['BusinessPartnerLocation'] = [
   }
 ];
 
-catalogs['Warehouse'] = [
-  {
-    "id": "wh-001",
-    "name": "Main Warehouse"
-  },
-  {
-    "id": "wh-002",
-    "name": "East Distribution Center"
-  },
-  {
-    "id": "wh-003",
-    "name": "West Hub"
-  },
-  {
-    "id": "wh-004",
-    "name": "North Storage"
-  },
-  {
-    "id": "wh-005",
-    "name": "South Logistics"
-  }
-];
-
 catalogs['PriceList'] = [
   {
     "id": "pl-001",
@@ -207,6 +184,25 @@ catalogs['PriceList'] = [
   {
     "id": "pl-004",
     "name": "VIP Pricing"
+  }
+];
+
+catalogs['PaymentMethod'] = [
+  {
+    "id": "pm-001",
+    "name": "Wire Transfer"
+  },
+  {
+    "id": "pm-002",
+    "name": "Credit Card"
+  },
+  {
+    "id": "pm-003",
+    "name": "Check"
+  },
+  {
+    "id": "pm-004",
+    "name": "Cash"
   }
 ];
 
@@ -233,57 +229,26 @@ catalogs['PaymentTerm'] = [
   }
 ];
 
-catalogs['PaymentMethod'] = [
+catalogs['Warehouse'] = [
   {
-    "id": "pm-001",
-    "name": "Wire Transfer"
+    "id": "wh-001",
+    "name": "Main Warehouse"
   },
   {
-    "id": "pm-002",
-    "name": "Credit Card"
+    "id": "wh-002",
+    "name": "East Distribution Center"
   },
   {
-    "id": "pm-003",
-    "name": "Check"
+    "id": "wh-003",
+    "name": "West Hub"
   },
   {
-    "id": "pm-004",
-    "name": "Cash"
-  }
-];
-
-catalogs['User'] = [
-  {
-    "id": "user-001",
-    "name": "Alice Johnson"
+    "id": "wh-004",
+    "name": "North Storage"
   },
   {
-    "id": "user-002",
-    "name": "Bob Smith"
-  },
-  {
-    "id": "user-003",
-    "name": "Carol Williams"
-  },
-  {
-    "id": "user-004",
-    "name": "David Brown"
-  },
-  {
-    "id": "user-005",
-    "name": "Eva Martinez"
-  },
-  {
-    "id": "user-006",
-    "name": "Frank Lee"
-  },
-  {
-    "id": "user-007",
-    "name": "Grace Kim"
-  },
-  {
-    "id": "user-008",
-    "name": "Henry Davis"
+    "id": "wh-005",
+    "name": "South Logistics"
   }
 ];
 
@@ -410,6 +375,29 @@ catalogs['Product'] = [
   }
 ];
 
+catalogs['UOM'] = [
+  {
+    "id": "uom-001",
+    "name": "Each"
+  },
+  {
+    "id": "uom-002",
+    "name": "Box"
+  },
+  {
+    "id": "uom-003",
+    "name": "Kg"
+  },
+  {
+    "id": "uom-004",
+    "name": "Meter"
+  },
+  {
+    "id": "uom-005",
+    "name": "Liter"
+  }
+];
+
 catalogs['Tax'] = [
   {
     "id": "tax-001",
@@ -440,29 +428,6 @@ catalogs['Tax'] = [
     "id": "tax-006",
     "name": "Reduced Rate 5%",
     "rate": 5
-  }
-];
-
-catalogs['UOM'] = [
-  {
-    "id": "uom-001",
-    "name": "Each"
-  },
-  {
-    "id": "uom-002",
-    "name": "Box"
-  },
-  {
-    "id": "uom-003",
-    "name": "Kg"
-  },
-  {
-    "id": "uom-004",
-    "name": "Meter"
-  },
-  {
-    "id": "uom-005",
-    "name": "Liter"
   }
 ];
 

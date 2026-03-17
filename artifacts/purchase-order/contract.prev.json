@@ -1,0 +1,6217 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-03-14T05:39:50.831Z",
+  "checksum": "d8e8122bf4f33e33",
+  "frontendContract": {
+    "window": {
+      "id": "181",
+      "name": "Purchase Order",
+      "primaryEntity": "order",
+      "category": "purchases"
+    },
+    "entities": {
+      "order": {
+        "tableName": "C_Order",
+        "tabId": "294",
+        "tabName": "Header",
+        "fields": [
+          {
+            "name": "documentStatus",
+            "column": "DocStatus",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "orderDate",
+            "column": "DateOrdered",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "BusinessPartner",
+            "inputMode": "search"
+          },
+          {
+            "name": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "C_BPartner_ID"
+            }
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Warehouse",
+            "inputMode": "selector"
+          },
+          {
+            "name": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "PaymentMethod",
+            "inputMode": "selector"
+          },
+          {
+            "name": "paymentTerms",
+            "column": "C_PaymentTerm_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "reference": "PaymentTerm",
+            "inputMode": "selector"
+          },
+          {
+            "name": "priceList",
+            "column": "M_PriceList_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "PriceList",
+            "inputMode": "selector"
+          },
+          {
+            "name": "invoiceAddress",
+            "column": "BillTo_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "C_BPartner_ID"
+            }
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "text",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "deliveryNotes",
+            "column": "Deliverynotes",
+            "type": "text",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "orderReference",
+            "column": "POReference",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "grandTotalAmount",
+            "column": "GrandTotal",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "summedLineAmount",
+            "column": "TotalLines",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Project",
+            "inputMode": "search"
+          },
+          {
+            "name": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "CostCenter",
+            "inputMode": "selector"
+          },
+          {
+            "name": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Asset",
+            "inputMode": "selector"
+          },
+          {
+            "name": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "UserDimension1",
+            "inputMode": "selector"
+          },
+          {
+            "name": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "UserDimension2",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [
+          "documentStatus",
+          "orderDate",
+          "businessPartner",
+          "orderReference"
+        ],
+        "computedFields": [
+          {
+            "name": "documentStatus",
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            }
+          }
+        ]
+      },
+      "orderLine": {
+        "tableName": "C_OrderLine",
+        "tabId": "293",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search"
+          },
+          {
+            "name": "operativeQuantity",
+            "column": "Aumqty",
+            "type": "quantity",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "operativeUOM",
+            "column": "C_Aum",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          },
+          {
+            "name": "orderedQuantity",
+            "column": "QtyOrdered",
+            "type": "quantity",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "UOM"
+          },
+          {
+            "name": "unitPrice",
+            "column": "PriceActual",
+            "type": "price",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "grossUnitPrice",
+            "column": "Gross_Unit_Price",
+            "type": "price",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "lineNetAmount",
+            "column": "LineNetAmt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "lineGrossAmount",
+            "column": "Line_Gross_Amount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Tax",
+            "inputMode": "selector"
+          },
+          {
+            "name": "listPrice",
+            "column": "PriceList",
+            "type": "price",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "grossListPrice",
+            "column": "GrossPriceList",
+            "type": "decimal",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "discount",
+            "column": "Discount",
+            "type": "decimal",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "text",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Project",
+            "inputMode": "search"
+          },
+          {
+            "name": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "CostCenter",
+            "inputMode": "selector"
+          },
+          {
+            "name": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Asset",
+            "inputMode": "selector"
+          },
+          {
+            "name": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "UserDimension1",
+            "inputMode": "selector"
+          },
+          {
+            "name": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "UserDimension2",
+            "inputMode": "selector"
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "orderLineTax": {
+        "tableName": "C_OrderLineTax",
+        "tabId": "ADBD1719BFA14C97A32C7B6E8452D14F",
+        "tabName": "Line Tax",
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Tax"
+          },
+          {
+            "name": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "taxAmount",
+            "column": "Taxamt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "reservedStock": {
+        "tableName": "M_Reservation_Stock",
+        "tabId": "64B971D786A646DC9656534AABB13FA9",
+        "tabName": "Prereserved Qty",
+        "fields": [
+          {
+            "name": "reservation",
+            "column": "M_Reservation_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Reservation"
+          },
+          {
+            "name": "storageBin",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "Locator"
+          },
+          {
+            "name": "attributeSetValue",
+            "column": "M_Attributesetinstance_ID",
+            "type": "price",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "allocated",
+            "column": "IsAllocated",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "quantity",
+            "column": "Quantity",
+            "type": "quantity",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "released",
+            "column": "ReleasedQty",
+            "type": "quantity",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "BusinessPartner"
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "basicDiscounts": {
+        "tableName": "C_Order_Discount",
+        "tabId": "1011100001",
+        "tabName": "Basic Discounts",
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "discount",
+            "column": "C_Discount_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Discount"
+          },
+          {
+            "name": "cascade",
+            "column": "Cascade",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "orderTax": {
+        "tableName": "C_OrderTax",
+        "tabId": "295",
+        "tabName": "Tax",
+        "fields": [
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Tax"
+          },
+          {
+            "name": "taxableAmount",
+            "column": "TaxBaseAmt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "taxAmount",
+            "column": "TaxAmt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "paymentPlan": {
+        "tableName": "FIN_Payment_Sched_Ord_V",
+        "tabId": "FA57D75B1BBB4583B4A777008A29BF54",
+        "tabName": "Payment Plan",
+        "fields": [
+          {
+            "name": "dueDate",
+            "column": "Duedate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "PaymentMethod"
+          },
+          {
+            "name": "expected",
+            "column": "Expected",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "received",
+            "column": "Received",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "outstanding",
+            "column": "Outstanding",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "lastPayment",
+            "column": "Lastpayment",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "numberOfPayments",
+            "column": "Numberofpayments",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "reference": "Currency"
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "paymentDetails": {
+        "tableName": "FIN_Payment_Detail_V",
+        "tabId": "6707D7449A8D45DB851F608BA88329C8",
+        "tabName": "Payment Details",
+        "fields": [
+          {
+            "name": "payment",
+            "column": "FIN_Payment_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Payment"
+          },
+          {
+            "name": "paymentDate",
+            "column": "Paymentdate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "dueDate",
+            "column": "Duedate",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "paymentMethod",
+            "column": "Fin_Paymentmethod_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "PaymentMethod"
+          },
+          {
+            "name": "finFinancialAccountID",
+            "column": "Fin_Financial_Account_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "FinancialAccount"
+          },
+          {
+            "name": "expected",
+            "column": "Expected",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "paidAmount",
+            "column": "Paidamt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "writeoffAmount",
+            "column": "Writeoffamt",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "expectedConverted",
+            "column": "ExpectedConverted",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "paidConverted",
+            "column": "PaidConverted",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "finaccTxnConvertRate",
+            "column": "Finacc_Txn_Convert_Rate",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "canceled",
+            "column": "Iscanceled",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "status",
+            "column": "Status",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "181",
+      "name": "Purchase Order",
+      "primaryEntity": "order",
+      "category": "purchases"
+    },
+    "entities": {
+      "order": {
+        "tableName": "C_Order",
+        "tabId": "294",
+        "tabName": "Header",
+        "fields": [
+          {
+            "name": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "transactionDocument",
+            "column": "C_DocTypeTarget_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "documentNo",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "documentType",
+            "column": "C_DocType_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "documentStatus",
+            "column": "DocStatus",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesTransaction",
+            "column": "IsSOTrx",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "orderDate",
+            "column": "DateOrdered",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "paymentTerms",
+            "column": "C_PaymentTerm_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "priceList",
+            "column": "M_PriceList_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "invoiceAddress",
+            "column": "BillTo_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "deliveryNotes",
+            "column": "Deliverynotes",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "orderReference",
+            "column": "POReference",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "grandTotalAmount",
+            "column": "GrandTotal",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "summedLineAmount",
+            "column": "TotalLines",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "userContact",
+            "column": "AD_User_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "salesRepresentative",
+            "column": "SalesRep_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "accountingDate",
+            "column": "DateAcct",
+            "type": "date",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "incoterms",
+            "column": "C_Incoterms_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "iNCOTERMSDescription",
+            "column": "Incotermsdescription",
+            "type": "text",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "printDiscount",
+            "column": "IsDiscountPrinted",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "freightAmount",
+            "column": "FreightAmt",
+            "type": "amount",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "deliveryMethod",
+            "column": "DeliveryViaRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesCampaign",
+            "column": "C_Campaign_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "shippingCompany",
+            "column": "M_Shipper_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "priority",
+            "column": "PriorityRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "chargeAmount",
+            "column": "ChargeAmt",
+            "type": "amount",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "charge",
+            "column": "C_Charge_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "activity",
+            "column": "C_Activity_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "freightCostRule",
+            "column": "FreightCostRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "trxOrganization",
+            "column": "AD_OrgTrx_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "formOfPayment",
+            "column": "PaymentRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "deliveryLocation",
+            "column": "Delivery_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "deliveryTerms",
+            "column": "DeliveryRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "datePrinted",
+            "column": "DatePrinted",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "selfService",
+            "column": "IsSelfService",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dropShipLocation",
+            "column": "DropShip_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "dropShipPartner",
+            "column": "DropShip_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "dropShipContact",
+            "column": "DropShip_User_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "selected",
+            "column": "IsSelected",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "posted",
+            "column": "Posted",
+            "type": "image",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoiceTerms",
+            "column": "InvoiceRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "processNow",
+            "column": "Processing",
+            "type": "image",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "delivered",
+            "column": "IsDelivered",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "reinvoice",
+            "column": "IsInvoiced",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "print",
+            "column": "IsPrinted",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "deliveryStatusPurchase",
+            "column": "DeliveryStatusPurchase",
+            "type": "integer",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "invoiceStatus",
+            "column": "InvoiceStatus",
+            "type": "integer",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "eMAPRMAddPayment",
+            "column": "EM_APRM_AddPayment",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "documentAction",
+            "column": "DocAction",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "copyFrom",
+            "column": "CopyFrom",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "copyFromPO",
+            "column": "CopyFromPO",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "createPOLines",
+            "column": "Create_POLines",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          }
+        ]
+      },
+      "orderLine": {
+        "tableName": "C_OrderLine",
+        "tabId": "293",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "salesOrderLine",
+            "column": "C_OrderLine_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "operativeQuantity",
+            "column": "Aumqty",
+            "type": "quantity",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "operativeUOM",
+            "column": "C_Aum",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "orderedQuantity",
+            "column": "QtyOrdered",
+            "type": "quantity",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "unitPrice",
+            "column": "PriceActual",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "grossUnitPrice",
+            "column": "Gross_Unit_Price",
+            "type": "price",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "lineNetAmount",
+            "column": "LineNetAmt",
+            "type": "amount",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "lineGrossAmount",
+            "column": "Line_Gross_Amount",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "listPrice",
+            "column": "PriceList",
+            "type": "price",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "grossListPrice",
+            "column": "GrossPriceList",
+            "type": "decimal",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "discount",
+            "column": "Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "asset",
+            "column": "A_Asset_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "warehouse",
+            "column": "M_Warehouse_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderDate",
+            "column": "DateOrdered",
+            "type": "date",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "reservedQuantity",
+            "column": "QtyReserved",
+            "type": "quantity",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "deliveredQuantity",
+            "column": "QtyDelivered",
+            "type": "quantity",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoicedQuantity",
+            "column": "QtyInvoiced",
+            "type": "quantity",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "shippingCompany",
+            "column": "M_Shipper_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "freightAmount",
+            "column": "FreightAmt",
+            "type": "amount",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "attributeSetValue",
+            "column": "M_AttributeSetInstance_ID",
+            "type": "price",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "editLineAmount",
+            "column": "Iseditlinenetamt",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cancelPriceAdjustment",
+            "column": "CANCELPRICEAD",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "baseGrossUnitPrice",
+            "column": "grosspricestd",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "standardPrice",
+            "column": "PriceStd",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "orderQuantity",
+            "column": "QuantityOrder",
+            "type": "quantity",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderUOM",
+            "column": "M_Product_Uom_Id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "bOMParentID",
+            "column": "BOM_Parent_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "directShipment",
+            "column": "DirectShip",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoiceDate",
+            "column": "DateInvoiced",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "dateDelivered",
+            "column": "DateDelivered",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "warehouseRule",
+            "column": "M_Warehouse_Rule_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cOrderDiscountID",
+            "column": "C_Order_Discount_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "priceAdjustment",
+            "column": "M_Offer_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "descriptionOnly",
+            "column": "IsDescription",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "resourceAssignment",
+            "column": "S_ResourceAssignment_ID",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "priceLimit",
+            "column": "PriceLimit",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "managePrereservation",
+            "column": "Manage_Prereservation",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "explode",
+            "column": "Explode",
+            "type": "image",
+            "visibility": "discarded",
+            "required": false
+          }
+        ]
+      },
+      "orderLineTax": {
+        "tableName": "C_OrderLineTax",
+        "tabId": "ADBD1719BFA14C97A32C7B6E8452D14F",
+        "tabName": "Line Tax",
+        "fields": [
+          {
+            "name": "cOrderlinetaxID",
+            "column": "C_Orderlinetax_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrderLine",
+            "column": "C_Orderline_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "taxableAmount",
+            "column": "Taxbaseamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "taxAmount",
+            "column": "Taxamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          }
+        ]
+      },
+      "reservedStock": {
+        "tableName": "M_Reservation_Stock",
+        "tabId": "64B971D786A646DC9656534AABB13FA9",
+        "tabName": "Prereserved Qty",
+        "fields": [
+          {
+            "name": "reservationStock",
+            "column": "M_Reservation_Stock_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrderLine",
+            "column": "C_Orderline_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "reservation",
+            "column": "M_Reservation_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "storageBin",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "attributeSetValue",
+            "column": "M_Attributesetinstance_ID",
+            "type": "price",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "allocated",
+            "column": "IsAllocated",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "quantity",
+            "column": "Quantity",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "released",
+            "column": "ReleasedQty",
+            "type": "quantity",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          }
+        ]
+      },
+      "basicDiscounts": {
+        "tableName": "C_Order_Discount",
+        "tabId": "1011100001",
+        "tabName": "Basic Discounts",
+        "fields": [
+          {
+            "name": "cOrderDiscountID",
+            "column": "C_Order_Discount_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "discount",
+            "column": "C_Discount_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "cascade",
+            "column": "Cascade",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          }
+        ]
+      },
+      "orderTax": {
+        "tableName": "C_OrderTax",
+        "tabId": "295",
+        "tabName": "Tax",
+        "fields": [
+          {
+            "name": "cOrderTaxID",
+            "column": "C_OrderTax_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "tax",
+            "column": "C_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "taxableAmount",
+            "column": "TaxBaseAmt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "taxAmount",
+            "column": "TaxAmt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          }
+        ]
+      },
+      "paymentPlan": {
+        "tableName": "FIN_Payment_Sched_Ord_V",
+        "tabId": "FA57D75B1BBB4583B4A777008A29BF54",
+        "tabName": "Payment Plan",
+        "fields": [
+          {
+            "name": "finPaymentSchedOrdVID",
+            "column": "Fin_Payment_Sched_Ord_V_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "dueDate",
+            "column": "Duedate",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "expected",
+            "column": "Expected",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "received",
+            "column": "Received",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "outstanding",
+            "column": "Outstanding",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "lastPayment",
+            "column": "Lastpayment",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "numberOfPayments",
+            "column": "Numberofpayments",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          }
+        ]
+      },
+      "paymentDetails": {
+        "tableName": "FIN_Payment_Detail_V",
+        "tabId": "6707D7449A8D45DB851F608BA88329C8",
+        "tabName": "Payment Details",
+        "fields": [
+          {
+            "name": "finPaymentDetailVID",
+            "column": "Fin_Payment_Detail_V_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderPaymentPlan",
+            "column": "Fin_Payment_Sched_Ord_V_Id",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "businessPartner",
+            "column": "C_Bpartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "finaccCurrencyID",
+            "column": "Finacc_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "paymentno",
+            "column": "Paymentno",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoiceno",
+            "column": "Invoiceno",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderno",
+            "column": "Orderno",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "invoiceAmount",
+            "column": "Invoicedamt",
+            "type": "amount",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "payment",
+            "column": "FIN_Payment_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "paymentDate",
+            "column": "Paymentdate",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "dueDate",
+            "column": "Duedate",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paymentMethod",
+            "column": "Fin_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "finFinancialAccountID",
+            "column": "Fin_Financial_Account_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "expected",
+            "column": "Expected",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paidAmount",
+            "column": "Paidamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "writeoffAmount",
+            "column": "Writeoffamt",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "expectedConverted",
+            "column": "ExpectedConverted",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "paidConverted",
+            "column": "PaidConverted",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "finaccTxnConvertRate",
+            "column": "Finacc_Txn_Convert_Rate",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "canceled",
+            "column": "Iscanceled",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "status",
+            "column": "Status",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/order",
+        "entity": "order",
+        "supportedFilters": [
+          "documentStatus",
+          "orderDate",
+          "businessPartner",
+          "orderReference"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/order/:id",
+        "entity": "order",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/order",
+        "entity": "order",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/order/:id",
+        "entity": "order",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/order/:id",
+        "entity": "order",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/orderLine",
+        "entity": "orderLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/orderLine/:id",
+        "entity": "orderLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/orderLine",
+        "entity": "orderLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/orderLine/:id",
+        "entity": "orderLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/orderLine/:id",
+        "entity": "orderLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/orderLineTax",
+        "entity": "orderLineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/orderLineTax/:id",
+        "entity": "orderLineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/orderLineTax",
+        "entity": "orderLineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/orderLineTax/:id",
+        "entity": "orderLineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/orderLineTax/:id",
+        "entity": "orderLineTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/reservedStock",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/reservedStock/:id",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/reservedStock",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/reservedStock/:id",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/reservedStock/:id",
+        "entity": "reservedStock",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/basicDiscounts",
+        "entity": "basicDiscounts",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/basicDiscounts/:id",
+        "entity": "basicDiscounts",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/basicDiscounts",
+        "entity": "basicDiscounts",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/basicDiscounts/:id",
+        "entity": "basicDiscounts",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/basicDiscounts/:id",
+        "entity": "basicDiscounts",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/orderTax",
+        "entity": "orderTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/orderTax/:id",
+        "entity": "orderTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/orderTax",
+        "entity": "orderTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/orderTax/:id",
+        "entity": "orderTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/orderTax/:id",
+        "entity": "orderTax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/paymentPlan",
+        "entity": "paymentPlan",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/paymentPlan/:id",
+        "entity": "paymentPlan",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/paymentPlan",
+        "entity": "paymentPlan",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/paymentPlan/:id",
+        "entity": "paymentPlan",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/paymentPlan/:id",
+        "entity": "paymentPlan",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/paymentDetails",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/paymentDetails/:id",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/paymentDetails",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/paymentDetails/:id",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/paymentDetails/:id",
+        "entity": "paymentDetails",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "purchase-order",
+    "baseUrl": "/sws/neo/purchase-order",
+    "crud": {
+      "order": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/order",
+        "detailUrl": "/sws/neo/purchase-order/order/{id}",
+        "supportedFilters": [
+          "documentStatus",
+          "orderDate",
+          "businessPartner",
+          "orderReference"
+        ]
+      },
+      "orderLine": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/orderLine",
+        "detailUrl": "/sws/neo/purchase-order/orderLine/{id}",
+        "supportedFilters": []
+      },
+      "orderLineTax": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/orderLineTax",
+        "detailUrl": "/sws/neo/purchase-order/orderLineTax/{id}",
+        "supportedFilters": []
+      },
+      "reservedStock": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/reservedStock",
+        "detailUrl": "/sws/neo/purchase-order/reservedStock/{id}",
+        "supportedFilters": []
+      },
+      "basicDiscounts": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/basicDiscounts",
+        "detailUrl": "/sws/neo/purchase-order/basicDiscounts/{id}",
+        "supportedFilters": []
+      },
+      "orderTax": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/orderTax",
+        "detailUrl": "/sws/neo/purchase-order/orderTax/{id}",
+        "supportedFilters": []
+      },
+      "paymentPlan": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/paymentPlan",
+        "detailUrl": "/sws/neo/purchase-order/paymentPlan/{id}",
+        "supportedFilters": []
+      },
+      "paymentDetails": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/purchase-order/paymentDetails",
+        "detailUrl": "/sws/neo/purchase-order/paymentDetails/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [
+      {
+        "entity": "order",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BusinessPartner",
+        "url": "/sws/neo/purchase-order/order/selectors/businessPartner"
+      },
+      {
+        "entity": "order",
+        "field": "partnerAddress",
+        "column": "C_BPartner_Location_ID",
+        "reference": "BusinessPartnerLocation",
+        "url": "/sws/neo/purchase-order/order/selectors/partnerAddress"
+      },
+      {
+        "entity": "order",
+        "field": "warehouse",
+        "column": "M_Warehouse_ID",
+        "reference": "Warehouse",
+        "url": "/sws/neo/purchase-order/order/selectors/warehouse"
+      },
+      {
+        "entity": "order",
+        "field": "paymentMethod",
+        "column": "FIN_Paymentmethod_ID",
+        "reference": "PaymentMethod",
+        "url": "/sws/neo/purchase-order/order/selectors/paymentMethod"
+      },
+      {
+        "entity": "order",
+        "field": "paymentTerms",
+        "column": "C_PaymentTerm_ID",
+        "reference": "PaymentTerm",
+        "url": "/sws/neo/purchase-order/order/selectors/paymentTerms"
+      },
+      {
+        "entity": "order",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "url": "/sws/neo/purchase-order/order/selectors/priceList"
+      },
+      {
+        "entity": "order",
+        "field": "invoiceAddress",
+        "column": "BillTo_ID",
+        "reference": "BusinessPartnerLocation",
+        "url": "/sws/neo/purchase-order/order/selectors/invoiceAddress"
+      },
+      {
+        "entity": "order",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "url": "/sws/neo/purchase-order/order/selectors/project"
+      },
+      {
+        "entity": "order",
+        "field": "costcenter",
+        "column": "C_Costcenter_ID",
+        "reference": "CostCenter",
+        "url": "/sws/neo/purchase-order/order/selectors/costcenter"
+      },
+      {
+        "entity": "order",
+        "field": "asset",
+        "column": "A_Asset_ID",
+        "reference": "Asset",
+        "url": "/sws/neo/purchase-order/order/selectors/asset"
+      },
+      {
+        "entity": "order",
+        "field": "stDimension",
+        "column": "User1_ID",
+        "reference": "UserDimension1",
+        "url": "/sws/neo/purchase-order/order/selectors/stDimension"
+      },
+      {
+        "entity": "order",
+        "field": "ndDimension",
+        "column": "User2_ID",
+        "reference": "UserDimension2",
+        "url": "/sws/neo/purchase-order/order/selectors/ndDimension"
+      },
+      {
+        "entity": "orderLine",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/product"
+      },
+      {
+        "entity": "orderLine",
+        "field": "operativeUOM",
+        "column": "C_Aum",
+        "reference": "UOM",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/operativeUOM"
+      },
+      {
+        "entity": "orderLine",
+        "field": "uOM",
+        "column": "C_UOM_ID",
+        "reference": "UOM",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/uOM"
+      },
+      {
+        "entity": "orderLine",
+        "field": "tax",
+        "column": "C_Tax_ID",
+        "reference": "Tax",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/tax"
+      },
+      {
+        "entity": "orderLine",
+        "field": "project",
+        "column": "C_Project_ID",
+        "reference": "Project",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/project"
+      },
+      {
+        "entity": "orderLine",
+        "field": "costcenter",
+        "column": "C_Costcenter_ID",
+        "reference": "CostCenter",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/costcenter"
+      },
+      {
+        "entity": "orderLine",
+        "field": "asset",
+        "column": "A_Asset_ID",
+        "reference": "Asset",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/asset"
+      },
+      {
+        "entity": "orderLine",
+        "field": "stDimension",
+        "column": "User1_ID",
+        "reference": "UserDimension1",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/stDimension"
+      },
+      {
+        "entity": "orderLine",
+        "field": "ndDimension",
+        "column": "User2_ID",
+        "reference": "UserDimension2",
+        "url": "/sws/neo/purchase-order/orderLine/selectors/ndDimension"
+      },
+      {
+        "entity": "orderLineTax",
+        "field": "tax",
+        "column": "C_Tax_ID",
+        "reference": "Tax",
+        "url": "/sws/neo/purchase-order/orderLineTax/selectors/tax"
+      },
+      {
+        "entity": "reservedStock",
+        "field": "reservation",
+        "column": "M_Reservation_ID",
+        "reference": "Reservation",
+        "url": "/sws/neo/purchase-order/reservedStock/selectors/reservation"
+      },
+      {
+        "entity": "reservedStock",
+        "field": "storageBin",
+        "column": "M_Locator_ID",
+        "reference": "Locator",
+        "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
+      },
+      {
+        "entity": "reservedStock",
+        "field": "businessPartner",
+        "column": "C_BPartner_ID",
+        "reference": "BusinessPartner",
+        "url": "/sws/neo/purchase-order/reservedStock/selectors/businessPartner"
+      },
+      {
+        "entity": "basicDiscounts",
+        "field": "discount",
+        "column": "C_Discount_ID",
+        "reference": "Discount",
+        "url": "/sws/neo/purchase-order/basicDiscounts/selectors/discount"
+      },
+      {
+        "entity": "orderTax",
+        "field": "tax",
+        "column": "C_Tax_ID",
+        "reference": "Tax",
+        "url": "/sws/neo/purchase-order/orderTax/selectors/tax"
+      },
+      {
+        "entity": "paymentPlan",
+        "field": "paymentMethod",
+        "column": "FIN_Paymentmethod_ID",
+        "reference": "PaymentMethod",
+        "url": "/sws/neo/purchase-order/paymentPlan/selectors/paymentMethod"
+      },
+      {
+        "entity": "paymentPlan",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "url": "/sws/neo/purchase-order/paymentPlan/selectors/currency"
+      },
+      {
+        "entity": "paymentDetails",
+        "field": "payment",
+        "column": "FIN_Payment_ID",
+        "reference": "Payment",
+        "url": "/sws/neo/purchase-order/paymentDetails/selectors/payment"
+      },
+      {
+        "entity": "paymentDetails",
+        "field": "paymentMethod",
+        "column": "Fin_Paymentmethod_ID",
+        "reference": "PaymentMethod",
+        "url": "/sws/neo/purchase-order/paymentDetails/selectors/paymentMethod"
+      },
+      {
+        "entity": "paymentDetails",
+        "field": "finFinancialAccountID",
+        "column": "Fin_Financial_Account_ID",
+        "reference": "FinancialAccount",
+        "url": "/sws/neo/purchase-order/paymentDetails/selectors/finFinancialAccountID"
+      }
+    ],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=purchase-orderDate"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    }
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be present in order"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "Field 'orderDate' should be present in order"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in order"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Field 'partnerAddress' should be present in order"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should be present in order"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "scheduledDeliveryDate",
+        "runner": "node",
+        "description": "Field 'scheduledDeliveryDate' should be present in order"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Field 'paymentMethod' should be present in order"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "paymentTerms",
+        "runner": "node",
+        "description": "Field 'paymentTerms' should be present in order"
+      },
+      {
+        "id": "t-9",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "priceList",
+        "runner": "node",
+        "description": "Field 'priceList' should be present in order"
+      },
+      {
+        "id": "t-10",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "invoiceAddress",
+        "runner": "node",
+        "description": "Field 'invoiceAddress' should be present in order"
+      },
+      {
+        "id": "t-11",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in order"
+      },
+      {
+        "id": "t-12",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "deliveryNotes",
+        "runner": "node",
+        "description": "Field 'deliveryNotes' should be present in order"
+      },
+      {
+        "id": "t-13",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should be present in order"
+      },
+      {
+        "id": "t-14",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "grandTotalAmount",
+        "runner": "node",
+        "description": "Field 'grandTotalAmount' should be present in order"
+      },
+      {
+        "id": "t-15",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "summedLineAmount",
+        "runner": "node",
+        "description": "Field 'summedLineAmount' should be present in order"
+      },
+      {
+        "id": "t-16",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "priceIncludesTax",
+        "runner": "node",
+        "description": "Field 'priceIncludesTax' should be present in order"
+      },
+      {
+        "id": "t-17",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should be present in order"
+      },
+      {
+        "id": "t-18",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should be present in order"
+      },
+      {
+        "id": "t-19",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should be present in order"
+      },
+      {
+        "id": "t-20",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should be present in order"
+      },
+      {
+        "id": "t-21",
+        "category": "field-presence",
+        "entity": "order",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should be present in order"
+      },
+      {
+        "id": "t-22",
+        "category": "field-type",
+        "entity": "order",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should have type 'string' in order"
+      },
+      {
+        "id": "t-23",
+        "category": "field-type",
+        "entity": "order",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "Field 'orderDate' should have type 'string' in order"
+      },
+      {
+        "id": "t-24",
+        "category": "field-type",
+        "entity": "order",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in order"
+      },
+      {
+        "id": "t-25",
+        "category": "field-type",
+        "entity": "order",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Field 'partnerAddress' should have type 'string' in order"
+      },
+      {
+        "id": "t-26",
+        "category": "field-type",
+        "entity": "order",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should have type 'string' in order"
+      },
+      {
+        "id": "t-27",
+        "category": "field-type",
+        "entity": "order",
+        "field": "scheduledDeliveryDate",
+        "runner": "node",
+        "description": "Field 'scheduledDeliveryDate' should have type 'string' in order"
+      },
+      {
+        "id": "t-28",
+        "category": "field-type",
+        "entity": "order",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Field 'paymentMethod' should have type 'string' in order"
+      },
+      {
+        "id": "t-29",
+        "category": "field-type",
+        "entity": "order",
+        "field": "paymentTerms",
+        "runner": "node",
+        "description": "Field 'paymentTerms' should have type 'string' in order"
+      },
+      {
+        "id": "t-30",
+        "category": "field-type",
+        "entity": "order",
+        "field": "priceList",
+        "runner": "node",
+        "description": "Field 'priceList' should have type 'string' in order"
+      },
+      {
+        "id": "t-31",
+        "category": "field-type",
+        "entity": "order",
+        "field": "invoiceAddress",
+        "runner": "node",
+        "description": "Field 'invoiceAddress' should have type 'string' in order"
+      },
+      {
+        "id": "t-32",
+        "category": "field-type",
+        "entity": "order",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in order"
+      },
+      {
+        "id": "t-33",
+        "category": "field-type",
+        "entity": "order",
+        "field": "deliveryNotes",
+        "runner": "node",
+        "description": "Field 'deliveryNotes' should have type 'string' in order"
+      },
+      {
+        "id": "t-34",
+        "category": "field-type",
+        "entity": "order",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should have type 'string' in order"
+      },
+      {
+        "id": "t-35",
+        "category": "field-type",
+        "entity": "order",
+        "field": "grandTotalAmount",
+        "runner": "node",
+        "description": "Field 'grandTotalAmount' should have type 'number' in order"
+      },
+      {
+        "id": "t-36",
+        "category": "field-type",
+        "entity": "order",
+        "field": "summedLineAmount",
+        "runner": "node",
+        "description": "Field 'summedLineAmount' should have type 'number' in order"
+      },
+      {
+        "id": "t-37",
+        "category": "field-type",
+        "entity": "order",
+        "field": "priceIncludesTax",
+        "runner": "node",
+        "description": "Field 'priceIncludesTax' should have type 'boolean' in order"
+      },
+      {
+        "id": "t-38",
+        "category": "field-type",
+        "entity": "order",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should have type 'string' in order"
+      },
+      {
+        "id": "t-39",
+        "category": "field-type",
+        "entity": "order",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should have type 'string' in order"
+      },
+      {
+        "id": "t-40",
+        "category": "field-type",
+        "entity": "order",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should have type 'string' in order"
+      },
+      {
+        "id": "t-41",
+        "category": "field-type",
+        "entity": "order",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should have type 'string' in order"
+      },
+      {
+        "id": "t-42",
+        "category": "field-type",
+        "entity": "order",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should have type 'string' in order"
+      },
+      {
+        "id": "t-43",
+        "category": "searchable-filters",
+        "entity": "order",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be a supported filter for order"
+      },
+      {
+        "id": "t-44",
+        "category": "searchable-filters",
+        "entity": "order",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "Field 'orderDate' should be a supported filter for order"
+      },
+      {
+        "id": "t-45",
+        "category": "searchable-filters",
+        "entity": "order",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for order"
+      },
+      {
+        "id": "t-46",
+        "category": "searchable-filters",
+        "entity": "order",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should be a supported filter for order"
+      },
+      {
+        "id": "t-47",
+        "category": "visibility",
+        "entity": "order",
+        "runner": "node",
+        "description": "Entity 'order' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-48",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in orderLine"
+      },
+      {
+        "id": "t-49",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in orderLine"
+      },
+      {
+        "id": "t-50",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "Field 'operativeQuantity' should be present in orderLine"
+      },
+      {
+        "id": "t-51",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Field 'operativeUOM' should be present in orderLine"
+      },
+      {
+        "id": "t-52",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "orderedQuantity",
+        "runner": "node",
+        "description": "Field 'orderedQuantity' should be present in orderLine"
+      },
+      {
+        "id": "t-53",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should be present in orderLine"
+      },
+      {
+        "id": "t-54",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "unitPrice",
+        "runner": "node",
+        "description": "Field 'unitPrice' should be present in orderLine"
+      },
+      {
+        "id": "t-55",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "grossUnitPrice",
+        "runner": "node",
+        "description": "Field 'grossUnitPrice' should be present in orderLine"
+      },
+      {
+        "id": "t-56",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "lineNetAmount",
+        "runner": "node",
+        "description": "Field 'lineNetAmount' should be present in orderLine"
+      },
+      {
+        "id": "t-57",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "lineGrossAmount",
+        "runner": "node",
+        "description": "Field 'lineGrossAmount' should be present in orderLine"
+      },
+      {
+        "id": "t-58",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "tax",
+        "runner": "node",
+        "description": "Field 'tax' should be present in orderLine"
+      },
+      {
+        "id": "t-59",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should be present in orderLine"
+      },
+      {
+        "id": "t-60",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "grossListPrice",
+        "runner": "node",
+        "description": "Field 'grossListPrice' should be present in orderLine"
+      },
+      {
+        "id": "t-61",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "discount",
+        "runner": "node",
+        "description": "Field 'discount' should be present in orderLine"
+      },
+      {
+        "id": "t-62",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in orderLine"
+      },
+      {
+        "id": "t-63",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "taxableAmount",
+        "runner": "node",
+        "description": "Field 'taxableAmount' should be present in orderLine"
+      },
+      {
+        "id": "t-64",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should be present in orderLine"
+      },
+      {
+        "id": "t-65",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should be present in orderLine"
+      },
+      {
+        "id": "t-66",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should be present in orderLine"
+      },
+      {
+        "id": "t-67",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should be present in orderLine"
+      },
+      {
+        "id": "t-68",
+        "category": "field-presence",
+        "entity": "orderLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should be present in orderLine"
+      },
+      {
+        "id": "t-69",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in orderLine"
+      },
+      {
+        "id": "t-70",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-71",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "Field 'operativeQuantity' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-72",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Field 'operativeUOM' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-73",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "orderedQuantity",
+        "runner": "node",
+        "description": "Field 'orderedQuantity' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-74",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-75",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "unitPrice",
+        "runner": "node",
+        "description": "Field 'unitPrice' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-76",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "grossUnitPrice",
+        "runner": "node",
+        "description": "Field 'grossUnitPrice' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-77",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "lineNetAmount",
+        "runner": "node",
+        "description": "Field 'lineNetAmount' should have type 'number' in orderLine"
+      },
+      {
+        "id": "t-78",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "lineGrossAmount",
+        "runner": "node",
+        "description": "Field 'lineGrossAmount' should have type 'number' in orderLine"
+      },
+      {
+        "id": "t-79",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "tax",
+        "runner": "node",
+        "description": "Field 'tax' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-80",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-81",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "grossListPrice",
+        "runner": "node",
+        "description": "Field 'grossListPrice' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-82",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "discount",
+        "runner": "node",
+        "description": "Field 'discount' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-83",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-84",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "taxableAmount",
+        "runner": "node",
+        "description": "Field 'taxableAmount' should have type 'number' in orderLine"
+      },
+      {
+        "id": "t-85",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-86",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-87",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-88",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-89",
+        "category": "field-type",
+        "entity": "orderLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should have type 'string' in orderLine"
+      },
+      {
+        "id": "t-90",
+        "category": "visibility",
+        "entity": "orderLine",
+        "runner": "node",
+        "description": "Entity 'orderLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-91",
+        "category": "field-presence",
+        "entity": "orderLineTax",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in orderLineTax"
+      },
+      {
+        "id": "t-92",
+        "category": "field-presence",
+        "entity": "orderLineTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Field 'tax' should be present in orderLineTax"
+      },
+      {
+        "id": "t-93",
+        "category": "field-presence",
+        "entity": "orderLineTax",
+        "field": "taxableAmount",
+        "runner": "node",
+        "description": "Field 'taxableAmount' should be present in orderLineTax"
+      },
+      {
+        "id": "t-94",
+        "category": "field-presence",
+        "entity": "orderLineTax",
+        "field": "taxAmount",
+        "runner": "node",
+        "description": "Field 'taxAmount' should be present in orderLineTax"
+      },
+      {
+        "id": "t-95",
+        "category": "field-type",
+        "entity": "orderLineTax",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in orderLineTax"
+      },
+      {
+        "id": "t-96",
+        "category": "field-type",
+        "entity": "orderLineTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Field 'tax' should have type 'string' in orderLineTax"
+      },
+      {
+        "id": "t-97",
+        "category": "field-type",
+        "entity": "orderLineTax",
+        "field": "taxableAmount",
+        "runner": "node",
+        "description": "Field 'taxableAmount' should have type 'number' in orderLineTax"
+      },
+      {
+        "id": "t-98",
+        "category": "field-type",
+        "entity": "orderLineTax",
+        "field": "taxAmount",
+        "runner": "node",
+        "description": "Field 'taxAmount' should have type 'number' in orderLineTax"
+      },
+      {
+        "id": "t-99",
+        "category": "visibility",
+        "entity": "orderLineTax",
+        "runner": "node",
+        "description": "Entity 'orderLineTax' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-100",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "reservation",
+        "runner": "node",
+        "description": "Field 'reservation' should be present in reservedStock"
+      },
+      {
+        "id": "t-101",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should be present in reservedStock"
+      },
+      {
+        "id": "t-102",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "Field 'attributeSetValue' should be present in reservedStock"
+      },
+      {
+        "id": "t-103",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "allocated",
+        "runner": "node",
+        "description": "Field 'allocated' should be present in reservedStock"
+      },
+      {
+        "id": "t-104",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "quantity",
+        "runner": "node",
+        "description": "Field 'quantity' should be present in reservedStock"
+      },
+      {
+        "id": "t-105",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "released",
+        "runner": "node",
+        "description": "Field 'released' should be present in reservedStock"
+      },
+      {
+        "id": "t-106",
+        "category": "field-presence",
+        "entity": "reservedStock",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in reservedStock"
+      },
+      {
+        "id": "t-107",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "reservation",
+        "runner": "node",
+        "description": "Field 'reservation' should have type 'string' in reservedStock"
+      },
+      {
+        "id": "t-108",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should have type 'string' in reservedStock"
+      },
+      {
+        "id": "t-109",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "Field 'attributeSetValue' should have type 'string' in reservedStock"
+      },
+      {
+        "id": "t-110",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "allocated",
+        "runner": "node",
+        "description": "Field 'allocated' should have type 'boolean' in reservedStock"
+      },
+      {
+        "id": "t-111",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "quantity",
+        "runner": "node",
+        "description": "Field 'quantity' should have type 'string' in reservedStock"
+      },
+      {
+        "id": "t-112",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "released",
+        "runner": "node",
+        "description": "Field 'released' should have type 'string' in reservedStock"
+      },
+      {
+        "id": "t-113",
+        "category": "field-type",
+        "entity": "reservedStock",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in reservedStock"
+      },
+      {
+        "id": "t-114",
+        "category": "visibility",
+        "entity": "reservedStock",
+        "runner": "node",
+        "description": "Entity 'reservedStock' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-115",
+        "category": "field-presence",
+        "entity": "basicDiscounts",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in basicDiscounts"
+      },
+      {
+        "id": "t-116",
+        "category": "field-presence",
+        "entity": "basicDiscounts",
+        "field": "discount",
+        "runner": "node",
+        "description": "Field 'discount' should be present in basicDiscounts"
+      },
+      {
+        "id": "t-117",
+        "category": "field-presence",
+        "entity": "basicDiscounts",
+        "field": "cascade",
+        "runner": "node",
+        "description": "Field 'cascade' should be present in basicDiscounts"
+      },
+      {
+        "id": "t-118",
+        "category": "field-presence",
+        "entity": "basicDiscounts",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in basicDiscounts"
+      },
+      {
+        "id": "t-119",
+        "category": "field-type",
+        "entity": "basicDiscounts",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in basicDiscounts"
+      },
+      {
+        "id": "t-120",
+        "category": "field-type",
+        "entity": "basicDiscounts",
+        "field": "discount",
+        "runner": "node",
+        "description": "Field 'discount' should have type 'string' in basicDiscounts"
+      },
+      {
+        "id": "t-121",
+        "category": "field-type",
+        "entity": "basicDiscounts",
+        "field": "cascade",
+        "runner": "node",
+        "description": "Field 'cascade' should have type 'boolean' in basicDiscounts"
+      },
+      {
+        "id": "t-122",
+        "category": "field-type",
+        "entity": "basicDiscounts",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in basicDiscounts"
+      },
+      {
+        "id": "t-123",
+        "category": "visibility",
+        "entity": "basicDiscounts",
+        "runner": "node",
+        "description": "Entity 'basicDiscounts' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-124",
+        "category": "field-presence",
+        "entity": "orderTax",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in orderTax"
+      },
+      {
+        "id": "t-125",
+        "category": "field-presence",
+        "entity": "orderTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Field 'tax' should be present in orderTax"
+      },
+      {
+        "id": "t-126",
+        "category": "field-presence",
+        "entity": "orderTax",
+        "field": "taxableAmount",
+        "runner": "node",
+        "description": "Field 'taxableAmount' should be present in orderTax"
+      },
+      {
+        "id": "t-127",
+        "category": "field-presence",
+        "entity": "orderTax",
+        "field": "taxAmount",
+        "runner": "node",
+        "description": "Field 'taxAmount' should be present in orderTax"
+      },
+      {
+        "id": "t-128",
+        "category": "field-type",
+        "entity": "orderTax",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in orderTax"
+      },
+      {
+        "id": "t-129",
+        "category": "field-type",
+        "entity": "orderTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Field 'tax' should have type 'string' in orderTax"
+      },
+      {
+        "id": "t-130",
+        "category": "field-type",
+        "entity": "orderTax",
+        "field": "taxableAmount",
+        "runner": "node",
+        "description": "Field 'taxableAmount' should have type 'number' in orderTax"
+      },
+      {
+        "id": "t-131",
+        "category": "field-type",
+        "entity": "orderTax",
+        "field": "taxAmount",
+        "runner": "node",
+        "description": "Field 'taxAmount' should have type 'number' in orderTax"
+      },
+      {
+        "id": "t-132",
+        "category": "visibility",
+        "entity": "orderTax",
+        "runner": "node",
+        "description": "Entity 'orderTax' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-133",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "dueDate",
+        "runner": "node",
+        "description": "Field 'dueDate' should be present in paymentPlan"
+      },
+      {
+        "id": "t-134",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Field 'paymentMethod' should be present in paymentPlan"
+      },
+      {
+        "id": "t-135",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "expected",
+        "runner": "node",
+        "description": "Field 'expected' should be present in paymentPlan"
+      },
+      {
+        "id": "t-136",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "received",
+        "runner": "node",
+        "description": "Field 'received' should be present in paymentPlan"
+      },
+      {
+        "id": "t-137",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "outstanding",
+        "runner": "node",
+        "description": "Field 'outstanding' should be present in paymentPlan"
+      },
+      {
+        "id": "t-138",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "lastPayment",
+        "runner": "node",
+        "description": "Field 'lastPayment' should be present in paymentPlan"
+      },
+      {
+        "id": "t-139",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "numberOfPayments",
+        "runner": "node",
+        "description": "Field 'numberOfPayments' should be present in paymentPlan"
+      },
+      {
+        "id": "t-140",
+        "category": "field-presence",
+        "entity": "paymentPlan",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in paymentPlan"
+      },
+      {
+        "id": "t-141",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "dueDate",
+        "runner": "node",
+        "description": "Field 'dueDate' should have type 'string' in paymentPlan"
+      },
+      {
+        "id": "t-142",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Field 'paymentMethod' should have type 'string' in paymentPlan"
+      },
+      {
+        "id": "t-143",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "expected",
+        "runner": "node",
+        "description": "Field 'expected' should have type 'number' in paymentPlan"
+      },
+      {
+        "id": "t-144",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "received",
+        "runner": "node",
+        "description": "Field 'received' should have type 'number' in paymentPlan"
+      },
+      {
+        "id": "t-145",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "outstanding",
+        "runner": "node",
+        "description": "Field 'outstanding' should have type 'number' in paymentPlan"
+      },
+      {
+        "id": "t-146",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "lastPayment",
+        "runner": "node",
+        "description": "Field 'lastPayment' should have type 'string' in paymentPlan"
+      },
+      {
+        "id": "t-147",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "numberOfPayments",
+        "runner": "node",
+        "description": "Field 'numberOfPayments' should have type 'number' in paymentPlan"
+      },
+      {
+        "id": "t-148",
+        "category": "field-type",
+        "entity": "paymentPlan",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in paymentPlan"
+      },
+      {
+        "id": "t-149",
+        "category": "visibility",
+        "entity": "paymentPlan",
+        "runner": "node",
+        "description": "Entity 'paymentPlan' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-150",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "payment",
+        "runner": "node",
+        "description": "Field 'payment' should be present in paymentDetails"
+      },
+      {
+        "id": "t-151",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "paymentDate",
+        "runner": "node",
+        "description": "Field 'paymentDate' should be present in paymentDetails"
+      },
+      {
+        "id": "t-152",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "dueDate",
+        "runner": "node",
+        "description": "Field 'dueDate' should be present in paymentDetails"
+      },
+      {
+        "id": "t-153",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Field 'paymentMethod' should be present in paymentDetails"
+      },
+      {
+        "id": "t-154",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "finFinancialAccountID",
+        "runner": "node",
+        "description": "Field 'finFinancialAccountID' should be present in paymentDetails"
+      },
+      {
+        "id": "t-155",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "expected",
+        "runner": "node",
+        "description": "Field 'expected' should be present in paymentDetails"
+      },
+      {
+        "id": "t-156",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "paidAmount",
+        "runner": "node",
+        "description": "Field 'paidAmount' should be present in paymentDetails"
+      },
+      {
+        "id": "t-157",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "writeoffAmount",
+        "runner": "node",
+        "description": "Field 'writeoffAmount' should be present in paymentDetails"
+      },
+      {
+        "id": "t-158",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "expectedConverted",
+        "runner": "node",
+        "description": "Field 'expectedConverted' should be present in paymentDetails"
+      },
+      {
+        "id": "t-159",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "paidConverted",
+        "runner": "node",
+        "description": "Field 'paidConverted' should be present in paymentDetails"
+      },
+      {
+        "id": "t-160",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "finaccTxnConvertRate",
+        "runner": "node",
+        "description": "Field 'finaccTxnConvertRate' should be present in paymentDetails"
+      },
+      {
+        "id": "t-161",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "canceled",
+        "runner": "node",
+        "description": "Field 'canceled' should be present in paymentDetails"
+      },
+      {
+        "id": "t-162",
+        "category": "field-presence",
+        "entity": "paymentDetails",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should be present in paymentDetails"
+      },
+      {
+        "id": "t-163",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "payment",
+        "runner": "node",
+        "description": "Field 'payment' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-164",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "paymentDate",
+        "runner": "node",
+        "description": "Field 'paymentDate' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-165",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "dueDate",
+        "runner": "node",
+        "description": "Field 'dueDate' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-166",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Field 'paymentMethod' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-167",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "finFinancialAccountID",
+        "runner": "node",
+        "description": "Field 'finFinancialAccountID' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-168",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "expected",
+        "runner": "node",
+        "description": "Field 'expected' should have type 'number' in paymentDetails"
+      },
+      {
+        "id": "t-169",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "paidAmount",
+        "runner": "node",
+        "description": "Field 'paidAmount' should have type 'number' in paymentDetails"
+      },
+      {
+        "id": "t-170",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "writeoffAmount",
+        "runner": "node",
+        "description": "Field 'writeoffAmount' should have type 'number' in paymentDetails"
+      },
+      {
+        "id": "t-171",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "expectedConverted",
+        "runner": "node",
+        "description": "Field 'expectedConverted' should have type 'number' in paymentDetails"
+      },
+      {
+        "id": "t-172",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "paidConverted",
+        "runner": "node",
+        "description": "Field 'paidConverted' should have type 'number' in paymentDetails"
+      },
+      {
+        "id": "t-173",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "finaccTxnConvertRate",
+        "runner": "node",
+        "description": "Field 'finaccTxnConvertRate' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-174",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "canceled",
+        "runner": "node",
+        "description": "Field 'canceled' should have type 'boolean' in paymentDetails"
+      },
+      {
+        "id": "t-175",
+        "category": "field-type",
+        "entity": "paymentDetails",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should have type 'string' in paymentDetails"
+      },
+      {
+        "id": "t-176",
+        "category": "visibility",
+        "entity": "paymentDetails",
+        "runner": "node",
+        "description": "Entity 'paymentDetails' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-177",
+        "category": "system-field",
+        "entity": "order",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-178",
+        "category": "system-field",
+        "entity": "order",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-179",
+        "category": "system-field",
+        "entity": "order",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-180",
+        "category": "system-field",
+        "entity": "order",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-181",
+        "category": "system-field",
+        "entity": "order",
+        "field": "transactionDocument",
+        "runner": "node",
+        "description": "System field 'transactionDocument' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-182",
+        "category": "system-field",
+        "entity": "order",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "System field 'documentNo' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-183",
+        "category": "system-field",
+        "entity": "order",
+        "field": "documentType",
+        "runner": "node",
+        "description": "System field 'documentType' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-184",
+        "category": "system-field",
+        "entity": "order",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-185",
+        "category": "system-field",
+        "entity": "order",
+        "field": "salesTransaction",
+        "runner": "node",
+        "description": "System field 'salesTransaction' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-186",
+        "category": "system-field",
+        "entity": "order",
+        "field": "currency",
+        "runner": "node",
+        "description": "System field 'currency' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-187",
+        "category": "system-field",
+        "entity": "order",
+        "field": "userContact",
+        "runner": "node",
+        "description": "System field 'userContact' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-188",
+        "category": "system-field",
+        "entity": "order",
+        "field": "salesRepresentative",
+        "runner": "node",
+        "description": "System field 'salesRepresentative' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-189",
+        "category": "system-field",
+        "entity": "order",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "System field 'accountingDate' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-190",
+        "category": "system-field",
+        "entity": "order",
+        "field": "incoterms",
+        "runner": "node",
+        "description": "System field 'incoterms' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-191",
+        "category": "system-field",
+        "entity": "order",
+        "field": "iNCOTERMSDescription",
+        "runner": "node",
+        "description": "System field 'iNCOTERMSDescription' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-192",
+        "category": "system-field",
+        "entity": "order",
+        "field": "printDiscount",
+        "runner": "node",
+        "description": "System field 'printDiscount' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-193",
+        "category": "system-field",
+        "entity": "order",
+        "field": "freightAmount",
+        "runner": "node",
+        "description": "System field 'freightAmount' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-194",
+        "category": "system-field",
+        "entity": "order",
+        "field": "deliveryMethod",
+        "runner": "node",
+        "description": "System field 'deliveryMethod' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-195",
+        "category": "system-field",
+        "entity": "order",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-196",
+        "category": "system-field",
+        "entity": "order",
+        "field": "shippingCompany",
+        "runner": "node",
+        "description": "System field 'shippingCompany' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-197",
+        "category": "system-field",
+        "entity": "order",
+        "field": "priority",
+        "runner": "node",
+        "description": "System field 'priority' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-198",
+        "category": "system-field",
+        "entity": "order",
+        "field": "chargeAmount",
+        "runner": "node",
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-199",
+        "category": "system-field",
+        "entity": "order",
+        "field": "charge",
+        "runner": "node",
+        "description": "System field 'charge' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-200",
+        "category": "system-field",
+        "entity": "order",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-201",
+        "category": "system-field",
+        "entity": "order",
+        "field": "freightCostRule",
+        "runner": "node",
+        "description": "System field 'freightCostRule' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-202",
+        "category": "system-field",
+        "entity": "order",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-203",
+        "category": "system-field",
+        "entity": "order",
+        "field": "formOfPayment",
+        "runner": "node",
+        "description": "System field 'formOfPayment' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-204",
+        "category": "system-field",
+        "entity": "order",
+        "field": "deliveryLocation",
+        "runner": "node",
+        "description": "System field 'deliveryLocation' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-205",
+        "category": "system-field",
+        "entity": "order",
+        "field": "deliveryTerms",
+        "runner": "node",
+        "description": "System field 'deliveryTerms' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-206",
+        "category": "system-field",
+        "entity": "order",
+        "field": "datePrinted",
+        "runner": "node",
+        "description": "System field 'datePrinted' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-207",
+        "category": "system-field",
+        "entity": "order",
+        "field": "selfService",
+        "runner": "node",
+        "description": "System field 'selfService' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-208",
+        "category": "system-field",
+        "entity": "order",
+        "field": "dropShipLocation",
+        "runner": "node",
+        "description": "System field 'dropShipLocation' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-209",
+        "category": "system-field",
+        "entity": "order",
+        "field": "dropShipPartner",
+        "runner": "node",
+        "description": "System field 'dropShipPartner' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-210",
+        "category": "system-field",
+        "entity": "order",
+        "field": "dropShipContact",
+        "runner": "node",
+        "description": "System field 'dropShipContact' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-211",
+        "category": "system-field",
+        "entity": "order",
+        "field": "selected",
+        "runner": "node",
+        "description": "System field 'selected' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-212",
+        "category": "system-field",
+        "entity": "order",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-213",
+        "category": "system-field",
+        "entity": "order",
+        "field": "invoiceTerms",
+        "runner": "node",
+        "description": "System field 'invoiceTerms' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-214",
+        "category": "system-field",
+        "entity": "order",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-215",
+        "category": "system-field",
+        "entity": "order",
+        "field": "delivered",
+        "runner": "node",
+        "description": "System field 'delivered' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-216",
+        "category": "system-field",
+        "entity": "order",
+        "field": "reinvoice",
+        "runner": "node",
+        "description": "System field 'reinvoice' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-217",
+        "category": "system-field",
+        "entity": "order",
+        "field": "print",
+        "runner": "node",
+        "description": "System field 'print' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-218",
+        "category": "system-field",
+        "entity": "order",
+        "field": "deliveryStatusPurchase",
+        "runner": "node",
+        "description": "System field 'deliveryStatusPurchase' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-219",
+        "category": "system-field",
+        "entity": "order",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "System field 'invoiceStatus' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-220",
+        "category": "system-field",
+        "entity": "order",
+        "field": "eMAPRMAddPayment",
+        "runner": "node",
+        "description": "System field 'eMAPRMAddPayment' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-221",
+        "category": "system-field",
+        "entity": "order",
+        "field": "documentAction",
+        "runner": "node",
+        "description": "System field 'documentAction' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-222",
+        "category": "system-field",
+        "entity": "order",
+        "field": "copyFrom",
+        "runner": "node",
+        "description": "System field 'copyFrom' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-223",
+        "category": "system-field",
+        "entity": "order",
+        "field": "copyFromPO",
+        "runner": "node",
+        "description": "System field 'copyFromPO' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-224",
+        "category": "system-field",
+        "entity": "order",
+        "field": "createPOLines",
+        "runner": "node",
+        "description": "System field 'createPOLines' should exist in backend but not frontend for order"
+      },
+      {
+        "id": "t-225",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-226",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-227",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-228",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-229",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-230",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "System field 'warehouse' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-231",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "currency",
+        "runner": "node",
+        "description": "System field 'currency' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-232",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "System field 'businessPartner' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-233",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "System field 'partnerAddress' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-234",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "System field 'orderDate' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-235",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "scheduledDeliveryDate",
+        "runner": "node",
+        "description": "System field 'scheduledDeliveryDate' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-236",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "reservedQuantity",
+        "runner": "node",
+        "description": "System field 'reservedQuantity' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-237",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "deliveredQuantity",
+        "runner": "node",
+        "description": "System field 'deliveredQuantity' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-238",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "invoicedQuantity",
+        "runner": "node",
+        "description": "System field 'invoicedQuantity' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-239",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "shippingCompany",
+        "runner": "node",
+        "description": "System field 'shippingCompany' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-240",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "freightAmount",
+        "runner": "node",
+        "description": "System field 'freightAmount' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-241",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "System field 'attributeSetValue' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-242",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "editLineAmount",
+        "runner": "node",
+        "description": "System field 'editLineAmount' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-243",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "cancelPriceAdjustment",
+        "runner": "node",
+        "description": "System field 'cancelPriceAdjustment' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-244",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "baseGrossUnitPrice",
+        "runner": "node",
+        "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-245",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "System field 'standardPrice' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-246",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "System field 'orderQuantity' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-247",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "orderUOM",
+        "runner": "node",
+        "description": "System field 'orderUOM' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-248",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "bOMParentID",
+        "runner": "node",
+        "description": "System field 'bOMParentID' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-249",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "directShipment",
+        "runner": "node",
+        "description": "System field 'directShipment' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-250",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "invoiceDate",
+        "runner": "node",
+        "description": "System field 'invoiceDate' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-251",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "dateDelivered",
+        "runner": "node",
+        "description": "System field 'dateDelivered' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-252",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "warehouseRule",
+        "runner": "node",
+        "description": "System field 'warehouseRule' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-253",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "cOrderDiscountID",
+        "runner": "node",
+        "description": "System field 'cOrderDiscountID' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-254",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "priceAdjustment",
+        "runner": "node",
+        "description": "System field 'priceAdjustment' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-255",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "descriptionOnly",
+        "runner": "node",
+        "description": "System field 'descriptionOnly' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-256",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "resourceAssignment",
+        "runner": "node",
+        "description": "System field 'resourceAssignment' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-257",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "priceLimit",
+        "runner": "node",
+        "description": "System field 'priceLimit' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-258",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "managePrereservation",
+        "runner": "node",
+        "description": "System field 'managePrereservation' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-259",
+        "category": "system-field",
+        "entity": "orderLine",
+        "field": "explode",
+        "runner": "node",
+        "description": "System field 'explode' should exist in backend but not frontend for orderLine"
+      },
+      {
+        "id": "t-260",
+        "category": "system-field",
+        "entity": "orderLineTax",
+        "field": "cOrderlinetaxID",
+        "runner": "node",
+        "description": "System field 'cOrderlinetaxID' should exist in backend but not frontend for orderLineTax"
+      },
+      {
+        "id": "t-261",
+        "category": "system-field",
+        "entity": "orderLineTax",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for orderLineTax"
+      },
+      {
+        "id": "t-262",
+        "category": "system-field",
+        "entity": "orderLineTax",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for orderLineTax"
+      },
+      {
+        "id": "t-263",
+        "category": "system-field",
+        "entity": "orderLineTax",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for orderLineTax"
+      },
+      {
+        "id": "t-264",
+        "category": "system-field",
+        "entity": "orderLineTax",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for orderLineTax"
+      },
+      {
+        "id": "t-265",
+        "category": "system-field",
+        "entity": "orderLineTax",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for orderLineTax"
+      },
+      {
+        "id": "t-266",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "reservationStock",
+        "runner": "node",
+        "description": "System field 'reservationStock' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-267",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-268",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-269",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-270",
+        "category": "system-field",
+        "entity": "reservedStock",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for reservedStock"
+      },
+      {
+        "id": "t-271",
+        "category": "system-field",
+        "entity": "basicDiscounts",
+        "field": "cOrderDiscountID",
+        "runner": "node",
+        "description": "System field 'cOrderDiscountID' should exist in backend but not frontend for basicDiscounts"
+      },
+      {
+        "id": "t-272",
+        "category": "system-field",
+        "entity": "basicDiscounts",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for basicDiscounts"
+      },
+      {
+        "id": "t-273",
+        "category": "system-field",
+        "entity": "basicDiscounts",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for basicDiscounts"
+      },
+      {
+        "id": "t-274",
+        "category": "system-field",
+        "entity": "basicDiscounts",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for basicDiscounts"
+      },
+      {
+        "id": "t-275",
+        "category": "system-field",
+        "entity": "orderTax",
+        "field": "cOrderTaxID",
+        "runner": "node",
+        "description": "System field 'cOrderTaxID' should exist in backend but not frontend for orderTax"
+      },
+      {
+        "id": "t-276",
+        "category": "system-field",
+        "entity": "orderTax",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for orderTax"
+      },
+      {
+        "id": "t-277",
+        "category": "system-field",
+        "entity": "orderTax",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for orderTax"
+      },
+      {
+        "id": "t-278",
+        "category": "system-field",
+        "entity": "orderTax",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for orderTax"
+      },
+      {
+        "id": "t-279",
+        "category": "system-field",
+        "entity": "orderTax",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for orderTax"
+      },
+      {
+        "id": "t-280",
+        "category": "system-field",
+        "entity": "paymentPlan",
+        "field": "finPaymentSchedOrdVID",
+        "runner": "node",
+        "description": "System field 'finPaymentSchedOrdVID' should exist in backend but not frontend for paymentPlan"
+      },
+      {
+        "id": "t-281",
+        "category": "system-field",
+        "entity": "paymentPlan",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for paymentPlan"
+      },
+      {
+        "id": "t-282",
+        "category": "system-field",
+        "entity": "paymentPlan",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for paymentPlan"
+      },
+      {
+        "id": "t-283",
+        "category": "system-field",
+        "entity": "paymentPlan",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for paymentPlan"
+      },
+      {
+        "id": "t-284",
+        "category": "system-field",
+        "entity": "paymentPlan",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for paymentPlan"
+      },
+      {
+        "id": "t-285",
+        "category": "system-field",
+        "entity": "paymentPlan",
+        "field": "invoice",
+        "runner": "node",
+        "description": "System field 'invoice' should exist in backend but not frontend for paymentPlan"
+      },
+      {
+        "id": "t-286",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "finPaymentDetailVID",
+        "runner": "node",
+        "description": "System field 'finPaymentDetailVID' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-287",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-288",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-289",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-290",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "orderPaymentPlan",
+        "runner": "node",
+        "description": "System field 'orderPaymentPlan' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-291",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "System field 'businessPartner' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-292",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "currency",
+        "runner": "node",
+        "description": "System field 'currency' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-293",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "finaccCurrencyID",
+        "runner": "node",
+        "description": "System field 'finaccCurrencyID' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-294",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "paymentno",
+        "runner": "node",
+        "description": "System field 'paymentno' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-295",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "invoiceno",
+        "runner": "node",
+        "description": "System field 'invoiceno' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-296",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "orderno",
+        "runner": "node",
+        "description": "System field 'orderno' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-297",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "invoiceAmount",
+        "runner": "node",
+        "description": "System field 'invoiceAmount' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-298",
+        "category": "rule-declared",
+        "rule": "SE_Order_Organization_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_Organization_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-299",
+        "category": "rule-declared",
+        "rule": "SL_Order_DocType_C_DocTypeTarget_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_DocType_C_DocTypeTarget_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-300",
+        "category": "rule-declared",
+        "rule": "SL_Order_UpdateLinesDate_DateOrdered",
+        "runner": "node",
+        "description": "Rule 'SL_Order_UpdateLinesDate_DateOrdered' (callout) should be declared"
+      },
+      {
+        "id": "t-301",
+        "category": "rule-declared",
+        "rule": "SL_Order_UpdateLinesDate_DatePromised",
+        "runner": "node",
+        "description": "Rule 'SL_Order_UpdateLinesDate_DatePromised' (callout) should be declared"
+      },
+      {
+        "id": "t-302",
+        "category": "rule-declared",
+        "rule": "SL_Order_PriceList_M_PriceList_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_PriceList_M_PriceList_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-303",
+        "category": "rule-declared",
+        "rule": "SE_Order_BPartner_C_BPartner_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_BPartner_C_BPartner_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-304",
+        "category": "rule-declared",
+        "rule": "SL_Charge_C_Charge_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Charge_C_Charge_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-305",
+        "category": "rule-declared",
+        "rule": "SE_Order_BPartnerLocation_C_BPartner_Location_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_BPartnerLocation_C_BPartner_Location_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-306",
+        "category": "rule-declared",
+        "rule": "SE_Order_Project_C_Project_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_Project_C_Project_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-307",
+        "category": "rule-declared",
+        "rule": "SL_Order_Product_M_Product_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Product_M_Product_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-308",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_QtyOrdered",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_QtyOrdered' (callout) should be declared"
+      },
+      {
+        "id": "t-309",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_PriceActual",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_PriceActual' (callout) should be declared"
+      },
+      {
+        "id": "t-310",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_PriceList",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_PriceList' (callout) should be declared"
+      },
+      {
+        "id": "t-311",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_C_Tax_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_C_Tax_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-312",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_LineNetAmt",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_LineNetAmt' (callout) should be declared"
+      },
+      {
+        "id": "t-313",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_Discount",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_Discount' (callout) should be declared"
+      },
+      {
+        "id": "t-314",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_Gross_Unit_Price",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_Gross_Unit_Price' (callout) should be declared"
+      },
+      {
+        "id": "t-315",
+        "category": "rule-declared",
+        "rule": "SL_Order_Charge_Tax_C_Charge_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Charge_Tax_C_Charge_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-316",
+        "category": "rule-declared",
+        "rule": "SL_Order_Tax_C_BPartner_Location_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Tax_C_BPartner_Location_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-317",
+        "category": "rule-declared",
+        "rule": "OperativeQuantity_To_BaseQuantity_C_Aum",
+        "runner": "node",
+        "description": "Rule 'OperativeQuantity_To_BaseQuantity_C_Aum' (callout) should be declared"
+      },
+      {
+        "id": "t-318",
+        "category": "rule-declared",
+        "rule": "OperativeQuantity_To_BaseQuantity_Aumqty",
+        "runner": "node",
+        "description": "Rule 'OperativeQuantity_To_BaseQuantity_Aumqty' (callout) should be declared"
+      },
+      {
+        "id": "t-319",
+        "category": "rule-declared",
+        "rule": "SL_Order_Conversion_M_Product_Uom_Id",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Conversion_M_Product_Uom_Id' (callout) should be declared"
+      },
+      {
+        "id": "t-320",
+        "category": "rule-declared",
+        "rule": "SL_Order_Conversion_QuantityOrder",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Conversion_QuantityOrder' (callout) should be declared"
+      },
+      {
+        "id": "t-321",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_M_AttributeSetInstance_ID",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_M_AttributeSetInstance_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-322",
+        "category": "rule-declared",
+        "rule": "SL_Order_Amt_CANCELPRICEAD",
+        "runner": "node",
+        "description": "Rule 'SL_Order_Amt_CANCELPRICEAD' (callout) should be declared"
+      },
+      {
+        "id": "t-323",
+        "category": "rule-declared",
+        "rule": "Val_C_BPartner_Location_ShipTo",
+        "runner": "node",
+        "description": "Rule 'Val_C_BPartner_Location_ShipTo' (validation) should be declared"
+      },
+      {
+        "id": "t-324",
+        "category": "rule-declared",
+        "rule": "Val_C_BPartner_Location_BillTo",
+        "runner": "node",
+        "description": "Rule 'Val_C_BPartner_Location_BillTo' (validation) should be declared"
+      },
+      {
+        "id": "t-325",
+        "category": "rule-declared",
+        "rule": "Val_C_DocType_PO_SO",
+        "runner": "node",
+        "description": "Rule 'Val_C_DocType_PO_SO' (validation) should be declared"
+      },
+      {
+        "id": "t-326",
+        "category": "rule-declared",
+        "rule": "Val_M_PriceList_isSOTrx",
+        "runner": "node",
+        "description": "Rule 'Val_M_PriceList_isSOTrx' (validation) should be declared"
+      },
+      {
+        "id": "t-327",
+        "category": "rule-declared",
+        "rule": "Val_AD_User_BPartner_Contacts",
+        "runner": "node",
+        "description": "Rule 'Val_AD_User_BPartner_Contacts' (validation) should be declared"
+      },
+      {
+        "id": "t-328",
+        "category": "rule-declared",
+        "rule": "Val_FIN_PaymentMethod_IsSOTrx",
+        "runner": "node",
+        "description": "Rule 'Val_FIN_PaymentMethod_IsSOTrx' (validation) should be declared"
+      },
+      {
+        "id": "t-329",
+        "category": "rule-declared",
+        "rule": "Val_C_Tax_IsSOTrx_Date",
+        "runner": "node",
+        "description": "Rule 'Val_C_Tax_IsSOTrx_Date' (validation) should be declared"
+      },
+      {
+        "id": "t-330",
+        "category": "rule-declared",
+        "rule": "Val_C_Aum_UOM",
+        "runner": "node",
+        "description": "Rule 'Val_C_Aum_UOM' (validation) should be declared"
+      },
+      {
+        "id": "t-331",
+        "category": "rule-declared",
+        "rule": "Val_C_Project_Status_BPartner",
+        "runner": "node",
+        "description": "Rule 'Val_C_Project_Status_BPartner' (validation) should be declared"
+      },
+      {
+        "id": "t-332",
+        "category": "rule-declared",
+        "rule": "ReadOnly_Processed_Header",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_Processed_Header' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-333",
+        "category": "rule-declared",
+        "rule": "ReadOnly_Processed_Lines",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_Processed_Lines' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-334",
+        "category": "rule-declared",
+        "rule": "ReadOnly_Posted_Dimensions",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_Posted_Dimensions' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-335",
+        "category": "rule-declared",
+        "rule": "ReadOnly_GrossPrice_NetFields",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_GrossPrice_NetFields' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-336",
+        "category": "rule-declared",
+        "rule": "ReadOnly_LineNetAmt_Edit",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_LineNetAmt_Edit' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-337",
+        "category": "rule-declared",
+        "rule": "Display_GrossPrice_Fields",
+        "runner": "node",
+        "description": "Rule 'Display_GrossPrice_Fields' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-338",
+        "category": "rule-declared",
+        "rule": "Display_NetPrice_Fields",
+        "runner": "node",
+        "description": "Rule 'Display_NetPrice_Fields' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-339",
+        "category": "rule-declared",
+        "rule": "Display_AlternateUOM_Fields",
+        "runner": "node",
+        "description": "Rule 'Display_AlternateUOM_Fields' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-340",
+        "category": "rule-declared",
+        "rule": "Display_AlternateTaxableAmount",
+        "runner": "node",
+        "description": "Rule 'Display_AlternateTaxableAmount' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-341",
+        "category": "rule-declared",
+        "rule": "Display_ACCT_DIMENSION",
+        "runner": "node",
+        "description": "Rule 'Display_ACCT_DIMENSION' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-342",
+        "category": "rule-declared",
+        "rule": "Process_ProcessOrder",
+        "runner": "node",
+        "description": "Rule 'Process_ProcessOrder' (process) should be declared"
+      },
+      {
+        "id": "t-343",
+        "category": "rule-declared",
+        "rule": "Process_AddPayment",
+        "runner": "node",
+        "description": "Rule 'Process_AddPayment' (process) should be declared"
+      },
+      {
+        "id": "t-344",
+        "category": "rule-declared",
+        "rule": "Process_CopyFromOrders",
+        "runner": "node",
+        "description": "Rule 'Process_CopyFromOrders' (process) should be declared"
+      },
+      {
+        "id": "t-345",
+        "category": "rule-declared",
+        "rule": "Process_CreatePOLines",
+        "runner": "node",
+        "description": "Rule 'Process_CreatePOLines' (process) should be declared"
+      },
+      {
+        "id": "t-346",
+        "category": "rule-declared",
+        "rule": "Process_CopyLines",
+        "runner": "node",
+        "description": "Rule 'Process_CopyLines' (process) should be declared"
+      },
+      {
+        "id": "t-347",
+        "category": "rule-declared",
+        "rule": "Process_Explode",
+        "runner": "node",
+        "description": "Rule 'Process_Explode' (process) should be declared"
+      },
+      {
+        "id": "t-348",
+        "category": "rule-declared",
+        "rule": "Process_ManagePrereservation",
+        "runner": "node",
+        "description": "Rule 'Process_ManagePrereservation' (process) should be declared"
+      },
+      {
+        "id": "t-349",
+        "category": "rule-declared",
+        "rule": "Process_CalculatePromotions",
+        "runner": "node",
+        "description": "Rule 'Process_CalculatePromotions' (process) should be declared"
+      },
+      {
+        "id": "t-350",
+        "category": "rule-declared",
+        "rule": "Process_CancelAndReplace",
+        "runner": "node",
+        "description": "Rule 'Process_CancelAndReplace' (process) should be declared"
+      },
+      {
+        "id": "t-351",
+        "category": "rule-declared",
+        "rule": "Process_Post",
+        "runner": "node",
+        "description": "Rule 'Process_Post' (process) should be declared"
+      },
+      {
+        "id": "t-352",
+        "category": "rule-declared",
+        "rule": "Process_UpdatePaymentPlan",
+        "runner": "node",
+        "description": "Rule 'Process_UpdatePaymentPlan' (process) should be declared"
+      },
+      {
+        "id": "t-353",
+        "category": "rule-declared",
+        "rule": "AuxInput_GROSSPRICE",
+        "runner": "node",
+        "description": "Rule 'AuxInput_GROSSPRICE' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-354",
+        "category": "rule-declared",
+        "rule": "AuxInput_ORDERTYPE",
+        "runner": "node",
+        "description": "Rule 'AuxInput_ORDERTYPE' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-355",
+        "category": "rule-declared",
+        "rule": "AuxInput_Processed",
+        "runner": "node",
+        "description": "Rule 'AuxInput_Processed' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-356",
+        "category": "rule-declared",
+        "rule": "AuxInput_UsesAlternate",
+        "runner": "node",
+        "description": "Rule 'AuxInput_UsesAlternate' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-357",
+        "category": "rule-declared",
+        "rule": "AuxInput_DOCBASETYPE",
+        "runner": "node",
+        "description": "Rule 'AuxInput_DOCBASETYPE' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-358",
+        "category": "rule-declared",
+        "rule": "AuxInput_HASSECONDUOM",
+        "runner": "node",
+        "description": "Rule 'AuxInput_HASSECONDUOM' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-359",
+        "category": "rule-declared",
+        "rule": "AuxInput_isBOM",
+        "runner": "node",
+        "description": "Rule 'AuxInput_isBOM' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-360",
+        "category": "rule-declared",
+        "rule": "AuxInput_IsStocked",
+        "runner": "node",
+        "description": "Rule 'AuxInput_IsStocked' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-361",
+        "category": "rule-declared",
+        "rule": "AuxInput_ATTRIBUTESET",
+        "runner": "node",
+        "description": "Rule 'AuxInput_ATTRIBUTESET' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-362",
+        "category": "rule-declared",
+        "rule": "AuxInput_showAddPayment",
+        "runner": "node",
+        "description": "Rule 'AuxInput_showAddPayment' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-363",
+        "category": "rule-declared",
+        "rule": "AuxInput_APRM_OrderIsPaid",
+        "runner": "node",
+        "description": "Rule 'AuxInput_APRM_OrderIsPaid' (auxiliaryInput) should be declared"
+      },
+      {
+        "id": "t-364",
+        "category": "crud-flags",
+        "entity": "order",
+        "runner": "node",
+        "description": "CRUD flags for 'order' should all be booleans"
+      },
+      {
+        "id": "t-365",
+        "category": "crud-flags",
+        "entity": "orderLine",
+        "runner": "node",
+        "description": "CRUD flags for 'orderLine' should all be booleans"
+      },
+      {
+        "id": "t-366",
+        "category": "crud-flags",
+        "entity": "orderLineTax",
+        "runner": "node",
+        "description": "CRUD flags for 'orderLineTax' should all be booleans"
+      },
+      {
+        "id": "t-367",
+        "category": "crud-flags",
+        "entity": "reservedStock",
+        "runner": "node",
+        "description": "CRUD flags for 'reservedStock' should all be booleans"
+      },
+      {
+        "id": "t-368",
+        "category": "crud-flags",
+        "entity": "basicDiscounts",
+        "runner": "node",
+        "description": "CRUD flags for 'basicDiscounts' should all be booleans"
+      },
+      {
+        "id": "t-369",
+        "category": "crud-flags",
+        "entity": "orderTax",
+        "runner": "node",
+        "description": "CRUD flags for 'orderTax' should all be booleans"
+      },
+      {
+        "id": "t-370",
+        "category": "crud-flags",
+        "entity": "paymentPlan",
+        "runner": "node",
+        "description": "CRUD flags for 'paymentPlan' should all be booleans"
+      },
+      {
+        "id": "t-371",
+        "category": "crud-flags",
+        "entity": "paymentDetails",
+        "runner": "node",
+        "description": "CRUD flags for 'paymentDetails' should all be booleans"
+      },
+      {
+        "id": "t-372",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in order should exist"
+      },
+      {
+        "id": "t-373",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in order should exist"
+      },
+      {
+        "id": "t-374",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'warehouse' in order should exist"
+      },
+      {
+        "id": "t-375",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in order should exist"
+      },
+      {
+        "id": "t-376",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "paymentTerms",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentTerms' in order should exist"
+      },
+      {
+        "id": "t-377",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "priceList",
+        "runner": "node",
+        "description": "Selector endpoint for 'priceList' in order should exist"
+      },
+      {
+        "id": "t-378",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "invoiceAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoiceAddress' in order should exist"
+      },
+      {
+        "id": "t-379",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in order should exist"
+      },
+      {
+        "id": "t-380",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in order should exist"
+      },
+      {
+        "id": "t-381",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in order should exist"
+      },
+      {
+        "id": "t-382",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'stDimension' in order should exist"
+      },
+      {
+        "id": "t-383",
+        "category": "selector-endpoint",
+        "entity": "order",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'ndDimension' in order should exist"
+      },
+      {
+        "id": "t-384",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in orderLine should exist"
+      },
+      {
+        "id": "t-385",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'operativeUOM' in orderLine should exist"
+      },
+      {
+        "id": "t-386",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'uOM' in orderLine should exist"
+      },
+      {
+        "id": "t-387",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "tax",
+        "runner": "node",
+        "description": "Selector endpoint for 'tax' in orderLine should exist"
+      },
+      {
+        "id": "t-388",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in orderLine should exist"
+      },
+      {
+        "id": "t-389",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in orderLine should exist"
+      },
+      {
+        "id": "t-390",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in orderLine should exist"
+      },
+      {
+        "id": "t-391",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'stDimension' in orderLine should exist"
+      },
+      {
+        "id": "t-392",
+        "category": "selector-endpoint",
+        "entity": "orderLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'ndDimension' in orderLine should exist"
+      },
+      {
+        "id": "t-393",
+        "category": "selector-endpoint",
+        "entity": "orderLineTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Selector endpoint for 'tax' in orderLineTax should exist"
+      },
+      {
+        "id": "t-394",
+        "category": "selector-endpoint",
+        "entity": "reservedStock",
+        "field": "reservation",
+        "runner": "node",
+        "description": "Selector endpoint for 'reservation' in reservedStock should exist"
+      },
+      {
+        "id": "t-395",
+        "category": "selector-endpoint",
+        "entity": "reservedStock",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Selector endpoint for 'storageBin' in reservedStock should exist"
+      },
+      {
+        "id": "t-396",
+        "category": "selector-endpoint",
+        "entity": "reservedStock",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in reservedStock should exist"
+      },
+      {
+        "id": "t-397",
+        "category": "selector-endpoint",
+        "entity": "basicDiscounts",
+        "field": "discount",
+        "runner": "node",
+        "description": "Selector endpoint for 'discount' in basicDiscounts should exist"
+      },
+      {
+        "id": "t-398",
+        "category": "selector-endpoint",
+        "entity": "orderTax",
+        "field": "tax",
+        "runner": "node",
+        "description": "Selector endpoint for 'tax' in orderTax should exist"
+      },
+      {
+        "id": "t-399",
+        "category": "selector-endpoint",
+        "entity": "paymentPlan",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in paymentPlan should exist"
+      },
+      {
+        "id": "t-400",
+        "category": "selector-endpoint",
+        "entity": "paymentPlan",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in paymentPlan should exist"
+      },
+      {
+        "id": "t-401",
+        "category": "selector-endpoint",
+        "entity": "paymentDetails",
+        "field": "payment",
+        "runner": "node",
+        "description": "Selector endpoint for 'payment' in paymentDetails should exist"
+      },
+      {
+        "id": "t-402",
+        "category": "selector-endpoint",
+        "entity": "paymentDetails",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in paymentDetails should exist"
+      },
+      {
+        "id": "t-403",
+        "category": "selector-endpoint",
+        "entity": "paymentDetails",
+        "field": "finFinancialAccountID",
+        "runner": "node",
+        "description": "Selector endpoint for 'finFinancialAccountID' in paymentDetails should exist"
+      }
+    ],
+    "summary": {
+      "total": 403,
+      "byCategory": {
+        "field-presence": 82,
+        "field-type": 82,
+        "searchable-filters": 4,
+        "visibility": 8,
+        "system-field": 121,
+        "rule-declared": 66,
+        "crud-flags": 8,
+        "selector-endpoint": 32
+      },
+      "byRunner": {
+        "node": 403,
+        "junit": 0
+      }
+    }
+  }
+}

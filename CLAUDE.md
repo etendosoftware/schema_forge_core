@@ -78,6 +78,7 @@ git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
 ```
 All agents work ONLY in that worktree — never in the main repo.
 The coordinator creates the worktree and passes the path to each agent.
+**Worktree branches are LOCAL ONLY.** They are never pushed to remote. After pipeline approval, the coordinator merges them locally into the parent branch via `git merge --squash`.
 
 ## Parallelization
 - Independent tasks → parallel worktrees
@@ -93,21 +94,34 @@ The coordinator creates the worktree and passes the path to each agent.
 ## Documentation Freshness (MANDATORY)
 Any PR that modifies the pipeline, CLI tools, data flow, repository structure, or architecture MUST include updates to all documentation and diagrams that reference the changed component. **Code change + doc update = one atomic unit.** See `<self_documentation>` section for the full checklist and list of files to verify. REVIEW must reject PRs that change documented behavior without updating the docs.
 
-## Pull Requests (MANDATORY)
-After DEV completes, the coordinator creates a PR:
-1. DEV pushes branch to remote: `git push -u origin feat/<task-name>`
-2. Coordinator creates PR via `gh pr create` **targeting the branch the worktree was created from** (NEVER `main`)
-3. REVIEW and QA phases happen on the PR (agents comment their verdicts on the PR)
-4. On rejection: DEV fixes, pushes, cycle restarts from rejecting phase
-5. After all phases APPROVE: coordinator merges via `gh pr merge --squash`
-6. Remove worktree and delete branch
+## Local Merge (MANDATORY)
+Worktree branches are **never pushed to remote**. All review happens locally through the pipeline phases.
 
-**PR target rules:**
-- If working from `feature/ETP-XXXX` → PR targets `feature/ETP-XXXX`
-- If working from `develop` → PR targets `develop`
+After all phases APPROVE:
+1. Coordinator switches to the parent branch: `git checkout feature/ETP-XXXX`
+2. Squash-merge the worktree branch: `git merge --squash feat/<task-name>`
+3. Commit with a clear message following commit conventions
+4. Clean up: `git worktree remove .worktrees/feat-<task-name> && git branch -d feat/<task-name>`
+
+On rejection: DEV fixes in the SAME worktree, cycle restarts from rejecting phase (no push needed).
+
+**The only GitHub PR is feature → develop**, created when the feature is complete. The user controls when to push and create this PR.
+
+**PR rules (for the feature → develop PR):**
 - **NEVER target `main` directly.** The highest allowed target is `develop`.
-- **Always assign the PR to the current user** (`gh api repos/{owner}/{repo}/issues/{pr}/assignees --method POST -f "assignees[]={username}"`).
-- **GitHub usernames must be stored in MEMORY.md** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to MEMORY.md for future use. **CRITICAL:** Before ANY GitHub operation (locking windows, creating PRs, assigning issues), read `memory/github-usernames.md` to get the correct username. NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
+- **Always assign the PR to the current user.**
+- **GitHub usernames must be stored in auto-memory** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to auto-memory for future use. **CRITICAL:** Before ANY GitHub operation, read the `github-usernames.md` file from the auto-memory directory (`~/.claude/projects/.../memory/github-usernames.md` — use the absolute path, NEVER a path relative to the project root). NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
+
+## New Feature Branch Policy (MANDATORY)
+When the user requests a new task while on a feature branch, the coordinator MUST ask:
+1. **What is the new task?**
+2. **Does it depend on changes in the current feature branch?**
+
+Based on the answer:
+- **Independent task →** Create new branch from `develop` (with `git pull` first to update)
+- **Dependent task →** Create new branch from the current feature branch
+
+This prevents unnecessary coupling between features while ensuring dependent work has access to what it needs.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
@@ -250,6 +264,7 @@ schema-forge/                             # THIS REPO — design + tooling
     ├── architecture-overview.md          # System architecture (Schema Forge + Etendo Go)
     ├── PRD.md / TDD.md                   # Product + technical design
     ├── PRD-anex.md / TDD-anex.md         # API versioning model
+    ├── neo-headless-extensibility.md      # How to extend/customize NEO Headless (hooks, config, patterns)
     ├── etendo-ad/                        # Etendo AD reference (schema mappings, processes, display logic)
     └── plans/                            # Feature plans and evaluations
 ```
@@ -295,8 +310,9 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 | `NeoSelectorService` | FK dropdown resolution (TableDir, Table, Search, OBUISEL). |
 | `NeoProcessService` | Process execution (OBUIAPP + Classic). |
 | `NeoReportService` | Report generation (Jasper via ReportingUtils). |
-| `NeoHandler` (interface) | CDI hook for custom logic. Return `NeoResponse` or `null` to fall through. |
-| `NeoContext` / `NeoResponse` | Request context (builder) and response wrapper. |
+| `NeoHandler` (interface) | CDI hook for custom logic. Pre/post hooks via `handle()` + `afterHandle()`. See `docs/neo-headless-extensibility.md`. |
+| `NeoEndpointType` (enum) | Identifies sub-endpoint type: CRUD, SELECTOR, ACTION, EVALUATE_DISPLAY, CALLOUT, DEFAULTS. |
+| `NeoContext` / `NeoResponse` | Request context (builder with endpointType/fieldName) and response wrapper. |
 | `PopulateSpecHelper` | Auto-populate entities/fields from AD metadata. |
 | 4 webhooks | `SFUpsertSpec`, `SFUpsertEntity`, `SFUpsertField`, `SFPopulateSpec` |
 
@@ -365,6 +381,26 @@ Folders (`isSummary='Y'`) are grouping nodes — the pipeline reports them as no
 - **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence
 - **OBDal transactions**: single DB transaction, all-or-nothing rollback. No Sagas.
 
+### Spec Naming Convention (MANDATORY)
+
+All spec names use **kebab-case**. The canonical transformation is `toSpecName()` in `cli/src/push-to-neo.js` (single source of truth — other modules import it from there).
+
+**Transformation rules:** trim → split camelCase → replace non-alphanumeric with `-` → strip leading/trailing `-` → lowercase.
+
+| Context | Format | Example |
+|---------|--------|---------|
+| Spec name (DB `ETGO_SF_SPEC.name`) | kebab-case | `purchase-order` |
+| Artifact directory | kebab-case | `artifacts/purchase-order/` |
+| `contract.json` field `specName` | kebab-case | `"specName": "purchase-order"` |
+| NEO API URLs | kebab-case | `/sws/neo/purchase-order/header` |
+| React component file names | PascalCase (derived) | `PurchaseOrderPage.jsx` |
+| Window display name (AD metadata) | Mixed case (original) | `"Purchase Order"` |
+
+**Rules for agents:**
+- **NEVER** guess or manually construct a spec name. Always use `toSpecName()` or read it from the artifact directory name.
+- The artifact directory name IS the spec name. They are always identical.
+- When referring to a window in code or config, use the kebab-case spec name (`purchase-order`), not PascalCase (`PurchaseOrder`) or display name (`Purchase Order`).
+
 ## Custom Section Preservation (Frontend Regeneration)
 
 When `generate-frontend.js` regenerates React components, custom code (callout translations, hooks, handlers) survives via section markers. The generator emits delimiter comments; the preservation module extracts custom blocks from the old file and re-injects them into the new output.
@@ -381,6 +417,10 @@ When `generate-frontend.js` regenerates React components, custom code (callout t
 - `cli/src/preserve-custom-sections.js` -- extract, inject, and append logic
 - `cli/src/generate-frontend.js` -- emits `GENERATED_START/END` blocks and `CUSTOM_SLOT` placeholders
 - `cli/src/pipeline.js` -- integrates preservation into the regeneration step
+
+## Generated Files Policy
+
+**NEVER manually edit generated output files** (e.g., files in `artifacts/*/generated/`). All fixes must be made at the **pipeline level** — generators (`cli/src/generate-*.js`), extractors (`cli/src/extract-*.js`), or shared components (`tools/app-shell/src/`) — so they apply to ALL windows, not just the current one. Generated files are outputs, not sources.
 
 ## Testing
 

@@ -1,7 +1,7 @@
 {
   "windowId": "183",
   "windowName": "purchase-invoice",
-  "extractedAt": "2026-03-12T19:22:44.131Z",
+  "extractedAt": "2026-03-12T19:23:56.137Z",
   "rules": [
     {
       "type": "callout",
