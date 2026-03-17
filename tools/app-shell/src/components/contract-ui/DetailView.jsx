@@ -151,6 +151,65 @@ export function DetailView({
     executeCallout(field, value, hook.editing);
   }, [hook.handleChange, hook.editing, executeCallout]);
 
+  // Execute callout for child entity (line-level) fields and apply results via callback.
+  // Merges parent header data into formState so callouts have full context (e.g., priceList).
+  const handleLineFieldChange = useCallback(async (field, value, rowValues, applyUpdates) => {
+    if (!field || !value || value === '' || !token || !apiBaseUrl || !detailEntity) return;
+    if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
+    try {
+      // Build formState: line row values + parent header fields for context
+      const headerData = hook.editing || hook.selected || {};
+      const formState = { ...rowValues };
+      // Include header fields that callouts typically need (priceList, businessPartner, org, etc.)
+      for (const [k, v] of Object.entries(headerData)) {
+        if (!(k in formState) && v != null && v !== '') {
+          formState[k] = v;
+        }
+      }
+      // Extract auxiliary values (e.g., product_PSTD, product_UOM from selector _aux)
+      const auxiliaryValues = {};
+      for (const [k, v] of Object.entries(formState)) {
+        if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(k) && v != null && v !== '') {
+          auxiliaryValues[k] = String(v);
+        }
+      }
+      const payload = {
+        field,
+        value,
+        formState,
+        ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+      };
+      const res = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return;
+      const calloutData = await res.json();
+      const result = {};
+      if (calloutData.updates) {
+        for (const [k, entry] of Object.entries(calloutData.updates)) {
+          result[k] = entry.value;
+          if (entry._identifier) result[k + '$_identifier'] = entry._identifier;
+        }
+      }
+      if (calloutData.combos) {
+        for (const [k, combo] of Object.entries(calloutData.combos)) {
+          if (combo.selected != null) {
+            result[k] = combo.selected;
+            if (combo._identifier) result[k + '$_identifier'] = combo._identifier;
+          }
+        }
+      }
+      if (Object.keys(result).length > 0) applyUpdates?.(result);
+    } catch {
+      // Callout is best-effort
+    }
+  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected]);
+
   const data = hook.editing || currentItem || {};
   const title = isNew
     ? `New ${entityLabel || entity}`
@@ -352,6 +411,7 @@ export function DetailView({
                         },
                         onCancel: () => setAddingLine(false),
                         catalogs,
+                        onFieldChange: handleLineFieldChange,
                       }}
                     />
                     <button
@@ -394,8 +454,8 @@ export function DetailView({
               </>
             )}
 
-            {/* Footer totals */}
-            {DetailTable && (
+            {/* Footer totals (only when summary has amount fields) */}
+            {DetailTable && summary.some(f => f.type === 'amount') && (
               <div className="flex justify-end pt-2 border-t border-border/50">
                 <div className="w-72 space-y-1.5">
                   {summary.filter(f => f.type === 'amount').map(f => {
