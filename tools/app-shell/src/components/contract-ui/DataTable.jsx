@@ -7,6 +7,7 @@ import { Search, Inbox, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
+import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 
 /**
  * Format a number as currency with $ prefix and locale-aware separators.
@@ -195,10 +196,17 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
+
+  // Report columns to parent (e.g., ListView sort popover)
+  useEffect(() => {
+    if (onColumnsReady && columns.length > 0) {
+      onColumnsReady(columns);
+    }
+  }, [columns, onColumnsReady]);
 
   const hasActiveFilter = searchQuery.length > 0;
 
@@ -231,7 +239,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     const display = resolveIdentifier(row, col.key);
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
-      return <span className="font-medium text-blue-600">{row[col.key]}</span>;
+      return <span className="font-medium text-blue-600">{display}</span>;
     }
     if (col.type === 'status') {
       const badgeProps = getStatusBadgeProps(row[col.key]);
@@ -258,8 +266,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (col.type === 'amount') {
       return <span className="tabular-nums">{formatCurrency(row[col.key])}</span>;
     }
-    // Truncate long text values
-    const val = row[col.key];
+    // Truncate long display values
+    const val = display;
     if (typeof val === 'string' && val.length > 30) {
       return <span className="block max-w-[200px] truncate" title={val}>{val}</span>;
     }
@@ -322,10 +330,14 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               )}
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
+                const isSorted = sortColumn === col.key;
                 return (
                   <TableHead key={col.key} className={`text-xs font-medium text-muted-foreground/70 tracking-wide ${col.type === 'amount' ? 'text-right' : ''}`}>
                     <FieldHighlight entityName={entity} fieldName={col.key}>
                       {colLabel}
+                      {isSorted && (
+                        <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                      )}
                     </FieldHighlight>
                   </TableHead>
                 );

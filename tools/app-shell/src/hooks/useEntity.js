@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 
 function buildHeaders(token) {
   return {
@@ -7,25 +8,43 @@ function buildHeaders(token) {
   };
 }
 
+/**
+ * Extract a human-readable error message from a NEO Headless error response.
+ */
+async function extractErrorMessage(res) {
+  try {
+    const data = await res.json();
+    // Etendo JsonDataService wraps errors in response.error
+    const err = data?.response?.error;
+    if (err?.message) return err.message;
+    if (typeof err === 'string') return err;
+    if (data?.message) return data.message;
+  } catch { /* body not JSON */ }
+  return `Error ${res.status}`;
+}
+
 export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [sortColumn, setSortColumn] = useState('creationDate');
+  const [sortDirection, setSortDirection] = useState('desc');
 
   const headers = buildHeaders(token);
 
   const refresh = useCallback(() => {
     setLoading(true);
-    fetch(`${apiBaseUrl}/${entity}`, { headers })
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortColumn} ${sortDirection}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
       .then(data => { const rows = data?.response?.data ?? (Array.isArray(data) ? data : []); setItems(rows); setLoading(false); })
       .catch(() => { setItems([]); setLoading(false); });
-  }, [apiBaseUrl, entity, token]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -76,7 +95,15 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
       if (res.ok) {
         const data = await res.json();
         if (data.defaults) {
-          setEditing(prev => ({ ...prev, ...data.defaults }));
+          // Normalize date values from Etendo format (dd-MM-yyyy) to HTML date input (yyyy-MM-dd)
+          const normalized = { ...data.defaults };
+          for (const [key, val] of Object.entries(normalized)) {
+            if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
+              const [dd, mm, yyyy] = val.split('-');
+              normalized[key] = `${yyyy}-${mm}-${dd}`;
+            }
+          }
+          setEditing(prev => ({ ...prev, ...normalized }));
         }
       }
     } catch {
@@ -90,6 +117,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
 
   const handleSave = useCallback(async () => {
     if (!editing) return;
+    setSaveError(null);
     const isNew = !editing.id;
     const url = isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
     // Use PATCH for existing records (partial update), POST for new
@@ -115,20 +143,41 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
         const saved = data?.response?.data?.[0] ?? data;
         setSelected(saved);
         setEditing({ ...saved });
+        setSaveError(null);
+        toast.success(isNew ? 'Record created' : 'Record saved');
         refresh();
+        return saved;
+      } else {
+        const msg = await extractErrorMessage(res);
+        setSaveError(msg);
+        toast.error(msg);
+        return null;
       }
-    } catch { /* caller handles */ }
+    } catch (err) {
+      const msg = err?.message || 'Network error';
+      setSaveError(msg);
+      toast.error(msg);
+      return null;
+    }
   }, [editing, selected, apiBaseUrl, entity, token, refresh]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;
     try {
-      await fetch(`${apiBaseUrl}/${entity}/${selected.id}`, { method: 'DELETE', headers });
-      setSelected(null);
-      setEditing(null);
-      setChildren([]);
-      refresh();
-    } catch { /* caller handles */ }
+      const res = await fetch(`${apiBaseUrl}/${entity}/${selected.id}`, { method: 'DELETE', headers });
+      if (res.ok) {
+        setSelected(null);
+        setEditing(null);
+        setChildren([]);
+        toast.success('Record deleted');
+        refresh();
+      } else {
+        const msg = await extractErrorMessage(res);
+        toast.error(msg);
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Network error');
+    }
   }, [selected, apiBaseUrl, entity, token, refresh]);
 
   const handleAddChild = useCallback((childData) => {
@@ -157,9 +206,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   }, [selected, apiBaseUrl, token, refresh]);
 
   return {
-    items, selected, editing, children, loading,
+    items, selected, editing, children, loading, saveError,
     handleSelect, handleNew, handleChange, handleSave, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
     refresh, fetchById,
+    sortColumn, sortDirection, setSortColumn, setSortDirection,
   };
 }

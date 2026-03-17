@@ -4,6 +4,8 @@ import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
 import catalogs from './mockCatalogs';
 
+const breadcrumb = 'Purchases / Purchase Order';
+
 // @sf-generated-start summary:order
 const summary = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
@@ -145,6 +147,13 @@ const api = {
     }
   },
   "selectors": [
+    {
+      "entity": "order",
+      "field": "transactionDocument",
+      "column": "C_DocTypeTarget_ID",
+      "reference": "DocumentType",
+      "url": "/sws/neo/purchase-order/order/selectors/transactionDocument"
+    },
     {
       "entity": "order",
       "field": "businessPartner",
@@ -405,6 +414,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         detailLabel="Order Line"
         windowName={windowName}
         recordId={recordId}
+        breadcrumb={breadcrumb}
       api={api}
         {...props}
       />
@@ -417,6 +427,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
       Table={OrderTable}
       entityLabel="Orders"
       windowName={windowName}
+      breadcrumb={breadcrumb}
       {...props}
     />
   );

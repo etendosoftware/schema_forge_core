@@ -47,41 +47,37 @@ User interacts → POST /callout (existing endpoint)
 - `NeoOpenAPIEndpoint.java` — OpenAPI documentation
 - `useEntity.js` — handleNew fetches defaults async (best-effort)
 
-### Phase 2: Real Sequence Preview — PENDING
+### Phase 2: Reuse Etendo Utilities (Sequence + SQL + Preferences) — IN PROGRESS
 
-**Current state:** Returns `<auto>` placeholder for DocumentNo fields.
+**Approach:** Instead of reimplementing, delegate to Etendo's existing static utility methods.
+
+**Key insight:** `FormInitializationComponent` is too coupled to HTTP, but the utilities it calls internally are all `public static` and callable from NEO:
+
+| Method | What it does | Dependency |
+|--------|-------------|------------|
+| `Utility.getDefault()` | Resolves literals, preferences, context vars, comma fallbacks | `VariablesSecureApp` |
+| `Utility.parseContext()` | Replaces `@...@` placeholders (inline or parameterized) | `VariablesSecureApp` |
+| `Utility.getDocumentNo()` | Next document number (preview with `updateNext=false`) | Window/table/doctype context |
+| `Utility.getPreference()` | User preferences per field | `VariablesSecureApp` |
+| `UIDefinition.getDefaultValueFromSQLExpression()` | Executes `@SQL=SELECT...` with parameter binding | `Field` object, `VariablesSecureApp` |
+| `SequenceUtils.isSequence()` | Detects sequence columns | `Column` object |
 
 **What needs to be done:**
-- Integrate `Utility.getDocumentNo()` with `updateNext=false` to get the real next number without consuming it
-- Requires: document type context (C_DocType_ID / C_DocTypeTarget_ID) which may not be known at init time
-- For columns with `isUseAutomaticSequence()`, use `NextSequenceValue.getInstance().generateNextSequenceValue()` in preview mode
+1. Build a `VariablesSecureApp` from `OBContext` (NEO already has JWT-authenticated context)
+2. Replace `resolveFieldDefault()` manual logic with `Utility.getDefault()` delegation
+3. Replace `resolveSequencePreview()` with `Utility.getDocumentNo(..., updateNext=false)`
+4. Add SQL expression support via `Utility.parseContext()` + direct SQL execution
+5. Add preference support (comes free with `Utility.getDefault()`)
 
 **Key files to modify:**
-- `NeoDefaultsService.java` — `resolveSequencePreview()` method (currently returns `<auto>`)
+- `NeoDefaultsService.java` — refactor to delegate to Etendo utilities
 
-**Reference implementation:**
-- `UIDefinition.java` lines 178-213 — sequence detection and DocumentNo generation
-- `Utility.java` line 834 — `getDocumentNo()` signature
+**Reference classes (Etendo core, read-only):**
+- `Utility.java` — `getDefault()` (line 647), `parseContext()` (line 769), `getDocumentNo()` (line 834)
+- `UIDefinition.java` — `getDefaultValueFromSQLExpression()` (line 290)
+- `SequenceUtils.java` — `isSequence()` (line 81)
 
-### Phase 3: SQL Expression Defaults — PENDING
-
-**Current state:** `@SQL=SELECT...` expressions are skipped and added to `metadata.unresolvedFields`.
-
-**What needs to be done:**
-- Parse SQL after `@SQL=` prefix
-- Extract `@parameter@` placeholders, resolve from context vars or already-resolved defaults
-- Execute via `PreparedStatement` on `OBDal.getInstance().getConnection(false)`
-- Two-pass resolution: first resolve non-SQL defaults, then SQL defaults (which may reference other defaults)
-
-**Key reference:**
-- `UIDefinition.java` lines 290-333 — `getDefaultValueFromSQLExpression()`
-
-**Example:**
-```
-@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@
-```
-
-### Phase 4: Callout Cascade — PENDING
+### Phase 3: Callout Cascade — PENDING
 
 **Current state:** Defaults are resolved but callouts triggered by those defaults are not executed.
 
