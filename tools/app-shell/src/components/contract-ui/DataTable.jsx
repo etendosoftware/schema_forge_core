@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Inbox, X, ChevronDown } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
@@ -29,7 +29,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
 
   const handleSelect = (opt) => {
     setQuery(opt.name || opt.label || opt._identifier || '');
-    onChange(opt.id, opt.name || opt.label || opt._identifier || '');
+    onChange(opt.id, opt.name || opt.label || opt._identifier || '', opt);
     setOpen(false);
   };
 
@@ -161,7 +161,7 @@ function EmptyState({ hasFilter, totalCount }) {
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable }) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -220,6 +220,27 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
     setTimeout(() => firstInputRef.current?.focus(), 0);
   };
 
+  // Wrap handleChange to also notify parent (for callout triggering)
+  const handleFieldChange = useCallback((key, val, selectedItem) => {
+    // Build a snapshot of current + new values for the callout formState
+    const snapshot = { ...values, [key]: val };
+    handleChange(key, val);
+    // Store _aux data from selector items as auxiliaryValues (e.g., product_UOM, product_PSTD)
+    if (selectedItem?._aux) {
+      for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
+        snapshot[key + suffix] = auxVal;
+        handleChange(key + suffix, auxVal);
+      }
+    }
+    // Notify parent for callout execution — pass computed snapshot (not stale React state)
+    onFieldChange?.(key, val, snapshot, (updates) => {
+      // Callback to apply callout results to the inline row
+      for (const [field, value] of Object.entries(updates)) {
+        handleChange(field, value);
+      }
+    });
+  }, [handleChange, onFieldChange, values]);
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -234,12 +255,29 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
 
   return (
     <TableRow className="bg-blue-50/50 border-t-2 border-primary/20">
+      {/* Accept / Cancel buttons */}
+      {selectable && (
+        <TableCell className="w-10 px-1">
+          <div className="flex gap-0.5">
+            <button type="button" onClick={handleConfirm} title="Add (Enter)"
+              className="h-7 w-7 flex items-center justify-center rounded text-emerald-600 hover:bg-emerald-50">
+              <Check className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={onCancel} title="Cancel (Esc)"
+              className="h-7 w-7 flex items-center justify-center rounded text-red-500 hover:bg-red-50">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </TableCell>
+      )}
       {columns.map(col => {
         const field = fieldMap[col.key];
         if (!field) {
+          // Show callout-derived values if available, otherwise dash
+          const derivedVal = values[col.key];
           return (
             <TableCell key={col.key} className="text-muted-foreground text-sm">
-              &mdash;
+              {derivedVal != null && derivedVal !== '' ? derivedVal : '\u2014'}
             </TableCell>
           );
         }
@@ -257,9 +295,9 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
                 options={options}
                 inputRef={isFirst ? firstInputRef : undefined}
                 placeholder={t(field.column) ?? field.label ?? field.key}
-                onChange={(id, label) => {
-                  handleChange(field.key, id);
+                onChange={(id, label, selectedItem) => {
                   handleChange(field.key + '$_identifier', label);
+                  handleFieldChange(field.key, id, selectedItem);
                 }}
                 onKeyDown={handleKeyDown}
               />
@@ -277,11 +315,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
                 value={values[field.key] ?? ''}
                 onChange={(e) => {
                   const selectedId = e.target.value;
-                  handleChange(field.key, selectedId);
                   const opt = options.find(o => o.id === selectedId);
                   if (opt) {
                     handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
                   }
+                  handleFieldChange(field.key, selectedId, opt);
                 }}
                 onKeyDown={handleKeyDown}
                 className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
@@ -327,7 +365,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
  *  - selectedId: string | number
  *  - compact: boolean (reserved for narrower layout)
  *  - loading: boolean (shows skeleton when true)
- *  - addRow: { active, fields, onAdd, onCancel, catalogs } — inline add row config
+ *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
 export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady }) {
   const t = useLabel();
@@ -478,7 +516,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.length === 0 ? (
+            {filteredData.length === 0 && !addRow?.active ? (
               <TableRow>
                 <TableCell colSpan={colSpan} className="p-0">
                   <EmptyState hasFilter={hasActiveFilter} totalCount={data.length} />
@@ -526,6 +564,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 onCancel={addRow.onCancel}
                 data={data}
                 catalogs={addRow.catalogs}
+                onFieldChange={addRow.onFieldChange}
+                selectable={selectable}
               />
             )}
           </TableBody>

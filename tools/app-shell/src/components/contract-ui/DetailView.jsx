@@ -407,7 +407,13 @@ export function DetailView({
                         active: addingLine,
                         fields: allEntryFields,
                         onAdd: (lineData) => {
-                          hook.handleAddChild?.(lineData);
+                          // Only send entry field keys to the API — exclude callout-derived values
+                          const entryKeys = new Set(allEntryFields.map(f => f.key));
+                          const filtered = {};
+                          for (const [k, v] of Object.entries(lineData)) {
+                            if (entryKeys.has(k)) filtered[k] = v;
+                          }
+                          hook.handleAddChild?.(filtered);
                         },
                         onCancel: () => setAddingLine(false),
                         catalogs,

@@ -228,10 +228,44 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     }
   }, [selected, apiBaseUrl, entity, token, refresh]);
 
-  const handleAddChild = useCallback((childData) => {
-    const newChild = { id: `new-${Date.now()}`, ...childData };
-    setChildren(prev => [...prev, newChild]);
-  }, []);
+  const handleAddChild = useCallback(async (childData) => {
+    if (!childEntity || !apiBaseUrl || !token || !selected?.id) return;
+    try {
+      const body = {};
+      // Only include fields that are valid for the entity (from addLineFields entry + derived keys)
+      // and convert numeric strings to numbers for BigDecimal compatibility
+      for (const [key, val] of Object.entries(childData)) {
+        // Skip internal/companion keys
+        if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
+        // Skip callout internal fields
+        if (key === 'CURSOR_FIELD' || key.startsWith('has')) continue;
+        // Skip empty values — let backend defaults handle them
+        if (val === '' || val == null) continue;
+        // Convert numeric strings to numbers
+        if (typeof val === 'string' && val.match(/^-?\d+(\.\d+)?$/)) {
+          body[key] = Number(val);
+        } else {
+          body[key] = val;
+        }
+      }
+      // Include parentId in the body — the backend resolves it to the correct FK field name
+      body.parentId = selected.id;
+      const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error('Failed to save line:', text);
+        return;
+      }
+      // Refresh children from backend
+      fetchChildren(selected.id);
+    } catch (err) {
+      console.error('Error adding child:', err);
+    }
+  }, [childEntity, apiBaseUrl, token, selected, headers, fetchChildren]);
 
   const handleUpdateChild = useCallback((childId, field, value) => {
     setChildren(prev => prev.map(c =>

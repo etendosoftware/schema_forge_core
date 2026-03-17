@@ -258,7 +258,7 @@ export async function pushToNeo(windowName, options = {}) {
     const existingSpecId = existingSpec.rows.length > 0
       ? existingSpec.rows[0].etgo_sf_spec_id
       : null;
-    console.log(`[1/3] Upserting spec '${specName}' for window ${windowId}...`);
+    console.log(`[1/4] Upserting spec '${specName}' for window ${windowId}...`);
     const specResult = await writerUpsertSpec(client, {
       name: specName,
       moduleId,
@@ -271,7 +271,7 @@ export async function pushToNeo(windowName, options = {}) {
     console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
 
     // Step 2: Populate spec from AD metadata
-    console.log(`[2/3] Populating spec from AD metadata...`);
+    console.log(`[2/4] Populating spec from AD metadata...`);
     const popResult = await writerPopulateSpec(client, {
       specId,
       moduleId,
@@ -327,7 +327,8 @@ export async function pushToNeo(windowName, options = {}) {
     // and handles tabs that share the same DB table correctly.
     if (schema.entities) {
       for (const ent of schema.entities) {
-        const entityId = ent.tabName && entityMapByName[ent.tabName];
+        const entityId = (ent.tabName && entityMapByName[ent.tabName])
+          || (ent.tableName && entityMapByTableName[ent.tableName]);
         if (entityId) {
           await client.query(
             'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
@@ -339,7 +340,7 @@ export async function pushToNeo(windowName, options = {}) {
     }
 
     // Step 3: Update field visibility from contract
-    console.log(`[3/3] Updating ${allFields.length} fields from contract visibility...`);
+    console.log(`[3/4] Updating ${allFields.length} fields from contract visibility...`);
     let successCount = 0;
     let errorCount = 0;
     const fieldResults = [];
@@ -390,9 +391,36 @@ export async function pushToNeo(windowName, options = {}) {
       successCount++;
     }
 
+    // Step 4: Exclude all fields NOT in the contract
+    console.log(`[4/4] Excluding non-contract fields...`);
+    const contractColumns = new Set(allFields.map(f => f.column));
+    let excludedCount = 0;
+
+    for (const ent of popResult.entities) {
+      const entityId = ent.entityId;
+      const allEntityFields = await client.query(
+        `SELECT sf.etgo_sf_field_id, c.columnname
+         FROM etgo_sf_field sf
+         JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
+         WHERE sf.etgo_sf_entity_id = $1 AND sf.isincluded = 'Y'`,
+        [entityId],
+      );
+
+      for (const row of allEntityFields.rows) {
+        if (!contractColumns.has(row.columnname)) {
+          await client.query(
+            `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
+            [row.etgo_sf_field_id],
+          );
+          excludedCount++;
+        }
+      }
+    }
+    console.log(`       ${excludedCount} non-contract fields excluded.`);
+
     await client.query('COMMIT');
 
-    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors.`);
+    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors, ${excludedCount} excluded.`);
 
     return {
       dryRun: false,
@@ -402,6 +430,7 @@ export async function pushToNeo(windowName, options = {}) {
       entitiesPopulated: popResult.entityCount,
       fieldsUpdated: successCount,
       fieldsErrored: errorCount,
+      fieldsExcluded: excludedCount,
       fieldResults,
     };
   } catch (err) {

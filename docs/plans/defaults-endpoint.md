@@ -47,35 +47,26 @@ User interacts → POST /callout (existing endpoint)
 - `NeoOpenAPIEndpoint.java` — OpenAPI documentation
 - `useEntity.js` — handleNew fetches defaults async (best-effort)
 
-### Phase 2: Reuse Etendo Utilities (Sequence + SQL + Preferences) — IN PROGRESS
+### Phase 2: Reuse Etendo Utilities (Sequence + SQL + Preferences) — DONE
 
 **Approach:** Instead of reimplementing, delegate to Etendo's existing static utility methods.
 
-**Key insight:** `FormInitializationComponent` is too coupled to HTTP, but the utilities it calls internally are all `public static` and callable from NEO:
+**Implemented in:** `NeoDefaultsService.java` (510 lines)
 
-| Method | What it does | Dependency |
-|--------|-------------|------------|
-| `Utility.getDefault()` | Resolves literals, preferences, context vars, comma fallbacks | `VariablesSecureApp` |
-| `Utility.parseContext()` | Replaces `@...@` placeholders (inline or parameterized) | `VariablesSecureApp` |
-| `Utility.getDocumentNo()` | Next document number (preview with `updateNext=false`) | Window/table/doctype context |
-| `Utility.getPreference()` | User preferences per field | `VariablesSecureApp` |
-| `UIDefinition.getDefaultValueFromSQLExpression()` | Executes `@SQL=SELECT...` with parameter binding | `Field` object, `VariablesSecureApp` |
-| `SequenceUtils.isSequence()` | Detects sequence columns | `Column` object |
+All Etendo utilities are integrated:
 
-**What needs to be done:**
-1. Build a `VariablesSecureApp` from `OBContext` (NEO already has JWT-authenticated context)
-2. Replace `resolveFieldDefault()` manual logic with `Utility.getDefault()` delegation
-3. Replace `resolveSequencePreview()` with `Utility.getDocumentNo(..., updateNext=false)`
-4. Add SQL expression support via `Utility.parseContext()` + direct SQL execution
-5. Add preference support (comes free with `Utility.getDefault()`)
+| Method | What it does | Integration |
+|--------|-------------|-------------|
+| `Utility.getDefault()` | Resolves literals, preferences, context vars, comma fallbacks | Used for AD_Column defaults and user preferences |
+| `Utility.parseContext()` / `getContext()` | Replaces `@...@` placeholders | Used in SQL default resolution for `@param@` token replacement |
+| `Utility.getDocumentNo()` | Next document number (preview with `updateNext=false`) | Returns wrapped `"<docNo>"` for sequence preview |
+| `SequenceUtils.isSequence()` | Detects sequence columns | Used with classic DocumentNo/Value fallback |
+| `LoginUtils.fillSessionArguments()` | Populates all session variables in `VariablesSecureApp` | Called to match classic UI context initialization |
 
-**Key files to modify:**
-- `NeoDefaultsService.java` — refactor to delegate to Etendo utilities
-
-**Reference classes (Etendo core, read-only):**
-- `Utility.java` — `getDefault()` (line 647), `parseContext()` (line 769), `getDocumentNo()` (line 834)
-- `UIDefinition.java` — `getDefaultValueFromSQLExpression()` (line 290)
-- `SequenceUtils.java` — `isSequence()` (line 81)
+Additional features implemented:
+- `VariablesSecureApp` bridge built from `OBContext` (JWT-authenticated)
+- `injectMandatoryDefaults()` for NOT NULL columns not in ETGO_SF_FIELD
+- SQL expression support with prepared statements and parameter binding
 
 ### Phase 3: Callout Cascade — PENDING
 
