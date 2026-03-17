@@ -1,337 +1,273 @@
 # Schema Forge
 
-Schema Forge is the design and tooling layer for building a simplified Etendo interface. It analyzes Etendo metadata, helps humans make design decisions, and configures the runtime module ([com.etendoerp.go / NEO Headless](docs/neo-headless.md)) via direct DB writes. No backend code generation -- NEO Headless serves APIs dynamically from configuration.
+Design and tooling layer for building a simplified Etendo interface. Schema Forge analyzes Etendo metadata, helps humans make design decisions, and configures the runtime module ([NEO Headless](docs/neo-headless-extensibility.md)) — no backend code generation needed.
 
 ```
-Schema Forge (this repo)              com.etendoerp.go (runtime)
-  - Extracts metadata from Etendo       - NeoServlet at /sws/neo/*
-  - Generates React UI components        - Serves CRUD, selectors, processes
-  - Writes config to ETGO_SF_* tables    - Reads config from those same tables
+┌─────────────────────────────┐         ┌──────────────────────────────┐
+│       SCHEMA FORGE          │         │      com.etendoerp.go        │
+│    (design + tooling)       │ writes  │    (runtime / NEO Headless)  │
+│                             │ ──────▶ │                              │
+│  cli/    → extractors, etc  │  via DB │  NeoServlet (/sws/neo/*)     │
+│  tools/  → decision UIs     │         │  ETGO_SF_SPEC/ENTITY/FIELD   │
+│  artifacts/ → per-window    │         │  Webhooks, CDI hooks         │
+└─────────────────────────────┘         └──────────────────────────────┘
 ```
 
 Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 
-## Initial Setup
+## Prerequisites
 
-### Prerequisites
+Before starting, make sure you have the following installed:
 
-- **Node.js >= 22** (`node -v`)
-- **PostgreSQL** access to an Etendo database (dev/staging, never production)
-- **Running Etendo instance** with the Application Dictionary populated
+- **Node.js >= 22** — [download](https://nodejs.org/)
+- **npm** (ships with Node.js)
+- **GitHub CLI (`gh`)** — required for window locks and PR workflow
+  ```bash
+  # macOS
+  brew install gh
+  # Then authenticate:
+  gh auth login
+  ```
+  [Install instructions for other platforms](https://cli.github.com/)
+- **PostgreSQL** — access to an Etendo development database
+- **Claude Code** — with the **Chrome DevTools MCP server** installed for UI testing and debugging
+  - Install the MCP server: `claude mcp add chrome-devtools` or configure it in `.claude/settings.json`
+  - See the [Chrome DevTools MCP](https://github.com/anthropics/claude-code) docs for setup details
+- **Etendo Claude Marketplace** — Claude Code plugins for Etendo development
+  - Install the marketplace and plugins:
+    ```
+    /plugin marketplace add etendosoftware/etendo_claude_marketplace
+    /plugin install dev-assistant@etendo_claude_marketplace
+    /plugin install etendo-workflow-manager@etendo_claude_marketplace
+    ```
+  - See the [marketplace repo](https://github.com/etendosoftware/etendo_claude_marketplace) for the full plugin reference
 
-### 1. Clone and install
+## Installation
+
+### 1. Start from a working Etendo Core
+
+You need a functional Etendo Core instance as the base. This gives Claude Code full access to the Etendo source code and database.
 
 ```bash
-git clone git@github.com:etendosoftware/schema_forge.git
-cd schema_forge
-npm install
+cd /path/to/etendo_core
+git checkout feature/ETP-3519
 ```
 
-This installs all workspaces: `cli/`, `tools/app-shell`, `tools/decision-panel`, `tools/ui-preview`.
+Make sure Etendo compiles and runs correctly before proceeding.
 
-### 2. Configure environment
+### 2. Clone Schema Forge
+
+Clone this repository **inside** the Etendo project directory (sibling to `modules/`):
+
+```bash
+cd /path/to/etendo_core
+git clone git@github.com:etendosoftware/etendo_schema_forge.git schema_forge
+cd schema_forge
+git checkout develop
+```
+
+### 3. Clone com.etendoerp.go
+
+Clone the runtime module into the Etendo `modules/` directory:
+
+```bash
+cd /path/to/etendo_core/modules
+git clone git@github.com:etendosoftware/com.etendoerp.go.git
+cd com.etendoerp.go
+git checkout develop
+```
+
+### 4. Clone com.etendoerp.openapi (if needed)
+
+If the build fails due to a missing dependency, clone the OpenAPI module:
+
+```bash
+cd /path/to/etendo_core/modules
+git clone git@github.com:etendosoftware/com.etendoerp.openapi.git
+cd com.etendoerp.openapi
+git checkout main
+```
+
+### 5. Install Schema Forge dependencies
+
+```bash
+cd /path/to/etendo_core/schema_forge
+make install
+```
+
+This installs all workspace dependencies (CLI tools + UI tools).
+
+### 6. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your Etendo database credentials:
+Edit `.env` with your values:
 
 ```env
+# Path to your Etendo root (relative or absolute)
+ETENDO_ROOT=..
+
+# Database connection (optional — CLI auto-reads from gradle.properties)
 ETENDO_DB_HOST=localhost
 ETENDO_DB_PORT=5432
-ETENDO_DB_USER=tad
-ETENDO_DB_PASSWORD=tad
-ETENDO_DB_NAME=etendo
-ETENDO_SOURCE_DIR=/path/to/your/etendo/src
+ETENDO_DB_USER=etendo
+ETENDO_DB_PASSWORD=
+ETENDO_DB_NAME=etendo_dev
 ```
 
-These values come from your Etendo's `gradle.properties` file (`bbdd.host`, `bbdd.port`, `bbdd.user`, `bbdd.password`, `bbdd.sid`).
+> **Note:** The CLI tools auto-read DB credentials from `{ETENDO_ROOT}/gradle.properties`. The `.env` overrides are only needed if your setup differs.
 
-### 3. Verify connection
+### Expected directory structure
+
+After installation, your project should look like this:
+
+```
+etendo_core/                    ← branch: feature/ETP-3519
+├── modules/
+│   ├── com.etendoerp.go/       ← branch: develop
+│   └── com.etendoerp.openapi/  ← branch: main (if needed)
+├── schema_forge/               ← branch: develop
+└── gradle.properties
+```
+
+## First Steps
+
+### 1. Refresh the menu cache
+
+The menu cache indexes all Etendo windows, processes, and reports for fast lookup:
 
 ```bash
-node cli/src/extract-from-db.js 143 sales-order
+node cli/src/menu-cache.js refresh
 ```
 
-If it works, you will see extracted files in `artifacts/sales-order/`.
+### 2. Explore available windows and processes
 
-## UI Generation and Running
+```bash
+# Search by name
+node cli/src/menu-cache.js search "sales order"
 
-The pipeline generates **real React components** that work in two modes: a local preview with mock data (no backend needed) and a production deployment served by Etendo's Tomcat.
+# Filter by type
+node cli/src/menu-cache.js search "invoice" --type window
+node cli/src/menu-cache.js search "payment" --type process
 
-### How UI generation works
-
-The pipeline step F8 (`generate-frontend.js`) produces React components (forms, grids, FK selectors) based on the curated schema and contracts. These components are written to `artifacts/{window}/generated/web/{window}/`.
-
-Alongside the components, `generate-mock-data.js` produces a `mockData.js` file with realistic sample data for each window. This allows previewing the UI without a running Etendo instance.
-
-```
-Pipeline step F8 output:
-  artifacts/{window}/generated/web/{window}/
-    ├── index.jsx          # Main component (real, uses NEO Headless API)
-    ├── Header.jsx         # Tab components
-    ├── Lines.jsx
-    ├── mockData.js        # Sample data for preview mode
-    └── ...
+# List all of a type
+node cli/src/menu-cache.js list window
+node cli/src/menu-cache.js list process
+node cli/src/menu-cache.js list report
 ```
 
-Both files are generated together -- you don't choose one or the other during generation.
+### 3. Run the pipeline for a window
 
-### Preview mode (mock data, no backend)
+The pipeline extracts metadata, classifies fields, generates contracts, configures NEO Headless, and generates the React frontend:
 
-For rapid UI iteration without needing Etendo running:
+```bash
+# By menu name (recommended — auto-detects type)
+node cli/src/pipeline.js --menu-name "Sales Order"
+
+# By menu ID
+node cli/src/pipeline.js --menu-id 143
+```
+
+Pipeline steps (window mode):
+
+| Phase | Step | Description |
+|-------|------|-------------|
+| F1a | extract-fields | Extract field metadata from Etendo DB |
+| F1b | extract-rules | Extract business rules and callouts |
+| F2 | validate | Validate schema (4 levels) |
+| F3 | pre-classify | Auto-classify rules (deterministic + AI) |
+| F4 | human-decisions | Open Decision Panel for human review |
+| F6 | generate-contract | Generate frontend/backend contracts |
+| F7 | push-to-neo | Configure NEO Headless (DB writes) |
+| F8 | generate-frontend | Generate React components |
+| F9 | run-tests | Run contract tests |
+
+### 4. Start the dev server
+
+Preview the generated UI with hot reload:
 
 ```bash
 make dev
-# Opens at http://localhost:3100
+# → http://localhost:3100
 ```
 
-This starts the Vite dev server with hot reload. The app loads `mockData.js` files instead of calling NEO Headless APIs, so you can work on the UI without a database or Tomcat.
+By default it runs with mock data (`VITE_MOCK=true`). To connect to a live Etendo instance, edit `tools/app-shell/.env.development`:
 
-Use this when:
-- Iterating on layout, styling, or component behavior
-- You don't have Etendo running locally
-- You want instant feedback (hot reload)
+```env
+VITE_MOCK=false
+VITE_API_BASE=http://localhost:8080/etendo
+```
 
-### Production mode (real data, deployed in Etendo)
-
-To deploy the UI into your running Etendo instance:
+### 5. Build and deploy to Etendo
 
 ```bash
 make deploy
 ```
 
-This builds the SPA with Vite and copies the output to `modules/com.etendoerp.go/web/com.etendoerp.go/`. Tomcat serves it immediately at:
+The built SPA is copied to `modules/com.etendoerp.go/web/com.etendoerp.go/` and served by Tomcat at `/etendo/web/com.etendoerp.go/` — no restart needed.
 
-```
-http://localhost:8080/etendo/web/com.etendoerp.go/
-```
-
-No Tomcat restart needed -- static files are picked up automatically.
-
-After deploying, if NEO configuration changed or this is the first deploy, rebuild Etendo:
+### 6. Run tests
 
 ```bash
-cd <etendo_root> && ./gradlew smartbuild export.database --info
+make test
 ```
 
-If not using Docker, restart Tomcat manually. Docker environments auto-restart after a few seconds.
+## CLI Tools Reference
 
-Use this when:
-- Testing with real Etendo data
-- Verifying API integration (CRUD, selectors, processes)
-- Final validation before merging
-
-### Comparison
-
-| | Preview | Production |
-|--|---------|------------|
-| **Command** | `make dev` | `make deploy` |
-| **URL** | `http://localhost:3100` | `http://localhost:8080/etendo/web/com.etendoerp.go/` |
-| **Data source** | Mock (`mockData.js`) | Real (NEO Headless API) |
-| **Requires Etendo** | No | Yes (Tomcat + DB) |
-| **Hot reload** | Yes | No (static files) |
-| **Auth** | None | JWT token |
-| **Use case** | UI development | Integration testing / production |
-
-### Build-only (no deploy)
-
-```bash
-make build
-# Output: tools/app-shell/dist/
-```
-
-### Override deploy target
-
-If your Etendo root is not the default path:
-
-```bash
-make deploy MODULE_WEB=/path/to/etendo/modules/com.etendoerp.go/web/com.etendoerp.go
-```
-
-### Other tools
-
-```bash
-cd tools/decision-panel && npm run dev   # http://localhost:5174 — Field/rule curation UI
-cd tools/ui-preview && npm run dev       # http://localhost:5175 — Sandboxed component preview
-```
-
-## The Pipeline
-
-The pipeline transforms a raw Etendo window into a working UI component. This is the core workflow.
-
-```
-F1a. Extract fields        -> artifacts/{window}/fields.csv + schema-raw.json
-F1b. Extract rules         -> artifacts/{window}/rules-raw.json
-F2.  Validate schema       -> validation report
-F3.  Pre-classify rules    -> artifacts/{window}/rules-classified.json
-F4.  [PAUSE] Human decisions via Decision Panel
-F6.  Generate contract     -> artifacts/{window}/contract.json
-F7.  Push to NEO           -> writes config to ETGO_SF_* tables
-F8.  Generate frontend     -> artifacts/{window}/generated/web/{window}/*.jsx
-F8b. [PAUSE] Translate TODOs (AI-assisted callout/onchange translation)
-F9.  Run contract tests    -> test results
-```
-
-### Run the full pipeline
-
-```bash
-npx sf-pipeline <windowId> [windowName]
-# Example:
-npx sf-pipeline 143 sales-order
-```
-
-### Run individual steps
-
-```bash
-npx sf-extract-db <windowId> <windowName>      # F1a: extract fields + rules from DB
-npx sf-extract-rules <windowId> <windowName>    # F1b: extract business rules
-npx sf-validate                                  # F2: validate schema
-npx sf-classify                                  # F3: pre-classify rules
-npx sf-contract                                  # F6: generate contract
-npx sf-push-neo                                  # F7: write config to NEO Headless DB
-npx sf-test                                      # F9: run contract tests
-npx sf-gen-log                                   # View generation log
-npx sf-test-report                               # Generate HTML test report
-npx sf-pipeline <windowId> [windowName]          # All steps end-to-end
-```
-
-## Adding a New Window
-
-This is the most common task you will perform.
-
-### Scenario A: Window already registered in the UI
-
-37 windows are already registered. If your window is one of them, the generated components **replace the existing ones automatically**.
-
-1. Find the window ID in Etendo:
-
-```sql
-SELECT ad_window_id, name FROM ad_window WHERE name ILIKE '%your window%';
-```
-
-2. Run the pipeline:
-
-```bash
-npx sf-pipeline <windowId> <windowName>
-# Example:
-npx sf-pipeline 143 sales-order
-```
-
-3. Restart the dev server to see changes.
-
-That is it. The pipeline generates components in `artifacts/{windowName}/generated/web/{windowName}/` and the UI picks them up from the existing registry.
-
-### Scenario B: Window not yet in the UI
-
-After running the pipeline, you need to register the window in 3 files.
-
-**1. Add to `tools/app-shell/src/windows/registry.js`:**
-
-```js
-// Add to the windowLoaders object:
-'your-window': () => import('@generated/your-window/generated/web/your-window/index.jsx'),
-```
-
-**2. Add to `tools/app-shell/src/menu.json`:**
-
-```json
-{
-  "group": "YourGroup",
-  "icon": "IconName",
-  "items": [
-    { "name": "your-window", "label": "Your Window" }
-  ]
-}
-```
-
-Or add to an existing group's `items` array.
-
-**3. Add to `tools/app-shell/src/App.jsx` (in `loadAllMockData`):**
-
-```js
-// Add inside the Promise.all array:
-import('@generated/your-window/generated/web/your-window/mockData.js'),
-```
-
-Then restart the dev server.
-
-## Custom Section Preservation
-
-When you re-run the pipeline on a window that already has custom code (translated callouts, custom hooks, etc.), the system preserves your changes using delimiters:
-
-- `// @sf-generated-start ID` / `// @sf-generated-end ID` -- autogenerated code (overwritten on regeneration)
-- `// @sf-custom-start ID` / `// @sf-custom-end ID` -- your custom code (preserved across regenerations)
-- `// @sf-custom-slot ID` -- placeholder where custom code gets injected
-
-You can safely re-run the pipeline without losing manual edits inside `@sf-custom` blocks.
-
-## UI Architecture
-
-The app-shell has three layers of pages:
-
-| Layer | Count | Description |
-|-------|-------|-------------|
-| **Window pages** | 37 | Autogenerated from contract. Loaded by `WindowLoader` via `registry.js` |
-| **Overview pages** | 9 | Dashboard-style pages per module (Sales, Purchases, etc.). Semi data-driven |
-| **Utility pages** | 3 | Dashboard, Onboarding, SmartScan |
-
-Window pages are fully generated. Overview and utility pages are hand-crafted.
-
-## CLI Commands Reference
-
-All commands are `bin` entries in `cli/package.json`. Run with `npx`:
+All tools live in `cli/src/`. Available as `sf-*` commands after `npm install`:
 
 | Command | Description |
 |---------|-------------|
-| `npx sf-extract-db <windowId> <windowName>` | Extract fields + rules from Etendo DB |
-| `npx sf-extract <windowId> <windowName>` | Extract field metadata with FK resolution |
-| `npx sf-extract-rules <windowId> <windowName>` | Extract business rules and callouts |
-| `npx sf-validate` | Validate schema (4 levels) |
-| `npx sf-classify` | Pre-classify rules (deterministic + AI) |
-| `npx sf-contract` | Generate frontend/backend contracts |
-| `npx sf-push-neo` | Write config to NEO Headless DB tables |
-| `npx sf-pipeline <windowId> [windowName]` | Run full pipeline end-to-end |
-| `npx sf-test` | Run contract tests |
-| `npx sf-gen-log` | View generation log |
-| `npx sf-test-report` | Generate HTML test report |
+| `sf-pipeline` | Full pipeline (auto-detects window/process/report from menu) |
+| `sf-extract-db` | Extract fields + rules from Etendo DB |
+| `sf-extract` | Field extraction with FK resolution |
+| `sf-extract-rules` | Rule + callout extraction |
+| `sf-classify` | Pre-classify rules (deterministic + AI) |
+| `sf-validate` | 4-level schema validation |
+| `sf-contract` | Generate frontend/backend contracts |
+| `sf-push-neo` | Configure NEO Headless via DB writes |
+| `sf-test` | Run contract tests |
+| `sf-lock` | Window lock management (via GitHub Issues) |
+| `sf-check-version` | Check contract version and classify changes |
+
+## Make Targets
+
+```
+make help           Show all targets
+make install        Install all workspace dependencies
+make dev            Start dev server (localhost:3100)
+make build          Build app-shell for production
+make deploy         Build + deploy to Etendo module
+make test           Run all CLI tests
+make test-frontend  Run frontend generator tests
+make clean          Remove build artifacts
+```
 
 ## Project Structure
 
 ```
-schema-forge/
-├── cli/                          # Node.js CLI tools (extractors, validators, generators)
-│   └── src/
-│       ├── extract-from-db.js    # Extract fields + rules from Etendo DB
-│       ├── extract-fields.js     # Field extraction with FK resolution
-│       ├── extract-rules.js      # Business rule + callout extraction
-│       ├── pre-classify.js       # Auto-classify rules
-│       ├── validate-schema.js    # 4-level schema validation
-│       ├── generate-contract.js  # Frontend/backend contract generation
-│       ├── push-to-neo.js        # Write config to ETGO_SF_* tables
-│       ├── generate-frontend.js  # React SPA generation (emits section markers)
-│       ├── generate-mock-data.js # Mock data for UI preview
-│       ├── run-contract-tests.js # Contract test runner
-│       └── pipeline.js           # Full pipeline orchestrator
-├── tools/                        # React web apps
-│   ├── app-shell/                # Main UI (Vite + React + Tailwind)
-│   ├── decision-panel/           # Field visibility + rule curation
-│   └── ui-preview/               # Live preview with mock data
-├── artifacts/{window-name}/      # Per-window: schemas, rules, decisions, generated code
-├── core-maps/                    # system-columns.json, ad-reference-map.json
-├── docs/                         # All documentation
-└── .env                          # Local config (not committed)
+schema_forge/
+├── cli/                    # Node.js CLI tools (extractors, validators, generators)
+├── tools/
+│   ├── app-shell/          # Main UI shell (Vite + React + Tailwind)
+│   ├── decision-panel/     # Field visibility + rule curation UI
+│   └── ui-preview/         # Live preview with mock data
+├── artifacts/              # Per-window/process outputs (schemas, contracts, generated code)
+├── core-maps/              # Shared metadata (system columns, AD reference map, menu cache)
+├── scripts/                # Helper scripts (JWT tokens for testing)
+├── docs/                   # All documentation
+├── Makefile                # Build, test, deploy commands
+└── .env.example            # Environment configuration template
 ```
 
 ## Documentation
 
-Full documentation lives in `docs/`. Start with [docs/index.md](docs/index.md).
+See [`docs/index.md`](docs/index.md) for the full documentation index, including:
 
-| Document | Contents |
-|----------|----------|
-| [PRD.md](docs/PRD.md) | Product requirements, decision map, pipeline, scope |
-| [TDD.md](docs/TDD.md) | Technical design, data models, validation rules |
-| [architecture-overview.md](docs/architecture-overview.md) | Full system architecture |
-| [etendo-ad/](docs/etendo-ad/index.md) | How Etendo AD works (schema mappings, processes, display logic) |
-| [plans/](docs/plans/) | Active feature plans and proposals |
+- [Architecture Overview](docs/architecture-overview.md) — system design, data flow
+- [PRD](docs/PRD.md) — product requirements and scope
+- [TDD](docs/TDD.md) — technical design and data models
+- [NEO Headless Extensibility](docs/neo-headless-extensibility.md) — how to extend the runtime API
+- [Etendo AD Reference](docs/etendo-ad/index.md) — how the Application Dictionary works

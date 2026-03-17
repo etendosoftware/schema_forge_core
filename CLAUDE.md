@@ -78,6 +78,7 @@ git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
 ```
 All agents work ONLY in that worktree — never in the main repo.
 The coordinator creates the worktree and passes the path to each agent.
+**Worktree branches are LOCAL ONLY.** They are never pushed to remote. After pipeline approval, the coordinator merges them locally into the parent branch via `git merge --squash`.
 
 ## Parallelization
 - Independent tasks → parallel worktrees
@@ -93,21 +94,34 @@ The coordinator creates the worktree and passes the path to each agent.
 ## Documentation Freshness (MANDATORY)
 Any PR that modifies the pipeline, CLI tools, data flow, repository structure, or architecture MUST include updates to all documentation and diagrams that reference the changed component. **Code change + doc update = one atomic unit.** See `<self_documentation>` section for the full checklist and list of files to verify. REVIEW must reject PRs that change documented behavior without updating the docs.
 
-## Pull Requests (MANDATORY)
-After DEV completes, the coordinator creates a PR:
-1. DEV pushes branch to remote: `git push -u origin feat/<task-name>`
-2. Coordinator creates PR via `gh pr create` **targeting the branch the worktree was created from** (NEVER `main`)
-3. REVIEW and QA phases happen on the PR (agents comment their verdicts on the PR)
-4. On rejection: DEV fixes, pushes, cycle restarts from rejecting phase
-5. After all phases APPROVE: coordinator merges via `gh pr merge --squash`
-6. Remove worktree and delete branch
+## Local Merge (MANDATORY)
+Worktree branches are **never pushed to remote**. All review happens locally through the pipeline phases.
 
-**PR target rules:**
-- If working from `feature/ETP-XXXX` → PR targets `feature/ETP-XXXX`
-- If working from `develop` → PR targets `develop`
+After all phases APPROVE:
+1. Coordinator switches to the parent branch: `git checkout feature/ETP-XXXX`
+2. Squash-merge the worktree branch: `git merge --squash feat/<task-name>`
+3. Commit with a clear message following commit conventions
+4. Clean up: `git worktree remove .worktrees/feat-<task-name> && git branch -d feat/<task-name>`
+
+On rejection: DEV fixes in the SAME worktree, cycle restarts from rejecting phase (no push needed).
+
+**The only GitHub PR is feature → develop**, created when the feature is complete. The user controls when to push and create this PR.
+
+**PR rules (for the feature → develop PR):**
 - **NEVER target `main` directly.** The highest allowed target is `develop`.
-- **Always assign the PR to the current user** (`gh api repos/{owner}/{repo}/issues/{pr}/assignees --method POST -f "assignees[]={username}"`).
-- **GitHub usernames must be stored in auto-memory** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to auto-memory for future use. **CRITICAL:** Before ANY GitHub operation (locking windows, creating PRs, assigning issues), read the `github-usernames.md` file from the auto-memory directory (`~/.claude/projects/.../memory/github-usernames.md` — use the absolute path, NEVER a path relative to the project root). NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
+- **Always assign the PR to the current user.**
+- **GitHub usernames must be stored in auto-memory** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to auto-memory for future use. **CRITICAL:** Before ANY GitHub operation, read the `github-usernames.md` file from the auto-memory directory (`~/.claude/projects/.../memory/github-usernames.md` — use the absolute path, NEVER a path relative to the project root). NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
+
+## New Feature Branch Policy (MANDATORY)
+When the user requests a new task while on a feature branch, the coordinator MUST ask:
+1. **What is the new task?**
+2. **Does it depend on changes in the current feature branch?**
+
+Based on the answer:
+- **Independent task →** Create new branch from `develop` (with `git pull` first to update)
+- **Dependent task →** Create new branch from the current feature branch
+
+This prevents unnecessary coupling between features while ensuring dependent work has access to what it needs.
 
 ## Branch Safety (MANDATORY)
 When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
