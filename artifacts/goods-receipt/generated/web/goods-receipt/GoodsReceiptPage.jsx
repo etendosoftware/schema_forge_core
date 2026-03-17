@@ -4,16 +4,23 @@ import GoodsReceiptForm from './GoodsReceiptForm';
 import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import catalogs from './mockCatalogs';
 
+const breadcrumb = 'Procurement / Goods Receipt';
+
+// @sf-generated-start summary:goodsReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
+// @sf-generated-end summary:goodsReceipt
 
+// @sf-generated-start processes:goodsReceipt
 const processes = [
 
 ];
+// @sf-generated-end processes:goodsReceipt
 
+// @sf-generated-start addLineFields:goodsReceiptLine
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
@@ -26,8 +33,107 @@ const addLineFields = {
 
   ],
 };
+// @sf-generated-end addLineFields:goodsReceiptLine
 
+const api = {
+  "specName": "goods-receipt",
+  "baseUrl": "/sws/neo/goods-receipt",
+  "crud": {
+    "goodsReceipt": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/goods-receipt/goodsReceipt",
+      "detailUrl": "/sws/neo/goods-receipt/goodsReceipt/{id}",
+      "supportedFilters": [
+        "businessPartner",
+        "movementDate",
+        "warehouse",
+        "poReference",
+        "documentNo",
+        "docStatus"
+      ]
+    },
+    "goodsReceiptLine": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/goods-receipt/goodsReceiptLine",
+      "detailUrl": "/sws/neo/goods-receipt/goodsReceiptLine/{id}",
+      "supportedFilters": [
+        "product"
+      ]
+    }
+  },
+  "selectors": [
+    {
+      "entity": "goodsReceipt",
+      "field": "businessPartner",
+      "column": "C_BPartner_ID",
+      "reference": "BusinessPartner",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/businessPartner"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "partnerAddress",
+      "column": "C_BPartner_Location_ID",
+      "reference": "BusinessPartnerLocation",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/warehouse"
+    },
+    {
+      "entity": "goodsReceiptLine",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/product"
+    },
+    {
+      "entity": "goodsReceiptLine",
+      "field": "locator",
+      "column": "M_Locator_ID",
+      "reference": "Locator",
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/locator"
+    },
+    {
+      "entity": "goodsReceiptLine",
+      "field": "uom",
+      "column": "C_UOM_ID",
+      "reference": "UOM",
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/uom"
+    }
+  ],
+  "actions": [],
+  "queryParams": {
+    "pagination": {
+      "startRow": "_startRow",
+      "endRow": "_endRow",
+      "default": "0-100"
+    },
+    "sorting": {
+      "param": "_sortBy",
+      "example": "_sortBy=goods-receiptDate"
+    },
+    "filtering": "Use field name as query param: ?fieldName=value",
+    "parentFilter": "parentId={id} for child entities"
+  }
+};
+
+// @sf-generated-start component:GoodsReceiptPage
 export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:GoodsReceiptPage
   if (recordId) {
     return (
       <DetailView
@@ -44,6 +150,8 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         detailLabel="Goods Receipt Line"
         windowName={windowName}
         recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
         {...props}
       />
     );
@@ -53,9 +161,13 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
     <ListView
       entity="goodsReceipt"
       Table={GoodsReceiptTable}
-      entityLabel="Goods Receipt"
+      entityLabel="Goods Receipts"
       windowName={windowName}
+      breadcrumb={breadcrumb}
       {...props}
     />
   );
 }
+// @sf-generated-end component:GoodsReceiptPage
+
+// @sf-custom-slot section:GoodsReceiptPage-custom
