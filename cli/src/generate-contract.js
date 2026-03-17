@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { toSpecName } from './push-to-neo.js';
 
 const TS_TYPE_MAP = {
   string: 'string',
@@ -445,18 +446,6 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
   };
 }
 
-/**
- * Convert a window display name to kebab-case spec name.
- * "Sales Order" -> "sales-order", "Business Partner" -> "business-partner"
- */
-function toSpecName(windowName) {
-  return windowName
-    .trim()
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase();
-}
 
 /**
  * Generate API prediction: predicts NEO Headless URLs, selectors, actions, and query params.

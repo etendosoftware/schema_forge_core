@@ -250,6 +250,7 @@ schema-forge/                             # THIS REPO — design + tooling
     ├── architecture-overview.md          # System architecture (Schema Forge + Etendo Go)
     ├── PRD.md / TDD.md                   # Product + technical design
     ├── PRD-anex.md / TDD-anex.md         # API versioning model
+    ├── neo-headless-extensibility.md      # How to extend/customize NEO Headless (hooks, config, patterns)
     ├── etendo-ad/                        # Etendo AD reference (schema mappings, processes, display logic)
     └── plans/                            # Feature plans and evaluations
 ```
@@ -295,8 +296,9 @@ The runtime module is at `/modules/com.etendoerp.go/`. Full reference documentat
 | `NeoSelectorService` | FK dropdown resolution (TableDir, Table, Search, OBUISEL). |
 | `NeoProcessService` | Process execution (OBUIAPP + Classic). |
 | `NeoReportService` | Report generation (Jasper via ReportingUtils). |
-| `NeoHandler` (interface) | CDI hook for custom logic. Return `NeoResponse` or `null` to fall through. |
-| `NeoContext` / `NeoResponse` | Request context (builder) and response wrapper. |
+| `NeoHandler` (interface) | CDI hook for custom logic. Pre/post hooks via `handle()` + `afterHandle()`. See `docs/neo-headless-extensibility.md`. |
+| `NeoEndpointType` (enum) | Identifies sub-endpoint type: CRUD, SELECTOR, ACTION, EVALUATE_DISPLAY, CALLOUT, DEFAULTS. |
+| `NeoContext` / `NeoResponse` | Request context (builder with endpointType/fieldName) and response wrapper. |
 | `PopulateSpecHelper` | Auto-populate entities/fields from AD metadata. |
 | 4 webhooks | `SFUpsertSpec`, `SFUpsertEntity`, `SFUpsertField`, `SFPopulateSpec` |
 
@@ -364,6 +366,26 @@ Folders (`isSummary='Y'`) are grouping nodes — the pipeline reports them as no
 - **Visibility model**: editable (user input), readOnly (display), system (auto-derived, hidden), discarded (ignored)
 - **System field derivations**: fromConfig, fromParent, fromField, lookup, computed, sequence
 - **OBDal transactions**: single DB transaction, all-or-nothing rollback. No Sagas.
+
+### Spec Naming Convention (MANDATORY)
+
+All spec names use **kebab-case**. The canonical transformation is `toSpecName()` in `cli/src/push-to-neo.js` (single source of truth — other modules import it from there).
+
+**Transformation rules:** trim → split camelCase → replace non-alphanumeric with `-` → strip leading/trailing `-` → lowercase.
+
+| Context | Format | Example |
+|---------|--------|---------|
+| Spec name (DB `ETGO_SF_SPEC.name`) | kebab-case | `purchase-order` |
+| Artifact directory | kebab-case | `artifacts/purchase-order/` |
+| `contract.json` field `specName` | kebab-case | `"specName": "purchase-order"` |
+| NEO API URLs | kebab-case | `/sws/neo/purchase-order/header` |
+| React component file names | PascalCase (derived) | `PurchaseOrderPage.jsx` |
+| Window display name (AD metadata) | Mixed case (original) | `"Purchase Order"` |
+
+**Rules for agents:**
+- **NEVER** guess or manually construct a spec name. Always use `toSpecName()` or read it from the artifact directory name.
+- The artifact directory name IS the spec name. They are always identical.
+- When referring to a window in code or config, use the kebab-case spec name (`purchase-order`), not PascalCase (`PurchaseOrder`) or display name (`Purchase Order`).
 
 ## Custom Section Preservation (Frontend Regeneration)
 
