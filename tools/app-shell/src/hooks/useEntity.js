@@ -25,6 +25,18 @@ async function extractErrorMessage(res) {
 
 const BATCH_SIZE = 75;
 
+/**
+ * Resolve the backend sort key for a given column.
+ * FK columns have a companion `col$_identifier` in the response — sorting by that
+ * produces alphabetical order instead of sorting by the raw UUID.
+ */
+function resolveSortKey(sortColumn, sampleRow) {
+  if (!sampleRow) return sortColumn;
+  const identifierKey = `${sortColumn}$_identifier`;
+  if (identifierKey in sampleRow) return identifierKey;
+  return sortColumn;
+}
+
 export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -37,6 +49,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const [sortColumn, setSortColumn] = useState('creationDate');
   const [sortDirection, setSortDirection] = useState('desc');
   const startRowRef = useRef(0);
+  const sampleRowRef = useRef(null);
 
   const headers = buildHeaders(token);
 
@@ -44,13 +57,15 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     startRowRef.current = 0;
     setHasMore(true);
     setLoading(true);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortColumn} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}`, { headers })
+    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
       .then(data => {
         const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        if (rows.length > 0) sampleRowRef.current = rows[0];
         setItems(rows);
         startRowRef.current = rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
@@ -63,7 +78,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     if (!hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     const start = startRowRef.current;
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortColumn} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}`, { headers })
+    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
