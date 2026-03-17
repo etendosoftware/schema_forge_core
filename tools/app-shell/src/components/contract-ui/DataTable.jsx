@@ -3,11 +3,88 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Inbox, X } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+
+/**
+ * Compact inline combobox for search-type FK fields in rapid line entry.
+ * Text input with filtered dropdown — lightweight alternative to full SearchInput.
+ */
+function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const displayValue = options.find(o => o.id === value);
+
+  const filtered = useMemo(() => {
+    if (!query) return options.slice(0, 15);
+    const q = query.toLowerCase();
+    return options.filter(o => {
+      const name = o.name || o.label || o._identifier || '';
+      return name.toLowerCase().includes(q);
+    }).slice(0, 15);
+  }, [query, options]);
+
+  const handleSelect = (opt) => {
+    setQuery(opt.name || opt.label || opt._identifier || '');
+    onChange(opt.id, opt.name || opt.label || opt._identifier || '');
+    setOpen(false);
+  };
+
+  // Sync display when value is set externally
+  useEffect(() => {
+    if (displayValue && !query) {
+      setQuery(displayValue.name || displayValue.label || displayValue._identifier || '');
+    }
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+          // Clear ID when typing (user is searching, not committed yet)
+          if (value) onChange('', '');
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={(e) => {
+          // Let Enter/Escape propagate to the row handler only if dropdown is closed
+          if (e.key === 'Enter' && open && filtered.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSelect(filtered[0]);
+            return;
+          }
+          onKeyDown?.(e);
+        }}
+        placeholder={placeholder}
+        className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 pr-6 focus:ring-2 focus:ring-primary focus:outline-none"
+      />
+      <ChevronDown className="absolute right-1.5 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 top-full left-0 mt-0.5 bg-white border rounded-md shadow-lg max-h-40 overflow-auto min-w-[200px] w-max">
+          {filtered.map(opt => (
+            <button
+              key={opt.id}
+              type="button"
+              className="w-full text-left px-2 py-1.5 text-sm hover:bg-blue-50 cursor-pointer whitespace-nowrap"
+              onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
+            >
+              {opt.name || opt.label || opt._identifier || opt.id}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * Format a number as currency with $ prefix and locale-aware separators.
@@ -84,7 +161,7 @@ function EmptyState({ hasFilter, totalCount }) {
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs }) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -132,6 +209,12 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
     for (const f of fields) {
       next[f.key] = f.key === 'lineNo' ? nextLineNo : '';
     }
+    // Clear any $_identifier companion values
+    for (const key of Object.keys(values)) {
+      if (key.includes('$_identifier') && !(key in next)) {
+        next[key] = '';
+      }
+    }
     setValues(next);
     // Re-focus first input for rapid entry
     setTimeout(() => firstInputRef.current?.focus(), 0);
@@ -162,6 +245,56 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data }) {
         }
         const isFirst = !firstInputAssigned;
         if (isFirst) firstInputAssigned = true;
+
+        // Search fields render as compact combobox (text input + filtered dropdown)
+        if (field.type === 'search' && catalogs?.[field.reference]) {
+          const options = catalogs[field.reference] || [];
+          return (
+            <TableCell key={col.key} className="py-1 px-2">
+              <InlineSearchCombo
+                field={field}
+                value={values[field.key] ?? ''}
+                options={options}
+                inputRef={isFirst ? firstInputRef : undefined}
+                placeholder={t(field.column) ?? field.label ?? field.key}
+                onChange={(id, label) => {
+                  handleChange(field.key, id);
+                  handleChange(field.key + '$_identifier', label);
+                }}
+                onKeyDown={handleKeyDown}
+              />
+            </TableCell>
+          );
+        }
+
+        // Selector fields render as native <select> dropdowns (few options)
+        if (field.type === 'selector' && catalogs?.[field.reference]) {
+          const options = catalogs[field.reference] || [];
+          return (
+            <TableCell key={col.key} className="py-1 px-2">
+              <select
+                ref={isFirst ? firstInputRef : undefined}
+                value={values[field.key] ?? ''}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  handleChange(field.key, selectedId);
+                  const opt = options.find(o => o.id === selectedId);
+                  if (opt) {
+                    handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
+                  }
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              >
+                <option value="">{t(field.column) ?? field.label ?? field.key}</option>
+                {options.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</option>
+                ))}
+              </select>
+            </TableCell>
+          );
+        }
+
         return (
           <TableCell key={col.key} className="py-1 px-2">
             <input
@@ -392,6 +525,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 onAdd={addRow.onAdd}
                 onCancel={addRow.onCancel}
                 data={data}
+                catalogs={addRow.catalogs}
               />
             )}
           </TableBody>

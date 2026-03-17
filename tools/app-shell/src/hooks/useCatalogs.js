@@ -54,9 +54,10 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}) {
     });
 
     Promise.all(fetches).then(resolved => {
-      const results = { ...fallback };
+      const results = {};
       for (const result of resolved) {
-        if (result && result.items.length > 0) {
+        if (result) {
+          // API responded — use its data (even if empty). Never fall back to mocks.
           results[result.reference] = result.items;
         }
       }
