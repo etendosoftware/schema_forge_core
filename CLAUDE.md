@@ -68,21 +68,8 @@ This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broke
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
-## Worktree Isolation (MANDATORY)
-Every task runs in an isolated git worktree. No exceptions.
-The worktree branch is created FROM the current branch, and PRs target that same branch.
-```
-# Detect current branch, then create worktree from it
-CURRENT_BRANCH=$(git branch --show-current)
-git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
-```
-All agents work ONLY in that worktree — never in the main repo.
-The coordinator creates the worktree and passes the path to each agent.
-**Worktree branches are LOCAL ONLY.** They are never pushed to remote. After pipeline approval, the coordinator merges them locally into the parent branch via `git merge`.
-
-## Parallelization
-- Independent tasks → parallel worktrees
-- Within a task → sequential pipeline
+## Branching, Worktrees & Merging
+See `docs/branch-workflow.md` for all rules on worktree isolation, local merge, PR targets, feature branch policy, and branch safety.
 
 ## Reject Cycle
 1. Coordinator receives rejection report
@@ -93,37 +80,6 @@ The coordinator creates the worktree and passes the path to each agent.
 
 ## Documentation Freshness (MANDATORY)
 Any PR that modifies the pipeline, CLI tools, data flow, repository structure, or architecture MUST include updates to all documentation and diagrams that reference the changed component. **Code change + doc update = one atomic unit.** See `<self_documentation>` section for the full checklist and list of files to verify. REVIEW must reject PRs that change documented behavior without updating the docs.
-
-## Local Merge (MANDATORY)
-Worktree branches are **never pushed to remote**. All review happens locally through the pipeline phases.
-
-After all phases APPROVE:
-1. Coordinator switches to the parent branch: `git checkout feature/ETP-XXXX`
-2. Merge the worktree branch: `git merge feat/<task-name>` (preserves full commit history)
-3. Clean up: `git worktree remove .worktrees/feat-<task-name> && git branch -d feat/<task-name>`
-
-On rejection: DEV fixes in the SAME worktree, cycle restarts from rejecting phase (no push needed).
-
-**The only GitHub PR is feature → develop**, created when the feature is complete. The user controls when to push and create this PR.
-
-**PR rules (for the feature → develop PR):**
-- **NEVER target `main` directly.** The highest allowed target is `develop`.
-- **Always assign the PR to the current user.**
-- **GitHub usernames must be stored in auto-memory** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to auto-memory for future use. **CRITICAL:** Before ANY GitHub operation, read the `github-usernames.md` file from the auto-memory directory (`~/.claude/projects/.../memory/github-usernames.md` — use the absolute path, NEVER a path relative to the project root). NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
-
-## New Feature Branch Policy (MANDATORY)
-When the user requests a new task while on a feature branch, the coordinator MUST ask:
-1. **What is the new task?**
-2. **Does it depend on changes in the current feature branch?**
-
-Based on the answer:
-- **Independent task →** Create new branch from `develop` (with `git pull` first to update)
-- **Dependent task →** Create new branch from the current feature branch
-
-This prevents unnecessary coupling between features while ensuring dependent work has access to what it needs.
-
-## Branch Safety (MANDATORY)
-When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
 
 ## Commit Conventions (MANDATORY)
 All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
@@ -158,7 +114,7 @@ Branch naming also follows Git Police patterns:
 - Approve work that skipped pipeline phases
 - Let agents work outside their assigned worktree
 - Commit, merge, or work directly on `main` or `develop` — ALL work happens on feature branches via PRs
-- Create PRs targeting `main` — the highest allowed PR target is `develop`; `main` is only updated via publish/release merges from `develop`
+- Create PRs targeting `main`
 </what_i_never_do>
 
 <communication>
@@ -175,37 +131,11 @@ Branch naming also follows Git Police patterns:
 **com.etendoerp.go** (Etendo Go) is the runtime implementation — a metadata-driven REST API layer (`NEO Headless`) that runs inside Etendo. It exposes AD Windows and Processes as JSON APIs based on configuration stored in 3 database tables (`ETGO_SF_SPEC`, `ETGO_SF_ENTITY`, `ETGO_SF_FIELD`).
 
 ```
-┌─────────────────────────────────┐          ┌──────────────────────────────────┐
-│         SCHEMA FORGE            │          │        com.etendoerp.go          │
-│     (design + tooling)          │          │     (runtime implementation)     │
-│                                 │          │                                  │
-│  cli/        → extractors,      │  writes  │  NeoServlet (/sws/neo/*)         │
-│                validators,      │ ──────▶  │  NeoSelectorService              │
-│                generators       │  via     │  NeoProcessService               │
-│                                 │  webhooks│  NeoReportService                │
-│  tools/      → decision UIs     │          │  NeoHandler (CDI hooks)          │
-│  templates/  → legacy (unused)  │          │  PopulateSpecHelper              │
-│  artifacts/  → per-window data  │          │  4 webhooks (upsert/populate)    │
-│  docs/       → PRD, TDD, AD ref │          │                                  │
-│  core-maps/  → shared metadata  │          │  Tables: ETGO_SF_SPEC            │
-│  pending/    → future proposals │          │          ETGO_SF_ENTITY           │
-│                                 │          │          ETGO_SF_FIELD            │
-└─────────────────────────────────┘          └──────────────────────────────────┘
-     This repository                          /modules/com.etendoerp.go/
+Schema Forge (this repo)  ──writes via webhooks──▶  com.etendoerp.go (/modules/)
+   (design + tooling)                                 (runtime API engine)
 ```
 
 **Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime.
-
-### Two Repositories, One System
-
-| Aspect | Schema Forge (this repo) | Etendo Go (modules/) |
-|--------|--------------------------|----------------------|
-| **Role** | Design, analysis, tooling, documentation | Runtime API engine |
-| **Language** | Node.js (CLI), React (UIs) | Java (Etendo module) |
-| **Output** | Artifacts, configs, webhook calls | Live REST endpoints |
-| **Changes** | Frequently (every design iteration) | Rarely (engine is stable) |
-| **Path** | `schema_forge/` | `modules/com.etendoerp.go/` |
-| **Docs** | `docs/architecture-overview.md` | `docs/neo-headless.md` (API reference) |
 
 See `docs/architecture-overview.md` for the full system architecture.
 
