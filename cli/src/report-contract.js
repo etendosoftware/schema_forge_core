@@ -29,6 +29,27 @@ const ROOT = join(__dirname, '..', '..');
 const SYSTEM_VISIBILITIES = new Set(['system', 'discarded']);
 const REQUIRED_CONTRACT_KEYS = ['reportId', 'type', 'entity', 'columns'];
 
+const DEFAULT_WIDTHS = {
+  boolean: '8%',
+  amount: '12%',
+  number: '12%',
+  integer: '12%',
+  date: '12%',
+  datetime: '12%',
+};
+
+/**
+ * Convert a camelCase field name to a human-readable label.
+ * e.g. "searchKey" → "Search Key", "isActive" → "Is Active", "taxId" → "Tax ID"
+ */
+function humanizeFieldName(name) {
+  return name
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, s => s.toUpperCase())
+    .replace(/\bId\b/g, 'ID')
+    .trim();
+}
+
 // ---------------------------------------------------------------------------
 // Pure helpers
 // ---------------------------------------------------------------------------
@@ -74,21 +95,28 @@ export function generateReportContract(schema, type) {
   // Columns: grid fields only (default visible columns in the report)
   const columns = usableFields
     .filter(f => f.grid)
-    .map(f => ({
-      field: f.name,
-      label: { en: f.name },
-      type: f.type,
-      sortable: true,
-    }));
+    .map(f => {
+      const label = humanizeFieldName(f.label ?? f.name);
+      return {
+        field: f.name,
+        label: { en_US: label, es_ES: label },
+        type: f.type,
+        width: DEFAULT_WIDTHS[f.type] ?? 'auto',
+        sortable: true,
+      };
+    });
 
   // Filters: searchable string fields get text filters; booleans get boolean filters
   const filters = usableFields
     .filter(f => f.searchable || f.type === 'boolean')
-    .map(f => ({
-      field: f.name,
-      label: { en: f.name },
-      type: filterTypeFor(f),
-    }));
+    .map(f => {
+      const label = humanizeFieldName(f.label ?? f.name);
+      return {
+        field: f.name,
+        label: { en_US: label, es_ES: label },
+        type: filterTypeFor(f),
+      };
+    });
 
   // Default sort: first sortable column, ascending
   const firstColumn = columns[0];

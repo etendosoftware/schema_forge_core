@@ -11,25 +11,31 @@
     {
       "field": "name",
       "label": {
-        "en": "name"
+        "en_US": "Name",
+        "es_ES": "Name"
       },
       "type": "string",
+      "width": "auto",
       "sortable": true
     },
     {
       "field": "searchKey",
       "label": {
-        "en": "searchKey"
+        "en_US": "Search Key",
+        "es_ES": "Search Key"
       },
       "type": "string",
+      "width": "auto",
       "sortable": true
     },
     {
       "field": "isActive",
       "label": {
-        "en": "isActive"
+        "en_US": "Is Active",
+        "es_ES": "Is Active"
       },
       "type": "boolean",
+      "width": "8%",
       "sortable": true
     }
   ],
@@ -37,21 +43,24 @@
     {
       "field": "name",
       "label": {
-        "en": "name"
+        "en_US": "Name",
+        "es_ES": "Name"
       },
       "type": "text"
     },
     {
       "field": "searchKey",
       "label": {
-        "en": "searchKey"
+        "en_US": "Search Key",
+        "es_ES": "Search Key"
       },
       "type": "text"
     },
     {
       "field": "isActive",
       "label": {
-        "en": "isActive"
+        "en_US": "Is Active",
+        "es_ES": "Is Active"
       },
       "type": "boolean"
     }
