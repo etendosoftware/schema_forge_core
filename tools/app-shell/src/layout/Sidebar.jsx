@@ -31,7 +31,6 @@ import {
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
 import { useMenuLabel } from '@/i18n';
-import { UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -59,7 +58,6 @@ const EXPANDED_W = 240;
 
 export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   const { selectedOrg } = useAuth();
-  const [showUserPopover, setShowUserPopover] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname.replace(/^\//, '');
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
@@ -87,34 +85,15 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
           'flex shrink-0 items-center h-14',
           expanded ? 'px-4 gap-3' : 'justify-center'
         )}>
-          {!expanded ? (
-            <button
-              onClick={() => setShowUserPopover(v => !v)}
-              className="h-9 w-9 shrink-0 rounded-lg overflow-hidden"
-            >
-              <img
-                src="/favicon.png"
-                alt="Etendo"
-                className="h-9 w-9"
-              />
-            </button>
-          ) : (
-            <img
-              src="/favicon.png"
-              alt="Etendo"
-              className="h-9 w-9 shrink-0 rounded-lg"
-            />
-          )}
+          <img
+            src="/favicon.png"
+            alt="Etendo"
+            className="h-9 w-9 shrink-0 rounded-lg"
+          />
           {expanded && (
-            <button
-              onClick={() => setShowUserPopover(v => !v)}
-              className="flex flex-col leading-none min-w-0 flex-1 text-left"
-            >
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-semibold text-foreground truncate">{selectedOrg?.name || 'Your company'}</span>
-                <ChevronRight className={cn('h-3 w-3 text-muted-foreground transition-transform', showUserPopover && 'rotate-90')} />
-              </div>
-            </button>
+            <div className="flex flex-col leading-none min-w-0 flex-1 text-left">
+              <span className="text-sm font-semibold text-foreground truncate">{selectedOrg?.name || 'Your company'}</span>
+            </div>
           )}
           <button
             onClick={onToggle}
@@ -127,13 +106,6 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
           </button>
         </div>
 
-        {/* Context switcher popover */}
-        {showUserPopover && (
-          <UserContextSwitcher
-            onClose={() => setShowUserPopover(false)}
-            positionClassName={expanded ? 'top-14 left-4' : 'top-14 left-[68px]'}
-          />
-        )}
 
         {/* Expand button (only when collapsed) */}
         {!expanded && (
