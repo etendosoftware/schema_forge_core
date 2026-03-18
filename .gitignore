@@ -3,7 +3,11 @@ etendo_core
 app.log
 node_modules/
 tools/decision-panel/dist/
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+!.claude/agents/
+!.claude/agents/**
 artifacts/test-report.xml
 artifacts/test-report.html
 .DS_Store

@@ -188,7 +188,8 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 

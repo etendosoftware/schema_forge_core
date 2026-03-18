@@ -243,6 +243,7 @@ Build the curated schema with this structure:
         {
           "name": "{camelCase field name}",
           "column": "{original column name}",
+          "label": "{from schema-raw field.label — ALWAYS include, even if same as name}",
           "type": "string|foreignKey|amount|boolean|date|datetime|number|id",
           "visibility": "editable|readOnly|system|discarded",
           "required": true|false,
