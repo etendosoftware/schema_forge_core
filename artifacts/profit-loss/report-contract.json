@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "reportId": "profit-loss",
+  "type": "grouped-listing",
+  "source": "manual",
+  "title": { "en_US": "Profit & Loss", "es_ES": "Pérdidas y Ganancias" },
+  "orientation": "portrait",
+  "columns": [
+    { "field": "description", "label": { "en_US": "Description", "es_ES": "Descripción" }, "type": "string", "width": "40%", "sortable": true },
+    { "field": "amount", "label": { "en_US": "Amount", "es_ES": "Importe" }, "type": "amount", "width": "25%", "sortable": true },
+    { "field": "percentage", "label": { "en_US": "%", "es_ES": "%" }, "type": "number", "width": "15%", "sortable": true }
+  ],
+  "groups": [
+    { "field": "category", "label": { "en_US": "Category", "es_ES": "Categoría" } }
+  ],
+  "filters": [],
+  "defaultSort": { "field": "category", "direction": "asc" },
+  "outputs": ["pdf", "xlsx", "csv", "html"],
+  "summary": { "totalRows": true },
+  "mockDataFile": "mock-data.json"
+}

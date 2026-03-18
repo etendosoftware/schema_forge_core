@@ -1,0 +1,7 @@
+[
+  {"vendor":"Acme Supplies","current":8500,"days30":3200,"days60":1000,"days90plus":0,"total":12700},
+  {"vendor":"Tech Components Ltd","current":5600,"days30":2400,"days60":0,"days90plus":0,"total":8000},
+  {"vendor":"Pacific Materials","current":3200,"days30":1800,"days60":1200,"days90plus":500,"total":6700},
+  {"vendor":"Euro Logistics","current":4100,"days30":900,"days60":0,"days90plus":0,"total":5000},
+  {"vendor":"Nordic Equipment","current":2800,"days30":1500,"days60":800,"days90plus":500,"total":5600}
+]

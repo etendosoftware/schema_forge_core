@@ -51,7 +51,7 @@ function listReports() {
     if (existsSync(contractPath)) {
       try {
         const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
-        if (contract.source === 'jasper-migration' || contract.type === 'grouped-listing') {
+        if (contract.reportId && contract.outputs?.length > 0 && (contract.source === 'jasper-migration' || contract.source === 'manual' || contract.mockDataFile)) {
           reports.push({
             id: contract.reportId,
             title: contract.title,
@@ -67,17 +67,27 @@ function listReports() {
 }
 
 /**
- * Execute the Jasper SQL from a contract against the Etendo DB.
+ * Fetch report data — from DB (jasper SQL) or from mock data file.
  */
 async function fetchReportData(reportId, { limit } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
-  if (!contract.jasper?.originalFile) {
-    throw new Error('No jasper source file in contract');
+  // If contract has a mockDataFile, use it directly (no DB needed)
+  if (contract.mockDataFile) {
+    const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
+    if (existsSync(mockPath)) {
+      let rows = JSON.parse(readFileSync(mockPath, 'utf8'));
+      if (limit) rows = rows.slice(0, parseInt(limit, 10));
+      return { rows, contract };
+    }
   }
 
-  // Parse the jrxml to get SQL
+  // Otherwise, use Jasper SQL from the jrxml
+  if (!contract.jasper?.originalFile) {
+    throw new Error('No data source configured (no mockDataFile or jasper.originalFile)');
+  }
+
   const jrxmlPath = resolve(ROOT, contract.jasper.originalFile);
   if (!existsSync(jrxmlPath)) {
     throw new Error(`JRXML not found: ${jrxmlPath}`);

@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "reportId": "report-general-ledger",
+  "type": "grouped-listing",
+  "source": "jasper-migration",
+  "jasper": {
+    "originalFile": "etendo_core/src/org/openbravo/erpCommon/ad_reports/ReportGeneralLedger.jrxml",
+    "processId": "",
+    "processValue": "",
+    "queryLanguage": "SQL"
+  },
+  "title": {
+    "en_US": "Report General Ledger",
+    "es_ES": "Report General Ledger"
+  },
+  "orientation": "portrait",
+  "columns": [
+    {
+      "field": "DESCRIPTION",
+      "label": {
+        "en_US": "Date",
+        "es_ES": "Date"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "AMTACCTDR",
+      "label": {
+        "en_US": "Debit",
+        "es_ES": "Debit"
+      },
+      "type": "amount",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "AMTACCTCR",
+      "label": {
+        "en_US": "Credit",
+        "es_ES": "Credit"
+      },
+      "type": "amount",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "TOTALACCTSUB",
+      "label": {
+        "en_US": "Balance",
+        "es_ES": "Balance"
+      },
+      "type": "amount",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "DATEACCT",
+      "label": {
+        "en_US": "Description",
+        "es_ES": "Description"
+      },
+      "type": "date",
+      "width": "auto",
+      "sortable": true
+    }
+  ],
+  "groups": [
+    {
+      "field": "GROUPBYID",
+      "label": {
+        "en_US": "G R O U P B Y I D",
+        "es_ES": "G R O U P B Y I D"
+      }
+    },
+    {
+      "field": "VALUE",
+      "label": {
+        "en_US": "Acct. No.",
+        "es_ES": "Acct. No."
+      }
+    }
+  ],
+  "filters": [],
+  "defaultSort": {
+    "field": "DESCRIPTION",
+    "direction": "asc"
+  },
+  "outputs": [
+    "pdf",
+    "xlsx",
+    "csv",
+    "html"
+  ],
+  "summary": {
+    "totalRows": true
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "reportId": "aging-payable",
+  "type": "listing",
+  "source": "manual",
+  "title": { "en_US": "Aging of Payables", "es_ES": "Antigüedad de Pagos" },
+  "orientation": "landscape",
+  "columns": [
+    { "field": "vendor", "label": { "en_US": "Vendor", "es_ES": "Proveedor" }, "type": "string", "width": "25%", "sortable": true },
+    { "field": "current", "label": { "en_US": "Current", "es_ES": "Corriente" }, "type": "amount", "width": "13%", "sortable": true },
+    { "field": "days30", "label": { "en_US": "1-30 Days", "es_ES": "1-30 Días" }, "type": "amount", "width": "13%", "sortable": true },
+    { "field": "days60", "label": { "en_US": "31-60 Days", "es_ES": "31-60 Días" }, "type": "amount", "width": "13%", "sortable": true },
+    { "field": "days90plus", "label": { "en_US": "90+ Days", "es_ES": "90+ Días" }, "type": "amount", "width": "13%", "sortable": true },
+    { "field": "total", "label": { "en_US": "Total", "es_ES": "Total" }, "type": "amount", "width": "13%", "sortable": true }
+  ],
+  "groups": [],
+  "filters": [],
+  "defaultSort": { "field": "vendor", "direction": "asc" },
+  "outputs": ["pdf", "xlsx", "csv", "html"],
+  "summary": { "totalRows": true },
+  "mockDataFile": "mock-data.json"
+}
