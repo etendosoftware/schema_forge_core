@@ -42,7 +42,7 @@ export default function App() {
   }, [selectedArtifact]);
 
   const renderPreview = useCallback(async () => {
-    if (!contract) return;
+    if (!contract || !mockData || mockData.length === 0) return;
     setLoading(true);
     setError(null);
     try {
