@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  jsreport:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${JSREPORT_PORT:-5488}:5488"
+    volumes:
+      - ../../templates/reports:/app/data/templates/base:ro
+      - ../../artifacts:/app/data/artifacts:ro
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5488/api/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
