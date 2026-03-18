@@ -23,6 +23,7 @@ export function DetailView({
   detailEntity,
   Form,
   DetailTable,
+  DetailForm,
   summary = [],
   statusField,
   processes = [],
@@ -47,6 +48,7 @@ export function DetailView({
   const [addingLine, setAddingLine] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [directFetched, setDirectFetched] = useState(false);
+  const [selectedLine, setSelectedLine] = useState(null);
 
   // Track fields whose values were set by a callout response to avoid re-triggering
   const calloutAppliedRef = useRef(new Set());
@@ -93,6 +95,11 @@ export function DetailView({
       hook.fetchById(recordId);
     }
   }, [currentItem, recordId, hook.selected, hook.handleSelect]);
+
+  // Reset selected line when the parent record changes
+  useEffect(() => {
+    setSelectedLine(null);
+  }, [hook.selected?.id]);
 
   // Apply callout results to the form when they arrive
   useEffect(() => {
@@ -353,6 +360,8 @@ export function DetailView({
         <div className="flex-1 overflow-auto px-6 pb-6">
           <div className="max-w-5xl space-y-6">
             {/* Principal header fields (horizontal row) */}
+            {/* Visibility logic is intentionally not applied here: principal fields must always
+                be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
             <div>
               <Form
                 entity={entity}
@@ -361,7 +370,7 @@ export function DetailView({
                 catalogs={catalogs}
                 layout="horizontal"
                 section="principal"
-                displayLogic={displayLogic}
+                displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
                 api={api}
                 token={token}
                 apiBaseUrl={apiBaseUrl}
@@ -403,6 +412,8 @@ export function DetailView({
                     <DetailTable
                       data={hook.children}
                       entity={detailEntity}
+                      onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
+                      selectedRowId={selectedLine?.id}
                       addRow={{
                         active: addingLine,
                         fields: allEntryFields,
@@ -426,6 +437,16 @@ export function DetailView({
                     >
                       + Add {detailLabel || 'line'}
                     </button>
+                    {DetailForm && selectedLine && (
+                      <div className="border-t border-zinc-700 mt-4 pt-4">
+                        <DetailForm
+                          data={selectedLine}
+                          readOnly={true}
+                          entity={detailEntity}
+                          catalogs={catalogs}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -467,7 +488,7 @@ export function DetailView({
                   {summary.filter(f => f.type === 'amount').map(f => {
                     const label = f.key.replace(/([A-Z])/g, ' $1').trim();
                     const val = data[f.key] || 0;
-                    const currency = data.currency || 'AR$';
+                    const currency = data['currency$_identifier'] || data.currency || '$';
                     return (
                       <div key={f.key} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{label}</span>
@@ -481,7 +502,7 @@ export function DetailView({
                       {(() => {
                         const totalField = summary.find(f => f.key.toLowerCase().includes('grand') || f.key.toLowerCase().includes('total'));
                         const val = data[totalField?.key] || 0;
-                        const currency = data.currency || 'AR$';
+                        const currency = data['currency$_identifier'] || data.currency || '$';
                         return `${currency} ${Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                       })()}
                     </span>

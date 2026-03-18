@@ -367,7 +367,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -525,15 +525,22 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
             ) : (
               filteredData.map((row, idx) => {
                 const isChecked = selectedRows.has(row.id);
+                const isSelectedLine = row.id === selectedRowId;
                 return (
                   <TableRow
                     key={row.id ?? idx}
-                    onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
+                    onClick={() => {
+                      if (onRowClick) onRowClick(row);
+                      else if (onNavigate) onNavigate(row);
+                      else onRowSelect?.(row);
+                    }}
                     className={[
-                      'cursor-pointer transition-colors h-12',
+                      'transition-colors h-12',
+                      onRowClick ? 'cursor-pointer' : 'cursor-pointer',
                       isChecked ? 'bg-primary/5' : '',
                       row.id === selectedId ? 'bg-primary/10' : '',
-                      'hover:bg-muted/50',
+                      isSelectedLine ? 'bg-zinc-700 text-white' : '',
+                      !isSelectedLine ? 'hover:bg-muted/50' : 'hover:bg-zinc-600',
                     ].filter(Boolean).join(' ')}
                   >
                     {selectable && (

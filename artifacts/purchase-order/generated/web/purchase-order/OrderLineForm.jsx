@@ -23,6 +23,9 @@ const fields = [
   { key: 'asset', column: 'A_Asset_ID', type: 'selector', section: 'other', reference: 'Asset', inputMode: 'selector' },
   { key: 'stDimension', column: 'User1_ID', type: 'selector', section: 'other', reference: 'UserDimension1', inputMode: 'selector' },
   { key: 'ndDimension', column: 'User2_ID', type: 'selector', section: 'other', reference: 'UserDimension2', inputMode: 'selector' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', readOnly: true, section: 'other' },
+  { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date', section: 'other' },
+  { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', section: 'other' },
 ];
 // @sf-generated-end fields:orderLine
 

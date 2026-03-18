@@ -16,6 +16,7 @@ const api = {
       "listUrl": "/sws/neo/purchase-order/order",
       "detailUrl": "/sws/neo/purchase-order/order/{id}",
       "supportedFilters": [
+        "documentNo",
         "documentStatus",
         "orderDate",
         "businessPartner",
@@ -110,6 +111,12 @@ const api = {
     },
     {
       "entity": "order",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/currency"
+    },
+    {
+      "entity": "order",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
@@ -152,10 +159,10 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "invoiceAddress",
+      "field": "invoiceFrom",
       "column": "BillTo_ID",
       "reference": "BusinessPartnerLocation",
-      "url": "/sws/neo/purchase-order/order/selectors/invoiceAddress"
+      "url": "/sws/neo/purchase-order/order/selectors/invoiceFrom"
     },
     {
       "entity": "order",
@@ -191,6 +198,24 @@ const api = {
       "column": "User2_ID",
       "reference": "UserDimension2",
       "url": "/sws/neo/purchase-order/order/selectors/ndDimension"
+    },
+    {
+      "entity": "order",
+      "field": "companyAgent",
+      "column": "SalesRep_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/companyAgent"
+    },
+    {
+      "entity": "order",
+      "field": "incoterms",
+      "column": "C_Incoterms_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/incoterms"
+    },
+    {
+      "entity": "order",
+      "field": "charge",
+      "column": "C_Charge_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/charge"
     },
     {
       "entity": "orderLine",
@@ -254,6 +279,41 @@ const api = {
       "column": "User2_ID",
       "reference": "UserDimension2",
       "url": "/sws/neo/purchase-order/orderLine/selectors/ndDimension"
+    },
+    {
+      "entity": "orderLine",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/warehouse"
+    },
+    {
+      "entity": "orderLine",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/currency"
+    },
+    {
+      "entity": "orderLine",
+      "field": "businessPartner",
+      "column": "C_BPartner_ID",
+      "reference": "BusinessPartner",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/businessPartner"
+    },
+    {
+      "entity": "orderLine",
+      "field": "partnerAddress",
+      "column": "C_BPartner_Location_ID",
+      "reference": "BusinessPartnerLocation",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/partnerAddress"
+    },
+    {
+      "entity": "orderLine",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/shippingCompany"
     },
     {
       "entity": "orderLineTax",

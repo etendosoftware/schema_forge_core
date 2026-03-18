@@ -2,15 +2,20 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
+import OrderLineForm from './OrderLineForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Order';
 
 // @sf-generated-start summary:order
 const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status' },
 ];
 
 const statusField = 'documentStatus';
@@ -18,7 +23,9 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:order
 const processes = [
-
+  { name: 'processOrder', label: 'Process Order', style: 'positive' },
+  { name: 'copyFromPO', label: 'Copy From P O', style: 'positive' },
+  { name: 'print', label: 'Print', style: 'positive' },
 ];
 // @sf-generated-end processes:order
 
@@ -35,6 +42,8 @@ const addLineFields = {
     { key: 'asset', column: 'A_Asset_ID', type: 'selector', reference: 'Asset', inputMode: 'selector' },
     { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'UserDimension1', inputMode: 'selector' },
     { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'UserDimension2', inputMode: 'selector' },
+    { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date' },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
   ],
   derived: [
     { key: 'unitPrice', column: 'PriceActual', type: 'text' },
@@ -62,6 +71,7 @@ const api = {
       "listUrl": "/sws/neo/purchase-order/order",
       "detailUrl": "/sws/neo/purchase-order/order/{id}",
       "supportedFilters": [
+        "documentNo",
         "documentStatus",
         "orderDate",
         "businessPartner",
@@ -156,6 +166,12 @@ const api = {
     },
     {
       "entity": "order",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/currency"
+    },
+    {
+      "entity": "order",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
@@ -198,10 +214,10 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "invoiceAddress",
+      "field": "invoiceFrom",
       "column": "BillTo_ID",
       "reference": "BusinessPartnerLocation",
-      "url": "/sws/neo/purchase-order/order/selectors/invoiceAddress"
+      "url": "/sws/neo/purchase-order/order/selectors/invoiceFrom"
     },
     {
       "entity": "order",
@@ -237,6 +253,24 @@ const api = {
       "column": "User2_ID",
       "reference": "UserDimension2",
       "url": "/sws/neo/purchase-order/order/selectors/ndDimension"
+    },
+    {
+      "entity": "order",
+      "field": "companyAgent",
+      "column": "SalesRep_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/companyAgent"
+    },
+    {
+      "entity": "order",
+      "field": "incoterms",
+      "column": "C_Incoterms_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/incoterms"
+    },
+    {
+      "entity": "order",
+      "field": "charge",
+      "column": "C_Charge_ID",
+      "url": "/sws/neo/purchase-order/order/selectors/charge"
     },
     {
       "entity": "orderLine",
@@ -300,6 +334,41 @@ const api = {
       "column": "User2_ID",
       "reference": "UserDimension2",
       "url": "/sws/neo/purchase-order/orderLine/selectors/ndDimension"
+    },
+    {
+      "entity": "orderLine",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/warehouse"
+    },
+    {
+      "entity": "orderLine",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/currency"
+    },
+    {
+      "entity": "orderLine",
+      "field": "businessPartner",
+      "column": "C_BPartner_ID",
+      "reference": "BusinessPartner",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/businessPartner"
+    },
+    {
+      "entity": "orderLine",
+      "field": "partnerAddress",
+      "column": "C_BPartner_Location_ID",
+      "reference": "BusinessPartnerLocation",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/partnerAddress"
+    },
+    {
+      "entity": "orderLine",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/orderLine/selectors/shippingCompany"
     },
     {
       "entity": "orderLineTax",
@@ -405,6 +474,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         detailEntity="orderLine"
         Form={OrderForm}
         DetailTable={OrderLineTable}
+        DetailForm={OrderLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
@@ -428,6 +498,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
       entityLabel="Orders"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

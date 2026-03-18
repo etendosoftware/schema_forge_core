@@ -76,18 +76,19 @@
           "grid": true,
           "form": true,
           "searchable": false,
-          "section": "principal",
+          "section": "other",
           "reference": "DocumentType"
         },
         {
           "name": "documentNo",
           "column": "DocumentNo",
           "type": "string",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false,
+          "grid": true,
+          "form": true,
+          "searchable": true,
+          "section": "principal",
           "derivation": {
             "type": "sequence",
             "source": "documentType.sequence"
@@ -114,12 +115,13 @@
           "visibility": "readOnly",
           "required": true,
           "grid": true,
-          "form": true,
+          "form": false,
           "searchable": true,
           "derivation": {
             "type": "computed",
             "source": "DR"
-          }
+          },
+          "statusBar": true
         },
         {
           "name": "processed",
@@ -153,15 +155,17 @@
           "name": "currency",
           "column": "C_Currency_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": true,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "fromConfig",
             "source": "context.cCurrencyId"
-          }
+          },
+          "statusBar": true
         },
         {
           "name": "orderDate",
@@ -171,7 +175,8 @@
           "required": true,
           "grid": true,
           "form": true,
-          "searchable": true
+          "searchable": true,
+          "section": "other"
         },
         {
           "name": "businessPartner",
@@ -182,6 +187,7 @@
           "grid": true,
           "form": true,
           "searchable": true,
+          "section": "principal",
           "reference": "BusinessPartner",
           "inputMode": "search"
         },
@@ -194,6 +200,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
           "dependsOn": {
@@ -210,6 +217,7 @@
           "grid": true,
           "form": true,
           "searchable": false,
+          "section": "principal",
           "reference": "Warehouse",
           "inputMode": "selector"
         },
@@ -221,7 +229,8 @@
           "required": true,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "section": "principal"
         },
         {
           "name": "paymentMethod",
@@ -233,7 +242,8 @@
           "form": true,
           "searchable": false,
           "reference": "PaymentMethod",
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "section": "other"
         },
         {
           "name": "paymentTerms",
@@ -244,6 +254,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "PaymentTerm",
           "inputMode": "selector"
         },
@@ -256,11 +267,12 @@
           "grid": true,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "PriceList",
           "inputMode": "selector"
         },
         {
-          "name": "invoiceAddress",
+          "name": "invoiceFrom",
           "column": "BillTo_ID",
           "type": "foreignKey",
           "visibility": "editable",
@@ -273,7 +285,8 @@
           "dependsOn": {
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
-          }
+          },
+          "section": "other"
         },
         {
           "name": "description",
@@ -283,7 +296,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "section": "other"
         },
         {
           "name": "deliveryNotes",
@@ -293,7 +307,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "section": "other"
         },
         {
           "name": "orderReference",
@@ -303,7 +318,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": true
+          "searchable": true,
+          "section": "other"
         },
         {
           "name": "grandTotalAmount",
@@ -312,8 +328,10 @@
           "visibility": "readOnly",
           "required": true,
           "grid": true,
-          "form": true,
-          "searchable": false
+          "form": false,
+          "searchable": false,
+          "section": "other",
+          "statusBar": true
         },
         {
           "name": "summedLineAmount",
@@ -322,8 +340,10 @@
           "visibility": "readOnly",
           "required": true,
           "grid": false,
-          "form": true,
-          "searchable": false
+          "form": false,
+          "searchable": false,
+          "section": "other",
+          "statusBar": true
         },
         {
           "name": "priceIncludesTax",
@@ -333,7 +353,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "section": "other"
         },
         {
           "name": "project",
@@ -344,6 +365,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "Project",
           "inputMode": "search"
         },
@@ -356,6 +378,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "CostCenter",
           "inputMode": "selector"
         },
@@ -368,6 +391,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "Asset",
           "inputMode": "selector"
         },
@@ -380,6 +404,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "UserDimension1",
           "inputMode": "selector"
         },
@@ -392,6 +417,7 @@
           "grid": false,
           "form": true,
           "searchable": false,
+          "section": "other",
           "reference": "UserDimension2",
           "inputMode": "selector"
         },
@@ -410,14 +436,15 @@
           }
         },
         {
-          "name": "salesRepresentative",
+          "name": "companyAgent",
           "column": "SalesRep_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "editable",
           "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "fromConfig",
             "source": "context.salesRepId"
@@ -427,11 +454,12 @@
           "name": "accountingDate",
           "column": "DateAcct",
           "type": "date",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": true,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "computed",
             "source": "@#Date@"
@@ -441,21 +469,23 @@
           "name": "incoterms",
           "column": "C_Incoterms_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "editable",
           "required": false,
           "grid": false,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "section": "other"
         },
         {
           "name": "iNCOTERMSDescription",
           "column": "Incotermsdescription",
           "type": "text",
-          "visibility": "system",
+          "visibility": "editable",
           "required": false,
           "grid": false,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "section": "other"
         },
         {
           "name": "printDiscount",
@@ -475,11 +505,12 @@
           "name": "freightAmount",
           "column": "FreightAmt",
           "type": "amount",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": true,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -489,11 +520,12 @@
           "name": "deliveryMethod",
           "column": "DeliveryViaRule",
           "type": "enum",
-          "visibility": "system",
+          "visibility": "editable",
           "required": true,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "computed",
             "source": "P"
@@ -523,11 +555,12 @@
           "name": "priority",
           "column": "PriorityRule",
           "type": "enum",
-          "visibility": "system",
+          "visibility": "editable",
           "required": true,
-          "grid": false,
+          "grid": true,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "computed",
             "source": "5"
@@ -537,11 +570,12 @@
           "name": "chargeAmount",
           "column": "ChargeAmt",
           "type": "amount",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -551,11 +585,12 @@
           "name": "charge",
           "column": "C_Charge_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "editable",
           "required": false,
           "grid": false,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "section": "other"
         },
         {
           "name": "activity",
@@ -619,11 +654,12 @@
           "name": "deliveryTerms",
           "column": "DeliveryRule",
           "type": "enum",
-          "visibility": "system",
+          "visibility": "editable",
           "required": true,
           "grid": false,
           "form": false,
           "searchable": false,
+          "section": "other",
           "derivation": {
             "type": "computed",
             "source": "A"
@@ -765,21 +801,25 @@
           "name": "deliveryStatusPurchase",
           "column": "DeliveryStatusPurchase",
           "type": "integer",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": false,
-          "grid": false,
+          "grid": true,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "section": "other",
+          "statusBar": true
         },
         {
           "name": "invoiceStatus",
           "column": "InvoiceStatus",
           "type": "integer",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": false,
-          "grid": false,
+          "grid": true,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "section": "other",
+          "statusBar": true
         },
         {
           "name": "eMAPRMAddPayment",
@@ -1138,92 +1178,73 @@
           "name": "warehouse",
           "column": "M_Warehouse_ID",
           "type": "foreignKey",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.warehouse"
-          }
+          "reference": "Warehouse"
         },
         {
           "name": "currency",
           "column": "C_Currency_ID",
           "type": "foreignKey",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.currency"
-          }
+          "statusBar": true,
+          "reference": "Currency"
         },
         {
           "name": "businessPartner",
           "column": "C_BPartner_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.businessPartner"
-          }
+          "reference": "BusinessPartner"
         },
         {
           "name": "partnerAddress",
           "column": "C_BPartner_Location_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.partnerAddress"
-          }
+          "reference": "BusinessPartnerLocation"
         },
         {
           "name": "orderDate",
           "column": "DateOrdered",
           "type": "date",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
-          "form": false,
-          "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.dateOrdered"
-          }
+          "form": true,
+          "searchable": false
         },
         {
           "name": "scheduledDeliveryDate",
           "column": "DatePromised",
           "type": "date",
-          "visibility": "system",
+          "visibility": "editable",
           "required": false,
           "grid": false,
-          "form": false,
-          "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.datePromised"
-          }
+          "form": true,
+          "searchable": false
         },
         {
           "name": "reservedQuantity",
           "column": "QtyReserved",
           "type": "quantity",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
           "form": false,
           "searchable": false
@@ -1232,42 +1253,41 @@
           "name": "deliveredQuantity",
           "column": "QtyDelivered",
           "type": "quantity",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "statusBar": true
         },
         {
           "name": "invoicedQuantity",
           "column": "QtyInvoiced",
           "type": "quantity",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "statusBar": true
         },
         {
           "name": "shippingCompany",
           "column": "M_Shipper_ID",
           "type": "foreignKey",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": false,
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": {
-            "type": "fromParent",
-            "source": "order.shippingCompany"
-          }
+          "reference": "Shipper"
         },
         {
           "name": "freightAmount",
           "column": "FreightAmt",
           "type": "amount",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
           "form": false,
           "searchable": false
@@ -1275,11 +1295,11 @@
         {
           "name": "attributeSetValue",
           "column": "M_AttributeSetInstance_ID",
-          "type": "price",
-          "visibility": "system",
+          "type": "text",
+          "visibility": "editable",
           "required": false,
           "grid": false,
-          "form": false,
+          "form": true,
           "searchable": false
         },
         {
