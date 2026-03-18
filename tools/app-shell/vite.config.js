@@ -4,6 +4,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
 import schemaApiPlugin from './vite-plugins/schema-api.js';
 
+// Target Etendo instance for dev proxy. Override via ETENDO_URL in .env.local
+// if your instance uses a different context.name (e.g. ETENDO_URL=http://localhost:8080/mycontext)
+const ETENDO_URL = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
+
 export default defineConfig({
   base: './',
   plugins: [
@@ -43,15 +47,15 @@ export default defineConfig({
     port: 3100,
     proxy: {
       '/etendo_sf': {
-        target: 'http://localhost:8080',
+        target: ETENDO_URL,
         changeOrigin: true,
       },
       '/sws': {
-        target: 'http://localhost:8080/etendo',
+        target: ETENDO_URL,
         changeOrigin: true,
       },
       '/webhooks': {
-        target: 'http://localhost:8080/etendo',
+        target: ETENDO_URL,
         changeOrigin: true,
       },
     },

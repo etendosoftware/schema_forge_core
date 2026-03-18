@@ -593,6 +593,14 @@ make build
 make dev
 ```
 
+**Dev server proxy and `context.name`:** The Vite dev server proxies `/sws`, `/webhooks`, and `/etendo_sf` to the Etendo instance. The default target is `http://localhost:8080/etendo`. If your instance uses a different `context.name` (set via `context.name` in `gradle.properties`), override it in `tools/app-shell/.env.local`:
+
+```
+ETENDO_URL=http://localhost:8080/mycontext
+```
+
+When served from Tomcat (production build), the context path is detected automatically from `window.location.pathname` — no configuration needed.
+
 **How it works:**
 1. `make build` runs `vite build` in `tools/app-shell/`, producing optimized static files in `tools/app-shell/dist/`
 2. `make deploy` copies `dist/*` to `{etendo_root}/modules/com.etendoerp.go/web/com.etendoerp.go/`
