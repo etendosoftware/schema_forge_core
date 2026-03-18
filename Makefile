@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report generate dev build install install-e2e deploy clean help
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help
 
 # --- Testing ---
 
@@ -24,6 +24,9 @@ test-e2e-ui: ## Open Playwright UI for interactive test running
 
 test-e2e-report: ## Show last E2E test report in browser
 	cd e2e && npx playwright show-report ../artifacts/e2e-report
+
+test-e2e-record: ## Record a test flow (opens browser, generates code)
+	cd e2e && npx playwright codegen --save-storage=auth.json http://localhost:3100 --output=recordings/recorded-flow.spec.js
 
 install-e2e: ## Install E2E dependencies + browsers
 	cd e2e && npm install && npx playwright install chromium

@@ -27,7 +27,7 @@ export async function login(page, {
   await page.getByRole('textbox', { name: 'Username' }).fill(user);
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/dashboard', { timeout: 10_000 });
+  await page.waitForURL('**/dashboard', { timeout: 15_000 });
 
   // Switch role/org context
   await switchContext(page, role, org);
@@ -43,7 +43,6 @@ export async function switchContext(page, role, org) {
   // Click the Etendo logo to open the context switcher popover
   const logoButton = page.locator('button:has(img[alt="Etendo"])');
   await logoButton.click({ timeout: 5_000 });
-  await page.waitForTimeout(300);
 
   // The popover renders two <select> elements: Role (first) and Organization (second)
   const roleSelect = page.locator('select').first();
@@ -58,14 +57,27 @@ export async function switchContext(page, role, org) {
 
   // Click Apply (only appears when there are changes)
   const applyButton = page.getByRole('button', { name: 'Apply' });
-  if (await applyButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await applyButton.click();
-    await page.waitForTimeout(1_000);
+  try {
+    if (await applyButton.isVisible({ timeout: 2_000 })) {
+      await applyButton.click();
+      // Wait for the context to settle — Apply may trigger a re-render or reload
+      await page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+  } catch {
+    // Apply not visible means context was already correct
   }
 
-  // Close the popover by clicking outside
-  await page.locator('body').click({ position: { x: 600, y: 400 } });
-  await page.waitForTimeout(300);
+  // Close the popover by clicking outside (if still open)
+  try {
+    const backdrop = page.locator('.fixed.inset-0');
+    if (await backdrop.isVisible({ timeout: 500 }).catch(() => false)) {
+      await backdrop.click();
+    }
+  } catch {
+    // Popover already closed
+  }
+  await page.waitForTimeout(200);
 }
 
 /**

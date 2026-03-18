@@ -536,6 +536,16 @@ make test-e2e-headless  # Run headless (for CI)
 make test-e2e-debug     # Step-by-step debug mode
 make test-e2e-ui        # Interactive Playwright UI
 make test-e2e-report    # View last test report
+make test-e2e-record    # Open recorder — user clicks, Playwright generates code
+
+# Run a single test file:
+cd e2e && npx playwright test tests/flows/purchase-order-create.spec.js --headed
+
+# Run tests matching a name:
+cd e2e && npx playwright test --headed --grep "Partner Address"
+
+# Exclude a known failing test:
+cd e2e && npx playwright test --headed --grep-invert "Partner Address Bug"
 ```
 
 **Test structure:**
@@ -553,11 +563,27 @@ e2e/
 │       └── sales-order-crud.spec.js  # Full CRUD flow example
 ```
 
-**Two-phase workflow for writing E2E tests:**
+**Three ways to create E2E tests** (see `docs/e2e-testing-guide.md` for the full guide):
 
-1. **Discover with agent-browser** — Use `agent-browser` CLI (`open`, `snapshot -i`, `click @eN`, `fill @eN "text"`) to explore the live UI. The accessibility tree output maps directly to Playwright's `getByRole()` selectors. Fallback: Chrome DevTools MCP. See `e2e/MCP-DISCOVERY-GUIDE.md`.
+1. **Record** (recommended) — Run `make test-e2e-record`, the user interacts with the browser, Playwright generates code. Then the coordinator transforms the recording into a proper test with `login()`, role-based selectors, and assertions. Recordings land in `e2e/recordings/` (gitignored).
 
-2. **Automate with Playwright** — Translate discovered selectors into Playwright tests in `e2e/tests/flows/`. Use role-based locators (`page.getByRole('button', { name: 'Save' })`) which match the agent-browser snapshot output. Update `selectors.js` with real selectors.
+2. **Discover with agent-browser** — Use `agent-browser` CLI (`open`, `snapshot -i`, `click @eN`) to explore the live UI. The accessibility tree output maps directly to Playwright's `getByRole()` selectors. Fallback: Chrome DevTools MCP.
+
+3. **Manual** — Write tests from scratch using known selectors in `e2e/tests/helpers/selectors.js`.
+
+**When the user asks to create a new E2E test**, always propose recording first — it's the fastest path and produces the most accurate selectors since the user drives the real flow.
+
+**`data-testid` convention:** Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit `data-testid` attributes automatically. Use `page.getByTestId()` in tests — it's language-independent and survives text changes.
+
+| Pattern | Example | Component |
+|---------|---------|-----------|
+| `field-{fieldKey}` | `field-businessPartner`, `field-partnerAddress` | EntityForm (all input types) |
+| `action-{name}` | `action-save`, `action-cancel`, `action-new`, `action-save-draft` | DetailView, ListView buttons |
+| `detail-view` | — | DetailView container |
+| `list-view` | — | ListView container |
+| `row-{id}` | `row-ABC123` | DataTable rows |
+| `option-{id}` | `option-ABC123` | SearchInput suggestions |
+| `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
 
 **Reports:** Test reports (HTML + screenshots on failure) go to `artifacts/e2e-report/`.
 

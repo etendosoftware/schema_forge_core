@@ -1,6 +1,10 @@
 # E2E Testing Guide
 
-This guide explains how to write automated end-to-end tests for Schema Forge UI windows. The workflow has two phases: **discover** the UI interactively, then **automate** with Playwright.
+This guide explains how to write automated end-to-end tests for Schema Forge UI windows. There are three ways to create tests, from easiest to most hands-on:
+
+1. **Record** — You record the flow in a browser, Claude turns it into a proper test
+2. **Discover + Automate** — Explore with agent-browser, then write Playwright tests
+3. **Manual** — Write tests from scratch using known selectors
 
 ## Prerequisites
 
@@ -19,6 +23,90 @@ npm install -g agent-browser && agent-browser install   # Optional: install agen
 | `make test-e2e-debug` | Step-by-step debug mode |
 | `make test-e2e-ui` | Interactive Playwright UI |
 | `make test-e2e-report` | View last HTML test report |
+| `make test-e2e-record` | Open recorder — you click, it generates code |
+
+---
+
+## Method 1: Record a Flow (Recommended for new tests)
+
+The fastest way to create a test. You interact with the app in a real browser, and Playwright records every action as code. Then Claude takes that recording and turns it into a proper test with assertions and validations.
+
+### How it works
+
+```
+1. You: "I want a test for creating a goods receipt"
+2. Claude: runs make test-e2e-record
+3. You: interact with the browser (login, navigate, click, fill forms)
+4. You: close the browser when done
+5. Claude: reads the recorded code from e2e/recordings/
+6. Claude: transforms it into a proper test with:
+   - login() + switchContext() helpers
+   - Role-based selectors (getByRole) instead of brittle CSS
+   - Assertions and validations for each step
+   - Error handling and proper structure
+7. You: review and approve
+```
+
+### Step by step
+
+**1. Start the dev server** (keep it running):
+```bash
+make dev
+```
+
+**2. Start the recorder:**
+```bash
+make test-e2e-record
+```
+
+This opens two windows:
+- A **browser** where you perform actions normally
+- A **Playwright Inspector** panel showing the generated code in real time
+
+**3. Perform the flow:**
+- Log in (admin/admin)
+- Switch role/org if needed
+- Navigate to the window
+- Do what you want to test (create a record, search, edit, delete, etc.)
+- Close the browser when done
+
+**4. The recorded code** is saved to `e2e/recordings/recorded-flow.spec.js`. It looks something like this:
+
+```js
+// Raw recording — Claude will clean this up
+import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) => {
+  await page.goto('http://localhost:3100/');
+  await page.getByRole('textbox', { name: 'Username' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.goto('http://localhost:3100/purchase-order');
+  await page.getByRole('button', { name: 'New Order' }).click();
+  // ... more actions
+});
+```
+
+**5. Give it to Claude** — say something like:
+> "Here's my recording for goods receipt creation. Turn it into a proper test that validates the form fields load, the save works, and check the record appears in the list."
+
+Claude will:
+- Replace hardcoded URLs with `navigateTo()`
+- Add `login()` with proper role/org context
+- Add `expect()` assertions for every important step
+- Handle edge cases (waits, timeouts, disabled fields)
+- Save it in the right location (`e2e/tests/flows/`)
+
+### Tips for recording
+
+- **Do the happy path first** — record the simplest successful flow, then Claude adds edge cases
+- **Don't worry about being perfect** — the recording is a starting point, not the final test
+- **Pause and think** — the recorder captures everything; if you make a mistake, just redo it (Claude will clean up duplicates)
+- **Record one flow at a time** — it's easier to manage than one giant recording
+
+---
+
+## Method 2: Discover with agent-browser + Automate
 
 ## Test Structure
 
@@ -36,7 +124,7 @@ e2e/
 │       └── purchase-order-create.spec.js  # Purchase Order with role/org context
 ```
 
-## Phase 1: Discover with agent-browser
+### Discover with agent-browser
 
 [agent-browser](https://agent-browser.dev/) is a Rust CLI for browser automation designed for AI agents. It outputs a compact accessibility tree where each element gets a unique ref (`@e1`, `@e2`). This output maps directly to Playwright's `getByRole()` selectors.
 
@@ -173,7 +261,7 @@ For each window, discover and document:
 - [ ] **Tabs** — child entity tabs (e.g., "Order Line 0", "Others")
 - [ ] **Child table** — column headers, "Add" button
 
-## Phase 2: Write the Playwright test
+### Write the Playwright test
 
 ### Translating agent-browser output to Playwright
 

@@ -528,6 +528,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 return (
                   <TableRow
                     key={row.id ?? idx}
+                    data-testid={`row-${row.id ?? idx}`}
                     onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
                     className={[
                       'cursor-pointer transition-colors h-12',
