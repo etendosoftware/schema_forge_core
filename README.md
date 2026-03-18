@@ -132,8 +132,34 @@ etendo_core/                    ← branch: feature/ETP-3519
 └── gradle.properties
 ```
 
-## First Steps
+## First Steps (Claude Guided) (Recommended)
+This tool is designed to be used iteratively through the Claude Code interface, interacting with the agent.
 
+### 1. Start Etendo Classic
+Make sure your Etendo instance is running and accessible. This allows the agent to use the backend endpoints for testing and validation during the pipeline execution. It can be in SmartTomcat or Dockerized Tomcat. The important thing is that the database is accessible.
+
+### 1. Start a new conversation in Claude Code
+- Open Claude Code and start a new conversation. IMPORTANT: Open the conversation in the schema_forge directory to ensure the agent has access to the correct context and files. 
+
+### 2. Set up the agent
+- In the conversation, ask to set up the agent with the configuration required to work, such as "Etendo path", "Database credentials", "Menu cache", etc.
+
+### 3. Start the UI in development mode
+- Ask the agent to start the UI. It will install dependencies and start the development server. The UI will be available at http://localhost:3100. This UI will auto-refresh on changes.
+
+### 4. Ask the agent to run the pipeline for a specific window or process
+- You can ask the agent to run the pipeline for a specific window or process by providing the menu name or ID. For example, "Run the pipeline for the Sales Order window" or "Run the pipeline for menu ID 143". The agent will execute the pipeline steps, including metadata extraction, rule classification, contract generation, and frontend generation.
+
+It is recommended to give the agent the "decisions" from the start so they can be applied automatically. This is not mandatory, as they can be provided before the "classification" step, but if given from the start, they can be applied immediately in the "classification" step and also used to "validate" the rules with the decisions in mind.
+
+
+### 5. Change decisions and re-run the pipeline
+- If you want to change any design decisions (e.g., field visibility, rule classifications), you can do so through the chat with the agent, and then re-run the pipeline to see the changes reflected in the generated UI. This will modify the "decisions" file so the changes will be persisted for future runs, and the pipeline steps that run will be the post-classification steps (contract generation, push to NEO, frontend generation, etc.), skipping the extraction and classification steps. Example: "Change the visibility of the 'Credit Limit' field to hidden and re-run the pipeline for the Sales Order window". 
+
+
+
+
+## First Steps (Manual) 
 ### 1. Refresh the menu cache
 
 The menu cache indexes all Etendo windows, processes, and reports for fast lookup:
