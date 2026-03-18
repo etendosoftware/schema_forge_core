@@ -3,6 +3,10 @@
   "reportId": "business-partner-listing",
   "type": "listing",
   "entity": "business-partner",
+  "title": {
+    "en_US": "Business Partner",
+    "es_ES": "Business Partner"
+  },
   "columns": [
     {
       "field": "name",
@@ -58,5 +62,8 @@
   },
   "outputs": [
     "pdf"
-  ]
+  ],
+  "summary": {
+    "totalRows": true
+  }
 }

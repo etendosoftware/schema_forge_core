@@ -118,13 +118,13 @@ export function resolveTemplateFiles(root, artifact, report) {
  * @param {string} opts.templateContent - Handlebars template string
  * @returns {object} jsreport API payload
  */
-export function buildJsreportPayload(contract, rows, { locale, css, templateContent }) {
-  // Resolve recipe based on format hint embedded in contract outputs (default to pdf)
-  const recipe = 'chrome-pdf';
+export function buildJsreportPayload(contract, rows, { locale, css, templateContent, helpersCode }) {
+  // Resolve recipe — use html for preview (no Chrome dependency), chrome-pdf for production
+  const recipe = 'html';
 
   // Resolve i18n for columns
   const columns = (contract.columns ?? []).map(col => ({
-    field: col.field,
+    key: col.field,
     label: resolveLabel(col.label, locale),
     type: col.type,
     width: col.width,
@@ -140,7 +140,7 @@ export function buildJsreportPayload(contract, rows, { locale, css, templateCont
     summary.totalRows = rows.length;
   }
 
-  return {
+  const payload = {
     template: {
       content: templateContent,
       engine: 'handlebars',
@@ -152,7 +152,7 @@ export function buildJsreportPayload(contract, rows, { locale, css, templateCont
         title,
         generatedAt: new Date().toISOString(),
         locale,
-        filters: contract.filters ?? [],
+        filters: [],
         truncated: false,
       },
       columns,
@@ -160,6 +160,13 @@ export function buildJsreportPayload(contract, rows, { locale, css, templateCont
       summary,
     },
   };
+
+  // Include Handlebars helpers code for jsreport to register
+  if (helpersCode) {
+    payload.template.helpers = helpersCode;
+  }
+
+  return payload;
 }
 
 // ---------------------------------------------------------------------------
@@ -268,10 +275,20 @@ if (isMain) {
     }
   }
 
+  // Load Handlebars helpers code for jsreport
+  let helpersCode = '';
+  try {
+    const helpersPath = join(ROOT, 'templates', 'reports', 'helpers', 'jsreport-helpers.js');
+    helpersCode = await readFile(helpersPath, 'utf8');
+  } catch {
+    console.warn('[report-preview] No jsreport-helpers.js found — helpers will not be available in template');
+  }
+
   const payload = buildJsreportPayload(contract, rows, {
     locale: opts.locale,
     css: combinedCss,
     templateContent,
+    helpersCode,
   });
 
   console.log(`[report-preview] Rendering via jsreport at port ${opts.port}...`);

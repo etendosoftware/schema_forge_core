@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   jsreport:
     build:
@@ -8,8 +6,9 @@ services:
     ports:
       - "${JSREPORT_PORT:-5488}:5488"
     volumes:
-      - ../../templates/reports:/app/data/templates/base:ro
-      - ../../artifacts:/app/data/artifacts:ro
+      - ../../templates/reports:/app/sf-templates:ro
+      - ../../artifacts:/app/sf-artifacts:ro
+      - jsreport-data:/app/data
     environment:
       - NODE_ENV=development
     healthcheck:
@@ -19,3 +18,6 @@ services:
       retries: 10
       start_period: 10s
     restart: unless-stopped
+
+volumes:
+  jsreport-data:

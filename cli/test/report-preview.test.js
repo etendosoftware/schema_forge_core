@@ -63,7 +63,7 @@ describe('buildJsreportPayload', () => {
     });
 
     assert.equal(payload.template.engine, 'handlebars');
-    assert.equal(payload.template.recipe, 'chrome-pdf');
+    assert.equal(payload.template.recipe, 'html');
     assert.ok(payload.template.content.includes('{{meta.title}}'));
     assert.equal(payload.data.meta.title, 'Business Partners');
     assert.equal(payload.data.meta.locale, 'en_US');

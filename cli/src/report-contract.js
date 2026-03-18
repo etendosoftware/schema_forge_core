@@ -101,10 +101,15 @@ export function generateReportContract(schema, type) {
     reportId: `${specName}-${type}`,
     type,
     entity: specName,
+    title: {
+      en_US: schema.window.name,
+      es_ES: schema.window.name,
+    },
     columns,
     filters,
     defaultSort,
     outputs: ['pdf'],
+    summary: { totalRows: true },
   };
 }
 
