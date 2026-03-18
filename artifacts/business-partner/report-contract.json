@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "reportId": "business-partner-listing",
+  "type": "listing",
+  "entity": "business-partner",
+  "columns": [
+    {
+      "field": "name",
+      "label": {
+        "en": "name"
+      },
+      "type": "string",
+      "sortable": true
+    },
+    {
+      "field": "searchKey",
+      "label": {
+        "en": "searchKey"
+      },
+      "type": "string",
+      "sortable": true
+    },
+    {
+      "field": "isActive",
+      "label": {
+        "en": "isActive"
+      },
+      "type": "boolean",
+      "sortable": true
+    }
+  ],
+  "filters": [
+    {
+      "field": "name",
+      "label": {
+        "en": "name"
+      },
+      "type": "text"
+    },
+    {
+      "field": "searchKey",
+      "label": {
+        "en": "searchKey"
+      },
+      "type": "text"
+    },
+    {
+      "field": "isActive",
+      "label": {
+        "en": "isActive"
+      },
+      "type": "boolean"
+    }
+  ],
+  "defaultSort": {
+    "field": "name",
+    "direction": "asc"
+  },
+  "outputs": [
+    "pdf"
+  ]
+}
