@@ -241,9 +241,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
         if (key === 'CURSOR_FIELD' || key.startsWith('has')) continue;
         // Skip empty values — let backend defaults handle them
         if (val === '' || val == null) continue;
-        // Convert numeric strings to numbers
-        if (typeof val === 'string' && val.match(/^-?\d+(\.\d+)?$/)) {
-          body[key] = Number(val);
+        // Convert numeric strings to numbers for BigDecimal compatibility
+        if (typeof val === 'number') {
+          body[key] = val;
+        } else if (typeof val === 'string' && val.match(/^-?\d[\d,]*(\.\d+)?$/)) {
+          // Matches: "100", "0.89", "1,000.50", "-3.14"
+          body[key] = Number(val.replace(/,/g, ''));
         } else {
           body[key] = val;
         }

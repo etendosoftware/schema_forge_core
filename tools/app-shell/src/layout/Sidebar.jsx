@@ -8,6 +8,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip.jsx';
 import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover.jsx';
+import {
   Eye,
   LayoutDashboard,
   ShoppingCart,
@@ -18,7 +23,6 @@ import {
   Settings,
   FolderKanban,
   Target,
-  LogOut,
   FileJson,
   PanelLeftOpen,
   PanelLeftClose,
@@ -54,7 +58,7 @@ const COLLAPSED_W = 60;
 const EXPANDED_W = 240;
 
 export default function AppSidebar({ menuGroups, expanded, onToggle }) {
-  const { username, logout, selectedOrg } = useAuth();
+  const { selectedOrg } = useAuth();
   const [showUserPopover, setShowUserPopover] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname.replace(/^\//, '');
@@ -160,14 +164,12 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             const isOpen = openGroups[g.group];
 
             if (!expanded) {
-              // Collapsed: icon only
+              // Collapsed: popover submenu
               return (
                 <div key={g.group} className="flex justify-center py-0.5">
-
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <NavLink
-                        to={`/${g.items[0].name}`}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
                         className={cn(
                           'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
                           isGroupActive
@@ -176,10 +178,34 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                         )}
                       >
                         <Icon className="h-5 w-5" />
-                      </NavLink>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{tMenu(g.group)}</TooltipContent>
-                  </Tooltip>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="right"
+                      className="w-48 p-1.5"
+                    >
+                      <p className="px-2 py-1 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                        {tMenu(g.group)}
+                      </p>
+                      {g.items.map((item) => {
+                        const isItemActive = item.name === currentPath;
+                        return (
+                          <NavLink
+                            key={item.name}
+                            to={`/${item.name}`}
+                            className={cn(
+                              'block px-2 py-1.5 text-sm rounded-md transition-colors',
+                              isItemActive
+                                ? 'text-foreground bg-muted font-medium'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            )}
+                          >
+                            {tMenu(item.label)}
+                          </NavLink>
+                        );
+                      })}
+                    </PopoverContent>
+                  </Popover>
                 </div>
               );
             }
@@ -273,34 +299,6 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             </NavLink>
           )}
 
-          {/* User + Logout */}
-          {!expanded ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={logout}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Logout ({username})</TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-foreground">
-                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
-              </div>
-              <span className="truncate flex-1">{username}</span>
-              <button
-                onClick={logout}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                title="Logout"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
         </div>
       </nav>
     </TooltipProvider>
