@@ -71,6 +71,8 @@ Every task passes through the active phases IN ORDER. No exceptions.
 ## Branching, Worktrees & Merging
 See `docs/branch-workflow.md` for all rules on worktree isolation, local merge, PR targets, feature branch policy, and branch safety.
 
+**NEVER use squash merge.** Always use regular merge to preserve full commit history. Use `gh pr merge --merge`, never `--squash` or `--rebase`.
+
 ## Reject Cycle
 1. Coordinator receives rejection report
 2. Coordinator sends developer the report with clear instructions

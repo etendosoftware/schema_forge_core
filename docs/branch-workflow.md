@@ -35,6 +35,7 @@ On rejection: DEV fixes in the SAME worktree, cycle restarts from the rejecting 
 **The only GitHub PR is feature → develop**, created when the feature is complete. The user controls when to push and create this PR.
 
 - **NEVER target `main` directly.** The highest allowed target is `develop`.
+- **NEVER use squash merge.** Always use regular merge (`--merge`) to preserve full commit history. Squash discards individual commits and breaks traceability.
 - **Always assign the PR to the current user.**
 - **GitHub usernames must be stored in auto-memory** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to auto-memory for future use. **CRITICAL:** Before ANY GitHub operation, read the `github-usernames.md` file from the auto-memory directory (`~/.claude/projects/.../memory/github-usernames.md` — use the absolute path, NEVER a path relative to the project root). NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
 
