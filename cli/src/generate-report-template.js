@@ -164,57 +164,37 @@ function generateGroupedTemplate(contract) {
     { bg: '#94a3b8', fg: '#1e293b' },
   ];
 
-  // Build group header rows
+  // Build group header HTML for a single group level
   function groupHeaderHtml(group, level) {
     const color = groupColors[Math.min(level, groupColors.length - 1)];
-    return `        {{#if (isGroupBreak '${group.field}' (lookup this '${group.field}'))}}
-        <tr class="group-header group-level-${level}">
-          <td colspan="${cols.length}" style="background: ${color.bg}; color: ${color.fg}; font-weight: 600; padding: 2mm 4mm; font-size: ${11 - level}pt;">
-            ${group.label.en_US}: {{lookup this '${group.field}'}}
-          </td>
-        </tr>
-        {{/if}}`;
-  }
+    const headerFields = group.headerFields || [];
 
-  // For document-level groups, also show sub-fields (dates, delivery info)
-  // We detect this from the original Jasper — the last group typically has header fields
-  function documentGroupHeaderHtml(group, level, contract) {
-    const color = groupColors[Math.min(level, groupColors.length - 1)];
-    // Find fields that belong to this group level (not in detail columns, not in other groups)
-    const detailFieldNames = new Set(cols.map(c => c.field));
-    const groupFieldNames = new Set(groups.map(g => g.field));
-    // The "header fields" are fields shown in the group header row (not detail, not group key)
-    // For the document group: dateordered, datepromised, deliveryrule, deliverylocation, poreference
-    const headerFields = (contract._groupHeaderFields || {})[group.field] || [];
+    let subHeaderHtml = '';
+    if (headerFields.length > 0) {
+      const cells = headerFields.map(f => {
+        const label = typeof f.label === 'object' ? f.label.en_US : f.label;
+        const val = f.type === 'date' ? `{{formatDate (lookup this '${f.field}')}}` : `{{lookup this '${f.field}'}}`;
+        return `<span style="margin-right: 3mm;"><strong>${label}:</strong> ${val}</span>`;
+      }).join('\n              ');
 
-    if (headerFields.length === 0) {
-      return groupHeaderHtml(group, level);
-    }
-
-    const subFieldsCells = headerFields.map(f =>
-      `<span style="margin-right: 3mm;"><strong>${f.label}:</strong> {{lookup this '${f.field}'}}</span>`
-    ).join('\n              ');
-
-    return `        {{#if (isGroupBreak '${group.field}' (lookup this '${group.field}'))}}
-        <tr class="group-header group-level-${level}">
-          <td colspan="${cols.length}" style="background: ${color.bg}; color: ${color.fg}; font-weight: 600; padding: 2mm 4mm; font-size: ${11 - level}pt;">
-            ${group.label.en_US}: {{lookup this '${group.field}'}}
-          </td>
-        </tr>
+      subHeaderHtml = `
         <tr class="group-subheader">
           <td colspan="${cols.length}" style="background: #f1f5f9; padding: 1.5mm 4mm; font-size: 8pt; color: #475569;">
-            ${subFieldsCells}
+            ${cells}
           </td>
-        </tr>
+        </tr>`;
+    }
+
+    return `        {{#if (isGroupBreak '${group.field}' (lookup this '${group.field}'))}}
+        <tr class="group-header group-level-${level}">
+          <td colspan="${cols.length}" style="background: ${color.bg}; color: ${color.fg}; font-weight: 600; padding: 2mm 4mm; font-size: ${11 - level}pt;">
+            ${group.label.en_US}: {{lookup this '${group.field}'}}
+          </td>
+        </tr>${subHeaderHtml}
         {{/if}}`;
   }
 
-  const groupHeaders = groups.map((g, i) => {
-    if (i === groups.length - 1 && contract._groupHeaderFields?.[g.field]) {
-      return documentGroupHeaderHtml(g, i, contract);
-    }
-    return groupHeaderHtml(g, i);
-  }).join('\n');
+  const groupHeaders = groups.map((g, i) => groupHeaderHtml(g, i)).join('\n');
 
   return `{{!-- Auto-generated grouped listing template for: ${contract.reportId} --}}
 <!DOCTYPE html>

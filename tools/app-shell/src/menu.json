@@ -30,7 +30,8 @@
         { "name": "goods-receipt", "label": "Goods Receipt" },
         { "name": "purchase-invoice", "label": "Invoices" },
         { "name": "return-to-vendor", "label": "Returns" },
-        { "name": "return-to-vendor-shipment", "label": "Return Shipments" }
+        { "name": "return-to-vendor-shipment", "label": "Return Shipments" },
+        { "name": "report-viewer", "label": "Reports" }
       ]
     },
     {

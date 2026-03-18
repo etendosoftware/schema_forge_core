@@ -3,12 +3,14 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
 import schemaApiPlugin from './vite-plugins/schema-api.js';
+import reportApiPlugin from './vite-plugins/report-api.js';
 
 export default defineConfig({
   base: './',
   plugins: [
     react(),
     schemaApiPlugin(),
+    reportApiPlugin(),
     VitePWA({
       registerType: 'prompt',
       workbox: {

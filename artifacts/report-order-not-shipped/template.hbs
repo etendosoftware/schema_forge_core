@@ -21,43 +21,40 @@
 
   <table class="report-table">
     <thead><tr>
-      <th style="width: auto">Product</th>
-      <th style="width: auto">Ordered Quantity</th>
-      <th style="width: auto">Pending Quantity</th>
-      <th style="width: auto">Quantity in Stock</th>
-      <th style="width: auto">Unit</th>
-      <th style="width: auto">Quantity in Stock</th>
+      <th style="width: 30%">Product</th>
+      <th style="width: 15%">Ordered Qty</th>
+      <th style="width: 15%">Pending Qty</th>
+      <th style="width: 15%">Stock</th>
     </tr></thead>
     <tbody>
       {{#each rows}}
         {{#if (isGroupBreak 'orgname' (lookup this 'orgname'))}}
         <tr class="group-header group-level-0">
-          <td colspan="6" style="background: #1a1a2e; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 11pt;">
+          <td colspan="4" style="background: #1a1a2e; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 11pt;">
             Organization: {{lookup this 'orgname'}}
           </td>
         </tr>
         {{/if}}
         {{#if (isGroupBreak 'bpname' (lookup this 'bpname'))}}
         <tr class="group-header group-level-1">
-          <td colspan="6" style="background: #334155; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 10pt;">
+          <td colspan="4" style="background: #334155; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 10pt;">
             Business Partner: {{lookup this 'bpname'}}
           </td>
         </tr>
         {{/if}}
         {{#if (isGroupBreak 'documentno' (lookup this 'documentno'))}}
         <tr class="group-header group-level-2">
-          <td colspan="6" style="background: #64748b; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 9pt;">
-            Order Document No.: {{lookup this 'documentno'}}
+          <td colspan="4" style="background: #64748b; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 9pt;">
+            Order No.: {{lookup this 'documentno'}}
           </td>
         </tr>
         <tr class="group-subheader">
-          <td colspan="6" style="background: #f1f5f9; padding: 1.5mm 4mm; font-size: 8pt; color: #475569;">
-            <span style="margin-right: 3mm;"><strong>Poreference:</strong> {{lookup this 'poreference'}}</span>
-              <span style="margin-right: 3mm;"><strong>Dateordered:</strong> {{lookup this 'dateordered'}}</span>
-              <span style="margin-right: 3mm;"><strong>Datepromised:</strong> {{lookup this 'datepromised'}}</span>
-              <span style="margin-right: 3mm;"><strong>Deliveryrule:</strong> {{lookup this 'deliveryrule'}}</span>
-              <span style="margin-right: 3mm;"><strong>Deliverylocation:</strong> {{lookup this 'deliverylocation'}}</span>
-              <span style="margin-right: 3mm;"><strong>M Attributesetinstance Id:</strong> {{lookup this 'm_attributesetinstance_id'}}</span>
+          <td colspan="4" style="background: #f1f5f9; padding: 1.5mm 4mm; font-size: 8pt; color: #475569;">
+            <span style="margin-right: 3mm;"><strong>PO Reference:</strong> {{lookup this 'poreference'}}</span>
+              <span style="margin-right: 3mm;"><strong>Order Date:</strong> {{formatDate (lookup this 'dateordered')}}</span>
+              <span style="margin-right: 3mm;"><strong>Delivery Date:</strong> {{formatDate (lookup this 'datepromised')}}</span>
+              <span style="margin-right: 3mm;"><strong>Delivery Rule:</strong> {{lookup this 'deliveryrule'}}</span>
+              <span style="margin-right: 3mm;"><strong>Location:</strong> {{lookup this 'deliverylocation'}}</span>
           </td>
         </tr>
         {{/if}}
@@ -65,8 +62,6 @@
           <td>{{lookup this 'prodname'}}</td>
           <td>{{lookup this 'orderedqty'}}</td>
           <td>{{lookup this 'pendingqty'}}</td>
-          <td>{{lookup this 'qtyinstock'}}</td>
-          <td>{{lookup this 'aumsymbol'}}</td>
           <td>{{lookup this 'qtyinstock'}}</td>
         </tr>
       {{/each}}

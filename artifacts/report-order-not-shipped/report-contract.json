@@ -6,111 +6,70 @@
   "jasper": {
     "originalFile": "etendo_core/modules_core/org.openbravo.reports.ordersawaitingdelivery/src/org/openbravo/reports/ordersawaitingdelivery/erpCommon/ad_reports/ReportOrderNotShipped.jrxml",
     "processId": "3DAA5E63A30D45A8ABF87701F8BD91EF",
-    "processValue": "",
+    "processValue": "ReportOrderNotShipped",
     "queryLanguage": "SQL"
   },
   "title": {
-    "en_US": "Report Order Not Shipped",
-    "es_ES": "Report Order Not Shipped"
+    "en_US": "Orders Awaiting Delivery",
+    "es_ES": "Pedidos Pendientes de Entrega"
   },
   "orientation": "landscape",
   "columns": [
     {
       "field": "prodname",
-      "label": {
-        "en_US": "Product",
-        "es_ES": "Product"
-      },
+      "label": { "en_US": "Product", "es_ES": "Producto" },
       "type": "string",
-      "width": "auto",
+      "width": "30%",
       "sortable": true
     },
     {
       "field": "orderedqty",
-      "label": {
-        "en_US": "Ordered Quantity",
-        "es_ES": "Ordered Quantity"
-      },
+      "label": { "en_US": "Ordered Qty", "es_ES": "Cant. Pedida" },
       "type": "string",
-      "width": "auto",
+      "width": "15%",
       "sortable": true
     },
     {
       "field": "pendingqty",
-      "label": {
-        "en_US": "Pending Quantity",
-        "es_ES": "Pending Quantity"
-      },
+      "label": { "en_US": "Pending Qty", "es_ES": "Cant. Pendiente" },
       "type": "string",
-      "width": "auto",
+      "width": "15%",
       "sortable": true
     },
     {
       "field": "qtyinstock",
-      "label": {
-        "en_US": "Quantity in Stock",
-        "es_ES": "Quantity in Stock"
-      },
+      "label": { "en_US": "Stock", "es_ES": "Stock" },
       "type": "string",
-      "width": "auto",
-      "sortable": true
-    },
-    {
-      "field": "aumsymbol",
-      "label": {
-        "en_US": "Unit",
-        "es_ES": "Unit"
-      },
-      "type": "string",
-      "width": "auto",
-      "sortable": true
-    },
-    {
-      "field": "qtyinstock",
-      "label": {
-        "en_US": "Quantity in Stock",
-        "es_ES": "Quantity in Stock"
-      },
-      "type": "string",
-      "width": "auto",
+      "width": "15%",
       "sortable": true
     }
   ],
   "groups": [
     {
       "field": "orgname",
-      "label": {
-        "en_US": "Organization",
-        "es_ES": "Organization"
-      }
+      "label": { "en_US": "Organization", "es_ES": "Organización" }
     },
     {
       "field": "bpname",
-      "label": {
-        "en_US": "Business Partner",
-        "es_ES": "Business Partner"
-      }
+      "label": { "en_US": "Business Partner", "es_ES": "Tercero" }
     },
     {
       "field": "documentno",
-      "label": {
-        "en_US": "Order Document No.",
-        "es_ES": "Order Document No."
-      }
+      "label": { "en_US": "Order No.", "es_ES": "Nº Pedido" },
+      "headerFields": [
+        { "field": "poreference", "label": { "en_US": "PO Reference", "es_ES": "Ref. Pedido" } },
+        { "field": "dateordered", "label": { "en_US": "Order Date", "es_ES": "Fecha Pedido" }, "type": "date" },
+        { "field": "datepromised", "label": { "en_US": "Delivery Date", "es_ES": "Fecha Entrega" }, "type": "date" },
+        { "field": "deliveryrule", "label": { "en_US": "Delivery Rule", "es_ES": "Regla Entrega" } },
+        { "field": "deliverylocation", "label": { "en_US": "Location", "es_ES": "Ubicación" } }
+      ]
     }
   ],
   "filters": [],
   "defaultSort": {
-    "field": "prodname",
+    "field": "orgname",
     "direction": "asc"
   },
-  "outputs": [
-    "pdf",
-    "xlsx",
-    "csv",
-    "html"
-  ],
-  "summary": {
-    "totalRows": true
-  }
+  "outputs": ["pdf", "xlsx", "csv", "html"],
+  "summary": { "totalRows": true }
 }
