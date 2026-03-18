@@ -13,3 +13,9 @@ window-locks.json
 tools/app-shell/dist/
 tools/app-shell/.env.local
 tools/app-shell/.env.development
+
+# Report preview outputs
+artifacts/*/reports/*/preview.*
+
+# Docker jsreport runtime data
+docker/jsreport/data/
