@@ -311,8 +311,12 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
     const fields = tab.fields.map((row) => {
       const classification = classifyField(row, systemColumns);
       const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
+      const isPk = row.columnname === tab.tableName + '_ID';
+      const isCoreModule = row.table_module_id === '0' || row.column_module_id !== '0';
+      const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
       const fieldDef = {
-        name: toPropertyName(row.obdal_name),
+        name: apiKey,
+        apiKey,
         columnName: row.columnname,
         label: row.field_name,
         type: schemaType,
@@ -457,6 +461,7 @@ SELECT
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
+  c.AD_Module_ID AS column_module_id, tbl.AD_Module_ID AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
   vr.Code AS val_rule_code,

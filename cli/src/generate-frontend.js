@@ -81,8 +81,9 @@ export function generateTableComponent(entityName, contract) {
   const enumFieldVars = {};
   for (const f of gridFields) {
     if (f.enumValues && f.enumValues.length > 0) {
-      const varName = `${f.name}Labels`;
-      enumFieldVars[f.name] = varName;
+      const fieldKey = f.apiKey || f.name;
+      const varName = `${fieldKey}Labels`;
+      enumFieldVars[fieldKey] = varName;
       const entries = f.enumValues.map(e => `  '${e.value}': '${e.name.replace(/'/g, "\\'")}'`).join(',\n');
       enumLabelLines.push(`const ${varName} = {\n${entries},\n};`);
     }
@@ -91,8 +92,9 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    const enumLabelsPart = enumFieldVars[f.name] ? `, enumLabels: ${enumFieldVars[f.name]}` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart}${enumLabelsPart} },`;
+    const fieldKey = f.apiKey || f.name;
+    const enumLabelsPart = enumFieldVars[fieldKey] ? `, enumLabels: ${enumFieldVars[fieldKey]}` : '';
+    return `  { key: '${fieldKey}', column: '${f.column}', type: '${type}'${selectionPart}${enumLabelsPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -186,7 +188,7 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -237,11 +239,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
+    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   // Status field config
-  const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
+  const statusFieldLine = statusField ? `'${statusField.apiKey || statusField.name}'` : 'null';
 
   // Process config
   const processesArray = processes.map(p => {
@@ -265,14 +267,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `    { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
+    return `    { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
   // API prediction config

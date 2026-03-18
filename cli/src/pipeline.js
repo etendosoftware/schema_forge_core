@@ -27,6 +27,7 @@ export function buildPipelineSteps() {
     { name: 'generate-contract', description: 'Generate frontend/backend contracts + test manifest', phase: 'F6' },
     { name: 'check-version', description: 'Check contract version and classify changes', phase: 'F6b' },
     { name: 'push-to-neo', description: 'Configure NEO Headless via webhooks (from contract)', phase: 'F7' },
+    { name: 'validate-field-names', description: 'Validate field names match NEO API (optional)', phase: 'F7b', optional: true },
     { name: 'generate-frontend', description: 'Generate React components from contract', phase: 'F8' },
     { name: 'translate-todos', description: 'AI-assisted translation of callout/onchange TODO comments', phase: 'F8b', interactive: true },
     { name: 'run-tests', description: 'Run contract tests (Node.js side)', phase: 'F9' },
@@ -399,6 +400,26 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           }
           break;
         }
+        case 'validate-field-names': {
+          const { validateFieldNames } = await import('./validate-field-names.js');
+          const result = await validateFieldNames(windowName);
+          if (result.skipped) {
+            console.log(`  → Skipped: ${result.reason}`);
+          } else {
+            console.log(`  ✓ ${result.matched.length} fields matched`);
+            if (result.mismatched.length > 0) {
+              console.warn(`  ⚠ ${result.mismatched.length} field name mismatches:`);
+              result.mismatched.forEach(m => console.warn(`    ${m.contract} → API returns: ${m.api}`));
+            }
+            if (result.missing.length > 0) {
+              console.log(`  → ${result.missing.length} contract fields not in API: ${result.missing.join(', ')}`);
+            }
+            if (result.extra.length > 0) {
+              console.log(`  → ${result.extra.length} extra API fields (not in contract): ${result.extra.join(', ')}`);
+            }
+          }
+          break;
+        }
         case 'generate-frontend': {
           const { generateAll } = await import('./generate-frontend.js');
           const { preserveAndRegenerate } = await import('./preserve-custom-sections.js');
@@ -514,8 +535,12 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
         }
       }
     } catch (err) {
-      console.error(`  ✗ ${step.name} failed: ${err.message}`);
-      process.exit(1);
+      if (step.optional) {
+        console.log(`  → ${step.name} failed (optional, continuing): ${err.message}`);
+      } else {
+        console.error(`  ✗ ${step.name} failed: ${err.message}`);
+        process.exit(1);
+      }
     }
   }
 

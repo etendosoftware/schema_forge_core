@@ -87,6 +87,7 @@ export function generateFrontendContract(schema, rules = []) {
     const fields = visibleFields.map(f => {
       const mapped = {
         name: f.name,
+        apiKey: f.apiKey || f.name,
         column: f.column,
         type: f.type,
         tsType: mapTsType(f.type),
@@ -195,6 +196,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
   for (const entity of schema.entities) {
     const fields = entity.fields.map(f => ({
       name: f.name,
+      apiKey: f.apiKey || f.name,
       column: f.column,
       type: f.type,
       visibility: f.visibility,
