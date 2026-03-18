@@ -555,9 +555,9 @@ e2e/
 
 **Two-phase workflow for writing E2E tests:**
 
-1. **Discover with Chrome DevTools MCP** — Use MCP tools (`navigate_page`, `take_snapshot`, `click`, `fill`) to explore the live UI, find actual DOM selectors, and verify flows work. See `e2e/MCP-DISCOVERY-GUIDE.md`.
+1. **Discover with agent-browser** — Use `agent-browser` CLI (`open`, `snapshot -i`, `click @eN`, `fill @eN "text"`) to explore the live UI. The accessibility tree output maps directly to Playwright's `getByRole()` selectors. Fallback: Chrome DevTools MCP. See `e2e/MCP-DISCOVERY-GUIDE.md`.
 
-2. **Automate with Playwright** — Translate discovered selectors and flows into Playwright tests in `e2e/tests/flows/`. Update `selectors.js` with real selectors found during discovery.
+2. **Automate with Playwright** — Translate discovered selectors into Playwright tests in `e2e/tests/flows/`. Use role-based locators (`page.getByRole('button', { name: 'Save' })`) which match the agent-browser snapshot output. Update `selectors.js` with real selectors.
 
 **Reports:** Test reports (HTML + screenshots on failure) go to `artifacts/e2e-report/`.
 

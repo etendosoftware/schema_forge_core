@@ -13,3 +13,6 @@ window-locks.json
 tools/app-shell/dist/
 tools/app-shell/.env.local
 tools/app-shell/.env.development
+artifacts/e2e-report/
+e2e/test-results/
+e2e/playwright-report/

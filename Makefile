@@ -1,4 +1,4 @@
-.PHONY: test test-frontend generate dev build install deploy clean help
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report generate dev build install install-e2e deploy clean help
 
 # --- Testing ---
 
@@ -7,6 +7,26 @@ test: ## Run all CLI tests
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
+
+# --- E2E Testing (Playwright) ---
+
+test-e2e: ## Run E2E tests with visible browser
+	cd e2e && npx playwright test --headed
+
+test-e2e-headless: ## Run E2E tests headless (CI mode)
+	cd e2e && npx playwright test --headed=false
+
+test-e2e-debug: ## Run E2E tests in debug mode (step by step)
+	cd e2e && npx playwright test --debug
+
+test-e2e-ui: ## Open Playwright UI for interactive test running
+	cd e2e && npx playwright test --ui
+
+test-e2e-report: ## Show last E2E test report in browser
+	cd e2e && npx playwright show-report ../artifacts/e2e-report
+
+install-e2e: ## Install E2E dependencies + browsers
+	cd e2e && npm install && npx playwright install chromium
 
 # --- Code Generation ---
 
