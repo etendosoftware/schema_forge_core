@@ -39,6 +39,7 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
         <Input
           id={field.key}
           name={field.key}
+          data-testid={`field-${field.key}`}
           type="text"
           placeholder={`Search ${resolvedLabel}...`}
           value={query}
@@ -60,6 +61,7 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
             <button
               key={opt.id}
               type="button"
+              data-testid={`option-${opt.id}`}
               className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 cursor-pointer"
               onMouseDown={() => handleSelect(opt)}
             >
@@ -100,12 +102,12 @@ function SelectorInput({ field, value, displayValue, onChange, catalogs, resolve
       }}
       required={field.required}
     >
-      <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
+      <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
         <SelectValue placeholder={`Select ${resolvedLabel}...`} />
       </SelectTrigger>
       <SelectContent>
         {options.map(opt => (
-          <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+          <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
       </SelectContent>
     </Select>
@@ -163,14 +165,14 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
       required={field.required}
       disabled={(!parentValue && !value) || loading}
     >
-      <SelectTrigger id={field.key} className="focus:ring-2 focus:ring-primary">
+      <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
         <SelectValue
           placeholder={loading ? 'Loading...' : (parentValue ? `Select ${resolvedLabel}...` : `Select ${field.dependsOn?.field} first`)}
         />
       </SelectTrigger>
       <SelectContent>
         {options.map(opt => (
-          <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+          <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
       </SelectContent>
     </Select>
@@ -224,6 +226,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 aria-checked={!!data?.[f.key]}
                 disabled={isReadOnly}
                 id={f.key}
+                data-testid={`field-${f.key}`}
                 onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key])}
                 className={[
                   'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
@@ -381,6 +384,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               <Input
                 id={f.key}
                 name={f.key}
+                data-testid={`field-${f.key}`}
                 type={inputType}
                 value={data?.[f.key] ?? ''}
                 onChange={(e) => onChange?.(f.key, e.target.value)}

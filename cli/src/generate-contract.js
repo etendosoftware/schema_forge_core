@@ -87,6 +87,7 @@ export function generateFrontendContract(schema, rules = []) {
     const fields = visibleFields.map(f => {
       const mapped = {
         name: f.name,
+        apiKey: f.apiKey || f.name,
         column: f.column,
         type: f.type,
         tsType: mapTsType(f.type),
@@ -96,6 +97,7 @@ export function generateFrontendContract(schema, rules = []) {
         form: f.form,
       };
       if (f.reference) mapped.reference = f.reference;
+      if (f.enumValues) mapped.enumValues = f.enumValues;
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
 
@@ -163,16 +165,25 @@ export function generateFrontendContract(schema, rules = []) {
 
     const searchableFields = visibleFields
       .filter(f => f.searchable)
-      .map(f => f.name);
+      .map(f => f.apiKey || f.name);
 
     const computedFields = visibleFields
       .filter(f => f.derivation)
-      .map(f => ({ name: f.name, derivation: f.derivation }));
+      .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
     entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
   }
 
-  return { window: schema.window, entities };
+  // Include layoutType from curated schema; default to "default" when absent
+  const win = { ...schema.window };
+  win.layoutType = schema.window.layoutType ?? 'default';
+
+  // Include templateConfig only for layout types that use it
+  if (win.layoutType === 'kanban' || win.layoutType === 'calendar') {
+    win.templateConfig = schema.window.templateConfig ?? null;
+  }
+
+  return { window: win, entities };
 }
 
 /**
@@ -185,6 +196,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
   for (const entity of schema.entities) {
     const fields = entity.fields.map(f => ({
       name: f.name,
+      apiKey: f.apiKey || f.name,
       column: f.column,
       type: f.type,
       visibility: f.visibility,
@@ -195,7 +207,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
 
     const searchableFields = entity.fields
       .filter(f => f.searchable)
-      .map(f => f.name);
+      .map(f => f.apiKey || f.name);
 
     const basePath = `/${entity.name}`;
 

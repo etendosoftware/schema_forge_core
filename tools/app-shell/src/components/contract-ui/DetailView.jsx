@@ -234,7 +234,7 @@ export function DetailView({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" data-testid="detail-view">
       {/* Top bar area (gray background, inherited from parent) */}
       <div className="px-6 pt-3 pb-3">
         {/* Row: Title + Global search + action icons */}
@@ -294,6 +294,7 @@ export function DetailView({
               variant="outline"
               size="sm"
               className="gap-1.5"
+              data-testid="action-cancel"
               onClick={() => navigate(`/${windowName}`)}
             >
               <X className="h-3.5 w-3.5" />
@@ -332,14 +333,14 @@ export function DetailView({
               );
             })}
 
-            <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" onClick={async () => {
+            <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
               const saved = await hook.handleSave(data);
               if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
             }}>
               <Save className="h-3.5 w-3.5" />
               Save draft
             </Button>
-            <Button size="sm" className="gap-1.5" onClick={async () => {
+            <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
               const saved = await hook.handleSave(data);
               if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
             }}>
@@ -407,13 +408,9 @@ export function DetailView({
                         active: addingLine,
                         fields: allEntryFields,
                         onAdd: (lineData) => {
-                          // Only send entry field keys to the API — exclude callout-derived values
-                          const entryKeys = new Set(allEntryFields.map(f => f.key));
-                          const filtered = {};
-                          for (const [k, v] of Object.entries(lineData)) {
-                            if (entryKeys.has(k)) filtered[k] = v;
-                          }
-                          hook.handleAddChild?.(filtered);
+                          // Send all values including callout-derived fields (price, UOM, tax).
+                          // handleAddChild filters out internal/companion keys itself.
+                          hook.handleAddChild?.(lineData);
                         },
                         onCancel: () => setAddingLine(false),
                         catalogs,

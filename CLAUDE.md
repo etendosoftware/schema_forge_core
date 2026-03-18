@@ -68,21 +68,8 @@ This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broke
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
-## Worktree Isolation (MANDATORY)
-Every task runs in an isolated git worktree. No exceptions.
-The worktree branch is created FROM the current branch, and PRs target that same branch.
-```
-# Detect current branch, then create worktree from it
-CURRENT_BRANCH=$(git branch --show-current)
-git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
-```
-All agents work ONLY in that worktree — never in the main repo.
-The coordinator creates the worktree and passes the path to each agent.
-**Worktree branches are LOCAL ONLY.** They are never pushed to remote. After pipeline approval, the coordinator merges them locally into the parent branch via `git merge --squash`.
-
-## Parallelization
-- Independent tasks → parallel worktrees
-- Within a task → sequential pipeline
+## Branching, Worktrees & Merging
+See `docs/branch-workflow.md` for all rules on worktree isolation, local merge, PR targets, feature branch policy, and branch safety.
 
 ## Reject Cycle
 1. Coordinator receives rejection report
@@ -93,38 +80,6 @@ The coordinator creates the worktree and passes the path to each agent.
 
 ## Documentation Freshness (MANDATORY)
 Any PR that modifies the pipeline, CLI tools, data flow, repository structure, or architecture MUST include updates to all documentation and diagrams that reference the changed component. **Code change + doc update = one atomic unit.** See `<self_documentation>` section for the full checklist and list of files to verify. REVIEW must reject PRs that change documented behavior without updating the docs.
-
-## Local Merge (MANDATORY)
-Worktree branches are **never pushed to remote**. All review happens locally through the pipeline phases.
-
-After all phases APPROVE:
-1. Coordinator switches to the parent branch: `git checkout feature/ETP-XXXX`
-2. Squash-merge the worktree branch: `git merge --squash feat/<task-name>`
-3. Commit with a clear message following commit conventions
-4. Clean up: `git worktree remove .worktrees/feat-<task-name> && git branch -d feat/<task-name>`
-
-On rejection: DEV fixes in the SAME worktree, cycle restarts from rejecting phase (no push needed).
-
-**The only GitHub PR is feature → develop**, created when the feature is complete. The user controls when to push and create this PR.
-
-**PR rules (for the feature → develop PR):**
-- **NEVER target `main` directly.** The highest allowed target is `develop`.
-- **Always assign the PR to the current user.**
-- **GitHub usernames must be stored in auto-memory** (not committed). On first interaction, look up the current user's GitHub username and any known reviewers, and save them to auto-memory for future use. **CRITICAL:** Before ANY GitHub operation, read the `github-usernames.md` file from the auto-memory directory (`~/.claude/projects/.../memory/github-usernames.md` — use the absolute path, NEVER a path relative to the project root). NEVER assume, hardcode, or guess a username — if no username is stored, ask the user and save it immediately.
-
-## New Feature Branch Policy (MANDATORY)
-When the user requests a new task while on a feature branch, the coordinator MUST ask:
-1. **What is the new task?**
-2. **Does it depend on changes in the current feature branch?**
-
-Based on the answer:
-- **Independent task →** Create new branch from `develop` (with `git pull` first to update)
-- **Dependent task →** Create new branch from the current feature branch
-
-This prevents unnecessary coupling between features while ensuring dependent work has access to what it needs.
-
-## Branch Safety (MANDATORY)
-When the Schema Forge repository (project analyzer) is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module while Schema Forge is on a feature branch. Always verify both repos are on matching branches before generating or committing code.
 
 ## Commit Conventions (MANDATORY)
 All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
@@ -159,7 +114,7 @@ Branch naming also follows Git Police patterns:
 - Approve work that skipped pipeline phases
 - Let agents work outside their assigned worktree
 - Commit, merge, or work directly on `main` or `develop` — ALL work happens on feature branches via PRs
-- Create PRs targeting `main` — the highest allowed PR target is `develop`; `main` is only updated via publish/release merges from `develop`
+- Create PRs targeting `main`
 </what_i_never_do>
 
 <communication>
@@ -176,37 +131,11 @@ Branch naming also follows Git Police patterns:
 **com.etendoerp.go** (Etendo Go) is the runtime implementation — a metadata-driven REST API layer (`NEO Headless`) that runs inside Etendo. It exposes AD Windows and Processes as JSON APIs based on configuration stored in 3 database tables (`ETGO_SF_SPEC`, `ETGO_SF_ENTITY`, `ETGO_SF_FIELD`).
 
 ```
-┌─────────────────────────────────┐          ┌──────────────────────────────────┐
-│         SCHEMA FORGE            │          │        com.etendoerp.go          │
-│     (design + tooling)          │          │     (runtime implementation)     │
-│                                 │          │                                  │
-│  cli/        → extractors,      │  writes  │  NeoServlet (/sws/neo/*)         │
-│                validators,      │ ──────▶  │  NeoSelectorService              │
-│                generators       │  via     │  NeoProcessService               │
-│                                 │  webhooks│  NeoReportService                │
-│  tools/      → decision UIs     │          │  NeoHandler (CDI hooks)          │
-│  templates/  → legacy (unused)  │          │  PopulateSpecHelper              │
-│  artifacts/  → per-window data  │          │  4 webhooks (upsert/populate)    │
-│  docs/       → PRD, TDD, AD ref │          │                                  │
-│  core-maps/  → shared metadata  │          │  Tables: ETGO_SF_SPEC            │
-│  pending/    → future proposals │          │          ETGO_SF_ENTITY           │
-│                                 │          │          ETGO_SF_FIELD            │
-└─────────────────────────────────┘          └──────────────────────────────────┘
-     This repository                          /modules/com.etendoerp.go/
+Schema Forge (this repo)  ──writes via webhooks──▶  com.etendoerp.go (/modules/)
+   (design + tooling)                                 (runtime API engine)
 ```
 
 **Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime.
-
-### Two Repositories, One System
-
-| Aspect | Schema Forge (this repo) | Etendo Go (modules/) |
-|--------|--------------------------|----------------------|
-| **Role** | Design, analysis, tooling, documentation | Runtime API engine |
-| **Language** | Node.js (CLI), React (UIs) | Java (Etendo module) |
-| **Output** | Artifacts, configs, webhook calls | Live REST endpoints |
-| **Changes** | Frequently (every design iteration) | Rarely (engine is stable) |
-| **Path** | `schema_forge/` | `modules/com.etendoerp.go/` |
-| **Docs** | `docs/architecture-overview.md` | `docs/neo-headless.md` (API reference) |
 
 See `docs/architecture-overview.md` for the full system architecture.
 
@@ -254,10 +183,19 @@ schema-forge/                             # THIS REPO — design + tooling
 │       └── pipeline.js                   # Full pipeline (windows, processes, reports, or auto-detect via menu ID/name)
 ├── tools/                                # React decision UIs
 │   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind)
+│   │   └── src/
+│   │       └── windows/
+│   │           ├── custom/              # Hand-written custom window components (layoutType: "custom")
+│   │           ├── registry.js          # Window loader registry (windowLoaders + customLoaders)
+│   │           └── PlaceholderWindow.jsx # Fallback for unregistered windows
 │   ├── decision-panel/                   # Field visibility + rule curation
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
 ├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
+├── e2e/                                  # Playwright E2E tests (UI flow automation)
+│   ├── tests/helpers/                    # Shared selectors + auth helpers
+│   ├── tests/flows/                      # Per-window flow tests
+│   └── tests/smoke.spec.js              # Smoke tests (all windows load)
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json, ad-menu-cache.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
@@ -295,6 +233,8 @@ NEO Headless Runtime (NeoServlet at /sws/neo/*)
     │ Serves CRUD, selectors, processes, reports — live, no compilation
     ▼
 React SPA (generated frontend)
+    │ layoutType dispatch: kanban → KanbanBoard, calendar → CalendarView,
+    │ custom → windows/custom/{name}/, default → ListView/DetailView
     Consumes NEO Headless API
 ```
 
@@ -418,6 +358,84 @@ When `generate-frontend.js` regenerates React components, custom code (callout t
 - `cli/src/generate-frontend.js` -- emits `GENERATED_START/END` blocks and `CUSTOM_SLOT` placeholders
 - `cli/src/pipeline.js` -- integrates preservation into the regeneration step
 
+## Window Template Extensibility
+
+Windows can opt into alternative layouts by setting `layoutType` in `schema-curated.json` (`window` object).
+
+### Layout Types
+
+| `layoutType` | Behavior |
+|---|---|
+| `"default"` (or absent) | Standard ListView/DetailView — no change to existing behavior |
+| `"kanban"` | Generated page uses `KanbanBoard` from `@/components/contract-ui` |
+| `"calendar"` | Generated page uses `CalendarView` from `@/components/contract-ui` |
+| `"custom"` | Pipeline generates a scaffold in `windows/custom/` — developer builds on top |
+
+### Setting layoutType
+
+Edit `artifacts/{window-name}/schema-curated.json` and add to the `window` object:
+
+```json
+"window": {
+  "layoutType": "kanban",
+  "templateConfig": {
+    "groupByField": "documentStatus",
+    "columns": [{ "value": "DR", "title": "Draft", "color": "gray" }],
+    "cardTitle": "documentNo",
+    "cardSubtitle": "businessPartner",
+    "cardValue": "grandTotal"
+  }
+}
+```
+
+For calendar:
+```json
+"layoutType": "calendar",
+"templateConfig": {
+  "dateField": "orderDate",
+  "endDateField": null,
+  "eventTitle": "documentNo",
+  "eventType": "documentStatus"
+}
+```
+
+For custom (no templateConfig needed):
+```json
+"layoutType": "custom"
+```
+
+### Custom Windows Convention
+
+Custom windows live in `tools/app-shell/src/windows/custom/{window-name}/`:
+- `index.jsx` — the hand-written React component (receives same props as generated windows)
+- `mockCatalogs.js` — FK reference data for local development
+
+The pipeline generates the initial scaffold with rich JSDoc comments (all entities, fields, processes, API patterns). The developer builds on top.
+
+**Regeneration safety:** If `index.jsx` already exists when the pipeline runs again, the new scaffold is written as `index.jsx.new`. The existing file is never touched. Same for `mockCatalogs.js`. Use AI or a diff tool to merge updated metadata.
+
+### Registry: customLoaders
+
+`tools/app-shell/src/windows/registry.js` contains a `customLoaders` map alongside `windowLoaders`. When the pipeline creates a custom scaffold for the first time, it auto-registers the loader. Resolution order:
+
+```
+windowLoaders[name] || customLoaders[name] || PlaceholderWindow
+```
+
+### Flow: layoutType → contract → generator
+
+```
+schema-curated.json (layoutType, templateConfig)
+    ↓
+generate-contract.js → frontendContract.window.layoutType
+    ↓
+generate-frontend.js → generateAll() dispatches by layoutType
+    - "custom"   → generateCustomScaffold() → windows/custom/{name}/
+    - "kanban"   → generateKanbanPage() → artifacts/{name}/generated/
+    - "calendar" → generateCalendarPage() → artifacts/{name}/generated/
+    - "default"  → generatePageComponent() [unchanged]
+```
+
 ## Generated Files Policy
 
 **NEVER manually edit generated output files** (e.g., files in `artifacts/*/generated/`). All fixes must be made at the **pipeline level** — generators (`cli/src/generate-*.js`), extractors (`cli/src/extract-*.js`), or shared components (`tools/app-shell/src/`) — so they apply to ALL windows, not just the current one. Generated files are outputs, not sources.
@@ -427,8 +445,82 @@ When `generate-frontend.js` regenerates React components, custom code (callout t
 - **Contract tests (Node.js):** Run against JSON contract in Schema Forge. No backend needed. Cover field presence, types, visibility, searchable filters.
 - **Unit tests (JUnit):** In Etendo Go module. Cover path parsing, context builder, tab filtering.
 - **Integration tests (JUnit):** Run inside Etendo (OBBaseTest). Cover real transactions, derivations, processes, permissions.
+- **E2E tests (Playwright):** In `e2e/`. Automated UI flow tests that run against the live SPA. See below.
 - Every process must declare at least 3 edge cases.
 - Every kept rule must have a behavioral test.
+
+### E2E Testing (Playwright)
+
+End-to-end tests live in `e2e/` and validate complete UI flows (navigation, CRUD, processes) to prevent regressions.
+
+**Setup (one-time):**
+```bash
+make install-e2e    # Install Playwright + Chromium browser
+```
+
+**Running tests:**
+```bash
+make dev            # Start dev server first (in another terminal)
+make test-e2e       # Run all E2E tests with visible browser
+make test-e2e-headless  # Run headless (for CI)
+make test-e2e-debug     # Step-by-step debug mode
+make test-e2e-ui        # Interactive Playwright UI
+make test-e2e-report    # View last test report
+make test-e2e-record    # Open recorder — user clicks, Playwright generates code
+
+# Run a single test file:
+cd e2e && npx playwright test tests/flows/purchase-order-create.spec.js --headed
+
+# Run tests matching a name:
+cd e2e && npx playwright test --headed --grep "Partner Address"
+
+# Exclude a known failing test:
+cd e2e && npx playwright test --headed --grep-invert "Partner Address Bug"
+```
+
+**Test structure:**
+```
+e2e/
+├── playwright.config.js          # Config (headless: false = visible browser)
+├── MCP-DISCOVERY-GUIDE.md        # How to discover selectors with Chrome DevTools MCP
+├── tests/
+│   ├── helpers/
+│   │   ├── auth.js               # Authentication + navigation helpers
+│   │   └── selectors.js          # Shared UI selectors (update after MCP discovery)
+│   ├── smoke.spec.js             # Smoke: verify windows load without errors
+│   └── flows/
+│       ├── navigation.spec.js    # Sidebar menu + routing
+│       └── sales-order-crud.spec.js  # Full CRUD flow example
+```
+
+**Three ways to create E2E tests** (see `docs/e2e-testing-guide.md` for the full guide):
+
+1. **Record** (recommended) — Run `make test-e2e-record`, the user interacts with the browser, Playwright generates code. Then the coordinator transforms the recording into a proper test with `login()`, role-based selectors, and assertions. Recordings land in `e2e/recordings/` (gitignored).
+
+2. **Discover with agent-browser** — Use `agent-browser` CLI (`open`, `snapshot -i`, `click @eN`) to explore the live UI. The accessibility tree output maps directly to Playwright's `getByRole()` selectors. Fallback: Chrome DevTools MCP.
+
+3. **Manual** — Write tests from scratch using known selectors in `e2e/tests/helpers/selectors.js`.
+
+**When the user asks to create a new E2E test**, always propose recording first — it's the fastest path and produces the most accurate selectors since the user drives the real flow.
+
+**`data-testid` convention:** Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit `data-testid` attributes automatically. Use `page.getByTestId()` in tests — it's language-independent and survives text changes.
+
+| Pattern | Example | Component |
+|---------|---------|-----------|
+| `field-{fieldKey}` | `field-businessPartner`, `field-partnerAddress` | EntityForm (all input types) |
+| `action-{name}` | `action-save`, `action-cancel`, `action-new`, `action-save-draft` | DetailView, ListView buttons |
+| `detail-view` | — | DetailView container |
+| `list-view` | — | ListView container |
+| `row-{id}` | `row-ABC123` | DataTable rows |
+| `option-{id}` | `option-ABC123` | SearchInput suggestions |
+| `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
+
+**Reports:** Test reports (HTML + screenshots on failure) go to `artifacts/e2e-report/`.
+
+**Against deployed Etendo:**
+```bash
+BASE_URL=http://localhost:8080/etendo/web/com.etendoerp.go make test-e2e
+```
 
 ## Project Management
 

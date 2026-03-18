@@ -44,9 +44,10 @@ flowchart TD
     end
 
     subgraph FrontendGen["7. FRONTEND GENERATION (CLI)"]
-        GF["generate-frontend.js<br/>(windows, processes, reports)"]
+        GF["generate-frontend.js<br/>(dispatches by layoutType:<br/>default / kanban / calendar / custom)"]
         GM["generate-mock-data.js"]
         REACT["React SPA components"]
+        CUSTOM["Custom scaffold<br/>(windows/custom/{name}/)"]
         MOCK["mockData.js<br/>mockCatalogs.js"]
     end
 
@@ -127,7 +128,8 @@ flowchart TD
     %% Frontend: contract → React SPA + mock data
     CONTRACT -->|"types, inputMode, callouts,<br/>displayLogic, apiPrediction"| GF
     CONTRACT --> GM
-    GF --> REACT
+    GF -->|"default/kanban/calendar"| REACT
+    GF -->|"custom"| CUSTOM
     GM --> MOCK
 
     %% TODO Translation (windows only, after frontend generation)
@@ -168,7 +170,7 @@ flowchart TD
     class EXT,PEXT,PC,VAL cli
     class DP human
     class NEO,AUTH,RESOLVE,FILTER,HANDLER,DS,SEL,PROC,RPT runtime
-    class RAW_S,RAW_R,RAW_P,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,MOCK artifact
+    class RAW_S,RAW_R,RAW_P,CLASS_R,CUR_S,CUR_R,TABLES,CONTRACT,REACT,CUSTOM,MOCK artifact
     class CT,IT test
     class APP client
     class GC,PTN,GF,GM,TT cli

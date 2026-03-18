@@ -69,7 +69,18 @@ export function getAllWindowNames() {
 }
 
 /**
+ * Hand-written custom window loaders.
+ * Each entry maps a window slug to a dynamic import of its custom component.
+ * Entries are auto-registered by the pipeline when layoutType is "custom".
+ * Developers can also add entries manually for fully custom windows.
+ */
+const customLoaders = {
+  // Auto-registered by pipeline when layoutType: "custom"
+};
+
+/**
  * Build window map with loaders for all windows in menu.json.
+ * Resolution order: windowLoaders > customLoaders > PlaceholderWindow
  */
 export function buildWindowMap() {
   const map = {};
@@ -79,7 +90,9 @@ export function buildWindowMap() {
         name: item.name,
         label: item.label,
         contract: null,
-        loader: windowLoaders[item.name] || (() => import('./PlaceholderWindow.jsx')),
+        loader: windowLoaders[item.name]
+          || customLoaders[item.name]
+          || (() => import('./PlaceholderWindow.jsx')),
       };
     }
   }
