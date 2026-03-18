@@ -461,7 +461,7 @@ SELECT
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
-  c.AD_Module_ID AS column_module_id, tbl.AD_Module_ID AS table_module_id,
+  c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
   vr.Code AS val_rule_code,
