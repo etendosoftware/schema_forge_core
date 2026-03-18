@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic } from 'lucide-react';
+import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer } from 'lucide-react';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import ReportDrawer from './ReportDrawer.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -28,6 +29,7 @@ export function ListView({
   const [selectedRows, setSelectedRows] = useState([]);
   const [showUserContext, setShowUserContext] = useState(false);
   const [showSortPopover, setShowSortPopover] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [tableColumns, setTableColumns] = useState([]);
   const sortBtnRef = useRef(null);
   const scrollRef = useRef(null);
@@ -226,6 +228,15 @@ export function ListView({
                   </span>
                 )}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white"
+                onClick={() => setShowReport(true)}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </Button>
               {/* Split "New" button */}
               <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">
                 <Button
@@ -280,6 +291,14 @@ export function ListView({
           )}
         </div>
       </div>
+      <ReportDrawer
+        open={showReport}
+        onClose={() => setShowReport(false)}
+        windowName={windowName}
+        columns={tableColumns}
+        data={hook.items}
+        title={label}
+      />
     </div>
   );
 }
