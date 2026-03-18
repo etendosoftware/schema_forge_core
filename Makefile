@@ -1,4 +1,4 @@
-.PHONY: test test-frontend generate dev build install deploy clean help
+.PHONY: test test-frontend generate dev build install deploy clean help report-serve report-serve-detach report-stop report-preview
 
 # --- Testing ---
 
@@ -41,6 +41,20 @@ deploy: build ## Build app-shell and deploy to Etendo module web dir
 	@mkdir -p $(MODULE_WEB)
 	@cp -r tools/app-shell/dist/* $(MODULE_WEB)/
 	@echo "Deployed to $(MODULE_WEB)"
+
+# --- Reports ---
+
+report-serve: ## Start jsreport in Docker (foreground)
+	node cli/src/report-serve.js
+
+report-serve-detach: ## Start jsreport in Docker (background)
+	node cli/src/report-serve.js --detach
+
+report-stop: ## Stop jsreport Docker container
+	node cli/src/report-serve.js --stop
+
+report-preview: ## Preview Business Partner listing report (requires jsreport running)
+	node cli/src/report-preview.js --artifact business-partner --report listing
 
 # --- Cleanup ---
 
