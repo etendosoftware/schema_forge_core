@@ -172,7 +172,16 @@ export function generateFrontendContract(schema, rules = []) {
     entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
   }
 
-  return { window: schema.window, entities };
+  // Include layoutType from curated schema; default to "default" when absent
+  const win = { ...schema.window };
+  win.layoutType = schema.window.layoutType ?? 'default';
+
+  // Include templateConfig only for layout types that use it
+  if (win.layoutType === 'kanban' || win.layoutType === 'calendar') {
+    win.templateConfig = schema.window.templateConfig ?? null;
+  }
+
+  return { window: win, entities };
 }
 
 /**

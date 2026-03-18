@@ -402,10 +402,67 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
         case 'generate-frontend': {
           const { generateAll } = await import('./generate-frontend.js');
           const { preserveAndRegenerate } = await import('./preserve-custom-sections.js');
-          const { readFile, writeFile, mkdir } = await import('node:fs/promises');
-          const { resolve: resolvePath } = await import('node:path');
+          const { readFile, writeFile, mkdir, access } = await import('node:fs/promises');
+          const { resolve: resolvePath, dirname: dirnamePath } = await import('node:path');
+          const { fileURLToPath: fileURLToPathMod } = await import('node:url');
           const contract = JSON.parse(await readFile(`artifacts/${windowName}/contract.json`, 'utf8'));
+          const layoutType = contract.frontendContract?.window?.layoutType ?? 'default';
           const files = generateAll(contract);
+
+          if (layoutType === 'custom') {
+            // Custom scaffold path: write to windows/custom/{windowName}/
+            // Resolve the app-shell src directory relative to this file's location
+            const __filename = fileURLToPathMod(import.meta.url);
+            const repoRoot = resolvePath(dirnamePath(__filename), '../../');
+            const customDir = resolvePath(repoRoot, `tools/app-shell/src/windows/custom/${windowName}`);
+            await mkdir(customDir, { recursive: true });
+
+            const indexPath = resolvePath(customDir, 'index.jsx');
+            const catalogPath = resolvePath(customDir, 'mockCatalogs.js');
+
+            // Regeneration safety: existing files are preserved; new content gets .new suffix
+            let indexExists = false;
+            let catalogExists = false;
+            try { await access(indexPath); indexExists = true; } catch { /* first run */ }
+            try { await access(catalogPath); catalogExists = true; } catch { /* first run */ }
+
+            const indexCode = files['index.jsx'];
+            const catalogCode = files['mockCatalogs.js'];
+
+            if (indexExists) {
+              await writeFile(`${indexPath}.new`, indexCode, 'utf8');
+              console.log(`  Custom scaffold updated at ${indexPath}.new (existing index.jsx preserved)`);
+              console.log('  Use AI to diff index.jsx vs index.jsx.new and adapt changes');
+            } else {
+              await writeFile(indexPath, indexCode, 'utf8');
+              console.log(`  Custom scaffold created at ${indexPath}`);
+            }
+
+            if (catalogExists) {
+              await writeFile(`${catalogPath}.new`, catalogCode, 'utf8');
+            } else {
+              await writeFile(catalogPath, catalogCode, 'utf8');
+            }
+
+            // Auto-register the custom loader in registry.js
+            const registryPath = resolvePath(repoRoot, 'tools/app-shell/src/windows/registry.js');
+            const registryContent = await readFile(registryPath, 'utf8');
+            const loaderEntry = `  '${windowName}': () => import('./custom/${windowName}/index.jsx'),`;
+            if (!registryContent.includes(`'${windowName}'`)) {
+              // Insert after the customLoaders opening brace
+              const updated = registryContent.replace(
+                /const customLoaders = \{(\s*)\/\/ Auto-registered by pipeline/,
+                `const customLoaders = {$1// Auto-registered by pipeline\n${loaderEntry}`,
+              );
+              await writeFile(registryPath, updated, 'utf8');
+              console.log(`  Auto-registered '${windowName}' in registry.js customLoaders`);
+            }
+
+            console.log(`  ✓ Custom scaffold ready (layoutType: custom)`);
+            frontendGenerated = true;
+            break;
+          }
+
           const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
           await mkdir(outDir, { recursive: true });
 
@@ -413,6 +470,8 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           let totalUnmatched = 0;
 
           for (const [filename, code] of Object.entries(files)) {
+            // Skip internal marker keys
+            if (filename.startsWith('__')) continue;
             const filePath = resolvePath(outDir, filename);
 
             // Read existing content BEFORE overwriting (for .old backup)
@@ -429,7 +488,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             }
           }
 
-          let summary = `  ✓ ${Object.keys(files).length} frontend components generated`;
+          let summary = `  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`;
           if (totalPreserved > 0 || totalUnmatched > 0) {
             summary += ` (preserved ${totalPreserved} custom sections`;
             if (totalUnmatched > 0) {

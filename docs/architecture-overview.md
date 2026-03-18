@@ -151,7 +151,7 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | `generate-contract.js` | Curated schema + rules (windows) or `process-raw.json` (processes/reports) | `contract.json` (frontend + backend contract, process contract, or report contract) |
 | `neo-writer.js` | DB client + params | Direct INSERT/UPDATE to ETGO_SF_* tables (transactional) |
 | `push-to-neo.js` | Contract + schema artifacts | Orchestrates neo-writer: spec → populate → field updates |
-| `generate-frontend.js` | Contract | React SPA components (window entities or process forms) |
+| `generate-frontend.js` | Contract | React SPA components — dispatches by `layoutType`: default (ListView/DetailView), kanban (KanbanBoard), calendar (CalendarView), custom (scaffold in `windows/custom/`) |
 | `translate-todos.js` | Generated React components | Components with translated callout/onchange logic (AI-assisted, interactive) |
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |

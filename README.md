@@ -157,6 +157,15 @@ It is recommended to give the agent the "decisions" from the start so they can b
 - If you want to change any design decisions (e.g., field visibility, rule classifications), you can do so through the chat with the agent, and then re-run the pipeline to see the changes reflected in the generated UI. This will modify the "decisions" file so the changes will be persisted for future runs, and the pipeline steps that run will be the post-classification steps (contract generation, push to NEO, frontend generation, etc.), skipping the extraction and classification steps. Example: "Change the visibility of the 'Credit Limit' field to hidden and re-run the pipeline for the Sales Order window".
 
 
+### 6. Use Claude to solve problems and errors
+- When you encounter any issues, errors, or unexpected behavior during the pipeline execution or in the generated UI, you can ask the agent for help. It's important to differentiate between errors that are expected during development (e.g., due to incomplete implementations or edge cases) and those that indicate a problem with the pipeline or the generated code. You can ask the agent to analyze error messages, logs, or unexpected UI behavior to identify potential causes and solutions. Example: "I'm getting a validation error in the pipeline related to the 'Order Total' field. Can you help me understand why and how to fix it?"
+
+### 7. Use the agent to test the UI or investigate issues
+- "I have an issue with the generated UI for the Sales Order window. The 'Add Line' button is not working as expected. Can you help me debug this issue?" The agent can guide you through using the Chrome DevTools MCP server to inspect the frontend code, check network requests, and analyze logs to identify the root cause of the issue.
+
+### 8. Deploy the UI to the Etendo Go module
+- Once you are satisfied with the generated UI in development mode, you can ask the agent to deploy it to the Etendo Go module. The agent will build the frontend for production and copy the build artifacts to the correct location in the `com.etendoerp.go` module. Example: "Deploy the UI to the Etendo Go module".
+
 
 
 ## First Steps (Manual)
