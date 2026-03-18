@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "reportId": "report-order-not-shipped",
+  "type": "grouped-listing",
+  "source": "jasper-migration",
+  "jasper": {
+    "originalFile": "etendo_core/modules_core/org.openbravo.reports.ordersawaitingdelivery/src/org/openbravo/reports/ordersawaitingdelivery/erpCommon/ad_reports/ReportOrderNotShipped.jrxml",
+    "processId": "3DAA5E63A30D45A8ABF87701F8BD91EF",
+    "processValue": "",
+    "queryLanguage": "SQL"
+  },
+  "title": {
+    "en_US": "Report Order Not Shipped",
+    "es_ES": "Report Order Not Shipped"
+  },
+  "orientation": "landscape",
+  "columns": [
+    {
+      "field": "prodname",
+      "label": {
+        "en_US": "Product",
+        "es_ES": "Product"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "orderedqty",
+      "label": {
+        "en_US": "Ordered Quantity",
+        "es_ES": "Ordered Quantity"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "pendingqty",
+      "label": {
+        "en_US": "Pending Quantity",
+        "es_ES": "Pending Quantity"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "qtyinstock",
+      "label": {
+        "en_US": "Quantity in Stock",
+        "es_ES": "Quantity in Stock"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "aumsymbol",
+      "label": {
+        "en_US": "Unit",
+        "es_ES": "Unit"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "qtyinstock",
+      "label": {
+        "en_US": "Quantity in Stock",
+        "es_ES": "Quantity in Stock"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    }
+  ],
+  "groups": [
+    {
+      "field": "orgname",
+      "label": {
+        "en_US": "Organization",
+        "es_ES": "Organization"
+      }
+    },
+    {
+      "field": "bpname",
+      "label": {
+        "en_US": "Business Partner",
+        "es_ES": "Business Partner"
+      }
+    },
+    {
+      "field": "documentno",
+      "label": {
+        "en_US": "Order Document No.",
+        "es_ES": "Order Document No."
+      }
+    }
+  ],
+  "filters": [],
+  "defaultSort": {
+    "field": "prodname",
+    "direction": "asc"
+  },
+  "outputs": [
+    "pdf",
+    "xlsx",
+    "csv",
+    "html"
+  ],
+  "summary": {
+    "totalRows": true
+  }
+}
