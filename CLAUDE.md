@@ -78,7 +78,7 @@ git worktree add .worktrees/feat-<task-name> -b feat/<task-name>
 ```
 All agents work ONLY in that worktree — never in the main repo.
 The coordinator creates the worktree and passes the path to each agent.
-**Worktree branches are LOCAL ONLY.** They are never pushed to remote. After pipeline approval, the coordinator merges them locally into the parent branch via `git merge --squash`.
+**Worktree branches are LOCAL ONLY.** They are never pushed to remote. After pipeline approval, the coordinator merges them locally into the parent branch via `git merge`.
 
 ## Parallelization
 - Independent tasks → parallel worktrees
@@ -99,9 +99,8 @@ Worktree branches are **never pushed to remote**. All review happens locally thr
 
 After all phases APPROVE:
 1. Coordinator switches to the parent branch: `git checkout feature/ETP-XXXX`
-2. Squash-merge the worktree branch: `git merge --squash feat/<task-name>`
-3. Commit with a clear message following commit conventions
-4. Clean up: `git worktree remove .worktrees/feat-<task-name> && git branch -d feat/<task-name>`
+2. Merge the worktree branch: `git merge feat/<task-name>` (preserves full commit history)
+3. Clean up: `git worktree remove .worktrees/feat-<task-name> && git branch -d feat/<task-name>`
 
 On rejection: DEV fixes in the SAME worktree, cycle restarts from rejecting phase (no push needed).
 
@@ -263,6 +262,10 @@ schema-forge/                             # THIS REPO — design + tooling
 │   └── ui-preview/                       # Live preview with mock data
 ├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless config via webhooks)
 ├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
+├── e2e/                                  # Playwright E2E tests (UI flow automation)
+│   ├── tests/helpers/                    # Shared selectors + auth helpers
+│   ├── tests/flows/                      # Per-window flow tests
+│   └── tests/smoke.spec.js              # Smoke tests (all windows load)
 ├── core-maps/                            # system-columns.json, impact-messages.json, ad-reference-map.json, ad-menu-cache.json
 ├── pending/                              # Future proposals (callouts, OpenAPI registration)
 └── docs/                                 # All documentation
@@ -512,8 +515,56 @@ generate-frontend.js → generateAll() dispatches by layoutType
 - **Contract tests (Node.js):** Run against JSON contract in Schema Forge. No backend needed. Cover field presence, types, visibility, searchable filters.
 - **Unit tests (JUnit):** In Etendo Go module. Cover path parsing, context builder, tab filtering.
 - **Integration tests (JUnit):** Run inside Etendo (OBBaseTest). Cover real transactions, derivations, processes, permissions.
+- **E2E tests (Playwright):** In `e2e/`. Automated UI flow tests that run against the live SPA. See below.
 - Every process must declare at least 3 edge cases.
 - Every kept rule must have a behavioral test.
+
+### E2E Testing (Playwright)
+
+End-to-end tests live in `e2e/` and validate complete UI flows (navigation, CRUD, processes) to prevent regressions.
+
+**Setup (one-time):**
+```bash
+make install-e2e    # Install Playwright + Chromium browser
+```
+
+**Running tests:**
+```bash
+make dev            # Start dev server first (in another terminal)
+make test-e2e       # Run all E2E tests with visible browser
+make test-e2e-headless  # Run headless (for CI)
+make test-e2e-debug     # Step-by-step debug mode
+make test-e2e-ui        # Interactive Playwright UI
+make test-e2e-report    # View last test report
+```
+
+**Test structure:**
+```
+e2e/
+├── playwright.config.js          # Config (headless: false = visible browser)
+├── MCP-DISCOVERY-GUIDE.md        # How to discover selectors with Chrome DevTools MCP
+├── tests/
+│   ├── helpers/
+│   │   ├── auth.js               # Authentication + navigation helpers
+│   │   └── selectors.js          # Shared UI selectors (update after MCP discovery)
+│   ├── smoke.spec.js             # Smoke: verify windows load without errors
+│   └── flows/
+│       ├── navigation.spec.js    # Sidebar menu + routing
+│       └── sales-order-crud.spec.js  # Full CRUD flow example
+```
+
+**Two-phase workflow for writing E2E tests:**
+
+1. **Discover with Chrome DevTools MCP** — Use MCP tools (`navigate_page`, `take_snapshot`, `click`, `fill`) to explore the live UI, find actual DOM selectors, and verify flows work. See `e2e/MCP-DISCOVERY-GUIDE.md`.
+
+2. **Automate with Playwright** — Translate discovered selectors and flows into Playwright tests in `e2e/tests/flows/`. Update `selectors.js` with real selectors found during discovery.
+
+**Reports:** Test reports (HTML + screenshots on failure) go to `artifacts/e2e-report/`.
+
+**Against deployed Etendo:**
+```bash
+BASE_URL=http://localhost:8080/etendo/web/com.etendoerp.go make test-e2e
+```
 
 ## Project Management
 
