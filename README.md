@@ -139,7 +139,7 @@ This tool is designed to be used iteratively through the Claude Code interface, 
 Make sure your Etendo instance is running and accessible. This allows the agent to use the backend endpoints for testing and validation during the pipeline execution. It can be in SmartTomcat or Dockerized Tomcat. The important thing is that the database is accessible.
 
 ### 1. Start a new conversation in Claude Code
-- Open Claude Code and start a new conversation. IMPORTANT: Open the conversation in the schema_forge directory to ensure the agent has access to the correct context and files. 
+- Open Claude Code and start a new conversation. IMPORTANT: Open the conversation in the schema_forge directory to ensure the agent has access to the correct context and files.
 
 ### 2. Set up the agent
 - In the conversation, ask to set up the agent with the configuration required to work, such as "Etendo path", "Database credentials", "Menu cache", etc.
@@ -154,12 +154,12 @@ It is recommended to give the agent the "decisions" from the start so they can b
 
 
 ### 5. Change decisions and re-run the pipeline
-- If you want to change any design decisions (e.g., field visibility, rule classifications), you can do so through the chat with the agent, and then re-run the pipeline to see the changes reflected in the generated UI. This will modify the "decisions" file so the changes will be persisted for future runs, and the pipeline steps that run will be the post-classification steps (contract generation, push to NEO, frontend generation, etc.), skipping the extraction and classification steps. Example: "Change the visibility of the 'Credit Limit' field to hidden and re-run the pipeline for the Sales Order window". 
+- If you want to change any design decisions (e.g., field visibility, rule classifications), you can do so through the chat with the agent, and then re-run the pipeline to see the changes reflected in the generated UI. This will modify the "decisions" file so the changes will be persisted for future runs, and the pipeline steps that run will be the post-classification steps (contract generation, push to NEO, frontend generation, etc.), skipping the extraction and classification steps. Example: "Change the visibility of the 'Credit Limit' field to hidden and re-run the pipeline for the Sales Order window".
 
 
 
 
-## First Steps (Manual) 
+## First Steps (Manual)
 ### 1. Refresh the menu cache
 
 The menu cache indexes all Etendo windows, processes, and reports for fast lookup:
