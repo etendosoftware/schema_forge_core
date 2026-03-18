@@ -412,9 +412,17 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (col === columns[0] && col.type === 'string') {
       return <span className="font-medium text-blue-600">{display}</span>;
     }
+    if (col.type === 'enum') {
+      const raw = row[col.key];
+      const label = col.enumLabels?.[raw] ?? raw;
+      const badgeProps = getStatusBadgeProps(raw);
+      return <Badge {...badgeProps}>{label}</Badge>;
+    }
     if (col.type === 'status') {
-      const badgeProps = getStatusBadgeProps(row[col.key]);
-      return <Badge {...badgeProps}>{statusLabel(row[col.key])}</Badge>;
+      const raw = row[col.key];
+      const badgeProps = getStatusBadgeProps(raw);
+      const label = col.enumLabels?.[raw] ?? statusLabel(raw);
+      return <Badge {...badgeProps}>{label}</Badge>;
     }
     if (col.type === 'boolean') {
       const val = row[col.key];

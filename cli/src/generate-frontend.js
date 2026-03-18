@@ -40,6 +40,7 @@ export function getReadOnlyFields(contract, entityName) {
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
+  if (field.enumValues) return 'enum';
   if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) return 'status';
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
@@ -75,16 +76,31 @@ export function generateTableComponent(entityName, contract) {
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
+  // Generate inline enum label maps for fields with enumValues
+  const enumLabelLines = [];
+  const enumFieldVars = {};
+  for (const f of gridFields) {
+    if (f.enumValues && f.enumValues.length > 0) {
+      const varName = `${f.name}Labels`;
+      enumFieldVars[f.name] = varName;
+      const entries = f.enumValues.map(e => `  '${e.value}': '${e.name.replace(/'/g, "\\'")}'`).join(',\n');
+      enumLabelLines.push(`const ${varName} = {\n${entries},\n};`);
+    }
+  }
+
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart} },`;
+    const enumLabelsPart = enumFieldVars[f.name] ? `, enumLabels: ${enumFieldVars[f.name]}` : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart}${enumLabelsPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
-  return `import { DataTable } from '@/components/contract-ui';
+  const enumBlock = enumLabelLines.length > 0 ? '\n' + enumLabelLines.join('\n\n') + '\n' : '';
 
+  return `import { DataTable } from '@/components/contract-ui';
+${enumBlock}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}

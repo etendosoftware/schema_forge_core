@@ -96,6 +96,7 @@ export function generateFrontendContract(schema, rules = []) {
         form: f.form,
       };
       if (f.reference) mapped.reference = f.reference;
+      if (f.enumValues) mapped.enumValues = f.enumValues;
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
 

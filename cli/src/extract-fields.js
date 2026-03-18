@@ -269,7 +269,7 @@ function deduplicateFieldNames(fields) {
  * Groups rows by tab, maps AD_Reference_IDs to schema types, and produces
  * the schema-raw.json structure per TDD 2.1.
  */
-export function buildSchema(rows, systemColumns, refMap) {
+export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
   if (!rows || rows.length === 0) {
     return { window: null, entities: [] };
   }
@@ -365,6 +365,14 @@ export function buildSchema(rows, systemColumns, refMap) {
         const reference = buildReference(row);
         if (reference) {
           fieldDef.reference = reference;
+        }
+      }
+
+      // Attach enum values for List-type fields (AD_Reference_ID = 17)
+      if (schemaType === 'enum' && row.ad_reference_value_id) {
+        const enumValues = enumValuesMap[row.ad_reference_value_id];
+        if (enumValues) {
+          fieldDef.enumValues = enumValues;
         }
       }
 
@@ -519,9 +527,33 @@ export async function main(windowId, windowName) {
       return { window: null, entities: [] };
     }
 
+    // Fetch enum values for List-type fields (AD_Reference_ID = 17)
+    const listRefIds = [...new Set(
+      rows
+        .filter(r => String(r.ad_reference_id) === '17' && r.ad_reference_value_id)
+        .map(r => r.ad_reference_value_id)
+    )];
+
+    const enumValuesMap = {};
+    if (listRefIds.length > 0) {
+      const enumResult = await pool.query(
+        `SELECT rl.AD_Reference_ID, rl.Value, rl.Name
+         FROM AD_Ref_List rl
+         WHERE rl.AD_Reference_ID = ANY($1)
+           AND rl.IsActive = 'Y'
+         ORDER BY rl.SeqNo, rl.Name`,
+        [listRefIds]
+      );
+      for (const row of enumResult.rows) {
+        const refId = row.ad_reference_id;
+        if (!enumValuesMap[refId]) enumValuesMap[refId] = [];
+        enumValuesMap[refId].push({ value: row.value, name: row.name });
+      }
+    }
+
     // Use window name from DB if not provided
     const resolvedName = windowName ?? rows[0].window_name;
-    const schema = buildSchema(rows, systemColumns, refMap);
+    const schema = buildSchema(rows, systemColumns, refMap, enumValuesMap);
 
     // Write to artifacts directory
     const artifactsDir = join(ROOT, 'artifacts', resolvedName);
