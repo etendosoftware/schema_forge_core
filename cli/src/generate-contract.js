@@ -89,6 +89,7 @@ export function generateFrontendContract(schema, rules = []) {
         name: f.name,
         apiKey: f.apiKey || f.name,
         column: f.column,
+        label: f.label,
         type: f.type,
         tsType: mapTsType(f.type),
         visibility: f.visibility,
