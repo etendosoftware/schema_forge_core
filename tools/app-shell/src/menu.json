@@ -41,7 +41,7 @@
         { "name": "payment-out", "label": "Payments Out" },
         { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
         { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "recurring-invoice", "label": "Recurring Invoices" },
+        { "name": "recurring-invoice", "label": "Recurring Invoices", "hidden": true },
         { "name": "reports", "label": "Reports" }
       ]
     },
@@ -54,7 +54,7 @@
         { "name": "physical-inventory", "label": "Physical Inventory" },
         { "name": "goods-movements", "label": "Goods Movements" },
         { "name": "warehouse", "label": "Warehouses" },
-        { "name": "warehouse-storage-bins", "label": "Storage Bins" }
+        { "name": "warehouse-storage-bins", "label": "Storage Bins", "hidden": true }
       ]
     },
     {
@@ -62,19 +62,20 @@
       "icon": "Users",
       "items": [
         { "name": "contacts", "label": "Contacts" },
-        { "name": "business-partner", "label": "Business Partners" },
-        { "name": "crm", "label": "CRM" },
-        { "name": "deal", "label": "Deals" },
-        { "name": "activity", "label": "Activities" },
-        { "name": "lead", "label": "Leads" },
-        { "name": "hr", "label": "HR" },
-        { "name": "employee", "label": "Employees" },
-        { "name": "absence", "label": "Absences" }
+        { "name": "business-partner", "label": "Business Partners", "hidden": true },
+        { "name": "crm", "label": "CRM", "hidden": true },
+        { "name": "deal", "label": "Deals", "hidden": true },
+        { "name": "activity", "label": "Activities", "hidden": true },
+        { "name": "lead", "label": "Leads", "hidden": true },
+        { "name": "hr", "label": "HR", "hidden": true },
+        { "name": "employee", "label": "Employees", "hidden": true },
+        { "name": "absence", "label": "Absences", "hidden": true }
       ]
     },
     {
       "group": "Projects",
       "icon": "FolderKanban",
+      "hidden": true,
       "items": [
         { "name": "project", "label": "Projects" },
         { "name": "time-tracking", "label": "Time Tracking" },
