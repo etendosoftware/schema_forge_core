@@ -312,7 +312,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       const classification = classifyField(row, systemColumns);
       const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
       const isPk = row.columnname === tab.tableName + '_ID';
-      const isCoreModule = row.table_module_id === '0' || row.column_module_id !== '0';
+      const isCoreModule = row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
       const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
       const fieldDef = {
         name: apiKey,

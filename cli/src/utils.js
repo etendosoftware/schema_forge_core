@@ -11,23 +11,6 @@ export function generateVersion() {
   return '0.1.0';
 }
 
-// --- Reserved Java keywords map (from NamingUtil.java lines 47-98) ---
-const RESERVED_NAMES = {
-  'case': 'cse', 'char': 'chr', 'abstract': 'abstrct', 'continue': 'cntinue',
-  'for': 'fr', 'new': 'nw', 'switch': 'swtch', 'assert': 'assrt',
-  'default': 'deflt', 'package': 'pkg', 'synchronized': 'synchrnized',
-  'boolean': 'bolean', 'do': 'd', 'if': 'i', 'private': 'prvate',
-  'this': 'ths', 'break': 'brk', 'double': 'dble', 'implements': 'implments',
-  'protected': 'prtected', 'throw': 'thrw', 'byte': 'bte', 'else': 'els',
-  'import': 'imprt', 'public': 'pblic', 'throws': 'thrws', 'enum': 'enm',
-  'instanceof': 'instnceof', 'return': 'rturn', 'transient': 'trnsnt',
-  'catch': 'ctch', 'extends': 'xtends', 'int': 'nt', 'short': 'shrt',
-  'try': 'tr', 'final': 'fnl', 'interface': 'interfce', 'static': 'statc',
-  'void': 'vod', 'class': 'clss', 'finally': 'finlly', 'long': 'lng',
-  'strictfp': 'strctfp', 'volatile': 'volatle', 'float': 'flt',
-  'native': 'natve', 'super': 'spr', 'while': 'whle',
-};
-
 /**
  * Strip the module prefix from a mapping name.
  * Mirrors NamingUtil.stripPrefix():
@@ -108,7 +91,9 @@ function lowerCaseFirst(value) {
  *   3. camelCaseIt on underscores, then on spaces
  *   4. stripIllegalCharacters (keep only a-zA-Z, digits not at position 0)
  *   5. lowerCaseFirst
- *   6. Reserved word replacement
+ *
+ * Note: NamingUtil.getSafeJavaName() (reserved word replacement) is NOT part of
+ * this algorithm — it is only used for Java code generation, not for API property names.
  *
  * @param {string} adColumnName - The AD_Column.Name (display name, e.g. "Order Date")
  * @param {object} [options]
@@ -139,30 +124,7 @@ export function toPropertyName(adColumnName, { isPk = false, isCoreModule = true
   // Step 5: Lowercase first character
   name = lowerCaseFirst(name);
 
-  // Step 6: Reserved word check
-  if (RESERVED_NAMES[name]) {
-    name = RESERVED_NAMES[name];
-  }
-
   return name;
-}
-
-/**
- * Legacy toPropertyName — simplified version kept for reference.
- * @deprecated Use toPropertyName() instead, which faithfully ports NamingUtil.java.
- */
-export function toPropertyNameLegacy(adColumnName) {
-  if (!adColumnName) return '';
-  const cleaned = adColumnName.replace(/[^a-zA-Z0-9 ]/g, '');
-  const parts = cleaned.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '';
-  const joined = parts
-    .map((word, i) => {
-      if (i === 0) return word.charAt(0).toLowerCase() + word.slice(1);
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .join('');
-  return joined.replace(/^[0-9]+/, '');
 }
 
 export function toCamelCase(columnName) {

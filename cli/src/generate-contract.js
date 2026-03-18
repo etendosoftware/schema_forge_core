@@ -165,11 +165,11 @@ export function generateFrontendContract(schema, rules = []) {
 
     const searchableFields = visibleFields
       .filter(f => f.searchable)
-      .map(f => f.name);
+      .map(f => f.apiKey || f.name);
 
     const computedFields = visibleFields
       .filter(f => f.derivation)
-      .map(f => ({ name: f.name, derivation: f.derivation }));
+      .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
     entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
   }
@@ -207,7 +207,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
 
     const searchableFields = entity.fields
       .filter(f => f.searchable)
-      .map(f => f.name);
+      .map(f => f.apiKey || f.name);
 
     const basePath = `/${entity.name}`;
 
