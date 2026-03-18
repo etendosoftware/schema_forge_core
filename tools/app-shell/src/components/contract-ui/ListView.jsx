@@ -295,9 +295,13 @@ export function ListView({
         open={showReport}
         onClose={() => setShowReport(false)}
         windowName={windowName}
-        columns={tableColumns}
-        data={hook.items}
+        columns={tableColumns.map(col => ({ ...col, label: t(col.column) ?? col.label ?? col.key }))}
         title={label}
+        apiBaseUrl={apiBaseUrl}
+        entity={entity}
+        token={token}
+        sortColumn={hook.sortColumn}
+        sortDirection={hook.sortDirection}
       />
     </div>
   );

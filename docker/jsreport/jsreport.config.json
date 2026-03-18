@@ -9,9 +9,10 @@
     },
     "chrome-pdf": {
       "launchOptions": {
-        "args": ["--no-sandbox", "--disable-dev-shm-usage"]
+        "executablePath": "/usr/bin/chromium-browser",
+        "args": ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
       },
-      "timeout": 30000
+      "timeout": 60000
     },
     "handlebars": {
       "enabled": true
@@ -22,7 +23,7 @@
     }
   },
   "templatingEngines": {
-    "timeout": 30000,
+    "timeout": 60000,
     "strategy": "in-process"
   },
   "logger": {

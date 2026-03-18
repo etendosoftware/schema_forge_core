@@ -47,12 +47,17 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/sws': {
-        target: 'http://localhost:8080/etendo',
+        target: 'http://localhost:8080/etendo_sf',
         changeOrigin: true,
       },
       '/webhooks': {
-        target: 'http://localhost:8080/etendo',
+        target: 'http://localhost:8080/etendo_sf',
         changeOrigin: true,
+      },
+      '/jsreport': {
+        target: 'http://localhost:5488',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/jsreport/, ''),
       },
     },
   },
