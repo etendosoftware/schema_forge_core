@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -208,10 +209,20 @@ function ReportViewer({ report, onBack }) {
   );
 }
 
+const CATEGORY_LABELS = {
+  purchases: { en: 'Purchases', es: 'Compras' },
+  finance: { en: 'Finance', es: 'Finanzas' },
+  sales: { en: 'Sales', es: 'Ventas' },
+  inventory: { en: 'Inventory', es: 'Inventario' },
+  other: { en: 'Other', es: 'Otros' },
+};
+
 export default function ReportViewerPage() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get('category');
 
   useEffect(() => {
     fetch('/api/reports')
@@ -225,10 +236,28 @@ export default function ReportViewerPage() {
     return <ReportViewer report={selectedReport} onBack={() => setSelectedReport(null)} />;
   }
 
+  // Group reports by category, optionally filtering
+  const filtered = categoryFilter
+    ? reports.filter(r => r.category === categoryFilter)
+    : reports;
+
+  const grouped = {};
+  for (const r of filtered) {
+    const cat = r.category || 'other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(r);
+  }
+
+  const categoryTitle = categoryFilter && CATEGORY_LABELS[categoryFilter]
+    ? CATEGORY_LABELS[categoryFilter].es
+    : null;
+
   return (
     <div className="h-full flex flex-col">
       <div className="px-6 pt-6 pb-4">
-        <h1 className="text-xl font-bold text-foreground">Reports</h1>
+        <h1 className="text-xl font-bold text-foreground">
+          {categoryTitle ? `Informes — ${categoryTitle}` : 'Reports'}
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">Available reports — click to run with real data</p>
       </div>
       <div className="flex-1 overflow-auto px-6 pb-6">
@@ -236,16 +265,27 @@ export default function ReportViewerPage() {
           <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" /> Loading reports...
           </div>
-        ) : reports.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">
             <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p>No reports found</p>
             <p className="text-xs mt-1">No reports configured yet</p>
           </div>
         ) : (
-          <div className="grid gap-3 max-w-2xl">
-            {reports.map(r => (
-              <ReportCard key={r.id} report={r} onRun={setSelectedReport} />
+          <div className="space-y-6 max-w-2xl">
+            {Object.entries(grouped).map(([cat, catReports]) => (
+              <div key={cat}>
+                {!categoryFilter && Object.keys(grouped).length > 1 && (
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    {CATEGORY_LABELS[cat]?.es || cat}
+                  </h2>
+                )}
+                <div className="grid gap-3">
+                  {catReports.map(r => (
+                    <ReportCard key={r.id} report={r} onRun={setSelectedReport} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

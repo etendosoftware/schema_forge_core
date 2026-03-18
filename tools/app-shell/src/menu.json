@@ -31,7 +31,7 @@
         { "name": "purchase-invoice", "label": "Invoices" },
         { "name": "return-to-vendor", "label": "Returns" },
         { "name": "return-to-vendor-shipment", "label": "Return Shipments" },
-        { "name": "report-viewer", "label": "Reports" }
+        { "name": "report-viewer-purchases", "label": "Reports", "path": "report-viewer?category=purchases" }
       ]
     },
     {
@@ -43,7 +43,7 @@
         { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
         { "name": "chart-of-accounts", "label": "Chart of Accounts" },
         { "name": "recurring-invoice", "label": "Recurring Invoices", "hidden": true },
-        { "name": "report-viewer", "label": "Reports" }
+        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
       ]
     },
     {

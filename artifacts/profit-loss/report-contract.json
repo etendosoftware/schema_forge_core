@@ -1,6 +1,7 @@
 {
   "version": 1,
   "reportId": "profit-loss",
+  "category": "finance",
   "type": "grouped-listing",
   "source": "manual",
   "title": { "en_US": "Profit & Loss", "es_ES": "Pérdidas y Ganancias" },

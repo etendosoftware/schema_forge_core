@@ -1,6 +1,7 @@
 {
   "version": 1,
   "reportId": "balance-sheet",
+  "category": "finance",
   "type": "grouped-listing",
   "source": "manual",
   "title": { "en_US": "Balance Sheet", "es_ES": "Balance General" },

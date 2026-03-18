@@ -46,7 +46,7 @@ const ICON_MAP = {
 export function findActiveGroup(menuGroups, pathname) {
   const currentPath = pathname.replace(/^\//, '');
   return menuGroups.find((g) =>
-    g.items.some((item) => item.name === currentPath)
+    g.items.some((item) => item.name === currentPath || (item.path && item.path.split('?')[0] === currentPath))
   ) || null;
 }
 
@@ -212,11 +212,12 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                 {isOpen && (
                   <div className="ml-7 border-l border-border/50 pl-2 py-0.5">
                     {g.items.map((item) => {
-                      const isItemActive = item.name === currentPath;
+                      const itemPath = item.path || item.name;
+                      const isItemActive = currentPath === item.name || currentPath === itemPath.split('?')[0];
                       return (
                         <NavLink
                           key={item.name}
-                          to={`/${item.name}`}
+                          to={`/${itemPath}`}
                           className={cn(
                             'block px-3 py-1.5 text-sm rounded-md transition-colors',
                             isItemActive

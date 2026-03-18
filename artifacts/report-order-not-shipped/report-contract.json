@@ -1,6 +1,7 @@
 {
   "version": 1,
   "reportId": "report-order-not-shipped",
+  "category": "purchases",
   "type": "grouped-listing",
   "source": "jasper-migration",
   "jasper": {

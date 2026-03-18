@@ -1,6 +1,7 @@
 {
   "version": 1,
   "reportId": "aging-receivable",
+  "category": "finance",
   "type": "listing",
   "source": "manual",
   "title": { "en_US": "Aging of Receivables", "es_ES": "Antigüedad de Cobros" },

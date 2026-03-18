@@ -56,6 +56,7 @@ function listReports() {
             id: contract.reportId,
             title: contract.title,
             type: contract.type,
+            category: contract.category || 'other',
             orientation: contract.orientation,
             outputs: contract.outputs,
           });

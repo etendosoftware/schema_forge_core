@@ -1,6 +1,7 @@
 {
   "version": 1,
   "reportId": "report-general-ledger",
+  "category": "finance",
   "type": "grouped-listing",
   "source": "jasper-migration",
   "jasper": {
