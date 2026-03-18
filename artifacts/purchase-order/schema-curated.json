@@ -77,7 +77,8 @@
           "form": true,
           "searchable": false,
           "section": "principal",
-          "reference": "DocumentType"
+          "reference": "DocumentType",
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "documentNo",
@@ -125,7 +126,7 @@
           "name": "processed",
           "column": "Processed",
           "type": "boolean",
-          "visibility": "system",
+          "visibility": "readOnly",
           "required": true,
           "grid": false,
           "form": false,
@@ -171,7 +172,8 @@
           "required": true,
           "grid": true,
           "form": true,
-          "searchable": true
+          "searchable": true,
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "businessPartner",
@@ -183,7 +185,8 @@
           "form": true,
           "searchable": true,
           "reference": "BusinessPartner",
-          "inputMode": "search"
+          "inputMode": "search",
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "partnerAddress",
@@ -199,7 +202,8 @@
           "dependsOn": {
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
-          }
+          },
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "warehouse",
@@ -211,7 +215,8 @@
           "form": true,
           "searchable": false,
           "reference": "Warehouse",
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "scheduledDeliveryDate",
@@ -221,7 +226,8 @@
           "required": true,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "paymentMethod",
@@ -233,7 +239,8 @@
           "form": true,
           "searchable": false,
           "reference": "PaymentMethod",
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "paymentTerms",
@@ -245,7 +252,8 @@
           "form": true,
           "searchable": false,
           "reference": "PaymentTerm",
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "priceList",
@@ -257,7 +265,8 @@
           "form": true,
           "searchable": false,
           "reference": "PriceList",
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "invoiceAddress",
@@ -273,7 +282,8 @@
           "dependsOn": {
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
-          }
+          },
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "description",
@@ -283,7 +293,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "deliveryNotes",
@@ -293,7 +304,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": false
+          "searchable": false,
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "orderReference",
@@ -303,7 +315,8 @@
           "required": false,
           "grid": false,
           "form": true,
-          "searchable": true
+          "searchable": true,
+          "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         {
           "name": "grandTotalAmount",

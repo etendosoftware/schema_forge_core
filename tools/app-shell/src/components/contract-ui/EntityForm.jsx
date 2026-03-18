@@ -214,8 +214,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     <div className={gridClass}>
       {displayFields.map(f => {
         const label = t(f.column) ?? f.label ?? f.key;
-        // Field is read-only if statically declared OR dynamically set by evaluate-display
-        const isReadOnly = f.readOnly || displayLogic?.readOnly?.[f.key] === true;
+        // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
+        const isReadOnly = f.readOnly
+          || displayLogic?.readOnly?.[f.key] === true
+          || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
         if (f.type === 'checkbox') {
           return (
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>

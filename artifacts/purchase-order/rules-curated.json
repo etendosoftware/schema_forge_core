@@ -282,7 +282,8 @@
       "entity": "order",
       "decision": "Keep",
       "description": "Make header fields read-only when order is processed (@Processed@='Y')",
-      "impactIfOmitted": "Users could attempt to edit processed orders"
+      "impactIfOmitted": "Users could attempt to edit processed orders",
+      "translated": "record.processed === true"
     },
     {
       "name": "ReadOnly_Processed_Lines",
