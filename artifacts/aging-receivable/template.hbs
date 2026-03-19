@@ -15,20 +15,22 @@
 
   <table class="report-table">
     <thead><tr>
-      <th style="width: 25%">Customer</th>
-      <th style="width: 13%">Current</th>
-      <th style="width: 13%">1-30 Days</th>
-      <th style="width: 13%">31-60 Days</th>
-      <th style="width: 13%">90+ Days</th>
-      <th style="width: 13%">Total</th>
+      <th style="width: 25%">Business Partner</th>
+      <th style="width: 12%">Current</th>
+      <th style="width: 12%">1-30 Days</th>
+      <th style="width: 12%">31-60 Days</th>
+      <th style="width: 12%">61-90 Days</th>
+      <th style="width: 12%">91-120 Days</th>
+      <th style="width: 12%">Total</th>
     </tr></thead>
     <tbody>
       {{#each rows}}<tr>
-        <td>{{lookup this 'customer'}}</td>
+        <td>{{lookup this 'bPartner'}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'current')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'days30')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'days60')}}</td>
-        <td class="cell-amount">{{formatCurrency (lookup this 'days90plus')}}</td>
+        <td class="cell-amount">{{formatCurrency (lookup this 'days90')}}</td>
+        <td class="cell-amount">{{formatCurrency (lookup this 'days120')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'total')}}</td>
       </tr>{{/each}}
     </tbody>

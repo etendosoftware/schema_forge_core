@@ -74,7 +74,51 @@ async function fetchReportData(reportId, { limit } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
-  // If contract has a mockDataFile, use it directly (no DB needed)
+  // Data source: NEO API (calls Etendo backend via NeoHandler)
+  if (contract.neo?.endpoint) {
+    try {
+      const neoUrl = `http://localhost:8080/etendo_sf${contract.neo.endpoint}`;
+      const neoBody = contract.neo.body || {};
+
+      // Get auth token from Etendo
+      const loginRes = await fetch('http://localhost:8080/etendo_sf/sws/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: 'admin', password: 'admin' }),
+      });
+      const loginData = await loginRes.json();
+      const token = loginData.token;
+
+      const neoRes = await fetch(neoUrl, {
+        method: contract.neo.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(neoBody),
+      });
+
+      if (neoRes.ok) {
+        const data = await neoRes.json();
+        // Navigate to the data path (e.g., "response.data")
+        let rows = data;
+        if (contract.neo.dataPath) {
+          for (const key of contract.neo.dataPath.split('.')) {
+            rows = rows?.[key];
+          }
+        }
+        if (Array.isArray(rows)) {
+          if (limit) rows = rows.slice(0, parseInt(limit, 10));
+          return { rows, contract };
+        }
+      }
+    } catch (e) {
+      // Fall through to mock data if NEO is unavailable
+      console.warn(`[report-api] NEO endpoint failed for ${reportId}: ${e.message}. Falling back to mock data.`);
+    }
+  }
+
+  // Fallback: mock data file
   if (contract.mockDataFile) {
     const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
     if (existsSync(mockPath)) {

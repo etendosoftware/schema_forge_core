@@ -3,20 +3,28 @@
   "reportId": "aging-receivable",
   "category": "finance",
   "type": "listing",
-  "source": "manual",
+  "source": "neo",
   "title": { "en_US": "Aging of Receivables", "es_ES": "Antigüedad de Cobros" },
   "orientation": "landscape",
+  "neo": {
+    "endpoint": "/sws/neo/aging-report",
+    "method": "POST",
+    "body": { "recOrPay": "RECEIVABLES" },
+    "dataPath": "response.data",
+    "handler": "agingReportHandler"
+  },
   "columns": [
-    { "field": "customer", "label": { "en_US": "Customer", "es_ES": "Cliente" }, "type": "string", "width": "25%", "sortable": true },
-    { "field": "current", "label": { "en_US": "Current", "es_ES": "Corriente" }, "type": "amount", "width": "13%", "sortable": true },
-    { "field": "days30", "label": { "en_US": "1-30 Days", "es_ES": "1-30 Días" }, "type": "amount", "width": "13%", "sortable": true },
-    { "field": "days60", "label": { "en_US": "31-60 Days", "es_ES": "31-60 Días" }, "type": "amount", "width": "13%", "sortable": true },
-    { "field": "days90plus", "label": { "en_US": "90+ Days", "es_ES": "90+ Días" }, "type": "amount", "width": "13%", "sortable": true },
-    { "field": "total", "label": { "en_US": "Total", "es_ES": "Total" }, "type": "amount", "width": "13%", "sortable": true }
+    { "field": "bPartner", "label": { "en_US": "Business Partner", "es_ES": "Tercero" }, "type": "string", "width": "25%", "sortable": true },
+    { "field": "current", "label": { "en_US": "Current", "es_ES": "Corriente" }, "type": "amount", "width": "12%", "sortable": true },
+    { "field": "days30", "label": { "en_US": "1-30 Days", "es_ES": "1-30 Días" }, "type": "amount", "width": "12%", "sortable": true },
+    { "field": "days60", "label": { "en_US": "31-60 Days", "es_ES": "31-60 Días" }, "type": "amount", "width": "12%", "sortable": true },
+    { "field": "days90", "label": { "en_US": "61-90 Days", "es_ES": "61-90 Días" }, "type": "amount", "width": "12%", "sortable": true },
+    { "field": "days120", "label": { "en_US": "91-120 Days", "es_ES": "91-120 Días" }, "type": "amount", "width": "12%", "sortable": true },
+    { "field": "total", "label": { "en_US": "Total", "es_ES": "Total" }, "type": "amount", "width": "12%", "sortable": true }
   ],
   "groups": [],
   "filters": [],
-  "defaultSort": { "field": "customer", "direction": "asc" },
+  "defaultSort": { "field": "bPartner", "direction": "asc" },
   "outputs": ["pdf", "xlsx", "csv", "html"],
   "summary": { "totalRows": true },
   "mockDataFile": "mock-data.json"
