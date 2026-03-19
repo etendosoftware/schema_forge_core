@@ -36,6 +36,37 @@ function ReportCard({ report, onRun }) {
   );
 }
 
+function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
+  if (!parameters || parameters.length === 0) return null;
+  return (
+    <div className="px-4 py-3 border-b border-border/30 bg-white shrink-0">
+      <div className="flex items-end gap-3 flex-wrap">
+        {parameters.map(p => {
+          const label = p.label?.en_US || p.name;
+          return (
+            <div key={p.name} className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">{label}</label>
+              <input
+                type={p.type === 'date' ? 'date' : p.type === 'number' ? 'number' : 'text'}
+                value={values[p.name] || ''}
+                onChange={e => onChange(p.name, e.target.value)}
+                className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-36"
+              />
+            </div>
+          );
+        })}
+        <button
+          onClick={() => onSubmit(values)}
+          disabled={loading}
+          className="h-8 px-4 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          Run Report
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ReportViewer({ report, onBack, token }) {
   const iframeRef = useRef(null);
   const [activeFormat, setActiveFormat] = useState('preview');
@@ -43,6 +74,17 @@ function ReportViewer({ report, onBack, token }) {
   const [error, setError] = useState(null);
   const [recordCount, setRecordCount] = useState(null);
   const previewHtmlRef = useRef('');
+  const [params, setParams] = useState(() => {
+    const defaults = {};
+    for (const p of report.parameters || []) {
+      if (p.default === '__TODAY__') {
+        defaults[p.name] = new Date().toISOString().split('T')[0];
+      } else {
+        defaults[p.name] = p.default || '';
+      }
+    }
+    return defaults;
+  });
 
   const renderReport = useCallback(async (format) => {
     setLoading(true);
@@ -52,7 +94,7 @@ function ReportViewer({ report, onBack, token }) {
       const res = await fetch(`/api/reports/${report.id}/render`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ format }),
+        body: JSON.stringify({ format, params }),
       });
 
       if (!res.ok) {
@@ -188,6 +230,14 @@ function ReportViewer({ report, onBack, token }) {
           </button>
         </div>
       </div>
+
+      <ReportParamsForm
+        parameters={report.parameters}
+        values={params}
+        onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
+        onSubmit={() => renderReport(activeFormat === 'pdf' ? 'html' : activeFormat)}
+        loading={loading}
+      />
 
       {/* Preview */}
       <div className="flex-1 overflow-hidden bg-slate-100 p-4">

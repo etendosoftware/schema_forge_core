@@ -59,6 +59,7 @@ function listReports() {
             category: contract.category || 'other',
             orientation: contract.orientation,
             outputs: contract.outputs,
+            parameters: contract.parameters || [],
           });
         }
       } catch { /* skip malformed */ }
@@ -73,7 +74,7 @@ function listReports() {
  *   VITE_MOCK=true  → use mock data files
  *   VITE_MOCK=false → use real data (NEO API or Jasper SQL)
  */
-async function fetchReportData(reportId, { limit, authToken } = {}) {
+async function fetchReportData(reportId, { limit, authToken, params = {} } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
@@ -98,7 +99,7 @@ async function fetchReportData(reportId, { limit, authToken } = {}) {
     if (!authToken) throw new Error('No auth token — user must be logged in');
     const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo_sf';
     const neoUrl = `${etendoBase}${contract.neo.endpoint}`;
-    const neoBody = contract.neo.body || {};
+    const neoBody = { ...(contract.neo.body || {}), ...params };
 
     const neoRes = await fetch(neoUrl, {
       method: contract.neo.method || 'POST',
@@ -174,6 +175,14 @@ async function fetchReportData(reportId, { limit, authToken } = {}) {
 
     // Parameterize query — support both Jasper-style hardcoded IDs and __PLACEHOLDER__ tokens
     sql = sql.replace(/__CLIENT_ID__/g, clientId);
+    // Replace user parameter placeholders (__PARAM_NAME__ format)
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') {
+        sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), String(value).replace(/'/g, "''"));
+      }
+    }
+    // Remove optional date filter clauses where params were not provided
+    sql = sql.replace(/AND\s*\('[^']*'\s*=\s*''\s*OR\s*\w+\.\w+\s*[><=]+\s*'__\w+__'[^)]*\)/gi, '');
     sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
     sql = sql.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi,
       `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
@@ -231,11 +240,17 @@ export default function reportApiPlugin() {
           const reportId = renderMatch[1];
           let body = '';
           for await (const chunk of req) body += chunk;
-          const { format = 'html', limit } = JSON.parse(body || '{}');
+          const { format = 'html', limit, params = {} } = JSON.parse(body || '{}');
 
           try {
             const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-            const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
+            const { rows, contract } = await fetchReportData(reportId, { limit, authToken, params });
+            const activeFilters = Object.entries(params)
+              .filter(([_, v]) => v && v !== '')
+              .map(([k, v]) => {
+                const paramDef = contract.parameters?.find(p => p.name === k);
+                return { label: paramDef?.label?.en_US || k, value: v };
+              });
             const artifactDir = join(ARTIFACTS_DIR, reportId);
             const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
             const helpersPath = join(artifactDir, 'helpers.js');
@@ -249,7 +264,7 @@ export default function reportApiPlugin() {
 
             const payload = {
               template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
-              data: { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: [] }, rows },
+              data: { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters }, rows },
             };
 
             if (recipe === 'chrome-pdf') {
