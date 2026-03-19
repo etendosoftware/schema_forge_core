@@ -22,7 +22,10 @@
     "sf-gen-log": "./src/generation-log.js",
     "sf-test-report": "./src/test-report-html.js",
     "sf-check-version": "./src/check-version.js",
-    "sf-lock": "./src/lock-window.js"
+    "sf-lock": "./src/lock-window.js",
+    "sf-report-contract": "./src/report-contract.js",
+    "sf-report-serve": "./src/report-serve.js",
+    "sf-report-preview": "./src/report-preview.js"
   },
   "devDependencies": {
     "ajv": "^8.17.0"

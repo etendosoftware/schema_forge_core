@@ -46,10 +46,18 @@ const ICON_MAP = {
   FileJson,
 };
 
-export function findActiveGroup(menuGroups, pathname) {
+export function findActiveGroup(menuGroups, pathname, search) {
   const currentPath = pathname.replace(/^\//, '');
+  const currentFull = currentPath + (search || '');
   return menuGroups.find((g) =>
-    g.items.some((item) => item.name === currentPath)
+    g.items.some((item) => {
+      const itemPath = item.path || item.name;
+      // Exact match including query params for items that use ?category=
+      if (item.path && item.path.includes('?')) {
+        return currentFull === itemPath;
+      }
+      return item.name === currentPath;
+    })
   ) || null;
 }
 
@@ -60,7 +68,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   const { selectedOrg } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname.replace(/^\//, '');
-  const activeGroup = findActiveGroup(menuGroups, location.pathname);
+  const activeGroup = findActiveGroup(menuGroups, location.pathname, location.search);
   const tMenu = useMenuLabel();
 
   const [openGroups, setOpenGroups] = useState(() => {
@@ -210,11 +218,15 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                 {isOpen && (
                   <div className="ml-7 border-l border-border/50 pl-2 py-0.5">
                     {g.items.map((item) => {
-                      const isItemActive = item.name === currentPath;
+                      const itemPath = item.path || item.name;
+                      const currentFull = currentPath + location.search;
+                      const isItemActive = item.path?.includes('?')
+                        ? currentFull === itemPath
+                        : currentPath === item.name;
                       return (
                         <NavLink
                           key={item.name}
-                          to={`/${item.name}`}
+                          to={`/${itemPath}`}
                           className={cn(
                             'block px-3 py-1.5 text-sm rounded-md transition-colors',
                             isItemActive

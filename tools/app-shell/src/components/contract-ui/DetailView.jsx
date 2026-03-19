@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
@@ -13,6 +13,7 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
+import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
 
 /**
  * Full-page detail view for a single entity record.
@@ -46,6 +47,7 @@ export function DetailView({
   const tMenu = useMenuLabel();
   const [addingLine, setAddingLine] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [showPrint, setShowPrint] = useState(false);
   const [directFetched, setDirectFetched] = useState(false);
 
   // Track fields whose values were set by a callout response to avoid re-triggering
@@ -311,6 +313,16 @@ export function DetailView({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Print document */}
+            {!isNew && recordId && (
+              <button
+                onClick={() => setShowPrint(true)}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                title="Print"
+              >
+                <Printer className="h-4 w-4" />
+              </button>
+            )}
             {/* More actions */}
             <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
               <MoreVertical className="h-4 w-4" />
@@ -489,6 +501,13 @@ export function DetailView({
           </div>
         </div>
       </div>
+      <DocumentPrintDrawer
+        open={showPrint}
+        onClose={() => setShowPrint(false)}
+        windowName={windowName}
+        documentIds={recordId ? [recordId] : []}
+        token={token}
+      />
     </div>
   );
 }
