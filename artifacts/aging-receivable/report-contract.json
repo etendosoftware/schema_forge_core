@@ -7,7 +7,7 @@
   "title": { "en_US": "Aging of Receivables", "es_ES": "Antigüedad de Cobros" },
   "orientation": "landscape",
   "neo": {
-    "endpoint": "/sws/neo/aging-report",
+    "endpoint": "/sws/neo/aging-receivable",
     "method": "POST",
     "body": { "recOrPay": "RECEIVABLES" },
     "dataPath": "response.data",
