@@ -1,1 +1,222 @@
-{ "processes": [] }
+{
+  "version": "0.1.0",
+  "processes": [
+    {
+      "name": "bookOrder",
+      "displayName": "Book Order",
+      "entity": "cOrder",
+      "trigger": {
+        "type": "button",
+        "field": "docAction",
+        "value": "CO"
+      },
+      "preconditions": [
+        {
+          "name": "documentStatus",
+          "description": "Order must be in Draft (DR) or In Progress (IP) status",
+          "expression": "docStatus IN ('DR', 'IP')"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "validateMandatoryFields",
+          "description": "Verify all mandatory header fields are filled: businessPartner, warehouse, orderDate, priceList",
+          "type": "validate",
+          "target": "cOrder",
+          "operation": {
+            "check": "mandatoryFields",
+            "fields": ["businessPartner", "warehouse", "orderDate", "priceList"]
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "onFailure": "abort",
+            "errorMessage": "Mandatory header fields must be completed before booking the order"
+          }
+        },
+        {
+          "order": 2,
+          "name": "validateOrderLines",
+          "description": "Verify at least one order line exists with product and quantity greater than zero",
+          "type": "validate",
+          "target": "cOrderLine",
+          "operation": {
+            "check": "minItems",
+            "minimum": 1,
+            "fields": ["product", "orderedQuantity"]
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "onFailure": "abort",
+            "errorMessage": "Order must have at least one line with a valid product and quantity"
+          }
+        },
+        {
+          "order": 3,
+          "name": "setDocumentStatus",
+          "description": "Update order document status to Booked (CO)",
+          "type": "mutation",
+          "target": "cOrder",
+          "operation": {
+            "action": "updateField",
+            "field": "docStatus",
+            "value": "CO"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "transactional": true
+          }
+        }
+      ],
+      "edgeCases": [
+        {
+          "name": "orderAlreadyBooked",
+          "description": "Booking an already-booked order must abort with a clear message",
+          "precondition": "docStatus = 'CO'",
+          "expectedBehavior": "Process aborts at precondition check with: Order is already booked"
+        },
+        {
+          "name": "missingMandatoryFields",
+          "description": "Booking without a price list or warehouse must fail validation",
+          "precondition": "priceList IS NULL OR warehouse IS NULL",
+          "expectedBehavior": "Step 1 validation fails; order remains in Draft status"
+        },
+        {
+          "name": "noOrderLines",
+          "description": "Booking with zero order lines must be rejected",
+          "precondition": "orderLine count = 0",
+          "expectedBehavior": "Step 2 validation fails with: Order must have at least one line"
+        }
+      ],
+      "transactional": true
+    },
+    {
+      "name": "voidOrder",
+      "displayName": "Void Order",
+      "entity": "cOrder",
+      "trigger": {
+        "type": "button",
+        "field": "docAction",
+        "value": "VO"
+      },
+      "preconditions": [
+        {
+          "name": "documentStatus",
+          "description": "Order must be in Booked (CO) status to be voided",
+          "expression": "docStatus = 'CO'"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "validateNotReceived",
+          "description": "Verify no goods receipt has been generated from this order",
+          "type": "validate",
+          "target": "cOrder",
+          "operation": {
+            "check": "linkedReceipts",
+            "allowedStatus": ["DR"]
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "onFailure": "abort",
+            "errorMessage": "Cannot void an order that has already been received"
+          }
+        },
+        {
+          "order": 2,
+          "name": "setDocumentStatusVoided",
+          "description": "Update order document status to Voided (VO)",
+          "type": "mutation",
+          "target": "cOrder",
+          "operation": {
+            "action": "updateField",
+            "field": "docStatus",
+            "value": "VO"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "transactional": true
+          }
+        }
+      ],
+      "edgeCases": [
+        {
+          "name": "orderNotBooked",
+          "description": "Voiding a Draft order must be rejected at the precondition check",
+          "precondition": "docStatus = 'DR'",
+          "expectedBehavior": "Process aborts with: Order must be booked before it can be voided"
+        },
+        {
+          "name": "orderWithReceipt",
+          "description": "Voiding an order that has a posted goods receipt must be blocked",
+          "precondition": "related M_InOut exists with docStatus = 'CO'",
+          "expectedBehavior": "Step 1 validation fails; order remains in Booked status"
+        },
+        {
+          "name": "alreadyVoided",
+          "description": "Attempting to void an already-voided order must be rejected at precondition",
+          "precondition": "docStatus = 'VO'",
+          "expectedBehavior": "Process aborts at precondition check with: Order is already voided"
+        }
+      ],
+      "transactional": true
+    },
+    {
+      "name": "closeOrder",
+      "displayName": "Close Order",
+      "entity": "cOrder",
+      "trigger": {
+        "type": "button",
+        "field": "docAction",
+        "value": "CL"
+      },
+      "preconditions": [
+        {
+          "name": "documentStatus",
+          "description": "Order must be in Booked (CO) status to be closed",
+          "expression": "docStatus = 'CO'"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "setDocumentStatusClosed",
+          "description": "Update order document status to Closed (CL)",
+          "type": "mutation",
+          "target": "cOrder",
+          "operation": {
+            "action": "updateField",
+            "field": "docStatus",
+            "value": "CL"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "transactional": true
+          }
+        }
+      ],
+      "edgeCases": [
+        {
+          "name": "orderNotBooked",
+          "description": "Closing a Draft order must be rejected at the precondition check",
+          "precondition": "docStatus = 'DR'",
+          "expectedBehavior": "Process aborts with: Order must be booked before it can be closed"
+        },
+        {
+          "name": "alreadyClosed",
+          "description": "Closing an already-closed order must be rejected",
+          "precondition": "docStatus = 'CL'",
+          "expectedBehavior": "Process aborts at precondition check with: Order is already closed"
+        }
+      ],
+      "transactional": true
+    }
+  ]
+}

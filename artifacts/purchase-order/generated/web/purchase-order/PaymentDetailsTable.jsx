@@ -1,5 +1,16 @@
 import { DataTable } from '@/components/contract-ui';
 
+const statusLabels = {
+  'RPAP': 'Awaiting Payment',
+  'RPAE': 'Awaiting Execution',
+  'RPVOID': 'Void',
+  'PPM': 'Payment Made',
+  'RPR': 'Payment Received',
+  'RDNC': 'Deposited not Cleared',
+  'PWNC': 'Withdrawn not Cleared',
+  'RPPC': 'Payment Cleared',
+};
+
 // @sf-generated-start columns:paymentDetails
 const columns = [
   { key: 'payment', column: 'FIN_Payment_ID', type: 'string' },
@@ -7,7 +18,8 @@ const columns = [
   { key: 'paymentMethod', column: 'Fin_Paymentmethod_ID', type: 'string' },
   { key: 'expected', column: 'Expected', type: 'amount' },
   { key: 'paidAmount', column: 'Paidamt', type: 'amount' },
-  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'paymentno', column: 'Paymentno', type: 'string' },
+  { key: 'status', column: 'Status', type: 'enum', enumLabels: statusLabels },
 ];
 // @sf-generated-end columns:paymentDetails
 

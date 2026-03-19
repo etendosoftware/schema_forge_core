@@ -8,9 +8,14 @@ const breadcrumb = 'Purchases / Purchase Order';
 
 // @sf-generated-start summary:order
 const summary = [
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
+  { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean', label: 'Price includes Tax' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'status', label: 'Delivery Status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status', label: 'Invoice Status' },
+  { key: 'formOfPayment', column: 'PaymentRule', type: 'enum', label: 'Form of Payment' },
+  { key: 'delivered', column: 'IsDelivered', type: 'boolean', label: 'Delivered' },
 ];
 
 const statusField = 'documentStatus';
@@ -62,9 +67,10 @@ const api = {
       "listUrl": "/sws/neo/purchase-order/order",
       "detailUrl": "/sws/neo/purchase-order/order/{id}",
       "supportedFilters": [
-        "documentStatus",
+        "documentNo",
         "orderDate",
         "businessPartner",
+        "documentStatus",
         "orderReference"
       ]
     },
@@ -152,6 +158,7 @@ const api = {
       "field": "transactionDocument",
       "column": "C_DocTypeTarget_ID",
       "reference": "DocumentType",
+      "inputMode": "search",
       "url": "/sws/neo/purchase-order/order/selectors/transactionDocument"
     },
     {
@@ -159,6 +166,7 @@ const api = {
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
+      "inputMode": "search",
       "url": "/sws/neo/purchase-order/order/selectors/businessPartner"
     },
     {
@@ -166,6 +174,7 @@ const api = {
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
       "url": "/sws/neo/purchase-order/order/selectors/partnerAddress"
     },
     {
@@ -173,6 +182,7 @@ const api = {
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/warehouse"
     },
     {
@@ -180,6 +190,7 @@ const api = {
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/paymentMethod"
     },
     {
@@ -187,6 +198,7 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/paymentTerms"
     },
     {
@@ -194,6 +206,7 @@ const api = {
       "field": "priceList",
       "column": "M_PriceList_ID",
       "reference": "PriceList",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/priceList"
     },
     {
@@ -201,6 +214,7 @@ const api = {
       "field": "invoiceAddress",
       "column": "BillTo_ID",
       "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
       "url": "/sws/neo/purchase-order/order/selectors/invoiceAddress"
     },
     {
@@ -208,6 +222,7 @@ const api = {
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
+      "inputMode": "search",
       "url": "/sws/neo/purchase-order/order/selectors/project"
     },
     {
@@ -215,6 +230,7 @@ const api = {
       "field": "costcenter",
       "column": "C_Costcenter_ID",
       "reference": "CostCenter",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/costcenter"
     },
     {
@@ -222,6 +238,7 @@ const api = {
       "field": "asset",
       "column": "A_Asset_ID",
       "reference": "Asset",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/asset"
     },
     {
@@ -229,6 +246,7 @@ const api = {
       "field": "stDimension",
       "column": "User1_ID",
       "reference": "UserDimension1",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/stDimension"
     },
     {
@@ -236,6 +254,7 @@ const api = {
       "field": "ndDimension",
       "column": "User2_ID",
       "reference": "UserDimension2",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/order/selectors/ndDimension"
     },
     {
@@ -243,6 +262,7 @@ const api = {
       "field": "product",
       "column": "M_Product_ID",
       "reference": "Product",
+      "inputMode": "search",
       "url": "/sws/neo/purchase-order/orderLine/selectors/product"
     },
     {
@@ -250,6 +270,7 @@ const api = {
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/operativeUOM"
     },
     {
@@ -257,6 +278,7 @@ const api = {
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/uOM"
     },
     {
@@ -264,6 +286,7 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/tax"
     },
     {
@@ -271,6 +294,7 @@ const api = {
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
+      "inputMode": "search",
       "url": "/sws/neo/purchase-order/orderLine/selectors/project"
     },
     {
@@ -278,6 +302,7 @@ const api = {
       "field": "costcenter",
       "column": "C_Costcenter_ID",
       "reference": "CostCenter",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/costcenter"
     },
     {
@@ -285,6 +310,7 @@ const api = {
       "field": "asset",
       "column": "A_Asset_ID",
       "reference": "Asset",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/asset"
     },
     {
@@ -292,6 +318,7 @@ const api = {
       "field": "stDimension",
       "column": "User1_ID",
       "reference": "UserDimension1",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/stDimension"
     },
     {
@@ -299,6 +326,7 @@ const api = {
       "field": "ndDimension",
       "column": "User2_ID",
       "reference": "UserDimension2",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/orderLine/selectors/ndDimension"
     },
     {
@@ -317,17 +345,17 @@ const api = {
     },
     {
       "entity": "reservedStock",
-      "field": "storageBin",
-      "column": "M_Locator_ID",
-      "reference": "Locator",
-      "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
-    },
-    {
-      "entity": "reservedStock",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "url": "/sws/neo/purchase-order/reservedStock/selectors/businessPartner"
+    },
+    {
+      "entity": "reservedStock",
+      "field": "storageBin",
+      "column": "M_Locator_ID",
+      "reference": "Locator",
+      "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
     },
     {
       "entity": "basicDiscounts",
@@ -379,7 +407,62 @@ const api = {
       "url": "/sws/neo/purchase-order/paymentDetails/selectors/finFinancialAccountID"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "entity": "order",
+      "field": "aPRMAddPayment",
+      "column": "EM_APRM_AddPayment",
+      "url": "/sws/neo/purchase-order/order/{id}/action/aPRMAddPayment"
+    },
+    {
+      "entity": "order",
+      "field": "documentAction",
+      "column": "DocAction",
+      "url": "/sws/neo/purchase-order/order/{id}/action/documentAction"
+    },
+    {
+      "entity": "order",
+      "field": "copyFrom",
+      "column": "CopyFrom",
+      "url": "/sws/neo/purchase-order/order/{id}/action/copyFrom"
+    },
+    {
+      "entity": "order",
+      "field": "copyFromPO",
+      "column": "CopyFromPO",
+      "url": "/sws/neo/purchase-order/order/{id}/action/copyFromPO"
+    },
+    {
+      "entity": "order",
+      "field": "createPOLines",
+      "column": "Create_POLines",
+      "url": "/sws/neo/purchase-order/order/{id}/action/createPOLines"
+    },
+    {
+      "entity": "order",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/purchase-order/order/{id}/action/posted"
+    },
+    {
+      "entity": "order",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/purchase-order/order/{id}/action/processNow"
+    },
+    {
+      "entity": "orderLine",
+      "field": "managePrereservation",
+      "column": "Manage_Prereservation",
+      "url": "/sws/neo/purchase-order/orderLine/{id}/action/managePrereservation"
+    },
+    {
+      "entity": "orderLine",
+      "field": "explode",
+      "column": "Explode",
+      "url": "/sws/neo/purchase-order/orderLine/{id}/action/explode"
+    }
+  ],
   "queryParams": {
     "pagination": {
       "startRow": "_startRow",
