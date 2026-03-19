@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -14,9 +14,16 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(displayValue || value || '');
+  // Tracks whether the user is actively typing so the sync effect doesn't fight keystrokes.
+  const isEditingRef = useRef(false);
 
   React.useEffect(() => {
-    setQuery(displayValue || value || '');
+    // Only sync from outside when the user is NOT actively editing.
+    // This prevents the parent state update (triggered by onChange while typing)
+    // from immediately reverting the input text.
+    if (!isEditingRef.current) {
+      setQuery(displayValue || value || '');
+    }
   }, [value, displayValue]);
 
   const options = catalogs?.[field.reference] ?? [];
@@ -27,10 +34,20 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
   }, [query, options]);
 
   const handleSelect = (opt) => {
+    isEditingRef.current = false;
     setQuery(opt.name);
     onChange?.(opt.id, opt.name, opt._aux);
     setOpen(false);
   };
+
+  const handleClear = () => {
+    isEditingRef.current = false;
+    setQuery('');
+    onChange?.(null, '');
+    setOpen(false);
+  };
+
+  const hasSelection = value != null && value !== '';
 
   return (
     <div className="relative">
@@ -44,16 +61,34 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           placeholder={`Search ${resolvedLabel}...`}
           value={query}
           onChange={(e) => {
+            isEditingRef.current = true;
             setQuery(e.target.value);
             onChange?.(e.target.value);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 200)}
-          className="pl-8 focus:ring-2 focus:ring-primary focus:outline-none"
+          onFocus={() => {
+            isEditingRef.current = true;
+            setOpen(true);
+          }}
+          onBlur={() => {
+            isEditingRef.current = false;
+            setTimeout(() => setOpen(false), 200);
+          }}
+          className="pl-8 pr-8 focus:ring-2 focus:ring-primary focus:outline-none"
           required={field.required}
           autoComplete="off"
         />
+        {hasSelection && (
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
+            className="absolute right-2 top-2 h-5 w-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            tabIndex={-1}
+            aria-label="Clear"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
       {open && filtered.length > 0 && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
