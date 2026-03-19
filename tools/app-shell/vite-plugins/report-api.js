@@ -188,6 +188,36 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
     sql = sql.replace(/AD_LANGUAGE\s*=\s*'[^']+'/gi, `AD_LANGUAGE = 'en_US'`);
 
+    // Inject date filters for Jasper SQL queries that don't have __PLACEHOLDER__ tokens
+    // Maps parameter names to likely SQL column names
+    const dateColumnMap = { dateFrom: 'DATEORDERED', dateTo: 'DATEORDERED' };
+    if (contract.jasper?.originalFile) {
+      const dateParams = (contract.parameters || []).filter(p => p.type === 'date');
+      const extraClauses = [];
+      for (const p of dateParams) {
+        const val = params[p.name];
+        if (!val) continue;
+        const col = dateColumnMap[p.name] || p.name.toUpperCase();
+        if (p.name.toLowerCase().includes('from')) {
+          extraClauses.push(`O.${col} >= '${String(val).replace(/'/g, "''")}'::date`);
+        } else if (p.name.toLowerCase().includes('to')) {
+          extraClauses.push(`O.${col} <= '${String(val).replace(/'/g, "''")}'::date`);
+        }
+      }
+      if (extraClauses.length > 0) {
+        // Insert before GROUP BY or ORDER BY
+        const insertPoint = sql.search(/\bGROUP\s+BY\b/i);
+        if (insertPoint > 0) {
+          sql = sql.slice(0, insertPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(insertPoint);
+        } else {
+          const orderPoint = sql.search(/\bORDER\s+BY\b/i);
+          if (orderPoint > 0) {
+            sql = sql.slice(0, orderPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(orderPoint);
+          }
+        }
+      }
+    }
+
     if (limit) sql = sql.replace(/;\s*$/, '') + ` LIMIT ${parseInt(limit, 10)}`;
 
     const { rows } = await pool.query(sql);
