@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
 import schemaApiPlugin from './vite-plugins/schema-api.js';
+import reportApiPlugin from './vite-plugins/report-api.js';
 
 // Target Etendo instance for dev proxy. Override via ETENDO_URL in .env.local
 // if your instance uses a different context.name (e.g. ETENDO_URL=http://localhost:8080/mycontext)
@@ -13,6 +14,7 @@ export default defineConfig({
   plugins: [
     react(),
     schemaApiPlugin(),
+    reportApiPlugin(),
     VitePWA({
       registerType: 'prompt',
       workbox: {
@@ -57,6 +59,11 @@ export default defineConfig({
       '/webhooks': {
         target: ETENDO_URL,
         changeOrigin: true,
+      },
+      '/jsreport': {
+        target: 'http://localhost:5488',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/jsreport/, ''),
       },
     },
   },

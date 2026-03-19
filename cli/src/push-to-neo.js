@@ -574,22 +574,186 @@ export async function pushProcessToNeo(processName, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Report push function (NeoHandler-based reports)
+// ---------------------------------------------------------------------------
+
+/**
+ * Push a report's configuration to NEO Headless.
+ * Creates a spec (type R) and an entity with the NeoHandler java_qualifier.
+ *
+ * Uses report-contract.json from the artifact directory.
+ * The handler class must be compiled and deployed in the Etendo module.
+ *
+ * @param {string} reportName - The report artifact folder name (e.g., "aging-receivable")
+ * @param {object} [options] - Override options
+ * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
+ * @param {string} [options.projectRoot] - Override project root path
+ * @param {string} [options.moduleId='94E1B433CF55451EABB764750AC5902A'] - AD_Module_ID
+ * @param {object} [options.dbConfig] - Override DB pool config
+ * @param {object} [options.audit] - Override audit defaults
+ * @returns {object} Result summary
+ */
+export async function pushReportToNeo(reportName, options = {}) {
+  const projectRoot = options.projectRoot || ROOT;
+  const artifactsDir = join(projectRoot, 'artifacts', reportName);
+
+  // Load report contract
+  let contractRaw;
+  try {
+    contractRaw = await readFile(join(artifactsDir, 'report-contract.json'), 'utf-8');
+  } catch (err) {
+    throw new Error(`Cannot read report-contract.json for '${reportName}': ${err.message}`);
+  }
+
+  const contract = JSON.parse(contractRaw);
+  const specName = contract.reportId || reportName;
+  const handler = contract.neo?.handler || null;
+  const title = contract.title?.en_US || specName;
+  const description = `Report: ${title}`;
+
+  // Resolve process ID if referenced in jasper config
+  const processId = contract.jasper?.processId || null;
+
+  if (options.dryRun === true) {
+    console.log(`[DRY RUN] Push report to NEO: ${title} (${specName})`);
+    console.log(`  Spec name: ${specName}`);
+    console.log(`  Spec type: R (report)`);
+    console.log(`  Process ID: ${processId || '(none)'}`);
+    console.log(`  NeoHandler: ${handler || '(none)'}`);
+    console.log(`  Method: direct DB write`);
+    console.log(`\n  Step 1: upsertSpec (specType=R)`);
+    console.log(`  Step 2: create entity with java_qualifier='${handler}'`);
+    return { dryRun: true, specName, handler };
+  }
+
+  // Live mode
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
+  const auditOpts = options.audit || {};
+  const pool = createDbPool(options.dbConfig);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Step 1: Upsert spec
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
+
+    console.log(`[1/2] Upserting spec '${specName}' (type=R)...`);
+    const specResult = await writerUpsertSpec(client, {
+      name: specName,
+      moduleId,
+      processId,
+      specType: 'R',
+      description,
+      specId: existingSpecId,
+      audit: auditOpts,
+    });
+    const specId = specResult.specId;
+    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+
+    // Step 2: Create/update the entity with the handler qualifier
+    if (handler) {
+      const existingEntity = await client.query(
+        'SELECT etgo_sf_entity_id FROM etgo_sf_entity WHERE etgo_sf_spec_id = $1',
+        [specId],
+      );
+
+      if (existingEntity.rows.length > 0) {
+        // Update handler qualifier on existing entity
+        const entityId = existingEntity.rows[0].etgo_sf_entity_id;
+        await client.query(
+          `UPDATE etgo_sf_entity SET java_qualifier = $1, name = $2, updated = now() WHERE etgo_sf_entity_id = $3`,
+          [handler, specName, entityId],
+        );
+        console.log(`[2/2] Updated entity handler: ${handler} (entity ${entityId})`);
+      } else {
+        // Create a minimal entity for the handler
+        const { generateId } = await import('./neo-writer.js');
+        const entityId = generateId();
+        const auditVals = {
+          ad_client_id: auditOpts.ad_client_id || '0',
+          ad_org_id: auditOpts.ad_org_id || '0',
+          isactive: 'Y',
+          created: new Date(),
+          createdby: auditOpts.createdby || '0',
+          updated: new Date(),
+          updatedby: auditOpts.updatedby || '0',
+        };
+        await client.query(
+          `INSERT INTO etgo_sf_entity
+           (etgo_sf_entity_id, etgo_sf_spec_id, name, ad_module_id, java_qualifier,
+            isget, ispost, isput, ispatch, isdelete, seqno,
+            ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
+           VALUES ($1, $2, $3, $4, $5,
+                   'Y', 'Y', 'N', 'N', 'N', 10,
+                   $6, $7, $8, $9, $10, $11, $12)`,
+          [entityId, specId, specName, moduleId, handler,
+           auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
+           auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
+        );
+        console.log(`[2/2] Created entity with handler: ${handler} (entity ${entityId})`);
+      }
+    } else if (processId) {
+      // No handler — populate from AD_Process metadata (standard report flow)
+      console.log(`[2/2] Populating spec from AD_Process...`);
+      const popResult = await writerPopulateSpec(client, {
+        specId,
+        moduleId,
+        audit: auditOpts,
+      });
+      console.log(`       Entity: ${popResult.entities[0]?.name || 'unnamed'}, Fields: ${popResult.fieldCount}`);
+    } else {
+      console.log(`[2/2] No handler or processId — spec-only registration.`);
+    }
+
+    await client.query('COMMIT');
+    console.log(`\nDone. Report spec '${specName}' configured.`);
+
+    return { dryRun: false, specName, specId, handler };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+    await closePool(pool);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
 
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const windowName = args.find(a => !a.startsWith('--'));
+  const isReport = args.includes('--type') && args[args.indexOf('--type') + 1] === 'report';
+  const name = args.find(a => !a.startsWith('--') && a !== 'report');
 
-  if (!windowName) {
-    console.error('Usage: node cli/src/push-to-neo.js <windowName> [--dry-run]');
-    console.error('Example: node cli/src/push-to-neo.js sales-order');
+  if (!name) {
+    console.error('Usage:');
+    console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run]');
+    console.error('  node cli/src/push-to-neo.js <reportName> --type report [--dry-run]');
+    console.error('');
+    console.error('Examples:');
+    console.error('  node cli/src/push-to-neo.js sales-order');
+    console.error('  node cli/src/push-to-neo.js aging-receivable --type report');
+    console.error('  node cli/src/push-to-neo.js aging-receivable --type report --dry-run');
     process.exit(1);
   }
 
   try {
-    const result = await pushToNeo(windowName, { dryRun });
+    let result;
+    if (isReport) {
+      result = await pushReportToNeo(name, { dryRun });
+    } else {
+      result = await pushToNeo(name, { dryRun });
+    }
     if (!dryRun) {
       console.log('\nResult:', JSON.stringify(result, null, 2));
     }

@@ -1,0 +1,450 @@
+/**
+ * Vite plugin: Report API
+ *
+ * Exposes endpoints for migrated Jasper reports:
+ *   GET  /api/reports                    — list available migrated reports
+ *   GET  /api/reports/:id/data           — execute SQL and return JSON rows
+ *   POST /api/reports/:id/render         — render via jsreport (returns HTML/PDF/etc)
+ */
+
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+
+const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
+const ROOT = resolve(ARTIFACTS_DIR, '..');
+const JSREPORT_URL = process.env.JSREPORT_URL || 'http://localhost:5488';
+
+// Find gradle.properties for DB connection
+function findGradleProps() {
+  const candidates = [
+    process.env.ETENDO_GRADLE_PROPERTIES,
+    resolve(ROOT, 'etendo_core/gradle.properties'),
+    resolve(ROOT, '../gradle.properties'),
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return null;
+}
+
+function parseGradleProps(path) {
+  const content = readFileSync(path, 'utf8');
+  const props = {};
+  for (const line of content.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const eq = t.indexOf('=');
+    if (eq === -1) continue;
+    props[t.slice(0, eq).trim()] = t.slice(eq + 1).trim();
+  }
+  return props;
+}
+
+/**
+ * List all artifact dirs that have a report-contract.json
+ */
+function listReports() {
+  const reports = [];
+  for (const dir of readdirSync(ARTIFACTS_DIR, { withFileTypes: true })) {
+    if (!dir.isDirectory()) continue;
+    const contractPath = join(ARTIFACTS_DIR, dir.name, 'report-contract.json');
+    if (existsSync(contractPath)) {
+      try {
+        const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+        if (contract.reportId && contract.outputs?.length > 0 && contract.type !== 'document' && (contract.source === 'jasper-migration' || contract.source === 'manual' || contract.source === 'sql' || contract.source === 'neo' || contract.mockDataFile)) {
+          reports.push({
+            id: contract.reportId,
+            title: contract.title,
+            type: contract.type,
+            category: contract.category || 'other',
+            orientation: contract.orientation,
+            outputs: contract.outputs,
+            parameters: contract.parameters || [],
+          });
+        }
+      } catch { /* skip malformed */ }
+    }
+  }
+  return reports;
+}
+
+/**
+ * Fetch report data.
+ * Mode is determined by VITE_MOCK env var (read from .env.local):
+ *   VITE_MOCK=true  → use mock data files
+ *   VITE_MOCK=false → use real data (NEO API or Jasper SQL)
+ */
+async function fetchReportData(reportId, { limit, authToken, params = {} } = {}) {
+  const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
+  const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+
+  // Check mock mode from env (VITE_MOCK in .env.local)
+  const isMock = process.env.VITE_MOCK === 'true';
+
+  if (isMock) {
+    // Mock mode: use mock data file
+    if (contract.mockDataFile) {
+      const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
+      if (existsSync(mockPath)) {
+        let rows = JSON.parse(readFileSync(mockPath, 'utf8'));
+        if (limit) rows = rows.slice(0, parseInt(limit, 10));
+        return { rows, contract };
+      }
+    }
+    throw new Error(`Mock data file not found for report '${reportId}'`);
+  }
+
+  // Real mode: NEO API (calls Etendo backend via NeoHandler)
+  if (contract.neo?.endpoint) {
+    if (!authToken) throw new Error('No auth token — user must be logged in');
+    const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
+    const neoUrl = `${etendoBase}${contract.neo.endpoint}`;
+    const neoBody = { ...(contract.neo.body || {}), ...params };
+
+    const neoRes = await fetch(neoUrl, {
+      method: contract.neo.method || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(neoBody),
+    });
+
+    if (!neoRes.ok) {
+      const text = await neoRes.text().catch(() => '');
+      throw new Error(`NEO ${neoRes.status}: ${text.slice(0, 200)}`);
+    }
+
+    const data = await neoRes.json();
+    let rows = data;
+    if (contract.neo.dataPath) {
+      for (const key of contract.neo.dataPath.split('.')) {
+        rows = rows?.[key];
+      }
+    }
+    if (!Array.isArray(rows)) throw new Error('NEO response did not contain rows array');
+    if (limit) rows = rows.slice(0, parseInt(limit, 10));
+    return { rows, contract };
+  }
+
+  // Document type: multiple queries (header + lines + taxes)
+  if (contract.type === 'document' && contract.sql?.header) {
+    const gradlePath = findGradleProps();
+    if (!gradlePath) throw new Error('gradle.properties not found');
+    const gradle = parseGradleProps(gradlePath);
+    const pg = await import('pg');
+    const pool = new pg.default.Pool({
+      host: gradle['bbdd.host'] || 'localhost',
+      port: parseInt(gradle['bbdd.port']) || 5432,
+      user: gradle['bbdd.user'],
+      password: gradle['bbdd.password'],
+      database: gradle['bbdd.sid'],
+      max: 3,
+    });
+
+    try {
+      function replacePlaceholders(sql) {
+        let q = sql;
+        for (const [key, value] of Object.entries(params)) {
+          if (value) q = q.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), String(value).replace(/'/g, "''"));
+        }
+        return q;
+      }
+
+      const headerSql = replacePlaceholders(contract.sql.header);
+      const linesSql = replacePlaceholders(contract.sql.lines);
+
+      const headerResult = await pool.query(headerSql);
+      const header = headerResult.rows[0] || {};
+
+      const linesResult = await pool.query(linesSql);
+      const lines = linesResult.rows;
+
+      let taxes = [];
+      if (contract.sql.taxes) {
+        const taxesSql = replacePlaceholders(contract.sql.taxes);
+        const taxResult = await pool.query(taxesSql);
+        taxes = taxResult.rows;
+      }
+
+      // For document type, return structured data (not flat rows)
+      return { rows: lines, contract, documentData: { header, lines, taxes } };
+    } finally {
+      await pool.end();
+    }
+  }
+
+  // SQL query: either inline in contract or from Jasper jrxml
+  let sql = null;
+
+  // Source: inline SQL in contract
+  if (contract.sql?.query) {
+    sql = contract.sql.query;
+  }
+
+  // Source: Jasper jrxml SQL
+  if (!sql && contract.jasper?.originalFile) {
+    const jrxmlPath = resolve(ROOT, contract.jasper.originalFile);
+    if (!existsSync(jrxmlPath)) {
+      throw new Error(`JRXML not found: ${jrxmlPath}`);
+    }
+    const extractorPath = resolve(ROOT, 'cli/src/extract-from-jasper.js');
+    const { parseJrxml } = await import(/* @vite-ignore */ extractorPath);
+    const parsed = parseJrxml(readFileSync(jrxmlPath, 'utf8'));
+    sql = parsed.query;
+  }
+
+  if (!sql) {
+    throw new Error(`No data source configured for report '${reportId}' (need neo, sql, jasper, or mockDataFile)`);
+  }
+
+  // Connect to DB
+  const gradlePath = findGradleProps();
+  if (!gradlePath) throw new Error('gradle.properties not found');
+  const gradle = parseGradleProps(gradlePath);
+
+  const pg = await import('pg');
+  const pool = new pg.default.Pool({
+    host: gradle['bbdd.host'] || 'localhost',
+    port: parseInt(gradle['bbdd.port']) || 5432,
+    user: gradle['bbdd.user'],
+    password: gradle['bbdd.password'],
+    database: gradle['bbdd.sid'],
+    max: 3,
+  });
+
+  try {
+    // Get client ID
+    const clientRes = await pool.query(
+      `SELECT ad_client_id FROM ad_client WHERE isactive = 'Y' AND ad_client_id != '0' ORDER BY name LIMIT 1`
+    );
+    const clientId = clientRes.rows[0]?.ad_client_id || '0';
+
+    // Parameterize query — support both Jasper-style hardcoded IDs and __PLACEHOLDER__ tokens
+    sql = sql.replace(/__CLIENT_ID__/g, clientId);
+    // Replace user parameter placeholders (__PARAM_NAME__ format)
+    // For multi-select values (comma-separated IDs), convert = 'id1,id2' to IN ('id1','id2')
+    for (const [key, value] of Object.entries(params)) {
+      if (key.startsWith('_display_')) continue; // Skip display-only params
+      if (value !== undefined && value !== null && value !== '') {
+        const escaped = String(value).replace(/'/g, "''");
+        sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
+      }
+    }
+    // Convert equality checks with comma-separated values to IN clauses
+    sql = sql.replace(/=\s*'([^']*,[^']*)'/g, (match, ids) => {
+      const inList = ids.split(',').map(id => `'${id.trim()}'`).join(',');
+      return `IN (${inList})`;
+    });
+    // Remove optional filter clauses where params were not provided
+    // Pattern: AND ('__X__' = '' OR ...) — handles nested parens like GREATEST(a,b)
+    sql = sql.replace(/AND\s*\('__\w+__'\s*=\s*''\s*OR\s*[\s\S]*?'__\w+__'[^)]*\)/gi, '');
+    sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
+    sql = sql.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi,
+      `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
+    sql = sql.replace(/AD_LANGUAGE\s*=\s*'[^']+'/gi, `AD_LANGUAGE = 'en_US'`);
+
+    // Inject date filters for Jasper SQL queries that don't have __PLACEHOLDER__ tokens.
+    // The contract can specify a dateColumn (e.g., "dateColumn": "DATEACCT" or "O.DATEORDERED").
+    // If not specified, we try to detect the date column from the SQL.
+    if (contract.jasper?.originalFile) {
+      const dateParams = (contract.parameters || []).filter(p => p.type === 'date');
+      const extraClauses = [];
+      for (const p of dateParams) {
+        const val = params[p.name];
+        if (!val) continue;
+        // Use contract-level dateColumn, or param-level column, or detect from SQL
+        const col = p.column || contract.jasper.dateColumn
+          || (sql.match(/\b(\w+\.)?DATEORDERED\b/i)?.[0])
+          || (sql.match(/\b(\w+\.)?DATEACCT\b/i)?.[0])
+          || 'DATEACCT';
+        const escaped = String(val).replace(/'/g, "''");
+        if (p.name.toLowerCase().includes('from')) {
+          extraClauses.push(`${col} >= '${escaped}'::date`);
+        } else if (p.name.toLowerCase().includes('to')) {
+          extraClauses.push(`${col} <= '${escaped}'::date`);
+        }
+      }
+      if (extraClauses.length > 0) {
+        const insertPoint = sql.search(/\bGROUP\s+BY\b/i);
+        if (insertPoint > 0) {
+          sql = sql.slice(0, insertPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(insertPoint);
+        } else {
+          const orderPoint = sql.search(/\bORDER\s+BY\b/i);
+          if (orderPoint > 0) {
+            sql = sql.slice(0, orderPoint) + 'AND ' + extraClauses.join(' AND ') + '\n' + sql.slice(orderPoint);
+          }
+        }
+      }
+    }
+
+    if (limit) sql = sql.replace(/;\s*$/, '') + ` LIMIT ${parseInt(limit, 10)}`;
+
+    const { rows } = await pool.query(sql);
+    return { rows, contract };
+  } finally {
+    await pool.end();
+  }
+}
+
+export default function reportApiPlugin() {
+  return {
+    name: 'report-api',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url, 'http://localhost');
+        const path = url.pathname;
+
+        // GET /api/report-selectors/:type?q=search — search BP, Product, Org for report filters
+        const selectorMatch = path.match(/^\/api\/report-selectors\/([\w-]+)$/);
+        if (req.method === 'GET' && selectorMatch) {
+          const type = selectorMatch[1];
+          const q = (url.searchParams.get('q') || '').trim();
+          try {
+            const gradlePath = findGradleProps();
+            if (!gradlePath) throw new Error('gradle.properties not found');
+            const gradle = parseGradleProps(gradlePath);
+            const pg = await import('pg');
+            const pool = new pg.default.Pool({ host: gradle['bbdd.host'] || 'localhost', port: parseInt(gradle['bbdd.port']) || 5432, user: gradle['bbdd.user'], password: gradle['bbdd.password'], database: gradle['bbdd.sid'], max: 2 });
+            try {
+              const queries = {
+                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+              };
+              const sql = queries[type];
+              if (!sql) throw new Error(`Unknown selector type: ${type}`);
+              const { rows } = await pool.query(sql, [`%${q}%`]);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(rows));
+            } finally { await pool.end(); }
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
+        // GET /api/reports — list migrated reports
+        if (req.method === 'GET' && path === '/api/reports') {
+          try {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(listReports()));
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
+        // GET /api/reports/:id/data — fetch report data from DB
+        const dataMatch = path.match(/^\/api\/reports\/([\w-]+)\/data$/);
+        if (req.method === 'GET' && dataMatch) {
+          const reportId = dataMatch[1];
+          const limit = url.searchParams.get('limit');
+          try {
+            const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+            const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ rows, contract, count: rows.length }));
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
+        // POST /api/reports/:id/render — render via jsreport
+        const renderMatch = path.match(/^\/api\/reports\/([\w-]+)\/render$/);
+        if (req.method === 'POST' && renderMatch) {
+          const reportId = renderMatch[1];
+          let body = '';
+          for await (const chunk of req) body += chunk;
+          const { format = 'html', limit, params = {} } = JSON.parse(body || '{}');
+
+          try {
+            const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+            const result = await fetchReportData(reportId, { limit, authToken, params });
+            let { rows, contract, documentData } = result;
+
+            // Handle groupBy parameter: remap the group field in rows
+            // The groupBy select options define { value: "key", label: "...", field: "sourceColumn" }
+            if (params.groupBy && rows) {
+              const groupByParam = contract.parameters?.find(p => p.name === 'groupBy');
+              const selectedOption = groupByParam?.options?.find(o => o.value === params.groupBy);
+              const sourceField = selectedOption?.field;
+              if (sourceField) {
+                rows = rows.map(r => ({ ...r, name: r[sourceField] || '(none)', value: '' }));
+              }
+            }
+            const activeFilters = Object.entries(params)
+              .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
+              .map(([k, v]) => {
+                const paramDef = contract.parameters?.find(p => p.name === k);
+                // Use display name if available (for search selectors that send UUIDs)
+                let displayValue = params['_display_' + k] || v;
+                // Format date values from ISO (YYYY-MM-DD) to DD/MM/YYYY
+                if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
+                  const [y, m, d] = displayValue.split('-');
+                  displayValue = `${d}/${m}/${y}`;
+                }
+                return { label: paramDef?.label?.en_US || k, value: displayValue };
+              });
+            const artifactDir = join(ARTIFACTS_DIR, reportId);
+            const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
+            const helpersPath = join(artifactDir, 'helpers.js');
+            const helpersCode = existsSync(helpersPath) ? readFileSync(helpersPath, 'utf8') : '';
+            const cssPath = join(ROOT, 'templates', 'reports', 'base.css');
+            const css = existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : '';
+
+            const recipeMap = { html: 'html', pdf: 'chrome-pdf', xlsx: 'html-to-xlsx', csv: 'text' };
+            const recipe = recipeMap[format] || 'html';
+            const title = contract.title?.en_US || reportId;
+
+            // Document type: structured data (header + lines + taxes)
+            // Listing type: flat rows
+            const templateData = documentData
+              ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params }, rows };
+
+            const payload = {
+              template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
+              data: templateData,
+            };
+
+            if (recipe === 'chrome-pdf') {
+              payload.template.chrome = {
+                landscape: contract.orientation === 'landscape',
+                format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm',
+              };
+            }
+
+            const jsRes = await fetch(`${JSREPORT_URL}/api/report`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            if (!jsRes.ok) {
+              const text = await jsRes.text();
+              throw new Error(`jsreport ${jsRes.status}: ${text.slice(0, 200)}`);
+            }
+
+            const contentType = jsRes.headers.get('content-type') || 'text/html';
+            res.setHeader('Content-Type', contentType);
+            const buffer = Buffer.from(await jsRes.arrayBuffer());
+            res.end(buffer);
+          } catch (e) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
+        next();
+      });
+    },
+  };
+}

@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic } from 'lucide-react';
+import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer } from 'lucide-react';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import ReportDrawer from './ReportDrawer.jsx';
+import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -28,6 +30,8 @@ export function ListView({
   const [selectedRows, setSelectedRows] = useState([]);
   const [showUserContext, setShowUserContext] = useState(false);
   const [showSortPopover, setShowSortPopover] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showDocPrint, setShowDocPrint] = useState(false);
   const [tableColumns, setTableColumns] = useState([]);
   const sortBtnRef = useRef(null);
   const scrollRef = useRef(null);
@@ -137,6 +141,23 @@ export function ListView({
               <span className="text-sm font-semibold">{selectedRows.length} Selected</span>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowDocPrint(true)}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Preview
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print ({selectedRows.length})
+              </Button>
               <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
                 Clear
               </Button>
@@ -226,6 +247,15 @@ export function ListView({
                   </span>
                 )}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white"
+                onClick={() => setShowReport(true)}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </Button>
               {/* Split "New" button */}
               <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">
                 <Button
@@ -281,6 +311,25 @@ export function ListView({
           )}
         </div>
       </div>
+      <ReportDrawer
+        open={showReport}
+        onClose={() => setShowReport(false)}
+        windowName={windowName}
+        columns={tableColumns.map(col => ({ ...col, label: t(col.column) ?? col.label ?? col.key }))}
+        title={label}
+        apiBaseUrl={apiBaseUrl}
+        entity={entity}
+        token={token}
+        sortColumn={hook.sortColumn}
+        sortDirection={hook.sortDirection}
+      />
+      <DocumentPrintDrawer
+        open={showDocPrint}
+        onClose={() => setShowDocPrint(false)}
+        windowName={windowName}
+        documentIds={selectedRows.map(r => r.id || r)}
+        token={token}
+      />
     </div>
   );
 }

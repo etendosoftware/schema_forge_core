@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "reportId": "report-order-not-shipped",
+  "category": "purchases",
+  "type": "grouped-listing",
+  "source": "jasper-migration",
+  "jasper": {
+    "originalFile": "etendo_core/modules_core/org.openbravo.reports.ordersawaitingdelivery/src/org/openbravo/reports/ordersawaitingdelivery/erpCommon/ad_reports/ReportOrderNotShipped.jrxml",
+    "processId": "3DAA5E63A30D45A8ABF87701F8BD91EF",
+    "processValue": "ReportOrderNotShipped",
+    "queryLanguage": "SQL"
+  },
+  "title": {
+    "en_US": "Orders Awaiting Delivery",
+    "es_ES": "Pedidos Pendientes de Entrega"
+  },
+  "orientation": "landscape",
+  "columns": [
+    {
+      "field": "prodname",
+      "label": { "en_US": "Product", "es_ES": "Producto" },
+      "type": "string",
+      "width": "30%",
+      "sortable": true
+    },
+    {
+      "field": "orderedqty",
+      "label": { "en_US": "Ordered Qty", "es_ES": "Cant. Pedida" },
+      "type": "string",
+      "width": "15%",
+      "sortable": true
+    },
+    {
+      "field": "pendingqty",
+      "label": { "en_US": "Pending Qty", "es_ES": "Cant. Pendiente" },
+      "type": "string",
+      "width": "15%",
+      "sortable": true
+    },
+    {
+      "field": "qtyinstock",
+      "label": { "en_US": "Stock", "es_ES": "Stock" },
+      "type": "string",
+      "width": "15%",
+      "sortable": true
+    }
+  ],
+  "groups": [
+    {
+      "field": "orgname",
+      "label": { "en_US": "Organization", "es_ES": "Organización" }
+    },
+    {
+      "field": "bpname",
+      "label": { "en_US": "Business Partner", "es_ES": "Tercero" }
+    },
+    {
+      "field": "documentno",
+      "label": { "en_US": "Order No.", "es_ES": "Nº Pedido" },
+      "headerFields": [
+        { "field": "poreference", "label": { "en_US": "PO Reference", "es_ES": "Ref. Pedido" } },
+        { "field": "dateordered", "label": { "en_US": "Order Date", "es_ES": "Fecha Pedido" }, "type": "date" },
+        { "field": "datepromised", "label": { "en_US": "Delivery Date", "es_ES": "Fecha Entrega" }, "type": "date" },
+        { "field": "deliveryrule", "label": { "en_US": "Delivery Rule", "es_ES": "Regla Entrega" } },
+        { "field": "deliverylocation", "label": { "en_US": "Location", "es_ES": "Ubicación" } }
+      ]
+    }
+  ],
+  "filters": [],
+  "parameters": [
+    { "name": "dateFrom", "label": { "en_US": "Order Date From", "es_ES": "Fecha pedido desde" }, "type": "date" },
+    { "name": "dateTo", "label": { "en_US": "Order Date To", "es_ES": "Fecha pedido hasta" }, "type": "date" }
+  ],
+  "defaultSort": {
+    "field": "orgname",
+    "direction": "asc"
+  },
+  "outputs": ["pdf", "xlsx", "csv", "html"],
+  "summary": { "totalRows": true }
+}
