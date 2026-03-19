@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -11,11 +11,14 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
  * Combobox-style search input for foreign key fields.
  * Filters results from catalogs when typing.
  */
-function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel }) {
+function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(displayValue || value || '');
+  const [serverResults, setServerResults] = useState(null);
+  const [fetching, setFetching] = useState(false);
   // Tracks whether the user is actively typing so the sync effect doesn't fight keystrokes.
   const isEditingRef = useRef(false);
+  const debounceRef = useRef(null);
 
   React.useEffect(() => {
     // Only sync from outside when the user is NOT actively editing.
@@ -26,15 +29,44 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
     }
   }, [value, displayValue]);
 
-  const options = catalogs?.[field.reference] ?? [];
+  // Server-side search: fetch with ?q= when selectorUrl and token are available.
+  const fetchServerResults = useCallback((q) => {
+    if (!selectorUrl || !token) return;
+    if (!q || q.trim().length === 0) {
+      setServerResults(null);
+      return;
+    }
+    setFetching(true);
+    fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setServerResults((data.items || []).map(item => ({
+            id: item.id,
+            name: item.label || item.name || item.id,
+            ...item,
+          })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setFetching(false));
+  }, [selectorUrl, token]);
+
+  // Local fallback: filter the pre-loaded catalog (used when selectorUrl not available)
+  const localOptions = catalogs?.[field.reference] ?? [];
   const filtered = useMemo(() => {
-    if (!query || query.length === 0) return options.slice(0, 10);
+    // Server results take priority when available
+    if (serverResults !== null) return serverResults.slice(0, 20);
+    if (!query || query.length === 0) return localOptions.slice(0, 10);
     const q = query.toLowerCase();
-    return options.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [query, options]);
+    return localOptions.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
+  }, [serverResults, query, localOptions]);
 
   const handleSelect = (opt) => {
     isEditingRef.current = false;
+    setServerResults(null);
     setQuery(opt.name);
     onChange?.(opt.id, opt.name, opt._aux);
     setOpen(false);
@@ -42,6 +74,7 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
 
   const handleClear = () => {
     isEditingRef.current = false;
+    setServerResults(null);
     setQuery('');
     onChange?.(null, '');
     setOpen(false);
@@ -62,9 +95,13 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           value={query}
           onChange={(e) => {
             isEditingRef.current = true;
-            setQuery(e.target.value);
-            onChange?.(e.target.value);
+            const newQuery = e.target.value;
+            setQuery(newQuery);
+            onChange?.(newQuery);
             setOpen(true);
+            // Debounced server-side fetch (300ms)
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => fetchServerResults(newQuery), 300);
           }}
           onFocus={() => {
             isEditingRef.current = true;
@@ -105,7 +142,12 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           ))}
         </div>
       )}
-      {open && query.length > 0 && filtered.length === 0 && (
+      {open && query.length > 0 && fetching && (
+        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
+          <div className="px-3 py-2 text-xs text-muted-foreground">Searching...</div>
+        </div>
+      )}
+      {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           <div className="px-3 py-2 text-xs text-muted-foreground">
             No results for "{query}"
@@ -412,6 +454,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                   }}
                   catalogs={catalogs}
                   resolvedLabel={label}
+                  selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+                  token={token}
                 />
               </div>
             </FieldHighlight>

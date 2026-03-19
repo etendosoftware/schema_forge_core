@@ -25,9 +25,12 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}) {
       'Content-Type': 'application/json',
     };
 
-    // Deduplicate selectors by reference (same reference may appear for multiple entities)
+    // Deduplicate selectors by reference (same reference may appear for multiple entities).
+    // Skip "search" inputMode fields — those use server-side ?q= fetching in SearchInput
+    // and don't benefit from pre-loading 20 results.
     const seen = new Set();
     const unique = api.selectors.filter(sel => {
+      if (sel.inputMode === 'search') return false;
       if (seen.has(sel.reference)) return false;
       seen.add(sel.reference);
       return true;

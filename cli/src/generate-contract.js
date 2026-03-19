@@ -497,6 +497,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
             field: field.name,
             column: field.column,
             reference: field.reference,
+            inputMode: field.inputMode,
             url: `${baseUrl}/${entityName}/selectors/${field.name}`,
           });
         }
