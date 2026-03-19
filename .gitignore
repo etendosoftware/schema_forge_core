@@ -18,6 +18,8 @@ tools/app-shell/dist/
 tools/app-shell/.env.local
 tools/app-shell/.env.development
 artifacts/e2e-report/
+artifacts/*/schema-curated.json
+artifacts/*/rules-curated.json
 e2e/test-results/
 e2e/playwright-report/
 e2e/recordings/

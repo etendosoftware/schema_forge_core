@@ -175,6 +175,9 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── generate-contract.js          # Frontend/backend contracts
 │       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows, processes + reports)
 │       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
+│       ├── resolve-curated.js            # raw + decisions → curated schema + rules (in memory)
+│       ├── migrate-to-decisions.js       # One-time migration: curated files → decisions.json
+│       ├── reconcile-schema.js           # Diff raw vs decisions (unclassified/orphaned fields)
 │       ├── custom-section-markers.js      # Delimiter constants for code preservation
 │       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
 │       ├── generate-frontend.js          # React SPA generation (emits section markers)
@@ -223,10 +226,14 @@ Schema Forge CLI (extract-from-db.js / extract-from-process.js)
     │ Extracts process metadata + parameters (standalone processes)
     ▼
 Per-Window/Process Artifacts (artifacts/{name}/)
-    │ schema-curated.json, rules-curated.json
+    │ schema-raw.json + rules-raw.json (extracted, committed)
+    │ decisions.json (AI/human classifications, committed, ~200-300 lines)
     ▼
-Decision UIs (tools/decision-panel/) or AI classification (/classify)
-    │ Human or AI curates: visibility, rule decisions
+AI classification (/classify) — writes decisions.json
+    │ Only overrides vs tier-1/2 defaults are stored (90% smaller than curated files)
+    ▼
+resolve-curated.js (raw + decisions → curated in memory)
+    │ No intermediate files written — curated is ephemeral
     ▼
 Schema Forge Webhooks → Etendo Go DB tables
     │ ETGO_SF_SPEC, ETGO_SF_ENTITY, ETGO_SF_FIELD
