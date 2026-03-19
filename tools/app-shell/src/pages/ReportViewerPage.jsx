@@ -36,13 +36,96 @@ function ReportCard({ report, onRun }) {
   );
 }
 
+function SearchInput({ selector, value, displayValue, onChange }) {
+  const [query, setQuery] = useState(displayValue || '');
+  const [options, setOptions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!query || query.length < 2) { setOptions([]); return; }
+    const t = setTimeout(() => {
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(setOptions)
+        .catch(() => setOptions([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query, selector]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        type="text"
+        value={query}
+        onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange('', ''); }}
+        onFocus={() => { if (options.length) setOpen(true); }}
+        placeholder="Search..."
+        className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-44"
+      />
+      {open && options.length > 0 && (
+        <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
+          {options.map(o => (
+            <button key={o.id} onClick={() => { onChange(o.id, o.name); setQuery(o.name); setOpen(false); }}
+              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
   if (!parameters || parameters.length === 0) return null;
+  const [displayValues, setDisplayValues] = useState({});
+
   return (
     <div className="px-4 py-3 border-b border-border/30 bg-white shrink-0">
       <div className="flex items-end gap-3 flex-wrap">
         {parameters.map(p => {
+          if (p.hidden) return null;
           const label = p.label?.en_US || p.name;
+
+          // Search selector (BP, Product, Account, Org)
+          if (p.type === 'search') {
+            return (
+              <div key={p.name} className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                <SearchInput
+                  selector={p.selector}
+                  value={values[p.name] || ''}
+                  displayValue={displayValues[p.name] || ''}
+                  onChange={(id, name) => { onChange(p.name, id); setDisplayValues(prev => ({ ...prev, [p.name]: name })); }}
+                />
+              </div>
+            );
+          }
+
+          // Select dropdown
+          if (p.type === 'select') {
+            return (
+              <div key={p.name} className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                <select
+                  value={values[p.name] || ''}
+                  onChange={e => onChange(p.name, e.target.value)}
+                  className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
+                >
+                  <option value="">All</option>
+                  {(p.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            );
+          }
+
+          // Standard inputs
           return (
             <div key={p.name} className="flex flex-col gap-1">
               <label className="text-xs font-medium text-muted-foreground">{label}</label>

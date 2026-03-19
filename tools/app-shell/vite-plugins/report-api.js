@@ -286,6 +286,37 @@ export default function reportApiPlugin() {
         const url = new URL(req.url, 'http://localhost');
         const path = url.pathname;
 
+        // GET /api/report-selectors/:type?q=search — search BP, Product, Org for report filters
+        const selectorMatch = path.match(/^\/api\/report-selectors\/([\w-]+)$/);
+        if (req.method === 'GET' && selectorMatch) {
+          const type = selectorMatch[1];
+          const q = (url.searchParams.get('q') || '').trim();
+          try {
+            const gradlePath = findGradleProps();
+            if (!gradlePath) throw new Error('gradle.properties not found');
+            const gradle = parseGradleProps(gradlePath);
+            const pg = await import('pg');
+            const pool = new pg.default.Pool({ host: gradle['bbdd.host'] || 'localhost', port: parseInt(gradle['bbdd.port']) || 5432, user: gradle['bbdd.user'], password: gradle['bbdd.password'], database: gradle['bbdd.sid'], max: 2 });
+            try {
+              const queries = {
+                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+              };
+              const sql = queries[type];
+              if (!sql) throw new Error(`Unknown selector type: ${type}`);
+              const { rows } = await pool.query(sql, [`%${q}%`]);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(rows));
+            } finally { await pool.end(); }
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
         // GET /api/reports — list migrated reports
         if (req.method === 'GET' && path === '/api/reports') {
           try {
@@ -326,7 +357,16 @@ export default function reportApiPlugin() {
           try {
             const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
             const result = await fetchReportData(reportId, { limit, authToken, params });
-            const { rows, contract, documentData } = result;
+            let { rows, contract, documentData } = result;
+
+            // Handle groupBy parameter: remap the group field in rows
+            if (params.groupBy && rows) {
+              const groupMap = { bpartner: 'bpname', product: 'productname' };
+              const sourceField = groupMap[params.groupBy];
+              if (sourceField) {
+                rows = rows.map(r => ({ ...r, name: r[sourceField] || '(none)', value: '' }));
+              }
+            }
             const activeFilters = Object.entries(params)
               .filter(([_, v]) => v && v !== '')
               .map(([k, v]) => {
