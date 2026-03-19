@@ -68,58 +68,62 @@ function listReports() {
 }
 
 /**
- * Fetch report data — from DB (jasper SQL) or from mock data file.
+ * Fetch report data.
+ * Mode is determined by VITE_MOCK env var (read from .env.local):
+ *   VITE_MOCK=true  → use mock data files
+ *   VITE_MOCK=false → use real data (NEO API or Jasper SQL)
  */
 async function fetchReportData(reportId, { limit, authToken } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
-  // Data source: NEO API (calls Etendo backend via NeoHandler)
-  if (contract.neo?.endpoint) {
-    try {
-      if (!authToken) throw new Error('No auth token — user must be logged in');
-      const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo_sf';
-      const neoUrl = `${etendoBase}${contract.neo.endpoint}`;
-      const neoBody = contract.neo.body || {};
-      const token = authToken;
+  // Check mock mode from env (VITE_MOCK in .env.local)
+  const isMock = process.env.VITE_MOCK === 'true';
 
-      const neoRes = await fetch(neoUrl, {
-        method: contract.neo.method || 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(neoBody),
-      });
-
-      if (neoRes.ok) {
-        const data = await neoRes.json();
-        // Navigate to the data path (e.g., "response.data")
-        let rows = data;
-        if (contract.neo.dataPath) {
-          for (const key of contract.neo.dataPath.split('.')) {
-            rows = rows?.[key];
-          }
-        }
-        if (Array.isArray(rows)) {
-          if (limit) rows = rows.slice(0, parseInt(limit, 10));
-          return { rows, contract };
-        }
+  if (isMock) {
+    // Mock mode: use mock data file
+    if (contract.mockDataFile) {
+      const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
+      if (existsSync(mockPath)) {
+        let rows = JSON.parse(readFileSync(mockPath, 'utf8'));
+        if (limit) rows = rows.slice(0, parseInt(limit, 10));
+        return { rows, contract };
       }
-    } catch (e) {
-      // Fall through to mock data if NEO is unavailable
-      console.warn(`[report-api] NEO endpoint failed for ${reportId}: ${e.message}. Falling back to mock data.`);
     }
+    throw new Error(`Mock data file not found for report '${reportId}'`);
   }
 
-  // Fallback: mock data file
-  if (contract.mockDataFile) {
-    const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
-    if (existsSync(mockPath)) {
-      let rows = JSON.parse(readFileSync(mockPath, 'utf8'));
-      if (limit) rows = rows.slice(0, parseInt(limit, 10));
-      return { rows, contract };
+  // Real mode: NEO API (calls Etendo backend via NeoHandler)
+  if (contract.neo?.endpoint) {
+    if (!authToken) throw new Error('No auth token — user must be logged in');
+    const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo_sf';
+    const neoUrl = `${etendoBase}${contract.neo.endpoint}`;
+    const neoBody = contract.neo.body || {};
+
+    const neoRes = await fetch(neoUrl, {
+      method: contract.neo.method || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(neoBody),
+    });
+
+    if (!neoRes.ok) {
+      const text = await neoRes.text().catch(() => '');
+      throw new Error(`NEO ${neoRes.status}: ${text.slice(0, 200)}`);
     }
+
+    const data = await neoRes.json();
+    let rows = data;
+    if (contract.neo.dataPath) {
+      for (const key of contract.neo.dataPath.split('.')) {
+        rows = rows?.[key];
+      }
+    }
+    if (!Array.isArray(rows)) throw new Error('NEO response did not contain rows array');
+    if (limit) rows = rows.slice(0, parseInt(limit, 10));
+    return { rows, contract };
   }
 
   // Otherwise, use Jasper SQL from the jrxml
