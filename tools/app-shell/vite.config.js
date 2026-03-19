@@ -49,11 +49,11 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/sws': {
-        target: 'http://localhost:8080/etendo_sf',
+        target: 'http://localhost:8080/etendo',
         changeOrigin: true,
       },
       '/webhooks': {
-        target: 'http://localhost:8080/etendo_sf',
+        target: 'http://localhost:8080/etendo',
         changeOrigin: true,
       },
       '/jsreport': {

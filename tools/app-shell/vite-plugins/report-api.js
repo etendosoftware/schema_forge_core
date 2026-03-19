@@ -97,7 +97,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   // Real mode: NEO API (calls Etendo backend via NeoHandler)
   if (contract.neo?.endpoint) {
     if (!authToken) throw new Error('No auth token — user must be logged in');
-    const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo_sf';
+    const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
     const neoUrl = `${etendoBase}${contract.neo.endpoint}`;
     const neoBody = { ...(contract.neo.body || {}), ...params };
 
