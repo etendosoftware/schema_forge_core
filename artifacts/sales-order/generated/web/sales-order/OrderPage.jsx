@@ -8,13 +8,10 @@ const breadcrumb = 'Sales / Sales Order';
 
 // @sf-generated-start summary:order
 const summary = [
-  { key: 'totalGrossAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'totalNetAmount', column: 'TotalLines', type: 'amount' },
   { key: 'quotation', column: 'Quotation_ID', type: 'string' },
   { key: 'canceledOrder', column: 'Cancelledorder_id', type: 'string' },
   { key: 'replacedOrder', column: 'Replacedorder_id', type: 'string' },
   { key: 'isCanceled', column: 'Iscancelled', type: 'boolean' },
-  { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
   { key: 'crmReference', column: 'BPartner_ExtRef', type: 'string' },
 ];
 

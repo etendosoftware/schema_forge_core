@@ -19,6 +19,7 @@
       "fields": [
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -52,6 +53,7 @@
         },
         {
           "name": "transactionDocument",
+          "apiKey": "transactionDocument",
           "columnName": "C_DocTypeTarget_ID",
           "label": "Transaction Document",
           "type": "foreignKey",
@@ -91,6 +93,7 @@
         },
         {
           "name": "documentNo",
+          "apiKey": "documentNo",
           "columnName": "DocumentNo",
           "label": "Document No.",
           "type": "string",
@@ -110,6 +113,7 @@
         },
         {
           "name": "orderDate",
+          "apiKey": "orderDate",
           "columnName": "DateOrdered",
           "label": "Order Date",
           "type": "date",
@@ -130,6 +134,7 @@
         },
         {
           "name": "businessPartner",
+          "apiKey": "businessPartner",
           "columnName": "C_BPartner_ID",
           "label": "Business Partner",
           "type": "foreignKey",
@@ -152,6 +157,7 @@
         },
         {
           "name": "partnerAddress",
+          "apiKey": "partnerAddress",
           "columnName": "C_BPartner_Location_ID",
           "label": "Partner Address",
           "type": "foreignKey",
@@ -179,6 +185,7 @@
         },
         {
           "name": "warehouse",
+          "apiKey": "warehouse",
           "columnName": "M_Warehouse_ID",
           "label": "Warehouse",
           "type": "foreignKey",
@@ -199,6 +206,7 @@
         },
         {
           "name": "scheduledDeliveryDate",
+          "apiKey": "scheduledDeliveryDate",
           "columnName": "DatePromised",
           "label": "Scheduled Delivery Date",
           "type": "date",
@@ -217,6 +225,7 @@
         },
         {
           "name": "paymentMethod",
+          "apiKey": "paymentMethod",
           "columnName": "FIN_Paymentmethod_ID",
           "label": "Payment Method",
           "type": "foreignKey",
@@ -242,6 +251,7 @@
         },
         {
           "name": "paymentTerms",
+          "apiKey": "paymentTerms",
           "columnName": "C_PaymentTerm_ID",
           "label": "Payment Terms",
           "type": "foreignKey",
@@ -261,6 +271,7 @@
         },
         {
           "name": "priceList",
+          "apiKey": "priceList",
           "columnName": "M_PriceList_ID",
           "label": "Price List",
           "type": "foreignKey",
@@ -288,6 +299,7 @@
         },
         {
           "name": "documentStatus",
+          "apiKey": "documentStatus",
           "columnName": "DocStatus",
           "label": "Document Status",
           "type": "enum",
@@ -301,10 +313,77 @@
           "defaultValue": "DR",
           "isSelectionColumn": true,
           "isFilterable": true,
-          "help": "The Document Status indicates the status of a document at this time.  To change the status of a document, use one of the buttons usually located at the bottom of the document window."
+          "help": "The Document Status indicates the status of a document at this time.  To change the status of a document, use one of the buttons usually located at the bottom of the document window.",
+          "enumValues": [
+            {
+              "value": "AE",
+              "name": "Automatic Evaluation"
+            },
+            {
+              "value": "CO",
+              "name": "Booked"
+            },
+            {
+              "value": "CL",
+              "name": "Closed"
+            },
+            {
+              "value": "CA",
+              "name": "Closed - Order Created"
+            },
+            {
+              "value": "CJ",
+              "name": "Closed - Rejected"
+            },
+            {
+              "value": "DR",
+              "name": "Draft"
+            },
+            {
+              "value": "ME",
+              "name": "Manual Evaluation"
+            },
+            {
+              "value": "NA",
+              "name": "Not Accepted"
+            },
+            {
+              "value": "NC",
+              "name": "Not Confirmed"
+            },
+            {
+              "value": "WP",
+              "name": "Not Paid"
+            },
+            {
+              "value": "RE",
+              "name": "Re-Opened"
+            },
+            {
+              "value": "TMP",
+              "name": "Temporal"
+            },
+            {
+              "value": "UE",
+              "name": "Under Evaluation"
+            },
+            {
+              "value": "IP",
+              "name": "Under Way"
+            },
+            {
+              "value": "??",
+              "name": "Unknown"
+            },
+            {
+              "value": "VO",
+              "name": "Voided"
+            }
+          ]
         },
         {
           "name": "grandTotalAmount",
+          "apiKey": "grandTotalAmount",
           "columnName": "GrandTotal",
           "label": "Total Gross Amount",
           "type": "amount",
@@ -318,6 +397,7 @@
         },
         {
           "name": "summedLineAmount",
+          "apiKey": "summedLineAmount",
           "columnName": "TotalLines",
           "label": "Total Net Amount",
           "type": "amount",
@@ -329,6 +409,7 @@
         },
         {
           "name": "currency",
+          "apiKey": "currency",
           "columnName": "C_Currency_ID",
           "label": "Currency",
           "type": "foreignKey",
@@ -353,6 +434,7 @@
         },
         {
           "name": "userContact",
+          "apiKey": "userContact",
           "columnName": "AD_User_ID",
           "label": "User/Contact",
           "type": "foreignKey",
@@ -380,6 +462,7 @@
         },
         {
           "name": "deliveryNotes",
+          "apiKey": "deliveryNotes",
           "columnName": "Deliverynotes",
           "label": "Delivery notes",
           "type": "text",
@@ -392,6 +475,7 @@
         },
         {
           "name": "description",
+          "apiKey": "description",
           "columnName": "Description",
           "label": "Description",
           "type": "text",
@@ -404,6 +488,7 @@
         },
         {
           "name": "orderReference",
+          "apiKey": "orderReference",
           "columnName": "POReference",
           "label": "Order Reference",
           "type": "string",
@@ -417,6 +502,7 @@
         },
         {
           "name": "salesRepresentative",
+          "apiKey": "salesRepresentative",
           "columnName": "SalesRep_ID",
           "label": "Company Agent",
           "type": "foreignKey",
@@ -446,6 +532,7 @@
         },
         {
           "name": "invoiceAddress",
+          "apiKey": "invoiceAddress",
           "columnName": "BillTo_ID",
           "label": "Invoice From",
           "type": "foreignKey",
@@ -473,6 +560,7 @@
         },
         {
           "name": "incoterms",
+          "apiKey": "incoterms",
           "columnName": "C_Incoterms_ID",
           "label": "Incoterms",
           "type": "foreignKey",
@@ -492,6 +580,7 @@
         },
         {
           "name": "iNCOTERMSDescription",
+          "apiKey": "iNCOTERMSDescription",
           "columnName": "Incotermsdescription",
           "label": "INCOTERMS description",
           "type": "text",
@@ -503,6 +592,7 @@
         },
         {
           "name": "printDiscount",
+          "apiKey": "printDiscount",
           "columnName": "IsDiscountPrinted",
           "label": "Print Discount",
           "type": "boolean",
@@ -515,6 +605,7 @@
         },
         {
           "name": "documentType",
+          "apiKey": "documentType",
           "columnName": "C_DocType_ID",
           "label": "Document Type",
           "type": "foreignKey",
@@ -539,6 +630,7 @@
         },
         {
           "name": "freightAmount",
+          "apiKey": "freightAmount",
           "columnName": "FreightAmt",
           "label": "Freight Amount",
           "type": "amount",
@@ -550,6 +642,7 @@
         },
         {
           "name": "deliveryMethod",
+          "apiKey": "deliveryMethod",
           "columnName": "DeliveryViaRule",
           "label": "Delivery Method",
           "type": "enum",
@@ -563,10 +656,25 @@
           "readOnlyLogic": "@Processed@='Y'",
           "defaultValue": "P",
           "isFilterable": true,
-          "help": "The Delivery Via indicates how the products should be delivered. For example, will the order be picked up or shipped."
+          "help": "The Delivery Via indicates how the products should be delivered. For example, will the order be picked up or shipped.",
+          "enumValues": [
+            {
+              "value": "D",
+              "name": "Delivery"
+            },
+            {
+              "value": "P",
+              "name": "Pickup"
+            },
+            {
+              "value": "S",
+              "name": "Shipper"
+            }
+          ]
         },
         {
           "name": "salesCampaign",
+          "apiKey": "salesCampaign",
           "columnName": "C_Campaign_ID",
           "label": "Sales Campaign",
           "type": "foreignKey",
@@ -588,6 +696,7 @@
         },
         {
           "name": "shippingCompany",
+          "apiKey": "shippingCompany",
           "columnName": "M_Shipper_ID",
           "label": "Shipping Company",
           "type": "foreignKey",
@@ -607,6 +716,7 @@
         },
         {
           "name": "priority",
+          "apiKey": "priority",
           "columnName": "PriorityRule",
           "label": "Priority",
           "type": "enum",
@@ -620,10 +730,25 @@
           "readOnlyLogic": "@Processed@='Y'",
           "defaultValue": "5",
           "isFilterable": true,
-          "help": "The Priority indicates the importance (high, medium, low) of this document"
+          "help": "The Priority indicates the importance (high, medium, low) of this document",
+          "enumValues": [
+            {
+              "value": "3",
+              "name": "High"
+            },
+            {
+              "value": "7",
+              "name": "Low"
+            },
+            {
+              "value": "5",
+              "name": "Medium"
+            }
+          ]
         },
         {
           "name": "chargeAmount",
+          "apiKey": "chargeAmount",
           "columnName": "ChargeAmt",
           "label": "Charge Amount",
           "type": "amount",
@@ -641,6 +766,7 @@
         },
         {
           "name": "charge",
+          "apiKey": "charge",
           "columnName": "C_Charge_ID",
           "label": "Charge",
           "type": "foreignKey",
@@ -663,6 +789,7 @@
         },
         {
           "name": "activity",
+          "apiKey": "activity",
           "columnName": "C_Activity_ID",
           "label": "Activity",
           "type": "foreignKey",
@@ -684,6 +811,7 @@
         },
         {
           "name": "freightCostRule",
+          "apiKey": "freightCostRule",
           "columnName": "FreightCostRule",
           "label": "Freight Cost Rule",
           "type": "enum",
@@ -696,10 +824,21 @@
           "maxLength": "60",
           "defaultValue": "I",
           "isFilterable": true,
-          "help": "The Freight Cost Rule indicates the method used when charging for freight."
+          "help": "The Freight Cost Rule indicates the method used when charging for freight.",
+          "enumValues": [
+            {
+              "value": "C",
+              "name": "Calculated"
+            },
+            {
+              "value": "I",
+              "name": "Freight included"
+            }
+          ]
         },
         {
           "name": "trxOrganization",
+          "apiKey": "trxOrganization",
           "columnName": "AD_OrgTrx_ID",
           "label": "Trx Organization",
           "type": "foreignKey",
@@ -721,10 +860,11 @@
           }
         },
         {
-          "name": "eMAPRMAddPayment",
+          "name": "aPRMAddPayment",
+          "apiKey": "aPRMAddPayment",
           "columnName": "EM_APRM_AddPayment",
           "label": "Add Payment",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "1",
@@ -734,9 +874,10 @@
         },
         {
           "name": "documentAction",
+          "apiKey": "documentAction",
           "columnName": "DocAction",
           "label": "Process Order",
-          "type": "image",
+          "type": "button",
           "mandatory": true,
           "visibility": "editable",
           "derivation": {
@@ -751,9 +892,10 @@
         },
         {
           "name": "copyFrom",
+          "apiKey": "copyFrom",
           "columnName": "CopyFrom",
           "label": "Copy Lines",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "1",
@@ -763,9 +905,10 @@
         },
         {
           "name": "copyFromPO",
+          "apiKey": "copyFromPO",
           "columnName": "CopyFromPO",
           "label": "Copy from Orders",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "1",
@@ -775,6 +918,7 @@
         },
         {
           "name": "priceIncludesTax",
+          "apiKey": "priceIncludesTax",
           "columnName": "IsTaxIncluded",
           "label": "Price includes Tax",
           "type": "boolean",
@@ -786,6 +930,7 @@
         },
         {
           "name": "project",
+          "apiKey": "project",
           "columnName": "C_Project_ID",
           "label": "Project",
           "type": "foreignKey",
@@ -817,6 +962,7 @@
         },
         {
           "name": "costcenter",
+          "apiKey": "costcenter",
           "columnName": "C_Costcenter_ID",
           "label": "Cost Center",
           "type": "foreignKey",
@@ -839,6 +985,7 @@
         },
         {
           "name": "asset",
+          "apiKey": "asset",
           "columnName": "A_Asset_ID",
           "label": "Asset",
           "type": "foreignKey",
@@ -861,6 +1008,7 @@
         },
         {
           "name": "stDimension",
+          "apiKey": "stDimension",
           "columnName": "User1_ID",
           "label": "1st Dimension",
           "type": "foreignKey",
@@ -883,6 +1031,7 @@
         },
         {
           "name": "ndDimension",
+          "apiKey": "ndDimension",
           "columnName": "User2_ID",
           "label": "2nd Dimension",
           "type": "foreignKey",
@@ -905,9 +1054,10 @@
         },
         {
           "name": "createPOLines",
+          "apiKey": "createPOLines",
           "columnName": "Create_POLines",
           "label": "Create Lines",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "editable",
           "derivation": {
@@ -921,6 +1071,7 @@
         },
         {
           "name": "deliveryStatusPurchase",
+          "apiKey": "deliveryStatusPurchase",
           "columnName": "DeliveryStatusPurchase",
           "label": "Delivery Status",
           "type": "integer",
@@ -930,6 +1081,7 @@
         },
         {
           "name": "invoiceStatus",
+          "apiKey": "invoiceStatus",
           "columnName": "InvoiceStatus",
           "label": "Invoice Status",
           "type": "integer",
@@ -939,6 +1091,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "IsActive",
           "label": "Active",
           "type": "boolean",
@@ -955,6 +1108,7 @@
         },
         {
           "name": "formOfPayment",
+          "apiKey": "formOfPayment",
           "columnName": "PaymentRule",
           "label": "Form of Payment",
           "type": "enum",
@@ -969,10 +1123,57 @@
           "readOnlyLogic": "@Processed@='Y'",
           "defaultValue": "B",
           "isFilterable": true,
-          "help": "Form of Payment indicates the method of payment used for this transaction (eg. cash, wire transfer, etc.)"
+          "help": "Form of Payment indicates the method of payment used for this transaction (eg. cash, wire transfer, etc.)",
+          "enumValues": [
+            {
+              "value": "5",
+              "name": "Bank Deposit"
+            },
+            {
+              "value": "R",
+              "name": "Bank Remittance"
+            },
+            {
+              "value": "B",
+              "name": "Cash"
+            },
+            {
+              "value": "C",
+              "name": "Cash on Delivery"
+            },
+            {
+              "value": "2",
+              "name": "Check"
+            },
+            {
+              "value": "K",
+              "name": "Credit Card"
+            },
+            {
+              "value": "4",
+              "name": "Money Order"
+            },
+            {
+              "value": "P",
+              "name": "On Credit"
+            },
+            {
+              "value": "3",
+              "name": "Promissory Note"
+            },
+            {
+              "value": "1",
+              "name": "Wire Transfer"
+            },
+            {
+              "value": "W",
+              "name": "Withholding"
+            }
+          ]
         },
         {
           "name": "deliveryLocation",
+          "apiKey": "deliveryLocation",
           "columnName": "Delivery_Location_ID",
           "label": "Delivery Location",
           "type": "foreignKey",
@@ -1000,6 +1201,7 @@
         },
         {
           "name": "salesTransaction",
+          "apiKey": "salesTransaction",
           "columnName": "IsSOTrx",
           "label": "Sales Transaction",
           "type": "boolean",
@@ -1017,6 +1219,7 @@
         },
         {
           "name": "deliveryTerms",
+          "apiKey": "deliveryTerms",
           "columnName": "DeliveryRule",
           "label": "Delivery Terms",
           "type": "enum",
@@ -1030,10 +1233,29 @@
           "readOnlyLogic": "@Processed@='Y'",
           "defaultValue": "A",
           "isFilterable": true,
-          "help": "The Delivery Rule indicates when an order should be delivered. For example should the order be delivered when the entire order is complete, when a line is complete or as the products become available."
+          "help": "The Delivery Rule indicates when an order should be delivered. For example should the order be delivered when the entire order is complete, when a line is complete or as the products become available.",
+          "enumValues": [
+            {
+              "value": "R",
+              "name": "After Receipt"
+            },
+            {
+              "value": "A",
+              "name": "Availability"
+            },
+            {
+              "value": "L",
+              "name": "Complete Line"
+            },
+            {
+              "value": "O",
+              "name": "Complete Order"
+            }
+          ]
         },
         {
           "name": "datePrinted",
+          "apiKey": "datePrinted",
           "columnName": "DatePrinted",
           "label": "Date printed",
           "type": "date",
@@ -1045,6 +1267,7 @@
         },
         {
           "name": "processed",
+          "apiKey": "processed",
           "columnName": "Processed",
           "label": "Processed",
           "type": "boolean",
@@ -1061,6 +1284,7 @@
         },
         {
           "name": "selfService",
+          "apiKey": "selfService",
           "columnName": "IsSelfService",
           "label": "Self-Service",
           "type": "boolean",
@@ -1073,6 +1297,7 @@
         },
         {
           "name": "dropShipLocation",
+          "apiKey": "dropShipLocation",
           "columnName": "DropShip_Location_ID",
           "label": "Drop Ship Location",
           "type": "foreignKey",
@@ -1101,6 +1326,7 @@
         },
         {
           "name": "dropShipPartner",
+          "apiKey": "dropShipPartner",
           "columnName": "DropShip_BPartner_ID",
           "label": "Drop Ship Partner",
           "type": "foreignKey",
@@ -1122,6 +1348,7 @@
         },
         {
           "name": "dropShipContact",
+          "apiKey": "dropShipContact",
           "columnName": "DropShip_User_ID",
           "label": "Drop Ship Contact",
           "type": "foreignKey",
@@ -1150,6 +1377,7 @@
         },
         {
           "name": "selected",
+          "apiKey": "selected",
           "columnName": "IsSelected",
           "label": "Selected",
           "type": "boolean",
@@ -1161,9 +1389,10 @@
         },
         {
           "name": "posted",
+          "apiKey": "posted",
           "columnName": "Posted",
           "label": "Posted",
-          "type": "image",
+          "type": "button",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "accounting",
@@ -1179,6 +1408,7 @@
         },
         {
           "name": "invoiceTerms",
+          "apiKey": "invoiceTerms",
           "columnName": "InvoiceRule",
           "label": "Invoice Terms",
           "type": "enum",
@@ -1199,13 +1429,36 @@
             "cascadeParams": [
               "C_DOCTYPETARGET_ID"
             ]
-          }
+          },
+          "enumValues": [
+            {
+              "value": "D",
+              "name": "After Delivery"
+            },
+            {
+              "value": "O",
+              "name": "After Order Delivered"
+            },
+            {
+              "value": "S",
+              "name": "Customer Schedule After Delivery"
+            },
+            {
+              "value": "N",
+              "name": "Do Not Invoice"
+            },
+            {
+              "value": "I",
+              "name": "Immediate"
+            }
+          ]
         },
         {
           "name": "processNow",
+          "apiKey": "processNow",
           "columnName": "Processing",
           "label": "Process Order",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
@@ -1218,7 +1471,8 @@
           "help": "Process Order"
         },
         {
-          "name": "salesOrder",
+          "name": "id",
+          "apiKey": "id",
           "columnName": "C_Order_ID",
           "label": "Purchase Order",
           "type": "id",
@@ -1234,6 +1488,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -1259,6 +1514,7 @@
         },
         {
           "name": "accountingDate",
+          "apiKey": "accountingDate",
           "columnName": "DateAcct",
           "label": "Accounting Date",
           "type": "date",
@@ -1276,6 +1532,7 @@
         },
         {
           "name": "delivered",
+          "apiKey": "delivered",
           "columnName": "IsDelivered",
           "label": "Delivered",
           "type": "boolean",
@@ -1287,6 +1544,7 @@
         },
         {
           "name": "reinvoice",
+          "apiKey": "reinvoice",
           "columnName": "IsInvoiced",
           "label": "Re-invoice",
           "type": "boolean",
@@ -1299,6 +1557,7 @@
         },
         {
           "name": "print",
+          "apiKey": "print",
           "columnName": "IsPrinted",
           "label": "Print",
           "type": "boolean",
@@ -1326,6 +1585,7 @@
       "fields": [
         {
           "name": "lineNo",
+          "apiKey": "lineNo",
           "columnName": "Line",
           "label": "Line No.",
           "type": "integer",
@@ -1344,6 +1604,7 @@
         },
         {
           "name": "product",
+          "apiKey": "product",
           "columnName": "M_Product_ID",
           "label": "Product",
           "type": "foreignKey",
@@ -1364,6 +1625,7 @@
         },
         {
           "name": "operativeQuantity",
+          "apiKey": "operativeQuantity",
           "columnName": "Aumqty",
           "label": "Operative Quantity",
           "type": "quantity",
@@ -1379,6 +1641,7 @@
         },
         {
           "name": "operativeUOM",
+          "apiKey": "operativeUOM",
           "columnName": "C_Aum",
           "label": "Alternative UOM",
           "type": "foreignKey",
@@ -1410,6 +1673,7 @@
         },
         {
           "name": "orderedQuantity",
+          "apiKey": "orderedQuantity",
           "columnName": "QtyOrdered",
           "label": "Ordered Quantity",
           "type": "quantity",
@@ -1428,6 +1692,7 @@
         },
         {
           "name": "uOM",
+          "apiKey": "uOM",
           "columnName": "C_UOM_ID",
           "label": "UOM",
           "type": "foreignKey",
@@ -1447,9 +1712,10 @@
         },
         {
           "name": "attributeSetValue",
+          "apiKey": "attributeSetValue",
           "columnName": "M_AttributeSetInstance_ID",
           "label": "Attribute Set Value",
-          "type": "price",
+          "type": "productAttribute",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "22",
@@ -1461,9 +1727,10 @@
         },
         {
           "name": "unitPrice",
+          "apiKey": "unitPrice",
           "columnName": "PriceActual",
           "label": "Net Unit Price",
-          "type": "string",
+          "type": "price",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "22",
@@ -1474,9 +1741,10 @@
         },
         {
           "name": "grossUnitPrice",
+          "apiKey": "grossUnitPrice",
           "columnName": "Gross_Unit_Price",
           "label": "Gross Unit Price",
-          "type": "string",
+          "type": "price",
           "mandatory": false,
           "visibility": "editable",
           "derivation": {
@@ -1493,6 +1761,7 @@
         },
         {
           "name": "lineNetAmount",
+          "apiKey": "lineNetAmount",
           "columnName": "LineNetAmt",
           "label": "Line Net Amount",
           "type": "amount",
@@ -1507,6 +1776,7 @@
         },
         {
           "name": "lineGrossAmount",
+          "apiKey": "lineGrossAmount",
           "columnName": "Line_Gross_Amount",
           "label": "Line Gross Amount",
           "type": "amount",
@@ -1524,6 +1794,7 @@
         },
         {
           "name": "tax",
+          "apiKey": "tax",
           "columnName": "C_Tax_ID",
           "label": "Tax",
           "type": "foreignKey",
@@ -1556,9 +1827,10 @@
         },
         {
           "name": "listPrice",
+          "apiKey": "listPrice",
           "columnName": "PriceList",
           "label": "Net List Price",
-          "type": "string",
+          "type": "price",
           "mandatory": true,
           "visibility": "editable",
           "maxLength": "22",
@@ -1570,6 +1842,7 @@
         },
         {
           "name": "grossListPrice",
+          "apiKey": "grossListPrice",
           "columnName": "GrossPriceList",
           "label": "Gross List Price",
           "type": "decimal",
@@ -1582,6 +1855,7 @@
         },
         {
           "name": "discount",
+          "apiKey": "discount",
           "columnName": "Discount",
           "label": "Discount %",
           "type": "decimal",
@@ -1600,6 +1874,7 @@
         },
         {
           "name": "description",
+          "apiKey": "description",
           "columnName": "Description",
           "label": "Description",
           "type": "text",
@@ -1611,6 +1886,7 @@
         },
         {
           "name": "taxableAmount",
+          "apiKey": "taxableAmount",
           "columnName": "Taxbaseamt",
           "label": "Alternate Taxable Amount",
           "type": "amount",
@@ -1624,6 +1900,7 @@
         },
         {
           "name": "editLineAmount",
+          "apiKey": "editLineAmount",
           "columnName": "Iseditlinenetamt",
           "label": "Edit Line Net Amount",
           "type": "boolean",
@@ -1643,6 +1920,7 @@
         },
         {
           "name": "cancelPriceAdjustment",
+          "apiKey": "cancelPriceAdjustment",
           "columnName": "CANCELPRICEAD",
           "label": "Cancel Discounts and Promotions",
           "type": "boolean",
@@ -1660,9 +1938,10 @@
         },
         {
           "name": "baseGrossUnitPrice",
+          "apiKey": "baseGrossUnitPrice",
           "columnName": "grosspricestd",
           "label": "Base Gross Unit Price",
-          "type": "string",
+          "type": "price",
           "mandatory": true,
           "visibility": "system",
           "derivation": {
@@ -1676,9 +1955,10 @@
         },
         {
           "name": "standardPrice",
+          "apiKey": "standardPrice",
           "columnName": "PriceStd",
           "label": "Base Net Unit Price",
-          "type": "string",
+          "type": "price",
           "mandatory": true,
           "visibility": "system",
           "derivation": {
@@ -1693,6 +1973,7 @@
         },
         {
           "name": "warehouse",
+          "apiKey": "warehouse",
           "columnName": "M_Warehouse_ID",
           "label": "Warehouse",
           "type": "foreignKey",
@@ -1720,6 +2001,7 @@
         },
         {
           "name": "reservedQuantity",
+          "apiKey": "reservedQuantity",
           "columnName": "QtyReserved",
           "label": "Reserved Quantity",
           "type": "quantity",
@@ -1732,6 +2014,7 @@
         },
         {
           "name": "deliveredQuantity",
+          "apiKey": "deliveredQuantity",
           "columnName": "QtyDelivered",
           "label": "Delivered Quantity",
           "type": "quantity",
@@ -1744,6 +2027,7 @@
         },
         {
           "name": "invoicedQuantity",
+          "apiKey": "invoicedQuantity",
           "columnName": "QtyInvoiced",
           "label": "Invoiced Quantity",
           "type": "quantity",
@@ -1756,6 +2040,7 @@
         },
         {
           "name": "shippingCompany",
+          "apiKey": "shippingCompany",
           "columnName": "M_Shipper_ID",
           "label": "Shipping Company",
           "type": "foreignKey",
@@ -1781,6 +2066,7 @@
         },
         {
           "name": "orderDate",
+          "apiKey": "orderDate",
           "columnName": "DateOrdered",
           "label": "Order Date",
           "type": "date",
@@ -1799,6 +2085,7 @@
         },
         {
           "name": "scheduledDeliveryDate",
+          "apiKey": "scheduledDeliveryDate",
           "columnName": "DatePromised",
           "label": "Scheduled Delivery Date",
           "type": "date",
@@ -1817,6 +2104,7 @@
         },
         {
           "name": "businessPartner",
+          "apiKey": "businessPartner",
           "columnName": "C_BPartner_ID",
           "label": "Business Partner",
           "type": "foreignKey",
@@ -1842,6 +2130,7 @@
         },
         {
           "name": "freightAmount",
+          "apiKey": "freightAmount",
           "columnName": "FreightAmt",
           "label": "Freight Amount",
           "type": "amount",
@@ -1854,6 +2143,7 @@
         },
         {
           "name": "partnerAddress",
+          "apiKey": "partnerAddress",
           "columnName": "C_BPartner_Location_ID",
           "label": "Partner Address",
           "type": "foreignKey",
@@ -1886,6 +2176,7 @@
         },
         {
           "name": "orderQuantity",
+          "apiKey": "orderQuantity",
           "columnName": "QuantityOrder",
           "label": "Order Quantity",
           "type": "quantity",
@@ -1900,6 +2191,7 @@
         },
         {
           "name": "orderUOM",
+          "apiKey": "orderUOM",
           "columnName": "M_Product_Uom_Id",
           "label": "Order UOM",
           "type": "foreignKey",
@@ -1922,9 +2214,10 @@
         },
         {
           "name": "managePrereservation",
+          "apiKey": "managePrereservation",
           "columnName": "Manage_Prereservation",
           "label": "Manage Prereservation",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "1",
@@ -1933,6 +2226,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -1968,6 +2262,7 @@
         },
         {
           "name": "project",
+          "apiKey": "project",
           "columnName": "C_Project_ID",
           "label": "Project",
           "type": "foreignKey",
@@ -1989,6 +2284,7 @@
         },
         {
           "name": "costcenter",
+          "apiKey": "costcenter",
           "columnName": "C_Costcenter_ID",
           "label": "Cost Center",
           "type": "foreignKey",
@@ -2011,6 +2307,7 @@
         },
         {
           "name": "asset",
+          "apiKey": "asset",
           "columnName": "A_Asset_ID",
           "label": "Asset",
           "type": "foreignKey",
@@ -2033,6 +2330,7 @@
         },
         {
           "name": "stDimension",
+          "apiKey": "stDimension",
           "columnName": "User1_ID",
           "label": "1st Dimension",
           "type": "foreignKey",
@@ -2055,6 +2353,7 @@
         },
         {
           "name": "ndDimension",
+          "apiKey": "ndDimension",
           "columnName": "User2_ID",
           "label": "2nd Dimension",
           "type": "foreignKey",
@@ -2077,9 +2376,10 @@
         },
         {
           "name": "explode",
+          "apiKey": "explode",
           "columnName": "Explode",
           "label": "Explode",
-          "type": "image",
+          "type": "button",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "1",
@@ -2089,6 +2389,7 @@
         },
         {
           "name": "bOMParentID",
+          "apiKey": "bOMParentID",
           "columnName": "BOM_Parent_ID",
           "label": "BOM_Parent_ID",
           "type": "foreignKey",
@@ -2107,6 +2408,7 @@
         },
         {
           "name": "directShipment",
+          "apiKey": "directShipment",
           "columnName": "DirectShip",
           "label": "Direct shipment",
           "type": "boolean",
@@ -2119,6 +2421,7 @@
         },
         {
           "name": "invoiceDate",
+          "apiKey": "invoiceDate",
           "columnName": "DateInvoiced",
           "label": "Invoice Date",
           "type": "date",
@@ -2130,6 +2433,7 @@
         },
         {
           "name": "salesOrder",
+          "apiKey": "salesOrder",
           "columnName": "C_Order_ID",
           "label": "Purchase Order",
           "type": "foreignKey",
@@ -2150,6 +2454,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "IsActive",
           "label": "Active",
           "type": "boolean",
@@ -2166,6 +2471,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -2190,7 +2496,8 @@
           }
         },
         {
-          "name": "salesOrderLine",
+          "name": "id",
+          "apiKey": "id",
           "columnName": "C_OrderLine_ID",
           "label": "Purchase Order Line",
           "type": "id",
@@ -2206,6 +2513,7 @@
         },
         {
           "name": "currency",
+          "apiKey": "currency",
           "columnName": "C_Currency_ID",
           "label": "Currency",
           "type": "foreignKey",
@@ -2230,6 +2538,7 @@
         },
         {
           "name": "dateDelivered",
+          "apiKey": "dateDelivered",
           "columnName": "DateDelivered",
           "label": "Date Delivered",
           "type": "date",
@@ -2241,6 +2550,7 @@
         },
         {
           "name": "warehouseRule",
+          "apiKey": "warehouseRule",
           "columnName": "M_Warehouse_Rule_ID",
           "label": "Warehouse Rule",
           "type": "foreignKey",
@@ -2260,6 +2570,7 @@
         },
         {
           "name": "cOrderDiscountID",
+          "apiKey": "cOrderDiscountID",
           "columnName": "C_Order_Discount_ID",
           "label": "C_Order_Discount_ID",
           "type": "foreignKey",
@@ -2278,6 +2589,7 @@
         },
         {
           "name": "priceAdjustment",
+          "apiKey": "priceAdjustment",
           "columnName": "M_Offer_ID",
           "label": "Promotion/Discount",
           "type": "foreignKey",
@@ -2298,6 +2610,7 @@
         },
         {
           "name": "descriptionOnly",
+          "apiKey": "descriptionOnly",
           "columnName": "IsDescription",
           "label": "Description Only",
           "type": "boolean",
@@ -2315,6 +2628,7 @@
         },
         {
           "name": "resourceAssignment",
+          "apiKey": "resourceAssignment",
           "columnName": "S_ResourceAssignment_ID",
           "label": "Resource Assignment",
           "type": "string",
@@ -2327,9 +2641,10 @@
         },
         {
           "name": "priceLimit",
+          "apiKey": "priceLimit",
           "columnName": "PriceLimit",
           "label": "Price Limit",
-          "type": "string",
+          "type": "price",
           "mandatory": true,
           "visibility": "system",
           "maxLength": "22",
@@ -2352,6 +2667,7 @@
       "fields": [
         {
           "name": "lineNo",
+          "apiKey": "lineNo",
           "columnName": "Line",
           "label": "Line No.",
           "type": "integer",
@@ -2368,6 +2684,7 @@
         },
         {
           "name": "tax",
+          "apiKey": "tax",
           "columnName": "C_Tax_ID",
           "label": "Tax",
           "type": "foreignKey",
@@ -2387,6 +2704,7 @@
         },
         {
           "name": "taxableAmount",
+          "apiKey": "taxableAmount",
           "columnName": "Taxbaseamt",
           "label": "Taxable Amount",
           "type": "amount",
@@ -2403,6 +2721,7 @@
         },
         {
           "name": "taxAmount",
+          "apiKey": "taxAmount",
           "columnName": "Taxamt",
           "label": "Tax Amount",
           "type": "amount",
@@ -2419,6 +2738,7 @@
         },
         {
           "name": "salesOrder",
+          "apiKey": "salesOrder",
           "columnName": "C_Order_ID",
           "label": "Purchase Order",
           "type": "foreignKey",
@@ -2438,6 +2758,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -2472,6 +2793,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -2503,6 +2825,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "Isactive",
           "label": "Active",
           "type": "boolean",
@@ -2520,6 +2843,7 @@
         },
         {
           "name": "cOrderlinetaxID",
+          "apiKey": "cOrderlinetaxID",
           "columnName": "C_Orderlinetax_ID",
           "label": "Order Line Tax",
           "type": "id",
@@ -2532,6 +2856,7 @@
         },
         {
           "name": "salesOrderLine",
+          "apiKey": "salesOrderLine",
           "columnName": "C_Orderline_ID",
           "label": "Purchase Order Line",
           "type": "foreignKey",
@@ -2567,6 +2892,7 @@
       "fields": [
         {
           "name": "reservation",
+          "apiKey": "reservation",
           "columnName": "M_Reservation_ID",
           "label": "Stock Reservation",
           "type": "foreignKey",
@@ -2587,6 +2913,7 @@
         },
         {
           "name": "businessPartner",
+          "apiKey": "businessPartner",
           "columnName": "C_BPartner_ID",
           "label": "Customer",
           "type": "foreignKey",
@@ -2611,6 +2938,7 @@
         },
         {
           "name": "storageBin",
+          "apiKey": "storageBin",
           "columnName": "M_Locator_ID",
           "label": "Storage Bin",
           "type": "foreignKey",
@@ -2629,9 +2957,10 @@
         },
         {
           "name": "attributeSetValue",
+          "apiKey": "attributeSetValue",
           "columnName": "M_Attributesetinstance_ID",
           "label": "Attribute Set Value",
-          "type": "price",
+          "type": "productAttribute",
           "mandatory": false,
           "visibility": "editable",
           "maxLength": "32",
@@ -2640,6 +2969,7 @@
         },
         {
           "name": "allocated",
+          "apiKey": "allocated",
           "columnName": "IsAllocated",
           "label": "Allocated",
           "type": "boolean",
@@ -2657,6 +2987,7 @@
         },
         {
           "name": "quantity",
+          "apiKey": "quantity",
           "columnName": "Quantity",
           "label": "Quantity",
           "type": "quantity",
@@ -2669,6 +3000,7 @@
         },
         {
           "name": "released",
+          "apiKey": "released",
           "columnName": "ReleasedQty",
           "label": "Released",
           "type": "quantity",
@@ -2680,6 +3012,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -2704,6 +3037,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "Isactive",
           "label": "Active",
           "type": "boolean",
@@ -2721,6 +3055,7 @@
         },
         {
           "name": "salesOrderLine",
+          "apiKey": "salesOrderLine",
           "columnName": "C_Orderline_ID",
           "label": "Purchase Order Line",
           "type": "foreignKey",
@@ -2739,7 +3074,8 @@
           }
         },
         {
-          "name": "reservationStock",
+          "name": "id",
+          "apiKey": "id",
           "columnName": "M_Reservation_Stock_ID",
           "label": "Reservation Stock",
           "type": "id",
@@ -2755,6 +3091,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -2792,6 +3129,7 @@
       "fields": [
         {
           "name": "lineNo",
+          "apiKey": "lineNo",
           "columnName": "Line",
           "label": "Line No.",
           "type": "integer",
@@ -2809,6 +3147,7 @@
         },
         {
           "name": "discount",
+          "apiKey": "discount",
           "columnName": "C_Discount_ID",
           "label": "Basic Discount",
           "type": "foreignKey",
@@ -2828,6 +3167,7 @@
         },
         {
           "name": "cascade",
+          "apiKey": "cascade",
           "columnName": "Cascade",
           "label": "Cascade",
           "type": "boolean",
@@ -2845,6 +3185,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "Isactive",
           "label": "Active",
           "type": "boolean",
@@ -2861,7 +3202,8 @@
           "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         },
         {
-          "name": "cOrderDiscountID",
+          "name": "id",
+          "apiKey": "id",
           "columnName": "C_Order_Discount_ID",
           "label": "C_Order_Discount_ID",
           "type": "id",
@@ -2876,6 +3218,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -2911,6 +3254,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -2943,6 +3287,7 @@
         },
         {
           "name": "salesOrder",
+          "apiKey": "salesOrder",
           "columnName": "C_Order_ID",
           "label": "Purchase Order",
           "type": "foreignKey",
@@ -2977,6 +3322,7 @@
       "fields": [
         {
           "name": "lineNo",
+          "apiKey": "lineNo",
           "columnName": "Line",
           "label": "Line No.",
           "type": "integer",
@@ -2993,6 +3339,7 @@
         },
         {
           "name": "tax",
+          "apiKey": "tax",
           "columnName": "C_Tax_ID",
           "label": "Tax",
           "type": "foreignKey",
@@ -3012,6 +3359,7 @@
         },
         {
           "name": "taxAmount",
+          "apiKey": "taxAmount",
           "columnName": "TaxAmt",
           "label": "Tax Amount",
           "type": "amount",
@@ -3023,6 +3371,7 @@
         },
         {
           "name": "taxableAmount",
+          "apiKey": "taxableAmount",
           "columnName": "TaxBaseAmt",
           "label": "Taxable Amount",
           "type": "amount",
@@ -3039,6 +3388,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -3062,7 +3412,8 @@
           }
         },
         {
-          "name": "cOrderTaxID",
+          "name": "id",
+          "apiKey": "id",
           "columnName": "C_OrderTax_ID",
           "label": "Order Tax",
           "type": "id",
@@ -3077,6 +3428,7 @@
         },
         {
           "name": "salesOrder",
+          "apiKey": "salesOrder",
           "columnName": "C_Order_ID",
           "label": "Purchase Order",
           "type": "foreignKey",
@@ -3097,6 +3449,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "IsActive",
           "label": "Active",
           "type": "boolean",
@@ -3113,6 +3466,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -3152,6 +3506,7 @@
       "fields": [
         {
           "name": "dueDate",
+          "apiKey": "dueDate",
           "columnName": "Duedate",
           "label": "Due Date",
           "type": "date",
@@ -3164,6 +3519,7 @@
         },
         {
           "name": "paymentMethod",
+          "apiKey": "paymentMethod",
           "columnName": "FIN_Paymentmethod_ID",
           "label": "Payment Method",
           "type": "foreignKey",
@@ -3181,6 +3537,7 @@
         },
         {
           "name": "expected",
+          "apiKey": "expected",
           "columnName": "Expected",
           "label": "Expected Amount",
           "type": "amount",
@@ -3191,6 +3548,7 @@
         },
         {
           "name": "received",
+          "apiKey": "received",
           "columnName": "Received",
           "label": "Paid",
           "type": "amount",
@@ -3201,6 +3559,7 @@
         },
         {
           "name": "outstanding",
+          "apiKey": "outstanding",
           "columnName": "Outstanding",
           "label": "Outstanding",
           "type": "amount",
@@ -3211,6 +3570,7 @@
         },
         {
           "name": "lastPayment",
+          "apiKey": "lastPayment",
           "columnName": "Lastpayment",
           "label": "Last Payment Date",
           "type": "date",
@@ -3221,6 +3581,7 @@
         },
         {
           "name": "numberOfPayments",
+          "apiKey": "numberOfPayments",
           "columnName": "Numberofpayments",
           "label": "Number of Payments",
           "type": "integer",
@@ -3231,6 +3592,7 @@
         },
         {
           "name": "currency",
+          "apiKey": "currency",
           "columnName": "C_Currency_ID",
           "label": "Currency",
           "type": "foreignKey",
@@ -3250,6 +3612,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -3279,6 +3642,7 @@
         },
         {
           "name": "invoice",
+          "apiKey": "invoice",
           "columnName": "C_Invoice_ID",
           "label": "Invoice",
           "type": "foreignKey",
@@ -3298,6 +3662,7 @@
         },
         {
           "name": "finPaymentSchedOrdVID",
+          "apiKey": "finPaymentSchedOrdVID",
           "columnName": "Fin_Payment_Sched_Ord_V_ID",
           "label": "Order Payment Out Plan",
           "type": "id",
@@ -3310,6 +3675,7 @@
         },
         {
           "name": "salesOrder",
+          "apiKey": "salesOrder",
           "columnName": "C_Order_ID",
           "label": "Purchase Order",
           "type": "foreignKey",
@@ -3330,6 +3696,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "Isactive",
           "label": "Active",
           "type": "boolean",
@@ -3342,6 +3709,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -3384,6 +3752,7 @@
       "fields": [
         {
           "name": "payment",
+          "apiKey": "payment",
           "columnName": "FIN_Payment_ID",
           "label": "Payment Out",
           "type": "foreignKey",
@@ -3404,6 +3773,7 @@
         },
         {
           "name": "paymentDate",
+          "apiKey": "paymentDate",
           "columnName": "Paymentdate",
           "label": "Payment Date",
           "type": "date",
@@ -3415,6 +3785,7 @@
         },
         {
           "name": "dueDate",
+          "apiKey": "dueDate",
           "columnName": "Duedate",
           "label": "Due Date",
           "type": "date",
@@ -3426,6 +3797,7 @@
         },
         {
           "name": "paymentMethod",
+          "apiKey": "paymentMethod",
           "columnName": "Fin_Paymentmethod_ID",
           "label": "Payment Method",
           "type": "foreignKey",
@@ -3443,6 +3815,7 @@
         },
         {
           "name": "finFinancialAccountID",
+          "apiKey": "finFinancialAccountID",
           "columnName": "Fin_Financial_Account_ID",
           "label": "Financial Account",
           "type": "foreignKey",
@@ -3461,6 +3834,7 @@
         },
         {
           "name": "expected",
+          "apiKey": "expected",
           "columnName": "Expected",
           "label": "Expected Amount",
           "type": "amount",
@@ -3471,6 +3845,7 @@
         },
         {
           "name": "paidAmount",
+          "apiKey": "paidAmount",
           "columnName": "Paidamt",
           "label": "Paid Amount",
           "type": "amount",
@@ -3482,6 +3857,7 @@
         },
         {
           "name": "currency",
+          "apiKey": "currency",
           "columnName": "C_Currency_ID",
           "label": "Currency",
           "type": "foreignKey",
@@ -3502,6 +3878,7 @@
         },
         {
           "name": "writeoffAmount",
+          "apiKey": "writeoffAmount",
           "columnName": "Writeoffamt",
           "label": "Write-off Amount",
           "type": "amount",
@@ -3513,6 +3890,7 @@
         },
         {
           "name": "expectedConverted",
+          "apiKey": "expectedConverted",
           "columnName": "ExpectedConverted",
           "label": "Expected (Account Currency)",
           "type": "amount",
@@ -3524,6 +3902,7 @@
         },
         {
           "name": "paidConverted",
+          "apiKey": "paidConverted",
           "columnName": "PaidConverted",
           "label": "Paid (Account Currency)",
           "type": "amount",
@@ -3535,6 +3914,7 @@
         },
         {
           "name": "finaccTxnConvertRate",
+          "apiKey": "finaccTxnConvertRate",
           "columnName": "Finacc_Txn_Convert_Rate",
           "label": "Exchange Rate",
           "type": "string",
@@ -3547,6 +3927,7 @@
         },
         {
           "name": "paymentno",
+          "apiKey": "paymentno",
           "columnName": "Paymentno",
           "label": "Payment No.",
           "type": "string",
@@ -3557,6 +3938,7 @@
         },
         {
           "name": "finaccCurrencyID",
+          "apiKey": "finaccCurrencyID",
           "columnName": "Finacc_Currency_ID",
           "label": "Finacc_Currency_ID",
           "type": "foreignKey",
@@ -3576,6 +3958,7 @@
         },
         {
           "name": "canceled",
+          "apiKey": "canceled",
           "columnName": "Iscanceled",
           "label": "Canceled",
           "type": "boolean",
@@ -3586,6 +3969,7 @@
         },
         {
           "name": "status",
+          "apiKey": "status",
           "columnName": "Status",
           "label": "Status",
           "type": "enum",
@@ -3593,10 +3977,45 @@
           "visibility": "readOnly",
           "maxLength": "60",
           "isFilterable": true,
-          "help": "Status for the debt payment"
+          "help": "Status for the debt payment",
+          "enumValues": [
+            {
+              "value": "RPAP",
+              "name": "Awaiting Payment"
+            },
+            {
+              "value": "RPAE",
+              "name": "Awaiting Execution"
+            },
+            {
+              "value": "RPVOID",
+              "name": "Void"
+            },
+            {
+              "value": "PPM",
+              "name": "Payment Made"
+            },
+            {
+              "value": "RPR",
+              "name": "Payment Received"
+            },
+            {
+              "value": "RDNC",
+              "name": "Deposited not Cleared"
+            },
+            {
+              "value": "PWNC",
+              "name": "Withdrawn not Cleared"
+            },
+            {
+              "value": "RPPC",
+              "name": "Payment Cleared"
+            }
+          ]
         },
         {
           "name": "orderPaymentPlan",
+          "apiKey": "orderPaymentPlan",
           "columnName": "Fin_Payment_Sched_Ord_V_Id",
           "label": "Order Payment Out Plan",
           "type": "foreignKey",
@@ -3616,6 +4035,7 @@
         },
         {
           "name": "finPaymentDetailVID",
+          "apiKey": "finPaymentDetailVID",
           "columnName": "Fin_Payment_Detail_V_ID",
           "label": "Payment Detail",
           "type": "id",
@@ -3627,6 +4047,7 @@
         },
         {
           "name": "invoiceAmount",
+          "apiKey": "invoiceAmount",
           "columnName": "Invoicedamt",
           "label": "Invoice Amount",
           "type": "amount",
@@ -3638,6 +4059,7 @@
         },
         {
           "name": "businessPartner",
+          "apiKey": "businessPartner",
           "columnName": "C_Bpartner_ID",
           "label": "Business Partner",
           "type": "foreignKey",
@@ -3657,6 +4079,7 @@
         },
         {
           "name": "organization",
+          "apiKey": "organization",
           "columnName": "AD_Org_ID",
           "label": "Organization",
           "type": "foreignKey",
@@ -3686,6 +4109,7 @@
         },
         {
           "name": "invoiceno",
+          "apiKey": "invoiceno",
           "columnName": "Invoiceno",
           "label": "Invoice No.",
           "type": "string",
@@ -3696,6 +4120,7 @@
         },
         {
           "name": "active",
+          "apiKey": "active",
           "columnName": "Isactive",
           "label": "Active",
           "type": "boolean",
@@ -3708,6 +4133,7 @@
         },
         {
           "name": "orderno",
+          "apiKey": "orderno",
           "columnName": "Orderno",
           "label": "Order No.",
           "type": "string",
@@ -3718,6 +4144,7 @@
         },
         {
           "name": "client",
+          "apiKey": "client",
           "columnName": "AD_Client_ID",
           "label": "Client",
           "type": "foreignKey",
@@ -3751,7 +4178,7 @@
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "cd96bd6b",
-    "extractedAt": "2026-03-16T17:27:16.641Z"
+    "checksum": "f7d7761d",
+    "extractedAt": "2026-03-18T19:05:36.153Z"
   }
 }

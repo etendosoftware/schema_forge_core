@@ -2,9 +2,9 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:relatedProducts
 const fields = [
-  { key: 'lineNo', column: 'Line', type: 'number', required: true, readOnly: true },
-  { key: 'product', column: 'M_Product_ID', type: 'search', required: true, readOnly: true, reference: 'Product', inputMode: 'search' },
-  { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', readOnly: true },
+  { key: 'lineNo', column: 'Line', type: 'number', required: true, readOnly: true, section: 'other' },
+  { key: 'product', column: 'M_Product_ID', type: 'search', required: true, readOnly: true, section: 'other', reference: 'Product', inputMode: 'search' },
+  { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', readOnly: true, section: 'other' },
 ];
 // @sf-generated-end fields:relatedProducts
 

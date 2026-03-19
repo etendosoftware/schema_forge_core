@@ -524,6 +524,11 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             }
           }
 
+          // Generate mockData.js (entity record data for local development)
+          const { generateMockDataFile } = await import('./generate-mock-data.js');
+          const mockDataPath = resolvePath(outDir, 'mockData.js');
+          await writeFile(mockDataPath, generateMockDataFile(contract), 'utf8');
+
           let summary = `  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`;
           if (totalPreserved > 0 || totalUnmatched > 0) {
             summary += ` (preserved ${totalPreserved} custom sections`;

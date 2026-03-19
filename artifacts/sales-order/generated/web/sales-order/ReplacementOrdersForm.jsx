@@ -2,7 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:replacementOrders
 const fields = [
-  { key: 'replacementOrder', column: 'C_Replacement_ID', type: 'search', required: true, readOnly: true, reference: 'Order', inputMode: 'search' },
+  { key: 'replacementOrder', column: 'C_Replacement_ID', type: 'search', required: true, readOnly: true, section: 'other', reference: 'Order', inputMode: 'search' },
 ];
 // @sf-generated-end fields:replacementOrders
 

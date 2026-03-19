@@ -33,8 +33,7 @@ export function getProcessesForEntity(contract, entityName) {
  */
 export function getReadOnlyFields(contract, entityName) {
   const entity = contract.frontendContract.entities[entityName];
-  // Exclude grid:true fields — they already appear in the table and must not repeat in the summary strip.
-  return entity.fields.filter(f => f.form && f.visibility === 'readOnly' && !f.grid);
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
 }
 
 /**
@@ -189,8 +188,7 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -246,11 +244,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Summary strip: grid:false only (getReadOnlyFields already filters), minus the status badge field
   const summaryFields = readOnlyFields.filter(f => f !== statusField);
 
-  // Summary config — include label so DetailView doesn't fall back to Hibernate field names
+  // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart} },`;
+    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   // Status field config
