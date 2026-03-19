@@ -150,9 +150,15 @@
   </div>
   {{/if}}
 
-  {{!-- Footer --}}
-  <div class="doc-footer">
-    Generated on {{formatDate meta.generatedAt}} &mdash; {{header.org_name}}
+  {{!-- Footer with QR --}}
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6mm; padding-top:4mm; border-top:1px solid #e2e8f0;">
+    <div style="flex-shrink:0;">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{encodeQR header}}" width="80" height="80" style="display:block;" />
+      <div style="font-size:6pt; color:#94a3b8; margin-top:1mm; max-width:80px; text-align:center;">Scan to verify</div>
+    </div>
+    <div style="font-size:7pt; color:#94a3b8; text-align:right;">
+      Generated on {{formatDate meta.generatedAt}}<br>{{header.org_name}}
+    </div>
   </div>
 
 </div></body></html>
