@@ -188,7 +188,10 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    // label: carries the per-window AD_Field.Name (takes precedence over global locale by column).
+    // Included only when present — fields without a per-window label fall through to locale + key.
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -247,7 +250,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}' },`;
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart} },`;
   }).join('\n');
 
   // Status field config

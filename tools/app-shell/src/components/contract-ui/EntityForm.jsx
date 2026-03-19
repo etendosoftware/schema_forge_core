@@ -296,7 +296,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   return (
     <div className={gridClass}>
       {displayFields.map(f => {
-        const label = t(f.column) ?? f.label ?? f.key;
+        // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
+        const label = f.label ?? t(f.column) ?? f.key;
         // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
         const isReadOnly = f.readOnly
           || displayLogic?.readOnly?.[f.key] === true
