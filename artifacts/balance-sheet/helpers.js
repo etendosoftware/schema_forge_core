@@ -16,7 +16,7 @@ function formatDate(value) {
   if (value == null || value === '') return '';
   var d = new Date(value);
   if (isNaN(d.getTime())) return String(value);
-  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
 }
 
 function formatCurrency(value) {
