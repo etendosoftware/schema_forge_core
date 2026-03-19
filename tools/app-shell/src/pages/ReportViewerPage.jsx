@@ -141,12 +141,16 @@ function ReportViewer({ report, onBack, token }) {
     }
 
     setLoading(false);
-  }, [report.id]);
+  }, [report.id, token, params]);
 
-  // Auto-render preview on mount
+  // Auto-render preview on mount (only once)
+  const initialRender = useRef(false);
   useEffect(() => {
-    renderReport('html');
-  }, [renderReport]);
+    if (!initialRender.current) {
+      initialRender.current = true;
+      renderReport('html');
+    }
+  }, []);
 
   const handleFormatClick = (fmt) => {
     if (fmt === 'preview') {
