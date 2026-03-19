@@ -4,6 +4,8 @@ FROM jsreport/jsreport:4.7.0
 USER root
 RUN apk add --no-cache chromium
 RUN mkdir -p /app/data && chown -R jsreport:jsreport /app/data
+# QR code generation in templates (used by helpers via require('qrcode'))
+RUN cd /app && npm install --save qrcode
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 USER jsreport
 

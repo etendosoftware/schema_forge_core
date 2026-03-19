@@ -22,6 +22,7 @@
       "allowedFiles": "**/*.*"
     }
   },
+  "trustUserCode": true,
   "templatingEngines": {
     "timeout": 60000,
     "strategy": "in-process"

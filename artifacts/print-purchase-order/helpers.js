@@ -1,3 +1,5 @@
+var QRCode = require('qrcode');
+
 function formatDate(value) {
   if (value == null || value === '') return '';
   var d = new Date(value);
@@ -16,24 +18,28 @@ function formatNumber(value) {
   if (isNaN(num)) return String(value);
   return new Intl.NumberFormat('en-US').format(num);
 }
-function encodeQR(header) {
-  // Build QR data string from document header — fields TBD
-  var parts = [];
-  if (header.doc_type) parts.push('T:' + header.doc_type);
-  if (header.documentno) parts.push('N:' + header.documentno);
-  if (header.dateordered) parts.push('D:' + header.dateordered.substring(0, 10));
-  if (header.bp_name) parts.push('BP:' + header.bp_name);
-  if (header.grandtotal) parts.push('$:' + header.grandtotal);
-  if (header.currency) parts.push('C:' + header.currency);
-  if (header.org_taxid) parts.push('TID:' + header.org_taxid);
-  if (header.status) parts.push('S:' + header.status);
-  return encodeURIComponent(parts.join('|'));
-}
-
 function ifCond(v1, operator, v2, options) {
   switch (operator) {
     case '===': return v1 === v2 ? options.fn(this) : options.inverse(this);
     case '!==': return v1 !== v2 ? options.fn(this) : options.inverse(this);
     default: return options.inverse(this);
   }
+}
+
+// Async helper: generates QR code as base64 data URL
+// Usage in template: {{qrCode header}}
+// jsreport supports async helpers that return promises
+function qrCode(header) {
+  var parts = [];
+  if (header.doc_type) parts.push('T:' + header.doc_type);
+  if (header.documentno) parts.push('N:' + header.documentno);
+  if (header.dateordered) parts.push('D:' + String(header.dateordered).substring(0, 10));
+  if (header.bp_name) parts.push('BP:' + header.bp_name);
+  if (header.grandtotal) parts.push('$:' + header.grandtotal);
+  if (header.currency) parts.push('C:' + header.currency);
+  if (header.org_taxid) parts.push('TID:' + header.org_taxid);
+  if (header.status) parts.push('S:' + header.status);
+
+  var data = parts.join('|');
+  return QRCode.toDataURL(data, { width: 120, margin: 1 });
 }
