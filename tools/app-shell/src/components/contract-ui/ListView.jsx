@@ -76,7 +76,7 @@ export function ListView({
   }, [hook.hasMore, hook.loadingMore, hook.loadMore]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" data-testid="list-view">
       {/* Top bar area (gray background, inherited from parent) */}
       <div className="px-6 pt-3 pb-3">
         {/* Row 1: Title + Global search + action icons */}
@@ -260,6 +260,7 @@ export function ListView({
               <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">
                 <Button
                   className="rounded-none rounded-l-lg gap-1.5 px-4"
+                  data-testid="action-new"
                   onClick={() => navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />

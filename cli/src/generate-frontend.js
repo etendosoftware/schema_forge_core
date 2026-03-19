@@ -40,6 +40,7 @@ export function getReadOnlyFields(contract, entityName) {
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
+  if (field.enumValues) return 'enum';
   if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) return 'status';
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
@@ -75,16 +76,33 @@ export function generateTableComponent(entityName, contract) {
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
+  // Generate inline enum label maps for fields with enumValues
+  const enumLabelLines = [];
+  const enumFieldVars = {};
+  for (const f of gridFields) {
+    if (f.enumValues && f.enumValues.length > 0) {
+      const fieldKey = f.apiKey || f.name;
+      const varName = `${fieldKey}Labels`;
+      enumFieldVars[fieldKey] = varName;
+      const entries = f.enumValues.map(e => `  '${e.value}': '${e.name.replace(/'/g, "\\'")}'`).join(',\n');
+      enumLabelLines.push(`const ${varName} = {\n${entries},\n};`);
+    }
+  }
+
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart} },`;
+    const fieldKey = f.apiKey || f.name;
+    const enumLabelsPart = enumFieldVars[fieldKey] ? `, enumLabels: ${enumFieldVars[fieldKey]}` : '';
+    return `  { key: '${fieldKey}', column: '${f.column}', type: '${type}'${selectionPart}${enumLabelsPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
-  return `import { DataTable } from '@/components/contract-ui';
+  const enumBlock = enumLabelLines.length > 0 ? '\n' + enumLabelLines.join('\n\n') + '\n' : '';
 
+  return `import { DataTable } from '@/components/contract-ui';
+${enumBlock}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -170,7 +188,8 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const fieldLine = `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -221,11 +240,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}' },`;
+    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}' },`;
   }).join('\n');
 
   // Status field config
-  const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
+  const statusFieldLine = statusField ? `'${statusField.apiKey || statusField.name}'` : 'null';
 
   // Process config
   const processesArray = processes.map(p => {
@@ -249,14 +268,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `    { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
+    return `    { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
   }).join('\n');
 
   // API prediction config
@@ -541,32 +560,334 @@ export function generateMockCatalogs(contract) {
 }
 
 /**
+ * Generate a Kanban-layout page component for the primary entity.
+ * Uses KanbanBoard from @/components/contract-ui with config from templateConfig.
+ * Also produces Table.jsx and Form.jsx for the detail view on card click.
+ */
+export function generateKanbanPage(primaryEntity, contract) {
+  const win = contract.frontendContract.window;
+  const templateConfig = win.templateConfig ?? {};
+  const compName = `${capitalize(primaryEntity)}KanbanPage`;
+  const windowLabel = win.name ?? toLabel(primaryEntity);
+  const category = capitalize(win.category ?? 'general');
+  const apiPrediction = contract.apiPrediction;
+  const specName = apiPrediction?.specName ?? primaryEntity;
+
+  const groupByField = templateConfig.groupByField ?? 'status';
+  const cardTitle = templateConfig.cardTitle ?? 'name';
+  const cardSubtitle = templateConfig.cardSubtitle ?? null;
+  const cardValue = templateConfig.cardValue ?? null;
+  const columns = templateConfig.columns ?? [];
+
+  const columnsLiteral = JSON.stringify(columns, null, 2)
+    .split('\n').join('\n');
+
+  const cardSubtitleProp = cardSubtitle ? `\n        cardSubtitle="${cardSubtitle}"` : '';
+  const cardValueProp = cardValue ? `\n        cardValue="${cardValue}"` : '';
+
+  const apiBaseUrlComment = `// API: GET /sws/neo/${specName}/${primaryEntity}`;
+
+  return `import { useState, useMemo, useCallback } from 'react';
+import { KanbanBoard } from '@/components/contract-ui';
+import { useEntity } from '@/hooks/useEntity';
+import { useNavigate } from 'react-router-dom';
+
+${apiBaseUrlComment}
+
+${MARKERS.GENERATED_START(`kanban-columns:${primaryEntity}`)}
+const kanbanColumns = ${columnsLiteral};
+${MARKERS.GENERATED_END(`kanban-columns:${primaryEntity}`)}
+
+const breadcrumb = '${category} / ${windowLabel}';
+
+${MARKERS.GENERATED_START(`component:${compName}`)}
+export default function ${compName}({ windowName, token, apiBaseUrl, ...props }) {
+  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
+  const navigate = useNavigate();
+  const { items, loading, refresh } = useEntity('${primaryEntity}', null, { token, apiBaseUrl });
+
+  // Map items to KanbanBoard cards: { id, columnId, title, subtitle?, value? }
+  const cards = useMemo(() => (items ?? []).map(record => ({
+    id: record.id,
+    columnId: record['${groupByField}'] ?? '',
+    title: record['${cardTitle}'] ?? '',${cardSubtitle ? `\n    subtitle: record['${cardSubtitle}'] ?? '',` : ''}${cardValue ? `\n    value: record['${cardValue}'] ?? null,` : ''}
+  })), [items]);
+
+  const handleCardClick = useCallback((card) => {
+    navigate(\`/\${windowName}/\${card.id}\`);
+  }, [navigate, windowName]);
+
+  const handleDragEnd = useCallback(async (cardId, fromColumnId, toColumnId) => {
+    // Update the record status via PATCH
+    const headers = { 'Authorization': \`Bearer \${token}\`, 'Content-Type': 'application/json' };
+    await fetch(\`\${apiBaseUrl}/${primaryEntity}/\${cardId}\`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ ${groupByField}: toColumnId }),
+    });
+    refresh();
+    ${MARKERS.CUSTOM_SLOT(`on-status-change:${primaryEntity}`)}
+  }, [token, apiBaseUrl, refresh]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center p-8 text-muted-foreground">Loading...</div>;
+  }
+
+  return (
+    <div>
+      <div className="mb-4 text-sm text-muted-foreground">{breadcrumb}</div>
+      <KanbanBoard
+        columns={kanbanColumns}
+        cards={cards}
+        onDragEnd={handleDragEnd}
+        onCardClick={handleCardClick}
+        emptyMessage="No items"
+      />
+    </div>
+  );
+}
+${MARKERS.GENERATED_END(`component:${compName}`)}
+
+${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
+`;
+}
+
+/**
+ * Generate a Calendar-layout page component for the primary entity.
+ * Uses CalendarView from @/components/contract-ui with config from templateConfig.
+ * Also produces Table.jsx and Form.jsx for the detail view on event click.
+ */
+export function generateCalendarPage(primaryEntity, contract) {
+  const win = contract.frontendContract.window;
+  const templateConfig = win.templateConfig ?? {};
+  const compName = `${capitalize(primaryEntity)}CalendarPage`;
+  const windowLabel = win.name ?? toLabel(primaryEntity);
+  const category = capitalize(win.category ?? 'general');
+  const apiPrediction = contract.apiPrediction;
+  const specName = apiPrediction?.specName ?? primaryEntity;
+
+  const dateField = templateConfig.dateField ?? 'date';
+  const endDateField = templateConfig.endDateField ?? null;
+  const eventTitle = templateConfig.eventTitle ?? 'name';
+  const eventType = templateConfig.eventType ?? null;
+
+  const endDateProp = endDateField ? `\n        endDateField="${endDateField}"` : '';
+  const eventTypeProp = eventType ? `\n        eventType="${eventType}"` : '';
+
+  const apiBaseUrlComment = `// API: GET /sws/neo/${specName}/${primaryEntity}`;
+
+  return `import { useState, useMemo, useCallback } from 'react';
+import { CalendarView } from '@/components/contract-ui';
+import { useEntity } from '@/hooks/useEntity';
+import { useNavigate } from 'react-router-dom';
+
+${apiBaseUrlComment}
+
+const breadcrumb = '${category} / ${windowLabel}';
+
+${MARKERS.GENERATED_START(`component:${compName}`)}
+export default function ${compName}({ windowName, token, apiBaseUrl, ...props }) {
+  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
+  const navigate = useNavigate();
+  const [month, setMonth] = useState(() => new Date());
+  const { items, loading } = useEntity('${primaryEntity}', null, { token, apiBaseUrl });
+
+  // Map items to CalendarView events: { id, title, date, endDate?, type? }
+  const events = useMemo(() => (items ?? []).map(record => ({
+    id: record.id,
+    title: record['${eventTitle}'] ?? '',
+    date: record['${dateField}'],${endDateField ? `\n    endDate: record['${endDateField}'],` : ''}${eventType ? `\n    type: record['${eventType}'],` : ''}
+  })), [items]);
+
+  const handleEventClick = useCallback((event) => {
+    navigate(\`/\${windowName}/\${event.id}\`);
+    ${MARKERS.CUSTOM_SLOT(`on-event-click:${primaryEntity}`)}
+  }, [navigate, windowName]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center p-8 text-muted-foreground">Loading...</div>;
+  }
+
+  return (
+    <div>
+      <div className="mb-4 text-sm text-muted-foreground">{breadcrumb}</div>
+      <CalendarView
+        events={events}
+        month={month}
+        onMonthChange={setMonth}
+        onEventClick={handleEventClick}
+      />
+    </div>
+  );
+}
+${MARKERS.GENERATED_END(`component:${compName}`)}
+
+${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
+`;
+}
+
+/**
+ * Generate a custom window scaffold in windows/custom/{window-name}/.
+ * Returns { 'index.jsx': code, 'mockCatalogs.js': code }.
+ *
+ * The scaffold is a working empty shell with rich JSDoc metadata so that
+ * AI or a developer can build the actual component with full context.
+ *
+ * Regeneration safety: if index.jsx already exists the caller should write
+ * the output as index.jsx.new instead (this function just returns the content).
+ */
+export function generateCustomScaffold(primaryEntity, detailEntity, contract) {
+  const { frontendContract, apiPrediction, backendContract } = contract;
+  const win = frontendContract.window;
+  const windowName = win.name ?? toLabel(primaryEntity);
+  const specName = apiPrediction?.specName ?? primaryEntity;
+  const baseUrl = apiPrediction?.baseUrl ?? `/sws/neo/${specName}`;
+  const category = win.category ?? 'general';
+
+  // Build entity metadata block for JSDoc
+  const entityLines = [];
+  for (const [entityName, entityData] of Object.entries(frontendContract.entities)) {
+    entityLines.push(` * Entity: ${entityName} (table: ${entityData.tableName ?? 'unknown'}, tabId: ${entityData.tabId ?? 'unknown'})`);
+    for (const field of entityData.fields) {
+      const flags = [
+        `type:${field.type}`,
+        `visibility:${field.visibility}`,
+        field.required ? 'required' : null,
+        field.inputMode ? `inputMode:${field.inputMode}` : null,
+        field.reference ? `ref:${field.reference}` : null,
+      ].filter(Boolean).join(', ');
+      entityLines.push(` *   - ${field.name} (${flags})`);
+    }
+  }
+
+  // Build process lines for JSDoc
+  const processEndpoints = backendContract?.processEndpoints ?? [];
+  const processLines = processEndpoints.length > 0
+    ? processEndpoints.map(p => ` *   - ${p.name}: POST ${baseUrl}/${p.entity}/action/${p.name}`)
+    : [' *   (none)'];
+
+  // Build API patterns block
+  const apiLines = [];
+  if (apiPrediction?.crud) {
+    for (const [entityName, crud] of Object.entries(apiPrediction.crud)) {
+      apiLines.push(` *   List:   GET ${crud.listUrl}`);
+      apiLines.push(` *   Detail: GET ${crud.detailUrl}`);
+    }
+  }
+  if (apiPrediction?.selectors?.length) {
+    for (const sel of apiPrediction.selectors) {
+      apiLines.push(` *   Selector (${sel.field}): GET ${sel.url}`);
+    }
+  }
+
+  const compName = `${capitalize(specName.replace(/-([a-z])/g, (_, c) => c.toUpperCase()))}Custom`;
+
+  const scaffold = `/**
+ * Custom Window: ${windowName}
+ * SpecName: ${specName}
+ * Category: ${category}
+ * API base: ${baseUrl}
+ *
+ * == Entities ==
+${entityLines.join('\n')}
+ *
+ * == Processes ==
+${processLines.join('\n')}
+ *
+ * == API Patterns ==
+${apiLines.join('\n')}
+ *
+ * == Available contract-ui components ==
+ *   KanbanBoard, CalendarView, DataTable, EntityForm, ListView, DetailView,
+ *   ProcessForm, ReportForm
+ *
+ * == Available hooks ==
+ *   useEntity({ entity, windowName, token, apiBaseUrl })
+ *   useAuth()
+ *
+ * == Full contract reference ==
+ *   See artifacts/${specName}/contract.json for the complete contract.
+ *
+ * == Regeneration ==
+ *   If the contract changes, the pipeline writes index.jsx.new with updated
+ *   metadata. Diff against this file and merge the changes you need.
+ */
+
+import { useState } from 'react';
+
+${MARKERS.CUSTOM_SLOT('imports:custom')}
+
+/**
+ * ${windowName} — custom window implementation.
+ *
+ * Props: { token, apiBaseUrl, windowName, recordId, window }
+ */
+export default function ${compName}({ token, apiBaseUrl, windowName, recordId, window: windowMeta }) {
+  ${MARKERS.CUSTOM_SLOT('state:custom')}
+
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h2>{windowMeta?.name ?? '${windowName}'}</h2>
+      <p>Custom window — implement your UI here.</p>
+      ${MARKERS.CUSTOM_SLOT('content:custom')}
+    </div>
+  );
+}
+`;
+
+  const mockCatalogs = generateMockCatalogs(contract);
+
+  return { 'index.jsx': scaffold, 'mockCatalogs.js': mockCatalogs };
+}
+
+/**
  * Generate all frontend components from a contract.
  * Returns a map of { filename: code }.
+ * Dispatches by layoutType: kanban, calendar, custom, or default.
  */
 export function generateAll(contract) {
   const { frontendContract } = contract;
   const { window: win, entities } = frontendContract;
   const primaryEntity = win.primaryEntity;
+  const layoutType = win.layoutType ?? 'default';
   const entityNames = Object.keys(entities);
   const detailEntity = entityNames.find(name => name !== primaryEntity);
 
+  // Custom scaffold: caller (pipeline) handles file placement and .new logic.
+  // Return special marker so pipeline can distinguish this case.
+  if (layoutType === 'custom') {
+    return { __layoutType: 'custom', ...generateCustomScaffold(primaryEntity, detailEntity, contract) };
+  }
+
   const files = {};
 
-  // Generate Table + Form for each entity
+  // Generate Table + Form for each entity (used by all layout types)
   for (const entityName of entityNames) {
     const capName = capitalize(entityName);
     files[`${capName}Table.jsx`] = generateTableComponent(entityName, contract);
     files[`${capName}Form.jsx`] = generateFormComponent(entityName, contract);
   }
 
+  // Generate mock catalogs
+  files['mockCatalogs.js'] = generateMockCatalogs(contract);
+
+  if (layoutType === 'kanban') {
+    files[`${capitalize(primaryEntity)}KanbanPage.jsx`] = generateKanbanPage(primaryEntity, contract);
+    files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity, contract);
+    return files;
+  }
+
+  if (layoutType === 'calendar') {
+    files[`${capitalize(primaryEntity)}CalendarPage.jsx`] = generateCalendarPage(primaryEntity, contract);
+    files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity, contract);
+    return files;
+  }
+
+  // Default layout — unchanged behavior
   // Generate Page if there is a detail entity
   if (detailEntity) {
     files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
   }
-
-  // Generate mock catalogs
-  files['mockCatalogs.js'] = generateMockCatalogs(contract);
 
   // Always generate index
   files['index.jsx'] = generateIndexComponent(primaryEntity, detailEntity, contract);
@@ -759,6 +1080,7 @@ if (isDirectRun) {
   mkdirSync(outDir, { recursive: true });
 
   for (const [filename, code] of Object.entries(files)) {
+    if (filename.startsWith('__')) continue; // Skip internal markers
     const filePath = resolve(outDir, filename);
     writeFileSync(filePath, code, 'utf-8');
     console.log(`  wrote ${filePath}`);

@@ -3,7 +3,11 @@ etendo_core
 app.log
 node_modules/
 tools/decision-panel/dist/
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+!.claude/agents/
+!.claude/agents/**
 artifacts/test-report.xml
 artifacts/test-report.html
 .DS_Store
@@ -13,9 +17,8 @@ window-locks.json
 tools/app-shell/dist/
 tools/app-shell/.env.local
 tools/app-shell/.env.development
-
-# Report preview outputs
-artifacts/*/reports/*/preview.*
-
-# Docker jsreport runtime data
-docker/jsreport/data/
+artifacts/e2e-report/
+e2e/test-results/
+e2e/playwright-report/
+e2e/recordings/
+e2e/auth.json

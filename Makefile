@@ -1,4 +1,4 @@
-.PHONY: test test-frontend generate dev build install deploy clean help report-serve report-serve-detach report-stop report-preview
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
 
 # --- Testing ---
 
@@ -7,6 +7,29 @@ test: ## Run all CLI tests
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
+
+# --- E2E Testing (Playwright) ---
+
+test-e2e: ## Run E2E tests with visible browser
+	cd e2e && npx playwright test --headed
+
+test-e2e-headless: ## Run E2E tests headless (CI mode)
+	cd e2e && npx playwright test --headed=false
+
+test-e2e-debug: ## Run E2E tests in debug mode (step by step)
+	cd e2e && npx playwright test --debug
+
+test-e2e-ui: ## Open Playwright UI for interactive test running
+	cd e2e && npx playwright test --ui
+
+test-e2e-report: ## Show last E2E test report in browser
+	cd e2e && npx playwright show-report ../artifacts/e2e-report
+
+test-e2e-record: ## Record a test flow (opens browser, generates code)
+	cd e2e && npx playwright codegen --save-storage=auth.json http://localhost:3100 --output=recordings/recorded-flow.spec.js
+
+install-e2e: ## Install E2E dependencies + browsers
+	cd e2e && npm install && npx playwright install chromium
 
 # --- Code Generation ---
 
@@ -42,18 +65,18 @@ deploy: build ## Build app-shell and deploy to Etendo module web dir
 	@cp -r tools/app-shell/dist/* $(MODULE_WEB)/
 	@echo "Deployed to $(MODULE_WEB)"
 
-# --- Reports ---
+# --- Report Server ---
 
-report-serve: ## Start jsreport in Docker (foreground)
-	node cli/src/report-serve.js
+report-serve: ## Start jsreport Docker container
+	docker compose -f docker/jsreport/docker-compose.yml up
 
-report-serve-detach: ## Start jsreport in Docker (background)
-	node cli/src/report-serve.js --detach
+report-serve-detach: ## Start jsreport in background
+	docker compose -f docker/jsreport/docker-compose.yml up -d
 
 report-stop: ## Stop jsreport Docker container
-	node cli/src/report-serve.js --stop
+	docker compose -f docker/jsreport/docker-compose.yml down
 
-report-preview: ## Preview Business Partner listing report (requires jsreport running)
+report-preview: ## Preview Business Partner listing report
 	node cli/src/report-preview.js --artifact business-partner --report listing
 
 # --- Cleanup ---

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { KPIHeader } from '@/components/contract-ui/KPIHeader';
 import { Chatter } from '@/components/contract-ui/Chatter';
@@ -6,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
+import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 import {
   DollarSign,
   CreditCard,
@@ -18,6 +20,11 @@ import {
   Info,
   ChevronRight,
   Clock,
+  Search,
+  Sparkles,
+  Plus,
+  Bell,
+  Mic,
 } from 'lucide-react';
 import { kpisConfig, actions } from '@generated/dashboard/generated/config';
 import * as mockData from '@generated/dashboard/generated/mockData';
@@ -257,8 +264,46 @@ function PendingTasks() {
  * ----------------------------------------------------------------*/
 
 export default function DashboardPage() {
+  const [showUserContext, setShowUserContext] = useState(false);
+
   return (
-    <div className="space-y-6 p-6 bg-white rounded-tl-2xl min-h-full">
+    <div className="h-full flex flex-col">
+      {/* Top bar (matches ListView/DetailView style) */}
+      <div className="px-6 pt-3 pb-3">
+        <div className="flex items-center gap-4">
+          <div className="shrink-0">
+            <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search clients, orders, invoices..."
+                readOnly
+                tabIndex={-1}
+                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
+              />
+              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+              <Sparkles className="h-4 w-4" />
+            </button>
+            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+              <Plus className="h-4 w-4" />
+            </button>
+            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+              <Bell className="h-4 w-4" />
+            </button>
+            <LocaleSwitcher />
+            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
+            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+          </div>
+        </div>
+      </div>
+    <div className="space-y-6 p-6 bg-white rounded-tl-2xl flex-1">
       {/* KPI Row */}
       <KPIHeader kpis={kpis} />
 
@@ -281,6 +326,7 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+    </div>
     </div>
   );
 }

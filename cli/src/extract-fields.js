@@ -269,7 +269,7 @@ function deduplicateFieldNames(fields) {
  * Groups rows by tab, maps AD_Reference_IDs to schema types, and produces
  * the schema-raw.json structure per TDD 2.1.
  */
-export function buildSchema(rows, systemColumns, refMap) {
+export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
   if (!rows || rows.length === 0) {
     return { window: null, entities: [] };
   }
@@ -311,8 +311,12 @@ export function buildSchema(rows, systemColumns, refMap) {
     const fields = tab.fields.map((row) => {
       const classification = classifyField(row, systemColumns);
       const schemaType = refMap[String(row.ad_reference_id)] ?? 'string';
+      const isPk = row.columnname === tab.tableName + '_ID';
+      const isCoreModule = row.table_module_id === '0' || (row.column_module_id != null && row.column_module_id !== '0');
+      const apiKey = toPropertyName(row.obdal_name, { isPk, isCoreModule });
       const fieldDef = {
-        name: toPropertyName(row.obdal_name),
+        name: apiKey,
+        apiKey,
         columnName: row.columnname,
         label: row.field_name,
         type: schemaType,
@@ -365,6 +369,14 @@ export function buildSchema(rows, systemColumns, refMap) {
         const reference = buildReference(row);
         if (reference) {
           fieldDef.reference = reference;
+        }
+      }
+
+      // Attach enum values for List-type fields (AD_Reference_ID = 17)
+      if (schemaType === 'enum' && row.ad_reference_value_id) {
+        const enumValues = enumValuesMap[row.ad_reference_value_id];
+        if (enumValues) {
+          fieldDef.enumValues = enumValues;
         }
       }
 
@@ -449,6 +461,7 @@ SELECT
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
+  c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
   vr.Code AS val_rule_code,
@@ -519,9 +532,33 @@ export async function main(windowId, windowName) {
       return { window: null, entities: [] };
     }
 
+    // Fetch enum values for List-type fields (AD_Reference_ID = 17)
+    const listRefIds = [...new Set(
+      rows
+        .filter(r => String(r.ad_reference_id) === '17' && r.ad_reference_value_id)
+        .map(r => r.ad_reference_value_id)
+    )];
+
+    const enumValuesMap = {};
+    if (listRefIds.length > 0) {
+      const enumResult = await pool.query(
+        `SELECT rl.AD_Reference_ID, rl.Value, rl.Name
+         FROM AD_Ref_List rl
+         WHERE rl.AD_Reference_ID = ANY($1)
+           AND rl.IsActive = 'Y'
+         ORDER BY rl.SeqNo, rl.Name`,
+        [listRefIds]
+      );
+      for (const row of enumResult.rows) {
+        const refId = row.ad_reference_id;
+        if (!enumValuesMap[refId]) enumValuesMap[refId] = [];
+        enumValuesMap[refId].push({ value: row.value, name: row.name });
+      }
+    }
+
     // Use window name from DB if not provided
     const resolvedName = windowName ?? rows[0].window_name;
-    const schema = buildSchema(rows, systemColumns, refMap);
+    const schema = buildSchema(rows, systemColumns, refMap, enumValuesMap);
 
     // Write to artifacts directory
     const artifactsDir = join(ROOT, 'artifacts', resolvedName);
