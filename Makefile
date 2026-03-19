@@ -1,4 +1,4 @@
-.PHONY: test test-frontend generate dev build install deploy clean help report-serve report-serve-detach report-stop report-preview report-studio
+.PHONY: test test-frontend generate dev build install deploy clean help report-serve report-serve-detach report-stop report-preview
 
 # --- Testing ---
 
@@ -55,9 +55,6 @@ report-stop: ## Stop jsreport Docker container
 
 report-preview: ## Preview Business Partner listing report (requires jsreport running)
 	node cli/src/report-preview.js --artifact business-partner --report listing
-
-report-studio: ## Start Report Studio dev server (http://localhost:3200, requires jsreport)
-	cd tools/report-studio && npx vite
 
 # --- Cleanup ---
 
