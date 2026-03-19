@@ -36,10 +36,11 @@ function ReportCard({ report, onRun }) {
   );
 }
 
-function SearchInput({ selector, value, displayValue, onChange }) {
-  const [query, setQuery] = useState(displayValue || '');
+function SearchInput({ selector, value, displayValue, onChange, multi }) {
+  const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState([]); // [{id, name}]
   const ref = useRef(null);
 
   useEffect(() => {
@@ -60,20 +61,51 @@ function SearchInput({ selector, value, displayValue, onChange }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const addItem = (item) => {
+    if (multi) {
+      const next = [...selected.filter(s => s.id !== item.id), item];
+      setSelected(next);
+      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+      setQuery('');
+    } else {
+      onChange(item.id, item.name);
+      setQuery(item.name);
+      setOpen(false);
+    }
+  };
+
+  const removeItem = (id) => {
+    const next = selected.filter(s => s.id !== id);
+    setSelected(next);
+    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+  };
+
+  const selectedIds = new Set(selected.map(s => s.id));
+
   return (
     <div className="relative" ref={ref}>
+      {multi && selected.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-1">
+          {selected.map(s => (
+            <span key={s.id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">
+              {s.name}
+              <button onClick={() => removeItem(s.id)} className="ml-0.5 hover:text-destructive">&times;</button>
+            </span>
+          ))}
+        </div>
+      )}
       <input
         type="text"
-        value={query}
-        onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange('', ''); }}
+        value={multi ? query : (query || displayValue || '')}
+        onChange={e => { setQuery(e.target.value); setOpen(true); if (!multi && !e.target.value) onChange('', ''); }}
         onFocus={() => { if (options.length) setOpen(true); }}
         placeholder="Search..."
         className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-44"
       />
       {open && options.length > 0 && (
         <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
-          {options.map(o => (
-            <button key={o.id} onClick={() => { onChange(o.id, o.name); setQuery(o.name); setOpen(false); }}
+          {options.filter(o => !selectedIds.has(o.id)).map(o => (
+            <button key={o.id} onClick={() => addItem(o)}
               className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
           ))}
         </div>
@@ -103,6 +135,7 @@ function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
                   value={values[p.name] || ''}
                   displayValue={displayValues[p.name] || ''}
                   onChange={(id, name) => { onChange(p.name, id); setDisplayValues(prev => ({ ...prev, [p.name]: name })); }}
+                  multi={p.multi}
                 />
               </div>
             );

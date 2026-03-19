@@ -223,11 +223,18 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     // Parameterize query — support both Jasper-style hardcoded IDs and __PLACEHOLDER__ tokens
     sql = sql.replace(/__CLIENT_ID__/g, clientId);
     // Replace user parameter placeholders (__PARAM_NAME__ format)
+    // For multi-select values (comma-separated IDs), convert = 'id1,id2' to IN ('id1','id2')
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== '') {
-        sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), String(value).replace(/'/g, "''"));
+        const escaped = String(value).replace(/'/g, "''");
+        sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
       }
     }
+    // Convert equality checks with comma-separated values to IN clauses
+    sql = sql.replace(/=\s*'([^']*,[^']*)'/g, (match, ids) => {
+      const inList = ids.split(',').map(id => `'${id.trim()}'`).join(',');
+      return `IN (${inList})`;
+    });
     // Remove optional date filter clauses where params were not provided
     sql = sql.replace(/AND\s*\('[^']*'\s*=\s*''\s*OR\s*\w+\.\w+\s*[><=]+\s*'__\w+__'[^)]*\)/gi, '');
     sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);

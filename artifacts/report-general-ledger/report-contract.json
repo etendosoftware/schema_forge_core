@@ -33,8 +33,8 @@
     { "name": "accountFrom", "label": { "en_US": "From Account", "es_ES": "Cuenta desde" }, "type": "text" },
     { "name": "accountTo", "label": { "en_US": "To Account", "es_ES": "Cuenta hasta" }, "type": "text" },
     { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org" },
-    { "name": "bPartnerId", "label": { "en_US": "Business Partner", "es_ES": "Tercero" }, "type": "search", "selector": "bpartner" },
-    { "name": "productId", "label": { "en_US": "Product", "es_ES": "Producto" }, "type": "search", "selector": "product" },
+    { "name": "bPartnerId", "label": { "en_US": "Business Partner", "es_ES": "Tercero" }, "type": "search", "selector": "bpartner", "multi": true },
+    { "name": "productId", "label": { "en_US": "Product", "es_ES": "Producto" }, "type": "search", "selector": "product", "multi": true },
     { "name": "groupBy", "label": { "en_US": "Group By", "es_ES": "Agrupar por" }, "type": "select", "options": [
       { "value": "", "label": "Account" },
       { "value": "bpartner", "label": "Business Partner" },
