@@ -127,6 +127,53 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     return { rows, contract };
   }
 
+  // Document type: multiple queries (header + lines + taxes)
+  if (contract.type === 'document' && contract.sql?.header) {
+    const gradlePath = findGradleProps();
+    if (!gradlePath) throw new Error('gradle.properties not found');
+    const gradle = parseGradleProps(gradlePath);
+    const pg = await import('pg');
+    const pool = new pg.default.Pool({
+      host: gradle['bbdd.host'] || 'localhost',
+      port: parseInt(gradle['bbdd.port']) || 5432,
+      user: gradle['bbdd.user'],
+      password: gradle['bbdd.password'],
+      database: gradle['bbdd.sid'],
+      max: 3,
+    });
+
+    try {
+      function replacePlaceholders(sql) {
+        let q = sql;
+        for (const [key, value] of Object.entries(params)) {
+          if (value) q = q.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), String(value).replace(/'/g, "''"));
+        }
+        return q;
+      }
+
+      const headerSql = replacePlaceholders(contract.sql.header);
+      const linesSql = replacePlaceholders(contract.sql.lines);
+
+      const headerResult = await pool.query(headerSql);
+      const header = headerResult.rows[0] || {};
+
+      const linesResult = await pool.query(linesSql);
+      const lines = linesResult.rows;
+
+      let taxes = [];
+      if (contract.sql.taxes) {
+        const taxesSql = replacePlaceholders(contract.sql.taxes);
+        const taxResult = await pool.query(taxesSql);
+        taxes = taxResult.rows;
+      }
+
+      // For document type, return structured data (not flat rows)
+      return { rows: lines, contract, documentData: { header, lines, taxes } };
+    } finally {
+      await pool.end();
+    }
+  }
+
   // SQL query: either inline in contract or from Jasper jrxml
   let sql = null;
 
@@ -274,7 +321,8 @@ export default function reportApiPlugin() {
 
           try {
             const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-            const { rows, contract } = await fetchReportData(reportId, { limit, authToken, params });
+            const result = await fetchReportData(reportId, { limit, authToken, params });
+            const { rows, contract, documentData } = result;
             const activeFilters = Object.entries(params)
               .filter(([_, v]) => v && v !== '')
               .map(([k, v]) => {
@@ -292,9 +340,15 @@ export default function reportApiPlugin() {
             const recipe = recipeMap[format] || 'html';
             const title = contract.title?.en_US || reportId;
 
+            // Document type: structured data (header + lines + taxes)
+            // Listing type: flat rows
+            const templateData = documentData
+              ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params }, rows };
+
             const payload = {
               template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
-              data: { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params }, rows },
+              data: templateData,
             };
 
             if (recipe === 'chrome-pdf') {
