@@ -24,6 +24,13 @@
   ],
   "groups": [],
   "filters": [],
+  "parameters": [
+    { "name": "currentDate", "label": { "en_US": "As of Date", "es_ES": "Fecha corte" }, "type": "date", "default": "__TODAY__" },
+    { "name": "column1", "label": { "en_US": "Bucket 1 (days)", "es_ES": "Tramo 1 (días)" }, "type": "number", "default": "30" },
+    { "name": "column2", "label": { "en_US": "Bucket 2", "es_ES": "Tramo 2" }, "type": "number", "default": "60" },
+    { "name": "column3", "label": { "en_US": "Bucket 3", "es_ES": "Tramo 3" }, "type": "number", "default": "90" },
+    { "name": "column4", "label": { "en_US": "Bucket 4", "es_ES": "Tramo 4" }, "type": "number", "default": "120" }
+  ],
   "defaultSort": { "field": "bPartner", "direction": "asc" },
   "outputs": ["pdf", "xlsx", "csv", "html"],
   "summary": { "totalRows": true },

@@ -28,6 +28,10 @@
       ]
     }
   ],
+  "parameters": [
+    { "name": "dateFrom", "label": { "en_US": "Date From", "es_ES": "Desde" }, "type": "date" },
+    { "name": "dateTo", "label": { "en_US": "Date To", "es_ES": "Hasta" }, "type": "date", "default": "__TODAY__" }
+  ],
   "defaultSort": { "field": "dateacct", "direction": "asc" },
   "outputs": ["pdf", "xlsx", "csv", "html"],
   "summary": { "totalRows": true },

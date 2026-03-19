@@ -67,6 +67,10 @@
     }
   ],
   "filters": [],
+  "parameters": [
+    { "name": "dateFrom", "label": { "en_US": "Order Date From", "es_ES": "Fecha pedido desde" }, "type": "date" },
+    { "name": "dateTo", "label": { "en_US": "Order Date To", "es_ES": "Fecha pedido hasta" }, "type": "date" }
+  ],
   "defaultSort": {
     "field": "orgname",
     "direction": "asc"
