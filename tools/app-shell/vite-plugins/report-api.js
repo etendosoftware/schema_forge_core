@@ -383,7 +383,12 @@ export default function reportApiPlugin() {
               .map(([k, v]) => {
                 const paramDef = contract.parameters?.find(p => p.name === k);
                 // Use display name if available (for search selectors that send UUIDs)
-                const displayValue = params['_display_' + k] || v;
+                let displayValue = params['_display_' + k] || v;
+                // Format date values from ISO (YYYY-MM-DD) to DD/MM/YYYY
+                if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
+                  const [y, m, d] = displayValue.split('-');
+                  displayValue = `${d}/${m}/${y}`;
+                }
                 return { label: paramDef?.label?.en_US || k, value: displayValue };
               });
             const artifactDir = join(ARTIFACTS_DIR, reportId);
