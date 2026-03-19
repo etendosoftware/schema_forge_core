@@ -339,7 +339,7 @@ export function DetailView({
                   variant="outline"
                   size="sm"
                   className={btnClass}
-                  onClick={() => hook.handleProcess?.(p.name)}
+                  onClick={() => hook.handleProcess?.(p)}
                 >
                   {p.label}
                 </Button>

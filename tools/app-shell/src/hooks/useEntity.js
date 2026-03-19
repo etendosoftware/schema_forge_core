@@ -280,15 +280,25 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
   }, []);
 
-  const handleProcess = useCallback(async (processName) => {
+  const handleProcess = useCallback(async (process, paramValues = {}) => {
     if (!selected?.id) return;
-    await fetch(`${apiBaseUrl}/process/${processName}`, {
+    // Build field values: start with hidden params from process definition, then merge user-supplied values
+    const fieldValues = {};
+    for (const p of (process.params ?? [])) {
+      if (p.hidden) fieldValues[p.key] = p.value;
+    }
+    Object.assign(fieldValues, paramValues);
+    const columnName = process.columnName;
+    const url = columnName
+      ? `${apiBaseUrl}/${entity}/${selected.id}/action/${columnName}`
+      : `${apiBaseUrl}/process/${process.name}`;
+    await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ id: selected.id }),
+      body: JSON.stringify({ fieldValues }),
     });
     refresh();
-  }, [selected, apiBaseUrl, token, refresh]);
+  }, [selected, entity, apiBaseUrl, token, refresh]);
 
   return {
     items, selected, editing, children, loading, loadingMore, hasMore, saveError,

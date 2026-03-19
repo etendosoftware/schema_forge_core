@@ -259,9 +259,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Process config
   const processesArray = processes.map(p => {
-    const isDestructive = /void|cancel|reject/i.test(p.name);
+    const isDestructive = /void|cancel|reject|reverse/i.test(p.name);
     const style = isDestructive ? 'destructive' : 'positive';
-    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}' },`;
+    const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
+    const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
+    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}'${colPart}${paramsPart} },`;
   }).join('\n');
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)

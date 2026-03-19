@@ -221,14 +221,22 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     );
   }
 
-  const processEndpoints = processes.map(p => ({
-    name: p.name,
-    method: 'POST',
-    path: `/process/${p.name}`,
-    entity: p.entity,
-    preconditions: p.preconditions ?? [],
-    steps: p.steps?.length ?? 0,
-  }));
+  const processEndpoints = processes.map(p => {
+    const columnName = p.trigger?.field ?? null;
+    const params = p.params ?? (p.trigger
+      ? [{ key: p.trigger.field, value: p.trigger.value, hidden: true }]
+      : []);
+    return {
+      name: p.name,
+      method: 'POST',
+      path: columnName ? `/${p.entity}/:id/action/${columnName}` : `/process/${p.name}`,
+      entity: p.entity,
+      columnName,
+      params,
+      preconditions: p.preconditions ?? [],
+      steps: p.steps?.length ?? 0,
+    };
+  });
 
   return { window: schema.window, entities, endpoints, processEndpoints };
 }
