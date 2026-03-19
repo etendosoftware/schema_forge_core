@@ -30,6 +30,9 @@ function ifCond(v1, operator, v2, options) {
 // Usage in template: {{qrCode header}}
 // jsreport supports async helpers that return promises
 function qrCode(header) {
+  if (!header || typeof header !== 'object') {
+    return QRCode.toDataURL('no data', { width: 120, margin: 1 });
+  }
   var parts = [];
   if (header.doc_type) parts.push('T:' + header.doc_type);
   if (header.documentno) parts.push('N:' + header.documentno);
@@ -40,6 +43,6 @@ function qrCode(header) {
   if (header.org_taxid) parts.push('TID:' + header.org_taxid);
   if (header.status) parts.push('S:' + header.status);
 
-  var data = parts.join('|');
+  var data = parts.length > 0 ? parts.join('|') : 'empty';
   return QRCode.toDataURL(data, { width: 120, margin: 1 });
 }
