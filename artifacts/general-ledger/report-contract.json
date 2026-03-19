@@ -11,16 +11,36 @@
     "queryLanguage": "SQL"
   },
   "title": {
-    "en_US": "Report General Ledger",
-    "es_ES": "Report General Ledger"
+    "en_US": "General Ledger",
+    "es_ES": "Libro Mayor"
   },
-  "orientation": "portrait",
+  "orientation": "landscape",
   "columns": [
+    {
+      "field": "DATEACCT",
+      "label": {
+        "en_US": "Date",
+        "es_ES": "Fecha"
+      },
+      "type": "date",
+      "width": "110px",
+      "sortable": true
+    },
+    {
+      "field": "ID",
+      "label": {
+        "en_US": "Journal",
+        "es_ES": "Asiento"
+      },
+      "type": "string",
+      "width": "120px",
+      "sortable": true
+    },
     {
       "field": "DESCRIPTION",
       "label": {
-        "en_US": "Date",
-        "es_ES": "Date"
+        "en_US": "Description",
+        "es_ES": "Descripcion"
       },
       "type": "string",
       "width": "auto",
@@ -30,62 +50,35 @@
       "field": "AMTACCTDR",
       "label": {
         "en_US": "Debit",
-        "es_ES": "Debit"
+        "es_ES": "Debe"
       },
       "type": "amount",
-      "width": "auto",
+      "width": "130px",
       "sortable": true
     },
     {
       "field": "AMTACCTCR",
       "label": {
         "en_US": "Credit",
-        "es_ES": "Credit"
+        "es_ES": "Haber"
       },
       "type": "amount",
-      "width": "auto",
-      "sortable": true
-    },
-    {
-      "field": "TOTALACCTSUB",
-      "label": {
-        "en_US": "Balance",
-        "es_ES": "Balance"
-      },
-      "type": "amount",
-      "width": "auto",
-      "sortable": true
-    },
-    {
-      "field": "DATEACCT",
-      "label": {
-        "en_US": "Description",
-        "es_ES": "Description"
-      },
-      "type": "date",
-      "width": "auto",
+      "width": "130px",
       "sortable": true
     }
   ],
   "groups": [
     {
-      "field": "GROUPBYID",
+      "field": "ACCTVALUE_DESCRIPTION",
       "label": {
-        "en_US": "G R O U P B Y I D",
-        "es_ES": "G R O U P B Y I D"
-      }
-    },
-    {
-      "field": "VALUE",
-      "label": {
-        "en_US": "Acct. No.",
-        "es_ES": "Acct. No."
+        "en_US": "Account",
+        "es_ES": "Cuenta"
       }
     }
   ],
   "filters": [],
   "defaultSort": {
-    "field": "DESCRIPTION",
+    "field": "DATEACCT",
     "direction": "asc"
   },
   "outputs": [

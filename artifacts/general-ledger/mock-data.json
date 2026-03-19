@@ -1,0 +1,102 @@
+{
+  "reportId": "report-general-ledger",
+  "generatedAt": "2026-03-18T12:00:00Z",
+  "locale": "en_US",
+  "groups": [
+    {
+      "ACCTVALUE_DESCRIPTION": "1000 - Cash",
+      "rows": [
+        {
+          "DATEACCT": "2026-01-05",
+          "ID": "JE-2026-0001",
+          "DESCRIPTION": "Opening balance",
+          "AMTACCTDR": 50000.00,
+          "AMTACCTCR": 0.00
+        },
+        {
+          "DATEACCT": "2026-01-12",
+          "ID": "JE-2026-0015",
+          "DESCRIPTION": "Customer payment received - INV-0042",
+          "AMTACCTDR": 12500.00,
+          "AMTACCTCR": 0.00
+        },
+        {
+          "DATEACCT": "2026-01-20",
+          "ID": "JE-2026-0028",
+          "DESCRIPTION": "Supplier payment - PO-0018",
+          "AMTACCTDR": 0.00,
+          "AMTACCTCR": 8750.00
+        }
+      ]
+    },
+    {
+      "ACCTVALUE_DESCRIPTION": "1200 - Accounts Receivable",
+      "rows": [
+        {
+          "DATEACCT": "2026-01-08",
+          "ID": "JE-2026-0005",
+          "DESCRIPTION": "Sales invoice INV-0042 - Acme Corp",
+          "AMTACCTDR": 15000.00,
+          "AMTACCTCR": 0.00
+        },
+        {
+          "DATEACCT": "2026-01-12",
+          "ID": "JE-2026-0015",
+          "DESCRIPTION": "Customer payment received - INV-0042",
+          "AMTACCTDR": 0.00,
+          "AMTACCTCR": 12500.00
+        },
+        {
+          "DATEACCT": "2026-01-25",
+          "ID": "JE-2026-0033",
+          "DESCRIPTION": "Sales invoice INV-0051 - Beta Ltd",
+          "AMTACCTDR": 22000.00,
+          "AMTACCTCR": 0.00
+        }
+      ]
+    },
+    {
+      "ACCTVALUE_DESCRIPTION": "2100 - Accounts Payable",
+      "rows": [
+        {
+          "DATEACCT": "2026-01-10",
+          "ID": "JE-2026-0010",
+          "DESCRIPTION": "Purchase order PO-0018 - Delta Supplies",
+          "AMTACCTDR": 0.00,
+          "AMTACCTCR": 8750.00
+        },
+        {
+          "DATEACCT": "2026-01-20",
+          "ID": "JE-2026-0028",
+          "DESCRIPTION": "Supplier payment - PO-0018",
+          "AMTACCTDR": 8750.00,
+          "AMTACCTCR": 0.00
+        }
+      ]
+    },
+    {
+      "ACCTVALUE_DESCRIPTION": "4000 - Sales Revenue",
+      "rows": [
+        {
+          "DATEACCT": "2026-01-08",
+          "ID": "JE-2026-0005",
+          "DESCRIPTION": "Sales invoice INV-0042 - Acme Corp",
+          "AMTACCTDR": 0.00,
+          "AMTACCTCR": 15000.00
+        },
+        {
+          "DATEACCT": "2026-01-25",
+          "ID": "JE-2026-0033",
+          "DESCRIPTION": "Sales invoice INV-0051 - Beta Ltd",
+          "AMTACCTDR": 0.00,
+          "AMTACCTCR": 22000.00
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "AMTACCTDR": 108250.00,
+    "AMTACCTCR": 67000.00,
+    "rowCount": 10
+  }
+}
