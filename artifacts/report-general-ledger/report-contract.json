@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "reportId": "report-general-ledger",
+  "category": "finance",
+  "type": "grouped-listing",
+  "source": "jasper-migration",
+  "jasper": {
+    "originalFile": "etendo_core/src/org/openbravo/erpCommon/ad_reports/ReportGeneralLedger.jrxml",
+    "processId": "",
+    "processValue": "",
+    "queryLanguage": "SQL"
+  },
+  "title": { "en_US": "General Ledger", "es_ES": "Libro Mayor" },
+  "orientation": "landscape",
+  "columns": [
+    { "field": "dateacct", "label": { "en_US": "Date", "es_ES": "Fecha" }, "type": "date", "width": "110px", "sortable": true },
+    { "field": "id", "label": { "en_US": "Journal", "es_ES": "Asiento" }, "type": "string", "width": "120px", "sortable": true },
+    { "field": "description", "label": { "en_US": "Description", "es_ES": "Descripción" }, "type": "string", "width": "auto", "sortable": true },
+    { "field": "amtacctdr", "label": { "en_US": "Debit", "es_ES": "Debe" }, "type": "amount", "width": "130px", "sortable": true },
+    { "field": "amtacctcr", "label": { "en_US": "Credit", "es_ES": "Haber" }, "type": "amount", "width": "130px", "sortable": true }
+  ],
+  "groups": [
+    { "field": "acctvalue_description", "label": { "en_US": "Account", "es_ES": "Cuenta" } }
+  ],
+  "defaultSort": { "field": "dateacct", "direction": "asc" },
+  "outputs": ["pdf", "xlsx", "csv", "html"],
+  "summary": { "totalRows": true },
+  "mockDataFile": "mock-data.json"
+}

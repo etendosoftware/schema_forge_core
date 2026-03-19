@@ -29,19 +29,19 @@
     </tr></thead>
     <tbody>
       {{#each rows}}
-        {{#if (isGroupBreak 'ACCTVALUE_DESCRIPTION' (lookup this 'ACCTVALUE_DESCRIPTION'))}}
+        {{#if (isGroupBreak 'acctvalue_description' (lookup this 'acctvalue_description'))}}
         <tr class="group-header group-level-0">
           <td colspan="5" style="background: #1a1a2e; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 11pt;">
-            Account: {{lookup this 'ACCTVALUE_DESCRIPTION'}}
+            Account: {{lookup this 'acctvalue_description'}}
           </td>
         </tr>
         {{/if}}
         <tr>
-          <td>{{formatDate (lookup this 'DATEACCT')}}</td>
-          <td>{{lookup this 'ID'}}</td>
-          <td>{{lookup this 'DESCRIPTION'}}</td>
-          <td class="cell-amount">{{formatCurrency (lookup this 'AMTACCTDR')}}</td>
-          <td class="cell-amount">{{formatCurrency (lookup this 'AMTACCTCR')}}</td>
+          <td>{{formatDate (lookup this 'dateacct')}}</td>
+          <td>{{lookup this 'id'}}</td>
+          <td>{{lookup this 'description'}}</td>
+          <td class="cell-amount">{{formatCurrency (lookup this 'amtacctdr')}}</td>
+          <td class="cell-amount">{{formatCurrency (lookup this 'amtacctcr')}}</td>
         </tr>
       {{/each}}
     </tbody>
