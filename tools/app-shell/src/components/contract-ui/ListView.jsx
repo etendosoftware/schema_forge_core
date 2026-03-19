@@ -8,6 +8,7 @@ import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical,
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 import ReportDrawer from './ReportDrawer.jsx';
+import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -30,6 +31,7 @@ export function ListView({
   const [showUserContext, setShowUserContext] = useState(false);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showDocPrint, setShowDocPrint] = useState(false);
   const [tableColumns, setTableColumns] = useState([]);
   const sortBtnRef = useRef(null);
   const scrollRef = useRef(null);
@@ -139,6 +141,15 @@ export function ListView({
               <span className="text-sm font-semibold">{selectedRows.length} Selected</span>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowDocPrint(true)}
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print ({selectedRows.length})
+              </Button>
               <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
                 Clear
               </Button>
@@ -302,6 +313,13 @@ export function ListView({
         token={token}
         sortColumn={hook.sortColumn}
         sortDirection={hook.sortDirection}
+      />
+      <DocumentPrintDrawer
+        open={showDocPrint}
+        onClose={() => setShowDocPrint(false)}
+        windowName={windowName}
+        documentIds={selectedRows.map(r => r.id || r)}
+        token={token}
       />
     </div>
   );
