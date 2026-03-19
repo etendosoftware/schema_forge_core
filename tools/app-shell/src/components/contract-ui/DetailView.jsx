@@ -10,6 +10,7 @@ import { useCallout } from '@/hooks/useCallout';
 import { useMenuLabel } from '@/i18n';
 import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
@@ -462,27 +463,32 @@ export function DetailView({
               <div className="flex justify-end pt-2 border-t border-border/50">
                 <div className="w-72 space-y-1.5">
                   {summary.filter(f => f.type === 'amount').map(f => {
-                    const label = f.key.replace(/([A-Z])/g, ' $1').trim();
-                    const val = data[f.key] || 0;
-                    const currency = data.currency || 'AR$';
+                    const label = f.label ?? f.key.replace(/([A-Z])/g, ' $1').trim();
+                    const val = data[f.key];
                     return (
                       <div key={f.key} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{label}</span>
-                        <span className="font-medium tabular-nums">{currency} {Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-medium tabular-nums">
+                          {val == null ? '\u2014' : formatAmount(val, data['currency$_identifier'])}
+                        </span>
                       </div>
                     );
                   })}
-                  <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
-                    <span>Total</span>
-                    <span className="tabular-nums">
-                      {(() => {
-                        const totalField = summary.find(f => f.key.toLowerCase().includes('grand') || f.key.toLowerCase().includes('total'));
-                        const val = data[totalField?.key] || 0;
-                        const currency = data.currency || 'AR$';
-                        return `${currency} ${Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                      })()}
-                    </span>
-                  </div>
+                  {(() => {
+                    const totalField = summary.find(
+                      f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || f.key.toLowerCase().includes('total'))
+                    );
+                    if (!totalField) return null;
+                    const val = data[totalField.key];
+                    return (
+                      <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
+                        <span>Total</span>
+                        <span className="tabular-nums">
+                          {val == null ? '\u2014' : formatAmount(val, data['currency$_identifier'])}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

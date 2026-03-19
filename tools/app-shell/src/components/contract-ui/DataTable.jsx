@@ -8,6 +8,7 @@ import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { formatAmount } from '@/lib/formatAmount.js';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
@@ -84,17 +85,6 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
       )}
     </div>
   );
-}
-
-/**
- * Format a number as currency with $ prefix and locale-aware separators.
- * e.g. 324000 → "$324.000,00"
- */
-function formatCurrency(value) {
-  if (value == null || value === '') return '\u2014';
-  const num = Number(value);
-  if (isNaN(num)) return value;
-  return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**
@@ -443,7 +433,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'amount') {
-      return <span className="tabular-nums">{formatCurrency(row[col.key])}</span>;
+      return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
     }
     // Truncate long display values
     const val = display;
@@ -585,7 +575,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 {columns.map((col, idx) => (
                   <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}>
                     {col.type === 'amount'
-                      ? formatCurrency(totals[col.key])
+                      ? formatAmount(totals[col.key], filteredData[0]?.['currency$_identifier'])
                       : ''}
                   </TableCell>
                 ))}

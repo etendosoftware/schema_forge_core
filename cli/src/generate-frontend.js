@@ -33,7 +33,8 @@ export function getProcessesForEntity(contract, entityName) {
  */
 export function getReadOnlyFields(contract, entityName) {
   const entity = contract.frontendContract.entities[entityName];
-  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
+  // Exclude grid:true fields — they already appear in the table and must not repeat in the summary strip.
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly' && !f.grid);
 }
 
 /**
@@ -233,14 +234,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
-  // Status field gets a badge in the header; others go in the summary strip
-  const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
+  // Status: search ALL readOnly form fields (including grid:true) so the badge is not lost
+  // when getReadOnlyFields() filters out grid fields for the summary strip.
+  const allReadOnlyFormFields = contract.frontendContract.entities[headerEntity].fields.filter(
+    f => f.form && f.visibility === 'readOnly'
+  );
+  const statusField = allReadOnlyFormFields.find(f => f.name.toLowerCase().includes('status'));
+
+  // Summary strip: grid:false only (getReadOnlyFields already filters), minus the status badge field
   const summaryFields = readOnlyFields.filter(f => f !== statusField);
 
-  // Summary config
+  // Summary config — include label so DetailView doesn't fall back to Hibernate field names
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}' },`;
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart} },`;
   }).join('\n');
 
   // Status field config
