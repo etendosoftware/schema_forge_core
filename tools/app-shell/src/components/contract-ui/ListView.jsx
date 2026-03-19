@@ -8,7 +8,7 @@ import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical,
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 import ReportDrawer from './ReportDrawer.jsx';
-import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
+import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -146,6 +146,14 @@ export function ListView({
                 size="sm"
                 className="gap-1.5"
                 onClick={() => setShowDocPrint(true)}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Preview
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
               >
                 <Printer className="h-3.5 w-3.5" />
                 Print ({selectedRows.length})
