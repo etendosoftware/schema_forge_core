@@ -102,6 +102,46 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
 
   const handlePdf = () => renderDocument(currentDocId, 'pdf');
 
+  // Generate a single PDF with ALL selected documents (page break between each)
+  const handlePrintAll = useCallback(async () => {
+    if (!reportId || !token || documentIds.length === 0) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch HTML for each document
+      const htmlParts = [];
+      for (const docId of documentIds) {
+        const res = await fetch(`/api/reports/${reportId}/render`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ format: 'html', params: { documentId: docId } }),
+        });
+        if (!res.ok) throw new Error(`Failed to render document ${docId}`);
+        htmlParts.push(await res.text());
+      }
+
+      // Combine with page breaks and send to jsreport for PDF
+      const combined = htmlParts.join('<div style="page-break-after: always;"></div>');
+      const pdfRes = await fetch('/jsreport/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template: { content: combined, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } },
+          data: {},
+        }),
+      });
+
+      if (!pdfRes.ok) throw new Error('PDF generation failed');
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      if (iframeRef.current) iframeRef.current.src = url;
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  }, [reportId, token, documentIds]);
+
   if (!open || !reportId) return null;
 
   return (
@@ -140,6 +180,16 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
           </div>
 
           <div className="flex items-center gap-2">
+            {total > 1 && (
+              <button
+                onClick={handlePrintAll}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-white border border-border text-foreground hover:bg-muted/50 disabled:opacity-50"
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                All ({total}) PDF
+              </button>
+            )}
             <button
               onClick={handlePdf}
               disabled={loading}
