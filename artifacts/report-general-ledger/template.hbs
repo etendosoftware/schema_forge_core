@@ -21,27 +21,32 @@
 
   <table class="report-table">
     <thead><tr>
-      <th style="width: 110px">Date</th>
-      <th style="width: 120px">Journal</th>
-      <th style="width: auto">Description</th>
-      <th style="width: 130px">Debit</th>
-      <th style="width: 130px">Credit</th>
+      <th style="width: 10%">Date</th>
+      <th style="width: 25%">Business Partner</th>
+      <th style="width: 15%">Debit</th>
+      <th style="width: 15%">Credit</th>
+      <th style="width: 15%">Balance</th>
     </tr></thead>
     <tbody>
       {{#each rows}}
-        {{#if (isGroupBreak 'acctvalue_description' (lookup this 'acctvalue_description'))}}
+        {{#if (isGroupBreak 'name' (lookup this 'name'))}}
         <tr class="group-header group-level-0">
           <td colspan="5" style="background: #1a1a2e; color: #ffffff; font-weight: 600; padding: 2mm 4mm; font-size: 11pt;">
-            Account: {{lookup this 'acctvalue_description'}}
+            Account: {{lookup this 'name'}}
+          </td>
+        </tr>
+        <tr class="group-subheader">
+          <td colspan="5" style="background: #f1f5f9; padding: 1.5mm 4mm; font-size: 8pt; color: #475569;">
+            <span style="margin-right: 3mm;"><strong>Code:</strong> {{lookup this 'value'}}</span>
           </td>
         </tr>
         {{/if}}
         <tr>
           <td>{{formatDate (lookup this 'dateacct')}}</td>
-          <td>{{lookup this 'id'}}</td>
-          <td>{{lookup this 'description'}}</td>
+          <td>{{lookup this 'groupbyname'}}</td>
           <td class="cell-amount">{{formatCurrency (lookup this 'amtacctdr')}}</td>
           <td class="cell-amount">{{formatCurrency (lookup this 'amtacctcr')}}</td>
+          <td class="cell-amount">{{formatCurrency (lookup this 'total')}}</td>
         </tr>
       {{/each}}
     </tbody>

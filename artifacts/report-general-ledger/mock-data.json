@@ -1,102 +1,12 @@
-{
-  "reportId": "report-general-ledger",
-  "generatedAt": "2026-03-18T12:00:00Z",
-  "locale": "en_US",
-  "groups": [
-    {
-      "ACCTVALUE_DESCRIPTION": "1000 - Cash",
-      "rows": [
-        {
-          "DATEACCT": "2026-01-05",
-          "ID": "JE-2026-0001",
-          "DESCRIPTION": "Opening balance",
-          "AMTACCTDR": 50000.00,
-          "AMTACCTCR": 0.00
-        },
-        {
-          "DATEACCT": "2026-01-12",
-          "ID": "JE-2026-0015",
-          "DESCRIPTION": "Customer payment received - INV-0042",
-          "AMTACCTDR": 12500.00,
-          "AMTACCTCR": 0.00
-        },
-        {
-          "DATEACCT": "2026-01-20",
-          "ID": "JE-2026-0028",
-          "DESCRIPTION": "Supplier payment - PO-0018",
-          "AMTACCTDR": 0.00,
-          "AMTACCTCR": 8750.00
-        }
-      ]
-    },
-    {
-      "ACCTVALUE_DESCRIPTION": "1200 - Accounts Receivable",
-      "rows": [
-        {
-          "DATEACCT": "2026-01-08",
-          "ID": "JE-2026-0005",
-          "DESCRIPTION": "Sales invoice INV-0042 - Acme Corp",
-          "AMTACCTDR": 15000.00,
-          "AMTACCTCR": 0.00
-        },
-        {
-          "DATEACCT": "2026-01-12",
-          "ID": "JE-2026-0015",
-          "DESCRIPTION": "Customer payment received - INV-0042",
-          "AMTACCTDR": 0.00,
-          "AMTACCTCR": 12500.00
-        },
-        {
-          "DATEACCT": "2026-01-25",
-          "ID": "JE-2026-0033",
-          "DESCRIPTION": "Sales invoice INV-0051 - Beta Ltd",
-          "AMTACCTDR": 22000.00,
-          "AMTACCTCR": 0.00
-        }
-      ]
-    },
-    {
-      "ACCTVALUE_DESCRIPTION": "2100 - Accounts Payable",
-      "rows": [
-        {
-          "DATEACCT": "2026-01-10",
-          "ID": "JE-2026-0010",
-          "DESCRIPTION": "Purchase order PO-0018 - Delta Supplies",
-          "AMTACCTDR": 0.00,
-          "AMTACCTCR": 8750.00
-        },
-        {
-          "DATEACCT": "2026-01-20",
-          "ID": "JE-2026-0028",
-          "DESCRIPTION": "Supplier payment - PO-0018",
-          "AMTACCTDR": 8750.00,
-          "AMTACCTCR": 0.00
-        }
-      ]
-    },
-    {
-      "ACCTVALUE_DESCRIPTION": "4000 - Sales Revenue",
-      "rows": [
-        {
-          "DATEACCT": "2026-01-08",
-          "ID": "JE-2026-0005",
-          "DESCRIPTION": "Sales invoice INV-0042 - Acme Corp",
-          "AMTACCTDR": 0.00,
-          "AMTACCTCR": 15000.00
-        },
-        {
-          "DATEACCT": "2026-01-25",
-          "ID": "JE-2026-0033",
-          "DESCRIPTION": "Sales invoice INV-0051 - Beta Ltd",
-          "AMTACCTDR": 0.00,
-          "AMTACCTCR": 22000.00
-        }
-      ]
-    }
-  ],
-  "totals": {
-    "AMTACCTDR": 108250.00,
-    "AMTACCTCR": 67000.00,
-    "rowCount": 10
-  }
-}
+[
+  {"value":"1110","name":"Checking Account","dateacct":"2026-01-05","groupbyname":"Opening Balance","amtacctdr":50000,"amtacctcr":0,"total":50000},
+  {"value":"1110","name":"Checking Account","dateacct":"2026-01-12","groupbyname":"Acme Corp","amtacctdr":12500,"amtacctcr":0,"total":12500},
+  {"value":"1110","name":"Checking Account","dateacct":"2026-01-20","groupbyname":"Delta Supplies","amtacctdr":0,"amtacctcr":8750,"total":-8750},
+  {"value":"1200","name":"Accounts Receivable","dateacct":"2026-01-08","groupbyname":"Acme Corp","amtacctdr":15000,"amtacctcr":0,"total":15000},
+  {"value":"1200","name":"Accounts Receivable","dateacct":"2026-01-12","groupbyname":"Acme Corp","amtacctdr":0,"amtacctcr":12500,"total":-12500},
+  {"value":"1200","name":"Accounts Receivable","dateacct":"2026-01-25","groupbyname":"Beta Ltd","amtacctdr":22000,"amtacctcr":0,"total":22000},
+  {"value":"2100","name":"Accounts Payable","dateacct":"2026-01-10","groupbyname":"Delta Supplies","amtacctdr":0,"amtacctcr":8750,"total":-8750},
+  {"value":"2100","name":"Accounts Payable","dateacct":"2026-01-20","groupbyname":"Delta Supplies","amtacctdr":8750,"amtacctcr":0,"total":8750},
+  {"value":"4000","name":"Sales Revenue","dateacct":"2026-01-08","groupbyname":"Acme Corp","amtacctdr":0,"amtacctcr":15000,"total":-15000},
+  {"value":"4000","name":"Sales Revenue","dateacct":"2026-01-25","groupbyname":"Beta Ltd","amtacctdr":0,"amtacctcr":22000,"total":-22000}
+]
