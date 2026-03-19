@@ -99,12 +99,40 @@ function diffField(curatedField, defaultField) {
 /**
  * Build a map from columnName -> raw field for a given raw entity.
  */
+/**
+ * Build a map from columnName -> field array.
+ * Stores arrays because some views have the same column appearing twice
+ * with different visibility (e.g., M_SOL_Reserved_Stock_V.C_Orderline_ID).
+ */
 function buildColumnMap(rawEntity) {
   const map = {};
   for (const f of (rawEntity?.fields || [])) {
-    map[f.columnName] = f;
+    if (!map[f.columnName]) map[f.columnName] = [];
+    map[f.columnName].push(f);
   }
   return map;
+}
+
+/**
+ * Find the best raw field match for a curated field given duplicate column candidates.
+ * Prefers the candidate whose visibility class matches closest to curatedVisibility.
+ */
+function findRawFieldByColumn(columnMap, columnName, curatedVisibility) {
+  const candidates = columnMap[columnName];
+  if (!candidates || candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  // Pick candidate whose visibility class matches curated visibility
+  const exact = candidates.find(f => f.visibility === curatedVisibility);
+  if (exact) return exact;
+
+  // Fallback: pick the non-system one if curated is visible
+  if (curatedVisibility !== 'system' && curatedVisibility !== 'discarded') {
+    const nonSystem = candidates.find(f => f.visibility !== 'system' && f.visibility !== 'discarded');
+    if (nonSystem) return nonSystem;
+  }
+
+  return candidates[0];
 }
 
 /**
@@ -286,17 +314,27 @@ function validateRoundtrip(original, resolved) {
 
     const origFields = orig.fields || [];
     const resFields = res.fields || [];
-    // Build field map by column for more robust matching (handles renamed fields)
+    // Build field maps — store arrays for duplicate columns (same column, different visibility)
     const resFieldMapByCol = {};
     const resFieldMapByName = {};
     for (const f of resFields) {
-      resFieldMapByCol[f.column] = f;
+      if (!resFieldMapByCol[f.column]) resFieldMapByCol[f.column] = [];
+      resFieldMapByCol[f.column].push(f);
       resFieldMapByName[f.name] = f;
     }
 
     for (const of_ of origFields) {
-      // Match by column (stable) with name fallback
-      const rf = resFieldMapByCol[of_.column] || resFieldMapByName[of_.name];
+      // Match by column (stable) with name fallback.
+      // When multiple resolved fields share a column, pick the one whose visibility matches.
+      let rf;
+      const colCandidates = resFieldMapByCol[of_.column];
+      if (colCandidates?.length === 1) {
+        rf = colCandidates[0];
+      } else if (colCandidates?.length > 1) {
+        rf = colCandidates.find(f => f.visibility === of_.visibility) || colCandidates[0];
+      } else {
+        rf = resFieldMapByName[of_.name];
+      }
       if (!rf) {
         // Skip fields discarded by EM_* pattern — their raw name differs from curated name
         if ((of_.column || '').toUpperCase().startsWith('EM_')) continue;
@@ -391,7 +429,9 @@ async function migrate(windowName, dryRun) {
     for (const curatedField of (curatedEntity.fields || [])) {
       const col = curatedField.column || '';
 
-      // Skip if the field is discarded by a pattern (no need to store it)
+      // Skip if the field is discarded by a pattern AND the curated also discards it.
+      // If the curated keeps it visible despite the pattern, we MUST store the explicit
+      // visibility decision (it will override the pattern in resolve-curated).
       const matchesPattern = discardPatterns.some(pat => {
         const c = col.toLowerCase();
         const p = pat.toLowerCase();
@@ -399,10 +439,12 @@ async function migrate(windowName, dryRun) {
         if (p.startsWith('*')) return c.endsWith(p.slice(1));
         return c === p;
       });
-      if (matchesPattern) continue;
+      const curatedIsDiscarded = curatedField.visibility === 'discarded';
+      if (matchesPattern && curatedIsDiscarded) continue;
 
       // Find the corresponding raw field by column name → get the raw (canonical) field name
-      const rawField = col ? rawFieldByColumn[col] : null;
+      // Use visibility-aware matching when multiple raw fields share the same column.
+      const rawField = col ? findRawFieldByColumn(rawFieldByColumn, col, curatedField.visibility) : null;
       const rawFieldName = rawField?.name || curatedField.name;
 
       // Find the default resolved field for this column
@@ -486,7 +528,7 @@ async function migrate(windowName, dryRun) {
         }
 
         if (Object.keys(residualDiff).length > 0) {
-          const rawField = col ? rawFieldByColumn[col] : null;
+          const rawField = col ? findRawFieldByColumn(rawFieldByColumn, col, curatedField.visibility) : null;
           const rawFieldName = rawField?.name || curatedField.name;
           if (!decisions.entities[rawEntityName]) decisions.entities[rawEntityName] = {};
           if (!decisions.entities[rawEntityName].fields) decisions.entities[rawEntityName].fields = {};

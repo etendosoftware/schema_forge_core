@@ -159,8 +159,9 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
   let visibility = discardedByPattern ? 'discarded' : rawField.visibility;
 
-  // Apply decision visibility override (unless pattern-discarded)
-  if (!discardedByPattern && fieldDecision.visibility) {
+  // Apply decision visibility override — explicit decisions always win, even over discard patterns.
+  // This lets human decisions rescue specific EM_* fields that should remain visible.
+  if (fieldDecision.visibility) {
     visibility = fieldDecision.visibility;
   }
 
