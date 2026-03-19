@@ -236,8 +236,8 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       const inList = ids.split(',').map(id => `'${id.trim()}'`).join(',');
       return `IN (${inList})`;
     });
-    // Remove optional date filter clauses where params were not provided
-    sql = sql.replace(/AND\s*\('[^']*'\s*=\s*''\s*OR\s*\w+\.\w+\s*[><=]+\s*'__\w+__'[^)]*\)/gi, '');
+    // Remove optional filter clauses where params were not provided (pattern: AND ('__X__' = '' OR ...))
+    sql = sql.replace(/AND\s*\('__\w+__'\s*=\s*''\s*OR\s*[^)]+\)/gi, '');
     sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
     sql = sql.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi,
       `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
