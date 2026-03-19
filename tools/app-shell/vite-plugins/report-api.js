@@ -294,7 +294,7 @@ export default function reportApiPlugin() {
 
             const payload = {
               template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
-              data: { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters }, rows },
+              data: { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params }, rows },
             };
 
             if (recipe === 'chrome-pdf') {

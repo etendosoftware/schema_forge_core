@@ -1,4 +1,4 @@
-{{!-- Auto-generated listing template for: aging-payable --}}
+{{!-- Aging of Payables template with dynamic bucket headers --}}
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><style>{{{css}}}</style></head>
 <body><div class="report-container">
@@ -17,10 +17,10 @@
     <thead><tr>
       <th style="width: 25%">Vendor</th>
       <th style="width: 12%">Current</th>
-      <th style="width: 12%">1-30 Days</th>
-      <th style="width: 12%">31-60 Days</th>
-      <th style="width: 12%">61-90 Days</th>
-      <th style="width: 12%">91-120 Days</th>
+      <th style="width: 12%">1-{{meta.params.column1}} Days</th>
+      <th style="width: 12%">{{meta.params.column1}}-{{meta.params.column2}} Days</th>
+      <th style="width: 12%">{{meta.params.column2}}-{{meta.params.column3}} Days</th>
+      <th style="width: 12%">{{meta.params.column3}}-{{meta.params.column4}} Days</th>
       <th style="width: 12%">Total</th>
     </tr></thead>
     <tbody>
