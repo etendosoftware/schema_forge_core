@@ -287,6 +287,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
         tabName: row.tab_name,
         tabLevel: row.tablevel,
         tabSeq: row.tab_seq,
+        uiPattern: row.ui_pattern,
         tableName: row.tablename,
         entityClassname: row.entity_classname,
         entityAlias: row.entity_alias,
@@ -448,7 +449,7 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
 const EXTRACT_SQL = `
 SELECT
   w.AD_Window_ID, w.Name AS window_name,
-  t.AD_Tab_ID, t.Name AS tab_name, t.TabLevel, t.SeqNo AS tab_seq,
+  t.AD_Tab_ID, t.Name AS tab_name, t.TabLevel, t.SeqNo AS tab_seq, t.UIPattern AS ui_pattern,
   t.WhereClause, t.OrderByClause, t.FilterClause,
   t.HQLWhereClause, t.HQLOrderByClause, t.HQLFilterClause,
   tbl.TableName, tbl.Classname AS entity_classname, tbl.Entity_Alias,

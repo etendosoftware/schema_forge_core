@@ -418,12 +418,14 @@ export function DetailView({
                         onFieldChange: handleLineFieldChange,
                       }}
                     />
-                    <button
-                      onClick={() => setAddingLine(!addingLine)}
-                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                    >
-                      + Add {detailLabel || 'line'}
-                    </button>
+                    {allEntryFields.length > 0 && (
+                      <button
+                        onClick={() => setAddingLine(!addingLine)}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                      >
+                        + Add {detailLabel || 'line'}
+                      </button>
+                    )}
                   </div>
                 )}
 

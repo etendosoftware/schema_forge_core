@@ -231,7 +231,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
   // Detail entity editable fields for the add-line mini form
-  const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
+  const detailEntity_ = contract.frontendContract.entities[detailEntity];
+  const detailUiPattern = detailEntity_?.uiPattern ?? 'STD';
+  const detailFields = detailEntity_?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
   // Status: search ALL readOnly form fields (including grid:true) so the badge is not lost
@@ -318,7 +320,7 @@ ${processesArray}
 ];
 ${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
 
-${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
+${detailUiPattern !== 'RO' && detailUiPattern !== 'SR' ? `${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
   entry: [
 ${entryArray}
@@ -327,7 +329,7 @@ ${entryArray}
 ${derivedArray}
   ],
 };
-${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}
+${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
@@ -342,7 +344,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         summary={summary}
         statusField={statusField}
         processes={processes}
-        addLineFields={addLineFields}
+        ${detailUiPattern !== 'RO' && detailUiPattern !== 'SR' ? 'addLineFields={addLineFields}' : ''}
         catalogs={catalogs}
         entityLabel="${toLabel(headerEntity)}"
         detailLabel="${toLabel(detailEntity)}"

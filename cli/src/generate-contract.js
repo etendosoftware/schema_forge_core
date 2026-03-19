@@ -172,7 +172,7 @@ export function generateFrontendContract(schema, rules = []) {
       .filter(f => f.derivation)
       .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
+    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
   }
 
   // Include layoutType from curated schema; default to "default" when absent
