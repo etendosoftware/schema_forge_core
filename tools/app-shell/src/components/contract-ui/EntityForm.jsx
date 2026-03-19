@@ -29,6 +29,33 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
     }
   }, [value, displayValue]);
 
+  // Auto-resolve display name when we have a value but no $identifier (e.g. from /defaults endpoint).
+  // 1. Try local catalog first (zero cost). 2. Fall back to selector endpoint with ?id=.
+  React.useEffect(() => {
+    if (!value || displayValue || isEditingRef.current) return;
+    // Try local catalog
+    const localOptions = catalogs?.[field.reference] ?? [];
+    const local = localOptions.find(opt => opt.id === value);
+    if (local) { setQuery(local.name || value); return; }
+    // Try server selector with ?id=
+    if (!selectorUrl || !token) return;
+    fetch(`${selectorUrl}?id=${encodeURIComponent(value)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const match = (data?.items || []).find(i => i.id === value);
+        if (match) {
+          setQuery(match.label || match.name || value);
+        } else {
+          // ID from /defaults not in selector options — clear to avoid showing raw UUID
+          setQuery('');
+          onChange?.(null, '');
+        }
+      })
+      .catch(() => {});
+  }, [value, displayValue, selectorUrl, token, catalogs, field.reference]);
+
   // Server-side search: fetch with ?q= when selectorUrl and token are available.
   const fetchServerResults = useCallback((q) => {
     if (!selectorUrl || !token) return;
@@ -367,7 +394,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 <DependentSelect
                   field={f}
                   value={data?.[f.key] ?? ''}
-                  displayValue={resolveIdentifier(data, f.key)}
+                  displayValue={data?.[f.key + '$_identifier']}
                   onChange={(val, label) => {
                     onChange?.(f.key, val);
                     if (label) onChange?.(f.key + '$_identifier', label);
@@ -443,7 +470,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 <SearchInput
                   field={f}
                   value={data?.[f.key] ?? ''}
-                  displayValue={resolveIdentifier(data, f.key)}
+                  displayValue={data?.[f.key + '$_identifier']}
                   onChange={(val, label, auxData) => {
                     onChange?.(f.key, val);
                     if (label) onChange?.(f.key + '$_identifier', label);

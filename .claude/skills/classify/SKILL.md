@@ -296,7 +296,21 @@ Build or patch the decisions.json file. Store ONLY overrides vs tier-1/2 default
 - Field keys are RAW field names from schema-raw.json (e.g., `id`, `businessPartner`)
 - Only include properties that DIFFER from the visibility-class defaults
 - A field with `visibility: "editable"` and all defaults → omit the field entry entirely
-- Explicit `null` for FK props (e.g., `"reference": null`) means "suppress auto-derivation"
+
+**Null semantics — CRITICAL:**
+`null` in decisions means "suppress the raw value, use nothing". This is an **active override**, not a default.
+
+| Property | Omit from decisions | Write `null` in decisions |
+|---|---|---|
+| `readOnlyLogic` | Use raw value as-is (Etendo rules apply) | Suppress raw value — field is NEVER read-only |
+| `displayLogic` | Use raw value as-is (Etendo rules apply) | Suppress raw value — field is ALWAYS visible |
+| `reference` | Auto-derive catalog name from `targetTable` | Suppress FK — treat as plain field |
+| `inputMode` | Auto-derive from reference type | Suppress inputMode — no selector/search widget |
+
+**Rule: NEVER write `readOnlyLogic: null` or `displayLogic: null` unless you are intentionally suppressing Etendo's logic.**
+If a field has no `readOnlyLogic` in raw, the resolved value is already null — no decision needed.
+If you want to keep Etendo's logic, omit the property entirely from decisions.
+Only use `null` when you actively want to override Etendo behavior for the simplified UI.
 
 **Entity name auto-simplification** (no entry needed when this applies):
 - `cOrder` → `order`, `cOrderLine` → `orderLine`, `mProduct` → `product`, `adUser` → `user`
