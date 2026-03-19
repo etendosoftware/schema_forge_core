@@ -3,19 +3,20 @@
   "reportId": "profit-loss",
   "category": "finance",
   "type": "grouped-listing",
-  "source": "manual",
+  "source": "sql",
   "title": { "en_US": "Profit & Loss", "es_ES": "Pérdidas y Ganancias" },
   "orientation": "portrait",
+  "sql": {
+    "query": "SELECT CASE ev.accounttype WHEN 'R' THEN '1. Revenue' WHEN 'E' THEN '2. Expenses' END AS category, ev.value || ' - ' || ev.name AS account, CASE ev.accounttype WHEN 'R' THEN SUM(fa.amtacctcr) - SUM(fa.amtacctdr) ELSE SUM(fa.amtacctdr) - SUM(fa.amtacctcr) END AS amount FROM fact_acct fa JOIN c_elementvalue ev ON ev.c_elementvalue_id = fa.account_id WHERE fa.ad_client_id IN ('__CLIENT_ID__') AND ev.accounttype IN ('R', 'E') AND ev.issummary = 'N' GROUP BY ev.accounttype, ev.value, ev.name HAVING ABS(SUM(fa.amtacctdr) - SUM(fa.amtacctcr)) > 0.01 ORDER BY category, ev.value"
+  },
   "columns": [
-    { "field": "description", "label": { "en_US": "Description", "es_ES": "Descripción" }, "type": "string", "width": "40%", "sortable": true },
-    { "field": "amount", "label": { "en_US": "Amount", "es_ES": "Importe" }, "type": "amount", "width": "25%", "sortable": true },
-    { "field": "percentage", "label": { "en_US": "%", "es_ES": "%" }, "type": "number", "width": "15%", "sortable": true }
+    { "field": "account", "label": { "en_US": "Account", "es_ES": "Cuenta" }, "type": "string", "width": "55%", "sortable": true },
+    { "field": "amount", "label": { "en_US": "Amount", "es_ES": "Importe" }, "type": "amount", "width": "25%", "sortable": true }
   ],
   "groups": [
     { "field": "category", "label": { "en_US": "Category", "es_ES": "Categoría" } }
   ],
-  "filters": [],
-  "defaultSort": { "field": "category", "direction": "asc" },
+  "defaultSort": { "field": "account", "direction": "asc" },
   "outputs": ["pdf", "xlsx", "csv", "html"],
   "summary": { "totalRows": true },
   "mockDataFile": "mock-data.json"

@@ -126,21 +126,29 @@ async function fetchReportData(reportId, { limit, authToken } = {}) {
     return { rows, contract };
   }
 
-  // Otherwise, use Jasper SQL from the jrxml
-  if (!contract.jasper?.originalFile) {
-    throw new Error('No data source configured (no mockDataFile or jasper.originalFile)');
+  // SQL query: either inline in contract or from Jasper jrxml
+  let sql = null;
+
+  // Source: inline SQL in contract
+  if (contract.sql?.query) {
+    sql = contract.sql.query;
   }
 
-  const jrxmlPath = resolve(ROOT, contract.jasper.originalFile);
-  if (!existsSync(jrxmlPath)) {
-    throw new Error(`JRXML not found: ${jrxmlPath}`);
+  // Source: Jasper jrxml SQL
+  if (!sql && contract.jasper?.originalFile) {
+    const jrxmlPath = resolve(ROOT, contract.jasper.originalFile);
+    if (!existsSync(jrxmlPath)) {
+      throw new Error(`JRXML not found: ${jrxmlPath}`);
+    }
+    const extractorPath = resolve(ROOT, 'cli/src/extract-from-jasper.js');
+    const { parseJrxml } = await import(/* @vite-ignore */ extractorPath);
+    const parsed = parseJrxml(readFileSync(jrxmlPath, 'utf8'));
+    sql = parsed.query;
   }
 
-  const extractorPath = resolve(ROOT, 'cli/src/extract-from-jasper.js');
-  const { parseJrxml } = await import(/* @vite-ignore */ extractorPath);
-  const parsed = parseJrxml(readFileSync(jrxmlPath, 'utf8'));
-  let sql = parsed.query;
-  if (!sql) throw new Error('No SQL query in jrxml');
+  if (!sql) {
+    throw new Error(`No data source configured for report '${reportId}' (need neo, sql, jasper, or mockDataFile)`);
+  }
 
   // Connect to DB
   const gradlePath = findGradleProps();
@@ -164,7 +172,8 @@ async function fetchReportData(reportId, { limit, authToken } = {}) {
     );
     const clientId = clientRes.rows[0]?.ad_client_id || '0';
 
-    // Parameterize query
+    // Parameterize query — support both Jasper-style hardcoded IDs and __PLACEHOLDER__ tokens
+    sql = sql.replace(/__CLIENT_ID__/g, clientId);
     sql = sql.replace(/AD_CLIENT_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi, `AD_CLIENT_ID IN ('${clientId}')`);
     sql = sql.replace(/AD_ORG_ID\s+IN\s*\(\s*'[^']+'\s*\)/gi,
       `AD_ORG_ID IN (SELECT AD_ORG_ID FROM AD_ORG WHERE AD_CLIENT_ID = '${clientId}' AND ISACTIVE = 'Y')`);
