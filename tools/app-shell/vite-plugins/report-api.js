@@ -368,9 +368,11 @@ export default function reportApiPlugin() {
             let { rows, contract, documentData } = result;
 
             // Handle groupBy parameter: remap the group field in rows
+            // The groupBy select options define { value: "key", label: "...", field: "sourceColumn" }
             if (params.groupBy && rows) {
-              const groupMap = { bpartner: 'bpname', product: 'productname' };
-              const sourceField = groupMap[params.groupBy];
+              const groupByParam = contract.parameters?.find(p => p.name === 'groupBy');
+              const selectedOption = groupByParam?.options?.find(o => o.value === params.groupBy);
+              const sourceField = selectedOption?.field;
               if (sourceField) {
                 rows = rows.map(r => ({ ...r, name: r[sourceField] || '(none)', value: '' }));
               }

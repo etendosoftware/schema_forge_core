@@ -1,14 +1,9 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
-// Map window names to print report IDs
-const PRINT_REPORT_MAP = {
-  'purchase-order': 'print-purchase-order',
-  // Future: 'sales-order': 'print-sales-order',
-};
-
 /**
  * Preview drawer: shows document preview one at a time with < > navigation.
+ * Report ID convention: print-{windowName} (e.g., print-purchase-order)
  */
 export default function DocumentPrintDrawer({ open, onClose, windowName, documentIds = [], token }) {
   const iframeRef = useRef(null);
@@ -16,7 +11,7 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const reportId = PRINT_REPORT_MAP[windowName];
+  const reportId = `print-${windowName}`;
   const total = documentIds.length;
   const currentDocId = documentIds[currentIndex];
 
@@ -91,7 +86,7 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
  * Call this function directly — no drawer needed.
  */
 export async function printDocuments(windowName, documentIds, token) {
-  const reportId = PRINT_REPORT_MAP[windowName];
+  const reportId = `print-${windowName}`;
   if (!reportId || !token || documentIds.length === 0) return;
 
   // Fetch HTML for each document

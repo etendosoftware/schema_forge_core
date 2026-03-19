@@ -34,8 +34,8 @@
     { "name": "productId", "label": { "en_US": "Product", "es_ES": "Producto" }, "type": "search", "selector": "product", "multi": true },
     { "name": "groupBy", "label": { "en_US": "Group By", "es_ES": "Agrupar por" }, "type": "select", "options": [
       { "value": "", "label": "Account" },
-      { "value": "bpartner", "label": "Business Partner" },
-      { "value": "product", "label": "Product" }
+      { "value": "bpartner", "label": "Business Partner", "field": "bpname" },
+      { "value": "product", "label": "Product", "field": "productname" }
     ]}
   ],
   "defaultSort": { "field": "dateacct", "direction": "asc" },
