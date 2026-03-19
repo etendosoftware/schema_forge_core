@@ -229,6 +229,12 @@ For each field, decide:
 - HIGH confidence: clear-cut decision (name, description, required date → editable)
 - LOW confidence: ambiguous fields → flag for human review
 
+**Reasoning (`reason` field):**
+Write a `reason` for every AI decision (non-obvious ones especially). Keep it to 1 sentence.
+- HIGH confidence: brief rationale (`"Required document identifier, always editable"`)
+- LOW confidence: explain the ambiguity (`"Could be display-only if backend auto-calculates, needs review"`)
+- Skip `reason` only for tier-1/2 auto-classifications (system columns, audit columns) since those are deterministic.
+
 Report:
 ```
 AI classified: {N} fields (high confidence)
@@ -283,7 +289,8 @@ Build or patch the decisions.json file. Store ONLY overrides vs tier-1/2 default
           "reference": "{CatalogName — for FK fields}",
           "inputMode": "selector|search|dependent",
           "dependsOn": { "field": "...", "filterKey": "..." },
-          "name": "{override — only if different from rawFieldName}"
+          "name": "{override — only if different from rawFieldName}",
+          "reason": "{optional — 1-sentence rationale for non-obvious AI decisions}"
         }
       }
     }
@@ -375,6 +382,7 @@ Decide for each rule:
 - `decision`: Keep | Replace | Simplify | Omit
 - `description`: Plain language explanation of the rule
 - `impactIfOmitted`: What changes for the user if omitted
+- `reason`: 1-sentence rationale for the decision (e.g. why Keep vs Simplify, why the DML matters or doesn't)
 
 **Decision guide:**
 | Scenario | Decision |
@@ -413,13 +421,15 @@ Add/update the `rules` key in `decisions.json`. Store ALL rules (they all requir
       "entity": "order",
       "decision": "Keep",
       "description": "Auto-fill address and price list from business partner",
-      "impactIfOmitted": "Users must manually set address and price list after selecting BP"
+      "impactIfOmitted": "Users must manually set address and price list after selecting BP",
+      "reason": "Core UX flow — without this, BP selection becomes a 3-step manual process"
     },
     "SL_Order_Amt_QtyOrdered": {
       "type": "callout",
       "entity": "orderLine",
       "decision": "Keep",
-      "description": "Recalculate line amount when quantity changes"
+      "description": "Recalculate line amount when quantity changes",
+      "reason": "Simple arithmetic with no DML, essential for line total accuracy"
     }
   }
 }
