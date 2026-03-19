@@ -225,6 +225,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     // Replace user parameter placeholders (__PARAM_NAME__ format)
     // For multi-select values (comma-separated IDs), convert = 'id1,id2' to IN ('id1','id2')
     for (const [key, value] of Object.entries(params)) {
+      if (key.startsWith('_display_')) continue; // Skip display-only params
       if (value !== undefined && value !== null && value !== '') {
         const escaped = String(value).replace(/'/g, "''");
         sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
@@ -375,10 +376,12 @@ export default function reportApiPlugin() {
               }
             }
             const activeFilters = Object.entries(params)
-              .filter(([_, v]) => v && v !== '')
+              .filter(([k, v]) => v && v !== '' && !k.startsWith('_display_'))
               .map(([k, v]) => {
                 const paramDef = contract.parameters?.find(p => p.name === k);
-                return { label: paramDef?.label?.en_US || k, value: v };
+                // Use display name if available (for search selectors that send UUIDs)
+                const displayValue = params['_display_' + k] || v;
+                return { label: paramDef?.label?.en_US || k, value: displayValue };
               });
             const artifactDir = join(ARTIFACTS_DIR, reportId);
             const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');

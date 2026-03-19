@@ -134,7 +134,7 @@ function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
                   selector={p.selector}
                   value={values[p.name] || ''}
                   displayValue={displayValues[p.name] || ''}
-                  onChange={(id, name) => { onChange(p.name, id); setDisplayValues(prev => ({ ...prev, [p.name]: name })); }}
+                  onChange={(id, name) => { onChange(p.name, id); onChange('_display_' + p.name, name); setDisplayValues(prev => ({ ...prev, [p.name]: name })); }}
                   multi={p.multi}
                 />
               </div>
