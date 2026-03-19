@@ -330,12 +330,25 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           try {
             decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
           } catch (err) {
-            if (err.code === 'ENOENT') {
-              console.error(`  ✗ decisions.json not found at ${decisionsPath}`);
-              console.error('  Run /classify to generate decisions.json first.');
-              process.exit(1);
+            if (err.code !== 'ENOENT') throw err;
+
+            // No decisions.json — auto-migrate from curated files if they exist
+            const curatedPath = `artifacts/${windowName}/schema-curated.json`;
+            try {
+              await readFile(curatedPath, 'utf8');
+              console.warn(`  ⚠ decisions.json not found — auto-migrating from curated files...`);
+              const { migrateWindow } = await import('./migrate-to-decisions.js');
+              await migrateWindow(windowName);
+              decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+              console.log(`  ✓ Auto-migrated to decisions.json`);
+            } catch (e2) {
+              if (e2.code === 'ENOENT') {
+                console.error(`  ✗ decisions.json not found at ${decisionsPath}`);
+                console.error('  Run /classify to generate decisions.json first.');
+                process.exit(1);
+              }
+              throw e2;
             }
-            throw err;
           }
 
           const resolved = await resolveCurated(schemaRaw, rulesRaw, decisions);

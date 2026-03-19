@@ -541,6 +541,18 @@ async function migrate(windowName, dryRun) {
 }
 
 // ---------------------------------------------------------------------------
+// Programmatic API
+// ---------------------------------------------------------------------------
+
+/**
+ * Migrate a window from curated files to decisions.json.
+ * Safe to call multiple times — skips if decisions.json already exists.
+ */
+export async function migrateWindow(windowName) {
+  await migrate(windowName, false);
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
 
