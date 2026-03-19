@@ -201,9 +201,15 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     displayFields = fields;
   }
 
-  // Apply visibility from evaluate-display (hide fields where visibility === false)
+  // Apply visibility from evaluate-display (hide fields where visibility === false).
+  // Only honor the evaluate-display result if the field itself declares a displayLogic
+  // in its contract definition. Fields without displayLogic have a static visibility
+  // decision that evaluate-display must not override (prevents AD displayLogic bugs
+  // from incorrectly hiding fields like businessPartner).
   if (displayLogic?.visibility && Object.keys(displayLogic.visibility).length > 0) {
-    displayFields = displayFields.filter(f => displayLogic.visibility[f.key] !== false);
+    displayFields = displayFields.filter(f =>
+      !f.displayLogic || displayLogic.visibility[f.key] !== false
+    );
   }
 
   const gridClass = layout === 'horizontal'
