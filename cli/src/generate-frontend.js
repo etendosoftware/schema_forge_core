@@ -214,9 +214,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
-  // Status field gets a badge in the header; others go in the summary strip
-  const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
-  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+  // Status field gets a badge in the header; others go in the summary strip.
+  // Prefer DocStatus column (document workflow status) if present, even when form:false.
+  // Summary includes: readOnly form fields + any field marked statusBar:true (isshowninstatusbar in AD).
+  const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
+  const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
+  const statusField = docStatusField ?? readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
+  const statusBarFields = allEntityFields.filter(f => f.statusBar && f !== statusField && !readOnlyFields.includes(f));
+  const summaryFields = [...readOnlyFields.filter(f => f !== statusField), ...statusBarFields];
 
   // Summary config
   const summaryArray = summaryFields.map(f => {
@@ -269,11 +274,22 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
+  // Detect secondary child entities for additional tabs (e.g., orderTax)
+  const allEntityNames = Object.keys(contract.frontendContract.entities);
+  const hasOrderTax = allEntityNames.includes('orderTax');
+  const secondaryTabsImports = hasOrderTax
+    ? `import OrderTaxTable from './OrderTaxTable';\nimport OrderTaxForm from './OrderTaxForm';`
+    : '';
+  const secondaryTabsProp = hasOrderTax
+    ? `\n        secondaryTabs={[\n          { key: 'orderTax', label: 'Tax', Table: OrderTaxTable, Form: OrderTaxForm },\n        ]}`
+    : '';
+
   return `import { ListView, DetailView } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
-import catalogs from './mockCatalogs';
+import ${detailName}Form from './${detailName}Form';
+${hasOrderTax ? `${secondaryTabsImports}\n` : ''}import catalogs from './mockCatalogs';
 
 const breadcrumb = '${windowCategory} / ${windowLabel}';
 
@@ -312,6 +328,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailEntity="${detailEntity}"
         Form={${headerName}Form}
         DetailTable={${detailName}Table}
+        DetailForm={${detailName}Form}
         summary={summary}
         statusField={statusField}
         processes={processes}
@@ -321,7 +338,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${toLabel(detailEntity)}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}
+        breadcrumb={breadcrumb}${apiProp}${secondaryTabsProp}
         {...props}
       />
     );
@@ -333,7 +350,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       Table={${headerName}Table}
       entityLabel="${toLabel(headerEntity)}s"
       windowName={windowName}
-      breadcrumb={breadcrumb}
+      breadcrumb={breadcrumb}${apiProp}
       {...props}
     />
   );

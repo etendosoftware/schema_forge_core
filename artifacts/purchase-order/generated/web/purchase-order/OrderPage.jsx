@@ -3,6 +3,8 @@ import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
 import OrderLineForm from './OrderLineForm';
+import OrderTaxTable from './OrderTaxTable';
+import OrderTaxForm from './OrderTaxForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Order';
@@ -486,6 +488,9 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'orderTax', label: 'Tax', Table: OrderTaxTable, Form: OrderTaxForm },
+        ]}
         {...props}
       />
     );

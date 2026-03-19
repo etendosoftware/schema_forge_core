@@ -38,6 +38,7 @@ export function DetailView({
   token,
   apiBaseUrl,
   breadcrumb,
+  secondaryTabs = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
@@ -49,6 +50,26 @@ export function DetailView({
   const [activeTab, setActiveTab] = useState(0);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
+  const [isClosingLine, setIsClosingLine] = useState(false);
+
+  const closeLine = useCallback(() => {
+    setIsClosingLine(true);
+    setTimeout(() => {
+      setSelectedLine(null);
+      setIsClosingLine(false);
+    }, 250);
+  }, []);
+
+  const [selectedSecondaryLine, setSelectedSecondaryLine] = useState(null);
+  const [isClosingSecondaryLine, setIsClosingSecondaryLine] = useState(false);
+
+  const closeSecondaryLine = useCallback(() => {
+    setIsClosingSecondaryLine(true);
+    setTimeout(() => {
+      setSelectedSecondaryLine(null);
+      setIsClosingSecondaryLine(false);
+    }, 250);
+  }, []);
 
   // Track fields whose values were set by a callout response to avoid re-triggering
   const calloutAppliedRef = useRef(new Set());
@@ -224,10 +245,13 @@ export function DetailView({
 
   const allEntryFields = addLineFields.entry ?? [];
 
-  // Build tabs: child entity lines + "Others" tab for non-principal header fields
+  // Build tabs: child entity lines + secondary tabs + "Others" tab for non-principal header fields
   const tabs = [];
   if (DetailTable) {
     tabs.push({ key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0 });
+  }
+  for (const st of secondaryTabs) {
+    tabs.push({ key: st.key, label: st.label });
   }
   // Always add "Others" tab for secondary header fields
   tabs.push({ key: 'others', label: 'Others' });
@@ -358,7 +382,7 @@ export function DetailView({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-auto px-6 pb-6">
-          <div className="max-w-5xl space-y-6">
+          <div className="max-w-full space-y-6">
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
@@ -384,7 +408,7 @@ export function DetailView({
                   {tabs.map((tab, idx) => (
                     <button
                       key={tab.key}
-                      onClick={() => setActiveTab(idx)}
+                      onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
                       className={[
                         'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
                         activeTab === idx
@@ -408,37 +432,51 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  <div className="pt-3">
-                    <DetailTable
-                      data={hook.children}
-                      entity={detailEntity}
-                      onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
-                      selectedRowId={selectedLine?.id}
-                      addRow={{
-                        active: addingLine,
-                        fields: allEntryFields,
-                        onAdd: (lineData) => {
-                          // Only send entry field keys to the API — exclude callout-derived values
-                          const entryKeys = new Set(allEntryFields.map(f => f.key));
-                          const filtered = {};
-                          for (const [k, v] of Object.entries(lineData)) {
-                            if (entryKeys.has(k)) filtered[k] = v;
-                          }
-                          hook.handleAddChild?.(filtered);
-                        },
-                        onCancel: () => setAddingLine(false),
-                        catalogs,
-                        onFieldChange: handleLineFieldChange,
-                      }}
-                    />
-                    <button
-                      onClick={() => setAddingLine(!addingLine)}
-                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                    >
-                      + Add {detailLabel || 'line'}
-                    </button>
-                    {DetailForm && selectedLine && (
-                      <div className="border-t border-zinc-700 mt-4 pt-4">
+                  <div className="pt-3 flex items-start gap-4">
+                    {/* Table + add button */}
+                    <div className="flex-1 min-w-0">
+                      <DetailTable
+                        data={hook.children}
+                        entity={detailEntity}
+                        onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
+                        selectedRowId={selectedLine?.id}
+                        addRow={{
+                          active: addingLine,
+                          fields: allEntryFields,
+                          onAdd: (lineData) => {
+                            // Only send entry field keys to the API — exclude callout-derived values
+                            const entryKeys = new Set(allEntryFields.map(f => f.key));
+                            const filtered = {};
+                            for (const [k, v] of Object.entries(lineData)) {
+                              if (entryKeys.has(k)) filtered[k] = v;
+                            }
+                            hook.handleAddChild?.(filtered);
+                          },
+                          onCancel: () => setAddingLine(false),
+                          catalogs,
+                          onFieldChange: handleLineFieldChange,
+                        }}
+                      />
+                      <button
+                        onClick={() => setAddingLine(!addingLine)}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                      >
+                        + Add {detailLabel || 'line'}
+                      </button>
+                    </div>
+
+                    {/* Right sidebar: line detail form */}
+                    {DetailForm && (selectedLine || isClosingLine) && (
+                      <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-foreground">{detailLabel || 'Line'} Detail</span>
+                          <button
+                            onClick={closeLine}
+                            className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <DetailForm
                           data={selectedLine}
                           readOnly={true}
@@ -449,6 +487,39 @@ export function DetailView({
                     )}
                   </div>
                 )}
+
+                {/* Tab content: secondary child entity tabs */}
+                {secondaryTabs.map(st => tabs[activeTab]?.key === st.key && (
+                  <div key={st.key} className="pt-3 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <st.Table
+                        data={hook.children}
+                        entity={st.key}
+                        onRowClick={st.Form ? (row) => setSelectedSecondaryLine({ ...row, _tabKey: st.key }) : undefined}
+                        selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                      />
+                    </div>
+                    {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
+                      <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-foreground">{st.label} Detail</span>
+                          <button
+                            onClick={closeSecondaryLine}
+                            className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <st.Form
+                          data={selectedSecondaryLine}
+                          readOnly={true}
+                          entity={st.key}
+                          catalogs={catalogs}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
 
                 {/* Tab content: Others (secondary header fields) */}
                 {tabs[activeTab]?.key === 'others' && (
