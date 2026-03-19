@@ -70,24 +70,18 @@ function listReports() {
 /**
  * Fetch report data — from DB (jasper SQL) or from mock data file.
  */
-async function fetchReportData(reportId, { limit } = {}) {
+async function fetchReportData(reportId, { limit, authToken } = {}) {
   const contractPath = join(ARTIFACTS_DIR, reportId, 'report-contract.json');
   const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 
   // Data source: NEO API (calls Etendo backend via NeoHandler)
   if (contract.neo?.endpoint) {
     try {
-      const neoUrl = `http://localhost:8080/etendo_sf${contract.neo.endpoint}`;
+      if (!authToken) throw new Error('No auth token — user must be logged in');
+      const etendoBase = process.env.ETENDO_URL || 'http://localhost:8080/etendo_sf';
+      const neoUrl = `${etendoBase}${contract.neo.endpoint}`;
       const neoBody = contract.neo.body || {};
-
-      // Get auth token from Etendo
-      const loginRes = await fetch('http://localhost:8080/etendo_sf/sws/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: 'admin', password: 'admin' }),
-      });
-      const loginData = await loginRes.json();
-      const token = loginData.token;
+      const token = authToken;
 
       const neoRes = await fetch(neoUrl, {
         method: contract.neo.method || 'POST',
@@ -207,7 +201,8 @@ export default function reportApiPlugin() {
           const reportId = dataMatch[1];
           const limit = url.searchParams.get('limit');
           try {
-            const { rows, contract } = await fetchReportData(reportId, { limit });
+            const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+            const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ rows, contract, count: rows.length }));
           } catch (e) {
@@ -226,7 +221,8 @@ export default function reportApiPlugin() {
           const { format = 'html', limit } = JSON.parse(body || '{}');
 
           try {
-            const { rows, contract } = await fetchReportData(reportId, { limit });
+            const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+            const { rows, contract } = await fetchReportData(reportId, { limit, authToken });
             const artifactDir = join(ARTIFACTS_DIR, reportId);
             const templateContent = readFileSync(join(artifactDir, 'template.hbs'), 'utf8');
             const helpersPath = join(artifactDir, 'helpers.js');

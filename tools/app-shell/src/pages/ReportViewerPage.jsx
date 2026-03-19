@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/auth/AuthContext.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -35,7 +36,7 @@ function ReportCard({ report, onRun }) {
   );
 }
 
-function ReportViewer({ report, onBack }) {
+function ReportViewer({ report, onBack, token }) {
   const iframeRef = useRef(null);
   const [activeFormat, setActiveFormat] = useState('preview');
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ function ReportViewer({ report, onBack }) {
     try {
       const res = await fetch(`/api/reports/${report.id}/render`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ format }),
       });
 
@@ -218,6 +219,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function ReportViewerPage() {
+  const { token } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -233,7 +235,7 @@ export default function ReportViewerPage() {
   }, []);
 
   if (selectedReport) {
-    return <ReportViewer report={selectedReport} onBack={() => setSelectedReport(null)} />;
+    return <ReportViewer report={selectedReport} onBack={() => setSelectedReport(null)} token={token} />;
   }
 
   // Group reports by category, optionally filtering
