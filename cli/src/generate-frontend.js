@@ -33,7 +33,7 @@ export function getProcessesForEntity(contract, entityName) {
  */
 export function getReadOnlyFields(contract, entityName) {
   const entity = contract.frontendContract.entities[entityName];
-  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly' && !f.grid);
 }
 
 /**
@@ -176,7 +176,13 @@ export function generateFormComponent(entityName, contract) {
       if (f.readOnlyLogic.evaluable === false) {
         readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
       } else if (f.readOnlyLogic.js) {
-        readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
+        // Prefix bare variable names with record. so the function accesses field values correctly
+        const jsExpr = f.readOnlyLogic.js.replace(/\b([a-z][a-zA-Z0-9]*)\b(?!\s*[\('])/g, (match) => {
+          // Skip JS keywords and operators
+          const skip = new Set(['true', 'false', 'null', 'undefined', 'Y', 'N', 'RPAE']);
+          return skip.has(match) ? match : `record.${match}`;
+        });
+        readOnlyLogicPart = `, readOnlyLogic: (record) => ${jsExpr}`;
       }
     }
     // Custom slots for callout and onChangeFunction behavioral hints
@@ -233,14 +239,17 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
-  // Status field gets a badge in the header; others go in the summary strip
-  const statusField = readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
-  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+  // Status field: search ALL readOnly fields (ignoring form/grid flags) so the badge always renders
+  const entity = contract.frontendContract.entities[headerEntity];
+  const statusField = entity.fields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
+  // Summary: only grid:false readOnly form fields, excluding status
+  const summaryFields = readOnlyFields.filter(f => f.name !== statusField?.name);
 
   // Summary config
   const summaryArray = summaryFields.map(f => {
     const type = mapFieldType(f);
-    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}' },`;
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    return `  { key: '${f.apiKey || f.name}', column: '${f.column}', type: '${type}'${labelPart} },`;
   }).join('\n');
 
   // Status field config

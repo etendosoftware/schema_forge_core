@@ -1,19 +1,24 @@
 import { DataTable } from '@/components/contract-ui';
 
+// @sf-generated-start columns:invoiceLine
 const columns = [
   { key: 'product', column: 'M_Product_ID', type: 'string' },
-  { key: 'quantity', column: 'QtyInvoiced', type: 'number' },
+  { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number' },
   { key: 'unitPrice', column: 'PriceActual', type: 'amount' },
   { key: 'tax', column: 'C_Tax_ID', type: 'string' },
-  { key: 'discount', column: 'Discount', type: 'number' },
   { key: 'lineNo', column: 'Line', type: 'number' },
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount' },
-  { key: 'uom', column: 'C_UOM_ID', type: 'string' },
-  { key: 'taxAmount', column: 'TaxAmt', type: 'amount' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'string' },
 ];
+// @sf-generated-end columns:invoiceLine
 
 const filters = ['product'];
 
+// @sf-generated-start component:InvoiceLineTable
 export default function InvoiceLineTable(props) {
+  // @sf-custom-slot hooks:InvoiceLineTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
+// @sf-generated-end component:InvoiceLineTable
+
+// @sf-custom-slot section:InvoiceLineTable-custom

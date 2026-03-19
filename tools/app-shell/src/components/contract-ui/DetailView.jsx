@@ -462,13 +462,16 @@ export function DetailView({
               <div className="flex justify-end pt-2 border-t border-border/50">
                 <div className="w-72 space-y-1.5">
                   {summary.filter(f => f.type === 'amount').map(f => {
-                    const label = f.key.replace(/([A-Z])/g, ' $1').trim();
+                    const label = f.label || f.key.replace(/([A-Z])/g, ' $1').trim();
                     const val = data[f.key] || 0;
-                    const currency = data.currency || 'AR$';
+                    const isoCode = data['currency$_identifier'];
+                    const formatted = isoCode
+                      ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: isoCode }).format(Number(val))
+                      : Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     return (
                       <div key={f.key} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{label}</span>
-                        <span className="font-medium tabular-nums">{currency} {Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-medium tabular-nums">{formatted}</span>
                       </div>
                     );
                   })}
@@ -477,9 +480,13 @@ export function DetailView({
                     <span className="tabular-nums">
                       {(() => {
                         const totalField = summary.find(f => f.key.toLowerCase().includes('grand') || f.key.toLowerCase().includes('total'));
-                        const val = data[totalField?.key] || 0;
-                        const currency = data.currency || 'AR$';
-                        return `${currency} ${Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        const val = totalField
+                          ? (data[totalField.key] || 0)
+                          : summary.filter(f => f.type === 'amount').reduce((acc, f) => acc + (Number(data[f.key]) || 0), 0);
+                        const isoCode = data['currency$_identifier'];
+                        return isoCode
+                          ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: isoCode }).format(Number(val))
+                          : Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                       })()}
                     </span>
                   </div>

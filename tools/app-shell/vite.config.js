@@ -14,10 +14,12 @@ export default defineConfig({
     react(),
     schemaApiPlugin(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: 'Etendo',
