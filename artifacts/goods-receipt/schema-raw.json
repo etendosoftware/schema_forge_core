@@ -255,7 +255,7 @@
           "label": "Document Status",
           "type": "enum",
           "mandatory": true,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "DR"
@@ -811,8 +811,52 @@
           "label": "Invoice Status",
           "type": "integer",
           "mandatory": false,
-          "visibility": "system",
+          "visibility": "readOnly",
           "maxLength": "4"
+        },
+        {
+          "name": "eMETBLKCBulkcompletion",
+          "columnName": "EM_Etblkc_Bulkcompletion",
+          "label": "Bulk Completion",
+          "type": "button",
+          "mandatory": true,
+          "visibility": "editable",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "displayLogic": "@DocStatus@!'CL'&@DocStatus@!'VO'",
+          "defaultValue": "N",
+          "isFilterable": true,
+          "help": "You can find the current status of each document in the Document Status field. This action can be performed on multiple records at once."
+        },
+        {
+          "name": "shipmentReceipt",
+          "columnName": "M_InOut_ID",
+          "label": "Goods Receipt",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Receipt ID indicates the unique document for this receipt."
+        },
+        {
+          "name": "pickDate",
+          "columnName": "PickDate",
+          "label": "Pick Date",
+          "type": "dateTime",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "19",
+          "readOnlyLogic": "@Processed@='Y'",
+          "isFilterable": true,
+          "help": "Date/Time when picked for Shipment"
         },
         {
           "name": "processNow",
@@ -829,61 +873,6 @@
           "maxLength": "1",
           "isFilterable": true,
           "help": "This process will move products in/out of inventory and mark line items as received/shipped."
-        },
-        {
-          "name": "salesTransaction",
-          "columnName": "IsSOTrx",
-          "label": "Sales Transaction",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.isSotrx"
-          },
-          "maxLength": "1",
-          "defaultValue": "@IsSOTrx@",
-          "isFilterable": true,
-          "help": "The Sales Transaction checkbox indicates if this item is a Sales Transaction."
-        },
-        {
-          "name": "datePrinted",
-          "columnName": "DatePrinted",
-          "label": "Date printed",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "10",
-          "isFilterable": true,
-          "help": "Indicates the Date that a document was printed."
-        },
-        {
-          "name": "print",
-          "columnName": "IsPrinted",
-          "label": "Print",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "The Printed checkbox indicates if this document or line will included when printing."
-        },
-        {
-          "name": "shipmentReceipt",
-          "columnName": "M_InOut_ID",
-          "label": "Goods Receipt",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The Receipt ID indicates the unique document for this receipt."
         },
         {
           "name": "invoice",
@@ -905,28 +894,96 @@
           }
         },
         {
-          "name": "pickDate",
-          "columnName": "PickDate",
-          "label": "Pick Date",
-          "type": "dateTime",
-          "mandatory": false,
+          "name": "client",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
           "visibility": "system",
-          "maxLength": "19",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "22",
           "readOnlyLogic": "@Processed@='Y'",
+          "defaultValue": "@AD_CLIENT_ID@",
           "isFilterable": true,
-          "help": "Date/Time when picked for Shipment"
+          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
         },
         {
-          "name": "shipDate",
-          "columnName": "ShipDate",
-          "label": "Ship Date",
-          "type": "dateTime",
+          "name": "active",
+          "columnName": "IsActive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          },
+          "maxLength": "1",
+          "isFilterable": true,
+          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
+        },
+        {
+          "name": "datePrinted",
+          "columnName": "DatePrinted",
+          "label": "Date printed",
+          "type": "date",
           "mandatory": false,
           "visibility": "system",
-          "maxLength": "19",
-          "readOnlyLogic": "@Processed@='Y'",
+          "maxLength": "10",
           "isFilterable": true,
-          "help": "Actual Date/Time of Shipment (pick up)"
+          "help": "Indicates the Date that a document was printed."
+        },
+        {
+          "name": "salesTransaction",
+          "columnName": "IsSOTrx",
+          "label": "Sales Transaction",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.isSotrx"
+          },
+          "maxLength": "1",
+          "defaultValue": "@IsSOTrx@",
+          "isFilterable": true,
+          "help": "The Sales Transaction checkbox indicates if this item is a Sales Transaction."
+        },
+        {
+          "name": "print",
+          "columnName": "IsPrinted",
+          "label": "Print",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1",
+          "isFilterable": true,
+          "help": "The Printed checkbox indicates if this document or line will included when printing."
+        },
+        {
+          "name": "trackingNo",
+          "columnName": "TrackingNo",
+          "label": "Tracking No",
+          "type": "string",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "60",
+          "isFilterable": true,
+          "help": "Number to track the shipment"
         },
         {
           "name": "logistic",
@@ -989,6 +1046,18 @@
           }
         },
         {
+          "name": "shipDate",
+          "columnName": "ShipDate",
+          "label": "Ship Date",
+          "type": "dateTime",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "19",
+          "readOnlyLogic": "@Processed@='Y'",
+          "isFilterable": true,
+          "help": "Actual Date/Time of Shipment (pick up)"
+        },
+        {
           "name": "orderDate",
           "columnName": "DateOrdered",
           "label": "Order Date",
@@ -998,58 +1067,6 @@
           "maxLength": "10",
           "isFilterable": true,
           "help": "Indicates the Date an item was ordered."
-        },
-        {
-          "name": "trackingNo",
-          "columnName": "TrackingNo",
-          "label": "Tracking No",
-          "type": "string",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "Number to track the shipment"
-        },
-        {
-          "name": "client",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
-          "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'",
-          "defaultValue": "@AD_CLIENT_ID@",
-          "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
-        },
-        {
-          "name": "active",
-          "columnName": "IsActive",
-          "label": "Active",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "true"
-          },
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         }
       ],
       "entityFullClass": "org.openbravo.model.materialmgmt.transaction.ShipmentInOut",
@@ -1515,7 +1532,7 @@
           "label": "Invoiced Quantity",
           "type": "quantity",
           "mandatory": true,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -1525,6 +1542,18 @@
           "defaultValue": "0",
           "isFilterable": true,
           "help": "The Invoiced Quantity indicates the quantity of a product that have been invoiced."
+        },
+        {
+          "name": "reinvoice",
+          "columnName": "IsInvoiced",
+          "label": "Re-invoice",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "1",
+          "isFilterable": true,
+          "help": "Indicator if invoiced"
         },
         {
           "name": "client",
@@ -1549,18 +1578,6 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
-        },
-        {
-          "name": "reinvoice",
-          "columnName": "IsInvoiced",
-          "label": "Re-invoice",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "Indicator if invoiced"
         },
         {
           "name": "active",
@@ -2734,7 +2751,7 @@
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "562fc95d",
-    "extractedAt": "2026-03-17T18:41:30.810Z"
+    "checksum": "6ddd9d6c",
+    "extractedAt": "2026-03-19T19:30:26.250Z"
   }
 }

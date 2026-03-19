@@ -11,6 +11,7 @@ obuiapp_process,,DDB20065809843FF92835E59ADB2234C,Landed Cost Matching Cancel,or
 obuiapp_process,,24E052E6FEB64295B64E683B5196230B,Landed Cost Matching Process,org.openbravo.costing.LCMatchingProcessHandler,Process_Matching
 obuiapp_process,,70E42AD47E5F4698A9ACCCAF3EB72B9E,Manage Prereservation Pick and Edit,org.openbravo.common.actionhandler.ManagePrereservationActionHandler,Manage_Prereservation
 obuiapp_process,,57496FB9CF9E4E8F847224017941570E,Post,com.smf.jobs.defaults.Post,Posted
+obuiapp_process,,33338B1F2C4F499EBA4F5547BE0B2A4E,Process Shipment,com.smf.jobs.defaults.ProcessShipment,EM_Etblkc_Bulkcompletion
 obuiapp_process,,5E9F9D7EECC24E4FBB2C60840FF613BE,RM Receipt Pick and Edit Lines,org.openbravo.common.actionhandler.RMInOutPickEditLines,RM_Receipt_PickEdit
 obuiapp_process,,4AD70293357245AB96E59C2CDB43A35D,RM Shipment Pick and Edit Lines,org.openbravo.common.actionhandler.RMShipmentPickEditLines,RM_Shipment_Pickedit
 tab_process,1000500004,,Print shipments process,,

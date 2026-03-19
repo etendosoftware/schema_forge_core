@@ -1,7 +1,7 @@
 {
   "windowId": "184",
   "windowName": "goods-receipt",
-  "extractedAt": "2026-03-17T18:41:30.903Z",
+  "extractedAt": "2026-03-19T19:30:26.270Z",
   "rules": [
     {
       "type": "callout",
@@ -528,6 +528,14 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
+      "fieldName": "Number of Packages",
+      "column": "NoPackages",
+      "rawExpression": "@FreightCostRule@='C'",
+      "translated": "freightCostRule=='C'"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
       "fieldName": "Delivery Terms",
       "column": "DeliveryRule",
       "rawExpression": "@MovementType@='C-'",
@@ -564,14 +572,6 @@
       "column": "SalesRep_ID",
       "rawExpression": "@Processed@='Y'",
       "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Number of Packages",
-      "column": "NoPackages",
-      "rawExpression": "@FreightCostRule@='C'",
-      "translated": "freightCostRule=='C'"
     },
     {
       "type": "displayLogic",
@@ -620,6 +620,14 @@
       "column": "Freight_Currency_ID",
       "rawExpression": "@FreightCostRule@='F' | @FreightCostRule@='C'",
       "translated": "freightCostRule=='F' || freightCostRule=='C'"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Bulk Completion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "rawExpression": "@DocStatus@!'CL'&@DocStatus@!'VO'",
+      "translated": "docStatus!='CL'&&docStatus!='VO'"
     },
     {
       "type": "displayLogic",
@@ -1183,7 +1191,7 @@
       "id": "109",
       "name": "Process Shipment",
       "className": null,
-      "column": "DocAction"
+      "column": "Processing"
     },
     {
       "type": "process",
@@ -1192,7 +1200,7 @@
       "id": "109",
       "name": "Process Shipment",
       "className": null,
-      "column": "Processing"
+      "column": "DocAction"
     },
     {
       "type": "process",
@@ -1283,6 +1291,15 @@
       "name": "Post",
       "className": "com.smf.jobs.defaults.Post",
       "column": "Posted"
+    },
+    {
+      "type": "process",
+      "source": "OBUIAPP_Process",
+      "mechanism": "obuiapp_process",
+      "id": "33338B1F2C4F499EBA4F5547BE0B2A4E",
+      "name": "Process Shipment",
+      "className": "com.smf.jobs.defaults.ProcessShipment",
+      "column": "EM_Etblkc_Bulkcompletion"
     },
     {
       "type": "process",
@@ -1431,10 +1448,10 @@
   "summary": {
     "callouts": 12,
     "validations": 10,
-    "displayLogic": 51,
+    "displayLogic": 52,
     "readOnlyLogic": 63,
-    "processes": 18,
+    "processes": 19,
     "auxiliaryInputs": 19,
-    "total": 154
+    "total": 156
   }
 }

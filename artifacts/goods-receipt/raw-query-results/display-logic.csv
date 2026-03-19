@@ -28,14 +28,15 @@ Calculate Freight Amount,@FreightCostRule@='C',,,,Calculate_Freight
 Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
 Process Shipment Java,@DocStatus@!'CL'&@DocStatus@!'VO',,,,Process_Goods_Java
 Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+Number of Packages,@FreightCostRule@='C',,,,NoPackages
 Delivery Terms,@MovementType@='C-',,,@Processed@='Y',DeliveryRule
 Delivery Method,@MovementType@='C-',,,@Processed@='Y',DeliveryViaRule
 Company Agent,,,,@Processed@='Y',SalesRep_ID
-Number of Packages,@FreightCostRule@='C',,,,NoPackages
 Activity,@$Element_AY@='Y',,,@Posted@='Y',C_Activity_ID
 Trx Organization,@$Element_OT@='Y',,,@Processed@='Y',AD_OrgTrx_ID
 Freight Category,@FreightCostRule@='C',,,,M_FreightCategory_ID
 Freight Currency,@FreightCostRule@='F' | @FreightCostRule@='C',,,,Freight_Currency_ID
+Bulk Completion,@DocStatus@!'CL'&@DocStatus@!'VO',,,,EM_Etblkc_Bulkcompletion
 Organization,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',AD_Org_ID
 Storage Bin,,,,@Processed@='Y',M_Locator_ID
 Product,,,,@Processed@='Y',M_Product_ID
