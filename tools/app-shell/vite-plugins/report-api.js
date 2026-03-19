@@ -51,7 +51,7 @@ function listReports() {
     if (existsSync(contractPath)) {
       try {
         const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
-        if (contract.reportId && contract.outputs?.length > 0 && (contract.source === 'jasper-migration' || contract.source === 'manual' || contract.mockDataFile)) {
+        if (contract.reportId && contract.outputs?.length > 0 && contract.type !== 'document' && (contract.source === 'jasper-migration' || contract.source === 'manual' || contract.source === 'sql' || contract.source === 'neo' || contract.mockDataFile)) {
           reports.push({
             id: contract.reportId,
             title: contract.title,
