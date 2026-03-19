@@ -276,9 +276,9 @@ export default function ReportViewerPage() {
   const { token } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
+  const reportId = searchParams.get('report');
 
   useEffect(() => {
     fetch('/api/reports')
@@ -288,8 +288,22 @@ export default function ReportViewerPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const selectedReport = reportId ? reports.find(r => r.id === reportId) : null;
+
+  const selectReport = (report) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('report', report.id);
+    setSearchParams(params);
+  };
+
+  const clearReport = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete('report');
+    setSearchParams(params);
+  };
+
   if (selectedReport) {
-    return <ReportViewer report={selectedReport} onBack={() => setSelectedReport(null)} token={token} />;
+    return <ReportViewer report={selectedReport} onBack={clearReport} token={token} />;
   }
 
   // Group reports by category, optionally filtering
@@ -338,7 +352,7 @@ export default function ReportViewerPage() {
                 )}
                 <div className="grid gap-3">
                   {catReports.map(r => (
-                    <ReportCard key={r.id} report={r} onRun={setSelectedReport} />
+                    <ReportCard key={r.id} report={r} onRun={selectReport} />
                   ))}
                 </div>
               </div>

@@ -43,10 +43,18 @@ const ICON_MAP = {
   FileJson,
 };
 
-export function findActiveGroup(menuGroups, pathname) {
+export function findActiveGroup(menuGroups, pathname, search) {
   const currentPath = pathname.replace(/^\//, '');
+  const currentFull = currentPath + (search || '');
   return menuGroups.find((g) =>
-    g.items.some((item) => item.name === currentPath || (item.path && item.path.split('?')[0] === currentPath))
+    g.items.some((item) => {
+      const itemPath = item.path || item.name;
+      // Exact match including query params for items that use ?category=
+      if (item.path && item.path.includes('?')) {
+        return currentFull === itemPath;
+      }
+      return item.name === currentPath;
+    })
   ) || null;
 }
 
@@ -58,7 +66,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   const [showUserPopover, setShowUserPopover] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname.replace(/^\//, '');
-  const activeGroup = findActiveGroup(menuGroups, location.pathname);
+  const activeGroup = findActiveGroup(menuGroups, location.pathname, location.search);
   const tMenu = useMenuLabel();
 
   const [openGroups, setOpenGroups] = useState(() => {
@@ -213,7 +221,10 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                   <div className="ml-7 border-l border-border/50 pl-2 py-0.5">
                     {g.items.map((item) => {
                       const itemPath = item.path || item.name;
-                      const isItemActive = currentPath === item.name || currentPath === itemPath.split('?')[0];
+                      const currentFull = currentPath + location.search;
+                      const isItemActive = item.path?.includes('?')
+                        ? currentFull === itemPath
+                        : currentPath === item.name;
                       return (
                         <NavLink
                           key={item.name}
