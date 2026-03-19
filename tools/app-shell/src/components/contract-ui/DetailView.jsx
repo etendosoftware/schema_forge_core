@@ -417,6 +417,8 @@ export function DetailView({
                     <DetailTable
                       data={hook.children}
                       entity={detailEntity}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
                       addRow={{
                         active: addingLine,
                         fields: allEntryFields,
