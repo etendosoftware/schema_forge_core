@@ -68,13 +68,13 @@ deploy: build ## Build app-shell and deploy to Etendo module web dir
 # --- Report Server ---
 
 report-serve: ## Start jsreport Docker container
-	docker compose -f docker/jsreport/docker-compose.yml up
+	docker compose -f ../modules/com.etendoerp.go/compose/com.etendoerp.go.yml up
 
 report-serve-detach: ## Start jsreport in background
-	docker compose -f docker/jsreport/docker-compose.yml up -d
+	docker compose -f ../modules/com.etendoerp.go/compose/com.etendoerp.go.yml up -d
 
 report-stop: ## Stop jsreport Docker container
-	docker compose -f docker/jsreport/docker-compose.yml down
+	docker compose -f ../modules/com.etendoerp.go/compose/com.etendoerp.go.yml down
 
 report-preview: ## Preview Business Partner listing report
 	node cli/src/report-preview.js --artifact business-partner --report listing
