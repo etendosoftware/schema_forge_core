@@ -280,6 +280,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     { key: 'orderTax',        label: 'Tax',              TableName: 'OrderTaxTable',        FormName: 'OrderTaxForm' },
     { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
     { key: 'paymentPlan',     label: 'Payment Plan',     TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
+    { key: 'accounting',      label: 'Accounting',       TableName: 'AccountingTable',       FormName: 'AccountingForm' },
+    { key: 'landedCost',      label: 'Landed Cost',      TableName: 'LandedCostTable',       FormName: 'LandedCostForm' },
   ].filter(t => allEntityNames.includes(t.key));
 
   const secondaryTabsImports = secondaryTabDefs

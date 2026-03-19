@@ -3,6 +3,10 @@ import GoodsReceiptTable from './GoodsReceiptTable';
 import GoodsReceiptForm from './GoodsReceiptForm';
 import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import GoodsReceiptLineForm from './GoodsReceiptLineForm';
+import AccountingTable from './AccountingTable';
+import AccountingForm from './AccountingForm';
+import LandedCostTable from './LandedCostTable';
+import LandedCostForm from './LandedCostForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Goods Receipt';
@@ -438,6 +442,10 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
+          { key: 'landedCost', label: 'Landed Cost', Table: LandedCostTable, Form: LandedCostForm },
+        ]}
         {...props}
       />
     );
