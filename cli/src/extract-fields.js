@@ -29,7 +29,7 @@ async function loadCoreMap(filename) {
  * 6. Everything else → editable
  */
 export function classifyField(fieldRow, systemColumns) {
-  const { columnname, tablename, isdisplayed, isreadonly, isupdateable, defaultvalue } = fieldRow;
+  const { columnname, tablename, isdisplayed, isshowninstatusbar, isreadonly, isupdateable, defaultvalue } = fieldRow;
 
   // 1. Primary key
   if (columnname === tablename + '_ID') {
@@ -59,8 +59,11 @@ export function classifyField(fieldRow, systemColumns) {
     };
   }
 
-  // 4. Not displayed
+  // 4. Not displayed — but if shown in status bar it's still relevant (readOnly)
   if (isdisplayed === 'N') {
+    if (isshowninstatusbar === 'Y') {
+      return { visibility: 'readOnly' };
+    }
     return {
       visibility: 'system',
       ...(inferCategoryFromColumn(columnname) && {
@@ -442,7 +445,7 @@ SELECT
   tbl.TableName, tbl.Classname AS entity_classname, tbl.Entity_Alias,
   pkg.JavaPackage AS entity_javapackage,
   f.AD_Field_ID, f.Name AS field_name,
-  f.IsDisplayed, f.IsReadOnly,
+  f.IsDisplayed, f.IsShownInStatusBar, f.IsReadOnly,
   f.DisplayLogic, f.DisplayLogic_Server, f.DisplayLogicGrid,
   f.SeqNo AS field_seq,
   c.ColumnName, c.Name AS obdal_name, c.AD_Reference_ID, c.IsMandatory, c.IsUpdateable,

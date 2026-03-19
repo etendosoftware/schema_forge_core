@@ -274,14 +274,22 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
-  // Detect secondary child entities for additional tabs (e.g., orderTax)
+  // Detect secondary child entities for additional tabs
   const allEntityNames = Object.keys(contract.frontendContract.entities);
-  const hasOrderTax = allEntityNames.includes('orderTax');
-  const secondaryTabsImports = hasOrderTax
-    ? `import OrderTaxTable from './OrderTaxTable';\nimport OrderTaxForm from './OrderTaxForm';`
-    : '';
-  const secondaryTabsProp = hasOrderTax
-    ? `\n        secondaryTabs={[\n          { key: 'orderTax', label: 'Tax', Table: OrderTaxTable, Form: OrderTaxForm },\n        ]}`
+  const secondaryTabDefs = [
+    { key: 'orderTax',        label: 'Tax',              TableName: 'OrderTaxTable',        FormName: 'OrderTaxForm' },
+    { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
+    { key: 'paymentPlan',     label: 'Payment Plan',     TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
+  ].filter(t => allEntityNames.includes(t.key));
+
+  const secondaryTabsImports = secondaryTabDefs
+    .map(t => `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`)
+    .join('\n');
+  const secondaryTabsPropEntries = secondaryTabDefs
+    .map(t => `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName} },`)
+    .join('\n');
+  const secondaryTabsProp = secondaryTabDefs.length > 0
+    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
   return `import { ListView, DetailView } from '@/components/contract-ui';
@@ -289,7 +297,7 @@ import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
-${hasOrderTax ? `${secondaryTabsImports}\n` : ''}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}import catalogs from './mockCatalogs';
 
 const breadcrumb = '${windowCategory} / ${windowLabel}';
 

@@ -41,6 +41,11 @@ export function DetailView({
   secondaryTabs = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  // Static hooks for up to 3 secondary tabs (React rules forbid dynamic hook calls)
+  const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.key ?? null, { token, apiBaseUrl });
+  const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.key ?? null, { token, apiBaseUrl });
+  const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.key ?? null, { token, apiBaseUrl });
+  const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2];
   const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
@@ -120,6 +125,14 @@ export function DetailView({
   // Reset selected line when the parent record changes
   useEffect(() => {
     setSelectedLine(null);
+  }, [hook.selected?.id]);
+
+  // Sync all secondary hooks with the selected parent record
+  useEffect(() => {
+    if (!hook.selected?.id) return;
+    secondaryHooks.forEach((sh, i) => {
+      if (secondaryTabs[i]) sh.handleSelect(hook.selected);
+    });
   }, [hook.selected?.id]);
 
   // Apply callout results to the form when they arrive
@@ -489,11 +502,11 @@ export function DetailView({
                 )}
 
                 {/* Tab content: secondary child entity tabs */}
-                {secondaryTabs.map(st => tabs[activeTab]?.key === st.key && (
+                {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
                   <div key={st.key} className="pt-3 flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <st.Table
-                        data={hook.children}
+                        data={secondaryHooks[stIdx]?.children ?? []}
                         entity={st.key}
                         onRowClick={st.Form ? (row) => setSelectedSecondaryLine({ ...row, _tabKey: st.key }) : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}

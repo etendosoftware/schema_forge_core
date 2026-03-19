@@ -47,11 +47,11 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/sws': {
-        target: 'http://localhost:8080/etendo',
+        target: 'http://localhost:8080/etendocorepg',
         changeOrigin: true,
       },
       '/webhooks': {
-        target: 'http://localhost:8080/etendo',
+        target: 'http://localhost:8080/etendocorepg',
         changeOrigin: true,
       },
     },

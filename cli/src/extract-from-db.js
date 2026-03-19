@@ -19,7 +19,7 @@ SELECT
   tbl.TableName, tbl.Classname AS entity_classname, tbl.Entity_Alias,
   pkg.JavaPackage AS entity_javapackage,
   f.AD_Field_ID, f.Name AS field_name,
-  f.IsDisplayed, f.IsReadOnly,
+  f.IsDisplayed, f.IsShownInStatusBar, f.IsReadOnly,
   f.DisplayLogic, f.DisplayLogic_Server, f.DisplayLogicGrid,
   f.SeqNo AS field_seq,
   c.ColumnName, c.AD_Reference_ID, c.IsMandatory, c.IsUpdateable,

@@ -1,1 +1,26 @@
-{ "processes": [] }
+{
+  "version": "0.1.0",
+  "processes": [
+    {
+      "name": "processOrder",
+      "label": "Process Order",
+      "column": "DocAction",
+      "style": "primary",
+      "entity": "order"
+    },
+    {
+      "name": "copyFromPO",
+      "label": "Copy from Orders",
+      "column": "Ref_Order_ID",
+      "style": "default",
+      "entity": "order"
+    },
+    {
+      "name": "print",
+      "label": "Print",
+      "column": "DocAction",
+      "style": "default",
+      "entity": "order"
+    }
+  ]
+}

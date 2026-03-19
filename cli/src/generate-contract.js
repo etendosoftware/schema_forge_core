@@ -108,6 +108,8 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.isFilterable) mapped.isFilterable = true;
       if (f.precision) mapped.precision = f.precision;
       if (f.isTranslated) mapped.isTranslated = true;
+      if (f.section) mapped.section = f.section;
+      if (f.statusBar) mapped.statusBar = true;
 
       // Behavioral metadata: callout
       if (f.callout) {

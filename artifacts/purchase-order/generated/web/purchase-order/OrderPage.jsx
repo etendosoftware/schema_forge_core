@@ -5,6 +5,10 @@ import OrderLineTable from './OrderLineTable';
 import OrderLineForm from './OrderLineForm';
 import OrderTaxTable from './OrderTaxTable';
 import OrderTaxForm from './OrderTaxForm';
+import BasicDiscountsTable from './BasicDiscountsTable';
+import BasicDiscountsForm from './BasicDiscountsForm';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Order';
@@ -490,6 +494,8 @@ export default function OrderPage({ windowName, recordId, ...props }) {
       api={api}
         secondaryTabs={[
           { key: 'orderTax', label: 'Tax', Table: OrderTaxTable, Form: OrderTaxForm },
+          { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
         ]}
         {...props}
       />
