@@ -118,11 +118,9 @@ function AppRoutes({ menuGroups, windowMap }) {
       <Route
         path="/onboarding"
         element={
-          <AuthGuard>
-            <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
-              <OnboardingPage />
-            </Suspense>
-          </AuthGuard>
+          <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
+            <OnboardingPage />
+          </Suspense>
         }
       />
       <Route
