@@ -1,7 +1,7 @@
 {
   "windowId": "183",
   "windowName": "purchase-invoice",
-  "extractedAt": "2026-03-12T19:23:56.137Z",
+  "extractedAt": "2026-03-19T19:48:49.668Z",
   "rules": [
     {
       "type": "callout",
@@ -994,6 +994,14 @@
       "translated": "financialManagement==''"
     },
     {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Bulk Completion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "rawExpression": "@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='Y'",
+      "translated": "docStatus!='CL'&&docStatus!='VO'&&invoiceProcessButton==true"
+    },
+    {
       "type": "readOnlyLogic",
       "source": "AD_Column",
       "fieldName": "Charge",
@@ -1180,6 +1188,14 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
+      "fieldName": "Match LC Costs",
+      "column": "Match_Lccosts",
+      "rawExpression": " @Processed@='Y' & @LC_MATCHED@ = 'N'",
+      "translated": "processed==true && lC_MATCHED == false"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
       "fieldName": "Account",
       "column": "Account_ID",
       "rawExpression": "@Financial_Invoice_Line@='Y'",
@@ -1192,14 +1208,6 @@
       "column": "Account_ID",
       "rawExpression": "@Processed@='Y'",
       "translated": "processed==true"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
-      "fieldName": "Match LC Costs",
-      "column": "Match_Lccosts",
-      "rawExpression": " @Processed@='Y' & @LC_MATCHED@ = 'N'",
-      "translated": "processed==true && lC_MATCHED == false"
     },
     {
       "type": "displayLogic",
@@ -2135,6 +2143,15 @@
     },
     {
       "type": "process",
+      "source": "OBUIAPP_Process",
+      "mechanism": "obuiapp_process",
+      "id": "272C8D38EF3245BF882E623CE92AB4E7",
+      "name": "Process Invoices",
+      "className": "com.smf.jobs.defaults.ProcessInvoices",
+      "column": "EM_Etblkc_Bulkcompletion"
+    },
+    {
+      "type": "process",
       "source": "AD_Process",
       "mechanism": "tab_process",
       "id": "1000500003",
@@ -2292,10 +2309,10 @@
   "summary": {
     "callouts": 26,
     "validations": 30,
-    "displayLogic": 75,
+    "displayLogic": 76,
     "readOnlyLogic": 96,
-    "processes": 21,
+    "processes": 22,
     "auxiliaryInputs": 24,
-    "total": 248
+    "total": 250
   }
 }

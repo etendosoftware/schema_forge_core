@@ -41,11 +41,12 @@ export function DetailView({
   secondaryTabs = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
-  // Static hooks for up to 3 secondary tabs (React rules forbid dynamic hook calls)
+  // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
   const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.key ?? null, { token, apiBaseUrl });
   const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.key ?? null, { token, apiBaseUrl });
   const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2];
+  const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.key ?? null, { token, apiBaseUrl });
+  const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });

@@ -278,6 +278,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const allEntityNames = Object.keys(contract.frontendContract.entities);
   const secondaryTabDefs = [
     { key: 'orderTax',        label: 'Tax',              TableName: 'OrderTaxTable',        FormName: 'OrderTaxForm' },
+    { key: 'invoiceTax',      label: 'Tax',              TableName: 'InvoiceTaxTable',      FormName: 'InvoiceTaxForm' },
     { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
     { key: 'paymentPlan',     label: 'Payment Plan',     TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
     { key: 'accounting',      label: 'Accounting',       TableName: 'AccountingTable',       FormName: 'AccountingForm' },
