@@ -63,7 +63,7 @@ export default function OnboardingPage() {
   const loadEnvironments = useCallback(async () => {
     setLoadingEnvs(true);
     try {
-      const res = await fetch('/sws/go/onboarding/environments', {
+      const res = await fetch('/sws/go/onboarding?action=environments', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
