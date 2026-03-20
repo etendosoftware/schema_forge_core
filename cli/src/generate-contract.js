@@ -228,20 +228,30 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     );
   }
 
-  // Build a set of known curated entity names for validation
+  // Build lookup structures for matching process entities to curated entity names.
+  // Processes reference entities by raw OBDal tableName-based names (e.g., "cOrder"),
+  // but curated entities may use tabName-based names (e.g., "header").
   const curatedEntityNames = new Set(schema.entities.map(e => e.name));
+  const tableNameToEntityName = new Map();
+  for (const e of schema.entities) {
+    if (e.tableName) tableNameToEntityName.set(e.tableName.toLowerCase(), e.name);
+  }
 
   const processEndpoints = processes.map(p => {
     const columnName = p.trigger?.field ?? null;
     const params = p.params ?? (p.trigger
       ? [{ key: p.trigger.field, value: p.trigger.value, hidden: true }]
       : []);
-    // Map process entity name (raw OBDal name like "cOrder") to the curated
-    // entity name used by the frontend (e.g. "order") so that
-    // getProcessesForEntity() can match them correctly.
-    const curatedEntity = curatedEntityNames.has(p.entity)
-      ? p.entity
-      : autoSimplifyEntityName(p.entity);
+    // Map process entity name to the curated entity name.
+    // Try: 1) direct match, 2) tableName lookup, 3) autoSimplify fallback (deprecated)
+    let curatedEntity = p.entity;
+    if (!curatedEntityNames.has(curatedEntity)) {
+      // Process entity might be a tableName-based key — look up by tableName
+      const fromTable = tableNameToEntityName.get(
+        (p.entity || '').replace(/^c|^m|^ad/i, '').toLowerCase()
+      ) || tableNameToEntityName.get((p.entity || '').toLowerCase());
+      curatedEntity = fromTable || autoSimplifyEntityName(p.entity);
+    }
     return {
       name: p.name,
       method: 'POST',

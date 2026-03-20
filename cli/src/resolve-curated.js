@@ -13,6 +13,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
+import { toCamelCase } from './utils.js';
 import { migrateDecisions, needsMigration, getVersion, CURRENT_VERSION } from './migrations/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -323,6 +324,43 @@ function resolveRules(rulesRaw, decisions) {
 }
 
 // ---------------------------------------------------------------------------
+// Entity decision matching (backward compatible with tableName-based keys)
+// ---------------------------------------------------------------------------
+
+/**
+ * Find the decisions entry for a raw entity, trying multiple matching strategies.
+ * This ensures backward compatibility when old decisions use tableName-based keys
+ * (e.g., "cOrder") but the raw schema now uses tabName-based keys (e.g., "header").
+ *
+ * @param {Object} rawEntity - Raw entity with name, tableName properties
+ * @param {Object} entitiesDecisions - The decisions.entities map
+ * @returns {Object} The matching decision object, or {} if none found
+ */
+function findEntityDecision(rawEntity, entitiesDecisions) {
+  // 1. Exact match by current name (tabName-based)
+  if (entitiesDecisions[rawEntity.name]) return entitiesDecisions[rawEntity.name];
+
+  // 2. Fallback: match by tableName derivation (handles unmigrated decisions)
+  if (rawEntity.tableName) {
+    const tableBasedKey = toCamelCase(rawEntity.tableName);
+    if (entitiesDecisions[tableBasedKey]) return entitiesDecisions[tableBasedKey];
+
+    // Also try the auto-simplified version (strips c/m/ad prefix)
+    const simplified = autoSimplifyEntityName(tableBasedKey);
+    if (simplified !== tableBasedKey && entitiesDecisions[simplified]) {
+      return entitiesDecisions[simplified];
+    }
+  }
+
+  // 3. Match by name override in decision value
+  for (const [, decVal] of Object.entries(entitiesDecisions)) {
+    if (decVal.name === rawEntity.name) return decVal;
+  }
+
+  return {};
+}
+
+// ---------------------------------------------------------------------------
 // Main resolver
 // ---------------------------------------------------------------------------
 
@@ -338,7 +376,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   // Migrate decisions to current version if needed (in-memory only, no file write)
   if (needsMigration(decisions)) {
     const fromV = getVersion(decisions);
-    const result = migrateDecisions(decisions);
+    const result = migrateDecisions(decisions, { schemaRaw });
     decisions = result.decisions;
     console.log(`  decisions migrated in-memory: v${fromV} → v${result.toVersion}`);
   }
@@ -350,7 +388,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
 
   for (const rawEntity of (schemaRaw.entities || [])) {
     const rawEntityName = rawEntity.name;
-    const entityDecision = entitiesDecisions[rawEntityName] || {};
+    const entityDecision = findEntityDecision(rawEntity, entitiesDecisions);
 
     // Skip entities explicitly excluded via decisions
     if (entityDecision.exclude === true) continue;
@@ -457,7 +495,7 @@ async function runCli() {
 
     // Auto-migrate and persist if needed
     if (needsMigration(decisions)) {
-      const result = migrateDecisions(decisions);
+      const result = migrateDecisions(decisions, { schemaRaw });
       decisions = result.decisions;
       await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
       console.log(`decisions.json auto-migrated: v${result.fromVersion} → v${result.toVersion}`);

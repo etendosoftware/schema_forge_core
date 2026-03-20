@@ -407,12 +407,17 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
     const semanticLevel = mapTabLevel(tab.tabLevel);
 
     // Track the primary entity (first header-level tab)
+    // Prefer tabName (human-readable tab label) over tableName (DB table)
+    const entityName = tab.tabName
+      ? toCamelCase(tab.tabName)
+      : toCamelCase(tab.tableName);
+
     if (semanticLevel === 'header' && !primaryEntity) {
-      primaryEntity = toCamelCase(tab.tableName);
+      primaryEntity = entityName;
     }
 
     const entity = {
-      name: toCamelCase(tab.tableName),
+      name: entityName,
       tableName: tab.tableName,
       tabId: tab.tabId,
       entityClassname,
