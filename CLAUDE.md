@@ -137,9 +137,19 @@ Schema Forge (this repo)  ──writes via webhooks──▶  com.etendoerp.go (
    (design + tooling)                                 (runtime API engine)
 ```
 
-**Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime.
+**etendo-go-architecture** is a separate repo with the production architecture decisions, infrastructure docs, and the `sf-radar` CLI tool. It tracks decisions across 7 teams (copilot, backend, frontend, infra, cloud, servicios, product). **This repo is optional** — only developers involved in architecture decisions need it locally. If an agent or developer doesn't have it, suggest cloning it but do NOT attempt to refresh or access it automatically.
 
-See `docs/architecture-overview.md` for the full system architecture.
+```
+Schema Forge (this repo)  ──writes via webhooks──▶  com.etendoerp.go (/modules/)
+   (design + tooling)                                 (runtime API engine)
+
+etendo-go-architecture (separate repo)  ──informs──▶  Schema Forge
+   (architecture decisions + sf-radar)                 (what to build and why)
+```
+
+**Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime. The architecture radar records WHY decisions were made.
+
+See `docs/architecture-overview.md` for the full system architecture and `docs/architecture-radar.md` for the sf-radar tool guide.
 
 ## Architecture
 
