@@ -1,9 +1,9 @@
 // Auto-generated mock data - do not edit manually
 
-export const invoice = [
+export const header = [
   {
-    "id": "mock-invoice-001",
-    "documentNo": "IN-00001",
+    "id": "mock-header-001",
+    "documentNo": "HE-00001",
     "invoiceDate": "2026-01-15",
     "businessPartner": "Acme Corp",
     "partnerAddress": "Acme Corp",
@@ -45,8 +45,8 @@ export const invoice = [
     "withholdingamount": 38907
   },
   {
-    "id": "mock-invoice-002",
-    "documentNo": "IN-00002",
+    "id": "mock-header-002",
+    "documentNo": "HE-00002",
     "invoiceDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
     "partnerAddress": "TechFlow Inc",
@@ -88,8 +88,8 @@ export const invoice = [
     "withholdingamount": 9306
   },
   {
-    "id": "mock-invoice-003",
-    "documentNo": "IN-00003",
+    "id": "mock-header-003",
+    "documentNo": "HE-00003",
     "invoiceDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
     "partnerAddress": "Global Trade Ltd",
@@ -131,8 +131,8 @@ export const invoice = [
     "withholdingamount": 11544
   },
   {
-    "id": "mock-invoice-004",
-    "documentNo": "IN-00004",
+    "id": "mock-header-004",
+    "documentNo": "HE-00004",
     "invoiceDate": "2026-01-18",
     "businessPartner": "Summit Industries",
     "partnerAddress": "Summit Industries",
@@ -174,8 +174,8 @@ export const invoice = [
     "withholdingamount": 11872
   },
   {
-    "id": "mock-invoice-005",
-    "documentNo": "IN-00005",
+    "id": "mock-header-005",
+    "documentNo": "HE-00005",
     "invoiceDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
     "partnerAddress": "Pacific Partners",
@@ -217,8 +217,8 @@ export const invoice = [
     "withholdingamount": 48460
   },
   {
-    "id": "mock-invoice-006",
-    "documentNo": "IN-00006",
+    "id": "mock-header-006",
+    "documentNo": "HE-00006",
     "invoiceDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
     "partnerAddress": "Alpine Solutions",
@@ -260,8 +260,8 @@ export const invoice = [
     "withholdingamount": 45418
   },
   {
-    "id": "mock-invoice-007",
-    "documentNo": "IN-00007",
+    "id": "mock-header-007",
+    "documentNo": "HE-00007",
     "invoiceDate": "2026-01-21",
     "businessPartner": "Meridian Group",
     "partnerAddress": "Meridian Group",
@@ -303,8 +303,8 @@ export const invoice = [
     "withholdingamount": 33840
   },
   {
-    "id": "mock-invoice-008",
-    "documentNo": "IN-00008",
+    "id": "mock-header-008",
+    "documentNo": "HE-00008",
     "invoiceDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
     "partnerAddress": "Vertex Systems",
@@ -346,8 +346,8 @@ export const invoice = [
     "withholdingamount": 25716
   },
   {
-    "id": "mock-invoice-009",
-    "documentNo": "IN-00009",
+    "id": "mock-header-009",
+    "documentNo": "HE-00009",
     "invoiceDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
     "partnerAddress": "Atlas Manufacturing",
@@ -389,8 +389,8 @@ export const invoice = [
     "withholdingamount": 44780
   },
   {
-    "id": "mock-invoice-010",
-    "documentNo": "IN-00010",
+    "id": "mock-header-010",
+    "documentNo": "HE-00010",
     "invoiceDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
     "partnerAddress": "Nova Enterprises",
@@ -432,8 +432,8 @@ export const invoice = [
     "withholdingamount": 12483
   },
   {
-    "id": "mock-invoice-011",
-    "documentNo": "IN-00011",
+    "id": "mock-header-011",
+    "documentNo": "HE-00011",
     "invoiceDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
     "partnerAddress": "Pinnacle Services",
@@ -475,8 +475,8 @@ export const invoice = [
     "withholdingamount": 46022
   },
   {
-    "id": "mock-invoice-012",
-    "documentNo": "IN-00012",
+    "id": "mock-header-012",
+    "documentNo": "HE-00012",
     "invoiceDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
     "partnerAddress": "Horizon Labs",
@@ -519,9 +519,9 @@ export const invoice = [
   }
 ];
 
-export const invoiceLine = [
+export const lines = [
   {
-    "id": "mock-invoiceLine-001",
+    "id": "mock-lines-001",
     "lineNo": 10,
     "product": "Laptop Pro 15",
     "operativeQuantity": "Sample operativeQuantity",
@@ -554,10 +554,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Acme Corp",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
-    "id": "mock-invoiceLine-002",
+    "id": "mock-lines-002",
     "lineNo": 20,
     "product": "USB-C Cable",
     "operativeQuantity": "Sample operativeQuantity",
@@ -590,10 +590,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "TechFlow Inc",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
-    "id": "mock-invoiceLine-003",
+    "id": "mock-lines-003",
     "lineNo": 30,
     "product": "Wireless Mouse",
     "operativeQuantity": "Sample operativeQuantity",
@@ -626,10 +626,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Global Trade Ltd",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
-    "id": "mock-invoiceLine-004",
+    "id": "mock-lines-004",
     "lineNo": 40,
     "product": "Mechanical Keyboard",
     "operativeQuantity": "Sample operativeQuantity",
@@ -662,10 +662,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Summit Industries",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
-    "id": "mock-invoiceLine-005",
+    "id": "mock-lines-005",
     "lineNo": 50,
     "product": "Monitor 27\"",
     "operativeQuantity": "Sample operativeQuantity",
@@ -698,10 +698,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Pacific Partners",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
-    "id": "mock-invoiceLine-006",
+    "id": "mock-lines-006",
     "lineNo": 60,
     "product": "Webcam HD",
     "operativeQuantity": "Sample operativeQuantity",
@@ -734,10 +734,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Alpine Solutions",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
-    "id": "mock-invoiceLine-007",
+    "id": "mock-lines-007",
     "lineNo": 70,
     "product": "Headset Pro",
     "operativeQuantity": "Sample operativeQuantity",
@@ -770,10 +770,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Meridian Group",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
-    "id": "mock-invoiceLine-008",
+    "id": "mock-lines-008",
     "lineNo": 80,
     "product": "Docking Station",
     "operativeQuantity": "Sample operativeQuantity",
@@ -806,10 +806,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Vertex Systems",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
-    "id": "mock-invoiceLine-009",
+    "id": "mock-lines-009",
     "lineNo": 90,
     "product": "SSD 1TB",
     "operativeQuantity": "Sample operativeQuantity",
@@ -842,10 +842,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Atlas Manufacturing",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
-    "id": "mock-invoiceLine-010",
+    "id": "mock-lines-010",
     "lineNo": 100,
     "product": "RAM 16GB",
     "operativeQuantity": "Sample operativeQuantity",
@@ -878,10 +878,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Nova Enterprises",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
-    "id": "mock-invoiceLine-011",
+    "id": "mock-lines-011",
     "lineNo": 110,
     "product": "Power Supply 750W",
     "operativeQuantity": "Sample operativeQuantity",
@@ -914,10 +914,10 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Pinnacle Services",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
-    "id": "mock-invoiceLine-012",
+    "id": "mock-lines-012",
     "lineNo": 120,
     "product": "Network Switch",
     "operativeQuantity": "Sample operativeQuantity",
@@ -950,6 +950,6 @@ export const invoiceLine = [
     "ndDimension": "Sample ndDimension",
     "explode": "Sample explode",
     "businessPartner": "Horizon Labs",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];

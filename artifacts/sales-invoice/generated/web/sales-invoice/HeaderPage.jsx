@@ -1,6 +1,74 @@
-import HeaderPage from './HeaderPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import HeaderTable from './HeaderTable';
+import HeaderForm from './HeaderForm';
+import LinesTable from './LinesTable';
+import LinesForm from './LinesForm';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'sales', name: 'Sales Invoice' };
+const breadcrumb = 'Sales / Sales Invoice';
+
+// @sf-generated-start summary:header
+const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
+  { key: 'totalPaid', column: 'Totalpaid', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'dueAmount', column: 'DueAmt', type: 'amount' },
+  { key: 'daysTillDue', column: 'DaysTillDue', type: 'number' },
+  { key: 'percentageOverdue', column: 'Percentageoverdue', type: 'number' },
+  { key: 'finalSettlementDate', column: 'Finalsettlement', type: 'date' },
+  { key: 'daysSalesOutstanding', column: 'Daysoutstanding', type: 'number' },
+  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
+  { key: 'externalBusinessPartnerReference', column: 'BPartner_ExtRef', type: 'string' },
+  { key: 'prepaymentamt', column: 'Prepaymentamt', type: 'amount' },
+  { key: 'paidAmountAtInvoicing', column: 'Paidamtatinvoicing', type: 'amount' },
+];
+
+const statusField = 'documentStatus';
+// @sf-generated-end summary:header
+
+// @sf-generated-start processes:header
+const processes = [
+
+];
+// @sf-generated-end processes:header
+
+// @sf-generated-start addLineFields:lines
+const addLineFields = {
+  entry: [
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
+    { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'text', required: true },
+    { key: 'financialInvoiceLine', column: 'Financial_Invoice_Line', type: 'checkbox', required: true },
+    { key: 'account', column: 'Account_ID', type: 'search', reference: 'Glitem', inputMode: 'search' },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
+    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'deferred', column: 'IsDeferred', type: 'checkbox', required: true },
+    { key: 'deferredPlanType', column: 'DefPlanType', type: 'text' },
+    { key: 'periodNumber', column: 'Periodnumber', type: 'number' },
+    { key: 'period', column: 'C_Period_ID', type: 'search', reference: 'Period', inputMode: 'search' },
+    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
+    { key: 'asset', column: 'A_Asset_ID', type: 'selector', reference: 'Asset', inputMode: 'selector' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector' },
+    { key: 'explode', column: 'Explode', type: 'text' },
+    { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', reference: 'BPartner', inputMode: 'search' },
+  ],
+  derived: [
+    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
+    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
+    { key: 'listPrice', column: 'PriceList', type: 'text' },
+    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
+    { key: 'cancelPriceAdjustment', column: 'CANCELPRICEAD', type: 'checkbox' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'Costcenter', inputMode: 'selector' },
+  ],
+};
+// @sf-generated-end addLineFields:lines
 
 const api = {
   "specName": "sales-invoice",
@@ -334,11 +402,45 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:HeaderPage
+export default function HeaderPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:HeaderPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="header"
+        detailEntity="lines"
+        Form={HeaderForm}
+        DetailTable={LinesTable}
+        DetailForm={LinesForm}
+        summary={summary}
+        statusField={statusField}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Header"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="header"
+      Table={HeaderTable}
+      entityLabel="Headers"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:HeaderPage
+
+// @sf-custom-slot section:HeaderPage-custom

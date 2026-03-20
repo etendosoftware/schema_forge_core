@@ -1,17 +1,17 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-20T15:15:01.420Z",
-  "checksum": "b47b45d6d248c3c6",
+  "generatedAt": "2026-03-20T19:27:57.268Z",
+  "checksum": "047612f2ceea7783",
   "frontendContract": {
     "window": {
       "id": "167",
       "name": "Sales Invoice",
-      "primaryEntity": "invoice",
+      "primaryEntity": "header",
       "category": "sales",
       "layoutType": "default"
     },
     "entities": {
-      "invoice": {
+      "header": {
         "tableName": "C_Invoice",
         "tabId": "263",
         "tabName": "Header",
@@ -836,7 +836,7 @@
           }
         ]
       },
-      "invoiceLine": {
+      "lines": {
         "tableName": "C_InvoiceLine",
         "tabId": "270",
         "tabName": "Lines",
@@ -1542,11 +1542,11 @@
     "window": {
       "id": "167",
       "name": "Sales Invoice",
-      "primaryEntity": "invoice",
+      "primaryEntity": "header",
       "category": "sales"
     },
     "entities": {
-      "invoice": {
+      "header": {
         "tableName": "C_Invoice",
         "tabId": "263",
         "tabName": "Header",
@@ -2145,7 +2145,7 @@
           }
         ]
       },
-      "invoiceLine": {
+      "lines": {
         "tableName": "C_InvoiceLine",
         "tabId": "270",
         "tabName": "Lines",
@@ -2612,8 +2612,8 @@
     "endpoints": [
       {
         "method": "GET",
-        "path": "/invoice",
-        "entity": "invoice",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": [
           "documentNo",
           "invoiceDate",
@@ -2624,113 +2624,76 @@
       },
       {
         "method": "GET",
-        "path": "/invoice/:id",
-        "entity": "invoice",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/invoice",
-        "entity": "invoice",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/invoice/:id",
-        "entity": "invoice",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/invoice/:id",
-        "entity": "invoice",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "GET",
-        "path": "/invoiceLine",
-        "entity": "invoiceLine",
+        "path": "/lines",
+        "entity": "lines",
         "supportedFilters": [
           "product"
         ]
       },
       {
         "method": "GET",
-        "path": "/invoiceLine/:id",
-        "entity": "invoiceLine",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/invoiceLine",
-        "entity": "invoiceLine",
+        "path": "/lines",
+        "entity": "lines",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/invoiceLine/:id",
-        "entity": "invoiceLine",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/invoiceLine/:id",
-        "entity": "invoiceLine",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       }
     ],
-    "processEndpoints": [
-      {
-        "name": "completeInvoice",
-        "method": "POST",
-        "path": "/process/completeInvoice",
-        "entity": "Invoice",
-        "columnName": null,
-        "params": [
-          {
-            "hidden": true
-          }
-        ],
-        "preconditions": [
-          "Invoice must have at least one line",
-          "Invoice status must be DR (Draft) or IP (In Progress)",
-          "All invoice lines must have a product assigned",
-          "All invoice lines must have a positive quantity"
-        ],
-        "steps": 5
-      },
-      {
-        "name": "voidInvoice",
-        "method": "POST",
-        "path": "/process/voidInvoice",
-        "entity": "Invoice",
-        "columnName": null,
-        "params": [
-          {
-            "hidden": true
-          }
-        ],
-        "preconditions": [
-          "Invoice status must be CO (Completed)",
-          "Invoice must not have payments applied"
-        ],
-        "steps": 3
-      }
-    ]
+    "processEndpoints": []
   },
   "apiPrediction": {
     "specName": "sales-invoice",
     "baseUrl": "/sws/neo/sales-invoice",
     "crud": {
-      "invoice": {
+      "header": {
         "get": true,
         "getById": true,
         "post": true,
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/sales-invoice/invoice",
-        "detailUrl": "/sws/neo/sales-invoice/invoice/{id}",
+        "listUrl": "/sws/neo/sales-invoice/header",
+        "detailUrl": "/sws/neo/sales-invoice/header/{id}",
         "supportedFilters": [
           "documentNo",
           "invoiceDate",
@@ -2739,15 +2702,15 @@
           "orderReference"
         ]
       },
-      "invoiceLine": {
+      "lines": {
         "get": true,
         "getById": true,
         "post": true,
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/sales-invoice/invoiceLine",
-        "detailUrl": "/sws/neo/sales-invoice/invoiceLine/{id}",
+        "listUrl": "/sws/neo/sales-invoice/lines",
+        "detailUrl": "/sws/neo/sales-invoice/lines/{id}",
         "supportedFilters": [
           "product"
         ]
@@ -2755,284 +2718,284 @@
     },
     "selectors": [
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
         "reference": "BusinessPartner",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/businessPartner"
+        "url": "/sws/neo/sales-invoice/header/selectors/businessPartner"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "partnerAddress",
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/partnerAddress"
+        "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentTerms",
         "column": "C_PaymentTerm_ID",
         "reference": "PaymentTerm",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/paymentTerms"
+        "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentMethod",
         "column": "FIN_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/paymentMethod"
+        "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "currency",
         "column": "C_Currency_ID",
         "reference": "Currency",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/currency"
+        "url": "/sws/neo/sales-invoice/header/selectors/currency"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "priceList",
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/priceList"
+        "url": "/sws/neo/sales-invoice/header/selectors/priceList"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesRepresentative",
         "column": "SalesRep_ID",
         "reference": "User",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/salesRepresentative"
+        "url": "/sws/neo/sales-invoice/header/selectors/salesRepresentative"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesOrder",
         "column": "C_Order_ID",
         "reference": "Order",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/salesOrder"
+        "url": "/sws/neo/sales-invoice/header/selectors/salesOrder"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "dependent",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/project"
+        "url": "/sws/neo/sales-invoice/header/selectors/project"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "column": "C_Costcenter_ID",
         "reference": "Costcenter",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/costcenter"
+        "url": "/sws/neo/sales-invoice/header/selectors/costcenter"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "column": "C_Campaign_ID",
         "reference": "Campaign",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/salesCampaign"
+        "url": "/sws/neo/sales-invoice/header/selectors/salesCampaign"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "column": "User1_ID",
         "reference": "User1",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/stDimension"
+        "url": "/sws/neo/sales-invoice/header/selectors/stDimension"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "column": "User2_ID",
         "reference": "User2",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoice/selectors/ndDimension"
+        "url": "/sws/neo/sales-invoice/header/selectors/ndDimension"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "product",
         "column": "M_Product_ID",
         "reference": "Product",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/product"
+        "url": "/sws/neo/sales-invoice/lines/selectors/product"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "column": "C_Aum",
         "reference": "UOM",
         "inputMode": "dependent",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/operativeUOM"
+        "url": "/sws/neo/sales-invoice/lines/selectors/operativeUOM"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "uOM",
         "column": "C_UOM_ID",
         "reference": "UOM",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/uOM"
+        "url": "/sws/neo/sales-invoice/lines/selectors/uOM"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/tax"
+        "url": "/sws/neo/sales-invoice/lines/selectors/tax"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "column": "Account_ID",
         "reference": "Glitem",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/account"
+        "url": "/sws/neo/sales-invoice/lines/selectors/account"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "column": "C_Period_ID",
         "reference": "Period",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/period"
+        "url": "/sws/neo/sales-invoice/lines/selectors/period"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/project"
+        "url": "/sws/neo/sales-invoice/lines/selectors/project"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "column": "C_Costcenter_ID",
         "reference": "Costcenter",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/costcenter"
+        "url": "/sws/neo/sales-invoice/lines/selectors/costcenter"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "column": "A_Asset_ID",
         "reference": "Asset",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/asset"
+        "url": "/sws/neo/sales-invoice/lines/selectors/asset"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "column": "User1_ID",
         "reference": "User1",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/stDimension"
+        "url": "/sws/neo/sales-invoice/lines/selectors/stDimension"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "column": "User2_ID",
         "reference": "User2",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/ndDimension"
+        "url": "/sws/neo/sales-invoice/lines/selectors/ndDimension"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "column": "C_Bpartner_ID",
         "reference": "BPartner",
         "inputMode": "search",
-        "url": "/sws/neo/sales-invoice/invoiceLine/selectors/businessPartner"
+        "url": "/sws/neo/sales-invoice/lines/selectors/businessPartner"
       }
     ],
     "actions": [
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMAddpayment",
         "column": "EM_APRM_Addpayment",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/aPRMAddpayment"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/aPRMAddpayment"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "posted",
         "column": "Posted",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/posted"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/posted"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMProcessinvoice",
         "column": "EM_APRM_Processinvoice",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/aPRMProcessinvoice"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/aPRMProcessinvoice"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentAction",
         "column": "DocAction",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/documentAction"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/documentAction"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromOrder",
         "column": "Createfromorders",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/createLinesFromOrder"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/createLinesFromOrder"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromShipment",
         "column": "Createfrominouts",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/createLinesFromShipment"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/createLinesFromShipment"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "copyFrom",
         "column": "CopyFrom",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/copyFrom"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/copyFrom"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "calculatePromotions",
         "column": "Calculate_Promotions",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/calculatePromotions"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/calculatePromotions"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "generateTo",
         "column": "GenerateTo",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/generateTo"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "processNow",
         "column": "Processing",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/processNow"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/processNow"
       },
       {
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFrom",
         "column": "CreateFrom",
-        "url": "/sws/neo/sales-invoice/invoice/{id}/action/createLinesFrom"
+        "url": "/sws/neo/sales-invoice/header/{id}/action/createLinesFrom"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "explode",
         "column": "Explode",
-        "url": "/sws/neo/sales-invoice/invoiceLine/{id}/action/explode"
+        "url": "/sws/neo/sales-invoice/lines/{id}/action/explode"
       },
       {
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "matchLCCosts",
         "column": "Match_Lccosts",
-        "url": "/sws/neo/sales-invoice/invoiceLine/{id}/action/matchLCCosts"
+        "url": "/sws/neo/sales-invoice/lines/{id}/action/matchLCCosts"
       }
     ],
     "queryParams": {
@@ -3054,2776 +3017,2776 @@
       {
         "id": "t-1",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentNo",
         "runner": "node",
-        "description": "Field 'documentNo' should be present in invoice"
+        "description": "Field 'documentNo' should be present in header"
       },
       {
         "id": "t-2",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "invoiceDate",
         "runner": "node",
-        "description": "Field 'invoiceDate' should be present in invoice"
+        "description": "Field 'invoiceDate' should be present in header"
       },
       {
         "id": "t-3",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be present in invoice"
+        "description": "Field 'businessPartner' should be present in header"
       },
       {
         "id": "t-4",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "partnerAddress",
         "runner": "node",
-        "description": "Field 'partnerAddress' should be present in invoice"
+        "description": "Field 'partnerAddress' should be present in header"
       },
       {
         "id": "t-5",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should be present in invoice"
+        "description": "Field 'description' should be present in header"
       },
       {
         "id": "t-6",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentTerms",
         "runner": "node",
-        "description": "Field 'paymentTerms' should be present in invoice"
+        "description": "Field 'paymentTerms' should be present in header"
       },
       {
         "id": "t-7",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentMethod",
         "runner": "node",
-        "description": "Field 'paymentMethod' should be present in invoice"
+        "description": "Field 'paymentMethod' should be present in header"
       },
       {
         "id": "t-8",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'documentStatus' should be present in invoice"
+        "description": "Field 'documentStatus' should be present in header"
       },
       {
         "id": "t-9",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "grandTotalAmount",
         "runner": "node",
-        "description": "Field 'grandTotalAmount' should be present in invoice"
+        "description": "Field 'grandTotalAmount' should be present in header"
       },
       {
         "id": "t-10",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "summedLineAmount",
         "runner": "node",
-        "description": "Field 'summedLineAmount' should be present in invoice"
+        "description": "Field 'summedLineAmount' should be present in header"
       },
       {
         "id": "t-11",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "currency",
         "runner": "node",
-        "description": "Field 'currency' should be present in invoice"
+        "description": "Field 'currency' should be present in header"
       },
       {
         "id": "t-12",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentComplete",
         "runner": "node",
-        "description": "Field 'paymentComplete' should be present in invoice"
+        "description": "Field 'paymentComplete' should be present in header"
       },
       {
         "id": "t-13",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "totalPaid",
         "runner": "node",
-        "description": "Field 'totalPaid' should be present in invoice"
+        "description": "Field 'totalPaid' should be present in header"
       },
       {
         "id": "t-14",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMAddpayment",
         "runner": "node",
-        "description": "Field 'aPRMAddpayment' should be present in invoice"
+        "description": "Field 'aPRMAddpayment' should be present in header"
       },
       {
         "id": "t-15",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMProcessinvoice",
         "runner": "node",
-        "description": "Field 'aPRMProcessinvoice' should be present in invoice"
+        "description": "Field 'aPRMProcessinvoice' should be present in header"
       },
       {
         "id": "t-16",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentAction",
         "runner": "node",
-        "description": "Field 'documentAction' should be present in invoice"
+        "description": "Field 'documentAction' should be present in header"
       },
       {
         "id": "t-17",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "outstandingAmount",
         "runner": "node",
-        "description": "Field 'outstandingAmount' should be present in invoice"
+        "description": "Field 'outstandingAmount' should be present in header"
       },
       {
         "id": "t-18",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromOrder",
         "runner": "node",
-        "description": "Field 'createLinesFromOrder' should be present in invoice"
+        "description": "Field 'createLinesFromOrder' should be present in header"
       },
       {
         "id": "t-19",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromShipment",
         "runner": "node",
-        "description": "Field 'createLinesFromShipment' should be present in invoice"
+        "description": "Field 'createLinesFromShipment' should be present in header"
       },
       {
         "id": "t-20",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "copyFrom",
         "runner": "node",
-        "description": "Field 'copyFrom' should be present in invoice"
+        "description": "Field 'copyFrom' should be present in header"
       },
       {
         "id": "t-21",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "dueAmount",
         "runner": "node",
-        "description": "Field 'dueAmount' should be present in invoice"
+        "description": "Field 'dueAmount' should be present in header"
       },
       {
         "id": "t-22",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysTillDue",
         "runner": "node",
-        "description": "Field 'daysTillDue' should be present in invoice"
+        "description": "Field 'daysTillDue' should be present in header"
       },
       {
         "id": "t-23",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "percentageOverdue",
         "runner": "node",
-        "description": "Field 'percentageOverdue' should be present in invoice"
+        "description": "Field 'percentageOverdue' should be present in header"
       },
       {
         "id": "t-24",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "finalSettlementDate",
         "runner": "node",
-        "description": "Field 'finalSettlementDate' should be present in invoice"
+        "description": "Field 'finalSettlementDate' should be present in header"
       },
       {
         "id": "t-25",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysSalesOutstanding",
         "runner": "node",
-        "description": "Field 'daysSalesOutstanding' should be present in invoice"
+        "description": "Field 'daysSalesOutstanding' should be present in header"
       },
       {
         "id": "t-26",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "priceList",
         "runner": "node",
-        "description": "Field 'priceList' should be present in invoice"
+        "description": "Field 'priceList' should be present in header"
       },
       {
         "id": "t-27",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesRepresentative",
         "runner": "node",
-        "description": "Field 'salesRepresentative' should be present in invoice"
+        "description": "Field 'salesRepresentative' should be present in header"
       },
       {
         "id": "t-28",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesOrder",
         "runner": "node",
-        "description": "Field 'salesOrder' should be present in invoice"
+        "description": "Field 'salesOrder' should be present in header"
       },
       {
         "id": "t-29",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "orderReference",
         "runner": "node",
-        "description": "Field 'orderReference' should be present in invoice"
+        "description": "Field 'orderReference' should be present in header"
       },
       {
         "id": "t-30",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "accountingDate",
         "runner": "node",
-        "description": "Field 'accountingDate' should be present in invoice"
+        "description": "Field 'accountingDate' should be present in header"
       },
       {
         "id": "t-31",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "calculatePromotions",
         "runner": "node",
-        "description": "Field 'calculatePromotions' should be present in invoice"
+        "description": "Field 'calculatePromotions' should be present in header"
       },
       {
         "id": "t-32",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "externalBusinessPartnerReference",
         "runner": "node",
-        "description": "Field 'externalBusinessPartnerReference' should be present in invoice"
+        "description": "Field 'externalBusinessPartnerReference' should be present in header"
       },
       {
         "id": "t-33",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should be present in invoice"
+        "description": "Field 'project' should be present in header"
       },
       {
         "id": "t-34",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "runner": "node",
-        "description": "Field 'costcenter' should be present in invoice"
+        "description": "Field 'costcenter' should be present in header"
       },
       {
         "id": "t-35",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Field 'salesCampaign' should be present in invoice"
+        "description": "Field 'salesCampaign' should be present in header"
       },
       {
         "id": "t-36",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should be present in invoice"
+        "description": "Field 'stDimension' should be present in header"
       },
       {
         "id": "t-37",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should be present in invoice"
+        "description": "Field 'ndDimension' should be present in header"
       },
       {
         "id": "t-38",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "prepaymentamt",
         "runner": "node",
-        "description": "Field 'prepaymentamt' should be present in invoice"
+        "description": "Field 'prepaymentamt' should be present in header"
       },
       {
         "id": "t-39",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paidAmountAtInvoicing",
         "runner": "node",
-        "description": "Field 'paidAmountAtInvoicing' should be present in invoice"
+        "description": "Field 'paidAmountAtInvoicing' should be present in header"
       },
       {
         "id": "t-40",
         "category": "field-presence",
-        "entity": "invoice",
+        "entity": "header",
         "field": "withholdingamount",
         "runner": "node",
-        "description": "Field 'withholdingamount' should be present in invoice"
+        "description": "Field 'withholdingamount' should be present in header"
       },
       {
         "id": "t-41",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentNo",
         "runner": "node",
-        "description": "Field 'documentNo' should have type 'string' in invoice"
+        "description": "Field 'documentNo' should have type 'string' in header"
       },
       {
         "id": "t-42",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "invoiceDate",
         "runner": "node",
-        "description": "Field 'invoiceDate' should have type 'string' in invoice"
+        "description": "Field 'invoiceDate' should have type 'string' in header"
       },
       {
         "id": "t-43",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in invoice"
+        "description": "Field 'businessPartner' should have type 'string' in header"
       },
       {
         "id": "t-44",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "partnerAddress",
         "runner": "node",
-        "description": "Field 'partnerAddress' should have type 'string' in invoice"
+        "description": "Field 'partnerAddress' should have type 'string' in header"
       },
       {
         "id": "t-45",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should have type 'string' in invoice"
+        "description": "Field 'description' should have type 'string' in header"
       },
       {
         "id": "t-46",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentTerms",
         "runner": "node",
-        "description": "Field 'paymentTerms' should have type 'string' in invoice"
+        "description": "Field 'paymentTerms' should have type 'string' in header"
       },
       {
         "id": "t-47",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentMethod",
         "runner": "node",
-        "description": "Field 'paymentMethod' should have type 'string' in invoice"
+        "description": "Field 'paymentMethod' should have type 'string' in header"
       },
       {
         "id": "t-48",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'documentStatus' should have type 'string' in invoice"
+        "description": "Field 'documentStatus' should have type 'string' in header"
       },
       {
         "id": "t-49",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "grandTotalAmount",
         "runner": "node",
-        "description": "Field 'grandTotalAmount' should have type 'number' in invoice"
+        "description": "Field 'grandTotalAmount' should have type 'number' in header"
       },
       {
         "id": "t-50",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "summedLineAmount",
         "runner": "node",
-        "description": "Field 'summedLineAmount' should have type 'number' in invoice"
+        "description": "Field 'summedLineAmount' should have type 'number' in header"
       },
       {
         "id": "t-51",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "currency",
         "runner": "node",
-        "description": "Field 'currency' should have type 'string' in invoice"
+        "description": "Field 'currency' should have type 'string' in header"
       },
       {
         "id": "t-52",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentComplete",
         "runner": "node",
-        "description": "Field 'paymentComplete' should have type 'boolean' in invoice"
+        "description": "Field 'paymentComplete' should have type 'boolean' in header"
       },
       {
         "id": "t-53",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "totalPaid",
         "runner": "node",
-        "description": "Field 'totalPaid' should have type 'number' in invoice"
+        "description": "Field 'totalPaid' should have type 'number' in header"
       },
       {
         "id": "t-54",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMAddpayment",
         "runner": "node",
-        "description": "Field 'aPRMAddpayment' should have type 'string' in invoice"
+        "description": "Field 'aPRMAddpayment' should have type 'string' in header"
       },
       {
         "id": "t-55",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMProcessinvoice",
         "runner": "node",
-        "description": "Field 'aPRMProcessinvoice' should have type 'string' in invoice"
+        "description": "Field 'aPRMProcessinvoice' should have type 'string' in header"
       },
       {
         "id": "t-56",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentAction",
         "runner": "node",
-        "description": "Field 'documentAction' should have type 'string' in invoice"
+        "description": "Field 'documentAction' should have type 'string' in header"
       },
       {
         "id": "t-57",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "outstandingAmount",
         "runner": "node",
-        "description": "Field 'outstandingAmount' should have type 'number' in invoice"
+        "description": "Field 'outstandingAmount' should have type 'number' in header"
       },
       {
         "id": "t-58",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromOrder",
         "runner": "node",
-        "description": "Field 'createLinesFromOrder' should have type 'string' in invoice"
+        "description": "Field 'createLinesFromOrder' should have type 'string' in header"
       },
       {
         "id": "t-59",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromShipment",
         "runner": "node",
-        "description": "Field 'createLinesFromShipment' should have type 'string' in invoice"
+        "description": "Field 'createLinesFromShipment' should have type 'string' in header"
       },
       {
         "id": "t-60",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "copyFrom",
         "runner": "node",
-        "description": "Field 'copyFrom' should have type 'string' in invoice"
+        "description": "Field 'copyFrom' should have type 'string' in header"
       },
       {
         "id": "t-61",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "dueAmount",
         "runner": "node",
-        "description": "Field 'dueAmount' should have type 'number' in invoice"
+        "description": "Field 'dueAmount' should have type 'number' in header"
       },
       {
         "id": "t-62",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysTillDue",
         "runner": "node",
-        "description": "Field 'daysTillDue' should have type 'number' in invoice"
+        "description": "Field 'daysTillDue' should have type 'number' in header"
       },
       {
         "id": "t-63",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "percentageOverdue",
         "runner": "node",
-        "description": "Field 'percentageOverdue' should have type 'number' in invoice"
+        "description": "Field 'percentageOverdue' should have type 'number' in header"
       },
       {
         "id": "t-64",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "finalSettlementDate",
         "runner": "node",
-        "description": "Field 'finalSettlementDate' should have type 'string' in invoice"
+        "description": "Field 'finalSettlementDate' should have type 'string' in header"
       },
       {
         "id": "t-65",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysSalesOutstanding",
         "runner": "node",
-        "description": "Field 'daysSalesOutstanding' should have type 'number' in invoice"
+        "description": "Field 'daysSalesOutstanding' should have type 'number' in header"
       },
       {
         "id": "t-66",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "priceList",
         "runner": "node",
-        "description": "Field 'priceList' should have type 'string' in invoice"
+        "description": "Field 'priceList' should have type 'string' in header"
       },
       {
         "id": "t-67",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesRepresentative",
         "runner": "node",
-        "description": "Field 'salesRepresentative' should have type 'string' in invoice"
+        "description": "Field 'salesRepresentative' should have type 'string' in header"
       },
       {
         "id": "t-68",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesOrder",
         "runner": "node",
-        "description": "Field 'salesOrder' should have type 'string' in invoice"
+        "description": "Field 'salesOrder' should have type 'string' in header"
       },
       {
         "id": "t-69",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "orderReference",
         "runner": "node",
-        "description": "Field 'orderReference' should have type 'string' in invoice"
+        "description": "Field 'orderReference' should have type 'string' in header"
       },
       {
         "id": "t-70",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "accountingDate",
         "runner": "node",
-        "description": "Field 'accountingDate' should have type 'string' in invoice"
+        "description": "Field 'accountingDate' should have type 'string' in header"
       },
       {
         "id": "t-71",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "calculatePromotions",
         "runner": "node",
-        "description": "Field 'calculatePromotions' should have type 'string' in invoice"
+        "description": "Field 'calculatePromotions' should have type 'string' in header"
       },
       {
         "id": "t-72",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "externalBusinessPartnerReference",
         "runner": "node",
-        "description": "Field 'externalBusinessPartnerReference' should have type 'string' in invoice"
+        "description": "Field 'externalBusinessPartnerReference' should have type 'string' in header"
       },
       {
         "id": "t-73",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should have type 'string' in invoice"
+        "description": "Field 'project' should have type 'string' in header"
       },
       {
         "id": "t-74",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "runner": "node",
-        "description": "Field 'costcenter' should have type 'string' in invoice"
+        "description": "Field 'costcenter' should have type 'string' in header"
       },
       {
         "id": "t-75",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Field 'salesCampaign' should have type 'string' in invoice"
+        "description": "Field 'salesCampaign' should have type 'string' in header"
       },
       {
         "id": "t-76",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in invoice"
+        "description": "Field 'stDimension' should have type 'string' in header"
       },
       {
         "id": "t-77",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in invoice"
+        "description": "Field 'ndDimension' should have type 'string' in header"
       },
       {
         "id": "t-78",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "prepaymentamt",
         "runner": "node",
-        "description": "Field 'prepaymentamt' should have type 'number' in invoice"
+        "description": "Field 'prepaymentamt' should have type 'number' in header"
       },
       {
         "id": "t-79",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paidAmountAtInvoicing",
         "runner": "node",
-        "description": "Field 'paidAmountAtInvoicing' should have type 'number' in invoice"
+        "description": "Field 'paidAmountAtInvoicing' should have type 'number' in header"
       },
       {
         "id": "t-80",
         "category": "field-type",
-        "entity": "invoice",
+        "entity": "header",
         "field": "withholdingamount",
         "runner": "node",
-        "description": "Field 'withholdingamount' should have type 'number' in invoice"
+        "description": "Field 'withholdingamount' should have type 'number' in header"
       },
       {
         "id": "t-81",
         "category": "searchable-filters",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentNo",
         "runner": "node",
-        "description": "Field 'documentNo' should be a supported filter for invoice"
+        "description": "Field 'documentNo' should be a supported filter for header"
       },
       {
         "id": "t-82",
         "category": "searchable-filters",
-        "entity": "invoice",
+        "entity": "header",
         "field": "invoiceDate",
         "runner": "node",
-        "description": "Field 'invoiceDate' should be a supported filter for invoice"
+        "description": "Field 'invoiceDate' should be a supported filter for header"
       },
       {
         "id": "t-83",
         "category": "searchable-filters",
-        "entity": "invoice",
+        "entity": "header",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be a supported filter for invoice"
+        "description": "Field 'businessPartner' should be a supported filter for header"
       },
       {
         "id": "t-84",
         "category": "searchable-filters",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentStatus",
         "runner": "node",
-        "description": "Field 'documentStatus' should be a supported filter for invoice"
+        "description": "Field 'documentStatus' should be a supported filter for header"
       },
       {
         "id": "t-85",
         "category": "searchable-filters",
-        "entity": "invoice",
+        "entity": "header",
         "field": "orderReference",
         "runner": "node",
-        "description": "Field 'orderReference' should be a supported filter for invoice"
+        "description": "Field 'orderReference' should be a supported filter for header"
       },
       {
         "id": "t-86",
         "category": "visibility",
-        "entity": "invoice",
+        "entity": "header",
         "runner": "node",
-        "description": "Entity 'invoice' should only expose visible fields in frontend"
+        "description": "Entity 'header' should only expose visible fields in frontend"
       },
       {
         "id": "t-87",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentComplete",
         "runner": "node",
-        "description": "Display logic for 'paymentComplete' in invoice should be valid JS"
+        "description": "Display logic for 'paymentComplete' in header should be valid JS"
       },
       {
         "id": "t-88",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "totalPaid",
         "runner": "node",
-        "description": "Display logic for 'totalPaid' in invoice should be valid JS"
+        "description": "Display logic for 'totalPaid' in header should be valid JS"
       },
       {
         "id": "t-89",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMAddpayment",
         "runner": "node",
-        "description": "Display logic for 'aPRMAddpayment' in invoice should be valid JS"
+        "description": "Display logic for 'aPRMAddpayment' in header should be valid JS"
       },
       {
         "id": "t-90",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMProcessinvoice",
         "runner": "node",
-        "description": "Display logic for 'aPRMProcessinvoice' in invoice should be valid JS"
+        "description": "Display logic for 'aPRMProcessinvoice' in header should be valid JS"
       },
       {
         "id": "t-91",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentAction",
         "runner": "node",
-        "description": "Display logic for 'documentAction' in invoice should be valid JS"
+        "description": "Display logic for 'documentAction' in header should be valid JS"
       },
       {
         "id": "t-92",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "outstandingAmount",
         "runner": "node",
-        "description": "Display logic for 'outstandingAmount' in invoice should be valid JS"
+        "description": "Display logic for 'outstandingAmount' in header should be valid JS"
       },
       {
         "id": "t-93",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromOrder",
         "runner": "node",
-        "description": "Display logic for 'createLinesFromOrder' in invoice should be valid JS"
+        "description": "Display logic for 'createLinesFromOrder' in header should be valid JS"
       },
       {
         "id": "t-94",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromShipment",
         "runner": "node",
-        "description": "Display logic for 'createLinesFromShipment' in invoice should be valid JS"
+        "description": "Display logic for 'createLinesFromShipment' in header should be valid JS"
       },
       {
         "id": "t-95",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "copyFrom",
         "runner": "node",
-        "description": "Display logic for 'copyFrom' in invoice should be valid JS"
+        "description": "Display logic for 'copyFrom' in header should be valid JS"
       },
       {
         "id": "t-96",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "dueAmount",
         "runner": "node",
-        "description": "Display logic for 'dueAmount' in invoice should be valid JS"
+        "description": "Display logic for 'dueAmount' in header should be valid JS"
       },
       {
         "id": "t-97",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysTillDue",
         "runner": "node",
-        "description": "Display logic for 'daysTillDue' in invoice should be valid JS"
+        "description": "Display logic for 'daysTillDue' in header should be valid JS"
       },
       {
         "id": "t-98",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "percentageOverdue",
         "runner": "node",
-        "description": "Display logic for 'percentageOverdue' in invoice should be valid JS"
+        "description": "Display logic for 'percentageOverdue' in header should be valid JS"
       },
       {
         "id": "t-99",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "finalSettlementDate",
         "runner": "node",
-        "description": "Display logic for 'finalSettlementDate' in invoice should be valid JS"
+        "description": "Display logic for 'finalSettlementDate' in header should be valid JS"
       },
       {
         "id": "t-100",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysSalesOutstanding",
         "runner": "node",
-        "description": "Display logic for 'daysSalesOutstanding' in invoice should be valid JS"
+        "description": "Display logic for 'daysSalesOutstanding' in header should be valid JS"
       },
       {
         "id": "t-101",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "calculatePromotions",
         "runner": "node",
-        "description": "Display logic for 'calculatePromotions' in invoice should be valid JS"
+        "description": "Display logic for 'calculatePromotions' in header should be valid JS"
       },
       {
         "id": "t-102",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "externalBusinessPartnerReference",
         "runner": "node",
-        "description": "Display logic for 'externalBusinessPartnerReference' in invoice should be valid JS"
+        "description": "Display logic for 'externalBusinessPartnerReference' in header should be valid JS"
       },
       {
         "id": "t-103",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Display logic for 'project' in invoice should be valid JS"
+        "description": "Display logic for 'project' in header should be valid JS"
       },
       {
         "id": "t-104",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "runner": "node",
-        "description": "Display logic for 'costcenter' in invoice should be valid JS"
+        "description": "Display logic for 'costcenter' in header should be valid JS"
       },
       {
         "id": "t-105",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Display logic for 'salesCampaign' in invoice should be valid JS"
+        "description": "Display logic for 'salesCampaign' in header should be valid JS"
       },
       {
         "id": "t-106",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Display logic for 'stDimension' in invoice should be valid JS"
+        "description": "Display logic for 'stDimension' in header should be valid JS"
       },
       {
         "id": "t-107",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Display logic for 'ndDimension' in invoice should be valid JS"
+        "description": "Display logic for 'ndDimension' in header should be valid JS"
       },
       {
         "id": "t-108",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paidAmountAtInvoicing",
         "runner": "node",
-        "description": "Display logic for 'paidAmountAtInvoicing' in invoice should be valid JS"
+        "description": "Display logic for 'paidAmountAtInvoicing' in header should be valid JS"
       },
       {
         "id": "t-109",
         "category": "displaylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "withholdingamount",
         "runner": "node",
-        "description": "Display logic for 'withholdingamount' in invoice should be valid JS"
+        "description": "Display logic for 'withholdingamount' in header should be valid JS"
       },
       {
         "id": "t-110",
         "category": "readonlylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Read-only logic for 'project' in invoice should be valid JS"
+        "description": "Read-only logic for 'project' in header should be valid JS"
       },
       {
         "id": "t-111",
         "category": "readonlylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "runner": "node",
-        "description": "Read-only logic for 'costcenter' in invoice should be valid JS"
+        "description": "Read-only logic for 'costcenter' in header should be valid JS"
       },
       {
         "id": "t-112",
         "category": "readonlylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Read-only logic for 'salesCampaign' in invoice should be valid JS"
+        "description": "Read-only logic for 'salesCampaign' in header should be valid JS"
       },
       {
         "id": "t-113",
         "category": "readonlylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Read-only logic for 'stDimension' in invoice should be valid JS"
+        "description": "Read-only logic for 'stDimension' in header should be valid JS"
       },
       {
         "id": "t-114",
         "category": "readonlylogic-valid",
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in invoice should be valid JS"
+        "description": "Read-only logic for 'ndDimension' in header should be valid JS"
       },
       {
         "id": "t-115",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paymentComplete",
         "runner": "node",
-        "description": "Display logic for 'paymentComplete' in invoice should have evaluable flag"
+        "description": "Display logic for 'paymentComplete' in header should have evaluable flag"
       },
       {
         "id": "t-116",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "totalPaid",
         "runner": "node",
-        "description": "Display logic for 'totalPaid' in invoice should have evaluable flag"
+        "description": "Display logic for 'totalPaid' in header should have evaluable flag"
       },
       {
         "id": "t-117",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMAddpayment",
         "runner": "node",
-        "description": "Display logic for 'aPRMAddpayment' in invoice should have evaluable flag"
+        "description": "Display logic for 'aPRMAddpayment' in header should have evaluable flag"
       },
       {
         "id": "t-118",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "aPRMProcessinvoice",
         "runner": "node",
-        "description": "Display logic for 'aPRMProcessinvoice' in invoice should have evaluable flag"
+        "description": "Display logic for 'aPRMProcessinvoice' in header should have evaluable flag"
       },
       {
         "id": "t-119",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "documentAction",
         "runner": "node",
-        "description": "Display logic for 'documentAction' in invoice should have evaluable flag"
+        "description": "Display logic for 'documentAction' in header should have evaluable flag"
       },
       {
         "id": "t-120",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "outstandingAmount",
         "runner": "node",
-        "description": "Display logic for 'outstandingAmount' in invoice should have evaluable flag"
+        "description": "Display logic for 'outstandingAmount' in header should have evaluable flag"
       },
       {
         "id": "t-121",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromOrder",
         "runner": "node",
-        "description": "Display logic for 'createLinesFromOrder' in invoice should have evaluable flag"
+        "description": "Display logic for 'createLinesFromOrder' in header should have evaluable flag"
       },
       {
         "id": "t-122",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFromShipment",
         "runner": "node",
-        "description": "Display logic for 'createLinesFromShipment' in invoice should have evaluable flag"
+        "description": "Display logic for 'createLinesFromShipment' in header should have evaluable flag"
       },
       {
         "id": "t-123",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "copyFrom",
         "runner": "node",
-        "description": "Display logic for 'copyFrom' in invoice should have evaluable flag"
+        "description": "Display logic for 'copyFrom' in header should have evaluable flag"
       },
       {
         "id": "t-124",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "dueAmount",
         "runner": "node",
-        "description": "Display logic for 'dueAmount' in invoice should have evaluable flag"
+        "description": "Display logic for 'dueAmount' in header should have evaluable flag"
       },
       {
         "id": "t-125",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysTillDue",
         "runner": "node",
-        "description": "Display logic for 'daysTillDue' in invoice should have evaluable flag"
+        "description": "Display logic for 'daysTillDue' in header should have evaluable flag"
       },
       {
         "id": "t-126",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "percentageOverdue",
         "runner": "node",
-        "description": "Display logic for 'percentageOverdue' in invoice should have evaluable flag"
+        "description": "Display logic for 'percentageOverdue' in header should have evaluable flag"
       },
       {
         "id": "t-127",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "finalSettlementDate",
         "runner": "node",
-        "description": "Display logic for 'finalSettlementDate' in invoice should have evaluable flag"
+        "description": "Display logic for 'finalSettlementDate' in header should have evaluable flag"
       },
       {
         "id": "t-128",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "daysSalesOutstanding",
         "runner": "node",
-        "description": "Display logic for 'daysSalesOutstanding' in invoice should have evaluable flag"
+        "description": "Display logic for 'daysSalesOutstanding' in header should have evaluable flag"
       },
       {
         "id": "t-129",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "calculatePromotions",
         "runner": "node",
-        "description": "Display logic for 'calculatePromotions' in invoice should have evaluable flag"
+        "description": "Display logic for 'calculatePromotions' in header should have evaluable flag"
       },
       {
         "id": "t-130",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "externalBusinessPartnerReference",
         "runner": "node",
-        "description": "Display logic for 'externalBusinessPartnerReference' in invoice should have evaluable flag"
+        "description": "Display logic for 'externalBusinessPartnerReference' in header should have evaluable flag"
       },
       {
         "id": "t-131",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Display logic for 'project' in invoice should have evaluable flag"
+        "description": "Display logic for 'project' in header should have evaluable flag"
       },
       {
         "id": "t-132",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "runner": "node",
-        "description": "Display logic for 'costcenter' in invoice should have evaluable flag"
+        "description": "Display logic for 'costcenter' in header should have evaluable flag"
       },
       {
         "id": "t-133",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Display logic for 'salesCampaign' in invoice should have evaluable flag"
+        "description": "Display logic for 'salesCampaign' in header should have evaluable flag"
       },
       {
         "id": "t-134",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Display logic for 'stDimension' in invoice should have evaluable flag"
+        "description": "Display logic for 'stDimension' in header should have evaluable flag"
       },
       {
         "id": "t-135",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Display logic for 'ndDimension' in invoice should have evaluable flag"
+        "description": "Display logic for 'ndDimension' in header should have evaluable flag"
       },
       {
         "id": "t-136",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "paidAmountAtInvoicing",
         "runner": "node",
-        "description": "Display logic for 'paidAmountAtInvoicing' in invoice should have evaluable flag"
+        "description": "Display logic for 'paidAmountAtInvoicing' in header should have evaluable flag"
       },
       {
         "id": "t-137",
         "category": "displaylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "withholdingamount",
         "runner": "node",
-        "description": "Display logic for 'withholdingamount' in invoice should have evaluable flag"
+        "description": "Display logic for 'withholdingamount' in header should have evaluable flag"
       },
       {
         "id": "t-138",
         "category": "readonlylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Read-only logic for 'project' in invoice should have evaluable flag"
+        "description": "Read-only logic for 'project' in header should have evaluable flag"
       },
       {
         "id": "t-139",
         "category": "readonlylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "costcenter",
         "runner": "node",
-        "description": "Read-only logic for 'costcenter' in invoice should have evaluable flag"
+        "description": "Read-only logic for 'costcenter' in header should have evaluable flag"
       },
       {
         "id": "t-140",
         "category": "readonlylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Read-only logic for 'salesCampaign' in invoice should have evaluable flag"
+        "description": "Read-only logic for 'salesCampaign' in header should have evaluable flag"
       },
       {
         "id": "t-141",
         "category": "readonlylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Read-only logic for 'stDimension' in invoice should have evaluable flag"
+        "description": "Read-only logic for 'stDimension' in header should have evaluable flag"
       },
       {
         "id": "t-142",
         "category": "readonlylogic-evaluable",
-        "entity": "invoice",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in invoice should have evaluable flag"
+        "description": "Read-only logic for 'ndDimension' in header should have evaluable flag"
       },
       {
         "id": "t-143",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "lineNo",
         "runner": "node",
-        "description": "Field 'lineNo' should be present in invoiceLine"
+        "description": "Field 'lineNo' should be present in lines"
       },
       {
         "id": "t-144",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "product",
         "runner": "node",
-        "description": "Field 'product' should be present in invoiceLine"
+        "description": "Field 'product' should be present in lines"
       },
       {
         "id": "t-145",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeQuantity",
         "runner": "node",
-        "description": "Field 'operativeQuantity' should be present in invoiceLine"
+        "description": "Field 'operativeQuantity' should be present in lines"
       },
       {
         "id": "t-146",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "runner": "node",
-        "description": "Field 'operativeUOM' should be present in invoiceLine"
+        "description": "Field 'operativeUOM' should be present in lines"
       },
       {
         "id": "t-147",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "invoicedQuantity",
         "runner": "node",
-        "description": "Field 'invoicedQuantity' should be present in invoiceLine"
+        "description": "Field 'invoicedQuantity' should be present in lines"
       },
       {
         "id": "t-148",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "uOM",
         "runner": "node",
-        "description": "Field 'uOM' should be present in invoiceLine"
+        "description": "Field 'uOM' should be present in lines"
       },
       {
         "id": "t-149",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "unitPrice",
         "runner": "node",
-        "description": "Field 'unitPrice' should be present in invoiceLine"
+        "description": "Field 'unitPrice' should be present in lines"
       },
       {
         "id": "t-150",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossUnitPrice",
         "runner": "node",
-        "description": "Field 'grossUnitPrice' should be present in invoiceLine"
+        "description": "Field 'grossUnitPrice' should be present in lines"
       },
       {
         "id": "t-151",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "lineNetAmount",
         "runner": "node",
-        "description": "Field 'lineNetAmount' should be present in invoiceLine"
+        "description": "Field 'lineNetAmount' should be present in lines"
       },
       {
         "id": "t-152",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossAmount",
         "runner": "node",
-        "description": "Field 'grossAmount' should be present in invoiceLine"
+        "description": "Field 'grossAmount' should be present in lines"
       },
       {
         "id": "t-153",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "tax",
         "runner": "node",
-        "description": "Field 'tax' should be present in invoiceLine"
+        "description": "Field 'tax' should be present in lines"
       },
       {
         "id": "t-154",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "listPrice",
         "runner": "node",
-        "description": "Field 'listPrice' should be present in invoiceLine"
+        "description": "Field 'listPrice' should be present in lines"
       },
       {
         "id": "t-155",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossListPrice",
         "runner": "node",
-        "description": "Field 'grossListPrice' should be present in invoiceLine"
+        "description": "Field 'grossListPrice' should be present in lines"
       },
       {
         "id": "t-156",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "financialInvoiceLine",
         "runner": "node",
-        "description": "Field 'financialInvoiceLine' should be present in invoiceLine"
+        "description": "Field 'financialInvoiceLine' should be present in lines"
       },
       {
         "id": "t-157",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "runner": "node",
-        "description": "Field 'account' should be present in invoiceLine"
+        "description": "Field 'account' should be present in lines"
       },
       {
         "id": "t-158",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "attributeSetValue",
         "runner": "node",
-        "description": "Field 'attributeSetValue' should be present in invoiceLine"
+        "description": "Field 'attributeSetValue' should be present in lines"
       },
       {
         "id": "t-159",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should be present in invoiceLine"
+        "description": "Field 'description' should be present in lines"
       },
       {
         "id": "t-160",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "taxableAmount",
         "runner": "node",
-        "description": "Field 'taxableAmount' should be present in invoiceLine"
+        "description": "Field 'taxableAmount' should be present in lines"
       },
       {
         "id": "t-161",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferred",
         "runner": "node",
-        "description": "Field 'deferred' should be present in invoiceLine"
+        "description": "Field 'deferred' should be present in lines"
       },
       {
         "id": "t-162",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "cancelPriceAdjustment",
         "runner": "node",
-        "description": "Field 'cancelPriceAdjustment' should be present in invoiceLine"
+        "description": "Field 'cancelPriceAdjustment' should be present in lines"
       },
       {
         "id": "t-163",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "baseGrossUnitPrice",
         "runner": "node",
-        "description": "Field 'baseGrossUnitPrice' should be present in invoiceLine"
+        "description": "Field 'baseGrossUnitPrice' should be present in lines"
       },
       {
         "id": "t-164",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "standardPrice",
         "runner": "node",
-        "description": "Field 'standardPrice' should be present in invoiceLine"
+        "description": "Field 'standardPrice' should be present in lines"
       },
       {
         "id": "t-165",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferredPlanType",
         "runner": "node",
-        "description": "Field 'deferredPlanType' should be present in invoiceLine"
+        "description": "Field 'deferredPlanType' should be present in lines"
       },
       {
         "id": "t-166",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "periodNumber",
         "runner": "node",
-        "description": "Field 'periodNumber' should be present in invoiceLine"
+        "description": "Field 'periodNumber' should be present in lines"
       },
       {
         "id": "t-167",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "runner": "node",
-        "description": "Field 'period' should be present in invoiceLine"
+        "description": "Field 'period' should be present in lines"
       },
       {
         "id": "t-168",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should be present in invoiceLine"
+        "description": "Field 'project' should be present in lines"
       },
       {
         "id": "t-169",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "runner": "node",
-        "description": "Field 'costcenter' should be present in invoiceLine"
+        "description": "Field 'costcenter' should be present in lines"
       },
       {
         "id": "t-170",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "runner": "node",
-        "description": "Field 'asset' should be present in invoiceLine"
+        "description": "Field 'asset' should be present in lines"
       },
       {
         "id": "t-171",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should be present in invoiceLine"
+        "description": "Field 'stDimension' should be present in lines"
       },
       {
         "id": "t-172",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should be present in invoiceLine"
+        "description": "Field 'ndDimension' should be present in lines"
       },
       {
         "id": "t-173",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "explode",
         "runner": "node",
-        "description": "Field 'explode' should be present in invoiceLine"
+        "description": "Field 'explode' should be present in lines"
       },
       {
         "id": "t-174",
         "category": "field-presence",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be present in invoiceLine"
+        "description": "Field 'businessPartner' should be present in lines"
       },
       {
         "id": "t-175",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "lineNo",
         "runner": "node",
-        "description": "Field 'lineNo' should have type 'number' in invoiceLine"
+        "description": "Field 'lineNo' should have type 'number' in lines"
       },
       {
         "id": "t-176",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "product",
         "runner": "node",
-        "description": "Field 'product' should have type 'string' in invoiceLine"
+        "description": "Field 'product' should have type 'string' in lines"
       },
       {
         "id": "t-177",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeQuantity",
         "runner": "node",
-        "description": "Field 'operativeQuantity' should have type 'string' in invoiceLine"
+        "description": "Field 'operativeQuantity' should have type 'string' in lines"
       },
       {
         "id": "t-178",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "runner": "node",
-        "description": "Field 'operativeUOM' should have type 'string' in invoiceLine"
+        "description": "Field 'operativeUOM' should have type 'string' in lines"
       },
       {
         "id": "t-179",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "invoicedQuantity",
         "runner": "node",
-        "description": "Field 'invoicedQuantity' should have type 'string' in invoiceLine"
+        "description": "Field 'invoicedQuantity' should have type 'string' in lines"
       },
       {
         "id": "t-180",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "uOM",
         "runner": "node",
-        "description": "Field 'uOM' should have type 'string' in invoiceLine"
+        "description": "Field 'uOM' should have type 'string' in lines"
       },
       {
         "id": "t-181",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "unitPrice",
         "runner": "node",
-        "description": "Field 'unitPrice' should have type 'string' in invoiceLine"
+        "description": "Field 'unitPrice' should have type 'string' in lines"
       },
       {
         "id": "t-182",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossUnitPrice",
         "runner": "node",
-        "description": "Field 'grossUnitPrice' should have type 'string' in invoiceLine"
+        "description": "Field 'grossUnitPrice' should have type 'string' in lines"
       },
       {
         "id": "t-183",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "lineNetAmount",
         "runner": "node",
-        "description": "Field 'lineNetAmount' should have type 'number' in invoiceLine"
+        "description": "Field 'lineNetAmount' should have type 'number' in lines"
       },
       {
         "id": "t-184",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossAmount",
         "runner": "node",
-        "description": "Field 'grossAmount' should have type 'number' in invoiceLine"
+        "description": "Field 'grossAmount' should have type 'number' in lines"
       },
       {
         "id": "t-185",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "tax",
         "runner": "node",
-        "description": "Field 'tax' should have type 'string' in invoiceLine"
+        "description": "Field 'tax' should have type 'string' in lines"
       },
       {
         "id": "t-186",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "listPrice",
         "runner": "node",
-        "description": "Field 'listPrice' should have type 'string' in invoiceLine"
+        "description": "Field 'listPrice' should have type 'string' in lines"
       },
       {
         "id": "t-187",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossListPrice",
         "runner": "node",
-        "description": "Field 'grossListPrice' should have type 'string' in invoiceLine"
+        "description": "Field 'grossListPrice' should have type 'string' in lines"
       },
       {
         "id": "t-188",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "financialInvoiceLine",
         "runner": "node",
-        "description": "Field 'financialInvoiceLine' should have type 'boolean' in invoiceLine"
+        "description": "Field 'financialInvoiceLine' should have type 'boolean' in lines"
       },
       {
         "id": "t-189",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "runner": "node",
-        "description": "Field 'account' should have type 'string' in invoiceLine"
+        "description": "Field 'account' should have type 'string' in lines"
       },
       {
         "id": "t-190",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "attributeSetValue",
         "runner": "node",
-        "description": "Field 'attributeSetValue' should have type 'string' in invoiceLine"
+        "description": "Field 'attributeSetValue' should have type 'string' in lines"
       },
       {
         "id": "t-191",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should have type 'string' in invoiceLine"
+        "description": "Field 'description' should have type 'string' in lines"
       },
       {
         "id": "t-192",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "taxableAmount",
         "runner": "node",
-        "description": "Field 'taxableAmount' should have type 'number' in invoiceLine"
+        "description": "Field 'taxableAmount' should have type 'number' in lines"
       },
       {
         "id": "t-193",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferred",
         "runner": "node",
-        "description": "Field 'deferred' should have type 'boolean' in invoiceLine"
+        "description": "Field 'deferred' should have type 'boolean' in lines"
       },
       {
         "id": "t-194",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "cancelPriceAdjustment",
         "runner": "node",
-        "description": "Field 'cancelPriceAdjustment' should have type 'boolean' in invoiceLine"
+        "description": "Field 'cancelPriceAdjustment' should have type 'boolean' in lines"
       },
       {
         "id": "t-195",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "baseGrossUnitPrice",
         "runner": "node",
-        "description": "Field 'baseGrossUnitPrice' should have type 'string' in invoiceLine"
+        "description": "Field 'baseGrossUnitPrice' should have type 'string' in lines"
       },
       {
         "id": "t-196",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "standardPrice",
         "runner": "node",
-        "description": "Field 'standardPrice' should have type 'string' in invoiceLine"
+        "description": "Field 'standardPrice' should have type 'string' in lines"
       },
       {
         "id": "t-197",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferredPlanType",
         "runner": "node",
-        "description": "Field 'deferredPlanType' should have type 'string' in invoiceLine"
+        "description": "Field 'deferredPlanType' should have type 'string' in lines"
       },
       {
         "id": "t-198",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "periodNumber",
         "runner": "node",
-        "description": "Field 'periodNumber' should have type 'number' in invoiceLine"
+        "description": "Field 'periodNumber' should have type 'number' in lines"
       },
       {
         "id": "t-199",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "runner": "node",
-        "description": "Field 'period' should have type 'string' in invoiceLine"
+        "description": "Field 'period' should have type 'string' in lines"
       },
       {
         "id": "t-200",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should have type 'string' in invoiceLine"
+        "description": "Field 'project' should have type 'string' in lines"
       },
       {
         "id": "t-201",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "runner": "node",
-        "description": "Field 'costcenter' should have type 'string' in invoiceLine"
+        "description": "Field 'costcenter' should have type 'string' in lines"
       },
       {
         "id": "t-202",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "runner": "node",
-        "description": "Field 'asset' should have type 'string' in invoiceLine"
+        "description": "Field 'asset' should have type 'string' in lines"
       },
       {
         "id": "t-203",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in invoiceLine"
+        "description": "Field 'stDimension' should have type 'string' in lines"
       },
       {
         "id": "t-204",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in invoiceLine"
+        "description": "Field 'ndDimension' should have type 'string' in lines"
       },
       {
         "id": "t-205",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "explode",
         "runner": "node",
-        "description": "Field 'explode' should have type 'string' in invoiceLine"
+        "description": "Field 'explode' should have type 'string' in lines"
       },
       {
         "id": "t-206",
         "category": "field-type",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in invoiceLine"
+        "description": "Field 'businessPartner' should have type 'string' in lines"
       },
       {
         "id": "t-207",
         "category": "searchable-filters",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "product",
         "runner": "node",
-        "description": "Field 'product' should be a supported filter for invoiceLine"
+        "description": "Field 'product' should be a supported filter for lines"
       },
       {
         "id": "t-208",
         "category": "visibility",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "runner": "node",
-        "description": "Entity 'invoiceLine' should only expose visible fields in frontend"
+        "description": "Entity 'lines' should only expose visible fields in frontend"
       },
       {
         "id": "t-209",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeQuantity",
         "runner": "node",
-        "description": "Display logic for 'operativeQuantity' in invoiceLine should be valid JS"
+        "description": "Display logic for 'operativeQuantity' in lines should be valid JS"
       },
       {
         "id": "t-210",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "runner": "node",
-        "description": "Display logic for 'operativeUOM' in invoiceLine should be valid JS"
+        "description": "Display logic for 'operativeUOM' in lines should be valid JS"
       },
       {
         "id": "t-211",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossUnitPrice",
         "runner": "node",
-        "description": "Display logic for 'grossUnitPrice' in invoiceLine should be valid JS"
+        "description": "Display logic for 'grossUnitPrice' in lines should be valid JS"
       },
       {
         "id": "t-212",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossAmount",
         "runner": "node",
-        "description": "Display logic for 'grossAmount' in invoiceLine should be valid JS"
+        "description": "Display logic for 'grossAmount' in lines should be valid JS"
       },
       {
         "id": "t-213",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossListPrice",
         "runner": "node",
-        "description": "Display logic for 'grossListPrice' in invoiceLine should be valid JS"
+        "description": "Display logic for 'grossListPrice' in lines should be valid JS"
       },
       {
         "id": "t-214",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "runner": "node",
-        "description": "Display logic for 'account' in invoiceLine should be valid JS"
+        "description": "Display logic for 'account' in lines should be valid JS"
       },
       {
         "id": "t-215",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "attributeSetValue",
         "runner": "node",
-        "description": "Display logic for 'attributeSetValue' in invoiceLine should be valid JS"
+        "description": "Display logic for 'attributeSetValue' in lines should be valid JS"
       },
       {
         "id": "t-216",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "taxableAmount",
         "runner": "node",
-        "description": "Display logic for 'taxableAmount' in invoiceLine should be valid JS"
+        "description": "Display logic for 'taxableAmount' in lines should be valid JS"
       },
       {
         "id": "t-217",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferred",
         "runner": "node",
-        "description": "Display logic for 'deferred' in invoiceLine should be valid JS"
+        "description": "Display logic for 'deferred' in lines should be valid JS"
       },
       {
         "id": "t-218",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "cancelPriceAdjustment",
         "runner": "node",
-        "description": "Display logic for 'cancelPriceAdjustment' in invoiceLine should be valid JS"
+        "description": "Display logic for 'cancelPriceAdjustment' in lines should be valid JS"
       },
       {
         "id": "t-219",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "baseGrossUnitPrice",
         "runner": "node",
-        "description": "Display logic for 'baseGrossUnitPrice' in invoiceLine should be valid JS"
+        "description": "Display logic for 'baseGrossUnitPrice' in lines should be valid JS"
       },
       {
         "id": "t-220",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "standardPrice",
         "runner": "node",
-        "description": "Display logic for 'standardPrice' in invoiceLine should be valid JS"
+        "description": "Display logic for 'standardPrice' in lines should be valid JS"
       },
       {
         "id": "t-221",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferredPlanType",
         "runner": "node",
-        "description": "Display logic for 'deferredPlanType' in invoiceLine should be valid JS"
+        "description": "Display logic for 'deferredPlanType' in lines should be valid JS"
       },
       {
         "id": "t-222",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "periodNumber",
         "runner": "node",
-        "description": "Display logic for 'periodNumber' in invoiceLine should be valid JS"
+        "description": "Display logic for 'periodNumber' in lines should be valid JS"
       },
       {
         "id": "t-223",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "runner": "node",
-        "description": "Display logic for 'period' in invoiceLine should be valid JS"
+        "description": "Display logic for 'period' in lines should be valid JS"
       },
       {
         "id": "t-224",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Display logic for 'project' in invoiceLine should be valid JS"
+        "description": "Display logic for 'project' in lines should be valid JS"
       },
       {
         "id": "t-225",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "runner": "node",
-        "description": "Display logic for 'costcenter' in invoiceLine should be valid JS"
+        "description": "Display logic for 'costcenter' in lines should be valid JS"
       },
       {
         "id": "t-226",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "runner": "node",
-        "description": "Display logic for 'asset' in invoiceLine should be valid JS"
+        "description": "Display logic for 'asset' in lines should be valid JS"
       },
       {
         "id": "t-227",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Display logic for 'stDimension' in invoiceLine should be valid JS"
+        "description": "Display logic for 'stDimension' in lines should be valid JS"
       },
       {
         "id": "t-228",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Display logic for 'ndDimension' in invoiceLine should be valid JS"
+        "description": "Display logic for 'ndDimension' in lines should be valid JS"
       },
       {
         "id": "t-229",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "explode",
         "runner": "node",
-        "description": "Display logic for 'explode' in invoiceLine should be valid JS"
+        "description": "Display logic for 'explode' in lines should be valid JS"
       },
       {
         "id": "t-230",
         "category": "displaylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Display logic for 'businessPartner' in invoiceLine should be valid JS"
+        "description": "Display logic for 'businessPartner' in lines should be valid JS"
       },
       {
         "id": "t-231",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeQuantity",
         "runner": "node",
-        "description": "Read-only logic for 'operativeQuantity' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'operativeQuantity' in lines should be valid JS"
       },
       {
         "id": "t-232",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "runner": "node",
-        "description": "Read-only logic for 'operativeUOM' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'operativeUOM' in lines should be valid JS"
       },
       {
         "id": "t-233",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossUnitPrice",
         "runner": "node",
-        "description": "Read-only logic for 'grossUnitPrice' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'grossUnitPrice' in lines should be valid JS"
       },
       {
         "id": "t-234",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossListPrice",
         "runner": "node",
-        "description": "Read-only logic for 'grossListPrice' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'grossListPrice' in lines should be valid JS"
       },
       {
         "id": "t-235",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "financialInvoiceLine",
         "runner": "node",
-        "description": "Read-only logic for 'financialInvoiceLine' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'financialInvoiceLine' in lines should be valid JS"
       },
       {
         "id": "t-236",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "runner": "node",
-        "description": "Read-only logic for 'account' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'account' in lines should be valid JS"
       },
       {
         "id": "t-237",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "attributeSetValue",
         "runner": "node",
-        "description": "Read-only logic for 'attributeSetValue' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'attributeSetValue' in lines should be valid JS"
       },
       {
         "id": "t-238",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "taxableAmount",
         "runner": "node",
-        "description": "Read-only logic for 'taxableAmount' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'taxableAmount' in lines should be valid JS"
       },
       {
         "id": "t-239",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferred",
         "runner": "node",
-        "description": "Read-only logic for 'deferred' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'deferred' in lines should be valid JS"
       },
       {
         "id": "t-240",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferredPlanType",
         "runner": "node",
-        "description": "Read-only logic for 'deferredPlanType' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'deferredPlanType' in lines should be valid JS"
       },
       {
         "id": "t-241",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "periodNumber",
         "runner": "node",
-        "description": "Read-only logic for 'periodNumber' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'periodNumber' in lines should be valid JS"
       },
       {
         "id": "t-242",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "runner": "node",
-        "description": "Read-only logic for 'period' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'period' in lines should be valid JS"
       },
       {
         "id": "t-243",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Read-only logic for 'project' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'project' in lines should be valid JS"
       },
       {
         "id": "t-244",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "runner": "node",
-        "description": "Read-only logic for 'costcenter' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'costcenter' in lines should be valid JS"
       },
       {
         "id": "t-245",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "runner": "node",
-        "description": "Read-only logic for 'asset' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'asset' in lines should be valid JS"
       },
       {
         "id": "t-246",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Read-only logic for 'stDimension' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'stDimension' in lines should be valid JS"
       },
       {
         "id": "t-247",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'ndDimension' in lines should be valid JS"
       },
       {
         "id": "t-248",
         "category": "readonlylogic-valid",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in invoiceLine should be valid JS"
+        "description": "Read-only logic for 'businessPartner' in lines should be valid JS"
       },
       {
         "id": "t-249",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeQuantity",
         "runner": "node",
-        "description": "Display logic for 'operativeQuantity' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'operativeQuantity' in lines should have evaluable flag"
       },
       {
         "id": "t-250",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "runner": "node",
-        "description": "Display logic for 'operativeUOM' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'operativeUOM' in lines should have evaluable flag"
       },
       {
         "id": "t-251",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossUnitPrice",
         "runner": "node",
-        "description": "Display logic for 'grossUnitPrice' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'grossUnitPrice' in lines should have evaluable flag"
       },
       {
         "id": "t-252",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossAmount",
         "runner": "node",
-        "description": "Display logic for 'grossAmount' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'grossAmount' in lines should have evaluable flag"
       },
       {
         "id": "t-253",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossListPrice",
         "runner": "node",
-        "description": "Display logic for 'grossListPrice' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'grossListPrice' in lines should have evaluable flag"
       },
       {
         "id": "t-254",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "runner": "node",
-        "description": "Display logic for 'account' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'account' in lines should have evaluable flag"
       },
       {
         "id": "t-255",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "attributeSetValue",
         "runner": "node",
-        "description": "Display logic for 'attributeSetValue' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'attributeSetValue' in lines should have evaluable flag"
       },
       {
         "id": "t-256",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "taxableAmount",
         "runner": "node",
-        "description": "Display logic for 'taxableAmount' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'taxableAmount' in lines should have evaluable flag"
       },
       {
         "id": "t-257",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferred",
         "runner": "node",
-        "description": "Display logic for 'deferred' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'deferred' in lines should have evaluable flag"
       },
       {
         "id": "t-258",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "cancelPriceAdjustment",
         "runner": "node",
-        "description": "Display logic for 'cancelPriceAdjustment' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'cancelPriceAdjustment' in lines should have evaluable flag"
       },
       {
         "id": "t-259",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "baseGrossUnitPrice",
         "runner": "node",
-        "description": "Display logic for 'baseGrossUnitPrice' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'baseGrossUnitPrice' in lines should have evaluable flag"
       },
       {
         "id": "t-260",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "standardPrice",
         "runner": "node",
-        "description": "Display logic for 'standardPrice' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'standardPrice' in lines should have evaluable flag"
       },
       {
         "id": "t-261",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferredPlanType",
         "runner": "node",
-        "description": "Display logic for 'deferredPlanType' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'deferredPlanType' in lines should have evaluable flag"
       },
       {
         "id": "t-262",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "periodNumber",
         "runner": "node",
-        "description": "Display logic for 'periodNumber' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'periodNumber' in lines should have evaluable flag"
       },
       {
         "id": "t-263",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "runner": "node",
-        "description": "Display logic for 'period' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'period' in lines should have evaluable flag"
       },
       {
         "id": "t-264",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Display logic for 'project' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'project' in lines should have evaluable flag"
       },
       {
         "id": "t-265",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "runner": "node",
-        "description": "Display logic for 'costcenter' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'costcenter' in lines should have evaluable flag"
       },
       {
         "id": "t-266",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "runner": "node",
-        "description": "Display logic for 'asset' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'asset' in lines should have evaluable flag"
       },
       {
         "id": "t-267",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Display logic for 'stDimension' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'stDimension' in lines should have evaluable flag"
       },
       {
         "id": "t-268",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Display logic for 'ndDimension' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'ndDimension' in lines should have evaluable flag"
       },
       {
         "id": "t-269",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "explode",
         "runner": "node",
-        "description": "Display logic for 'explode' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'explode' in lines should have evaluable flag"
       },
       {
         "id": "t-270",
         "category": "displaylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Display logic for 'businessPartner' in invoiceLine should have evaluable flag"
+        "description": "Display logic for 'businessPartner' in lines should have evaluable flag"
       },
       {
         "id": "t-271",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeQuantity",
         "runner": "node",
-        "description": "Read-only logic for 'operativeQuantity' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'operativeQuantity' in lines should have evaluable flag"
       },
       {
         "id": "t-272",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "operativeUOM",
         "runner": "node",
-        "description": "Read-only logic for 'operativeUOM' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'operativeUOM' in lines should have evaluable flag"
       },
       {
         "id": "t-273",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossUnitPrice",
         "runner": "node",
-        "description": "Read-only logic for 'grossUnitPrice' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'grossUnitPrice' in lines should have evaluable flag"
       },
       {
         "id": "t-274",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "grossListPrice",
         "runner": "node",
-        "description": "Read-only logic for 'grossListPrice' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'grossListPrice' in lines should have evaluable flag"
       },
       {
         "id": "t-275",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "financialInvoiceLine",
         "runner": "node",
-        "description": "Read-only logic for 'financialInvoiceLine' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'financialInvoiceLine' in lines should have evaluable flag"
       },
       {
         "id": "t-276",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "account",
         "runner": "node",
-        "description": "Read-only logic for 'account' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'account' in lines should have evaluable flag"
       },
       {
         "id": "t-277",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "attributeSetValue",
         "runner": "node",
-        "description": "Read-only logic for 'attributeSetValue' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'attributeSetValue' in lines should have evaluable flag"
       },
       {
         "id": "t-278",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "taxableAmount",
         "runner": "node",
-        "description": "Read-only logic for 'taxableAmount' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'taxableAmount' in lines should have evaluable flag"
       },
       {
         "id": "t-279",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferred",
         "runner": "node",
-        "description": "Read-only logic for 'deferred' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'deferred' in lines should have evaluable flag"
       },
       {
         "id": "t-280",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "deferredPlanType",
         "runner": "node",
-        "description": "Read-only logic for 'deferredPlanType' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'deferredPlanType' in lines should have evaluable flag"
       },
       {
         "id": "t-281",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "periodNumber",
         "runner": "node",
-        "description": "Read-only logic for 'periodNumber' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'periodNumber' in lines should have evaluable flag"
       },
       {
         "id": "t-282",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "period",
         "runner": "node",
-        "description": "Read-only logic for 'period' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'period' in lines should have evaluable flag"
       },
       {
         "id": "t-283",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Read-only logic for 'project' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'project' in lines should have evaluable flag"
       },
       {
         "id": "t-284",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "costcenter",
         "runner": "node",
-        "description": "Read-only logic for 'costcenter' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'costcenter' in lines should have evaluable flag"
       },
       {
         "id": "t-285",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "asset",
         "runner": "node",
-        "description": "Read-only logic for 'asset' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'asset' in lines should have evaluable flag"
       },
       {
         "id": "t-286",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Read-only logic for 'stDimension' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'stDimension' in lines should have evaluable flag"
       },
       {
         "id": "t-287",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'ndDimension' in lines should have evaluable flag"
       },
       {
         "id": "t-288",
         "category": "readonlylogic-evaluable",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in invoiceLine should have evaluable flag"
+        "description": "Read-only logic for 'businessPartner' in lines should have evaluable flag"
       },
       {
         "id": "t-289",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "adOrgId",
         "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for invoice"
+        "description": "System field 'adOrgId' should exist in backend but not frontend for header"
       },
       {
         "id": "t-290",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "cDocTypeTargetId",
         "runner": "node",
-        "description": "System field 'cDocTypeTargetId' should exist in backend but not frontend for invoice"
+        "description": "System field 'cDocTypeTargetId' should exist in backend but not frontend for header"
       },
       {
         "id": "t-291",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "userContact",
         "runner": "node",
-        "description": "System field 'userContact' should exist in backend but not frontend for invoice"
+        "description": "System field 'userContact' should exist in backend but not frontend for header"
       },
       {
         "id": "t-292",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "posted",
         "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for invoice"
+        "description": "System field 'posted' should exist in backend but not frontend for header"
       },
       {
         "id": "t-293",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "trxOrganization",
         "runner": "node",
-        "description": "System field 'trxOrganization' should exist in backend but not frontend for invoice"
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for header"
       },
       {
         "id": "t-294",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "taxDate",
         "runner": "node",
-        "description": "System field 'taxDate' should exist in backend but not frontend for invoice"
+        "description": "System field 'taxDate' should exist in backend but not frontend for header"
       },
       {
         "id": "t-295",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "activity",
         "runner": "node",
-        "description": "System field 'activity' should exist in backend but not frontend for invoice"
+        "description": "System field 'activity' should exist in backend but not frontend for header"
       },
       {
         "id": "t-296",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "charge",
         "runner": "node",
-        "description": "System field 'charge' should exist in backend but not frontend for invoice"
+        "description": "System field 'charge' should exist in backend but not frontend for header"
       },
       {
         "id": "t-297",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "chargeAmount",
         "runner": "node",
-        "description": "System field 'chargeAmount' should exist in backend but not frontend for invoice"
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for header"
       },
       {
         "id": "t-298",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "orderDate",
         "runner": "node",
-        "description": "System field 'orderDate' should exist in backend but not frontend for invoice"
+        "description": "System field 'orderDate' should exist in backend but not frontend for header"
       },
       {
         "id": "t-299",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "cDocTypeId",
         "runner": "node",
-        "description": "System field 'cDocTypeId' should exist in backend but not frontend for invoice"
+        "description": "System field 'cDocTypeId' should exist in backend but not frontend for header"
       },
       {
         "id": "t-300",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "asset",
         "runner": "node",
-        "description": "System field 'asset' should exist in backend but not frontend for invoice"
+        "description": "System field 'asset' should exist in backend but not frontend for header"
       },
       {
         "id": "t-301",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "isSotrx",
         "runner": "node",
-        "description": "System field 'isSotrx' should exist in backend but not frontend for invoice"
+        "description": "System field 'isSotrx' should exist in backend but not frontend for header"
       },
       {
         "id": "t-302",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "id",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for invoice"
+        "description": "System field 'id' should exist in backend but not frontend for header"
       },
       {
         "id": "t-303",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "lastCalculatedOnDate",
         "runner": "node",
-        "description": "System field 'lastCalculatedOnDate' should exist in backend but not frontend for invoice"
+        "description": "System field 'lastCalculatedOnDate' should exist in backend but not frontend for header"
       },
       {
         "id": "t-304",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "printDiscount",
         "runner": "node",
-        "description": "System field 'printDiscount' should exist in backend but not frontend for invoice"
+        "description": "System field 'printDiscount' should exist in backend but not frontend for header"
       },
       {
         "id": "t-305",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "print",
         "runner": "node",
-        "description": "System field 'print' should exist in backend but not frontend for invoice"
+        "description": "System field 'print' should exist in backend but not frontend for header"
       },
       {
         "id": "t-306",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "priceIncludesTax",
         "runner": "node",
-        "description": "System field 'priceIncludesTax' should exist in backend but not frontend for invoice"
+        "description": "System field 'priceIncludesTax' should exist in backend but not frontend for header"
       },
       {
         "id": "t-307",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "generateTo",
         "runner": "node",
-        "description": "System field 'generateTo' should exist in backend but not frontend for invoice"
+        "description": "System field 'generateTo' should exist in backend but not frontend for header"
       },
       {
         "id": "t-308",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "processNow",
         "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for invoice"
+        "description": "System field 'processNow' should exist in backend but not frontend for header"
       },
       {
         "id": "t-309",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "selfService",
         "runner": "node",
-        "description": "System field 'selfService' should exist in backend but not frontend for invoice"
+        "description": "System field 'selfService' should exist in backend but not frontend for header"
       },
       {
         "id": "t-310",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "withholding",
         "runner": "node",
-        "description": "System field 'withholding' should exist in backend but not frontend for invoice"
+        "description": "System field 'withholding' should exist in backend but not frontend for header"
       },
       {
         "id": "t-311",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "created",
         "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for invoice"
+        "description": "System field 'created' should exist in backend but not frontend for header"
       },
       {
         "id": "t-312",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "adClientId",
         "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for invoice"
+        "description": "System field 'adClientId' should exist in backend but not frontend for header"
       },
       {
         "id": "t-313",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "isActive",
         "runner": "node",
-        "description": "System field 'isActive' should exist in backend but not frontend for invoice"
+        "description": "System field 'isActive' should exist in backend but not frontend for header"
       },
       {
         "id": "t-314",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "processed",
         "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for invoice"
+        "description": "System field 'processed' should exist in backend but not frontend for header"
       },
       {
         "id": "t-315",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "datePrinted",
         "runner": "node",
-        "description": "System field 'datePrinted' should exist in backend but not frontend for invoice"
+        "description": "System field 'datePrinted' should exist in backend but not frontend for header"
       },
       {
         "id": "t-316",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createdBy",
         "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for invoice"
+        "description": "System field 'createdBy' should exist in backend but not frontend for header"
       },
       {
         "id": "t-317",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "createLinesFrom",
         "runner": "node",
-        "description": "System field 'createLinesFrom' should exist in backend but not frontend for invoice"
+        "description": "System field 'createLinesFrom' should exist in backend but not frontend for header"
       },
       {
         "id": "t-318",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "etcopagCopilotFeedback",
         "runner": "node",
-        "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for invoice"
+        "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
       },
       {
         "id": "t-319",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "fINPaymentPriorityID",
         "runner": "node",
-        "description": "System field 'fINPaymentPriorityID' should exist in backend but not frontend for invoice"
+        "description": "System field 'fINPaymentPriorityID' should exist in backend but not frontend for header"
       },
       {
         "id": "t-320",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "cashVAT",
         "runner": "node",
-        "description": "System field 'cashVAT' should exist in backend but not frontend for invoice"
+        "description": "System field 'cashVAT' should exist in backend but not frontend for header"
       },
       {
         "id": "t-321",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "updated",
         "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for invoice"
+        "description": "System field 'updated' should exist in backend but not frontend for header"
       },
       {
         "id": "t-322",
         "category": "system-field",
-        "entity": "invoice",
+        "entity": "header",
         "field": "updatedBy",
         "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for invoice"
+        "description": "System field 'updatedBy' should exist in backend but not frontend for header"
       },
       {
         "id": "t-323",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "cOrderlineId",
         "runner": "node",
-        "description": "System field 'cOrderlineId' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'cOrderlineId' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-324",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "mInoutlineId",
         "runner": "node",
-        "description": "System field 'mInoutlineId' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'mInoutlineId' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-325",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "editLineAmount",
         "runner": "node",
-        "description": "System field 'editLineAmount' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'editLineAmount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-326",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "excludeforwithholding",
         "runner": "node",
-        "description": "System field 'excludeforwithholding' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'excludeforwithholding' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-327",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "orderUOM",
         "runner": "node",
-        "description": "System field 'orderUOM' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'orderUOM' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-328",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "orderQuantity",
         "runner": "node",
-        "description": "System field 'orderQuantity' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'orderQuantity' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-329",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "adOrgId",
         "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'adOrgId' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-330",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "bOMParentID",
         "runner": "node",
-        "description": "System field 'bOMParentID' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'bOMParentID' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-331",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "creationDate",
         "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'creationDate' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-332",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "projectLine",
         "runner": "node",
-        "description": "System field 'projectLine' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'projectLine' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-333",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "invoiceDiscount",
         "runner": "node",
-        "description": "System field 'invoiceDiscount' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'invoiceDiscount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-334",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "descriptionOnly",
         "runner": "node",
-        "description": "System field 'descriptionOnly' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'descriptionOnly' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-335",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "resourceAssignment",
         "runner": "node",
-        "description": "System field 'resourceAssignment' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'resourceAssignment' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-336",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "priceLimit",
         "runner": "node",
-        "description": "System field 'priceLimit' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'priceLimit' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-337",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "active",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'active' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-338",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "chargeAmount",
         "runner": "node",
-        "description": "System field 'chargeAmount' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-339",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "adClientId",
         "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'adClientId' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-340",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "id",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'id' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-341",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "charge",
         "runner": "node",
-        "description": "System field 'charge' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'charge' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-342",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "priceAdjustment",
         "runner": "node",
-        "description": "System field 'priceAdjustment' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'priceAdjustment' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-343",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "cInvoiceId",
         "runner": "node",
-        "description": "System field 'cInvoiceId' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'cInvoiceId' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-344",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "createdBy",
         "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'createdBy' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-345",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "matchLCCosts",
         "runner": "node",
-        "description": "System field 'matchLCCosts' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'matchLCCosts' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-346",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "updated",
         "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'updated' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-347",
         "category": "system-field",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "updatedBy",
         "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for invoiceLine"
+        "description": "System field 'updatedBy' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-348",
@@ -5883,429 +5846,325 @@
       },
       {
         "id": "t-356",
-        "category": "process-happy",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' should complete successfully with valid preconditions"
+        "category": "crud-flags",
+        "entity": "header",
+        "runner": "node",
+        "description": "CRUD flags for 'header' should all be booleans"
       },
       {
         "id": "t-357",
-        "category": "process-failure",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' should fail when preconditions are not met"
+        "category": "crud-flags",
+        "entity": "lines",
+        "runner": "node",
+        "description": "CRUD flags for 'lines' should all be booleans"
       },
       {
         "id": "t-358",
-        "category": "process-edge",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in header should exist"
       },
       {
         "id": "t-359",
-        "category": "process-edge",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in header should exist"
       },
       {
         "id": "t-360",
-        "category": "process-edge",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "paymentTerms",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentTerms' in header should exist"
       },
       {
         "id": "t-361",
-        "category": "process-edge",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in header should exist"
       },
       {
         "id": "t-362",
-        "category": "process-rollback",
-        "process": "completeInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'completeInvoice' should rollback on failure"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in header should exist"
       },
       {
         "id": "t-363",
-        "category": "process-happy",
-        "process": "voidInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'voidInvoice' should complete successfully with valid preconditions"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "priceList",
+        "runner": "node",
+        "description": "Selector endpoint for 'priceList' in header should exist"
       },
       {
         "id": "t-364",
-        "category": "process-failure",
-        "process": "voidInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'voidInvoice' should fail when preconditions are not met"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "salesRepresentative",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesRepresentative' in header should exist"
       },
       {
         "id": "t-365",
-        "category": "process-edge",
-        "process": "voidInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'voidInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesOrder' in header should exist"
       },
       {
         "id": "t-366",
-        "category": "process-edge",
-        "process": "voidInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'voidInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in header should exist"
       },
       {
         "id": "t-367",
-        "category": "process-edge",
-        "process": "voidInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'voidInvoice' edge case 'undefined': undefined -> undefined"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in header should exist"
       },
       {
         "id": "t-368",
-        "category": "process-rollback",
-        "process": "voidInvoice",
-        "entity": "Invoice",
-        "runner": "junit",
-        "description": "Process 'voidInvoice' should rollback on failure"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesCampaign' in header should exist"
       },
       {
         "id": "t-369",
-        "category": "crud-flags",
-        "entity": "invoice",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "stDimension",
         "runner": "node",
-        "description": "CRUD flags for 'invoice' should all be booleans"
+        "description": "Selector endpoint for 'stDimension' in header should exist"
       },
       {
         "id": "t-370",
-        "category": "crud-flags",
-        "entity": "invoiceLine",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "ndDimension",
         "runner": "node",
-        "description": "CRUD flags for 'invoiceLine' should all be booleans"
+        "description": "Selector endpoint for 'ndDimension' in header should exist"
       },
       {
         "id": "t-371",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "businessPartner",
+        "entity": "lines",
+        "field": "product",
         "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in invoice should exist"
+        "description": "Selector endpoint for 'product' in lines should exist"
       },
       {
         "id": "t-372",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "partnerAddress",
+        "entity": "lines",
+        "field": "operativeUOM",
         "runner": "node",
-        "description": "Selector endpoint for 'partnerAddress' in invoice should exist"
+        "description": "Selector endpoint for 'operativeUOM' in lines should exist"
       },
       {
         "id": "t-373",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "paymentTerms",
+        "entity": "lines",
+        "field": "uOM",
         "runner": "node",
-        "description": "Selector endpoint for 'paymentTerms' in invoice should exist"
+        "description": "Selector endpoint for 'uOM' in lines should exist"
       },
       {
         "id": "t-374",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "paymentMethod",
+        "entity": "lines",
+        "field": "tax",
         "runner": "node",
-        "description": "Selector endpoint for 'paymentMethod' in invoice should exist"
+        "description": "Selector endpoint for 'tax' in lines should exist"
       },
       {
         "id": "t-375",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "currency",
+        "entity": "lines",
+        "field": "account",
         "runner": "node",
-        "description": "Selector endpoint for 'currency' in invoice should exist"
+        "description": "Selector endpoint for 'account' in lines should exist"
       },
       {
         "id": "t-376",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "priceList",
+        "entity": "lines",
+        "field": "period",
         "runner": "node",
-        "description": "Selector endpoint for 'priceList' in invoice should exist"
+        "description": "Selector endpoint for 'period' in lines should exist"
       },
       {
         "id": "t-377",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "salesRepresentative",
+        "entity": "lines",
+        "field": "project",
         "runner": "node",
-        "description": "Selector endpoint for 'salesRepresentative' in invoice should exist"
+        "description": "Selector endpoint for 'project' in lines should exist"
       },
       {
         "id": "t-378",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "salesOrder",
+        "entity": "lines",
+        "field": "costcenter",
         "runner": "node",
-        "description": "Selector endpoint for 'salesOrder' in invoice should exist"
+        "description": "Selector endpoint for 'costcenter' in lines should exist"
       },
       {
         "id": "t-379",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "project",
+        "entity": "lines",
+        "field": "asset",
         "runner": "node",
-        "description": "Selector endpoint for 'project' in invoice should exist"
+        "description": "Selector endpoint for 'asset' in lines should exist"
       },
       {
         "id": "t-380",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "costcenter",
+        "entity": "lines",
+        "field": "stDimension",
         "runner": "node",
-        "description": "Selector endpoint for 'costcenter' in invoice should exist"
+        "description": "Selector endpoint for 'stDimension' in lines should exist"
       },
       {
         "id": "t-381",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "salesCampaign",
+        "entity": "lines",
+        "field": "ndDimension",
         "runner": "node",
-        "description": "Selector endpoint for 'salesCampaign' in invoice should exist"
+        "description": "Selector endpoint for 'ndDimension' in lines should exist"
       },
       {
         "id": "t-382",
         "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "stDimension",
+        "entity": "lines",
+        "field": "businessPartner",
         "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in invoice should exist"
+        "description": "Selector endpoint for 'businessPartner' in lines should exist"
       },
       {
         "id": "t-383",
-        "category": "selector-endpoint",
-        "entity": "invoice",
-        "field": "ndDimension",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "aPRMAddpayment",
         "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in invoice should exist"
+        "description": "Action endpoint for 'aPRMAddpayment' in header should exist"
       },
       {
         "id": "t-384",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "product",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "posted",
         "runner": "node",
-        "description": "Selector endpoint for 'product' in invoiceLine should exist"
+        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-385",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "operativeUOM",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "aPRMProcessinvoice",
         "runner": "node",
-        "description": "Selector endpoint for 'operativeUOM' in invoiceLine should exist"
+        "description": "Action endpoint for 'aPRMProcessinvoice' in header should exist"
       },
       {
         "id": "t-386",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "uOM",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "documentAction",
         "runner": "node",
-        "description": "Selector endpoint for 'uOM' in invoiceLine should exist"
+        "description": "Action endpoint for 'documentAction' in header should exist"
       },
       {
         "id": "t-387",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "tax",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "createLinesFromOrder",
         "runner": "node",
-        "description": "Selector endpoint for 'tax' in invoiceLine should exist"
+        "description": "Action endpoint for 'createLinesFromOrder' in header should exist"
       },
       {
         "id": "t-388",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "account",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "createLinesFromShipment",
         "runner": "node",
-        "description": "Selector endpoint for 'account' in invoiceLine should exist"
+        "description": "Action endpoint for 'createLinesFromShipment' in header should exist"
       },
       {
         "id": "t-389",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "period",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "copyFrom",
         "runner": "node",
-        "description": "Selector endpoint for 'period' in invoiceLine should exist"
+        "description": "Action endpoint for 'copyFrom' in header should exist"
       },
       {
         "id": "t-390",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "project",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "calculatePromotions",
         "runner": "node",
-        "description": "Selector endpoint for 'project' in invoiceLine should exist"
+        "description": "Action endpoint for 'calculatePromotions' in header should exist"
       },
       {
         "id": "t-391",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "costcenter",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "generateTo",
         "runner": "node",
-        "description": "Selector endpoint for 'costcenter' in invoiceLine should exist"
+        "description": "Action endpoint for 'generateTo' in header should exist"
       },
       {
         "id": "t-392",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "asset",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "processNow",
         "runner": "node",
-        "description": "Selector endpoint for 'asset' in invoiceLine should exist"
+        "description": "Action endpoint for 'processNow' in header should exist"
       },
       {
         "id": "t-393",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "stDimension",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "createLinesFrom",
         "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in invoiceLine should exist"
+        "description": "Action endpoint for 'createLinesFrom' in header should exist"
       },
       {
         "id": "t-394",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "ndDimension",
+        "category": "action-endpoint",
+        "entity": "lines",
+        "field": "explode",
         "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in invoiceLine should exist"
+        "description": "Action endpoint for 'explode' in lines should exist"
       },
       {
         "id": "t-395",
-        "category": "selector-endpoint",
-        "entity": "invoiceLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in invoiceLine should exist"
-      },
-      {
-        "id": "t-396",
         "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "aPRMAddpayment",
-        "runner": "node",
-        "description": "Action endpoint for 'aPRMAddpayment' in invoice should exist"
-      },
-      {
-        "id": "t-397",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in invoice should exist"
-      },
-      {
-        "id": "t-398",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "aPRMProcessinvoice",
-        "runner": "node",
-        "description": "Action endpoint for 'aPRMProcessinvoice' in invoice should exist"
-      },
-      {
-        "id": "t-399",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "documentAction",
-        "runner": "node",
-        "description": "Action endpoint for 'documentAction' in invoice should exist"
-      },
-      {
-        "id": "t-400",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "createLinesFromOrder",
-        "runner": "node",
-        "description": "Action endpoint for 'createLinesFromOrder' in invoice should exist"
-      },
-      {
-        "id": "t-401",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "createLinesFromShipment",
-        "runner": "node",
-        "description": "Action endpoint for 'createLinesFromShipment' in invoice should exist"
-      },
-      {
-        "id": "t-402",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "copyFrom",
-        "runner": "node",
-        "description": "Action endpoint for 'copyFrom' in invoice should exist"
-      },
-      {
-        "id": "t-403",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "calculatePromotions",
-        "runner": "node",
-        "description": "Action endpoint for 'calculatePromotions' in invoice should exist"
-      },
-      {
-        "id": "t-404",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "generateTo",
-        "runner": "node",
-        "description": "Action endpoint for 'generateTo' in invoice should exist"
-      },
-      {
-        "id": "t-405",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Action endpoint for 'processNow' in invoice should exist"
-      },
-      {
-        "id": "t-406",
-        "category": "action-endpoint",
-        "entity": "invoice",
-        "field": "createLinesFrom",
-        "runner": "node",
-        "description": "Action endpoint for 'createLinesFrom' in invoice should exist"
-      },
-      {
-        "id": "t-407",
-        "category": "action-endpoint",
-        "entity": "invoiceLine",
-        "field": "explode",
-        "runner": "node",
-        "description": "Action endpoint for 'explode' in invoiceLine should exist"
-      },
-      {
-        "id": "t-408",
-        "category": "action-endpoint",
-        "entity": "invoiceLine",
+        "entity": "lines",
         "field": "matchLCCosts",
         "runner": "node",
-        "description": "Action endpoint for 'matchLCCosts' in invoiceLine should exist"
+        "description": "Action endpoint for 'matchLCCosts' in lines should exist"
       }
     ],
     "summary": {
-      "total": 408,
+      "total": 395,
       "byCategory": {
         "field-presence": 72,
         "field-type": 72,
@@ -6317,17 +6176,13 @@
         "readonlylogic-evaluable": 23,
         "system-field": 59,
         "rule-declared": 8,
-        "process-happy": 2,
-        "process-failure": 2,
-        "process-edge": 7,
-        "process-rollback": 2,
         "crud-flags": 2,
         "selector-endpoint": 25,
         "action-endpoint": 13
       },
       "byRunner": {
         "node": 395,
-        "junit": 13
+        "junit": 0
       }
     }
   }
