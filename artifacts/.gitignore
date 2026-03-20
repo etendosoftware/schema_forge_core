@@ -3,7 +3,7 @@
 */rules-raw.json
 */processes.json
 */raw-query-results/
-*/generated/
+# */generated/ — committed so devs have UI components immediately
 */contract.prev.json
 */contract-changelog.json
 */mockCatalogs.js
