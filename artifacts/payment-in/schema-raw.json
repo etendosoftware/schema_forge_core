@@ -675,54 +675,6 @@
           "help": "Payment In event"
         },
         {
-          "name": "processNow",
-          "apiKey": "processNow",
-          "columnName": "Processing",
-          "label": "Process Now",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "false"
-          },
-          "maxLength": "1",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "When this field is set as 'Y' a process is being performed on this record."
-        },
-        {
-          "name": "aPRMReconcilePayment",
-          "apiKey": "aPRMReconcilePayment",
-          "columnName": "EM_APRM_Reconcile_Payment",
-          "label": "Reconcile Payment",
-          "type": "button",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "1",
-          "displayLogic": "@status@='PPM'|@status@='RPR'",
-          "isFilterable": true
-        },
-        {
-          "name": "processed",
-          "apiKey": "processed",
-          "columnName": "Processed",
-          "label": "Processed",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "false"
-          },
-          "maxLength": "1",
-          "defaultValue": "N",
-          "isFilterable": true,
-          "help": "The Processed checkbox indicates that a document has been processed."
-        },
-        {
           "name": "active",
           "apiKey": "active",
           "columnName": "Isactive",
@@ -759,6 +711,36 @@
           "help": "Indicated a sales transaction (Accounts Receivable if Receipt=Y) or a purchase transaction (Accounts Payable if Receipt=N)."
         },
         {
+          "name": "processed",
+          "apiKey": "processed",
+          "columnName": "Processed",
+          "label": "Processed",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true,
+          "help": "The Processed checkbox indicates that a document has been processed."
+        },
+        {
+          "name": "aPRMReconcilePayment",
+          "apiKey": "aPRMReconcilePayment",
+          "columnName": "EM_APRM_Reconcile_Payment",
+          "label": "Reconcile Payment",
+          "type": "button",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "1",
+          "displayLogic": "@status@='PPM'|@status@='RPR'",
+          "isFilterable": true
+        },
+        {
           "name": "client",
           "apiKey": "client",
           "columnName": "AD_Client_ID",
@@ -790,6 +772,24 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
+        },
+        {
+          "name": "processNow",
+          "apiKey": "processNow",
+          "columnName": "Processing",
+          "label": "Process Now",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true,
+          "help": "When this field is set as 'Y' a process is being performed on this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_Payment",
@@ -2883,7 +2883,7 @@
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "d8999d22",
-    "extractedAt": "2026-03-18T17:45:08.733Z"
+    "checksum": "79832e0f",
+    "extractedAt": "2026-03-19T11:18:24.374Z"
   }
 }
