@@ -115,6 +115,7 @@ export default function OnboardingPage() {
     setResult(null);
     setSteps(STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null })));
 
+    let succeeded = false;
     try {
       const res = await fetch('/sws/go/onboarding', {
         method: 'POST',
@@ -142,26 +143,7 @@ export default function OnboardingPage() {
           const msg = JSON.parse(line);
           if (msg.result || msg.status === 'success') {
             setResult(msg);
-            if (msg.status === 'success') {
-              // Auto-login with the created credentials
-              try {
-                const loginRes = await fetch('/sws/login', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ username: form.adminUser, password: form.adminPassword }),
-                });
-                if (loginRes.ok) {
-                  const loginData = await loginRes.json();
-                  if (loginData.token) {
-                    localStorage.setItem('token', loginData.token);
-                    window.location.href = '/';
-                    return;
-                  }
-                }
-              } catch (loginErr) {
-                console.error('Auto-login failed:', loginErr);
-              }
-            }
+            if (msg.status === 'success') succeeded = true;
           } else if (msg.step) {
             setSteps(prev => prev.map((s, i) =>
               i === msg.step - 1
@@ -176,8 +158,27 @@ export default function OnboardingPage() {
       setResult({ result: 'failed', error: err.message });
     } finally {
       setRunning(false);
+      if (succeeded) {
+        try {
+          const loginRes = await fetch('/sws/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: form.adminUser, password: form.adminPassword }),
+          });
+          const loginData = await loginRes.json();
+          if (loginData.token) {
+            localStorage.setItem('token', loginData.token);
+            setTimeout(() => { window.location.href = '/dashboard'; }, 100);
+            return;
+          }
+        } catch (loginErr) {
+          console.error('Auto-login failed:', loginErr);
+        }
+        setView('list');
+        loadEnvironments();
+      }
     }
-  }, [form, token]);
+  }, [form, token, loadEnvironments]);
 
 
   const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }));
