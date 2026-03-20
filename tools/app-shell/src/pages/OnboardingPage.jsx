@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,31 +10,24 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Circle,
-  ChevronDown,
+  Loader2, CheckCircle2, XCircle, Circle, ChevronDown,
+  Plus, LogIn, Building2, RefreshCw,
 } from 'lucide-react';
 
 const STEPS = [
   { name: 'createClient', label: 'Create Client' },
   { name: 'createOrganization', label: 'Create Organization' },
-  { name: 'createClientAdmin', label: 'Create Client Admin' },
-  { name: 'createOrgAdmin', label: 'Create Org Admin' },
-  { name: 'createRole', label: 'Create Role + Access' },
+  { name: 'createRole', label: 'Configure Roles' },
   { name: 'seedReferenceData', label: 'Seed Reference Data' },
-  { name: 'createDocTypes', label: 'Document Types + Sequences' },
-  { name: 'markOrgReady', label: 'Mark Org Ready' },
+  { name: 'createDocTypes', label: 'Document Types' },
+  { name: 'markOrgReady', label: 'Finalize Setup' },
 ];
 
 const CURRENCIES = ['EUR', 'USD', 'ARS', 'GBP', 'BRL', 'MXN', 'CLP', 'COP'];
-
 const LANGUAGES = [
   { value: 'es_ES', label: 'Español' },
   { value: 'en_US', label: 'English' },
 ];
-
 const COUNTRIES = [
   { value: 'AR', label: 'Argentina' },
   { value: 'ES', label: 'España' },
@@ -45,72 +39,84 @@ const COUNTRIES = [
   { value: 'GB', label: 'United Kingdom' },
 ];
 
-const SELECT_CLASS =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
-
-const INITIAL_FORM = {
-  clientName: '',
-  orgName: '',
-  adminUser: '',
-  adminPassword: '',
-  currency: '',
-  language: '',
-  country: '',
-};
-
-// -- Status helpers -----------------------------------------------------------
-
-function initStepState() {
-  return Object.fromEntries(
-    STEPS.map((s) => [s.name, { status: 'pending', messages: [], open: false }])
-  );
-}
-
-function StatusIcon({ status }) {
-  if (status === 'running') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
-  if (status === 'done') return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-  if (status === 'failed') return <XCircle className="h-4 w-4 text-red-500" />;
-  return <Circle className="h-4 w-4 text-muted-foreground" />;
-}
-
-// -- Main component -----------------------------------------------------------
-
 export default function OnboardingPage() {
-  const [form, setForm] = useState(INITIAL_FORM);
+  const navigate = useNavigate();
+  const [view, setView] = useState('list'); // 'list' | 'create'
+  const [environments, setEnvironments] = useState([]);
+  const [loadingEnvs, setLoadingEnvs] = useState(true);
+  const [loggingIn, setLoggingIn] = useState(null); // clientId being logged into
+
+  // Create form state
+  const [form, setForm] = useState({
+    clientName: '', orgName: '', adminUser: '', adminPassword: '',
+    currency: 'EUR', language: 'es_ES', countryCode: 'AR',
+  });
+  const [steps, setSteps] = useState(
+    STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null }))
+  );
+  const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
-  const [stepState, setStepState] = useState(initStepState);
-  const [result, setResult] = useState(null); // { success: bool, message: string }
 
-  const set = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+  const token = localStorage.getItem('token');
 
-  const setStep = (name, patch) =>
-    setStepState((prev) => ({
-      ...prev,
-      [name]: { ...prev[name], ...patch },
-    }));
+  // Load environments
+  const loadEnvironments = useCallback(async () => {
+    setLoadingEnvs(true);
+    try {
+      const res = await fetch('/sws/go/onboarding/environments', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEnvironments(data.environments || []);
+      }
+    } catch (err) {
+      console.error('Failed to load environments', err);
+    } finally {
+      setLoadingEnvs(false);
+    }
+  }, [token]);
 
-  const canSubmit =
-    form.clientName &&
-    form.orgName &&
-    form.adminUser &&
-    form.adminPassword &&
-    form.currency &&
-    form.language &&
-    form.country;
+  useEffect(() => {
+    loadEnvironments();
+  }, [loadEnvironments]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!canSubmit || running) return;
+  // Login to environment
+  const loginToEnvironment = async (env) => {
+    setLoggingIn(env.clientId);
+    try {
+      const res = await fetch('/sws/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: env.adminUser,
+          password: form.adminPassword || 'test1234', // TODO: ask for password
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          navigate('/');
+        }
+      } else {
+        alert('Login failed. Check credentials.');
+      }
+    } catch (err) {
+      alert('Login error: ' + err.message);
+    } finally {
+      setLoggingIn(null);
+    }
+  };
 
+  // Run onboarding
+  const runOnboarding = useCallback(async () => {
     setRunning(true);
     setResult(null);
-    setStepState(initStepState());
+    setSteps(STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null })));
 
-    const token = localStorage.getItem('token');
-
-    let response;
     try {
-      response = await fetch('/sws/go/onboarding', {
+      const res = await fetch('/sws/go/onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,295 +124,230 @@ export default function OnboardingPage() {
         },
         body: JSON.stringify(form),
       });
-    } catch (err) {
-      setResult({ success: false, message: `Network error: ${err.message}` });
-      setRunning(false);
-      return;
-    }
 
-    if (!response.body) {
-      setResult({ success: false, message: 'No response body from server.' });
-      setRunning(false);
-      return;
-    }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep partial last line
+        buffer = lines.pop();
 
         for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-
-          let event;
-          try {
-            event = JSON.parse(trimmed);
-          } catch {
-            continue;
+          if (!line.trim()) continue;
+          const msg = JSON.parse(line);
+          if (msg.result || msg.status === 'success') {
+            setResult(msg);
+          } else if (msg.step) {
+            setSteps(prev => prev.map((s, i) =>
+              i === msg.step - 1
+                ? { ...s, status: msg.status, ms: msg.ms || null, error: msg.error || null }
+                : s
+            ));
           }
-
-          if (event.step) {
-            const { step: name, status, message } = event;
-            setStepState((prev) => {
-              const current = prev[name] ?? { status: 'pending', messages: [], open: false };
-              const isActive = status === 'running' || status === 'failed';
-              return {
-                ...prev,
-                [name]: {
-                  ...current,
-                  status,
-                  open: isActive ? true : current.open,
-                  messages: message
-                    ? [...current.messages, message]
-                    : current.messages,
-                },
-              };
-            });
-          }
-
-          if (event.type === 'result') {
-            setResult({ success: event.success, message: event.message });
-          }
-        }
-      }
-
-      // flush remaining buffer
-      if (buffer.trim()) {
-        try {
-          const event = JSON.parse(buffer.trim());
-          if (event.type === 'result') {
-            setResult({ success: event.success, message: event.message });
-          }
-        } catch {
-          // ignore unparseable tail
         }
       }
     } catch (err) {
-      setResult({ success: false, message: `Stream error: ${err.message}` });
+      setResult({ result: 'failed', error: err.message });
     } finally {
       setRunning(false);
+      loadEnvironments();
     }
+  }, [form, token, loadEnvironments]);
+
+  const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }));
+  const isFormValid = form.clientName && form.orgName && form.adminUser && form.adminPassword;
+
+  const StatusIcon = ({ status }) => {
+    if (status === 'running') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+    if (status === 'done') return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (status === 'failed') return <XCircle className="h-4 w-4 text-red-500" />;
+    return <Circle className="h-4 w-4 text-gray-300" />;
+  };
+
+  // ── LIST VIEW ──
+  if (view === 'list') {
+    return (
+      <div className="max-w-3xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Environments</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={loadEnvironments} disabled={loadingEnvs}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${loadingEnvs ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={() => setView('create')}>
+              <Plus className="h-4 w-4 mr-1" /> New Environment
+            </Button>
+          </div>
+        </div>
+
+        {loadingEnvs ? (
+          <div className="flex justify-center p-8">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : environments.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center text-gray-500">
+              <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium mb-2">No environments yet</p>
+              <p className="mb-4">Create your first environment to get started.</p>
+              <Button onClick={() => setView('create')}>
+                <Plus className="h-4 w-4 mr-1" /> Create Environment
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {environments.map(env => (
+              <Card key={env.clientId} className="hover:border-gray-400 transition-colors">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-lg">{env.clientName}</p>
+                    <p className="text-sm text-gray-500">
+                      Org: {env.orgName || '—'} &middot; User: {env.adminUser || '—'}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Created: {env.created ? new Date(env.created).toLocaleDateString() : '—'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => loginToEnvironment(env)}
+                    disabled={loggingIn === env.clientId}
+                  >
+                    {loggingIn === env.clientId ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    ) : (
+                      <LogIn className="h-4 w-4 mr-1" />
+                    )}
+                    Enter
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
-  const toggleOpen = (name) =>
-    setStepState((prev) => ({
-      ...prev,
-      [name]: { ...prev[name], open: !prev[name].open },
-    }));
-
-  // -- Render ------------------------------------------------------------------
-
+  // ── CREATE VIEW ──
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Setup Wizard</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Configure a new client and organization in Etendo.
-        </p>
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">New Environment</h1>
+        <Button variant="ghost" onClick={() => { setView('list'); setResult(null); }}>
+          Back to list
+        </Button>
       </div>
 
-      {/* Form */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Client Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="clientName">Client Name</Label>
-              <Input
-                id="clientName"
-                placeholder="Acme Corp"
-                value={form.clientName}
-                onChange={(e) => set('clientName', e.target.value)}
-                disabled={running}
-              />
+        <CardHeader><CardTitle>Configuration</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="clientName">Company Name</Label>
+              <Input id="clientName" value={form.clientName}
+                onChange={e => updateField('clientName', e.target.value)} disabled={running} />
             </div>
-
-            {/* Org Name */}
-            <div className="space-y-1.5">
+            <div>
               <Label htmlFor="orgName">Organization Name</Label>
-              <Input
-                id="orgName"
-                placeholder="Acme Spain"
-                value={form.orgName}
-                onChange={(e) => set('orgName', e.target.value)}
-                disabled={running}
-              />
+              <Input id="orgName" value={form.orgName}
+                onChange={e => updateField('orgName', e.target.value)} disabled={running} />
             </div>
-
-            {/* Admin User */}
-            <div className="space-y-1.5">
-              <Label htmlFor="adminUser">Admin Username</Label>
-              <Input
-                id="adminUser"
-                placeholder="admin"
-                value={form.adminUser}
-                onChange={(e) => set('adminUser', e.target.value)}
-                disabled={running}
-              />
+            <div>
+              <Label htmlFor="adminUser">Admin Email</Label>
+              <Input id="adminUser" type="email" value={form.adminUser}
+                onChange={e => updateField('adminUser', e.target.value)} disabled={running} />
             </div>
-
-            {/* Admin Password */}
-            <div className="space-y-1.5">
+            <div>
               <Label htmlFor="adminPassword">Admin Password</Label>
-              <Input
-                id="adminPassword"
-                type="password"
-                placeholder="••••••••"
-                value={form.adminPassword}
-                onChange={(e) => set('adminPassword', e.target.value)}
-                disabled={running}
-              />
+              <Input id="adminPassword" type="password" value={form.adminPassword}
+                onChange={e => updateField('adminPassword', e.target.value)} disabled={running} />
             </div>
-
-            {/* Currency */}
-            <div className="space-y-1.5">
+            <div>
               <Label htmlFor="currency">Currency</Label>
-              <select
-                id="currency"
-                className={SELECT_CLASS}
-                value={form.currency}
-                onChange={(e) => set('currency', e.target.value)}
-                disabled={running}
-              >
-                <option value="">Select currency...</option>
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+              <select id="currency" value={form.currency}
+                onChange={e => updateField('currency', e.target.value)} disabled={running}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-
-            {/* Language */}
-            <div className="space-y-1.5">
+            <div>
               <Label htmlFor="language">Language</Label>
-              <select
-                id="language"
-                className={SELECT_CLASS}
-                value={form.language}
-                onChange={(e) => set('language', e.target.value)}
-                disabled={running}
-              >
-                <option value="">Select language...</option>
-                {LANGUAGES.map((l) => (
-                  <option key={l.value} value={l.value}>{l.label}</option>
-                ))}
+              <select id="language" value={form.language}
+                onChange={e => updateField('language', e.target.value)} disabled={running}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
               </select>
             </div>
-
-            {/* Country */}
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="country">Country</Label>
-              <select
-                id="country"
-                className={SELECT_CLASS}
-                value={form.country}
-                onChange={(e) => set('country', e.target.value)}
-                disabled={running}
-              >
-                <option value="">Select country...</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
+            <div>
+              <Label htmlFor="countryCode">Country</Label>
+              <select id="countryCode" value={form.countryCode}
+                onChange={e => updateField('countryCode', e.target.value)} disabled={running}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {COUNTRIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
-
-            {/* Submit */}
-            <div className="md:col-span-2 flex justify-end pt-2">
-              <Button type="submit" disabled={!canSubmit || running}>
-                {running && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {running ? 'Running...' : 'Start Setup'}
-              </Button>
-            </div>
-          </form>
+          </div>
+          <Button onClick={runOnboarding} disabled={running || !isFormValid}>
+            {running ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : 'Create Environment'}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Accordion — step progress */}
-      <div className="space-y-2">
-        {STEPS.map((step) => {
-          const state = stepState[step.name];
-          const isActive = state.status !== 'pending';
-
-          return (
-            <Collapsible
-              key={step.name}
-              open={state.open}
-              onOpenChange={() => toggleOpen(step.name)}
-            >
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className={`flex w-full items-center justify-between rounded-md border px-4 py-3 text-sm font-medium transition-colors hover:bg-muted/50 ${
-                    isActive ? 'bg-muted/30' : 'bg-background'
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <StatusIcon status={state.status} />
-                    {step.label}
-                  </span>
-                  {state.messages.length > 0 && (
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        state.open ? 'rotate-180' : ''
-                      }`}
-                    />
-                  )}
-                </button>
-              </CollapsibleTrigger>
-
-              {state.messages.length > 0 && (
-                <CollapsibleContent>
-                  <div className="rounded-b-md border border-t-0 bg-muted/20 px-4 py-3 space-y-1">
-                    {state.messages.map((msg, i) => (
-                      <p key={i} className="text-xs text-muted-foreground font-mono">
-                        {msg}
-                      </p>
-                    ))}
+      {/* Progress Accordion */}
+      {(running || result) && (
+        <Card>
+          <CardHeader><CardTitle>Progress</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {steps.map((step, i) => (
+              <Collapsible key={step.name}
+                open={step.status === 'running' || step.status === 'failed'}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-gray-50 hover:bg-gray-100">
+                  <div className="flex items-center gap-3">
+                    <StatusIcon status={step.status} />
+                    <span className="font-medium">Step {i + 1}: {step.label}</span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    {step.ms != null && <span className="text-sm text-gray-500">{step.ms}ms</span>}
+                    <ChevronDown className="h-4 w-4" />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-3 pl-10 text-sm">
+                  {step.status === 'running' && <span className="text-blue-600">Executing...</span>}
+                  {step.status === 'failed' && <span className="text-red-600 break-all">{step.error}</span>}
+                  {step.status === 'done' && <span className="text-green-600">Completed in {step.ms}ms</span>}
                 </CollapsibleContent>
-              )}
-            </Collapsible>
-          );
-        })}
-      </div>
+              </Collapsible>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Result card */}
+      {/* Result */}
       {result && (
-        <Card
-          className={
-            result.success
-              ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
-              : 'border-red-500 bg-red-50 dark:bg-red-950/20'
-          }
-        >
-          <CardContent className="flex items-start gap-3 pt-4">
-            {result.success ? (
-              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+        <Card className={result.status === 'success' || result.result === 'success' ? 'border-green-500' : 'border-red-500'}>
+          <CardContent className="p-4">
+            {result.status === 'success' ? (
+              <div className="text-green-700 space-y-2">
+                <p className="font-bold">Environment created ({result.totalMs}ms)</p>
+                <Button onClick={() => { setView('list'); setResult(null); }}>
+                  <LogIn className="h-4 w-4 mr-1" /> Go to Environments
+                </Button>
+              </div>
             ) : (
-              <XCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+              <div className="text-red-700">
+                <p className="font-bold">Creation failed</p>
+                <p className="text-sm">{result.error}</p>
+                {result.rolledBack && <p className="text-sm mt-1">All changes have been rolled back.</p>}
+              </div>
             )}
-            <div className="space-y-1">
-              <p className="font-medium text-sm">
-                {result.success ? 'Setup completed successfully' : 'Setup failed'}
-              </p>
-              <p className="text-sm text-muted-foreground">{result.message}</p>
-              {!result.success && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  All changes have been rolled back. You can fix the configuration and try again.
-                </p>
-              )}
-            </div>
           </CardContent>
         </Card>
       )}
