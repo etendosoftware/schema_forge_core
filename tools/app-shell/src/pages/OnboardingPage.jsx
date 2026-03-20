@@ -353,10 +353,14 @@ export default function OnboardingPage() {
                 </Button>
               </div>
             ) : (
-              <div className="text-red-700">
+              <div className="text-red-700 space-y-2">
                 <p className="font-bold">Creation failed</p>
                 <p className="text-sm">{result.error}</p>
                 {result.rolledBack && <p className="text-sm mt-1">All changes have been rolled back.</p>}
+                <Button variant="outline" size="sm" onClick={() => {
+                  setResult(null);
+                  setSteps(STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null })));
+                }}>Try Again</Button>
               </div>
             )}
           </CardContent>
