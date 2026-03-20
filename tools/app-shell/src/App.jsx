@@ -15,6 +15,7 @@ import ReportsPage from './pages/ReportsPage.jsx';
 import CrmPage from './pages/CrmPage.jsx';
 import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
+import ReportViewerPage from './pages/ReportViewerPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
@@ -130,6 +131,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="report-viewer" element={<ReportViewerPage />} />
         <Route path="crm" element={<CrmPage />} />
         <Route path="hr" element={<HrPage />} />
         <Route path="projects" element={<ProjectsPage />} />

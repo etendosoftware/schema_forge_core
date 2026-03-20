@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
 
 # --- Testing ---
 
@@ -64,6 +64,20 @@ deploy: build ## Build app-shell and deploy to Etendo module web dir
 	@mkdir -p $(MODULE_WEB)
 	@cp -r tools/app-shell/dist/* $(MODULE_WEB)/
 	@echo "Deployed to $(MODULE_WEB)"
+
+# --- Report Server ---
+
+report-serve: ## Start jsreport Docker container
+	docker compose -f docker/jsreport/docker-compose.yml up
+
+report-serve-detach: ## Start jsreport in background
+	docker compose -f docker/jsreport/docker-compose.yml up -d
+
+report-stop: ## Stop jsreport Docker container
+	docker compose -f docker/jsreport/docker-compose.yml down
+
+report-preview: ## Preview Business Partner listing report
+	node cli/src/report-preview.js --artifact business-partner --report listing
 
 # --- Cleanup ---
 

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "reportId": "business-partner-listing",
+  "type": "listing",
+  "entity": "business-partner",
+  "title": {
+    "en_US": "Business Partner",
+    "es_ES": "Business Partner"
+  },
+  "columns": [
+    {
+      "field": "name",
+      "label": {
+        "en_US": "Name",
+        "es_ES": "Name"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "searchKey",
+      "label": {
+        "en_US": "Search Key",
+        "es_ES": "Search Key"
+      },
+      "type": "string",
+      "width": "auto",
+      "sortable": true
+    },
+    {
+      "field": "isActive",
+      "label": {
+        "en_US": "Is Active",
+        "es_ES": "Is Active"
+      },
+      "type": "boolean",
+      "width": "8%",
+      "sortable": true
+    }
+  ],
+  "filters": [
+    {
+      "field": "name",
+      "label": {
+        "en_US": "Name",
+        "es_ES": "Name"
+      },
+      "type": "text"
+    },
+    {
+      "field": "searchKey",
+      "label": {
+        "en_US": "Search Key",
+        "es_ES": "Search Key"
+      },
+      "type": "text"
+    },
+    {
+      "field": "isActive",
+      "label": {
+        "en_US": "Is Active",
+        "es_ES": "Is Active"
+      },
+      "type": "boolean"
+    }
+  ],
+  "defaultSort": {
+    "field": "name",
+    "direction": "asc"
+  },
+  "outputs": [
+    "pdf"
+  ],
+  "summary": {
+    "totalRows": true
+  }
+}
