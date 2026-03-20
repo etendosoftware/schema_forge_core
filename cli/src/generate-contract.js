@@ -247,9 +247,10 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     let curatedEntity = p.entity;
     if (!curatedEntityNames.has(curatedEntity)) {
       // Process entity might be a tableName-based key — look up by tableName
-      const fromTable = tableNameToEntityName.get(
-        (p.entity || '').replace(/^c|^m|^ad/i, '').toLowerCase()
-      ) || tableNameToEntityName.get((p.entity || '').toLowerCase());
+      // Strip known OBDal prefixes (c, m, ad) only when followed by uppercase
+      const stripped = (p.entity || '').replace(/^(c|m|ad)(?=[A-Z])/, '');
+      const fromTable = tableNameToEntityName.get(stripped.toLowerCase())
+        || tableNameToEntityName.get((p.entity || '').toLowerCase());
       curatedEntity = fromTable || autoSimplifyEntityName(p.entity);
     }
     return {

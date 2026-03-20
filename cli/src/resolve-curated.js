@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
 import { toCamelCase } from './utils.js';
-import { migrateDecisions, needsMigration, getVersion, CURRENT_VERSION } from './migrations/index.js';
+import { migrateDecisions, needsMigration, getVersion } from './migrations/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

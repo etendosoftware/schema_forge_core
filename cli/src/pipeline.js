@@ -349,7 +349,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             const { needsMigration: needsMig, getVersion: getVer, migrateDecisions: migDec } = await import('./migrations/index.js');
             if (needsMig(decisions)) {
               const fromV = getVer(decisions);
-              const result = migDec(decisions);
+              const result = migDec(decisions, { schemaRaw });
               decisions = result.decisions;
               const { writeFile } = await import('node:fs/promises');
               await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
