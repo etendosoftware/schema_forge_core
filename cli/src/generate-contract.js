@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
+import { autoSimplifyEntityName } from './resolve-curated.js';
 
 const TS_TYPE_MAP = {
   string: 'string',
@@ -221,16 +222,25 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     );
   }
 
+  // Build a set of known curated entity names for validation
+  const curatedEntityNames = new Set(schema.entities.map(e => e.name));
+
   const processEndpoints = processes.map(p => {
     const columnName = p.trigger?.field ?? null;
     const params = p.params ?? (p.trigger
       ? [{ key: p.trigger.field, value: p.trigger.value, hidden: true }]
       : []);
+    // Map process entity name (raw OBDal name like "cOrder") to the curated
+    // entity name used by the frontend (e.g. "order") so that
+    // getProcessesForEntity() can match them correctly.
+    const curatedEntity = curatedEntityNames.has(p.entity)
+      ? p.entity
+      : autoSimplifyEntityName(p.entity);
     return {
       name: p.name,
       method: 'POST',
-      path: columnName ? `/${p.entity}/:id/action/${columnName}` : `/process/${p.name}`,
-      entity: p.entity,
+      path: columnName ? `/${curatedEntity}/:id/action/${columnName}` : `/process/${p.name}`,
+      entity: curatedEntity,
       columnName,
       params,
       preconditions: p.preconditions ?? [],

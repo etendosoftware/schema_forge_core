@@ -1,0 +1,47 @@
+name,validation_code,tab_name,ad_tab_id
+DOCBASETYPE,"@SQL=select coalesce(max(docbasetype), 'ARI') from c_doctype where c_doctype_id = @c_doctypetarget_id@",Header,263
+HAS_C_INVOICELINES,@SQL=select 'Y' from dual where exists (select 1 from c_invoiceline where c_invoice_id = @C_INVOICE_ID@),Header,263
+IsReversalDocument,"@SQL=select isreversal
+from c_doctype where c_doctype_id = @c_doctypetarget_id@",Header,263
+PromotionsDefined,@SQL=select case when count(*) = 0 then 'N' else 'Y' end from m_offer where isactive='Y' and ad_client_id = @AD_Client_ID@,Header,263
+showAddPayment,"@SQL=select case when sum(fpsd.amount)=ci.GrandTotal then 'N' else 'Y' end 
+          from fin_payment_scheduledetail fpsd
+              join fin_payment_detail fpd on fpsd.fin_payment_detail_id=fpd.fin_payment_detail_id
+              join fin_payment fp on fpd.fin_payment_id=fp.fin_payment_id
+              join fin_payment_schedule ps ON ps.fin_payment_schedule_id = fpsd.fin_payment_schedule_invoice
+              join c_invoice ci on ci.c_invoice_id=ps.c_invoice_id
+                WHERE ps.c_invoice_id =@c_invoice_id@
+                and to_number(aprm_seqnumberpaymentstatus(fp.status)) >= 40
+                group by ci.GrandTotal",Header,263
+VoidAutomaticallyCreated,@SQL=SELECT COUNT(*) FROM C_INVOICE_REVERSE WHERE C_INVOICE_ID=@C_INVOICE_ID@,Header,263
+ATTRIBUTESET,@SQL=SELECT M_ATTRIBUTESET_ID FROM M_PRODUCT WHERE M_PRODUCT_ID=@M_Product_ID@,Lines,270
+ATTRSETVALUETYPE,@SQL=SELECT ATTRSETVALUETYPE FROM M_PRODUCT WHERE M_PRODUCT_ID=@M_Product_ID@,Lines,270
+C_BPARTNER_ID,@C_BPARTNER_ID@,Lines,270
+DOCBASETYPE,"@SQL=select coalesce(max(dt.docbasetype), 'ARI') from c_invoice inv join c_doctype dt on (inv.c_doctypetarget_id = dt.c_doctype_id)
+where inv.c_invoice_id = @c_invoice_id@",Lines,270
+GROSSPRICE,@SQL=SELECT istaxincluded from m_pricelist where m_pricelist_id = @M_PRICELIST_ID@,Lines,270
+HASSECONDUOM,@SQL=SELECT (CASE COUNT(*) WHEN 0 THEN 0 ELSE 1 END) AS TOTAL FROM M_PRODUCT_UOM WHERE M_PRODUCT_ID=@M_Product_ID@ AND ISACTIVE='Y',Lines,270
+isBOM,@SQL=SELECT isBOM FROM M_PRODUCT WHERE M_PRODUCT_ID = @M_PRODUCT_ID@,Lines,270
+IsStocked,@SQL=SELECT IsStocked FROM M_PRODUCT WHERE M_PRODUCT_ID = @M_PRODUCT_ID@,Lines,270
+Parent_AD_Org,"@SQL= SELECT AD_ORG_ID
+FROM C_INVOICE
+WHERE C_INVOICE_ID = @C_INVOICE_ID@",Lines,270
+Posted,@SQL=SELECT POSTED FROM C_INVOICE WHERE C_INVOICE_ID = @C_INVOICE_ID@,Lines,270
+Processed,@SQL=SELECT PROCESSED FROM C_INVOICE WHERE C_INVOICE_ID = @C_INVOICE_ID@,Lines,270
+UsesAlternate,"@SQL=SELECT CASE WHEN COUNT(C_TAX_ID)>0 THEN 'Y' ELSE 'N' END AS ISUSED FROM C_TAX WHERE C_TAX_ISMEMBER(@C_TAX_ID@, C_TAX_ID)=1 AND BASEAMOUNT IN ('TBA', 'TBATAX')",Lines,270
+GROSSPRICE,@SQL=SELECT istaxincluded from m_pricelist where m_pricelist_id = @M_PRICELIST_ID@,Discounts and Promotions,800223
+DOCBASETYPE,"@SQL=select coalesce(max(dt.docbasetype), 'ARI') from c_invoiceline_acctdimension ilacct 
+                           join c_invoiceline il on (ilacct.c_invoiceline_id=il.c_invoiceline_id)
+                           join c_invoice inv on (il.c_invoice_id=inv.c_invoice_id)
+                           join c_doctype dt on (inv.c_doctypetarget_id = dt.c_doctype_id)
+			 where inv.c_invoice_id = @c_invoice_id@",Accounting dimension,22B201B931E540EDA0B6630B50E3B8D3
+Processed,@SQL=SELECT PROCESSED FROM C_INVOICE WHERE C_INVOICE_ID = @C_INVOICE_ID@,Tax,271
+Processed,@SQL=SELECT PROCESSED FROM C_INVOICE WHERE C_INVOICE_ID = @C_INVOICE_ID@,Basic Discounts,800059
+IsReceipt,Y,Payment Details,F6C2283A21314407BBBB23FF14B85ED4
+Processed,@SQL=SELECT PROCESSED FROM C_INVOICE WHERE C_INVOICE_ID = @C_INVOICE_ID@,Reversed Invoices,28D602B576DF417AB289B4EC94BE2C17
+HASREVERSEDINVOICESO,"@SQL=SELECT 'Y' 
+FROM DUAL 
+WHERE EXISTS (SELECT 1 FROM C_INVOICE_REVERSE WHERE C_INVOICE_ID = @C_Invoice_ID@ )
+AND EXISTS (SELECT 1 FROM C_CONVERSION_RATE_DOCUMENT WHERE C_INVOICE_ID = (SELECT REVERSED_C_INVOICE_ID
+                                                                               FROM C_INVOICE_REVERSE
+                                                                               WHERE C_INVOICE_ID = @C_Invoice_ID@) )",Exchange rates,FF808181308EA4230130901D313D00A5

@@ -1,0 +1,133 @@
+name,displaylogic,displaylogic_server,displaylogicgrid,readonlylogic,columnname
+Client,,,,@Processed@='Y',AD_Client_ID
+Organization,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',AD_Org_ID
+User/Contact,,,,@Processed@='Y',AD_User_ID
+Business Partner,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y' | @HAS_C_INVOICELINES@='Y',C_BPartner_ID
+Partner Address,,,,@Processed@='Y',C_BPartner_Location_ID
+Sales Campaign,@$Element_MC@='Y',,,@Posted@='Y',C_Campaign_ID
+Payment Terms,,,,@Processed@='Y',C_PaymentTerm_ID
+Project,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Project_ID
+Accounting Date,,,,@Posted@='Y',DateAcct
+Process Invoice,@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='',,,,DocAction
+Document No.,,,,@Processed@='Y',DocumentNo
+Charge,,,,@Processed@='Y',C_Charge_ID
+Transaction Document,,,,@Processed@='Y',C_DocTypeTarget_ID
+Charge Amount,,,,@Processed@='Y',ChargeAmt
+Invoice Date,,,,@Posted@='Y' | (@Processed@='Y' & (@DocStatus@!'VO')),DateInvoiced
+Price List,,,,@Processed@='Y',M_PriceList_ID
+Posted,@Processed@='Y' & @#ShowAcct@='Y',,,,Posted
+Copy Lines,@Processed@='N',,,,CopyFrom
+1st Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User1_ID
+2nd Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User2_ID
+Withholding,@FinancialManagement@='',,,,C_Withholding_ID
+Withholdingamount,@FinancialManagement@='',,,,Withholdingamount
+Amount Currently Due,@Processed@='Y' & @Ispaid@='N',,,,DueAmt
+CRM Reference,@BPartner_ExtRef@!'',,,,BPartner_ExtRef
+Payment Complete,@Processed@='Y',,,,Ispaid
+Paid Amount at Invoicing,@Iscashvat@='Y',,,,Paidamtatinvoicing
+Last Calculated on Date,@Processed@='Y',,,,LastCalculatedOnDate
+Total Paid,@Processed@='Y' & @Ispaid@='N',,,,Totalpaid
+Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
+Create Lines From Order,@Processed@='N' & @IsReversalDocument@='N',,,,Createfromorders
+Create Lines From Shipment,@Processed@='N' & @IsReversalDocument@='N',,,,Createfrominouts
+Total Outstanding,@Processed@='Y' & @Ispaid@='N',,,,OutstandingAmt
+Paid in Full Date,@Processed@='Y' & @Ispaid@='Y',,,,Finalsettlement
+Days to Pay in Full,@Processed@='Y' & @Ispaid@='Y',,,,Daysoutstanding
+Percentage Paid Late,@Processed@='Y' & @Totalpaid@!0 & @Percentageoverdue@!0,,,,Percentageoverdue
+Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+Calculate Promotions,@DocStatus@='DR' & @PromotionsDefined@='Y',,,,Calculate_Promotions
+Days Till Next Due,@Processed@='Y' & @Ispaid@='N',,,,DaysTillDue
+Payment Method,,,,@Processed@='Y',FIN_Paymentmethod_ID
+Process Invoices,@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='Y',,,,EM_APRM_Processinvoice
+Add Payment,@Processed@='Y'&@IsPaid@='N'& (@showAddPayment@='Y' | @showAddPayment@ =''),,,,EM_APRM_Addpayment
+Activity,@$Element_AY@='Y',,,@Posted@='Y',C_Activity_ID
+Trx Organization,@$Element_OT@='Y',,,@Processed@='Y',AD_OrgTrx_ID
+Charge,,,,@Processed@='Y',C_Charge_ID
+Client,,,,@Processed@='Y',AD_Client_ID
+Organization,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',AD_Org_ID
+Tax,,,,@Processed@='Y',C_Tax_ID
+UOM,,,,@Processed@='Y' | (@UomManagement@='Y' & @Financial_Invoice_Line@='N'),C_UOM_ID
+Charge Amount,@HasCharge@='Y',,,@Processed@='Y',ChargeAmt
+Line No.,,,,@Processed@='Y',Line
+Line Net Amount,,,,@Iseditlinenetamt@='N' | @Processed@='Y',LineNetAmt
+Product,@Financial_Invoice_Line@='N',,,@Processed@='Y',M_Product_ID
+Net Unit Price,,,,@Processed@='Y'|@GROSSPRICE@='Y',PriceActual
+List Price,@GROSSPRICE@='N',,,@Processed@='Y',PriceList
+Invoiced Quantity,,,,@Processed@='Y' | (@UomManagement@='Y' & @Financial_Invoice_Line@='N'),QtyInvoiced
+Price Limit,,,,@Processed@='Y',PriceLimit
+Attribute Set Value,(@ATTRIBUTESET@!''&@ATTRSETVALUETYPE@!'F')|(@M_AttributeSetInstance_ID@!''&@M_AttributeSetInstance_ID@!'0'),,,@Processed@='Y',M_AttributeSetInstance_ID
+Order UOM,(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!''),,,@Processed@='Y',M_Product_Uom_Id
+Order Quantity,(@HASSECONDUOM@=1 & @UomManagement@!'Y')  | (@UomManagement@='Y' & @M_Product_Uom_Id@!''),,,@Processed@='Y',QuantityOrder
+Base Net Unit Price,@GROSSPRICE@='N',,,,PriceStd
+Deferred Revenue,@M_PRODUCT_ID@!'',,,@Posted@='Y',IsDeferred
+Alternative UOM,@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N',@UomManagement@='Y',,@Processed@='Y',C_Aum
+Line Gross Amount,@GROSSPRICE@='Y',,,,Line_Gross_Amount
+Project,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Project_ID
+Base Gross Unit Price,@GROSSPRICE@='Y',,,,grosspricestd
+Financial Invoice Line,,,,@Processed@='Y',Financial_Invoice_Line
+Gross Unit Price,@GROSSPRICE@='Y',,,@Processed@='Y'|@GROSSPRICE@='N',Gross_Unit_Price
+Account,@Financial_Invoice_Line@='Y',,,@Processed@='Y',Account_ID
+Revenue Plan Type,@isdeferred@='Y',,,@Posted@='Y',DefPlanType
+Cancel Discounts and Promotions,@IsStocked@ = 'Y',,,,CANCELPRICEAD
+Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
+2nd Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User2_ID
+Alternate Taxable Amount,@UsesAlternate@='Y',,,@Processed@='Y',Taxbaseamt
+Operative Quantity,@M_Product_Uom_Id@='' & @Financial_Invoice_Line@='N',@UomManagement@='Y',,@Processed@='Y',Aumqty
+Business Partner,@ACCT_DIMENSION_DISPLAY@,,,@Processed@='Y',C_Bpartner_ID
+Period Number,@isdeferred@='Y',,,@Posted@='Y',Periodnumber
+Starting Period,@isdeferred@='Y',,,@Posted@='Y',C_Period_ID
+Gross List Price,@GROSSPRICE@='Y',,,@Processed@='Y',Grosspricelist
+Explode,@IsStocked@='N' & @isBOM@='Y' & @explode@!'Y' & @Processed@='N',,,,Explode
+1st Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User1_ID
+Edit Line Net Amount,,,,@Processed@='Y',Iseditlinenetamt
+Client,,,,@Processed@='Y',AD_Client_ID
+Organization,,,,@Processed@='Y',AD_Org_ID
+Tax,,,,@Processed@='Y' | @Recalculate@='Y',C_Tax_ID
+Tax Amount,,,,@Processed@='Y' | @Recalculate@='Y',TaxAmt
+Taxable Amount,,,,@Processed@='Y' | @Recalculate@='Y',TaxBaseAmt
+Currency,,,,@IsValid@='Y',C_Currency_ID
+Amount,,,,@IsValid@='Y',Amount
+Manual,,,,@IsValid@='Y',IsManual
+Organization,,,,@Processed@='Y',AD_Org_ID
+Active,,,,@Processed@='Y',IsActive
+Basic Discount,,,,@Processed@='Y',C_Discount_ID
+Line No.,,,,@Processed@='Y',Line
+Base Net Unit Price,@GROSSPRICE@='N',,,,Priceoffer
+Base Gross Unit Price,@GROSSPRICE@='Y',,,,Priceoffergross
+Product,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',M_Product_ID
+Business Partner,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Bpartner_ID
+Amount,,,,@Posted@='Y',Amt
+2nd Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User2_ID
+Project,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Project_ID
+Activity,@$Element_AY@='Y',,,@Posted@='Y',C_Activity_ID
+Sales Campaign,@$Element_MC@='Y',,,@Posted@='Y',C_Campaign_ID
+Active,,,,@Posted@='Y',IsActive
+1st Dimension,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',User1_ID
+Cost Center,@ACCT_DIMENSION_DISPLAY@,,,@Posted@='Y',C_Costcenter_ID
+Organization,@ACCT_DIMENSION_DISPLAY@,,,,AD_Org_ID
+Asset,@$Element_AS@='Y',,,@Posted@='Y',A_Asset_ID
+Active,,,,@Processed@='Y',Isactive
+Reversed Invoice,,,,@Processed@='Y',Reversed_C_Invoice_ID
+To Currency,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',C_Currency_Id_To
+Invoice,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',C_Invoice_ID
+C_Conversion_Rate_Document_ID,,,,@Posted@='Y',C_Conversion_Rate_Document_ID
+Currency,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',C_Currency_ID
+Active,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',Isactive
+Client,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',AD_Client_ID
+Financial Account Transaction,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',aprm_finacc_transaction_v_id
+Organization,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',AD_Org_ID
+Foreign  Amount,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',Foreign_Amount
+Rate,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',Rate
+Payment,,,,@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y',FIN_Payment_ID
+Modify Payment Plan,@DocStatus@='CO'&@IsPaid@='N',,,,EM_Aprm_Modif_Paym_Sched
+Modify Payment Plan,@DocStatus@='CO'&@IsPaid@='N',,,,EM_Aprm_Modif_Paym_Sched
+Payment Method,,,,@Processed@='Y' & @status@!'RPAE',Fin_Paymentmethod_ID
+Payment Date,,,,@Processed@='Y' & @status@!'RPAE',Paymentdate
+Invoice Paid,@InvoicePaidStatus@='Y',,,,Isinvoicepaid
+Financial Account,,,,@Processed@='Y' & @status@!'RPAE',Fin_Financial_Account_ID
+Document No.,,,,@Processed@='Y',DocumentNo
+Expected (Account Currency),@C_Currency_ID@!@FinAcc_Currency_ID@,,,,ExpectedConverted
+Received (Account Currency),@C_Currency_ID@!@FinAcc_Currency_ID@,,,,PaidConverted
+Exchange Rate,@C_Currency_ID@!@FinAcc_Currency_ID@,,,,Finacc_Txn_Convert_Rate
+Payment No.,false,,,,Paymentno

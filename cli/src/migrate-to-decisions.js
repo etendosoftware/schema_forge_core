@@ -261,21 +261,17 @@ function migrateRules(rulesCurated, rulesRaw) {
       continue;
     }
 
-    // Callout rule: compare to auto-classify
-    const autoDecision = getAutoDecision(rawRule);
-    const hasDecisionOverride = curatedRule.decision && curatedRule.decision !== autoDecision;
-    const hasDescription = Boolean(curatedRule.description);
-    const hasEntity = Boolean(curatedRule.entity);
-
-    if (hasDecisionOverride || hasDescription || hasEntity) {
+    // Callout rule: always store to preserve the complete list.
+    // Previously we skipped callout rules matching auto-classify, but that caused
+    // resolveRules() to treat the partial list as complete and lose unstored rules.
+    {
       const entry = {};
-      if (hasEntity) entry.entity = curatedRule.entity;
-      if (hasDecisionOverride) entry.decision = curatedRule.decision;
-      if (hasDescription) entry.description = curatedRule.description;
+      if (curatedRule.entity) entry.entity = curatedRule.entity;
+      if (curatedRule.decision) entry.decision = curatedRule.decision;
+      if (curatedRule.description) entry.description = curatedRule.description;
       if (curatedRule.impactIfOmitted) entry.impactIfOmitted = curatedRule.impactIfOmitted;
       rulesDecisions[curatedRule.name] = entry;
     }
-    // If no overrides needed, skip — auto-classify will reproduce it
   }
 
   return rulesDecisions;
@@ -469,6 +465,18 @@ async function migrate(windowName, dryRun) {
 
     if (Object.keys(entityEntry).length > 0) {
       entityDecisions[rawEntityName] = entityEntry;
+    }
+  }
+
+  // Step 2b: Mark raw entities not present in curated as excluded
+  for (const rawEntity of (schemaRaw.entities || [])) {
+    const rawEntityName = rawEntity.name;
+    const hasCuratedMatch = (schemaCurated.entities || []).some(
+      ce => findRawEntityForCurated([rawEntity], ce) === rawEntity
+    );
+    if (!hasCuratedMatch) {
+      if (!entityDecisions[rawEntityName]) entityDecisions[rawEntityName] = {};
+      entityDecisions[rawEntityName].exclude = true;
     }
   }
 

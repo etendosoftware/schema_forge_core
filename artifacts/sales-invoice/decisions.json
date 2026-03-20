@@ -1,0 +1,260 @@
+{
+  "$schema": "decisions-v1",
+  "window": {
+    "category": "sales",
+    "name": "Sales Invoice"
+  },
+  "entities": {
+    "cInvoice": {
+      "fields": {
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "partnerAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "businessPartnerId"
+          },
+          "readOnlyLogic": null
+        },
+        "invoiceDate": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "accountingDate": {
+          "readOnlyLogic": null
+        },
+        "paymentTerms": {
+          "readOnlyLogic": null
+        },
+        "paymentMethod": {
+          "reference": "PaymentMethod",
+          "readOnlyLogic": null
+        },
+        "priceList": {
+          "readOnlyLogic": null
+        },
+        "currency": {
+          "visibility": "editable",
+          "grid": true,
+          "reference": "Currency",
+          "inputMode": "selector"
+        },
+        "orderReference": {
+          "searchable": true
+        },
+        "active": {
+          "visibility": "discarded",
+          "form": true,
+          "name": "isActive"
+        },
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "documentStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true
+        },
+        "grandTotalAmount": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "summedLineAmount": {
+          "visibility": "readOnly"
+        },
+        "isPaid": {
+          "visibility": "discarded",
+          "grid": true,
+          "form": true
+        },
+        "client": {
+          "name": "adClientId"
+        },
+        "organization": {
+          "name": "adOrgId"
+        },
+        "transactionDocument": {
+          "name": "cDocTypeTargetId"
+        },
+        "documentType": {
+          "name": "cDocTypeId"
+        },
+        "salesTransaction": {
+          "name": "isSotrx"
+        },
+        "paymentRule": {
+          "visibility": "system"
+        },
+        "creationDate": {
+          "name": "created"
+        },
+        "updated": {
+          "visibility": "system"
+        }
+      }
+    },
+    "cInvoiceLine": {
+      "fields": {
+        "product": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "invoicedQuantity": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "unitPrice": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "listPrice": {
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "tax": {
+          "grid": true,
+          "inputMode": "selector",
+          "readOnlyLogic": null
+        },
+        "discount": {
+          "visibility": "discarded"
+        },
+        "lineNo": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "lineNetAmount": {
+          "visibility": "readOnly",
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "uOM": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "taxAmount": {
+          "visibility": "discarded"
+        },
+        "client": {
+          "name": "adClientId"
+        },
+        "organization": {
+          "name": "adOrgId"
+        },
+        "invoice": {
+          "name": "cInvoiceId"
+        },
+        "dateInvoiced": {
+          "visibility": "system"
+        },
+        "cCurrencyId": {
+          "visibility": "system"
+        },
+        "cBpartnerId": {
+          "visibility": "system"
+        },
+        "salesOrderLine": {
+          "visibility": "system",
+          "reference": null,
+          "inputMode": null,
+          "name": "cOrderlineId"
+        },
+        "goodsShipmentLine": {
+          "visibility": "system",
+          "reference": null,
+          "inputMode": null,
+          "name": "mInoutlineId"
+        }
+      }
+    },
+    "cInvoiceLineTax": {
+      "exclude": true
+    },
+    "cInvoiceTax": {
+      "exclude": true
+    },
+    "cInvoiceDiscount": {
+      "exclude": true
+    },
+    "finPaymentSchedule": {
+      "exclude": true
+    },
+    "finPaymentScheduleDetail": {
+      "exclude": true
+    },
+    "cInvoiceReverse": {
+      "exclude": true
+    },
+    "cConversionRateDocument": {
+      "exclude": true
+    },
+    "factAcct": {
+      "exclude": true
+    }
+  },
+  "rules": {
+    "BP_AutoFill_Address": {
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "When changing business partner, auto-fill partner address, payment terms, payment method and price list from customer defaults"
+    },
+    "Line_Recalc_Totals": {
+      "type": "eventHandler",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "After saving a line, recalculate header totals (TotalLines, GrandTotal) including taxes"
+    },
+    "Product_AutoFill_Price": {
+      "type": "callout",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "When selecting a product, auto-fill unit price, tax and UOM from the sales price list"
+    },
+    "Line_Calc_NetAmount": {
+      "type": "callout",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "Recalculate line net amount and tax amount when quantity, price or discount changes"
+    },
+    "ReadOnly_When_Processed": {
+      "type": "displayLogic",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Lock all editable fields when invoice status is Completed or Voided"
+    },
+    "Match_SO_Shipment": {
+      "type": "eventHandler",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "When a line references a sales order line or shipment line (C_OrderLine_ID, M_InOutLine_ID), validate quantity does not exceed outstanding amount from the linked document"
+    },
+    "DateAcct_Default": {
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "When dateInvoiced changes, auto-fill dateAcct with the same value unless manually overridden"
+    },
+    "Currency_From_PriceList": {
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "When price list changes, auto-fill currency from the selected price list"
+    }
+  },
+  "discardPatterns": []
+}

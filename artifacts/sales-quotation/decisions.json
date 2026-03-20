@@ -1,0 +1,261 @@
+{
+  "$schema": "decisions-v1",
+  "window": {
+    "category": "sales",
+    "name": "Sales Quotation"
+  },
+  "entities": {
+    "cOrder": {
+      "name": "quotation",
+      "fields": {
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "partnerAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "businessPartnerId"
+          },
+          "readOnlyLogic": null
+        },
+        "orderDate": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "scheduledDeliveryDate": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "priceList": {
+          "readOnlyLogic": null
+        },
+        "paymentTerms": {
+          "readOnlyLogic": null
+        },
+        "paymentMethod": {
+          "reference": "PaymentMethod",
+          "readOnlyLogic": null
+        },
+        "invoiceAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "businessPartnerId"
+          },
+          "readOnlyLogic": null
+        },
+        "salesRepresentative": {
+          "visibility": "editable",
+          "grid": true,
+          "reference": "User",
+          "inputMode": "search"
+        },
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "documentStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true
+        },
+        "grandTotalAmount": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "summedLineAmount": {
+          "visibility": "readOnly"
+        },
+        "currency": {
+          "visibility": "readOnly",
+          "reference": null,
+          "inputMode": null
+        },
+        "client": {
+          "name": "adClientId"
+        },
+        "organization": {
+          "name": "adOrgId"
+        },
+        "transactionDocument": {
+          "name": "cDocTypeTargetId"
+        },
+        "documentType": {
+          "name": "cDocTypeId"
+        },
+        "salesTransaction": {
+          "name": "isSotrx"
+        },
+        "accountingDate": {
+          "name": "dateAcct"
+        },
+        "invoiceTerms": {
+          "name": "invoiceRule"
+        },
+        "deliveryTerms": {
+          "name": "deliveryRule"
+        },
+        "deliveryMethod": {
+          "name": "deliveryViaRule"
+        },
+        "priority": {
+          "name": "priorityRule"
+        },
+        "formOfPayment": {
+          "name": "paymentRule"
+        },
+        "created": {
+          "visibility": "system"
+        },
+        "updated": {
+          "visibility": "system"
+        }
+      }
+    },
+    "cOrderLine": {
+      "name": "quotationLine",
+      "fields": {
+        "product": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "orderedQuantity": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "unitPrice": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "tax": {
+          "grid": true,
+          "inputMode": "selector",
+          "readOnlyLogic": null
+        },
+        "discount": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "lineNo": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "lineNetAmount": {
+          "visibility": "readOnly",
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "uOM": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "client": {
+          "name": "adClientId"
+        },
+        "organization": {
+          "name": "adOrgId"
+        },
+        "salesOrder": {
+          "name": "cOrderId"
+        },
+        "orderDate": {
+          "visibility": "system",
+          "displayLogic": null,
+          "name": "dateOrdered"
+        },
+        "scheduledDeliveryDate": {
+          "visibility": "system",
+          "displayLogic": null,
+          "name": "datePromised"
+        },
+        "currency": {
+          "name": "cCurrencyId"
+        },
+        "businessPartner": {
+          "name": "cBpartnerId"
+        }
+      }
+    },
+    "cOrderLineTax": {
+      "exclude": true
+    },
+    "mReservationStock": {
+      "exclude": true
+    },
+    "cOrderDiscount": {
+      "exclude": true
+    },
+    "cOrderTax": {
+      "exclude": true
+    },
+    "finPaymentSchedOrdV": {
+      "exclude": true
+    },
+    "finPaymentDetailV": {
+      "exclude": true
+    }
+  },
+  "rules": {
+    "BP_AutoFill_Address": {
+      "type": "callout",
+      "entity": "quotation",
+      "decision": "Keep",
+      "description": "When changing business partner, auto-fill delivery address and price list"
+    },
+    "Line_Recalc_Totals": {
+      "type": "eventHandler",
+      "entity": "quotationLine",
+      "decision": "Keep",
+      "description": "After saving a line, recalculate header totals (TotalLines, GrandTotal)"
+    },
+    "Product_AutoFill_Price": {
+      "type": "callout",
+      "entity": "quotationLine",
+      "decision": "Keep",
+      "description": "When selecting a product, auto-fill unit price, tax and UOM from price list"
+    },
+    "Line_Calc_NetAmount": {
+      "type": "callout",
+      "entity": "quotationLine",
+      "decision": "Keep",
+      "description": "Recalculate line net amount when quantity, price or discount changes"
+    },
+    "ReadOnly_When_Processed": {
+      "type": "displayLogic",
+      "entity": "quotation",
+      "decision": "Keep",
+      "description": "Lock all editable fields when quotation status is Completed or Voided"
+    },
+    "ValidUntil_Default": {
+      "type": "callout",
+      "entity": "quotation",
+      "decision": "Keep",
+      "description": "Default validUntil to orderDate + 30 days when creating a new quotation"
+    },
+    "Convert_To_Order": {
+      "type": "process",
+      "entity": "quotation",
+      "decision": "Keep",
+      "description": "Process to convert an approved quotation into a Sales Order (copies header + lines, sets new doc type)"
+    },
+    "Delivery_Fields_Hidden": {
+      "type": "displayLogic",
+      "entity": "quotation",
+      "decision": "Omit",
+      "description": "Delivery-related fields (isDelivered, deliveryLocation, warehouse on header) are not relevant for quotations and are omitted from the schema"
+    }
+  },
+  "discardPatterns": []
+}

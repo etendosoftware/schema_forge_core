@@ -1,0 +1,24 @@
+name,validation_code,tab_name,ad_tab_id
+DOCBASETYPE,@SQL=select max(docbasetype) from c_doctype where c_doctype_id = @c_doctype_id@,Header,257
+HAS_M_INOUTLINES,@SQL=select 'Y' from dual where exists (select 1 from m_inoutline where m_inout_id = @M_INOUT_ID@),Header,257
+ISLOGISTICAUX,N,Header,257
+ATTRIBUTESET,@SQL=SELECT M_ATTRIBUTESET_ID FROM M_PRODUCT WHERE M_PRODUCT_ID=@M_Product_ID@,Lines,258
+ATTRSETVALUETYPE,@SQL=SELECT ATTRSETVALUETYPE FROM M_PRODUCT WHERE M_PRODUCT_ID=@M_Product_ID@,Lines,258
+C_BPARTNER_ID,@C_BPARTNER_ID@,Lines,258
+DOCBASETYPE,"@SQL=select max(dt.docbasetype) from m_inout io join c_doctype dt on (io.c_doctype_id = dt.c_doctype_id)
+where io.m_inout_id = @m_inout_id@",Lines,258
+HASSECONDUOM,@SQL=SELECT (CASE COUNT(*) WHEN 0 THEN 0 ELSE 1 END) AS TOTAL FROM M_PRODUCT_UOM WHERE M_PRODUCT_ID=@M_Product_ID@ AND ISACTIVE='Y',Lines,258
+isBOM,@SQL=SELECT isBOM FROM M_PRODUCT WHERE M_PRODUCT_ID = @M_PRODUCT_ID@,Lines,258
+IsStocked,@SQL=SELECT IsStocked FROM M_PRODUCT WHERE M_PRODUCT_ID = @M_PRODUCT_ID@,Lines,258
+M_Warehouse_ID,@SQL=SELECT M_Warehouse_ID FROM M_INOUT WHERE M_INOUT_ID = @M_INOUT_ID@,Lines,258
+OnHandLocatorDefault,@SQL=SELECT M_LOCATOR_ID FROM M_LOCATOR WHERE ISACTIVE='Y' AND M_WAREHOUSE_ID = (SELECT M_WAREHOUSE_ID FROM M_INOUT WHERE M_INOUT_ID = @M_INOUT_ID@) ORDER BY M_LOCATOR.ISDEFAULT DESC,Lines,258
+Parent_AD_Org,"@SQL= SELECT AD_ORG_ID
+FROM M_INOUT
+WHERE M_INOUT_ID = @M_INOUT_ID@",Lines,258
+Posted,@SQL=SELECT POSTED FROM M_INOUT WHERE M_INOUT_ID = @M_INOUT_ID@,Lines,258
+Processed,@SQL=SELECT PROCESSED FROM M_INOUT WHERE M_INOUT_ID = @M_INOUT_ID@,Lines,258
+DOCBASETYPE,"@SQL=select max(dt.docbasetype) from m_inoutline_acctdimension iolacct 
+                           join m_inoutline iol on (iolacct.m_inoutline_id=iol.m_inoutline_id)
+                           join m_inout io on (iol.m_inout_id=io.m_inout_id)
+                           join c_doctype dt on (io.c_doctype_id = dt.c_doctype_id)
+                           where io.m_inout_id = @m_inout_id@",Accounting dimension,17FC33D4711A4DD492A14A5D7626D5F7

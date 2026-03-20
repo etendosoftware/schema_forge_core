@@ -346,6 +346,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
     const rawEntityName = rawEntity.name;
     const entityDecision = entitiesDecisions[rawEntityName] || {};
 
+    // Skip entities explicitly excluded via decisions
+    if (entityDecision.exclude === true) continue;
+
     const simplifiedName = entityDecision.name || autoSimplifyEntityName(rawEntityName);
     const fieldsDecisions = entityDecision.fields || {};
 

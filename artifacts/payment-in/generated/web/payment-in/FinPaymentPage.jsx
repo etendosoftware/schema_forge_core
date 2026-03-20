@@ -1,6 +1,47 @@
-import FinPaymentPage from './FinPaymentPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import FinPaymentTable from './FinPaymentTable';
+import FinPaymentForm from './FinPaymentForm';
+import FinPaymentScheduleDetailTable from './FinPaymentScheduleDetailTable';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'general', name: 'Payment In' };
+const breadcrumb = 'General / Payment In';
+
+// @sf-generated-start summary:finPayment
+const summary = [
+
+];
+
+const statusField = null;
+// @sf-generated-end summary:finPayment
+
+// @sf-generated-start processes:finPayment
+const processes = [
+
+];
+// @sf-generated-end processes:finPayment
+
+// @sf-generated-start addLineFields:finPaymentScheduleDetail
+const addLineFields = {
+  entry: [
+    { key: 'orderPaymentSchedule', column: 'FIN_Payment_Schedule_Order', type: 'search', lookup: true, inputMode: 'search' },
+    { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', inputMode: 'search' },
+    { key: 'gLItem', column: 'C_Glitem_ID', type: 'search', inputMode: 'search' },
+    { key: 'canceled', column: 'Iscanceled', type: 'checkbox', required: true, inputMode: 'checkbox' },
+    { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', inputMode: 'search' },
+    { key: 'activity', column: 'C_Activity_ID', type: 'search', reference: 'Activity selector', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', inputMode: 'search' },
+    { key: 'salesCampaign', column: 'C_Campaign_ID', type: 'search', reference: 'Campaign selector', inputMode: 'search' },
+    { key: 'project', column: 'C_Project_ID', type: 'search', inputMode: 'search' },
+    { key: 'salesRegion', column: 'C_Salesregion_ID', type: 'search', reference: 'Sales region selector', inputMode: 'search' },
+    { key: 'stDimension', column: 'User1_ID', type: 'search', reference: 'User Dimension 1', inputMode: 'search' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'search', reference: 'User Dimension 2', inputMode: 'search' },
+  ],
+  derived: [
+    { key: 'amount', column: 'Amount', type: 'number', inputMode: 'number' },
+    { key: 'costCenter', column: 'C_Costcenter_ID', type: 'search', reference: 'Cost Center Selector', inputMode: 'search' },
+  ],
+};
+// @sf-generated-end addLineFields:finPaymentScheduleDetail
 
 const api = {
   "specName": "payment-in",
@@ -254,11 +295,43 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <FinPaymentPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:FinPaymentPage
+export default function FinPaymentPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:FinPaymentPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="finPayment"
+        detailEntity="finPaymentScheduleDetail"
+        Form={FinPaymentForm}
+        DetailTable={FinPaymentScheduleDetailTable}
+        summary={summary}
+        statusField={statusField}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Fin Payment"
+        detailLabel="Fin Payment Schedule Detail"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="finPayment"
+      Table={FinPaymentTable}
+      entityLabel="Fin Payments"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:FinPaymentPage
+
+// @sf-custom-slot section:FinPaymentPage-custom
