@@ -132,9 +132,13 @@ export default function OnboardingPage() {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (!done) {
-          buffer += decoder.decode(value, { stream: true });
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
         }
+        if (done) {
+          buffer += decoder.decode();
+        }
+
         const lines = buffer.split('\n');
         buffer = done ? '' : lines.pop();
 
@@ -143,7 +147,9 @@ export default function OnboardingPage() {
           const msg = JSON.parse(line);
           if (msg.result || msg.status === 'success') {
             setResult(msg);
-            if (msg.status === 'success' && msg.token) succeededToken = msg.token;
+            if (msg.status === 'success' && msg.token) {
+              succeededToken = msg.token;
+            }
           } else if (msg.step) {
             setSteps(prev => prev.map((s, i) =>
               i === msg.step - 1
