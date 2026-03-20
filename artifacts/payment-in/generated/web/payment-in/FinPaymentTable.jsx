@@ -1,5 +1,16 @@
 import { DataTable } from '@/components/contract-ui';
 
+const statusLabels = {
+  'RPAP': 'Awaiting Payment',
+  'RPAE': 'Awaiting Execution',
+  'RPVOID': 'Void',
+  'PPM': 'Payment Made',
+  'RPR': 'Payment Received',
+  'RDNC': 'Deposited not Cleared',
+  'PWNC': 'Withdrawn not Cleared',
+  'RPPC': 'Payment Cleared',
+};
+
 // @sf-generated-start columns:finPayment
 const columns = [
   { key: 'referenceNo', column: 'Referenceno', type: 'string' },
@@ -10,16 +21,7 @@ const columns = [
   { key: 'amount', column: 'Amount', type: 'amount' },
   { key: 'account', column: 'Fin_Financial_Account_ID', type: 'string' },
   { key: 'currency', column: 'C_Currency_ID', type: 'string' },
-  { key: 'financialTransactionAmount', column: 'Finacc_Txn_Amount', type: 'amount' },
-  { key: 'financialTransactionConvertRate', column: 'Finacc_Txn_Convert_Rate', type: 'string' },
-  { key: 'aPRMAddScheduledpayments', column: 'EM_Aprm_Add_Scheduledpayments', type: 'string' },
-  { key: 'aPRMProcessPayment', column: 'EM_APRM_Process_Payment', type: 'string' },
-  { key: 'aprmExecutepayment', column: 'EM_Aprm_Executepayment', type: 'string' },
-  { key: 'reversedPayment', column: 'FIN_Rev_Payment_ID', type: 'string' },
-  { key: 'project', column: 'C_Project_ID', type: 'string' },
-  { key: 'costCenter', column: 'C_Costcenter_ID', type: 'string' },
-  { key: 'stDimension', column: 'User1_ID', type: 'string' },
-  { key: 'ndDimension', column: 'User2_ID', type: 'string' },
+  { key: 'status', column: 'Status', type: 'enum', enumLabels: statusLabels },
 ];
 // @sf-generated-end columns:finPayment
 

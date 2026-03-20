@@ -18,7 +18,8 @@ const statusField = 'status';
 
 // @sf-generated-start processes:finPayment
 const processes = [
-
+  { name: 'paymentProcess', label: 'Payment Process', style: 'positive', params: [{"name":"action","label":"Action","type":"list","required":true,"options":[{"value":"P","label":"Process"},{"value":"RE","label":"Reactivate"},{"value":"R","label":"Reactivate and Delete Lines"},{"value":"V","label":"Void"}]}] },
+  { name: 'reversePayment', label: 'Reverse Payment', style: 'destructive', params: [{"name":"action","type":"hidden","defaultValue":"RV"},{"name":"paymentDate","label":"Payment Date","type":"date","required":true}] },
 ];
 // @sf-generated-end processes:finPayment
 
@@ -30,17 +31,9 @@ const addLineFields = {
     { key: 'gLItem', column: 'C_Glitem_ID', type: 'search', inputMode: 'search' },
     { key: 'canceled', column: 'Iscanceled', type: 'checkbox', required: true },
     { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', inputMode: 'search' },
-    { key: 'activity', column: 'C_Activity_ID', type: 'search', reference: 'Activity selector', inputMode: 'search' },
-    { key: 'product', column: 'M_Product_ID', type: 'search', inputMode: 'search' },
-    { key: 'salesCampaign', column: 'C_Campaign_ID', type: 'search', reference: 'Campaign selector', inputMode: 'search' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', inputMode: 'search' },
-    { key: 'salesRegion', column: 'C_Salesregion_ID', type: 'search', reference: 'Sales region selector', inputMode: 'search' },
-    { key: 'stDimension', column: 'User1_ID', type: 'search', reference: 'User Dimension 1', inputMode: 'search' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'search', reference: 'User Dimension 2', inputMode: 'search' },
   ],
   derived: [
     { key: 'amount', column: 'Amount', type: 'number' },
-    { key: 'costCenter', column: 'C_Costcenter_ID', type: 'search', reference: 'Cost Center Selector', inputMode: 'search' },
   ],
 };
 // @sf-generated-end addLineFields:finPaymentScheduleDetail
@@ -90,19 +83,8 @@ const api = {
       "detailUrl": "/sws/neo/payment-in/finPaymentScheduleDetail/{id}",
       "supportedFilters": [
         "amount",
-        "orderPaymentSchedule",
-        "invoicePaymentSchedule",
-        "gLItem",
         "canceled",
-        "businessPartner",
-        "activity",
-        "product",
-        "salesCampaign",
-        "project",
-        "salesRegion",
-        "costCenter",
-        "stDimension",
-        "ndDimension"
+        "businessPartner"
       ]
     }
   },
@@ -201,68 +183,6 @@ const api = {
       "column": "C_Bpartner_ID",
       "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/businessPartner"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "activity",
-      "column": "C_Activity_ID",
-      "reference": "Activity selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/activity"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "product",
-      "column": "M_Product_ID",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/product"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "salesCampaign",
-      "column": "C_Campaign_ID",
-      "reference": "Campaign selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/salesCampaign"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "project",
-      "column": "C_Project_ID",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/project"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "salesRegion",
-      "column": "C_Salesregion_ID",
-      "reference": "Sales region selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/salesRegion"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Cost Center Selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/costCenter"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User Dimension 1",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/stDimension"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User Dimension 2",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/ndDimension"
     }
   ],
   "actions": [

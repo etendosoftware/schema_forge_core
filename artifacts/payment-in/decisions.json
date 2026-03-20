@@ -223,23 +223,21 @@
           "inputMode": "checkbox"
         },
         "orderPaymentSchedule": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
           "reference": null,
           "displayLogic": null
         },
         "writeoffAmount": {
+          "grid": true,
           "inputMode": "number"
         },
         "invoicePaymentSchedule": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
           "reference": null,
           "displayLogic": null
         },
         "gLItem": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
           "reference": null,
           "inputMode": "search"
         },
@@ -261,58 +259,36 @@
           "displayLogic": null
         },
         "activity": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Activity selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "product": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "salesCampaign": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Campaign selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "project": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "salesRegion": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Sales region selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "costCenter": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Cost Center Selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "stDimension": {
-          "grid": true,
-          "searchable": true,
-          "reference": "User Dimension 1",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "ndDimension": {
-          "grid": true,
-          "searchable": true,
-          "reference": "User Dimension 2",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "organization": {
           "inputMode": "search"

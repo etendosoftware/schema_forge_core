@@ -3,6 +3,7 @@
 export const finPayment = [
   {
     "id": "mock-finPayment-001",
+    "documentNo": "FI-00001",
     "referenceNo": "FI-00001",
     "paymentDate": "2026-01-15",
     "businessPartner": "Acme Corp",
@@ -28,6 +29,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-002",
+    "documentNo": "FI-00002",
     "referenceNo": "FI-00002",
     "paymentDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
@@ -53,6 +55,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-003",
+    "documentNo": "FI-00003",
     "referenceNo": "FI-00003",
     "paymentDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
@@ -78,6 +81,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-004",
+    "documentNo": "FI-00004",
     "referenceNo": "FI-00004",
     "paymentDate": "2026-01-18",
     "businessPartner": "Summit Industries",
@@ -103,6 +107,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-005",
+    "documentNo": "FI-00005",
     "referenceNo": "FI-00005",
     "paymentDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
@@ -128,6 +133,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-006",
+    "documentNo": "FI-00006",
     "referenceNo": "FI-00006",
     "paymentDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
@@ -153,6 +159,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-007",
+    "documentNo": "FI-00007",
     "referenceNo": "FI-00007",
     "paymentDate": "2026-01-21",
     "businessPartner": "Meridian Group",
@@ -178,6 +185,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-008",
+    "documentNo": "FI-00008",
     "referenceNo": "FI-00008",
     "paymentDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
@@ -203,6 +211,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-009",
+    "documentNo": "FI-00009",
     "referenceNo": "FI-00009",
     "paymentDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
@@ -228,6 +237,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-010",
+    "documentNo": "FI-00010",
     "referenceNo": "FI-00010",
     "paymentDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
@@ -253,6 +263,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-011",
+    "documentNo": "FI-00011",
     "referenceNo": "FI-00011",
     "paymentDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
@@ -278,6 +289,7 @@ export const finPayment = [
   },
   {
     "id": "mock-finPayment-012",
+    "documentNo": "FI-00012",
     "referenceNo": "FI-00012",
     "paymentDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
