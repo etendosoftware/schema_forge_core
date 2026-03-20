@@ -384,8 +384,16 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       }
 
       // Add processId for button-type fields (AD_Reference_ID = 28)
-      if (schemaType === 'button' && row.ad_process_id) {
-        fieldDef.processId = row.ad_process_id;
+      // Priority: OBUIAPP (modern) > Classic > Hardcoded (no ID)
+      if (schemaType === 'button') {
+        if (row.em_obuiapp_process_id) {
+          fieldDef.processId = row.em_obuiapp_process_id;
+          fieldDef.processType = 'obuiapp';
+        } else if (row.ad_process_id) {
+          fieldDef.processId = row.ad_process_id;
+          fieldDef.processType = 'classic';
+        }
+        // No processId + no processType = hardcoded button (resolved by convention)
       }
 
       // Attach enum values for List-type fields (AD_Reference_ID = 17)
@@ -483,6 +491,7 @@ SELECT
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
   c.AD_Process_ID,
+  c.EM_OBUIAPP_Process_ID,
   c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
@@ -556,6 +565,7 @@ SELECT
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
   c.AD_Process_ID,
+  c.EM_OBUIAPP_Process_ID,
   c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,

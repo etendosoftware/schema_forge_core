@@ -257,6 +257,10 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // enumValues
   if (rawField.enumValues) field.enumValues = rawField.enumValues;
 
+  // Passthrough process metadata for button fields
+  if (rawField.processId) field.processId = rawField.processId;
+  if (rawField.processType) field.processType = rawField.processType;
+
   return field;
 }
 

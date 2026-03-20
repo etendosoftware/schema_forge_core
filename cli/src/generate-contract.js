@@ -542,12 +542,15 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     // Actions — fields with type "button" (AD_Reference_ID = 28)
     for (const field of entity.fields) {
       if (field.type === 'button') {
-        actions.push({
+        const action = {
           entity: entityName,
           field: field.name,
           column: field.column,
           url: `${baseUrl}/${entityName}/{id}/action/${field.name}`,
-        });
+        };
+        if (field.processId) action.processId = field.processId;
+        if (field.processType) action.processType = field.processType;
+        actions.push(action);
       }
     }
   }
