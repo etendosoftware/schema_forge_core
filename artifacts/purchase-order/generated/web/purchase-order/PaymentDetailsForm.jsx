@@ -16,8 +16,8 @@ const fields = [
   { key: 'paymentno', column: 'Paymentno', type: 'text', label: 'Payment No.', required: true, readOnly: true, section: 'other' },
   { key: 'canceled', column: 'Iscanceled', type: 'checkbox', label: 'Canceled', readOnly: true, section: 'other' },
   { key: 'status', column: 'Status', type: 'text', label: 'Status', required: true, readOnly: true, section: 'other' },
-  { key: 'invoiceAmount', column: 'Invoicedamt', type: 'number', label: 'Invoice Amount', readOnly: true, section: 'other' },
   { key: 'invoiceno', column: 'Invoiceno', type: 'text', label: 'Invoice No.', readOnly: true, section: 'other' },
+  { key: 'invoiceAmount', column: 'Invoicedamt', type: 'number', label: 'Invoice Amount', readOnly: true, section: 'other' },
 ];
 // @sf-generated-end fields:paymentDetails
 

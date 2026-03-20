@@ -387,6 +387,29 @@ catalogs['Product'] = [
   }
 ];
 
+catalogs['UOM'] = [
+  {
+    "id": "uom-001",
+    "name": "Each"
+  },
+  {
+    "id": "uom-002",
+    "name": "Box"
+  },
+  {
+    "id": "uom-003",
+    "name": "Kg"
+  },
+  {
+    "id": "uom-004",
+    "name": "Meter"
+  },
+  {
+    "id": "uom-005",
+    "name": "Liter"
+  }
+];
+
 catalogs['Tax'] = [
   {
     "id": "tax-001",
@@ -417,29 +440,6 @@ catalogs['Tax'] = [
     "id": "tax-006",
     "name": "Reduced Rate 5%",
     "rate": 5
-  }
-];
-
-catalogs['UOM'] = [
-  {
-    "id": "uom-001",
-    "name": "Each"
-  },
-  {
-    "id": "uom-002",
-    "name": "Box"
-  },
-  {
-    "id": "uom-003",
-    "name": "Kg"
-  },
-  {
-    "id": "uom-004",
-    "name": "Meter"
-  },
-  {
-    "id": "uom-005",
-    "name": "Liter"
   }
 ];
 

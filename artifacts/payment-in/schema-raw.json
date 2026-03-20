@@ -378,7 +378,7 @@
           "label": "Status",
           "type": "enum",
           "mandatory": true,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "RPAP"
@@ -436,7 +436,7 @@
           "label": "Generated Credit",
           "type": "amount",
           "mandatory": false,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -455,7 +455,7 @@
           "label": "Used Credit",
           "type": "amount",
           "mandatory": false,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -472,7 +472,7 @@
           "label": "Write-off Amount",
           "type": "amount",
           "mandatory": true,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -521,6 +521,23 @@
             "hql": null,
             "displayColumn": null
           }
+        },
+        {
+          "name": "createdByAlgorithm",
+          "apiKey": "createdByAlgorithm",
+          "columnName": "CreatedByAlgorithm",
+          "label": "CreatedByAlgorithm",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "discarded",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true,
+          "help": "This column reflects whether the document was created by the matching algorithm or not."
         },
         {
           "name": "project",
@@ -662,6 +679,39 @@
           }
         },
         {
+          "name": "client",
+          "apiKey": "client",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32",
+          "readOnlyLogic": "@Processed@='Y",
+          "defaultValue": "@AD_CLIENT_ID@",
+          "isFilterable": true,
+          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "validationRule": {
+            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
+            "contextParams": [
+              "User_Client"
+            ],
+            "cascadeParams": []
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
           "name": "payment",
           "apiKey": "payment",
           "columnName": "Fin_Payment_ID",
@@ -673,6 +723,54 @@
           "maxLength": "32",
           "isFilterable": true,
           "help": "Payment In event"
+        },
+        {
+          "name": "aPRMReconcilePayment",
+          "apiKey": "aPRMReconcilePayment",
+          "columnName": "EM_APRM_Reconcile_Payment",
+          "label": "Reconcile Payment",
+          "type": "button",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "1",
+          "displayLogic": "@status@='PPM'|@status@='RPR'",
+          "isFilterable": true
+        },
+        {
+          "name": "processNow",
+          "apiKey": "processNow",
+          "columnName": "Processing",
+          "label": "Process Now",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true,
+          "help": "When this field is set as 'Y' a process is being performed on this record."
+        },
+        {
+          "name": "processed",
+          "apiKey": "processed",
+          "columnName": "Processed",
+          "label": "Processed",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true,
+          "help": "The Processed checkbox indicates that a document has been processed."
         },
         {
           "name": "active",
@@ -711,85 +809,64 @@
           "help": "Indicated a sales transaction (Accounts Receivable if Receipt=Y) or a purchase transaction (Accounts Payable if Receipt=N)."
         },
         {
-          "name": "processed",
-          "apiKey": "processed",
-          "columnName": "Processed",
-          "label": "Processed",
-          "type": "boolean",
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
           "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
+          "systemCategory": "audit",
           "derivation": {
-            "type": "computed",
-            "source": "false"
+            "type": "fromConfig",
+            "source": "new Date()"
           },
-          "maxLength": "1",
-          "defaultValue": "N",
+          "maxLength": "19",
+          "defaultValue": "SYSDATE",
           "isFilterable": true,
-          "help": "The Processed checkbox indicates that a document has been processed."
+          "help": "The Created field indicates the date that this record was created."
         },
         {
-          "name": "aPRMReconcilePayment",
-          "apiKey": "aPRMReconcilePayment",
-          "columnName": "EM_APRM_Reconcile_Payment",
-          "label": "Reconcile Payment",
-          "type": "button",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "1",
-          "displayLogic": "@status@='PPM'|@status@='RPR'",
-          "isFilterable": true
-        },
-        {
-          "name": "client",
-          "apiKey": "client",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "Createdby",
+          "label": "Createdby",
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
-          },
           "maxLength": "32",
-          "readOnlyLogic": "@Processed@='Y",
-          "defaultValue": "@AD_CLIENT_ID@",
           "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "validationRule": {
-            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
-            "contextParams": [
-              "User_Client"
-            ],
-            "cascadeParams": []
-          },
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
+          "help": "The Created By field indicates the user who created this record."
         },
         {
-          "name": "processNow",
-          "apiKey": "processNow",
-          "columnName": "Processing",
-          "label": "Process Now",
-          "type": "boolean",
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
           "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
+          "systemCategory": "audit",
           "derivation": {
-            "type": "computed",
-            "source": "false"
+            "type": "fromConfig",
+            "source": "new Date()"
           },
-          "maxLength": "1",
-          "defaultValue": "N",
+          "maxLength": "19",
+          "defaultValue": "SYSDATE",
           "isFilterable": true,
-          "help": "When this field is set as 'Y' a process is being performed on this record."
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "Updatedby",
+          "label": "Updatedby",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_Payment",
@@ -1256,6 +1333,38 @@
           }
         },
         {
+          "name": "client",
+          "apiKey": "client",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "32",
+          "defaultValue": "@AD_CLIENT_ID@",
+          "isFilterable": true,
+          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "validationRule": {
+            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
+            "contextParams": [
+              "User_Client"
+            ],
+            "cascadeParams": []
+          },
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
           "name": "organization",
           "apiKey": "organization",
           "columnName": "AD_Org_ID",
@@ -1303,36 +1412,88 @@
           "isFilterable": true
         },
         {
-          "name": "client",
-          "apiKey": "client",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "defaultValue": "SYSDATE",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "Createdby",
+          "label": "Createdby",
           "type": "foreignKey",
           "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "aPRMFinancialAccount",
+          "apiKey": "aPRMFinancialAccount",
+          "columnName": "EM_APRM_FinancialAccount",
+          "label": "EM_APRM_FinancialAccount",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "Financial Account in sales invoice details"
+        },
+        {
+          "name": "aPRMPaymentMethod",
+          "apiKey": "aPRMPaymentMethod",
+          "columnName": "EM_APRM_PaymentMethod",
+          "label": "EM_APRM_PaymentMethod",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "0",
+          "isFilterable": true,
+          "help": "Payment Method in Sales Invoice"
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
           "derivation": {
             "type": "fromConfig",
-            "source": "context.client"
+            "source": "new Date()"
           },
-          "maxLength": "32",
-          "defaultValue": "@AD_CLIENT_ID@",
+          "maxLength": "19",
+          "defaultValue": "SYSDATE",
           "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "validationRule": {
-            "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
-            "contextParams": [
-              "User_Client"
-            ],
-            "cascadeParams": []
-          },
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "Updatedby",
+          "label": "Updatedby",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_PaymentScheduleDetail",
@@ -1491,6 +1652,21 @@
           "isFilterable": true
         },
         {
+          "name": "id",
+          "apiKey": "id",
+          "columnName": "FIN_Payment_Exec_History_V_ID",
+          "label": "FIN_Payment_Exec_History_V_ID",
+          "type": "id",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "-5",
+          "isFilterable": true
+        },
+        {
           "name": "payment",
           "apiKey": "payment",
           "columnName": "FIN_Payment_ID",
@@ -1547,21 +1723,6 @@
           }
         },
         {
-          "name": "id",
-          "apiKey": "id",
-          "columnName": "FIN_Payment_Exec_History_V_ID",
-          "label": "FIN_Payment_Exec_History_V_ID",
-          "type": "id",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "-5",
-          "isFilterable": true
-        },
-        {
           "name": "active",
           "apiKey": "active",
           "columnName": "Isactive",
@@ -1605,6 +1766,64 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
+        },
+        {
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "Createdby",
+          "label": "Createdby",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "Updatedby",
+          "label": "Updatedby",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.PaymentExecutionHistoryV",
@@ -1858,6 +2077,111 @@
           "maxLength": "32",
           "readOnlyLogic": "@Posted@='Y'",
           "isFilterable": true
+        },
+        {
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "readOnlyLogic": "@Posted@='Y'",
+          "defaultValue": "@#Date@",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "Createdby",
+          "label": "Createdby",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "32",
+          "readOnlyLogic": "@Posted@='Y'",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "fINFinancialAccountTransaction",
+          "apiKey": "fINFinancialAccountTransaction",
+          "columnName": "FIN_Finacc_Transaction_ID",
+          "label": "FIN_Finacc_Transaction_ID",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "readOnlyLogic": "@Posted@='Y'",
+          "isFilterable": true,
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "FIN_Finacc_Transaction",
+            "keyColumn": "FIN_Finacc_Transaction_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "journalEntry",
+          "apiKey": "journalEntry",
+          "columnName": "GL_Journal_ID",
+          "label": "GL_Journal_ID",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "readOnlyLogic": "@Posted@='Y'",
+          "isFilterable": true,
+          "help": "The General Ledger Journal identifies a group of journal lines which represent a logical business transaction",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "GL_Journal",
+            "keyColumn": "GL_Journal_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "readOnlyLogic": "@Posted@='Y'",
+          "defaultValue": "@#Date@",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "Updatedby",
+          "label": "Updatedby",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "32",
+          "readOnlyLogic": "@Posted@='Y'",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.common.currency.ConversionRateDoc"
@@ -2032,6 +2356,66 @@
           "maxLength": "32",
           "isFilterable": true,
           "help": "Tracks the places where the credit payment has been used"
+        },
+        {
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "defaultValue": "SYSDATE",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "Createdby",
+          "label": "Createdby",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "defaultValue": "SYSDATE",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "Updatedby",
+          "label": "Updatedby",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.payment.FIN_Payment_Credit"
@@ -2874,6 +3258,103 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
+        },
+        {
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "CreatedBy",
+          "label": "CreatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "dateBalanced",
+          "apiKey": "dateBalanced",
+          "columnName": "Datebalanced",
+          "label": "Datebalanced",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "Used for certain accounts to set the date on which the account gets balance equal zero. This is used to exclude entries which are no longer open items. Useful to reduce number of entries to be reviewed"
+        },
+        {
+          "name": "modify",
+          "apiKey": "modify",
+          "columnName": "Ismodify",
+          "label": "Ismodify",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "UpdatedBy",
+          "label": "UpdatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.accounting.AccountingFact",
@@ -2883,7 +3364,7 @@
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "79832e0f",
-    "extractedAt": "2026-03-19T11:18:24.374Z"
+    "checksum": "d30fd350",
+    "extractedAt": "2026-03-20T15:14:58.846Z"
   }
 }

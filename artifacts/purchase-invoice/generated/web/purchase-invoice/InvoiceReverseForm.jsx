@@ -2,7 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:invoiceReverse
 const fields = [
-  { key: 'reversedCInvoiceId', column: 'Reversed_C_Invoice_ID', type: 'search', required: true, section: 'principal', reference: 'Invoice', inputMode: 'search' },
+  { key: 'reversedInvoice', column: 'Reversed_C_Invoice_ID', type: 'search', label: 'Reversed Invoice', required: true, section: 'principal', reference: 'Invoice', inputMode: 'search' },
 ];
 // @sf-generated-end fields:invoiceReverse
 

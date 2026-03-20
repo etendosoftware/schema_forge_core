@@ -960,105 +960,6 @@ export const reservedStock = [
   }
 ];
 
-export const basicDiscounts = [
-  {
-    "id": "mock-basicDiscounts-001",
-    "lineNo": 10,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-001"
-  },
-  {
-    "id": "mock-basicDiscounts-002",
-    "lineNo": 20,
-    "discount": 21,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-002"
-  },
-  {
-    "id": "mock-basicDiscounts-003",
-    "lineNo": 30,
-    "discount": 0,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-003"
-  },
-  {
-    "id": "mock-basicDiscounts-004",
-    "lineNo": 40,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-004"
-  },
-  {
-    "id": "mock-basicDiscounts-005",
-    "lineNo": 50,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-005"
-  },
-  {
-    "id": "mock-basicDiscounts-006",
-    "lineNo": 60,
-    "discount": 4,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-006"
-  },
-  {
-    "id": "mock-basicDiscounts-007",
-    "lineNo": 70,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-007"
-  },
-  {
-    "id": "mock-basicDiscounts-008",
-    "lineNo": 80,
-    "discount": 10,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-008"
-  },
-  {
-    "id": "mock-basicDiscounts-009",
-    "lineNo": 90,
-    "discount": 17,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-009"
-  },
-  {
-    "id": "mock-basicDiscounts-010",
-    "lineNo": 100,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-010"
-  },
-  {
-    "id": "mock-basicDiscounts-011",
-    "lineNo": 110,
-    "discount": 19,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-011"
-  },
-  {
-    "id": "mock-basicDiscounts-012",
-    "lineNo": 120,
-    "discount": 12,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "orderId": "mock-order-012"
-  }
-];
-
 export const orderTax = [
   {
     "id": "mock-orderTax-001",
@@ -1154,6 +1055,105 @@ export const orderTax = [
     "tax": "Exempt",
     "taxAmount": "Exempt",
     "taxableAmount": "Exempt",
+    "orderId": "mock-order-012"
+  }
+];
+
+export const basicDiscounts = [
+  {
+    "id": "mock-basicDiscounts-001",
+    "lineNo": 10,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-001"
+  },
+  {
+    "id": "mock-basicDiscounts-002",
+    "lineNo": 20,
+    "discount": 21,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-002"
+  },
+  {
+    "id": "mock-basicDiscounts-003",
+    "lineNo": 30,
+    "discount": 0,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-003"
+  },
+  {
+    "id": "mock-basicDiscounts-004",
+    "lineNo": 40,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-004"
+  },
+  {
+    "id": "mock-basicDiscounts-005",
+    "lineNo": 50,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-005"
+  },
+  {
+    "id": "mock-basicDiscounts-006",
+    "lineNo": 60,
+    "discount": 4,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-006"
+  },
+  {
+    "id": "mock-basicDiscounts-007",
+    "lineNo": 70,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-007"
+  },
+  {
+    "id": "mock-basicDiscounts-008",
+    "lineNo": 80,
+    "discount": 10,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-008"
+  },
+  {
+    "id": "mock-basicDiscounts-009",
+    "lineNo": 90,
+    "discount": 17,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-009"
+  },
+  {
+    "id": "mock-basicDiscounts-010",
+    "lineNo": 100,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-010"
+  },
+  {
+    "id": "mock-basicDiscounts-011",
+    "lineNo": 110,
+    "discount": 19,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "orderId": "mock-order-011"
+  },
+  {
+    "id": "mock-basicDiscounts-012",
+    "lineNo": 120,
+    "discount": 12,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
     "orderId": "mock-order-012"
   }
 ];
@@ -1322,8 +1322,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "DR",
-    "invoiceAmount": 38907,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 38907,
     "orderId": "mock-order-001"
   },
   {
@@ -1342,8 +1342,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "CO",
-    "invoiceAmount": 9306,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 9306,
     "orderId": "mock-order-002"
   },
   {
@@ -1362,8 +1362,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "VO",
-    "invoiceAmount": 11544,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 11544,
     "orderId": "mock-order-003"
   },
   {
@@ -1382,8 +1382,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "IP",
-    "invoiceAmount": 11872,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 11872,
     "orderId": "mock-order-004"
   },
   {
@@ -1402,8 +1402,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "DR",
-    "invoiceAmount": 48460,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 48460,
     "orderId": "mock-order-005"
   },
   {
@@ -1422,8 +1422,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "CO",
-    "invoiceAmount": 45418,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 45418,
     "orderId": "mock-order-006"
   },
   {
@@ -1442,8 +1442,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "VO",
-    "invoiceAmount": 33840,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 33840,
     "orderId": "mock-order-007"
   },
   {
@@ -1462,8 +1462,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "IP",
-    "invoiceAmount": 25716,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 25716,
     "orderId": "mock-order-008"
   },
   {
@@ -1482,8 +1482,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "DR",
-    "invoiceAmount": 44780,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 44780,
     "orderId": "mock-order-009"
   },
   {
@@ -1502,8 +1502,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "CO",
-    "invoiceAmount": 12483,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 12483,
     "orderId": "mock-order-010"
   },
   {
@@ -1522,8 +1522,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "VO",
-    "invoiceAmount": 46022,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 46022,
     "orderId": "mock-order-011"
   },
   {
@@ -1542,8 +1542,8 @@ export const paymentDetails = [
     "paymentno": "Sample paymentno",
     "canceled": "Sample canceled",
     "status": "IP",
-    "invoiceAmount": 38634,
     "invoiceno": "Sample invoiceno",
+    "invoiceAmount": 38634,
     "orderId": "mock-order-012"
   }
 ];

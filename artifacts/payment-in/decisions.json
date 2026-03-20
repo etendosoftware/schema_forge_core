@@ -57,14 +57,22 @@
           "searchable": true,
           "reference": null,
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "dependsOn": {
+            "field": "paymentMethod",
+            "filterKey": "Fin_Paymentmethod_ID"
+          }
         },
         "currency": {
           "grid": true,
           "searchable": true,
           "reference": null,
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "dependsOn": {
+            "field": "account",
+            "filterKey": "FIN_Financial_Account_ID"
+          }
         },
         "financialTransactionAmount": {
           "grid": true,

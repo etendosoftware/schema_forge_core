@@ -8,7 +8,7 @@ const fields = [
   // @sf-custom-slot callout:OperativeQuantity_To_BaseQuantity
   { key: 'operativeQuantity', column: 'Aumqty', type: 'text', label: 'Operative Quantity', section: 'principal' },
   // @sf-custom-slot callout:OperativeQuantity_To_BaseQuantity
-  { key: 'operativeUOM', column: 'C_Aum', type: 'selector', label: 'Alternative UOM', section: 'principal', reference: 'UOM', inputMode: 'selector' },
+  { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', label: 'Alternative UOM', section: 'principal', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
   // @sf-custom-slot callout:SL_Order_Amt
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', label: 'Ordered Quantity', required: true, section: 'other', readOnlySource: 'server', readOnlyLogicReason: 'session-variable' },
   { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM', required: true, readOnly: true, section: 'other', reference: 'UOM', inputMode: 'selector' },

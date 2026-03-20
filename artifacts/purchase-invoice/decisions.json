@@ -1,1 +1,64 @@
-{}
+{
+  "entities": {
+    "cInvoice": {
+      "fields": {
+        "cBpartnerLocationId": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "adUserId": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "cWithholdingId": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "cProjectId": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "partnerAddress": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "project": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        }
+      }
+    },
+    "cInvoiceLine": {
+      "fields": {
+        "operativeUOM": {
+          "dependsOn": {
+            "field": "product",
+            "filterKey": "M_Product_ID"
+          }
+        }
+      }
+    },
+    "finPaymentScheduleDetail": {
+      "fields": {
+        "account": {
+          "dependsOn": {
+            "field": "paymentMethod",
+            "filterKey": "Fin_Paymentmethod_ID"
+          }
+        }
+      }
+    }
+  }
+}

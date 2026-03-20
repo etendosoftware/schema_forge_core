@@ -68,24 +68,28 @@ const api = {
       "entity": "finPayment",
       "field": "businessPartner",
       "column": "C_Bpartner_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/businessPartner"
     },
     {
       "entity": "finPayment",
       "field": "paymentMethod",
       "column": "Fin_Paymentmethod_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/paymentMethod"
     },
     {
       "entity": "finPayment",
       "field": "account",
       "column": "Fin_Financial_Account_ID",
+      "inputMode": "dependent",
       "url": "/sws/neo/payment-in/finPayment/selectors/account"
     },
     {
       "entity": "finPayment",
       "field": "currency",
       "column": "C_Currency_ID",
+      "inputMode": "dependent",
       "url": "/sws/neo/payment-in/finPayment/selectors/currency"
     },
     {
@@ -93,12 +97,14 @@ const api = {
       "field": "reversedPayment",
       "column": "FIN_Rev_Payment_ID",
       "reference": "Payment Selector",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/reversedPayment"
     },
     {
       "entity": "finPayment",
       "field": "project",
       "column": "C_Project_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/project"
     },
     {
@@ -106,6 +112,7 @@ const api = {
       "field": "costCenter",
       "column": "C_Costcenter_ID",
       "reference": "Cost Center Selector",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/costCenter"
     },
     {
@@ -113,6 +120,7 @@ const api = {
       "field": "stDimension",
       "column": "User1_ID",
       "reference": "User Dimension 1",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/stDimension"
     },
     {
@@ -120,30 +128,35 @@ const api = {
       "field": "ndDimension",
       "column": "User2_ID",
       "reference": "User Dimension 2",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/ndDimension"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "orderPaymentSchedule",
       "column": "FIN_Payment_Schedule_Order",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/orderPaymentSchedule"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "invoicePaymentSchedule",
       "column": "FIN_Payment_Schedule_Invoice",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/invoicePaymentSchedule"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "gLItem",
       "column": "C_Glitem_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/gLItem"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "businessPartner",
       "column": "C_Bpartner_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/businessPartner"
     },
     {
@@ -151,12 +164,14 @@ const api = {
       "field": "activity",
       "column": "C_Activity_ID",
       "reference": "Activity selector",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/activity"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "product",
       "column": "M_Product_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/product"
     },
     {
@@ -164,12 +179,14 @@ const api = {
       "field": "salesCampaign",
       "column": "C_Campaign_ID",
       "reference": "Campaign selector",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/salesCampaign"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "project",
       "column": "C_Project_ID",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/project"
     },
     {
@@ -177,6 +194,7 @@ const api = {
       "field": "salesRegion",
       "column": "C_Salesregion_ID",
       "reference": "Sales region selector",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/salesRegion"
     },
     {
@@ -184,6 +202,7 @@ const api = {
       "field": "costCenter",
       "column": "C_Costcenter_ID",
       "reference": "Cost Center Selector",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/costCenter"
     },
     {
@@ -191,6 +210,7 @@ const api = {
       "field": "stDimension",
       "column": "User1_ID",
       "reference": "User Dimension 1",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/stDimension"
     },
     {
@@ -198,6 +218,7 @@ const api = {
       "field": "ndDimension",
       "column": "User2_ID",
       "reference": "User Dimension 2",
+      "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/ndDimension"
     }
   ],

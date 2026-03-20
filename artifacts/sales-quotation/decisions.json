@@ -20,7 +20,7 @@
           "inputMode": "dependent",
           "dependsOn": {
             "field": "businessPartner",
-            "filterKey": "businessPartnerId"
+            "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null
         },
@@ -49,7 +49,7 @@
           "inputMode": "dependent",
           "dependsOn": {
             "field": "businessPartner",
-            "filterKey": "businessPartnerId"
+            "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null
         },
@@ -120,6 +120,12 @@
         },
         "updated": {
           "visibility": "system"
+        },
+        "project": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         }
       }
     },
@@ -185,6 +191,12 @@
         },
         "businessPartner": {
           "name": "cBpartnerId"
+        },
+        "operativeUOM": {
+          "dependsOn": {
+            "field": "product",
+            "filterKey": "M_Product_ID"
+          }
         }
       }
     },

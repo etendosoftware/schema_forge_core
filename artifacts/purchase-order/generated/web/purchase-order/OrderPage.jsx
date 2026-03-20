@@ -8,8 +8,6 @@ const breadcrumb = 'Purchases / Purchase Order';
 
 // @sf-generated-start summary:order
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
   { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean', label: 'Price includes Tax' },
   { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'status', label: 'Delivery Status' },
@@ -23,7 +21,9 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:order
 const processes = [
-
+  { name: 'bookOrder', label: 'Book Order', style: 'positive', columnName: 'docAction', params: [{"key":"docAction","value":"CO","hidden":true}] },
+  { name: 'voidOrder', label: 'Void Order', style: 'destructive', columnName: 'docAction', params: [{"key":"docAction","value":"VO","hidden":true}] },
+  { name: 'closeOrder', label: 'Close Order', style: 'positive', columnName: 'docAction', params: [{"key":"docAction","value":"CL","hidden":true}] },
 ];
 // @sf-generated-end processes:order
 
@@ -33,7 +33,7 @@ const addLineFields = {
     { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
     { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'selector', reference: 'UOM', inputMode: 'selector' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
     { key: 'description', column: 'Description', type: 'textarea' },
     { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
@@ -107,17 +107,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-order/reservedStock/{id}",
       "supportedFilters": []
     },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/basicDiscounts",
-      "detailUrl": "/sws/neo/purchase-order/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
     "orderTax": {
       "get": true,
       "getById": true,
@@ -127,6 +116,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-order/orderTax",
       "detailUrl": "/sws/neo/purchase-order/orderTax/{id}",
+      "supportedFilters": []
+    },
+    "basicDiscounts": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-order/basicDiscounts",
+      "detailUrl": "/sws/neo/purchase-order/basicDiscounts/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -222,7 +222,7 @@ const api = {
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
-      "inputMode": "search",
+      "inputMode": "dependent",
       "url": "/sws/neo/purchase-order/order/selectors/project"
     },
     {
@@ -270,7 +270,7 @@ const api = {
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
-      "inputMode": "selector",
+      "inputMode": "dependent",
       "url": "/sws/neo/purchase-order/orderLine/selectors/operativeUOM"
     },
     {
@@ -358,18 +358,18 @@ const api = {
       "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
     },
     {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "url": "/sws/neo/purchase-order/basicDiscounts/selectors/discount"
-    },
-    {
       "entity": "orderTax",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "url": "/sws/neo/purchase-order/orderTax/selectors/tax"
+    },
+    {
+      "entity": "basicDiscounts",
+      "field": "discount",
+      "column": "C_Discount_ID",
+      "reference": "Discount",
+      "url": "/sws/neo/purchase-order/basicDiscounts/selectors/discount"
     },
     {
       "entity": "paymentPlan",
@@ -410,6 +410,30 @@ const api = {
   "actions": [
     {
       "entity": "order",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/purchase-order/order/{id}/action/generateTemplate"
+    },
+    {
+      "entity": "order",
+      "field": "rMPickFromShipment",
+      "column": "RM_PickFromShipment",
+      "url": "/sws/neo/purchase-order/order/{id}/action/rMPickFromShipment"
+    },
+    {
+      "entity": "order",
+      "field": "rMReceiveMaterials",
+      "column": "RM_ReceiveMaterials",
+      "url": "/sws/neo/purchase-order/order/{id}/action/rMReceiveMaterials"
+    },
+    {
+      "entity": "order",
+      "field": "rMCreateInvoice",
+      "column": "RM_CreateInvoice",
+      "url": "/sws/neo/purchase-order/order/{id}/action/rMCreateInvoice"
+    },
+    {
+      "entity": "order",
       "field": "aPRMAddPayment",
       "column": "EM_APRM_AddPayment",
       "url": "/sws/neo/purchase-order/order/{id}/action/aPRMAddPayment"
@@ -434,6 +458,24 @@ const api = {
     },
     {
       "entity": "order",
+      "field": "rMAddOrphanLine",
+      "column": "RM_AddOrphanLine",
+      "url": "/sws/neo/purchase-order/order/{id}/action/rMAddOrphanLine"
+    },
+    {
+      "entity": "order",
+      "field": "createOrder",
+      "column": "Convertquotation",
+      "url": "/sws/neo/purchase-order/order/{id}/action/createOrder"
+    },
+    {
+      "entity": "order",
+      "field": "calculatePromotions",
+      "column": "Calculate_Promotions",
+      "url": "/sws/neo/purchase-order/order/{id}/action/calculatePromotions"
+    },
+    {
+      "entity": "order",
       "field": "createPOLines",
       "column": "Create_POLines",
       "url": "/sws/neo/purchase-order/order/{id}/action/createPOLines"
@@ -451,6 +493,24 @@ const api = {
       "url": "/sws/neo/purchase-order/order/{id}/action/processNow"
     },
     {
+      "entity": "order",
+      "field": "cancelandreplace",
+      "column": "Cancelandreplace",
+      "url": "/sws/neo/purchase-order/order/{id}/action/cancelandreplace"
+    },
+    {
+      "entity": "order",
+      "field": "confirmcancelandreplace",
+      "column": "Confirmcancelandreplace",
+      "url": "/sws/neo/purchase-order/order/{id}/action/confirmcancelandreplace"
+    },
+    {
+      "entity": "order",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/purchase-order/order/{id}/action/rMPickfromreceipt"
+    },
+    {
       "entity": "orderLine",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",
@@ -461,6 +521,24 @@ const api = {
       "field": "explode",
       "column": "Explode",
       "url": "/sws/neo/purchase-order/orderLine/{id}/action/explode"
+    },
+    {
+      "entity": "orderLine",
+      "field": "manageReservation",
+      "column": "Manage_Reservation",
+      "url": "/sws/neo/purchase-order/orderLine/{id}/action/manageReservation"
+    },
+    {
+      "entity": "orderLine",
+      "field": "selectOrderLine",
+      "column": "Relate_Orderline",
+      "url": "/sws/neo/purchase-order/orderLine/{id}/action/selectOrderLine"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "updatePaymentPlan",
+      "column": "Update_Payment_Plan",
+      "url": "/sws/neo/purchase-order/paymentPlan/{id}/action/updatePaymentPlan"
     }
   ],
   "queryParams": {

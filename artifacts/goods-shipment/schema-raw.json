@@ -85,6 +85,24 @@
           }
         },
         {
+          "name": "mConditionGoodsID",
+          "apiKey": "mConditionGoodsID",
+          "columnName": "M_Condition_Goods_ID",
+          "label": "M_Condition_Goods_ID",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "32",
+          "isFilterable": true,
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_Condition_Goods",
+            "keyColumn": "M_Condition_Goods_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
           "name": "documentNo",
           "apiKey": "documentNo",
           "columnName": "DocumentNo",
@@ -244,7 +262,7 @@
           "label": "Document Status",
           "type": "enum",
           "mandatory": true,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "DR"
@@ -467,13 +485,13 @@
           "help": "A process that allows the user to copy lines (products) from an existing document different from the one being copied into. For example, in case of entering a new Goods Shipment, the user can copy lines (products) from an existing Sales Order or Sales Invoice."
         },
         {
-          "name": "processGoodsJava",
-          "apiKey": "processGoodsJava",
-          "columnName": "Process_Goods_Java",
-          "label": "Process Shipment Java",
+          "name": "documentAction",
+          "apiKey": "documentAction",
+          "columnName": "DocAction",
+          "label": "Process Shipment",
           "type": "button",
-          "mandatory": false,
-          "visibility": "editable",
+          "mandatory": true,
+          "visibility": "system",
           "derivation": {
             "type": "computed",
             "source": "CO"
@@ -486,13 +504,13 @@
           "fieldGroup": "Status"
         },
         {
-          "name": "documentAction",
-          "apiKey": "documentAction",
-          "columnName": "DocAction",
-          "label": "Process Shipment",
+          "name": "processGoodsJava",
+          "apiKey": "processGoodsJava",
+          "columnName": "Process_Goods_Java",
+          "label": "Process Shipment Java",
           "type": "button",
-          "mandatory": true,
-          "visibility": "system",
+          "mandatory": false,
+          "visibility": "editable",
           "derivation": {
             "type": "computed",
             "source": "CO"
@@ -968,7 +986,7 @@
           "label": "Invoice Status",
           "type": "integer",
           "mandatory": false,
-          "visibility": "system",
+          "visibility": "readOnly",
           "maxLength": "4"
         },
         {
@@ -1125,43 +1143,71 @@
           "help": "Generate Invoice from Shipment considering invoice terms of orders linked to shipment lines."
         },
         {
-          "name": "print",
-          "apiKey": "print",
-          "columnName": "IsPrinted",
-          "label": "Print",
+          "name": "processNow",
+          "apiKey": "processNow",
+          "columnName": "Processing",
+          "label": "Process Shipment",
+          "type": "boolean",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
+          "maxLength": "1",
+          "isFilterable": true,
+          "help": "This process will move products in/out of inventory and mark line items as received/shipped."
+        },
+        {
+          "name": "processed",
+          "apiKey": "processed",
+          "columnName": "Processed",
+          "label": "Processed",
           "type": "boolean",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          },
           "maxLength": "1",
           "isFilterable": true,
-          "help": "The Printed checkbox indicates if this document or line will included when printing."
+          "help": "The Processed checkbox indicates that a document has been processed."
         },
         {
-          "name": "client",
-          "apiKey": "client",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
-          "type": "foreignKey",
+          "name": "id",
+          "apiKey": "id",
+          "columnName": "M_InOut_ID",
+          "label": "Goods Shipment",
+          "type": "id",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
           "derivation": {
-            "type": "fromConfig",
-            "source": "context.client"
+            "type": "sequence"
           },
-          "maxLength": "22",
-          "readOnlyLogic": "@Processed@='Y'",
-          "defaultValue": "@AD_CLIENT_ID@",
+          "maxLength": "32",
           "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
+          "help": "The Shipment ID indicates the unique document for this shipment."
+        },
+        {
+          "name": "active",
+          "apiKey": "active",
+          "columnName": "IsActive",
+          "label": "Active",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          },
+          "maxLength": "1",
+          "isFilterable": true,
+          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
         },
         {
           "name": "updateLines",
@@ -1199,52 +1245,6 @@
           "help": "If is logistic it won't be invoiced. It uses for companies that rent locators or incoming materials that we don't want to invoice"
         },
         {
-          "name": "datePrinted",
-          "apiKey": "datePrinted",
-          "columnName": "DatePrinted",
-          "label": "Date printed",
-          "type": "date",
-          "mandatory": false,
-          "visibility": "system",
-          "maxLength": "10",
-          "isFilterable": true,
-          "help": "Indicates the Date that a document was printed."
-        },
-        {
-          "name": "processNow",
-          "apiKey": "processNow",
-          "columnName": "Processing",
-          "label": "Process Shipment",
-          "type": "boolean",
-          "mandatory": false,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "false"
-          },
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "This process will move products in/out of inventory and mark line items as received/shipped."
-        },
-        {
-          "name": "processed",
-          "apiKey": "processed",
-          "columnName": "Processed",
-          "label": "Processed",
-          "type": "boolean",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "false"
-          },
-          "maxLength": "1",
-          "isFilterable": true,
-          "help": "The Processed checkbox indicates that a document has been processed."
-        },
-        {
           "name": "invoice",
           "apiKey": "invoice",
           "columnName": "C_Invoice_ID",
@@ -1265,37 +1265,51 @@
           }
         },
         {
-          "name": "id",
-          "apiKey": "id",
-          "columnName": "M_InOut_ID",
-          "label": "Goods Shipment",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
+          "name": "generateTo",
+          "apiKey": "generateTo",
+          "columnName": "GenerateTo",
+          "label": "Generate Invoice from Receipt",
+          "type": "button",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "1",
           "isFilterable": true,
-          "help": "The Shipment ID indicates the unique document for this shipment."
+          "help": "Generate Invoice from Receipt will create an invoice based on the selected receipt and match the invoice to that receipt. If the receipt line is related to an existing order line, then the price of the invoice line is taken from that order line. In other case, it uses the retrieved price from the price list selected in the below drop-down list."
         },
         {
-          "name": "active",
-          "apiKey": "active",
-          "columnName": "IsActive",
-          "label": "Active",
+          "name": "print",
+          "apiKey": "print",
+          "columnName": "IsPrinted",
+          "label": "Print",
           "type": "boolean",
           "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
-          "derivation": {
-            "type": "computed",
-            "source": "true"
-          },
           "maxLength": "1",
           "isFilterable": true,
-          "help": "There are two methods of making records unavailable in the system: One is to delete the record, the other is to de-activate the record. A de-activated record is not available for selection, but available for reporting. There are two reasons for de-activating and not deleting records: \n(1) The system requires the record for auditing purposes.\n(2) The record is referenced by other records. E.g., you cannot delete a Business Partner, if there are existing invoices for it. By de-activating the Business Partner you prevent it from being used in future transactions."
+          "help": "The Printed checkbox indicates if this document or line will included when printing."
+        },
+        {
+          "name": "receiveMaterials",
+          "apiKey": "receiveMaterials",
+          "columnName": "RM_Receipt_PickEdit",
+          "label": "Receive Materials",
+          "type": "button",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "1",
+          "isFilterable": true
+        },
+        {
+          "name": "sendMaterials",
+          "apiKey": "sendMaterials",
+          "columnName": "RM_Shipment_Pickedit",
+          "label": "Send Materials",
+          "type": "button",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "1",
+          "isFilterable": true
         },
         {
           "name": "salesTransaction",
@@ -1314,6 +1328,112 @@
           "defaultValue": "@IsSOTrx@",
           "isFilterable": true,
           "help": "The Sales Transaction checkbox indicates if this item is a Sales Transaction."
+        },
+        {
+          "name": "datePrinted",
+          "apiKey": "datePrinted",
+          "columnName": "DatePrinted",
+          "label": "Date printed",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "10",
+          "isFilterable": true,
+          "help": "Indicates the Date that a document was printed."
+        },
+        {
+          "name": "client",
+          "apiKey": "client",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "22",
+          "readOnlyLogic": "@Processed@='Y'",
+          "defaultValue": "@AD_CLIENT_ID@",
+          "isFilterable": true,
+          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "CreatedBy",
+          "label": "CreatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "UpdatedBy",
+          "label": "UpdatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.materialmgmt.transaction.ShipmentInOut",
@@ -1368,6 +1488,24 @@
             "targetTable": "M_Product",
             "keyColumn": "M_Product_ID",
             "displayColumn": null,
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "mConditionGoodsID",
+          "apiKey": "mConditionGoodsID",
+          "columnName": "M_Condition_Goods_ID",
+          "label": "M_Condition_Goods_ID",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "32",
+          "isFilterable": true,
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "M_Condition_Goods",
+            "keyColumn": "M_Condition_Goods_ID",
+            "displayColumn": "Name",
             "filterExpression": null
           }
         },
@@ -1593,6 +1731,26 @@
           "help": "If a line is Description Only, e.g. Product Inventory is not corrected. No accounting transactions are created and the amount or totals are not included in the document.  This for including descriptional detail lines, e.g. for an Work Order."
         },
         {
+          "name": "canceledInoutLine",
+          "apiKey": "canceledInoutLine",
+          "columnName": "Canceled_Inoutline_ID",
+          "label": "Canceled Inout line",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "Shipment/Receipt line that it is canceled by this line",
+          "reference": {
+            "type": "Selector",
+            "targetTable": "M_InOutLine",
+            "selectorName": "M_InOutLine no combo",
+            "filterExpression": "e.shipmentReceipt.id = @inpmInoutId@",
+            "hql": null,
+            "displayColumn": null
+          }
+        },
+        {
           "name": "organization",
           "apiKey": "organization",
           "columnName": "AD_Org_ID",
@@ -1786,7 +1944,7 @@
           "label": "Invoiced Quantity",
           "type": "quantity",
           "mandatory": true,
-          "visibility": "system",
+          "visibility": "readOnly",
           "derivation": {
             "type": "computed",
             "source": "0"
@@ -1796,6 +1954,22 @@
           "defaultValue": "0",
           "isFilterable": true,
           "help": "The Invoiced Quantity indicates the quantity of a product that have been invoiced."
+        },
+        {
+          "name": "id",
+          "apiKey": "id",
+          "columnName": "M_InOutLine_ID",
+          "label": "Goods Shipment Line",
+          "type": "id",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "isFilterable": true,
+          "help": "The Goods Shipment Line indicates a unique line in a Shipment document"
         },
         {
           "name": "reinvoice",
@@ -1809,6 +1983,63 @@
           "maxLength": "1",
           "isFilterable": true,
           "help": "Indicator if invoiced"
+        },
+        {
+          "name": "client",
+          "apiKey": "client",
+          "columnName": "AD_Client_ID",
+          "label": "Client",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          },
+          "maxLength": "22",
+          "defaultValue": "@AD_Client_ID@",
+          "isFilterable": true,
+          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
+          "reference": {
+            "type": "TableDir",
+            "targetTable": "AD_Client",
+            "keyColumn": "AD_Client_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
+          }
+        },
+        {
+          "name": "managePrereservation",
+          "apiKey": "managePrereservation",
+          "columnName": "Manage_Prereservation",
+          "label": "Manage Prereservation",
+          "type": "button",
+          "mandatory": false,
+          "visibility": "discarded",
+          "maxLength": "1",
+          "isFilterable": true
+        },
+        {
+          "name": "businessPartner",
+          "apiKey": "businessPartner",
+          "columnName": "C_Bpartner_ID",
+          "label": "Business Partner",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "32",
+          "readOnlyLogic": "@Posted@='Y'",
+          "isFilterable": true,
+          "help": "A Business Partner is anyone with whom you transact.  This can include a customer, vendor, employee or any combination of these.",
+          "reference": {
+            "type": "Search",
+            "targetTable": "C_BPartner",
+            "keyColumn": "C_BPartner_ID",
+            "displayColumn": null,
+            "filterExpression": null
+          }
         },
         {
           "name": "active",
@@ -1849,66 +2080,72 @@
           }
         },
         {
-          "name": "id",
-          "apiKey": "id",
-          "columnName": "M_InOutLine_ID",
-          "label": "Goods Shipment Line",
-          "type": "id",
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
           "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "isFilterable": true,
-          "help": "The Goods Shipment Line indicates a unique line in a Shipment document"
-        },
-        {
-          "name": "client",
-          "apiKey": "client",
-          "columnName": "AD_Client_ID",
-          "label": "Client",
-          "type": "foreignKey",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
+          "systemCategory": "audit",
           "derivation": {
             "type": "fromConfig",
-            "source": "context.client"
+            "source": "new Date()"
           },
-          "maxLength": "22",
-          "defaultValue": "@AD_Client_ID@",
+          "maxLength": "19",
           "isFilterable": true,
-          "help": "A Client is a company or a legal entity. You cannot share data between Clients.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Client",
-            "keyColumn": "AD_Client_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
+          "help": "The Created field indicates the date that this record was created."
         },
         {
-          "name": "businessPartner",
-          "apiKey": "businessPartner",
-          "columnName": "C_Bpartner_ID",
-          "label": "Business Partner",
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "CreatedBy",
+          "label": "CreatedBy",
           "type": "foreignKey",
-          "mandatory": false,
+          "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "32",
-          "readOnlyLogic": "@Posted@='Y'",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
           "isFilterable": true,
-          "help": "A Business Partner is anyone with whom you transact.  This can include a customer, vendor, employee or any combination of these.",
-          "reference": {
-            "type": "Search",
-            "targetTable": "C_BPartner",
-            "keyColumn": "C_BPartner_ID",
-            "displayColumn": null,
-            "filterExpression": null
-          }
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "UpdatedBy",
+          "label": "UpdatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.materialmgmt.transaction.ShipmentInOutLine",
@@ -2309,17 +2546,17 @@
           }
         },
         {
-          "name": "locationToAddress",
-          "apiKey": "locationToAddress",
-          "columnName": "C_LocTo_ID",
-          "label": "Location to Address",
+          "name": "locationFromAddress",
+          "apiKey": "locationFromAddress",
+          "columnName": "C_LocFrom_ID",
+          "label": "Location from Address",
           "type": "foreignKey",
           "mandatory": false,
           "visibility": "system",
           "systemCategory": "internal",
           "maxLength": "22",
           "isFilterable": true,
-          "help": "The Location To indicates the location that a product was moved to.",
+          "help": "The Location From indicates the location that a product was moved from.",
           "reference": {
             "type": "Table",
             "targetTable": "C_Location",
@@ -2382,24 +2619,23 @@
           }
         },
         {
-          "name": "locationFromAddress",
-          "apiKey": "locationFromAddress",
-          "columnName": "C_LocFrom_ID",
-          "label": "Location from Address",
+          "name": "table",
+          "apiKey": "table",
+          "columnName": "AD_Table_ID",
+          "label": "Table",
           "type": "foreignKey",
-          "mandatory": false,
+          "mandatory": true,
           "visibility": "system",
           "systemCategory": "internal",
           "maxLength": "22",
           "isFilterable": true,
-          "help": "The Location From indicates the location that a product was moved from.",
+          "help": "The Table indicates the table in which a field or fields reside.",
           "reference": {
-            "type": "Table",
-            "targetTable": "C_Location",
-            "keyColumn": "C_Location_ID",
-            "displayColumn": "City",
-            "filterExpression": null,
-            "orderBy": null
+            "type": "TableDir",
+            "targetTable": "AD_Table",
+            "keyColumn": "AD_Table_ID",
+            "displayColumn": "Name",
+            "filterExpression": null
           }
         },
         {
@@ -2455,24 +2691,34 @@
           }
         },
         {
-          "name": "table",
-          "apiKey": "table",
-          "columnName": "AD_Table_ID",
-          "label": "Table",
-          "type": "foreignKey",
+          "name": "postingType",
+          "apiKey": "postingType",
+          "columnName": "PostingType",
+          "label": "Posting Type",
+          "type": "enum",
           "mandatory": true,
           "visibility": "system",
-          "systemCategory": "internal",
-          "maxLength": "22",
+          "maxLength": "60",
           "isFilterable": true,
-          "help": "The Table indicates the table in which a field or fields reside.",
-          "reference": {
-            "type": "TableDir",
-            "targetTable": "AD_Table",
-            "keyColumn": "AD_Table_ID",
-            "displayColumn": "Name",
-            "filterExpression": null
-          }
+          "help": "The Posting Type indicates the type of amount (Actual, Encumbrance, Budget) this journal updated.",
+          "enumValues": [
+            {
+              "value": "A",
+              "name": "Actual"
+            },
+            {
+              "value": "B",
+              "name": "Budget"
+            },
+            {
+              "value": "E",
+              "name": "Encumbrance"
+            },
+            {
+              "value": "S",
+              "name": "Statistical"
+            }
+          ]
         },
         {
           "name": "type",
@@ -2566,36 +2812,6 @@
           }
         },
         {
-          "name": "postingType",
-          "apiKey": "postingType",
-          "columnName": "PostingType",
-          "label": "Posting Type",
-          "type": "enum",
-          "mandatory": true,
-          "visibility": "system",
-          "maxLength": "60",
-          "isFilterable": true,
-          "help": "The Posting Type indicates the type of amount (Actual, Encumbrance, Budget) this journal updated.",
-          "enumValues": [
-            {
-              "value": "A",
-              "name": "Actual"
-            },
-            {
-              "value": "B",
-              "name": "Budget"
-            },
-            {
-              "value": "E",
-              "name": "Encumbrance"
-            },
-            {
-              "value": "S",
-              "name": "Statistical"
-            }
-          ]
-        },
-        {
           "name": "lineID",
           "apiKey": "lineID",
           "columnName": "Line_ID",
@@ -2670,16 +2886,19 @@
           }
         },
         {
-          "name": "foreignCurrencyDebit",
-          "apiKey": "foreignCurrencyDebit",
-          "columnName": "AmtSourceDr",
-          "label": "Foreign Currency Debit",
-          "type": "amount",
+          "name": "id",
+          "apiKey": "id",
+          "columnName": "Fact_Acct_ID",
+          "label": "Accounting Fact",
+          "type": "id",
           "mandatory": true,
           "visibility": "system",
-          "maxLength": "22",
-          "isFilterable": true,
-          "help": "The Source Debit Amount indicates the credit amount for this line in the source currency."
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "sequence"
+          },
+          "maxLength": "32",
+          "isFilterable": true
         },
         {
           "name": "quantity",
@@ -2692,6 +2911,18 @@
           "maxLength": "10",
           "isFilterable": true,
           "help": "The Quantity indicates the number of a specific product or item for this document."
+        },
+        {
+          "name": "foreignCurrencyDebit",
+          "apiKey": "foreignCurrencyDebit",
+          "columnName": "AmtSourceDr",
+          "label": "Foreign Currency Debit",
+          "type": "amount",
+          "mandatory": true,
+          "visibility": "system",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Source Debit Amount indicates the credit amount for this line in the source currency."
         },
         {
           "name": "uOM",
@@ -2712,21 +2943,6 @@
             "displayColumn": "Name",
             "filterExpression": null
           }
-        },
-        {
-          "name": "id",
-          "apiKey": "id",
-          "columnName": "Fact_Acct_ID",
-          "label": "Accounting Fact",
-          "type": "id",
-          "mandatory": true,
-          "visibility": "system",
-          "systemCategory": "internal",
-          "derivation": {
-            "type": "sequence"
-          },
-          "maxLength": "32",
-          "isFilterable": true
         },
         {
           "name": "groupID",
@@ -2752,6 +2968,124 @@
           "maxLength": "10",
           "isFilterable": true,
           "help": "The Transaction Date indicates the date of the transaction."
+        },
+        {
+          "name": "locationToAddress",
+          "apiKey": "locationToAddress",
+          "columnName": "C_LocTo_ID",
+          "label": "Location to Address",
+          "type": "foreignKey",
+          "mandatory": false,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Location To indicates the location that a product was moved to.",
+          "reference": {
+            "type": "Table",
+            "targetTable": "C_Location",
+            "keyColumn": "C_Location_ID",
+            "displayColumn": "City",
+            "filterExpression": null,
+            "orderBy": null
+          }
+        },
+        {
+          "name": "creationDate",
+          "apiKey": "creationDate",
+          "columnName": "Created",
+          "label": "Created",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Created field indicates the date that this record was created."
+        },
+        {
+          "name": "createdBy",
+          "apiKey": "createdBy",
+          "columnName": "CreatedBy",
+          "label": "CreatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Created By field indicates the user who created this record."
+        },
+        {
+          "name": "dateBalanced",
+          "apiKey": "dateBalanced",
+          "columnName": "Datebalanced",
+          "label": "Datebalanced",
+          "type": "date",
+          "mandatory": false,
+          "visibility": "system",
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "Used for certain accounts to set the date on which the account gets balance equal zero. This is used to exclude entries which are no longer open items. Useful to reduce number of entries to be reviewed"
+        },
+        {
+          "name": "modify",
+          "apiKey": "modify",
+          "columnName": "Ismodify",
+          "label": "Ismodify",
+          "type": "boolean",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "internal",
+          "derivation": {
+            "type": "computed",
+            "source": "N"
+          },
+          "maxLength": "1",
+          "defaultValue": "N",
+          "isFilterable": true
+        },
+        {
+          "name": "updated",
+          "apiKey": "updated",
+          "columnName": "Updated",
+          "label": "Updated",
+          "type": "dateTime",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "new Date()"
+          },
+          "maxLength": "19",
+          "isFilterable": true,
+          "help": "The Updated field indicates the date that this record was updated."
+        },
+        {
+          "name": "updatedBy",
+          "apiKey": "updatedBy",
+          "columnName": "UpdatedBy",
+          "label": "UpdatedBy",
+          "type": "foreignKey",
+          "mandatory": true,
+          "visibility": "system",
+          "systemCategory": "audit",
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.user"
+          },
+          "maxLength": "22",
+          "isFilterable": true,
+          "help": "The Updated By field indicates the user who updated this record."
         }
       ],
       "entityFullClass": "org.openbravo.model.financialmgmt.accounting.AccountingFact",
@@ -2761,7 +3095,7 @@
   ],
   "meta": {
     "version": "0.1.0",
-    "checksum": "d776330e",
-    "extractedAt": "2026-03-20T13:40:01.066Z"
+    "checksum": "8e8edd92",
+    "extractedAt": "2026-03-20T15:14:57.550Z"
   }
 }

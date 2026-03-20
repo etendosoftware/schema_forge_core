@@ -41,7 +41,10 @@
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
-          "dependsOn": { "field": "businessPartner", "filterKey": "C_BPartner_ID" },
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
           "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         "warehouse": {
@@ -65,7 +68,10 @@
         "invoiceAddress": {
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
-          "dependsOn": { "field": "businessPartner", "filterKey": "C_BPartner_ID" },
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
           "readOnlyLogic": "ReadOnly_Processed_Header"
         },
         "description": {
@@ -169,6 +175,24 @@
         },
         "ndDimension": {
           "reference": "UserDimension2"
+        },
+        "userContact": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "project": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "deliveryLocation": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         }
       }
     },
@@ -181,7 +205,11 @@
           "grid": true
         },
         "operativeUOM": {
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "dependsOn": {
+            "field": "product",
+            "filterKey": "M_Product_ID"
+          }
         },
         "orderedQuantity": {
           "grid": true
@@ -243,7 +271,11 @@
           "visibility": "system"
         },
         "partnerAddress": {
-          "visibility": "system"
+          "visibility": "system",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         },
         "salesOrder": {
           "visibility": "system"
@@ -891,5 +923,8 @@
       "impactIfOmitted": "Add Payment button shown even when order is fully paid"
     }
   },
-  "discardPatterns": ["CopyFrom*", "EM_*"]
+  "discardPatterns": [
+    "CopyFrom*",
+    "EM_*"
+  ]
 }

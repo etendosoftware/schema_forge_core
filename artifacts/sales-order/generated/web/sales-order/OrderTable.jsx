@@ -2,17 +2,15 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:order
 const columns = [
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'string' },
   { key: 'orderDate', column: 'DateOrdered', type: 'date' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'orderReference', column: 'POReference', type: 'string' },
-  { key: 'totalGrossAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'totalNetAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'string' },
   { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
 ];
 // @sf-generated-end columns:order
 
-const filters = ['businessPartner', 'orderDate', 'orderReference', 'totalGrossAmount'];
+const filters = ['orderDate', 'businessPartner', 'orderReference'];
 
 // @sf-generated-start component:OrderTable
 export default function OrderTable(props) {

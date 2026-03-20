@@ -7,49 +7,15 @@
   "entities": {
     "cOrder": {
       "fields": {
-        "cOrderId": {
-          "name": "id"
-        },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isActive": {
-          "name": "active"
-        },
-        "cDocTypeTargetId": {
-          "name": "transactionDocument"
-        },
-        "cDocTypeId": {
-          "name": "documentType"
-        },
-        "docStatus": {
-          "name": "documentStatus"
-        },
-        "docAction": {
+        "documentAction": {
           "visibility": "system",
-          "displayLogic": null,
-          "name": "documentAction"
+          "displayLogic": null
         },
-        "cCurrencyId": {
-          "name": "currency"
-        },
-        "adUserId": {
-          "name": "userContact"
-        },
-        "isSotrx": {
-          "name": "salesTransaction"
-        },
-        "isSelfService": {
-          "name": "selfService"
-        },
-        "isSelected": {
-          "name": "selected"
-        },
-        "isDiscountPrinted": {
-          "name": "printDiscount"
+        "userContact": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         },
         "isPrinted": {
           "name": "printed"
@@ -57,115 +23,73 @@
         "isInvoiced": {
           "name": "reInvoice"
         },
-        "soResStatus": {
-          "name": "reservationStatus"
-        },
-        "deliveryRule": {
-          "name": "deliveryTerms"
-        },
-        "freightAmt": {
-          "name": "freightAmount"
-        },
-        "priorityRule": {
-          "name": "priority"
-        },
-        "paymentRule": {
-          "name": "formOfPayment"
-        },
-        "dateAcct": {
-          "name": "accountingDate"
-        },
-        "generatetemplate": {
-          "name": "generateTemplate"
-        },
-        "deliverynotes": {
-          "name": "deliveryNotes"
-        },
-        "cIncotermsId": {
-          "name": "incoterms"
-        },
         "incotermsdescription": {
           "name": "incotermsDescription"
-        },
-        "mShipperId": {
-          "name": "shippingCompany"
-        },
-        "cCampaignId": {
-          "name": "salesCampaign"
-        },
-        "chargeAmt": {
-          "name": "chargeAmount"
-        },
-        "cChargeId": {
-          "name": "charge"
-        },
-        "cActivityId": {
-          "name": "activity"
-        },
-        "adOrgTrxId": {
-          "name": "trxOrganization"
         },
         "replacementorderId": {
           "name": "replacementOrder"
         },
-        "dropShipLocationId": {
-          "name": "dropShipLocation"
+        "dropShipLocation": {
+          "dependsOn": {
+            "field": "dropShipPartner",
+            "filterKey": "DropShip_BPartner_ID"
+          }
         },
-        "dropShipBpartnerId": {
-          "name": "dropShipPartner"
-        },
-        "dropShipUserId": {
-          "name": "dropShipContact"
-        },
-        "cBpartnerId": {
+        "businessPartner": {
           "grid": true,
           "searchable": true,
           "reference": "BusinessPartner",
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "businessPartner"
+          "displayLogic": null
         },
-        "cBpartnerLocationId": {
+        "partnerAddress": {
           "reference": "BusinessPartnerLocation",
-          "readOnlyLogic": null,
-          "name": "partnerAddress"
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
+          "readOnlyLogic": null
         },
-        "mPriceListId": {
-          "readOnlyLogic": null,
-          "name": "priceList"
+        "priceList": {
+          "readOnlyLogic": null
         },
-        "finPaymentmethodId": {
+        "paymentMethod": {
           "reference": "PaymentMethod",
-          "readOnlyLogic": null,
-          "name": "paymentMethod"
+          "readOnlyLogic": null
         },
-        "cPaymentTermId": {
-          "readOnlyLogic": null,
-          "name": "paymentTerms"
+        "paymentTerms": {
+          "readOnlyLogic": null
         },
-        "mWarehouseId": {
+        "warehouse": {
           "inputMode": "search",
-          "readOnlyLogic": null,
-          "name": "warehouse"
+          "readOnlyLogic": null
         },
-        "salesRepId": {
+        "salesRepresentative": {
           "grid": true,
-          "reference": "SalesRepresentative",
-          "name": "salesRepresentative"
+          "reference": "SalesRepresentative"
         },
-        "billToId": {
+        "invoiceAddress": {
           "reference": "BusinessPartnerLocation",
-          "readOnlyLogic": null,
-          "name": "invoiceAddress"
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
+          "readOnlyLogic": null
         },
-        "deliveryLocationId": {
+        "deliveryLocation": {
           "reference": "BusinessPartnerLocation",
-          "name": "deliveryLocation"
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         },
-        "cProjectId": {
+        "project": {
           "readOnlyLogic": null,
           "displayLogic": null,
-          "name": "project"
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         },
         "cCostcenterId": {
           "reference": "CostCenter",
@@ -174,11 +98,10 @@
           "displayLogic": null,
           "name": "costCenter"
         },
-        "aAssetId": {
+        "asset": {
           "inputMode": "search",
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "asset"
+          "displayLogic": null
         },
         "user1Id": {
           "reference": "UserDimension1",
@@ -194,25 +117,25 @@
           "displayLogic": null,
           "name": "dimension2"
         },
-        "dateOrdered": {
+        "orderDate": {
           "grid": true,
           "searchable": true,
+          "readOnlyLogic": null
+        },
+        "scheduledDeliveryDate": {
           "readOnlyLogic": null,
-          "name": "orderDate"
+          "displayLogic": null
         },
-        "datePromised": {
-          "readOnlyLogic": null,
+        "invoiceTerms": {
           "displayLogic": null,
-          "name": "scheduledDeliveryDate"
+          "dependsOn": {
+            "field": "transactionDocument",
+            "filterKey": "C_DOCTYPETARGET_ID"
+          }
         },
-        "invoiceRule": {
-          "displayLogic": null,
-          "name": "invoiceTerms"
-        },
-        "poreference": {
+        "orderReference": {
           "grid": true,
-          "searchable": true,
-          "name": "orderReference"
+          "searchable": true
         },
         "cancelandreplace": {
           "displayLogic": null,
@@ -233,9 +156,8 @@
           "grid": true,
           "name": "totalNetAmount"
         },
-        "quotationId": {
-          "displayLogic": null,
-          "name": "quotation"
+        "quotation": {
+          "displayLogic": null
         },
         "cancelledorderId": {
           "displayLogic": null,
@@ -248,10 +170,9 @@
         "iscancelled": {
           "name": "isCanceled"
         },
-        "isDelivered": {
+        "delivered": {
           "grid": true,
-          "displayLogic": null,
-          "name": "delivered"
+          "displayLogic": null
         },
         "bpartnerExtRef": {
           "displayLogic": null,
@@ -261,80 +182,11 @@
     },
     "cOrderLine": {
       "fields": {
-        "cOrderLineId": {
-          "name": "id"
-        },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isActive": {
-          "name": "active"
-        },
-        "cOrderId": {
-          "name": "salesOrder"
-        },
-        "cCurrencyId": {
-          "name": "currency"
-        },
-        "cBpartnerId": {
-          "name": "businessPartner"
-        },
-        "cBpartnerLocationId": {
-          "name": "partnerAddress"
-        },
-        "mWarehouseId": {
-          "name": "warehouse"
-        },
-        "mShipperId": {
-          "name": "shippingCompany"
-        },
-        "dateOrdered": {
-          "name": "orderDate"
-        },
-        "datePromised": {
-          "name": "scheduledDeliveryDate"
-        },
-        "dateInvoiced": {
-          "name": "invoiceDate"
-        },
-        "qtyInvoiced": {
-          "name": "invoicedQuantity"
-        },
-        "qtyReserved": {
-          "name": "reservedQuantity"
-        },
-        "freightAmt": {
-          "name": "freightAmount"
-        },
-        "directShip": {
-          "name": "directShipment"
-        },
-        "soResStatus": {
-          "name": "reservationStatus"
-        },
-        "mProductUomId": {
-          "name": "orderUOM"
-        },
-        "quantityOrder": {
-          "name": "orderQuantity"
-        },
         "priceStd": {
           "name": "baseNetUnitPrice"
         },
-        "grosspricestd": {
-          "name": "baseGrossUnitPrice"
-        },
         "iseditlinenetamt": {
           "name": "editLineNetAmount"
-        },
-        "isDescription": {
-          "name": "descriptionOnly"
-        },
-        "sResourceAssignmentId": {
-          "name": "resourceAssignment"
         },
         "bomParentId": {
           "name": "bomParent"
@@ -345,21 +197,18 @@
         "mOfferId": {
           "name": "promotionDiscount"
         },
-        "mProductId": {
+        "product": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null,
-          "name": "product"
+          "readOnlyLogic": null
         },
-        "qtyOrdered": {
+        "orderedQuantity": {
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "orderedQuantity"
+          "readOnlyLogic": null
         },
-        "aumqty": {
+        "operativeQuantity": {
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "operativeQuantity"
+          "displayLogic": null
         },
         "cAum": {
           "readOnlyLogic": null,
@@ -375,15 +224,13 @@
           "readOnlyLogic": null,
           "displayLogic": null
         },
-        "lineNetAmt": {
+        "lineNetAmount": {
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "lineNetAmount"
+          "readOnlyLogic": null
         },
-        "cTaxId": {
+        "tax": {
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "tax"
+          "readOnlyLogic": null
         },
         "priceList": {
           "readOnlyLogic": null,
@@ -394,9 +241,8 @@
           "grid": true,
           "readOnlyLogic": null
         },
-        "mWarehouseRuleId": {
-          "reference": "WarehouseRule",
-          "name": "warehouseRule"
+        "warehouseRule": {
+          "reference": "WarehouseRule"
         },
         "createReservation": {
           "readOnlyLogic": null,
@@ -408,10 +254,9 @@
           "displayLogic": null,
           "name": "alternateTaxableAmount"
         },
-        "mAttributeSetInstanceId": {
+        "attributeSetValue": {
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "attributeSetValue"
+          "displayLogic": null
         },
         "cancelpricead": {
           "displayLogic": null,
@@ -423,14 +268,12 @@
         "explode": {
           "displayLogic": null
         },
-        "relateOrderline": {
-          "displayLogic": null,
-          "name": "selectOrderLine"
+        "selectOrderLine": {
+          "displayLogic": null
         },
-        "cProjectId": {
+        "project": {
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "project"
+          "displayLogic": null
         },
         "cCostcenterId": {
           "reference": "CostCenter",
@@ -439,11 +282,10 @@
           "displayLogic": null,
           "name": "costCenter"
         },
-        "aAssetId": {
+        "asset": {
           "inputMode": "search",
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "asset"
+          "displayLogic": null
         },
         "user1Id": {
           "reference": "UserDimension1",
@@ -459,10 +301,9 @@
           "displayLogic": null,
           "name": "dimension2"
         },
-        "line": {
+        "lineNo": {
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "lineNo"
+          "readOnlyLogic": null
         },
         "overdueReturnDays": {
           "displayLogic": null
@@ -470,29 +311,32 @@
         "lineGrossAmount": {
           "displayLogic": null
         },
-        "grossPriceList": {
-          "displayLogic": null,
-          "name": "grossListPrice"
+        "grossListPrice": {
+          "displayLogic": null
         },
         "cUomId": {
           "readOnlyLogic": null,
           "name": "uom"
         },
-        "qtyDelivered": {
-          "displayLogic": null,
-          "name": "deliveredQuantity"
+        "deliveredQuantity": {
+          "displayLogic": null
         },
         "replacedorderlineId": {
           "displayLogic": null,
           "name": "replacedOrderLine"
         },
-        "quotationlineId": {
-          "displayLogic": null,
-          "name": "quotationLine"
+        "quotationLine": {
+          "displayLogic": null
         },
         "printDescription": {
           "visibility": "readOnly",
           "displayLogic": null
+        },
+        "operativeUOM": {
+          "dependsOn": {
+            "field": "product",
+            "filterKey": "M_Product_ID"
+          }
         }
       }
     },
@@ -501,37 +345,21 @@
         "cOrderlinetaxId": {
           "name": "id"
         },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isactive": {
-          "name": "active"
-        },
-        "cOrderlineId": {
-          "name": "salesOrderLine"
-        },
-        "line": {
+        "lineNo": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "lineNo"
+          "grid": true
         },
-        "cTaxId": {
+        "tax": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "tax"
+          "grid": true
         },
-        "taxbaseamt": {
+        "taxableAmount": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "taxableAmount"
+          "grid": true
         },
-        "taxamt": {
+        "taxAmount": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "taxAmount"
+          "grid": true
         }
       }
     },
@@ -541,38 +369,23 @@
         "mSolReservedStockVId": {
           "name": "id"
         },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isactive": {
-          "name": "active"
-        },
-        "mReservationStockId": {
-          "name": "reservationStock"
-        },
         "cOrderlineId2": {
           "visibility": "readOnly",
           "reference": null,
           "inputMode": null,
           "name": "purchaseOrderLine"
         },
-        "mReservationId": {
+        "stockReservation": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "search",
-          "name": "stockReservation"
+          "inputMode": "search"
         },
-        "mLocatorId": {
+        "storageBin": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "storageBin"
+          "grid": true
         },
-        "mAttributesetinstanceId": {
-          "visibility": "readOnly",
-          "name": "attributeSetValue"
+        "attributeSetValue": {
+          "visibility": "readOnly"
         },
         "cBpartnerId": {
           "visibility": "readOnly",
@@ -585,47 +398,28 @@
           "visibility": "readOnly",
           "grid": true
         },
-        "releasedQty": {
+        "released": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "released"
+          "grid": true
         }
       }
     },
     "cOrderlineServicerelation": {
       "name": "relatedProducts",
       "fields": {
-        "cOrderlineServicerelationId": {
-          "name": "id"
-        },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isactive": {
-          "name": "active"
-        },
-        "cOrderlineId": {
-          "name": "salesOrderLine"
-        },
         "cOrderlineRelatedId": {
           "name": "relatedSalesOrderLine"
         },
-        "line": {
+        "lineNo": {
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "lineNo"
+          "readOnlyLogic": null
         },
-        "mProductId": {
+        "product": {
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "product"
+          "readOnlyLogic": null
         },
-        "mAttributeSetInstanceId": {
-          "readOnlyLogic": null,
-          "name": "attributeSetValue"
+        "attributeSetValue": {
+          "readOnlyLogic": null
         }
       }
     },
@@ -655,23 +449,10 @@
     "cOrderDiscount": {
       "name": "basicDiscounts",
       "fields": {
-        "cOrderDiscountId": {
-          "name": "id"
-        },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "cOrderId": {
-          "name": "salesOrder"
-        },
-        "line": {
+        "lineNo": {
           "visibility": "readOnly",
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "lineNo"
+          "readOnlyLogic": null
         },
         "cDiscountId": {
           "visibility": "readOnly",
@@ -684,47 +465,27 @@
           "grid": true,
           "readOnlyLogic": null
         },
-        "isactive": {
+        "active": {
           "visibility": "readOnly",
           "grid": true,
-          "readOnlyLogic": null,
-          "name": "active"
+          "readOnlyLogic": null
         }
       }
     },
     "cOrderTax": {
       "fields": {
-        "cOrderTaxId": {
-          "name": "id"
-        },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isActive": {
-          "name": "active"
-        },
-        "cOrderId": {
-          "name": "salesOrder"
-        },
-        "line": {
+        "lineNo": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "lineNo"
+          "grid": true
         },
-        "cTaxId": {
-          "grid": true,
-          "name": "tax"
+        "tax": {
+          "grid": true
         },
-        "taxAmt": {
-          "grid": true,
-          "name": "taxAmount"
+        "taxAmount": {
+          "grid": true
         },
-        "taxBaseAmt": {
-          "grid": true,
-          "name": "taxableAmount"
+        "taxableAmount": {
+          "grid": true
         }
       }
     },
@@ -734,31 +495,14 @@
         "finPaymentSchedOrdVId": {
           "name": "id"
         },
-        "adClientId": {
-          "name": "client"
+        "dueDate": {
+          "visibility": "readOnly",
+          "grid": true
         },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isactive": {
-          "name": "active"
-        },
-        "cOrderId": {
-          "name": "salesOrder"
-        },
-        "cInvoiceId": {
-          "name": "invoice"
-        },
-        "duedate": {
+        "paymentMethod": {
           "visibility": "readOnly",
           "grid": true,
-          "name": "dueDate"
-        },
-        "finPaymentmethodId": {
-          "visibility": "readOnly",
-          "grid": true,
-          "reference": "PaymentMethod",
-          "name": "paymentMethod"
+          "reference": "PaymentMethod"
         },
         "expected": {
           "visibility": "readOnly",
@@ -778,15 +522,13 @@
           "grid": true,
           "name": "lastPaymentDate"
         },
-        "numberofpayments": {
+        "numberOfPayments": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "numberOfPayments"
+          "grid": true
         },
-        "cCurrencyId": {
+        "currency": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "currency"
+          "grid": true
         }
       }
     },
@@ -796,15 +538,6 @@
         "finPaymentDetailVId": {
           "name": "id"
         },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isactive": {
-          "name": "active"
-        },
         "finPaymentSchedOrdVId": {
           "name": "paymentSchedule"
         },
@@ -813,9 +546,6 @@
         },
         "finFinancialAccountId": {
           "name": "financialAccountInternal"
-        },
-        "cCurrencyId": {
-          "name": "currency"
         },
         "finaccCurrencyId": {
           "name": "finaccCurrency"
@@ -829,27 +559,19 @@
         "invoiceno": {
           "name": "invoiceNo"
         },
-        "invoicedamt": {
-          "name": "invoiceAmount"
-        },
-        "cBpartnerId": {
-          "name": "businessPartner"
-        },
         "finPaymentId": {
           "visibility": "readOnly",
           "grid": true,
           "inputMode": "search",
           "name": "paymentIn"
         },
-        "paymentdate": {
+        "paymentDate": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "paymentDate"
+          "grid": true
         },
-        "duedate": {
+        "dueDate": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "dueDate"
+          "grid": true
         },
         "expected": {
           "visibility": "readOnly",
@@ -880,9 +602,6 @@
           "displayLogic": null,
           "name": "exchangeRate"
         },
-        "iscanceled": {
-          "name": "canceled"
-        },
         "status": {
           "grid": true
         },
@@ -899,21 +618,6 @@
     "cOrderReplacement": {
       "name": "replacementOrders",
       "fields": {
-        "cOrderReplacementId": {
-          "name": "id"
-        },
-        "adClientId": {
-          "name": "client"
-        },
-        "adOrgId": {
-          "name": "organization"
-        },
-        "isactive": {
-          "name": "active"
-        },
-        "cOrderId": {
-          "name": "salesOrder"
-        },
         "cReplacementId": {
           "visibility": "readOnly",
           "grid": true,

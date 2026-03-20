@@ -2,19 +2,19 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:finPaymentScheduleDetail
 const fields = [
-  { key: 'amount', column: 'Amount', type: 'number', required: true, section: 'principal' },
-  { key: 'writeoffamt', column: 'Writeoffamt', type: 'number', section: 'principal' },
+  { key: 'amount', column: 'Amount', type: 'number', label: 'Received Amount', required: true, section: 'principal' },
+  { key: 'writeoffAmount', column: 'Writeoffamt', type: 'number', label: 'Write-off Amount', section: 'principal' },
   // @sf-custom-slot callout:SE_Payment_MultiCurrency
-  { key: 'paymentdate', column: 'Paymentdate', type: 'date', section: 'principal' },
+  { key: 'paymentDate', column: 'Paymentdate', type: 'date', label: 'Payment Date', section: 'principal' },
   // @sf-custom-slot callout:SE_PaymentMethod_FinAccount
-  { key: 'finPaymentmethodId', column: 'Fin_Paymentmethod_ID', type: 'selector', required: true, section: 'principal', reference: 'Paymentmethod', inputMode: 'selector' },
-  { key: 'amount2', column: 'Amount', type: 'number', required: true, section: 'other' },
+  { key: 'paymentMethod', column: 'Fin_Paymentmethod_ID', type: 'selector', label: 'Payment Method', required: true, section: 'principal', reference: 'Paymentmethod', inputMode: 'selector' },
+  { key: 'amount2', column: 'Amount', type: 'number', label: 'Amount', required: true, section: 'other' },
   // @sf-custom-slot callout:SE_Payment_FinAccount
-  { key: 'finFinancialAccountId', column: 'Fin_Financial_Account_ID', type: 'selector', required: true, section: 'other', reference: 'Financial_Account', inputMode: 'selector' },
-  { key: 'status', column: 'Status', type: 'text', required: true, section: 'other' },
-  { key: 'iscanceled', column: 'Iscanceled', type: 'checkbox', required: true, readOnly: true, section: 'other' },
-  { key: 'finPaymentId', column: 'Fin_Payment_ID', type: 'selector', required: true, readOnly: true, section: 'other', reference: 'Payment', inputMode: 'selector' },
-  { key: 'isinvoicepaid', column: 'Isinvoicepaid', type: 'checkbox', required: true, section: 'other' },
+  { key: 'account', column: 'Fin_Financial_Account_ID', type: 'dependent', label: 'Financial Account', required: true, section: 'other', reference: 'Financial_Account', inputMode: 'dependent', dependsOn: { field: 'paymentMethod', filterKey: 'Fin_Paymentmethod_ID' } },
+  { key: 'status', column: 'Status', type: 'text', label: 'Status', required: true, section: 'other' },
+  { key: 'canceled', column: 'Iscanceled', type: 'checkbox', label: 'Canceled', required: true, readOnly: true, section: 'other' },
+  { key: 'finPaymentID', column: 'Fin_Payment_ID', type: 'selector', label: 'Payment', required: true, readOnly: true, section: 'other', reference: 'Payment', inputMode: 'selector' },
+  { key: 'invoicePaid', column: 'Isinvoicepaid', type: 'checkbox', label: 'Invoice Paid', required: true, section: 'other' },
 ];
 // @sf-generated-end fields:finPaymentScheduleDetail
 

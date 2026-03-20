@@ -352,9 +352,30 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
     const simplifiedName = entityDecision.name || autoSimplifyEntityName(rawEntityName);
     const fieldsDecisions = entityDecision.fields || {};
 
+    // Build a column-name index for decision fallback lookup.
+    // Decision keys may use an older raw naming convention (e.g. cBpartnerLocationId)
+    // while the current raw uses a simplified name (e.g. partnerAddress).
+    // The column name (e.g. C_BPartner_Location_ID) is stable across extractions.
+    const fieldDecisionsByColumn = {};
+    for (const [decKey, decVal] of Object.entries(fieldsDecisions)) {
+      // We don't know the column from the key alone, so we'll match below
+      fieldDecisionsByColumn[decKey] = decVal;
+    }
+
     const curatedFields = (rawEntity.fields || []).map(rawField => {
-      const fieldKey = rawField.name; // == rawField.apiKey
-      const fieldDecision = fieldsDecisions[fieldKey] || {};
+      const fieldKey = rawField.name;
+      let fieldDecision = fieldsDecisions[fieldKey];
+      if (!fieldDecision && rawField.columnName) {
+        // Fallback: find a decision whose 'name' override matches rawField.name,
+        // or whose key matches a camelCase derivation of the column name
+        for (const [decKey, decVal] of Object.entries(fieldsDecisions)) {
+          if (decVal.name === rawField.name) {
+            fieldDecision = decVal;
+            break;
+          }
+        }
+      }
+      fieldDecision = fieldDecision || {};
       return buildCuratedField(rawField, fieldDecision, discardPatterns);
     });
 
