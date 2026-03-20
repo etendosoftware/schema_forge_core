@@ -383,6 +383,11 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
         }
       }
 
+      // Add processId for button-type fields (AD_Reference_ID = 28)
+      if (schemaType === 'button' && row.ad_process_id) {
+        fieldDef.processId = row.ad_process_id;
+      }
+
       // Attach enum values for List-type fields (AD_Reference_ID = 17)
       if (schemaType === 'enum' && row.ad_reference_value_id) {
         const enumValues = enumValuesMap[row.ad_reference_value_id];
@@ -472,6 +477,7 @@ SELECT
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
+  c.AD_Process_ID,
   c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
@@ -544,6 +550,7 @@ SELECT
   c.DefaultValue, c.FieldLength, c.ValueMin, c.ValueMax,
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
+  c.AD_Process_ID,
   c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
