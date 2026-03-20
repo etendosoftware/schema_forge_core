@@ -96,7 +96,7 @@ async function reconcileWithDecisions(windowName) {
   // Auto-migrate decisions schema version if needed
   const { needsMigration, migrateDecisions } = await import('./migrations/index.js');
   if (needsMigration(decisions)) {
-    const result = migrateDecisions(decisions);
+    const result = migrateDecisions(decisions, { schemaRaw: raw });
     decisions = result.decisions;
     await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
   }

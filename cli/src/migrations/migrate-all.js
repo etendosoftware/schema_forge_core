@@ -84,7 +84,16 @@ async function main() {
         continue;
       }
 
-      const result = migrateDecisions(decisions);
+      // Read schema-raw.json for context (needed by v1->v2 entity key migration)
+      const schemaRawPath = join(ARTIFACTS_DIR, windowName, 'schema-raw.json');
+      let schemaRaw = null;
+      try {
+        schemaRaw = JSON.parse(await readFile(schemaRawPath, 'utf-8'));
+      } catch {
+        // No schema-raw.json — migration will skip entity remapping
+      }
+
+      const result = migrateDecisions(decisions, { schemaRaw });
       console.log(`  ${windowName}: v${result.fromVersion} → v${result.toVersion}`);
 
       if (!dryRun) {

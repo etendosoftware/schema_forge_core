@@ -3,8 +3,9 @@
  *
  * Registry and runner for decisions.json schema migrations.
  *
- * Each migration is a pure function: (decisions) => decisions
+ * Each migration is a function: (decisions, context?) => decisions
  * that transforms the document from version N to version N+1.
+ * Context is optional and provides external data (e.g., schemaRaw).
  *
  * The current (latest) version is exported as CURRENT_VERSION.
  * All decisions.json files without an explicit "version" field
@@ -12,7 +13,7 @@
  *
  * Exports:
  *   CURRENT_VERSION  - number, the latest schema version
- *   migrateDecisions(decisions) - returns migrated decisions (new object, no mutation)
+ *   migrateDecisions(decisions, context?) - returns migrated decisions (new object, no mutation)
  *   needsMigration(decisions) - returns true if version < CURRENT_VERSION
  *   getVersion(decisions) - returns the numeric version of a decisions object
  */
@@ -22,7 +23,7 @@
 // ---------------------------------------------------------------------------
 
 // Import migrations here as they are created:
-// import { migrate as v1ToV2 } from './v1-to-v2.js';
+import { migrate as v1ToV2 } from './v1-to-v2.js';
 
 /**
  * Ordered list of migrations. Each entry:
@@ -32,8 +33,7 @@
  * Each migration receives a deep-cloned decisions object and returns the transformed version.
  */
 const MIGRATIONS = [
-  // Example (uncomment when first migration is needed):
-  // { fromVersion: 1, toVersion: 2, migrate: v1ToV2 },
+  { fromVersion: 1, toVersion: 2, migrate: v1ToV2 },
 ];
 
 /**
@@ -91,9 +91,10 @@ export function needsMigration(decisions) {
  * Throws if a required migration is missing from the registry.
  *
  * @param {Object} decisions - parsed decisions.json content
+ * @param {Object} [context={}] - optional context (e.g., { schemaRaw }) for migrations that need external data
  * @returns {{ decisions: Object, migrated: boolean, fromVersion: number, toVersion: number }}
  */
-export function migrateDecisions(decisions) {
+export function migrateDecisions(decisions, context = {}) {
   const fromVersion = getVersion(decisions);
 
   if (fromVersion >= CURRENT_VERSION) {
@@ -118,7 +119,7 @@ export function migrateDecisions(decisions) {
       );
     }
 
-    current = migration.migrate(current);
+    current = migration.migrate(current, context);
     currentVersion = migration.toVersion;
 
     // Ensure the migration updated version markers
