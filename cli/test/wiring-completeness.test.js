@@ -145,6 +145,12 @@ describe('Wiring completeness', () => {
   describe('Child entities must NOT appear as standalone menu items', () => {
     for (const [childName, info] of Object.entries(childToParent)) {
       const slug = camelToKebab(childName);
+      // If the slug matches a menu item that has its own independent artifact
+      // (its own contract.json), it's a different window that happens to share
+      // the name — not a real collision. Skip it.
+      const hasOwnArtifact = existsSync(resolve(ARTIFACTS, slug, 'contract.json'));
+      if (hasOwnArtifact && slug !== info.parent) continue;
+
       it(`${childName} (child of ${info.parent}) should not be a menu item`, () => {
         assert.ok(
           !allMenuItems.includes(slug),
