@@ -21,7 +21,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.organization" }
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          }
         },
         {
           "name": "documentNo",
@@ -32,7 +35,10 @@
           "grid": true,
           "form": true,
           "searchable": true,
-          "derivation": { "type": "sequence", "source": "documentType.sequence" }
+          "derivation": {
+            "type": "sequence",
+            "source": "documentType.sequence"
+          }
         },
         {
           "name": "documentType",
@@ -43,7 +49,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "doctype.goodsReceipt" }
+          "derivation": {
+            "type": "fromConfig",
+            "source": "doctype.goodsReceipt"
+          }
         },
         {
           "name": "warehouse",
@@ -80,7 +89,10 @@
           "searchable": false,
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
-          "dependsOn": { "field": "businessPartner", "filterKey": "C_BPartner_ID" }
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         },
         {
           "name": "movementDate",
@@ -143,7 +155,10 @@
           "grid": true,
           "form": false,
           "searchable": true,
-          "derivation": { "type": "computed", "source": "'DR'" }
+          "derivation": {
+            "type": "computed",
+            "source": "'DR'"
+          }
         },
         {
           "name": "invoiceStatus",
@@ -274,7 +289,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "computed", "source": "'CO'" }
+          "derivation": {
+            "type": "computed",
+            "source": "'CO'"
+          }
         },
         {
           "name": "posted",
@@ -285,7 +303,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "computed", "source": "'N'" }
+          "derivation": {
+            "type": "computed",
+            "source": "'N'"
+          }
         },
         {
           "name": "salesRepresentative",
@@ -376,7 +397,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "computed", "source": "'V+'" }
+          "derivation": {
+            "type": "computed",
+            "source": "'V+'"
+          }
         },
         {
           "name": "shippingCompany",
@@ -467,7 +491,9 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "sequence" }
+          "derivation": {
+            "type": "sequence"
+          }
         },
         {
           "name": "pickDate",
@@ -508,7 +534,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.client" }
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          }
         },
         {
           "name": "active",
@@ -519,7 +548,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "computed", "source": "true" }
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          }
         },
         {
           "name": "datePrinted",
@@ -859,7 +891,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.organization" }
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.organization"
+          }
         },
         {
           "name": "bOMParentID",
@@ -890,7 +925,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.client" }
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          }
         },
         {
           "name": "active",
@@ -901,7 +939,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "computed", "source": "true" }
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          }
         },
         {
           "name": "shipmentReceipt",
@@ -912,7 +953,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromParent", "source": "goodsReceipt.id" }
+          "derivation": {
+            "type": "fromParent",
+            "source": "goodsReceipt.id"
+          }
         },
         {
           "name": "goodsShipmentLine",
@@ -923,7 +967,9 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "sequence" }
+          "derivation": {
+            "type": "sequence"
+          }
         },
         {
           "name": "descriptionOnly",
@@ -941,35 +987,44 @@
       "name": "accounting",
       "tableName": "Fact_Acct",
       "tabName": "Accounting",
+      "javaQualifier": "factAcctHandler",
       "fields": [
         {
-          "name": "accountingDate",
-          "column": "DateAcct",
-          "type": "date",
+          "name": "account",
+          "column": "Account_ID",
+          "type": "string",
           "visibility": "readOnly",
-          "required": true,
+          "required": false,
           "grid": true,
           "form": true,
           "searchable": false
         },
         {
-          "name": "account",
-          "column": "Account_ID",
-          "type": "foreignKey",
+          "name": "accountingDate",
+          "column": "DateAcct",
+          "type": "date",
           "visibility": "readOnly",
-          "required": true,
+          "required": false,
           "grid": true,
           "form": true,
-          "searchable": false,
-          "reference": "Account",
-          "inputMode": "search"
+          "searchable": false
+        },
+        {
+          "name": "postingType",
+          "column": "PostingType",
+          "type": "string",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
         },
         {
           "name": "debit",
           "column": "AmtAcctDr",
           "type": "amount",
           "visibility": "readOnly",
-          "required": true,
+          "required": false,
           "grid": true,
           "form": true,
           "searchable": false
@@ -979,7 +1034,7 @@
           "column": "AmtAcctCr",
           "type": "amount",
           "visibility": "readOnly",
-          "required": true,
+          "required": false,
           "grid": true,
           "form": true,
           "searchable": false
@@ -987,128 +1042,15 @@
         {
           "name": "description",
           "column": "Description",
-          "type": "string",
-          "visibility": "readOnly",
-          "required": false,
-          "grid": false,
-          "form": true,
-          "searchable": false
-        },
-        {
-          "name": "businessPartner",
-          "column": "C_BPartner_ID",
-          "type": "foreignKey",
-          "visibility": "readOnly",
-          "required": false,
-          "grid": false,
-          "form": true,
-          "searchable": false,
-          "reference": "BusinessPartner",
-          "inputMode": "search"
-        },
-        {
-          "name": "product",
-          "column": "M_Product_ID",
-          "type": "foreignKey",
-          "visibility": "readOnly",
-          "required": false,
-          "grid": false,
-          "form": true,
-          "searchable": false,
-          "reference": "Product",
-          "inputMode": "search"
-        },
-        {
-          "name": "accountingSchema",
-          "column": "C_AcctSchema_ID",
-          "type": "foreignKey",
-          "visibility": "readOnly",
-          "required": true,
-          "grid": false,
-          "form": true,
-          "searchable": false,
-          "reference": "AccountingSchema",
-          "inputMode": "selector"
-        },
-        {
-          "name": "currency",
-          "column": "C_Currency_ID",
-          "type": "foreignKey",
-          "visibility": "readOnly",
-          "required": true,
-          "grid": false,
-          "form": true,
-          "searchable": false,
-          "reference": "Currency",
-          "inputMode": "selector"
-        },
-        {
-          "name": "period",
-          "column": "C_Period_ID",
-          "type": "foreignKey",
-          "visibility": "readOnly",
-          "required": true,
-          "grid": false,
-          "form": true,
-          "searchable": false,
-          "reference": "Period",
-          "inputMode": "selector"
-        },
-        {
-          "name": "client",
-          "column": "AD_Client_ID",
-          "type": "foreignKey",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.client" }
-        },
-        {
-          "name": "organization",
-          "column": "AD_Org_ID",
-          "type": "foreignKey",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.organization" }
-        },
-        {
-          "name": "active",
-          "column": "IsActive",
-          "type": "boolean",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false,
-          "derivation": { "type": "computed", "source": "true" }
-        },
-        {
-          "name": "recordID",
-          "column": "Record_ID",
           "type": "text",
-          "visibility": "system",
-          "required": true,
+          "visibility": "readOnly",
+          "required": false,
           "grid": false,
-          "form": false,
+          "form": true,
           "searchable": false
         },
         {
-          "name": "sequenceNumber",
-          "column": "SeqNo",
-          "type": "integer",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false
-        },
-        {
-          "name": "accountingFact",
+          "name": "factAcct",
           "column": "Fact_Acct_ID",
           "type": "id",
           "visibility": "system",
@@ -1116,57 +1058,37 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "sequence" }
+          "derivation": {
+            "type": "sequence"
+          }
         },
         {
-          "name": "table",
-          "column": "AD_Table_ID",
-          "type": "foreignKey",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false
-        },
-        {
-          "name": "foreignCurrencyDebit",
-          "column": "AmtSourceDr",
-          "type": "amount",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false
-        },
-        {
-          "name": "foreignCurrencyCredit",
-          "column": "AmtSourceCr",
-          "type": "amount",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false
-        },
-        {
-          "name": "postingType",
-          "column": "PostingType",
-          "type": "enum",
-          "visibility": "system",
-          "required": true,
-          "grid": false,
-          "form": false,
-          "searchable": false
-        },
-        {
-          "name": "groupID",
-          "column": "Fact_Acct_Group_ID",
+          "name": "recordID",
+          "column": "Record_ID",
           "type": "string",
           "visibility": "system",
           "required": true,
           "grid": false,
           "form": false,
-          "searchable": false
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "goodsReceipt.id"
+          }
+        },
+        {
+          "name": "adTable",
+          "column": "AD_Table_ID",
+          "type": "string",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "'319'"
+          }
         }
       ]
     },
@@ -1326,7 +1248,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromParent", "source": "goodsReceipt.id" }
+          "derivation": {
+            "type": "fromParent",
+            "source": "goodsReceipt.id"
+          }
         },
         {
           "name": "active",
@@ -1337,7 +1262,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "computed", "source": "true" }
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          }
         },
         {
           "name": "processMatching",
@@ -1358,7 +1286,10 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "fromConfig", "source": "context.client" }
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.client"
+          }
         },
         {
           "name": "landedCostCost",
@@ -1369,7 +1300,9 @@
           "grid": false,
           "form": false,
           "searchable": false,
-          "derivation": { "type": "sequence" }
+          "derivation": {
+            "type": "sequence"
+          }
         }
       ]
     }

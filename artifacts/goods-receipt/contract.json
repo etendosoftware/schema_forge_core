@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-03-19T19:36:58.079Z",
-  "checksum": "1d3f6371c3ae74a8",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-20T14:37:52.072Z",
+  "checksum": "34e60c9ff29b7898",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -426,26 +426,34 @@
         "tabName": "Accounting",
         "fields": [
           {
+            "name": "account",
+            "column": "Account_ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true
+          },
+          {
             "name": "accountingDate",
             "column": "DateAcct",
             "type": "date",
             "tsType": "string",
             "visibility": "readOnly",
-            "required": true,
+            "required": false,
             "grid": true,
             "form": true
           },
           {
-            "name": "account",
-            "column": "Account_ID",
-            "type": "foreignKey",
+            "name": "postingType",
+            "column": "PostingType",
+            "type": "string",
             "tsType": "string",
             "visibility": "readOnly",
-            "required": true,
-            "grid": true,
-            "form": true,
-            "reference": "Account",
-            "inputMode": "search"
+            "required": false,
+            "grid": false,
+            "form": true
           },
           {
             "name": "debit",
@@ -453,7 +461,7 @@
             "type": "amount",
             "tsType": "number",
             "visibility": "readOnly",
-            "required": true,
+            "required": false,
             "grid": true,
             "form": true
           },
@@ -463,79 +471,19 @@
             "type": "amount",
             "tsType": "number",
             "visibility": "readOnly",
-            "required": true,
+            "required": false,
             "grid": true,
             "form": true
           },
           {
             "name": "description",
             "column": "Description",
-            "type": "string",
+            "type": "text",
             "tsType": "string",
             "visibility": "readOnly",
             "required": false,
             "grid": false,
             "form": true
-          },
-          {
-            "name": "businessPartner",
-            "column": "C_BPartner_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "BusinessPartner",
-            "inputMode": "search"
-          },
-          {
-            "name": "product",
-            "column": "M_Product_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Product",
-            "inputMode": "search"
-          },
-          {
-            "name": "accountingSchema",
-            "column": "C_AcctSchema_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "reference": "AccountingSchema",
-            "inputMode": "selector"
-          },
-          {
-            "name": "currency",
-            "column": "C_Currency_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "reference": "Currency",
-            "inputMode": "selector"
-          },
-          {
-            "name": "period",
-            "column": "C_Period_ID",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "reference": "Period",
-            "inputMode": "selector"
           }
         ],
         "searchableFields": [],
@@ -1310,148 +1258,64 @@
         "tabName": "Accounting",
         "fields": [
           {
+            "name": "account",
+            "column": "Account_ID",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
             "name": "accountingDate",
             "column": "DateAcct",
             "type": "date",
             "visibility": "readOnly",
-            "required": true
+            "required": false
           },
           {
-            "name": "account",
-            "column": "Account_ID",
-            "type": "foreignKey",
+            "name": "postingType",
+            "column": "PostingType",
+            "type": "string",
             "visibility": "readOnly",
-            "required": true
+            "required": false
           },
           {
             "name": "debit",
             "column": "AmtAcctDr",
             "type": "amount",
             "visibility": "readOnly",
-            "required": true
+            "required": false
           },
           {
             "name": "credit",
             "column": "AmtAcctCr",
             "type": "amount",
             "visibility": "readOnly",
-            "required": true
+            "required": false
           },
           {
             "name": "description",
             "column": "Description",
-            "type": "string",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "businessPartner",
-            "column": "C_BPartner_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "product",
-            "column": "M_Product_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "accountingSchema",
-            "column": "C_AcctSchema_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "currency",
-            "column": "C_Currency_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "period",
-            "column": "C_Period_ID",
-            "type": "foreignKey",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "active",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "recordID",
-            "column": "Record_ID",
             "type": "text",
-            "visibility": "system",
-            "required": true
+            "visibility": "readOnly",
+            "required": false
           },
           {
-            "name": "sequenceNumber",
-            "column": "SeqNo",
-            "type": "integer",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "accountingFact",
+            "name": "factAcct",
             "column": "Fact_Acct_ID",
             "type": "id",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "table",
+            "name": "recordID",
+            "column": "Record_ID",
+            "type": "string",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "adTable",
             "column": "AD_Table_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "foreignCurrencyDebit",
-            "column": "AmtSourceDr",
-            "type": "amount",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "foreignCurrencyCredit",
-            "column": "AmtSourceCr",
-            "type": "amount",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "postingType",
-            "column": "PostingType",
-            "type": "enum",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "groupID",
-            "column": "Fact_Acct_Group_ID",
             "type": "string",
             "visibility": "system",
             "required": true
@@ -1916,48 +1780,6 @@
         "column": "User2_ID",
         "reference": "UserDimension2",
         "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/ndDimension"
-      },
-      {
-        "entity": "accounting",
-        "field": "account",
-        "column": "Account_ID",
-        "reference": "Account",
-        "url": "/sws/neo/goods-receipt/accounting/selectors/account"
-      },
-      {
-        "entity": "accounting",
-        "field": "businessPartner",
-        "column": "C_BPartner_ID",
-        "reference": "BusinessPartner",
-        "url": "/sws/neo/goods-receipt/accounting/selectors/businessPartner"
-      },
-      {
-        "entity": "accounting",
-        "field": "product",
-        "column": "M_Product_ID",
-        "reference": "Product",
-        "url": "/sws/neo/goods-receipt/accounting/selectors/product"
-      },
-      {
-        "entity": "accounting",
-        "field": "accountingSchema",
-        "column": "C_AcctSchema_ID",
-        "reference": "AccountingSchema",
-        "url": "/sws/neo/goods-receipt/accounting/selectors/accountingSchema"
-      },
-      {
-        "entity": "accounting",
-        "field": "currency",
-        "column": "C_Currency_ID",
-        "reference": "Currency",
-        "url": "/sws/neo/goods-receipt/accounting/selectors/currency"
-      },
-      {
-        "entity": "accounting",
-        "field": "period",
-        "column": "C_Period_ID",
-        "reference": "Period",
-        "url": "/sws/neo/goods-receipt/accounting/selectors/period"
       },
       {
         "entity": "landedCost",
@@ -2678,20 +2500,28 @@
         "id": "t-74",
         "category": "field-presence",
         "entity": "accounting",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Field 'accountingDate' should be present in accounting"
-      },
-      {
-        "id": "t-75",
-        "category": "field-presence",
-        "entity": "accounting",
         "field": "account",
         "runner": "node",
         "description": "Field 'account' should be present in accounting"
       },
       {
+        "id": "t-75",
+        "category": "field-presence",
+        "entity": "accounting",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should be present in accounting"
+      },
+      {
         "id": "t-76",
+        "category": "field-presence",
+        "entity": "accounting",
+        "field": "postingType",
+        "runner": "node",
+        "description": "Field 'postingType' should be present in accounting"
+      },
+      {
+        "id": "t-77",
         "category": "field-presence",
         "entity": "accounting",
         "field": "debit",
@@ -2699,7 +2529,7 @@
         "description": "Field 'debit' should be present in accounting"
       },
       {
-        "id": "t-77",
+        "id": "t-78",
         "category": "field-presence",
         "entity": "accounting",
         "field": "credit",
@@ -2707,7 +2537,7 @@
         "description": "Field 'credit' should be present in accounting"
       },
       {
-        "id": "t-78",
+        "id": "t-79",
         "category": "field-presence",
         "entity": "accounting",
         "field": "description",
@@ -2715,55 +2545,7 @@
         "description": "Field 'description' should be present in accounting"
       },
       {
-        "id": "t-79",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be present in accounting"
-      },
-      {
         "id": "t-80",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in accounting"
-      },
-      {
-        "id": "t-81",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "accountingSchema",
-        "runner": "node",
-        "description": "Field 'accountingSchema' should be present in accounting"
-      },
-      {
-        "id": "t-82",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "currency",
-        "runner": "node",
-        "description": "Field 'currency' should be present in accounting"
-      },
-      {
-        "id": "t-83",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "period",
-        "runner": "node",
-        "description": "Field 'period' should be present in accounting"
-      },
-      {
-        "id": "t-84",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Field 'accountingDate' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-85",
         "category": "field-type",
         "entity": "accounting",
         "field": "account",
@@ -2771,7 +2553,23 @@
         "description": "Field 'account' should have type 'string' in accounting"
       },
       {
-        "id": "t-86",
+        "id": "t-81",
+        "category": "field-type",
+        "entity": "accounting",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should have type 'string' in accounting"
+      },
+      {
+        "id": "t-82",
+        "category": "field-type",
+        "entity": "accounting",
+        "field": "postingType",
+        "runner": "node",
+        "description": "Field 'postingType' should have type 'string' in accounting"
+      },
+      {
+        "id": "t-83",
         "category": "field-type",
         "entity": "accounting",
         "field": "debit",
@@ -2779,7 +2577,7 @@
         "description": "Field 'debit' should have type 'number' in accounting"
       },
       {
-        "id": "t-87",
+        "id": "t-84",
         "category": "field-type",
         "entity": "accounting",
         "field": "credit",
@@ -2787,7 +2585,7 @@
         "description": "Field 'credit' should have type 'number' in accounting"
       },
       {
-        "id": "t-88",
+        "id": "t-85",
         "category": "field-type",
         "entity": "accounting",
         "field": "description",
@@ -2795,54 +2593,14 @@
         "description": "Field 'description' should have type 'string' in accounting"
       },
       {
-        "id": "t-89",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-90",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-91",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "accountingSchema",
-        "runner": "node",
-        "description": "Field 'accountingSchema' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-92",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "currency",
-        "runner": "node",
-        "description": "Field 'currency' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-93",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "period",
-        "runner": "node",
-        "description": "Field 'period' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-94",
+        "id": "t-86",
         "category": "visibility",
         "entity": "accounting",
         "runner": "node",
         "description": "Entity 'accounting' should only expose visible fields in frontend"
       },
       {
-        "id": "t-95",
+        "id": "t-87",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "lineNo",
@@ -2850,7 +2608,7 @@
         "description": "Field 'lineNo' should be present in landedCost"
       },
       {
-        "id": "t-96",
+        "id": "t-88",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "landedCostType",
@@ -2858,7 +2616,7 @@
         "description": "Field 'landedCostType' should be present in landedCost"
       },
       {
-        "id": "t-97",
+        "id": "t-89",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "invoiceLine",
@@ -2866,7 +2624,7 @@
         "description": "Field 'invoiceLine' should be present in landedCost"
       },
       {
-        "id": "t-98",
+        "id": "t-90",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "amount",
@@ -2874,7 +2632,7 @@
         "description": "Field 'amount' should be present in landedCost"
       },
       {
-        "id": "t-99",
+        "id": "t-91",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "currency",
@@ -2882,7 +2640,7 @@
         "description": "Field 'currency' should be present in landedCost"
       },
       {
-        "id": "t-100",
+        "id": "t-92",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "landedCostDistributionAlgorithm",
@@ -2890,7 +2648,7 @@
         "description": "Field 'landedCostDistributionAlgorithm' should be present in landedCost"
       },
       {
-        "id": "t-101",
+        "id": "t-93",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "description",
@@ -2898,7 +2656,7 @@
         "description": "Field 'description' should be present in landedCost"
       },
       {
-        "id": "t-102",
+        "id": "t-94",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "matched",
@@ -2906,7 +2664,7 @@
         "description": "Field 'matched' should be present in landedCost"
       },
       {
-        "id": "t-103",
+        "id": "t-95",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "matchingAmount",
@@ -2914,7 +2672,7 @@
         "description": "Field 'matchingAmount' should be present in landedCost"
       },
       {
-        "id": "t-104",
+        "id": "t-96",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "landedCost",
@@ -2922,7 +2680,7 @@
         "description": "Field 'landedCost' should be present in landedCost"
       },
       {
-        "id": "t-105",
+        "id": "t-97",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "matchingCostAdjustment",
@@ -2930,7 +2688,7 @@
         "description": "Field 'matchingCostAdjustment' should be present in landedCost"
       },
       {
-        "id": "t-106",
+        "id": "t-98",
         "category": "field-presence",
         "entity": "landedCost",
         "field": "isMatchingAdjusted",
@@ -2938,7 +2696,7 @@
         "description": "Field 'isMatchingAdjusted' should be present in landedCost"
       },
       {
-        "id": "t-107",
+        "id": "t-99",
         "category": "field-type",
         "entity": "landedCost",
         "field": "lineNo",
@@ -2946,7 +2704,7 @@
         "description": "Field 'lineNo' should have type 'number' in landedCost"
       },
       {
-        "id": "t-108",
+        "id": "t-100",
         "category": "field-type",
         "entity": "landedCost",
         "field": "landedCostType",
@@ -2954,7 +2712,7 @@
         "description": "Field 'landedCostType' should have type 'string' in landedCost"
       },
       {
-        "id": "t-109",
+        "id": "t-101",
         "category": "field-type",
         "entity": "landedCost",
         "field": "invoiceLine",
@@ -2962,7 +2720,7 @@
         "description": "Field 'invoiceLine' should have type 'string' in landedCost"
       },
       {
-        "id": "t-110",
+        "id": "t-102",
         "category": "field-type",
         "entity": "landedCost",
         "field": "amount",
@@ -2970,7 +2728,7 @@
         "description": "Field 'amount' should have type 'string' in landedCost"
       },
       {
-        "id": "t-111",
+        "id": "t-103",
         "category": "field-type",
         "entity": "landedCost",
         "field": "currency",
@@ -2978,7 +2736,7 @@
         "description": "Field 'currency' should have type 'string' in landedCost"
       },
       {
-        "id": "t-112",
+        "id": "t-104",
         "category": "field-type",
         "entity": "landedCost",
         "field": "landedCostDistributionAlgorithm",
@@ -2986,7 +2744,7 @@
         "description": "Field 'landedCostDistributionAlgorithm' should have type 'string' in landedCost"
       },
       {
-        "id": "t-113",
+        "id": "t-105",
         "category": "field-type",
         "entity": "landedCost",
         "field": "description",
@@ -2994,7 +2752,7 @@
         "description": "Field 'description' should have type 'string' in landedCost"
       },
       {
-        "id": "t-114",
+        "id": "t-106",
         "category": "field-type",
         "entity": "landedCost",
         "field": "matched",
@@ -3002,7 +2760,7 @@
         "description": "Field 'matched' should have type 'boolean' in landedCost"
       },
       {
-        "id": "t-115",
+        "id": "t-107",
         "category": "field-type",
         "entity": "landedCost",
         "field": "matchingAmount",
@@ -3010,7 +2768,7 @@
         "description": "Field 'matchingAmount' should have type 'number' in landedCost"
       },
       {
-        "id": "t-116",
+        "id": "t-108",
         "category": "field-type",
         "entity": "landedCost",
         "field": "landedCost",
@@ -3018,7 +2776,7 @@
         "description": "Field 'landedCost' should have type 'string' in landedCost"
       },
       {
-        "id": "t-117",
+        "id": "t-109",
         "category": "field-type",
         "entity": "landedCost",
         "field": "matchingCostAdjustment",
@@ -3026,7 +2784,7 @@
         "description": "Field 'matchingCostAdjustment' should have type 'string' in landedCost"
       },
       {
-        "id": "t-118",
+        "id": "t-110",
         "category": "field-type",
         "entity": "landedCost",
         "field": "isMatchingAdjusted",
@@ -3034,14 +2792,14 @@
         "description": "Field 'isMatchingAdjusted' should have type 'boolean' in landedCost"
       },
       {
-        "id": "t-119",
+        "id": "t-111",
         "category": "visibility",
         "entity": "landedCost",
         "runner": "node",
         "description": "Entity 'landedCost' should only expose visible fields in frontend"
       },
       {
-        "id": "t-120",
+        "id": "t-112",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "organization",
@@ -3049,7 +2807,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-121",
+        "id": "t-113",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "documentType",
@@ -3057,7 +2815,7 @@
         "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-122",
+        "id": "t-114",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "userContact",
@@ -3065,7 +2823,7 @@
         "description": "System field 'userContact' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-123",
+        "id": "t-115",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "createLinesFrom",
@@ -3073,7 +2831,7 @@
         "description": "System field 'createLinesFrom' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-124",
+        "id": "t-116",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "generateTo",
@@ -3081,7 +2839,7 @@
         "description": "System field 'generateTo' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-125",
+        "id": "t-117",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "processGoodsJava",
@@ -3089,7 +2847,7 @@
         "description": "System field 'processGoodsJava' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-126",
+        "id": "t-118",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "eMETBLKCBulkcompletion",
@@ -3097,7 +2855,7 @@
         "description": "System field 'eMETBLKCBulkcompletion' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-127",
+        "id": "t-119",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "documentAction",
@@ -3105,7 +2863,7 @@
         "description": "System field 'documentAction' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-128",
+        "id": "t-120",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "posted",
@@ -3113,7 +2871,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-129",
+        "id": "t-121",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "salesRepresentative",
@@ -3121,7 +2879,7 @@
         "description": "System field 'salesRepresentative' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-130",
+        "id": "t-122",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "charge",
@@ -3129,7 +2887,7 @@
         "description": "System field 'charge' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-131",
+        "id": "t-123",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "chargeAmount",
@@ -3137,7 +2895,7 @@
         "description": "System field 'chargeAmount' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-132",
+        "id": "t-124",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "deliveryTerms",
@@ -3145,7 +2903,7 @@
         "description": "System field 'deliveryTerms' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-133",
+        "id": "t-125",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "deliveryMethod",
@@ -3153,7 +2911,7 @@
         "description": "System field 'deliveryMethod' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-134",
+        "id": "t-126",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "freightAmount",
@@ -3161,7 +2919,7 @@
         "description": "System field 'freightAmount' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-135",
+        "id": "t-127",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "freightCostRule",
@@ -3169,7 +2927,7 @@
         "description": "System field 'freightCostRule' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-136",
+        "id": "t-128",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "priority",
@@ -3177,7 +2935,7 @@
         "description": "System field 'priority' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-137",
+        "id": "t-129",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "movementType",
@@ -3185,7 +2943,7 @@
         "description": "System field 'movementType' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-138",
+        "id": "t-130",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "shippingCompany",
@@ -3193,7 +2951,7 @@
         "description": "System field 'shippingCompany' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-139",
+        "id": "t-131",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "numberOfPackages",
@@ -3201,7 +2959,7 @@
         "description": "System field 'numberOfPackages' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-140",
+        "id": "t-132",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "activity",
@@ -3209,7 +2967,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-141",
+        "id": "t-133",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "salesCampaign",
@@ -3217,7 +2975,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-142",
+        "id": "t-134",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "trxOrganization",
@@ -3225,7 +2983,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-143",
+        "id": "t-135",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "freightCategory",
@@ -3233,7 +2991,7 @@
         "description": "System field 'freightCategory' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-144",
+        "id": "t-136",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "calculateFreight",
@@ -3241,7 +2999,7 @@
         "description": "System field 'calculateFreight' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-145",
+        "id": "t-137",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "freightCurrency",
@@ -3249,7 +3007,7 @@
         "description": "System field 'freightCurrency' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-146",
+        "id": "t-138",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "shipmentReceipt",
@@ -3257,7 +3015,7 @@
         "description": "System field 'shipmentReceipt' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-147",
+        "id": "t-139",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "pickDate",
@@ -3265,7 +3023,7 @@
         "description": "System field 'pickDate' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-148",
+        "id": "t-140",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "processNow",
@@ -3273,7 +3031,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-149",
+        "id": "t-141",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "invoice",
@@ -3281,7 +3039,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-150",
+        "id": "t-142",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "client",
@@ -3289,7 +3047,7 @@
         "description": "System field 'client' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-151",
+        "id": "t-143",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "active",
@@ -3297,7 +3055,7 @@
         "description": "System field 'active' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-152",
+        "id": "t-144",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "datePrinted",
@@ -3305,7 +3063,7 @@
         "description": "System field 'datePrinted' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-153",
+        "id": "t-145",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "salesTransaction",
@@ -3313,7 +3071,7 @@
         "description": "System field 'salesTransaction' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-154",
+        "id": "t-146",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "print",
@@ -3321,7 +3079,7 @@
         "description": "System field 'print' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-155",
+        "id": "t-147",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "trackingNo",
@@ -3329,7 +3087,7 @@
         "description": "System field 'trackingNo' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-156",
+        "id": "t-148",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "logistic",
@@ -3337,7 +3095,7 @@
         "description": "System field 'logistic' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-157",
+        "id": "t-149",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "updateLines",
@@ -3345,7 +3103,7 @@
         "description": "System field 'updateLines' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-158",
+        "id": "t-150",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "deliveryLocation",
@@ -3353,7 +3111,7 @@
         "description": "System field 'deliveryLocation' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-159",
+        "id": "t-151",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "shipDate",
@@ -3361,7 +3119,7 @@
         "description": "System field 'shipDate' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-160",
+        "id": "t-152",
         "category": "system-field",
         "entity": "goodsReceipt",
         "field": "orderDate",
@@ -3369,7 +3127,7 @@
         "description": "System field 'orderDate' should exist in backend but not frontend for goodsReceipt"
       },
       {
-        "id": "t-161",
+        "id": "t-153",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "managePrereservation",
@@ -3377,7 +3135,7 @@
         "description": "System field 'managePrereservation' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-162",
+        "id": "t-154",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "explode",
@@ -3385,7 +3143,7 @@
         "description": "System field 'explode' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-163",
+        "id": "t-155",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "orderUOM",
@@ -3393,7 +3151,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-164",
+        "id": "t-156",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "orderQuantity",
@@ -3401,7 +3159,7 @@
         "description": "System field 'orderQuantity' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-165",
+        "id": "t-157",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "organization",
@@ -3409,7 +3167,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-166",
+        "id": "t-158",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "bOMParentID",
@@ -3417,7 +3175,7 @@
         "description": "System field 'bOMParentID' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-167",
+        "id": "t-159",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "reinvoice",
@@ -3425,7 +3183,7 @@
         "description": "System field 'reinvoice' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-168",
+        "id": "t-160",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "client",
@@ -3433,7 +3191,7 @@
         "description": "System field 'client' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-169",
+        "id": "t-161",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "active",
@@ -3441,7 +3199,7 @@
         "description": "System field 'active' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-170",
+        "id": "t-162",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "shipmentReceipt",
@@ -3449,7 +3207,7 @@
         "description": "System field 'shipmentReceipt' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-171",
+        "id": "t-163",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "goodsShipmentLine",
@@ -3457,7 +3215,7 @@
         "description": "System field 'goodsShipmentLine' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-172",
+        "id": "t-164",
         "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "descriptionOnly",
@@ -3465,31 +3223,15 @@
         "description": "System field 'descriptionOnly' should exist in backend but not frontend for goodsReceiptLine"
       },
       {
-        "id": "t-173",
+        "id": "t-165",
         "category": "system-field",
         "entity": "accounting",
-        "field": "client",
+        "field": "factAcct",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for accounting"
+        "description": "System field 'factAcct' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-174",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-175",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-176",
+        "id": "t-166",
         "category": "system-field",
         "entity": "accounting",
         "field": "recordID",
@@ -3497,63 +3239,15 @@
         "description": "System field 'recordID' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-177",
+        "id": "t-167",
         "category": "system-field",
         "entity": "accounting",
-        "field": "sequenceNumber",
+        "field": "adTable",
         "runner": "node",
-        "description": "System field 'sequenceNumber' should exist in backend but not frontend for accounting"
+        "description": "System field 'adTable' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-178",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "accountingFact",
-        "runner": "node",
-        "description": "System field 'accountingFact' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-179",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "table",
-        "runner": "node",
-        "description": "System field 'table' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-180",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "foreignCurrencyDebit",
-        "runner": "node",
-        "description": "System field 'foreignCurrencyDebit' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-181",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "foreignCurrencyCredit",
-        "runner": "node",
-        "description": "System field 'foreignCurrencyCredit' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-182",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "postingType",
-        "runner": "node",
-        "description": "System field 'postingType' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-183",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "groupID",
-        "runner": "node",
-        "description": "System field 'groupID' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-184",
+        "id": "t-168",
         "category": "system-field",
         "entity": "landedCost",
         "field": "cancelMatching",
@@ -3561,7 +3255,7 @@
         "description": "System field 'cancelMatching' should exist in backend but not frontend for landedCost"
       },
       {
-        "id": "t-185",
+        "id": "t-169",
         "category": "system-field",
         "entity": "landedCost",
         "field": "goodsShipment",
@@ -3569,7 +3263,7 @@
         "description": "System field 'goodsShipment' should exist in backend but not frontend for landedCost"
       },
       {
-        "id": "t-186",
+        "id": "t-170",
         "category": "system-field",
         "entity": "landedCost",
         "field": "active",
@@ -3577,7 +3271,7 @@
         "description": "System field 'active' should exist in backend but not frontend for landedCost"
       },
       {
-        "id": "t-187",
+        "id": "t-171",
         "category": "system-field",
         "entity": "landedCost",
         "field": "processMatching",
@@ -3585,7 +3279,7 @@
         "description": "System field 'processMatching' should exist in backend but not frontend for landedCost"
       },
       {
-        "id": "t-188",
+        "id": "t-172",
         "category": "system-field",
         "entity": "landedCost",
         "field": "client",
@@ -3593,7 +3287,7 @@
         "description": "System field 'client' should exist in backend but not frontend for landedCost"
       },
       {
-        "id": "t-189",
+        "id": "t-173",
         "category": "system-field",
         "entity": "landedCost",
         "field": "landedCostCost",
@@ -3601,301 +3295,301 @@
         "description": "System field 'landedCostCost' should exist in backend but not frontend for landedCost"
       },
       {
-        "id": "t-190",
+        "id": "t-174",
         "category": "rule-declared",
         "rule": "SL_InOut_AccountingDate",
         "runner": "node",
         "description": "Rule 'SL_InOut_AccountingDate' (callout) should be declared"
       },
       {
-        "id": "t-191",
+        "id": "t-175",
         "category": "rule-declared",
         "rule": "SE_InOut_Organization",
         "runner": "node",
         "description": "Rule 'SE_InOut_Organization' (callout) should be declared"
       },
       {
-        "id": "t-192",
+        "id": "t-176",
         "category": "rule-declared",
         "rule": "SE_InOut_DocType",
         "runner": "node",
         "description": "Rule 'SE_InOut_DocType' (callout) should be declared"
       },
       {
-        "id": "t-193",
+        "id": "t-177",
         "category": "rule-declared",
         "rule": "SL_InOut_BPartner",
         "runner": "node",
         "description": "Rule 'SL_InOut_BPartner' (callout) should be declared"
       },
       {
-        "id": "t-194",
+        "id": "t-178",
         "category": "rule-declared",
         "rule": "SE_InOut_Warehouse",
         "runner": "node",
         "description": "Rule 'SE_InOut_Warehouse' (callout) should be declared"
       },
       {
-        "id": "t-195",
+        "id": "t-179",
         "category": "rule-declared",
         "rule": "SL_InOutLine_Product",
         "runner": "node",
         "description": "Rule 'SL_InOutLine_Product' (callout) should be declared"
       },
       {
-        "id": "t-196",
+        "id": "t-180",
         "category": "rule-declared",
         "rule": "SL_InOut_Conversion",
         "runner": "node",
         "description": "Rule 'SL_InOut_Conversion' (callout) should be declared"
       },
       {
-        "id": "t-197",
+        "id": "t-181",
         "category": "rule-declared",
         "rule": "OperativeQuantity_To_BaseQuantity",
         "runner": "node",
         "description": "Rule 'OperativeQuantity_To_BaseQuantity' (callout) should be declared"
       },
       {
-        "id": "t-198",
+        "id": "t-182",
         "category": "rule-declared",
         "rule": "SL_LandedCost_Cost_Type",
         "runner": "node",
         "description": "Rule 'SL_LandedCost_Cost_Type' (callout) should be declared"
       },
       {
-        "id": "t-199",
+        "id": "t-183",
         "category": "rule-declared",
         "rule": "SL_LandedCost_InvoiceLine",
         "runner": "node",
         "description": "Rule 'SL_LandedCost_InvoiceLine' (callout) should be declared"
       },
       {
-        "id": "t-200",
+        "id": "t-184",
         "category": "rule-declared",
         "rule": "VAL_DocType_MaterialReceipt",
         "runner": "node",
         "description": "Rule 'VAL_DocType_MaterialReceipt' (validation) should be declared"
       },
       {
-        "id": "t-201",
+        "id": "t-185",
         "category": "rule-declared",
         "rule": "VAL_BPartnerLocation_ShipTo",
         "runner": "node",
         "description": "Rule 'VAL_BPartnerLocation_ShipTo' (validation) should be declared"
       },
       {
-        "id": "t-202",
+        "id": "t-186",
         "category": "rule-declared",
         "rule": "VAL_User_BPartnerContact",
         "runner": "node",
         "description": "Rule 'VAL_User_BPartnerContact' (validation) should be declared"
       },
       {
-        "id": "t-203",
+        "id": "t-187",
         "category": "rule-declared",
         "rule": "VAL_User_OrgTree",
         "runner": "node",
         "description": "Rule 'VAL_User_OrgTree' (validation) should be declared"
       },
       {
-        "id": "t-204",
+        "id": "t-188",
         "category": "rule-declared",
         "rule": "VAL_Project_StatusAndBPartner",
         "runner": "node",
         "description": "Rule 'VAL_Project_StatusAndBPartner' (validation) should be declared"
       },
       {
-        "id": "t-205",
+        "id": "t-189",
         "category": "rule-declared",
         "rule": "VAL_DeliveryLocation_ShipTo",
         "runner": "node",
         "description": "Rule 'VAL_DeliveryLocation_ShipTo' (validation) should be declared"
       },
       {
-        "id": "t-206",
+        "id": "t-190",
         "category": "rule-declared",
         "rule": "VAL_Org_ShowChildren",
         "runner": "node",
         "description": "Rule 'VAL_Org_ShowChildren' (validation) should be declared"
       },
       {
-        "id": "t-207",
+        "id": "t-191",
         "category": "rule-declared",
         "rule": "VAL_Locator_ByWarehouse",
         "runner": "node",
         "description": "Rule 'VAL_Locator_ByWarehouse' (validation) should be declared"
       },
       {
-        "id": "t-208",
+        "id": "t-192",
         "category": "rule-declared",
         "rule": "VAL_UOM_ForProduct",
         "runner": "node",
         "description": "Rule 'VAL_UOM_ForProduct' (validation) should be declared"
       },
       {
-        "id": "t-209",
+        "id": "t-193",
         "category": "rule-declared",
         "rule": "VAL_DocType_LandedCostCost",
         "runner": "node",
         "description": "Rule 'VAL_DocType_LandedCostCost' (validation) should be declared"
       },
       {
-        "id": "t-210",
+        "id": "t-194",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Header",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-211",
+        "id": "t-195",
         "category": "rule-declared",
         "rule": "READONLY_Posted_AccountingDate",
         "runner": "node",
         "description": "Rule 'READONLY_Posted_AccountingDate' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-212",
+        "id": "t-196",
         "category": "rule-declared",
         "rule": "READONLY_BPartner_HasLines",
         "runner": "node",
         "description": "Rule 'READONLY_BPartner_HasLines' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-213",
+        "id": "t-197",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Lines",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-214",
+        "id": "t-198",
         "category": "rule-declared",
         "rule": "READONLY_UomManagement_Qty",
         "runner": "node",
         "description": "Rule 'READONLY_UomManagement_Qty' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-215",
+        "id": "t-199",
         "category": "rule-declared",
         "rule": "READONLY_LandedCost_Processed",
         "runner": "node",
         "description": "Rule 'READONLY_LandedCost_Processed' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-216",
+        "id": "t-200",
         "category": "rule-declared",
         "rule": "DISPLAY_InvoicedQty_WhenProcessed",
         "runner": "node",
         "description": "Rule 'DISPLAY_InvoicedQty_WhenProcessed' (displayLogic) should be declared"
       },
       {
-        "id": "t-217",
+        "id": "t-201",
         "category": "rule-declared",
         "rule": "DISPLAY_AttributeSet_WhenApplicable",
         "runner": "node",
         "description": "Rule 'DISPLAY_AttributeSet_WhenApplicable' (displayLogic) should be declared"
       },
       {
-        "id": "t-218",
+        "id": "t-202",
         "category": "rule-declared",
         "rule": "DISPLAY_OrderUOM_WhenApplicable",
         "runner": "node",
         "description": "Rule 'DISPLAY_OrderUOM_WhenApplicable' (displayLogic) should be declared"
       },
       {
-        "id": "t-219",
+        "id": "t-203",
         "category": "rule-declared",
         "rule": "DISPLAY_OperativeQty_WhenNoOrderUOM",
         "runner": "node",
         "description": "Rule 'DISPLAY_OperativeQty_WhenNoOrderUOM' (displayLogic) should be declared"
       },
       {
-        "id": "t-220",
+        "id": "t-204",
         "category": "rule-declared",
         "rule": "DISPLAY_Dimensions_WhenEnabled",
         "runner": "node",
         "description": "Rule 'DISPLAY_Dimensions_WhenEnabled' (displayLogic) should be declared"
       },
       {
-        "id": "t-221",
+        "id": "t-205",
         "category": "rule-declared",
         "rule": "PROCESS_ProcessShipment",
         "runner": "node",
         "description": "Rule 'PROCESS_ProcessShipment' (process) should be declared"
       },
       {
-        "id": "t-222",
+        "id": "t-206",
         "category": "rule-declared",
         "rule": "PROCESS_CreateLinesFrom",
         "runner": "node",
         "description": "Rule 'PROCESS_CreateLinesFrom' (process) should be declared"
       },
       {
-        "id": "t-223",
+        "id": "t-207",
         "category": "rule-declared",
         "rule": "PROCESS_GenerateInvoice",
         "runner": "node",
         "description": "Rule 'PROCESS_GenerateInvoice' (process) should be declared"
       },
       {
-        "id": "t-224",
+        "id": "t-208",
         "category": "rule-declared",
         "rule": "PROCESS_InvoiceFromShipment",
         "runner": "node",
         "description": "Rule 'PROCESS_InvoiceFromShipment' (process) should be declared"
       },
       {
-        "id": "t-225",
+        "id": "t-209",
         "category": "rule-declared",
         "rule": "PROCESS_LandedCostMatching",
         "runner": "node",
         "description": "Rule 'PROCESS_LandedCostMatching' (process) should be declared"
       },
       {
-        "id": "t-226",
+        "id": "t-210",
         "category": "rule-declared",
         "rule": "PROCESS_ManagePrereservation",
         "runner": "node",
         "description": "Rule 'PROCESS_ManagePrereservation' (process) should be declared"
       },
       {
-        "id": "t-227",
+        "id": "t-211",
         "category": "rule-declared",
         "rule": "PROCESS_Explode",
         "runner": "node",
         "description": "Rule 'PROCESS_Explode' (process) should be declared"
       },
       {
-        "id": "t-228",
+        "id": "t-212",
         "category": "crud-flags",
         "entity": "goodsReceipt",
         "runner": "node",
         "description": "CRUD flags for 'goodsReceipt' should all be booleans"
       },
       {
-        "id": "t-229",
+        "id": "t-213",
         "category": "crud-flags",
         "entity": "goodsReceiptLine",
         "runner": "node",
         "description": "CRUD flags for 'goodsReceiptLine' should all be booleans"
       },
       {
-        "id": "t-230",
+        "id": "t-214",
         "category": "crud-flags",
         "entity": "accounting",
         "runner": "node",
         "description": "CRUD flags for 'accounting' should all be booleans"
       },
       {
-        "id": "t-231",
+        "id": "t-215",
         "category": "crud-flags",
         "entity": "landedCost",
         "runner": "node",
         "description": "CRUD flags for 'landedCost' should all be booleans"
       },
       {
-        "id": "t-232",
+        "id": "t-216",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "warehouse",
@@ -3903,7 +3597,7 @@
         "description": "Selector endpoint for 'warehouse' in goodsReceipt should exist"
       },
       {
-        "id": "t-233",
+        "id": "t-217",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "businessPartner",
@@ -3911,7 +3605,7 @@
         "description": "Selector endpoint for 'businessPartner' in goodsReceipt should exist"
       },
       {
-        "id": "t-234",
+        "id": "t-218",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "partnerAddress",
@@ -3919,7 +3613,7 @@
         "description": "Selector endpoint for 'partnerAddress' in goodsReceipt should exist"
       },
       {
-        "id": "t-235",
+        "id": "t-219",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "salesOrder",
@@ -3927,7 +3621,7 @@
         "description": "Selector endpoint for 'salesOrder' in goodsReceipt should exist"
       },
       {
-        "id": "t-236",
+        "id": "t-220",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "project",
@@ -3935,7 +3629,7 @@
         "description": "Selector endpoint for 'project' in goodsReceipt should exist"
       },
       {
-        "id": "t-237",
+        "id": "t-221",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "costcenter",
@@ -3943,7 +3637,7 @@
         "description": "Selector endpoint for 'costcenter' in goodsReceipt should exist"
       },
       {
-        "id": "t-238",
+        "id": "t-222",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "asset",
@@ -3951,7 +3645,7 @@
         "description": "Selector endpoint for 'asset' in goodsReceipt should exist"
       },
       {
-        "id": "t-239",
+        "id": "t-223",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "stDimension",
@@ -3959,7 +3653,7 @@
         "description": "Selector endpoint for 'stDimension' in goodsReceipt should exist"
       },
       {
-        "id": "t-240",
+        "id": "t-224",
         "category": "selector-endpoint",
         "entity": "goodsReceipt",
         "field": "ndDimension",
@@ -3967,7 +3661,7 @@
         "description": "Selector endpoint for 'ndDimension' in goodsReceipt should exist"
       },
       {
-        "id": "t-241",
+        "id": "t-225",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "product",
@@ -3975,7 +3669,7 @@
         "description": "Selector endpoint for 'product' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-242",
+        "id": "t-226",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "operativeUOM",
@@ -3983,7 +3677,7 @@
         "description": "Selector endpoint for 'operativeUOM' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-243",
+        "id": "t-227",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "uOM",
@@ -3991,7 +3685,7 @@
         "description": "Selector endpoint for 'uOM' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-244",
+        "id": "t-228",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "storageBin",
@@ -3999,7 +3693,7 @@
         "description": "Selector endpoint for 'storageBin' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-245",
+        "id": "t-229",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "salesOrderLine",
@@ -4007,7 +3701,7 @@
         "description": "Selector endpoint for 'salesOrderLine' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-246",
+        "id": "t-230",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "businessPartner",
@@ -4015,7 +3709,7 @@
         "description": "Selector endpoint for 'businessPartner' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-247",
+        "id": "t-231",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "project",
@@ -4023,7 +3717,7 @@
         "description": "Selector endpoint for 'project' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-248",
+        "id": "t-232",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "costcenter",
@@ -4031,7 +3725,7 @@
         "description": "Selector endpoint for 'costcenter' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-249",
+        "id": "t-233",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "asset",
@@ -4039,7 +3733,7 @@
         "description": "Selector endpoint for 'asset' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-250",
+        "id": "t-234",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "stDimension",
@@ -4047,7 +3741,7 @@
         "description": "Selector endpoint for 'stDimension' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-251",
+        "id": "t-235",
         "category": "selector-endpoint",
         "entity": "goodsReceiptLine",
         "field": "ndDimension",
@@ -4055,55 +3749,7 @@
         "description": "Selector endpoint for 'ndDimension' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-252",
-        "category": "selector-endpoint",
-        "entity": "accounting",
-        "field": "account",
-        "runner": "node",
-        "description": "Selector endpoint for 'account' in accounting should exist"
-      },
-      {
-        "id": "t-253",
-        "category": "selector-endpoint",
-        "entity": "accounting",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in accounting should exist"
-      },
-      {
-        "id": "t-254",
-        "category": "selector-endpoint",
-        "entity": "accounting",
-        "field": "product",
-        "runner": "node",
-        "description": "Selector endpoint for 'product' in accounting should exist"
-      },
-      {
-        "id": "t-255",
-        "category": "selector-endpoint",
-        "entity": "accounting",
-        "field": "accountingSchema",
-        "runner": "node",
-        "description": "Selector endpoint for 'accountingSchema' in accounting should exist"
-      },
-      {
-        "id": "t-256",
-        "category": "selector-endpoint",
-        "entity": "accounting",
-        "field": "currency",
-        "runner": "node",
-        "description": "Selector endpoint for 'currency' in accounting should exist"
-      },
-      {
-        "id": "t-257",
-        "category": "selector-endpoint",
-        "entity": "accounting",
-        "field": "period",
-        "runner": "node",
-        "description": "Selector endpoint for 'period' in accounting should exist"
-      },
-      {
-        "id": "t-258",
+        "id": "t-236",
         "category": "selector-endpoint",
         "entity": "landedCost",
         "field": "landedCostType",
@@ -4111,7 +3757,7 @@
         "description": "Selector endpoint for 'landedCostType' in landedCost should exist"
       },
       {
-        "id": "t-259",
+        "id": "t-237",
         "category": "selector-endpoint",
         "entity": "landedCost",
         "field": "invoiceLine",
@@ -4119,7 +3765,7 @@
         "description": "Selector endpoint for 'invoiceLine' in landedCost should exist"
       },
       {
-        "id": "t-260",
+        "id": "t-238",
         "category": "selector-endpoint",
         "entity": "landedCost",
         "field": "currency",
@@ -4127,7 +3773,7 @@
         "description": "Selector endpoint for 'currency' in landedCost should exist"
       },
       {
-        "id": "t-261",
+        "id": "t-239",
         "category": "selector-endpoint",
         "entity": "landedCost",
         "field": "landedCostDistributionAlgorithm",
@@ -4135,7 +3781,7 @@
         "description": "Selector endpoint for 'landedCostDistributionAlgorithm' in landedCost should exist"
       },
       {
-        "id": "t-262",
+        "id": "t-240",
         "category": "selector-endpoint",
         "entity": "landedCost",
         "field": "landedCost",
@@ -4143,7 +3789,7 @@
         "description": "Selector endpoint for 'landedCost' in landedCost should exist"
       },
       {
-        "id": "t-263",
+        "id": "t-241",
         "category": "selector-endpoint",
         "entity": "landedCost",
         "field": "matchingCostAdjustment",
@@ -4151,7 +3797,7 @@
         "description": "Selector endpoint for 'matchingCostAdjustment' in landedCost should exist"
       },
       {
-        "id": "t-264",
+        "id": "t-242",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "createLinesFrom",
@@ -4159,7 +3805,7 @@
         "description": "Action endpoint for 'createLinesFrom' in goodsReceipt should exist"
       },
       {
-        "id": "t-265",
+        "id": "t-243",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "generateTo",
@@ -4167,7 +3813,7 @@
         "description": "Action endpoint for 'generateTo' in goodsReceipt should exist"
       },
       {
-        "id": "t-266",
+        "id": "t-244",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "processGoodsJava",
@@ -4175,7 +3821,7 @@
         "description": "Action endpoint for 'processGoodsJava' in goodsReceipt should exist"
       },
       {
-        "id": "t-267",
+        "id": "t-245",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "eMETBLKCBulkcompletion",
@@ -4183,7 +3829,7 @@
         "description": "Action endpoint for 'eMETBLKCBulkcompletion' in goodsReceipt should exist"
       },
       {
-        "id": "t-268",
+        "id": "t-246",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "documentAction",
@@ -4191,7 +3837,7 @@
         "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
       },
       {
-        "id": "t-269",
+        "id": "t-247",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "posted",
@@ -4199,7 +3845,7 @@
         "description": "Action endpoint for 'posted' in goodsReceipt should exist"
       },
       {
-        "id": "t-270",
+        "id": "t-248",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "calculateFreight",
@@ -4207,7 +3853,7 @@
         "description": "Action endpoint for 'calculateFreight' in goodsReceipt should exist"
       },
       {
-        "id": "t-271",
+        "id": "t-249",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "updateLines",
@@ -4215,7 +3861,7 @@
         "description": "Action endpoint for 'updateLines' in goodsReceipt should exist"
       },
       {
-        "id": "t-272",
+        "id": "t-250",
         "category": "action-endpoint",
         "entity": "goodsReceiptLine",
         "field": "managePrereservation",
@@ -4223,7 +3869,7 @@
         "description": "Action endpoint for 'managePrereservation' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-273",
+        "id": "t-251",
         "category": "action-endpoint",
         "entity": "goodsReceiptLine",
         "field": "explode",
@@ -4231,7 +3877,7 @@
         "description": "Action endpoint for 'explode' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-274",
+        "id": "t-252",
         "category": "action-endpoint",
         "entity": "landedCost",
         "field": "cancelMatching",
@@ -4239,7 +3885,7 @@
         "description": "Action endpoint for 'cancelMatching' in landedCost should exist"
       },
       {
-        "id": "t-275",
+        "id": "t-253",
         "category": "action-endpoint",
         "entity": "landedCost",
         "field": "processMatching",
@@ -4248,20 +3894,20 @@
       }
     ],
     "summary": {
-      "total": 275,
+      "total": 253,
       "byCategory": {
-        "field-presence": 55,
-        "field-type": 55,
+        "field-presence": 51,
+        "field-type": 51,
         "searchable-filters": 5,
         "visibility": 4,
-        "system-field": 70,
+        "system-field": 62,
         "rule-declared": 38,
         "crud-flags": 4,
-        "selector-endpoint": 32,
+        "selector-endpoint": 26,
         "action-endpoint": 12
       },
       "byRunner": {
-        "node": 275,
+        "node": 253,
         "junit": 0
       }
     }

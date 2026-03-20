@@ -199,48 +199,6 @@ const api = {
       "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/ndDimension"
     },
     {
-      "entity": "accounting",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "Account",
-      "url": "/sws/neo/goods-receipt/accounting/selectors/account"
-    },
-    {
-      "entity": "accounting",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/goods-receipt/accounting/selectors/businessPartner"
-    },
-    {
-      "entity": "accounting",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "url": "/sws/neo/goods-receipt/accounting/selectors/product"
-    },
-    {
-      "entity": "accounting",
-      "field": "accountingSchema",
-      "column": "C_AcctSchema_ID",
-      "reference": "AccountingSchema",
-      "url": "/sws/neo/goods-receipt/accounting/selectors/accountingSchema"
-    },
-    {
-      "entity": "accounting",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "url": "/sws/neo/goods-receipt/accounting/selectors/currency"
-    },
-    {
-      "entity": "accounting",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "url": "/sws/neo/goods-receipt/accounting/selectors/period"
-    },
-    {
       "entity": "landedCost",
       "field": "landedCostType",
       "column": "M_Lc_Type_ID",
