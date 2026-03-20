@@ -35,6 +35,14 @@ There are two kinds:
 
 If unsure, ask: _"Would this also happen if we ran the pipeline on a different window?"_ If yes → tool bug.
 
+**Before concluding it's a bug, ALWAYS verify in the code (MANDATORY):**
+
+1. Search the relevant CLI files (`cli/src/extract-fields.js`, `cli/src/generate-contract.js`, `cli/src/generate-frontend.js`, `cli/src/pipeline.js`) for any handling of the reported concept.
+2. Search the frontend components (`tools/app-shell/src/`) for any existing implementation.
+3. Check `core-maps/` for any reference data that might already model the concept.
+
+Only proceed if the code confirms the behavior is truly absent or broken. If it IS already handled somewhere, tell the user where and explain why the issue might be something else (configuration, data, window decision).
+
 ---
 
 ## Step 2: Capture the bug details
