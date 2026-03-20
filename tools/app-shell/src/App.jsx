@@ -98,7 +98,7 @@ async function loadAllMockData() {
 
 function AuthGuard({ children }) {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
   return children;
 }
 
