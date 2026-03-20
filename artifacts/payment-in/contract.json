@@ -1,17 +1,17 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-20T15:14:59.133Z",
-  "checksum": "cea73d723cfdf031",
+  "version": "0.2.0",
+  "generatedAt": "2026-03-20T19:12:35.175Z",
+  "checksum": "9d19ca91887a641d",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
       "name": "Payment In",
-      "primaryEntity": "finPayment",
+      "primaryEntity": "header",
       "category": "general",
       "layoutType": "default"
     },
     "entities": {
-      "finPayment": {
+      "header": {
         "tableName": "FIN_Payment",
         "tabId": "C4B6506838E14A349D6717D6856F1B56",
         "tabName": "Header",
@@ -447,7 +447,7 @@
           }
         ]
       },
-      "finPaymentScheduleDetail": {
+      "lines": {
         "tableName": "FIN_Payment_ScheduleDetail",
         "tabId": "34DA12C2E9E3424E9A853563BEFDE81F",
         "tabName": "Lines",
@@ -715,11 +715,11 @@
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
       "name": "Payment In",
-      "primaryEntity": "finPayment",
+      "primaryEntity": "header",
       "category": "general"
     },
     "entities": {
-      "finPayment": {
+      "header": {
         "tableName": "FIN_Payment",
         "tabId": "C4B6506838E14A349D6717D6856F1B56",
         "tabName": "Header",
@@ -1054,7 +1054,7 @@
           }
         ]
       },
-      "finPaymentScheduleDetail": {
+      "lines": {
         "tableName": "FIN_Payment_ScheduleDetail",
         "tabId": "34DA12C2E9E3424E9A853563BEFDE81F",
         "tabName": "Lines",
@@ -1329,8 +1329,8 @@
     "endpoints": [
       {
         "method": "GET",
-        "path": "/finPayment",
-        "entity": "finPayment",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": [
           "referenceNo",
           "paymentDate",
@@ -1354,32 +1354,32 @@
       },
       {
         "method": "GET",
-        "path": "/finPayment/:id",
-        "entity": "finPayment",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/finPayment",
-        "entity": "finPayment",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/finPayment/:id",
-        "entity": "finPayment",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/finPayment/:id",
-        "entity": "finPayment",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "GET",
-        "path": "/finPaymentScheduleDetail",
-        "entity": "finPaymentScheduleDetail",
+        "path": "/lines",
+        "entity": "lines",
         "supportedFilters": [
           "amount",
           "orderPaymentSchedule",
@@ -1399,102 +1399,44 @@
       },
       {
         "method": "GET",
-        "path": "/finPaymentScheduleDetail/:id",
-        "entity": "finPaymentScheduleDetail",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/finPaymentScheduleDetail",
-        "entity": "finPaymentScheduleDetail",
+        "path": "/lines",
+        "entity": "lines",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/finPaymentScheduleDetail/:id",
-        "entity": "finPaymentScheduleDetail",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/finPaymentScheduleDetail/:id",
-        "entity": "finPaymentScheduleDetail",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       }
     ],
-    "processEndpoints": [
-      {
-        "name": "paymentProcess",
-        "method": "POST",
-        "path": "/process/paymentProcess",
-        "entity": "paymentIn",
-        "columnName": null,
-        "params": [
-          {
-            "name": "action",
-            "label": "Action",
-            "type": "list",
-            "required": true,
-            "options": [
-              {
-                "value": "P",
-                "label": "Process"
-              },
-              {
-                "value": "RE",
-                "label": "Reactivate"
-              },
-              {
-                "value": "R",
-                "label": "Reactivate and Delete Lines"
-              },
-              {
-                "value": "V",
-                "label": "Void"
-              }
-            ]
-          }
-        ],
-        "preconditions": [],
-        "steps": 0
-      },
-      {
-        "name": "reversePayment",
-        "method": "POST",
-        "path": "/process/reversePayment",
-        "entity": "paymentIn",
-        "columnName": null,
-        "params": [
-          {
-            "name": "action",
-            "type": "hidden",
-            "defaultValue": "RV"
-          },
-          {
-            "name": "paymentDate",
-            "label": "Payment Date",
-            "type": "date",
-            "required": true
-          }
-        ],
-        "preconditions": [],
-        "steps": 0
-      }
-    ]
+    "processEndpoints": []
   },
   "apiPrediction": {
     "specName": "payment-in",
     "baseUrl": "/sws/neo/payment-in",
     "crud": {
-      "finPayment": {
+      "header": {
         "get": true,
         "getById": true,
         "post": true,
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/payment-in/finPayment",
-        "detailUrl": "/sws/neo/payment-in/finPayment/{id}",
+        "listUrl": "/sws/neo/payment-in/header",
+        "detailUrl": "/sws/neo/payment-in/header/{id}",
         "supportedFilters": [
           "referenceNo",
           "paymentDate",
@@ -1516,15 +1458,15 @@
           "ndDimension"
         ]
       },
-      "finPaymentScheduleDetail": {
+      "lines": {
         "get": true,
         "getById": true,
         "post": true,
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/payment-in/finPaymentScheduleDetail",
-        "detailUrl": "/sws/neo/payment-in/finPaymentScheduleDetail/{id}",
+        "listUrl": "/sws/neo/payment-in/lines",
+        "detailUrl": "/sws/neo/payment-in/lines/{id}",
         "supportedFilters": [
           "amount",
           "orderPaymentSchedule",
@@ -1545,199 +1487,199 @@
     },
     "selectors": [
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "businessPartner",
         "column": "C_Bpartner_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/businessPartner"
+        "url": "/sws/neo/payment-in/header/selectors/businessPartner"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentMethod",
         "column": "Fin_Paymentmethod_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/paymentMethod"
+        "url": "/sws/neo/payment-in/header/selectors/paymentMethod"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "account",
         "column": "Fin_Financial_Account_ID",
         "inputMode": "dependent",
-        "url": "/sws/neo/payment-in/finPayment/selectors/account"
+        "url": "/sws/neo/payment-in/header/selectors/account"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "currency",
         "column": "C_Currency_ID",
         "inputMode": "dependent",
-        "url": "/sws/neo/payment-in/finPayment/selectors/currency"
+        "url": "/sws/neo/payment-in/header/selectors/currency"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "reversedPayment",
         "column": "FIN_Rev_Payment_ID",
         "reference": "Payment Selector",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/reversedPayment"
+        "url": "/sws/neo/payment-in/header/selectors/reversedPayment"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "project",
         "column": "C_Project_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/project"
+        "url": "/sws/neo/payment-in/header/selectors/project"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "costCenter",
         "column": "C_Costcenter_ID",
         "reference": "Cost Center Selector",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/costCenter"
+        "url": "/sws/neo/payment-in/header/selectors/costCenter"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "stDimension",
         "column": "User1_ID",
         "reference": "User Dimension 1",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/stDimension"
+        "url": "/sws/neo/payment-in/header/selectors/stDimension"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "ndDimension",
         "column": "User2_ID",
         "reference": "User Dimension 2",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPayment/selectors/ndDimension"
+        "url": "/sws/neo/payment-in/header/selectors/ndDimension"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "orderPaymentSchedule",
         "column": "FIN_Payment_Schedule_Order",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/orderPaymentSchedule"
+        "url": "/sws/neo/payment-in/lines/selectors/orderPaymentSchedule"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoicePaymentSchedule",
         "column": "FIN_Payment_Schedule_Invoice",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/invoicePaymentSchedule"
+        "url": "/sws/neo/payment-in/lines/selectors/invoicePaymentSchedule"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "gLItem",
         "column": "C_Glitem_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/gLItem"
+        "url": "/sws/neo/payment-in/lines/selectors/gLItem"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "businessPartner",
         "column": "C_Bpartner_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/businessPartner"
+        "url": "/sws/neo/payment-in/lines/selectors/businessPartner"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "activity",
         "column": "C_Activity_ID",
         "reference": "Activity selector",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/activity"
+        "url": "/sws/neo/payment-in/lines/selectors/activity"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "product",
         "column": "M_Product_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/product"
+        "url": "/sws/neo/payment-in/lines/selectors/product"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesCampaign",
         "column": "C_Campaign_ID",
         "reference": "Campaign selector",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/salesCampaign"
+        "url": "/sws/neo/payment-in/lines/selectors/salesCampaign"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "project",
         "column": "C_Project_ID",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/project"
+        "url": "/sws/neo/payment-in/lines/selectors/project"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesRegion",
         "column": "C_Salesregion_ID",
         "reference": "Sales region selector",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/salesRegion"
+        "url": "/sws/neo/payment-in/lines/selectors/salesRegion"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "costCenter",
         "column": "C_Costcenter_ID",
         "reference": "Cost Center Selector",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/costCenter"
+        "url": "/sws/neo/payment-in/lines/selectors/costCenter"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "stDimension",
         "column": "User1_ID",
         "reference": "User Dimension 1",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/stDimension"
+        "url": "/sws/neo/payment-in/lines/selectors/stDimension"
       },
       {
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "ndDimension",
         "column": "User2_ID",
         "reference": "User Dimension 2",
         "inputMode": "search",
-        "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/ndDimension"
+        "url": "/sws/neo/payment-in/lines/selectors/ndDimension"
       }
     ],
     "actions": [
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMAddScheduledpayments",
         "column": "EM_Aprm_Add_Scheduledpayments",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMAddScheduledpayments"
+        "url": "/sws/neo/payment-in/header/{id}/action/aPRMAddScheduledpayments"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "posted",
         "column": "Posted",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/posted"
+        "url": "/sws/neo/payment-in/header/{id}/action/posted"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMProcessPayment",
         "column": "EM_APRM_Process_Payment",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMProcessPayment"
+        "url": "/sws/neo/payment-in/header/{id}/action/aPRMProcessPayment"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aprmExecutepayment",
         "column": "EM_Aprm_Executepayment",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/aprmExecutepayment"
+        "url": "/sws/neo/payment-in/header/{id}/action/aprmExecutepayment"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMReversePayment",
         "column": "EM_APRM_ReversePayment",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReversePayment"
+        "url": "/sws/neo/payment-in/header/{id}/action/aPRMReversePayment"
       },
       {
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMReconcilePayment",
         "column": "EM_APRM_Reconcile_Payment",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReconcilePayment"
+        "url": "/sws/neo/payment-in/header/{id}/action/aPRMReconcilePayment"
       }
     ],
     "queryParams": {
@@ -1759,1192 +1701,1192 @@
       {
         "id": "t-1",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "referenceNo",
         "runner": "node",
-        "description": "Field 'referenceNo' should be present in finPayment"
+        "description": "Field 'referenceNo' should be present in header"
       },
       {
         "id": "t-2",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentDate",
         "runner": "node",
-        "description": "Field 'paymentDate' should be present in finPayment"
+        "description": "Field 'paymentDate' should be present in header"
       },
       {
         "id": "t-3",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be present in finPayment"
+        "description": "Field 'businessPartner' should be present in header"
       },
       {
         "id": "t-4",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should be present in finPayment"
+        "description": "Field 'description' should be present in header"
       },
       {
         "id": "t-5",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentMethod",
         "runner": "node",
-        "description": "Field 'paymentMethod' should be present in finPayment"
+        "description": "Field 'paymentMethod' should be present in header"
       },
       {
         "id": "t-6",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "amount",
         "runner": "node",
-        "description": "Field 'amount' should be present in finPayment"
+        "description": "Field 'amount' should be present in header"
       },
       {
         "id": "t-7",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "account",
         "runner": "node",
-        "description": "Field 'account' should be present in finPayment"
+        "description": "Field 'account' should be present in header"
       },
       {
         "id": "t-8",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "currency",
         "runner": "node",
-        "description": "Field 'currency' should be present in finPayment"
+        "description": "Field 'currency' should be present in header"
       },
       {
         "id": "t-9",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "financialTransactionAmount",
         "runner": "node",
-        "description": "Field 'financialTransactionAmount' should be present in finPayment"
+        "description": "Field 'financialTransactionAmount' should be present in header"
       },
       {
         "id": "t-10",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "financialTransactionConvertRate",
         "runner": "node",
-        "description": "Field 'financialTransactionConvertRate' should be present in finPayment"
+        "description": "Field 'financialTransactionConvertRate' should be present in header"
       },
       {
         "id": "t-11",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMAddScheduledpayments",
         "runner": "node",
-        "description": "Field 'aPRMAddScheduledpayments' should be present in finPayment"
+        "description": "Field 'aPRMAddScheduledpayments' should be present in header"
       },
       {
         "id": "t-12",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMProcessPayment",
         "runner": "node",
-        "description": "Field 'aPRMProcessPayment' should be present in finPayment"
+        "description": "Field 'aPRMProcessPayment' should be present in header"
       },
       {
         "id": "t-13",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aprmExecutepayment",
         "runner": "node",
-        "description": "Field 'aprmExecutepayment' should be present in finPayment"
+        "description": "Field 'aprmExecutepayment' should be present in header"
       },
       {
         "id": "t-14",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "status",
         "runner": "node",
-        "description": "Field 'status' should be present in finPayment"
+        "description": "Field 'status' should be present in header"
       },
       {
         "id": "t-15",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "generatedCredit",
         "runner": "node",
-        "description": "Field 'generatedCredit' should be present in finPayment"
+        "description": "Field 'generatedCredit' should be present in header"
       },
       {
         "id": "t-16",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "usedCredit",
         "runner": "node",
-        "description": "Field 'usedCredit' should be present in finPayment"
+        "description": "Field 'usedCredit' should be present in header"
       },
       {
         "id": "t-17",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "writeoffAmount",
         "runner": "node",
-        "description": "Field 'writeoffAmount' should be present in finPayment"
+        "description": "Field 'writeoffAmount' should be present in header"
       },
       {
         "id": "t-18",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "reversedPayment",
         "runner": "node",
-        "description": "Field 'reversedPayment' should be present in finPayment"
+        "description": "Field 'reversedPayment' should be present in header"
       },
       {
         "id": "t-19",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should be present in finPayment"
+        "description": "Field 'project' should be present in header"
       },
       {
         "id": "t-20",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "costCenter",
         "runner": "node",
-        "description": "Field 'costCenter' should be present in finPayment"
+        "description": "Field 'costCenter' should be present in header"
       },
       {
         "id": "t-21",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should be present in finPayment"
+        "description": "Field 'stDimension' should be present in header"
       },
       {
         "id": "t-22",
         "category": "field-presence",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should be present in finPayment"
+        "description": "Field 'ndDimension' should be present in header"
       },
       {
         "id": "t-23",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "referenceNo",
         "runner": "node",
-        "description": "Field 'referenceNo' should have type 'string' in finPayment"
+        "description": "Field 'referenceNo' should have type 'string' in header"
       },
       {
         "id": "t-24",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentDate",
         "runner": "node",
-        "description": "Field 'paymentDate' should have type 'string' in finPayment"
+        "description": "Field 'paymentDate' should have type 'string' in header"
       },
       {
         "id": "t-25",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in finPayment"
+        "description": "Field 'businessPartner' should have type 'string' in header"
       },
       {
         "id": "t-26",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should have type 'string' in finPayment"
+        "description": "Field 'description' should have type 'string' in header"
       },
       {
         "id": "t-27",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentMethod",
         "runner": "node",
-        "description": "Field 'paymentMethod' should have type 'string' in finPayment"
+        "description": "Field 'paymentMethod' should have type 'string' in header"
       },
       {
         "id": "t-28",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "amount",
         "runner": "node",
-        "description": "Field 'amount' should have type 'number' in finPayment"
+        "description": "Field 'amount' should have type 'number' in header"
       },
       {
         "id": "t-29",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "account",
         "runner": "node",
-        "description": "Field 'account' should have type 'string' in finPayment"
+        "description": "Field 'account' should have type 'string' in header"
       },
       {
         "id": "t-30",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "currency",
         "runner": "node",
-        "description": "Field 'currency' should have type 'string' in finPayment"
+        "description": "Field 'currency' should have type 'string' in header"
       },
       {
         "id": "t-31",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "financialTransactionAmount",
         "runner": "node",
-        "description": "Field 'financialTransactionAmount' should have type 'number' in finPayment"
+        "description": "Field 'financialTransactionAmount' should have type 'number' in header"
       },
       {
         "id": "t-32",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "financialTransactionConvertRate",
         "runner": "node",
-        "description": "Field 'financialTransactionConvertRate' should have type 'string' in finPayment"
+        "description": "Field 'financialTransactionConvertRate' should have type 'string' in header"
       },
       {
         "id": "t-33",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMAddScheduledpayments",
         "runner": "node",
-        "description": "Field 'aPRMAddScheduledpayments' should have type 'string' in finPayment"
+        "description": "Field 'aPRMAddScheduledpayments' should have type 'string' in header"
       },
       {
         "id": "t-34",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMProcessPayment",
         "runner": "node",
-        "description": "Field 'aPRMProcessPayment' should have type 'string' in finPayment"
+        "description": "Field 'aPRMProcessPayment' should have type 'string' in header"
       },
       {
         "id": "t-35",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aprmExecutepayment",
         "runner": "node",
-        "description": "Field 'aprmExecutepayment' should have type 'string' in finPayment"
+        "description": "Field 'aprmExecutepayment' should have type 'string' in header"
       },
       {
         "id": "t-36",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "status",
         "runner": "node",
-        "description": "Field 'status' should have type 'string' in finPayment"
+        "description": "Field 'status' should have type 'string' in header"
       },
       {
         "id": "t-37",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "generatedCredit",
         "runner": "node",
-        "description": "Field 'generatedCredit' should have type 'number' in finPayment"
+        "description": "Field 'generatedCredit' should have type 'number' in header"
       },
       {
         "id": "t-38",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "usedCredit",
         "runner": "node",
-        "description": "Field 'usedCredit' should have type 'number' in finPayment"
+        "description": "Field 'usedCredit' should have type 'number' in header"
       },
       {
         "id": "t-39",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "writeoffAmount",
         "runner": "node",
-        "description": "Field 'writeoffAmount' should have type 'number' in finPayment"
+        "description": "Field 'writeoffAmount' should have type 'number' in header"
       },
       {
         "id": "t-40",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "reversedPayment",
         "runner": "node",
-        "description": "Field 'reversedPayment' should have type 'string' in finPayment"
+        "description": "Field 'reversedPayment' should have type 'string' in header"
       },
       {
         "id": "t-41",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should have type 'string' in finPayment"
+        "description": "Field 'project' should have type 'string' in header"
       },
       {
         "id": "t-42",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "costCenter",
         "runner": "node",
-        "description": "Field 'costCenter' should have type 'string' in finPayment"
+        "description": "Field 'costCenter' should have type 'string' in header"
       },
       {
         "id": "t-43",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in finPayment"
+        "description": "Field 'stDimension' should have type 'string' in header"
       },
       {
         "id": "t-44",
         "category": "field-type",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in finPayment"
+        "description": "Field 'ndDimension' should have type 'string' in header"
       },
       {
         "id": "t-45",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "referenceNo",
         "runner": "node",
-        "description": "Field 'referenceNo' should be a supported filter for finPayment"
+        "description": "Field 'referenceNo' should be a supported filter for header"
       },
       {
         "id": "t-46",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentDate",
         "runner": "node",
-        "description": "Field 'paymentDate' should be a supported filter for finPayment"
+        "description": "Field 'paymentDate' should be a supported filter for header"
       },
       {
         "id": "t-47",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be a supported filter for finPayment"
+        "description": "Field 'businessPartner' should be a supported filter for header"
       },
       {
         "id": "t-48",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should be a supported filter for finPayment"
+        "description": "Field 'description' should be a supported filter for header"
       },
       {
         "id": "t-49",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "paymentMethod",
         "runner": "node",
-        "description": "Field 'paymentMethod' should be a supported filter for finPayment"
+        "description": "Field 'paymentMethod' should be a supported filter for header"
       },
       {
         "id": "t-50",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "amount",
         "runner": "node",
-        "description": "Field 'amount' should be a supported filter for finPayment"
+        "description": "Field 'amount' should be a supported filter for header"
       },
       {
         "id": "t-51",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "account",
         "runner": "node",
-        "description": "Field 'account' should be a supported filter for finPayment"
+        "description": "Field 'account' should be a supported filter for header"
       },
       {
         "id": "t-52",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "currency",
         "runner": "node",
-        "description": "Field 'currency' should be a supported filter for finPayment"
+        "description": "Field 'currency' should be a supported filter for header"
       },
       {
         "id": "t-53",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "financialTransactionAmount",
         "runner": "node",
-        "description": "Field 'financialTransactionAmount' should be a supported filter for finPayment"
+        "description": "Field 'financialTransactionAmount' should be a supported filter for header"
       },
       {
         "id": "t-54",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "financialTransactionConvertRate",
         "runner": "node",
-        "description": "Field 'financialTransactionConvertRate' should be a supported filter for finPayment"
+        "description": "Field 'financialTransactionConvertRate' should be a supported filter for header"
       },
       {
         "id": "t-55",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMAddScheduledpayments",
         "runner": "node",
-        "description": "Field 'aPRMAddScheduledpayments' should be a supported filter for finPayment"
+        "description": "Field 'aPRMAddScheduledpayments' should be a supported filter for header"
       },
       {
         "id": "t-56",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMProcessPayment",
         "runner": "node",
-        "description": "Field 'aPRMProcessPayment' should be a supported filter for finPayment"
+        "description": "Field 'aPRMProcessPayment' should be a supported filter for header"
       },
       {
         "id": "t-57",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aprmExecutepayment",
         "runner": "node",
-        "description": "Field 'aprmExecutepayment' should be a supported filter for finPayment"
+        "description": "Field 'aprmExecutepayment' should be a supported filter for header"
       },
       {
         "id": "t-58",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "reversedPayment",
         "runner": "node",
-        "description": "Field 'reversedPayment' should be a supported filter for finPayment"
+        "description": "Field 'reversedPayment' should be a supported filter for header"
       },
       {
         "id": "t-59",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should be a supported filter for finPayment"
+        "description": "Field 'project' should be a supported filter for header"
       },
       {
         "id": "t-60",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "costCenter",
         "runner": "node",
-        "description": "Field 'costCenter' should be a supported filter for finPayment"
+        "description": "Field 'costCenter' should be a supported filter for header"
       },
       {
         "id": "t-61",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should be a supported filter for finPayment"
+        "description": "Field 'stDimension' should be a supported filter for header"
       },
       {
         "id": "t-62",
         "category": "searchable-filters",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should be a supported filter for finPayment"
+        "description": "Field 'ndDimension' should be a supported filter for header"
       },
       {
         "id": "t-63",
         "category": "visibility",
-        "entity": "finPayment",
+        "entity": "header",
         "runner": "node",
-        "description": "Entity 'finPayment' should only expose visible fields in frontend"
+        "description": "Entity 'header' should only expose visible fields in frontend"
       },
       {
         "id": "t-64",
         "category": "readonlylogic-valid",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "generatedCredit",
         "runner": "node",
-        "description": "Read-only logic for 'generatedCredit' in finPayment should be valid JS"
+        "description": "Read-only logic for 'generatedCredit' in header should be valid JS"
       },
       {
         "id": "t-65",
         "category": "readonlylogic-evaluable",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "generatedCredit",
         "runner": "node",
-        "description": "Read-only logic for 'generatedCredit' in finPayment should have evaluable flag"
+        "description": "Read-only logic for 'generatedCredit' in header should have evaluable flag"
       },
       {
         "id": "t-66",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "dueDate",
         "runner": "node",
-        "description": "Field 'dueDate' should be present in finPaymentScheduleDetail"
+        "description": "Field 'dueDate' should be present in lines"
       },
       {
         "id": "t-67",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoiceAmount",
         "runner": "node",
-        "description": "Field 'invoiceAmount' should be present in finPaymentScheduleDetail"
+        "description": "Field 'invoiceAmount' should be present in lines"
       },
       {
         "id": "t-68",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "expected",
         "runner": "node",
-        "description": "Field 'expected' should be present in finPaymentScheduleDetail"
+        "description": "Field 'expected' should be present in lines"
       },
       {
         "id": "t-69",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "amount",
         "runner": "node",
-        "description": "Field 'amount' should be present in finPaymentScheduleDetail"
+        "description": "Field 'amount' should be present in lines"
       },
       {
         "id": "t-70",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "orderPaymentSchedule",
         "runner": "node",
-        "description": "Field 'orderPaymentSchedule' should be present in finPaymentScheduleDetail"
+        "description": "Field 'orderPaymentSchedule' should be present in lines"
       },
       {
         "id": "t-71",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoicePaymentSchedule",
         "runner": "node",
-        "description": "Field 'invoicePaymentSchedule' should be present in finPaymentScheduleDetail"
+        "description": "Field 'invoicePaymentSchedule' should be present in lines"
       },
       {
         "id": "t-72",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "gLItem",
         "runner": "node",
-        "description": "Field 'gLItem' should be present in finPaymentScheduleDetail"
+        "description": "Field 'gLItem' should be present in lines"
       },
       {
         "id": "t-73",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "canceled",
         "runner": "node",
-        "description": "Field 'canceled' should be present in finPaymentScheduleDetail"
+        "description": "Field 'canceled' should be present in lines"
       },
       {
         "id": "t-74",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be present in finPaymentScheduleDetail"
+        "description": "Field 'businessPartner' should be present in lines"
       },
       {
         "id": "t-75",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "activity",
         "runner": "node",
-        "description": "Field 'activity' should be present in finPaymentScheduleDetail"
+        "description": "Field 'activity' should be present in lines"
       },
       {
         "id": "t-76",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "product",
         "runner": "node",
-        "description": "Field 'product' should be present in finPaymentScheduleDetail"
+        "description": "Field 'product' should be present in lines"
       },
       {
         "id": "t-77",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Field 'salesCampaign' should be present in finPaymentScheduleDetail"
+        "description": "Field 'salesCampaign' should be present in lines"
       },
       {
         "id": "t-78",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should be present in finPaymentScheduleDetail"
+        "description": "Field 'project' should be present in lines"
       },
       {
         "id": "t-79",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesRegion",
         "runner": "node",
-        "description": "Field 'salesRegion' should be present in finPaymentScheduleDetail"
+        "description": "Field 'salesRegion' should be present in lines"
       },
       {
         "id": "t-80",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "costCenter",
         "runner": "node",
-        "description": "Field 'costCenter' should be present in finPaymentScheduleDetail"
+        "description": "Field 'costCenter' should be present in lines"
       },
       {
         "id": "t-81",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should be present in finPaymentScheduleDetail"
+        "description": "Field 'stDimension' should be present in lines"
       },
       {
         "id": "t-82",
         "category": "field-presence",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should be present in finPaymentScheduleDetail"
+        "description": "Field 'ndDimension' should be present in lines"
       },
       {
         "id": "t-83",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "dueDate",
         "runner": "node",
-        "description": "Field 'dueDate' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'dueDate' should have type 'string' in lines"
       },
       {
         "id": "t-84",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoiceAmount",
         "runner": "node",
-        "description": "Field 'invoiceAmount' should have type 'number' in finPaymentScheduleDetail"
+        "description": "Field 'invoiceAmount' should have type 'number' in lines"
       },
       {
         "id": "t-85",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "expected",
         "runner": "node",
-        "description": "Field 'expected' should have type 'number' in finPaymentScheduleDetail"
+        "description": "Field 'expected' should have type 'number' in lines"
       },
       {
         "id": "t-86",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "amount",
         "runner": "node",
-        "description": "Field 'amount' should have type 'number' in finPaymentScheduleDetail"
+        "description": "Field 'amount' should have type 'number' in lines"
       },
       {
         "id": "t-87",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "orderPaymentSchedule",
         "runner": "node",
-        "description": "Field 'orderPaymentSchedule' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'orderPaymentSchedule' should have type 'string' in lines"
       },
       {
         "id": "t-88",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoicePaymentSchedule",
         "runner": "node",
-        "description": "Field 'invoicePaymentSchedule' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'invoicePaymentSchedule' should have type 'string' in lines"
       },
       {
         "id": "t-89",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "gLItem",
         "runner": "node",
-        "description": "Field 'gLItem' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'gLItem' should have type 'string' in lines"
       },
       {
         "id": "t-90",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "canceled",
         "runner": "node",
-        "description": "Field 'canceled' should have type 'boolean' in finPaymentScheduleDetail"
+        "description": "Field 'canceled' should have type 'boolean' in lines"
       },
       {
         "id": "t-91",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'businessPartner' should have type 'string' in lines"
       },
       {
         "id": "t-92",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "activity",
         "runner": "node",
-        "description": "Field 'activity' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'activity' should have type 'string' in lines"
       },
       {
         "id": "t-93",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "product",
         "runner": "node",
-        "description": "Field 'product' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'product' should have type 'string' in lines"
       },
       {
         "id": "t-94",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Field 'salesCampaign' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'salesCampaign' should have type 'string' in lines"
       },
       {
         "id": "t-95",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'project' should have type 'string' in lines"
       },
       {
         "id": "t-96",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesRegion",
         "runner": "node",
-        "description": "Field 'salesRegion' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'salesRegion' should have type 'string' in lines"
       },
       {
         "id": "t-97",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "costCenter",
         "runner": "node",
-        "description": "Field 'costCenter' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'costCenter' should have type 'string' in lines"
       },
       {
         "id": "t-98",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'stDimension' should have type 'string' in lines"
       },
       {
         "id": "t-99",
         "category": "field-type",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in finPaymentScheduleDetail"
+        "description": "Field 'ndDimension' should have type 'string' in lines"
       },
       {
         "id": "t-100",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "amount",
         "runner": "node",
-        "description": "Field 'amount' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'amount' should be a supported filter for lines"
       },
       {
         "id": "t-101",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "orderPaymentSchedule",
         "runner": "node",
-        "description": "Field 'orderPaymentSchedule' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'orderPaymentSchedule' should be a supported filter for lines"
       },
       {
         "id": "t-102",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoicePaymentSchedule",
         "runner": "node",
-        "description": "Field 'invoicePaymentSchedule' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'invoicePaymentSchedule' should be a supported filter for lines"
       },
       {
         "id": "t-103",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "gLItem",
         "runner": "node",
-        "description": "Field 'gLItem' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'gLItem' should be a supported filter for lines"
       },
       {
         "id": "t-104",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "canceled",
         "runner": "node",
-        "description": "Field 'canceled' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'canceled' should be a supported filter for lines"
       },
       {
         "id": "t-105",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "businessPartner",
         "runner": "node",
-        "description": "Field 'businessPartner' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'businessPartner' should be a supported filter for lines"
       },
       {
         "id": "t-106",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "activity",
         "runner": "node",
-        "description": "Field 'activity' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'activity' should be a supported filter for lines"
       },
       {
         "id": "t-107",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "product",
         "runner": "node",
-        "description": "Field 'product' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'product' should be a supported filter for lines"
       },
       {
         "id": "t-108",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "Field 'salesCampaign' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'salesCampaign' should be a supported filter for lines"
       },
       {
         "id": "t-109",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "project",
         "runner": "node",
-        "description": "Field 'project' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'project' should be a supported filter for lines"
       },
       {
         "id": "t-110",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "salesRegion",
         "runner": "node",
-        "description": "Field 'salesRegion' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'salesRegion' should be a supported filter for lines"
       },
       {
         "id": "t-111",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "costCenter",
         "runner": "node",
-        "description": "Field 'costCenter' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'costCenter' should be a supported filter for lines"
       },
       {
         "id": "t-112",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "stDimension",
         "runner": "node",
-        "description": "Field 'stDimension' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'stDimension' should be a supported filter for lines"
       },
       {
         "id": "t-113",
         "category": "searchable-filters",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "ndDimension",
         "runner": "node",
-        "description": "Field 'ndDimension' should be a supported filter for finPaymentScheduleDetail"
+        "description": "Field 'ndDimension' should be a supported filter for lines"
       },
       {
         "id": "t-114",
         "category": "visibility",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "runner": "node",
-        "description": "Entity 'finPaymentScheduleDetail' should only expose visible fields in frontend"
+        "description": "Entity 'lines' should only expose visible fields in frontend"
       },
       {
         "id": "t-115",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "organization",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for finPayment"
+        "description": "System field 'organization' should exist in backend but not frontend for header"
       },
       {
         "id": "t-116",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "documentType",
         "runner": "node",
-        "description": "System field 'documentType' should exist in backend but not frontend for finPayment"
+        "description": "System field 'documentType' should exist in backend but not frontend for header"
       },
       {
         "id": "t-117",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "documentNo",
         "runner": "node",
-        "description": "System field 'documentNo' should exist in backend but not frontend for finPayment"
+        "description": "System field 'documentNo' should exist in backend but not frontend for header"
       },
       {
         "id": "t-118",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "posted",
         "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for finPayment"
+        "description": "System field 'posted' should exist in backend but not frontend for header"
       },
       {
         "id": "t-119",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMReversePayment",
         "runner": "node",
-        "description": "System field 'aPRMReversePayment' should exist in backend but not frontend for finPayment"
+        "description": "System field 'aPRMReversePayment' should exist in backend but not frontend for header"
       },
       {
         "id": "t-120",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "createdByAlgorithm",
         "runner": "node",
-        "description": "System field 'createdByAlgorithm' should exist in backend but not frontend for finPayment"
+        "description": "System field 'createdByAlgorithm' should exist in backend but not frontend for header"
       },
       {
         "id": "t-121",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "activity",
         "runner": "node",
-        "description": "System field 'activity' should exist in backend but not frontend for finPayment"
+        "description": "System field 'activity' should exist in backend but not frontend for header"
       },
       {
         "id": "t-122",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "salesCampaign",
         "runner": "node",
-        "description": "System field 'salesCampaign' should exist in backend but not frontend for finPayment"
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for header"
       },
       {
         "id": "t-123",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "client",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for finPayment"
+        "description": "System field 'client' should exist in backend but not frontend for header"
       },
       {
         "id": "t-124",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "payment",
         "runner": "node",
-        "description": "System field 'payment' should exist in backend but not frontend for finPayment"
+        "description": "System field 'payment' should exist in backend but not frontend for header"
       },
       {
         "id": "t-125",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMReconcilePayment",
         "runner": "node",
-        "description": "System field 'aPRMReconcilePayment' should exist in backend but not frontend for finPayment"
+        "description": "System field 'aPRMReconcilePayment' should exist in backend but not frontend for header"
       },
       {
         "id": "t-126",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "processNow",
         "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for finPayment"
+        "description": "System field 'processNow' should exist in backend but not frontend for header"
       },
       {
         "id": "t-127",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "processed",
         "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for finPayment"
+        "description": "System field 'processed' should exist in backend but not frontend for header"
       },
       {
         "id": "t-128",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "active",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for finPayment"
+        "description": "System field 'active' should exist in backend but not frontend for header"
       },
       {
         "id": "t-129",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "receipt",
         "runner": "node",
-        "description": "System field 'receipt' should exist in backend but not frontend for finPayment"
+        "description": "System field 'receipt' should exist in backend but not frontend for header"
       },
       {
         "id": "t-130",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "creationDate",
         "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for finPayment"
+        "description": "System field 'creationDate' should exist in backend but not frontend for header"
       },
       {
         "id": "t-131",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "createdBy",
         "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for finPayment"
+        "description": "System field 'createdBy' should exist in backend but not frontend for header"
       },
       {
         "id": "t-132",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "updated",
         "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for finPayment"
+        "description": "System field 'updated' should exist in backend but not frontend for header"
       },
       {
         "id": "t-133",
         "category": "system-field",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "updatedBy",
         "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for finPayment"
+        "description": "System field 'updatedBy' should exist in backend but not frontend for header"
       },
       {
         "id": "t-134",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "paymentDetails",
         "runner": "node",
-        "description": "System field 'paymentDetails' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'paymentDetails' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-135",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "documentNo2",
         "runner": "node",
-        "description": "System field 'documentNo2' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'documentNo2' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-136",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "active",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'active' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-137",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "documentNo2",
         "runner": "node",
-        "description": "System field 'documentNo2' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'documentNo2' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-138",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "writeoffAmount",
         "runner": "node",
-        "description": "System field 'writeoffAmount' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'writeoffAmount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-139",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "doubtfulDebtAmount",
         "runner": "node",
-        "description": "System field 'doubtfulDebtAmount' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'doubtfulDebtAmount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-140",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "invoicePaid",
         "runner": "node",
-        "description": "System field 'invoicePaid' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'invoicePaid' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-141",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "client",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'client' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-142",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "organization",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'organization' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-143",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "fINPaymentScheduledetailID",
         "runner": "node",
-        "description": "System field 'fINPaymentScheduledetailID' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'fINPaymentScheduledetailID' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-144",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "creationDate",
         "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'creationDate' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-145",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "createdBy",
         "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'createdBy' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-146",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "aPRMFinancialAccount",
         "runner": "node",
-        "description": "System field 'aPRMFinancialAccount' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'aPRMFinancialAccount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-147",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "aPRMPaymentMethod",
         "runner": "node",
-        "description": "System field 'aPRMPaymentMethod' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'aPRMPaymentMethod' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-148",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "updated",
         "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'updated' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-149",
         "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
+        "entity": "lines",
         "field": "updatedBy",
         "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for finPaymentScheduleDetail"
+        "description": "System field 'updatedBy' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-150",
@@ -3123,269 +3065,237 @@
       },
       {
         "id": "t-175",
-        "category": "process-happy",
-        "process": "paymentProcess",
-        "entity": "paymentIn",
-        "runner": "junit",
-        "description": "Process 'paymentProcess' should complete successfully with valid preconditions"
+        "category": "crud-flags",
+        "entity": "header",
+        "runner": "node",
+        "description": "CRUD flags for 'header' should all be booleans"
       },
       {
         "id": "t-176",
-        "category": "process-failure",
-        "process": "paymentProcess",
-        "entity": "paymentIn",
-        "runner": "junit",
-        "description": "Process 'paymentProcess' should fail when preconditions are not met"
+        "category": "crud-flags",
+        "entity": "lines",
+        "runner": "node",
+        "description": "CRUD flags for 'lines' should all be booleans"
       },
       {
         "id": "t-177",
-        "category": "process-happy",
-        "process": "reversePayment",
-        "entity": "paymentIn",
-        "runner": "junit",
-        "description": "Process 'reversePayment' should complete successfully with valid preconditions"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in header should exist"
       },
       {
         "id": "t-178",
-        "category": "process-failure",
-        "process": "reversePayment",
-        "entity": "paymentIn",
-        "runner": "junit",
-        "description": "Process 'reversePayment' should fail when preconditions are not met"
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "Selector endpoint for 'paymentMethod' in header should exist"
       },
       {
         "id": "t-179",
-        "category": "crud-flags",
-        "entity": "finPayment",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "account",
         "runner": "node",
-        "description": "CRUD flags for 'finPayment' should all be booleans"
+        "description": "Selector endpoint for 'account' in header should exist"
       },
       {
         "id": "t-180",
-        "category": "crud-flags",
-        "entity": "finPaymentScheduleDetail",
+        "category": "selector-endpoint",
+        "entity": "header",
+        "field": "currency",
         "runner": "node",
-        "description": "CRUD flags for 'finPaymentScheduleDetail' should all be booleans"
+        "description": "Selector endpoint for 'currency' in header should exist"
       },
       {
         "id": "t-181",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "businessPartner",
+        "entity": "header",
+        "field": "reversedPayment",
         "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in finPayment should exist"
+        "description": "Selector endpoint for 'reversedPayment' in header should exist"
       },
       {
         "id": "t-182",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "paymentMethod",
+        "entity": "header",
+        "field": "project",
         "runner": "node",
-        "description": "Selector endpoint for 'paymentMethod' in finPayment should exist"
+        "description": "Selector endpoint for 'project' in header should exist"
       },
       {
         "id": "t-183",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "account",
+        "entity": "header",
+        "field": "costCenter",
         "runner": "node",
-        "description": "Selector endpoint for 'account' in finPayment should exist"
+        "description": "Selector endpoint for 'costCenter' in header should exist"
       },
       {
         "id": "t-184",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "currency",
+        "entity": "header",
+        "field": "stDimension",
         "runner": "node",
-        "description": "Selector endpoint for 'currency' in finPayment should exist"
+        "description": "Selector endpoint for 'stDimension' in header should exist"
       },
       {
         "id": "t-185",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "reversedPayment",
+        "entity": "header",
+        "field": "ndDimension",
         "runner": "node",
-        "description": "Selector endpoint for 'reversedPayment' in finPayment should exist"
+        "description": "Selector endpoint for 'ndDimension' in header should exist"
       },
       {
         "id": "t-186",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "project",
+        "entity": "lines",
+        "field": "orderPaymentSchedule",
         "runner": "node",
-        "description": "Selector endpoint for 'project' in finPayment should exist"
+        "description": "Selector endpoint for 'orderPaymentSchedule' in lines should exist"
       },
       {
         "id": "t-187",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "costCenter",
+        "entity": "lines",
+        "field": "invoicePaymentSchedule",
         "runner": "node",
-        "description": "Selector endpoint for 'costCenter' in finPayment should exist"
+        "description": "Selector endpoint for 'invoicePaymentSchedule' in lines should exist"
       },
       {
         "id": "t-188",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "stDimension",
+        "entity": "lines",
+        "field": "gLItem",
         "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in finPayment should exist"
+        "description": "Selector endpoint for 'gLItem' in lines should exist"
       },
       {
         "id": "t-189",
         "category": "selector-endpoint",
-        "entity": "finPayment",
-        "field": "ndDimension",
+        "entity": "lines",
+        "field": "businessPartner",
         "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in finPayment should exist"
+        "description": "Selector endpoint for 'businessPartner' in lines should exist"
       },
       {
         "id": "t-190",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "orderPaymentSchedule",
+        "entity": "lines",
+        "field": "activity",
         "runner": "node",
-        "description": "Selector endpoint for 'orderPaymentSchedule' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'activity' in lines should exist"
       },
       {
         "id": "t-191",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "invoicePaymentSchedule",
+        "entity": "lines",
+        "field": "product",
         "runner": "node",
-        "description": "Selector endpoint for 'invoicePaymentSchedule' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'product' in lines should exist"
       },
       {
         "id": "t-192",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "gLItem",
+        "entity": "lines",
+        "field": "salesCampaign",
         "runner": "node",
-        "description": "Selector endpoint for 'gLItem' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'salesCampaign' in lines should exist"
       },
       {
         "id": "t-193",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "businessPartner",
+        "entity": "lines",
+        "field": "project",
         "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'project' in lines should exist"
       },
       {
         "id": "t-194",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "activity",
+        "entity": "lines",
+        "field": "salesRegion",
         "runner": "node",
-        "description": "Selector endpoint for 'activity' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'salesRegion' in lines should exist"
       },
       {
         "id": "t-195",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "product",
+        "entity": "lines",
+        "field": "costCenter",
         "runner": "node",
-        "description": "Selector endpoint for 'product' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'costCenter' in lines should exist"
       },
       {
         "id": "t-196",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "salesCampaign",
+        "entity": "lines",
+        "field": "stDimension",
         "runner": "node",
-        "description": "Selector endpoint for 'salesCampaign' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'stDimension' in lines should exist"
       },
       {
         "id": "t-197",
         "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "project",
+        "entity": "lines",
+        "field": "ndDimension",
         "runner": "node",
-        "description": "Selector endpoint for 'project' in finPaymentScheduleDetail should exist"
+        "description": "Selector endpoint for 'ndDimension' in lines should exist"
       },
       {
         "id": "t-198",
-        "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "salesRegion",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "aPRMAddScheduledpayments",
         "runner": "node",
-        "description": "Selector endpoint for 'salesRegion' in finPaymentScheduleDetail should exist"
+        "description": "Action endpoint for 'aPRMAddScheduledpayments' in header should exist"
       },
       {
         "id": "t-199",
-        "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "costCenter",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "posted",
         "runner": "node",
-        "description": "Selector endpoint for 'costCenter' in finPaymentScheduleDetail should exist"
+        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-200",
-        "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "stDimension",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "aPRMProcessPayment",
         "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in finPaymentScheduleDetail should exist"
+        "description": "Action endpoint for 'aPRMProcessPayment' in header should exist"
       },
       {
         "id": "t-201",
-        "category": "selector-endpoint",
-        "entity": "finPaymentScheduleDetail",
-        "field": "ndDimension",
+        "category": "action-endpoint",
+        "entity": "header",
+        "field": "aprmExecutepayment",
         "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in finPaymentScheduleDetail should exist"
+        "description": "Action endpoint for 'aprmExecutepayment' in header should exist"
       },
       {
         "id": "t-202",
         "category": "action-endpoint",
-        "entity": "finPayment",
-        "field": "aPRMAddScheduledpayments",
+        "entity": "header",
+        "field": "aPRMReversePayment",
         "runner": "node",
-        "description": "Action endpoint for 'aPRMAddScheduledpayments' in finPayment should exist"
+        "description": "Action endpoint for 'aPRMReversePayment' in header should exist"
       },
       {
         "id": "t-203",
         "category": "action-endpoint",
-        "entity": "finPayment",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in finPayment should exist"
-      },
-      {
-        "id": "t-204",
-        "category": "action-endpoint",
-        "entity": "finPayment",
-        "field": "aPRMProcessPayment",
-        "runner": "node",
-        "description": "Action endpoint for 'aPRMProcessPayment' in finPayment should exist"
-      },
-      {
-        "id": "t-205",
-        "category": "action-endpoint",
-        "entity": "finPayment",
-        "field": "aprmExecutepayment",
-        "runner": "node",
-        "description": "Action endpoint for 'aprmExecutepayment' in finPayment should exist"
-      },
-      {
-        "id": "t-206",
-        "category": "action-endpoint",
-        "entity": "finPayment",
-        "field": "aPRMReversePayment",
-        "runner": "node",
-        "description": "Action endpoint for 'aPRMReversePayment' in finPayment should exist"
-      },
-      {
-        "id": "t-207",
-        "category": "action-endpoint",
-        "entity": "finPayment",
+        "entity": "header",
         "field": "aPRMReconcilePayment",
         "runner": "node",
-        "description": "Action endpoint for 'aPRMReconcilePayment' in finPayment should exist"
+        "description": "Action endpoint for 'aPRMReconcilePayment' in header should exist"
       }
     ],
     "summary": {
-      "total": 207,
+      "total": 203,
       "byCategory": {
         "field-presence": 39,
         "field-type": 39,
@@ -3395,15 +3305,13 @@
         "readonlylogic-evaluable": 1,
         "system-field": 35,
         "rule-declared": 25,
-        "process-happy": 2,
-        "process-failure": 2,
         "crud-flags": 2,
         "selector-endpoint": 21,
         "action-endpoint": 6
       },
       "byRunner": {
         "node": 203,
-        "junit": 4
+        "junit": 0
       }
     }
   }

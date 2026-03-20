@@ -1,9 +1,9 @@
 // Auto-generated mock data - do not edit manually
 
-export const finPayment = [
+export const header = [
   {
-    "id": "mock-finPayment-001",
-    "referenceNo": "FI-00001",
+    "id": "mock-header-001",
+    "referenceNo": "HE-00001",
     "paymentDate": "2026-01-15",
     "businessPartner": "Acme Corp",
     "description": "Standard order for Q1 delivery",
@@ -27,8 +27,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-002",
-    "referenceNo": "FI-00002",
+    "id": "mock-header-002",
+    "referenceNo": "HE-00002",
     "paymentDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
     "description": "Rush order - priority shipping required",
@@ -52,8 +52,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-003",
-    "referenceNo": "FI-00003",
+    "id": "mock-header-003",
+    "referenceNo": "HE-00003",
     "paymentDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
     "description": "Bulk purchase for warehouse restocking",
@@ -77,8 +77,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-004",
-    "referenceNo": "FI-00004",
+    "id": "mock-header-004",
+    "referenceNo": "HE-00004",
     "paymentDate": "2026-01-18",
     "businessPartner": "Summit Industries",
     "description": "Sample order for client evaluation",
@@ -102,8 +102,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-005",
-    "referenceNo": "FI-00005",
+    "id": "mock-header-005",
+    "referenceNo": "HE-00005",
     "paymentDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
     "description": "Recurring monthly supply order",
@@ -127,8 +127,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-006",
-    "referenceNo": "FI-00006",
+    "id": "mock-header-006",
+    "referenceNo": "HE-00006",
     "paymentDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
     "description": "Special pricing agreement applies",
@@ -152,8 +152,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-007",
-    "referenceNo": "FI-00007",
+    "id": "mock-header-007",
+    "referenceNo": "HE-00007",
     "paymentDate": "2026-01-21",
     "businessPartner": "Meridian Group",
     "description": "Consolidated order from multiple requests",
@@ -177,8 +177,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-008",
-    "referenceNo": "FI-00008",
+    "id": "mock-header-008",
+    "referenceNo": "HE-00008",
     "paymentDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
     "description": "Trial order for new product line",
@@ -202,8 +202,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-009",
-    "referenceNo": "FI-00009",
+    "id": "mock-header-009",
+    "referenceNo": "HE-00009",
     "paymentDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
     "description": "Replacement for damaged goods",
@@ -227,8 +227,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-010",
-    "referenceNo": "FI-00010",
+    "id": "mock-header-010",
+    "referenceNo": "HE-00010",
     "paymentDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
     "description": "Pre-season inventory build-up",
@@ -252,8 +252,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-011",
-    "referenceNo": "FI-00011",
+    "id": "mock-header-011",
+    "referenceNo": "HE-00011",
     "paymentDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
     "description": "Customer-specific configuration",
@@ -277,8 +277,8 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-012",
-    "referenceNo": "FI-00012",
+    "id": "mock-header-012",
+    "referenceNo": "HE-00012",
     "paymentDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
     "description": "Government contract fulfillment",
@@ -303,9 +303,9 @@ export const finPayment = [
   }
 ];
 
-export const finPaymentScheduleDetail = [
+export const lines = [
   {
-    "id": "mock-finPaymentScheduleDetail-001",
+    "id": "mock-lines-001",
     "dueDate": "2026-01-15",
     "invoiceAmount": 38907,
     "expected": 38907,
@@ -323,10 +323,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-001"
+    "headerId": "mock-header-001"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-002",
+    "id": "mock-lines-002",
     "dueDate": "2026-01-16",
     "invoiceAmount": 9306,
     "expected": 9306,
@@ -344,10 +344,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-002"
+    "headerId": "mock-header-002"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-003",
+    "id": "mock-lines-003",
     "dueDate": "2026-01-17",
     "invoiceAmount": 11544,
     "expected": 11544,
@@ -365,10 +365,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-003"
+    "headerId": "mock-header-003"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-004",
+    "id": "mock-lines-004",
     "dueDate": "2026-01-18",
     "invoiceAmount": 11872,
     "expected": 11872,
@@ -386,10 +386,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-004"
+    "headerId": "mock-header-004"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-005",
+    "id": "mock-lines-005",
     "dueDate": "2026-01-19",
     "invoiceAmount": 48460,
     "expected": 48460,
@@ -407,10 +407,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-005"
+    "headerId": "mock-header-005"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-006",
+    "id": "mock-lines-006",
     "dueDate": "2026-01-20",
     "invoiceAmount": 45418,
     "expected": 45418,
@@ -428,10 +428,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-006"
+    "headerId": "mock-header-006"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-007",
+    "id": "mock-lines-007",
     "dueDate": "2026-01-21",
     "invoiceAmount": 33840,
     "expected": 33840,
@@ -449,10 +449,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-007"
+    "headerId": "mock-header-007"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-008",
+    "id": "mock-lines-008",
     "dueDate": "2026-01-22",
     "invoiceAmount": 25716,
     "expected": 25716,
@@ -470,10 +470,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-008"
+    "headerId": "mock-header-008"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-009",
+    "id": "mock-lines-009",
     "dueDate": "2026-01-23",
     "invoiceAmount": 44780,
     "expected": 44780,
@@ -491,10 +491,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-009"
+    "headerId": "mock-header-009"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-010",
+    "id": "mock-lines-010",
     "dueDate": "2026-01-24",
     "invoiceAmount": 12483,
     "expected": 12483,
@@ -512,10 +512,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-010"
+    "headerId": "mock-header-010"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-011",
+    "id": "mock-lines-011",
     "dueDate": "2026-01-25",
     "invoiceAmount": 46022,
     "expected": 46022,
@@ -533,10 +533,10 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-011"
+    "headerId": "mock-header-011"
   },
   {
-    "id": "mock-finPaymentScheduleDetail-012",
+    "id": "mock-lines-012",
     "dueDate": "2026-01-26",
     "invoiceAmount": 38634,
     "expected": 38634,
@@ -554,6 +554,6 @@ export const finPaymentScheduleDetail = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-012"
+    "headerId": "mock-header-012"
   }
 ];

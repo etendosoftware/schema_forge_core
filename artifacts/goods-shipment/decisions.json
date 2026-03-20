@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Goods Shipment"
   },
   "entities": {
-    "mInOut": {
+    "header": {
       "name": "goodsShipment",
       "fields": {
         "businessPartner": {
@@ -87,7 +87,7 @@
         }
       }
     },
-    "mInOutLine": {
+    "lines": {
       "name": "goodsShipmentLine",
       "fields": {
         "product": {
@@ -141,10 +141,11 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     }
   },
   "rules": {},
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

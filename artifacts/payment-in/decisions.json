@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "general",
     "name": "Payment In"
   },
   "entities": {
-    "finPayment": {
+    "header": {
       "fields": {
         "organization": {
           "inputMode": "search"
@@ -193,7 +193,7 @@
         }
       }
     },
-    "finPaymentScheduleDetail": {
+    "lines": {
       "fields": {
         "dueDate": {
           "grid": true,
@@ -325,16 +325,16 @@
         }
       }
     },
-    "finPaymentExecHistoryV": {
+    "executionHistory": {
       "exclude": true
     },
-    "cConversionRateDocument": {
+    "exchangeRates": {
       "exclude": true
     },
-    "finPaymentCredit": {
+    "usedCreditSource": {
       "exclude": true
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     }
   },
@@ -404,5 +404,6 @@
       "type": "process"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

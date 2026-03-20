@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Sales Quotation"
   },
   "entities": {
-    "cOrder": {
+    "header": {
       "name": "quotation",
       "fields": {
         "businessPartner": {
@@ -129,7 +129,7 @@
         }
       }
     },
-    "cOrderLine": {
+    "lines": {
       "name": "quotationLine",
       "fields": {
         "product": {
@@ -200,16 +200,16 @@
         }
       }
     },
-    "cOrderLineTax": {
+    "lineTax": {
       "exclude": true
     },
     "mReservationStock": {
       "exclude": true
     },
-    "cOrderDiscount": {
+    "basicDiscounts": {
       "exclude": true
     },
-    "cOrderTax": {
+    "tax": {
       "exclude": true
     },
     "finPaymentSchedOrdV": {
@@ -269,5 +269,6 @@
       "description": "Delivery-related fields (isDelivered, deliveryLocation, warehouse on header) are not relevant for quotations and are omitted from the schema"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

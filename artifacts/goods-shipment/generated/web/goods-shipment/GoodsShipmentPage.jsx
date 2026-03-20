@@ -2,17 +2,19 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import GoodsShipmentTable from './GoodsShipmentTable';
 import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
+import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Goods Shipment';
 
 // @sf-generated-start summary:goodsShipment
 const summary = [
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'string', label: 'Sales Order' },
-  { key: 'isnettingshipment', column: 'Isnettingshipment', type: 'boolean', label: 'Is netting shipment' },
-  { key: 'externalBusinessPartnerReference', column: 'Bpartner_Extref', type: 'string', label: 'CRM Reference' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status', label: 'Invoice Status' },
-  { key: 'completelyInvoiced', column: 'Iscompletelyinvoiced', type: 'boolean', label: 'Completely Invoiced' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
+  { key: 'isnettingshipment', column: 'Isnettingshipment', type: 'boolean' },
+  { key: 'externalBusinessPartnerReference', column: 'Bpartner_Extref', type: 'string' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status' },
+  { key: 'completelyInvoiced', column: 'Iscompletelyinvoiced', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -344,13 +346,14 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         detailEntity="goodsShipmentLine"
         Form={GoodsShipmentForm}
         DetailTable={GoodsShipmentLineTable}
+        DetailForm={GoodsShipmentLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Goods Shipment"
-        detailLabel="Goods Shipment Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
@@ -367,6 +370,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       entityLabel="Goods Shipments"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

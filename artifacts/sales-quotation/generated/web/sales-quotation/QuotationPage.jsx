@@ -2,14 +2,17 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
+import QuotationLineForm from './QuotationLineForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
 // @sf-generated-start summary:quotation
 const summary = [
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -369,13 +372,14 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         detailEntity="quotationLine"
         Form={QuotationForm}
         DetailTable={QuotationLineTable}
+        DetailForm={QuotationLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Quotation"
-        detailLabel="Quotation Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
@@ -392,6 +396,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       entityLabel="Quotations"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

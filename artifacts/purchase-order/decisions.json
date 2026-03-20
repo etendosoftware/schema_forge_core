@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
     "name": "Purchase Order"
   },
   "entities": {
-    "cOrder": {
+    "header": {
       "fields": {
         "transactionDocument": {
           "visibility": "editable",
@@ -226,7 +226,7 @@
         }
       }
     },
-    "cOrderLine": {
+    "lines": {
       "fields": {
         "lineNo": {
           "grid": true,
@@ -386,7 +386,7 @@
         }
       }
     },
-    "cOrderLineTax": {
+    "lineTax": {
       "fields": {
         "lineNo": {
           "visibility": "readOnly",
@@ -407,7 +407,7 @@
         }
       }
     },
-    "mReservationStock": {
+    "prereservedQty": {
       "name": "reservedStock",
       "fields": {
         "reservation": {
@@ -442,7 +442,7 @@
         }
       }
     },
-    "cOrderDiscount": {
+    "basicDiscounts": {
       "name": "basicDiscounts",
       "fields": {
         "lineNo": {
@@ -467,7 +467,7 @@
         }
       }
     },
-    "cOrderTax": {
+    "tax": {
       "fields": {
         "lineNo": {
           "visibility": "readOnly",
@@ -485,7 +485,7 @@
         }
       }
     },
-    "finPaymentSchedOrdV": {
+    "paymentPlan": {
       "name": "paymentPlan",
       "fields": {
         "dueDate": {
@@ -522,7 +522,7 @@
         }
       }
     },
-    "finPaymentDetailV": {
+    "paymentDetails": {
       "name": "paymentDetails",
       "fields": {
         "payment": {
@@ -581,5 +581,6 @@
   "discardPatterns": [
     "CopyFrom*",
     "EM_*"
-  ]
+  ],
+  "version": 2
 }

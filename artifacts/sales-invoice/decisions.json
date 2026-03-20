@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Sales Invoice"
   },
   "entities": {
-    "cInvoice": {
+    "header": {
       "fields": {
         "businessPartner": {
           "grid": true,
@@ -110,7 +110,7 @@
         }
       }
     },
-    "cInvoiceLine": {
+    "lines": {
       "fields": {
         "product": {
           "grid": true,
@@ -193,28 +193,28 @@
         }
       }
     },
-    "cInvoiceLineTax": {
+    "lineTax": {
       "exclude": true
     },
-    "cInvoiceTax": {
+    "tax": {
       "exclude": true
     },
-    "cInvoiceDiscount": {
+    "basicDiscounts": {
       "exclude": true
     },
-    "finPaymentSchedule": {
+    "paymentPlan": {
       "exclude": true
     },
-    "finPaymentScheduleDetail": {
+    "paymentDetails": {
       "exclude": true
     },
-    "cInvoiceReverse": {
+    "reversedInvoices": {
       "exclude": true
     },
-    "cConversionRateDocument": {
+    "exchangeRates": {
       "exclude": true
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     }
   },
@@ -268,5 +268,6 @@
       "description": "When price list changes, auto-fill currency from the selected price list"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

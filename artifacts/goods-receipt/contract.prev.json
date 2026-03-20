@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-20T17:21:28.661Z",
-  "checksum": "0471ec6641fde329",
+  "generatedAt": "2026-03-20T17:40:12.165Z",
+  "checksum": "ddab047a376d7491",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -833,7 +833,8 @@
           }
         ],
         "searchableFields": [],
-        "computedFields": []
+        "computedFields": [],
+        "javaQualifier": "factAcctHandler"
       },
       "landedCost": {
         "tableName": "M_LC_Cost",
@@ -2298,7 +2299,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "factAcctHandler"
       },
       "landedCost": {
         "tableName": "M_LC_Cost",

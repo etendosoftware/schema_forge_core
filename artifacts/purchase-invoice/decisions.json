@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
     "name": "Purchase Invoice"
   },
   "entities": {
-    "cInvoice": {
+    "header": {
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
@@ -202,7 +202,7 @@
         }
       }
     },
-    "cInvoiceLine": {
+    "lines": {
       "fields": {
         "lineNo": {
           "grid": true,
@@ -360,7 +360,7 @@
         }
       }
     },
-    "cInvoiceTax": {
+    "tax": {
       "fields": {
         "lineNo": {
           "visibility": "readOnly",
@@ -386,7 +386,7 @@
         }
       }
     },
-    "cInvoiceDiscount": {
+    "basicDiscounts": {
       "name": "basicDiscounts",
       "fields": {
         "lineNo": {
@@ -402,7 +402,7 @@
         }
       }
     },
-    "finPaymentSchedule": {
+    "paymentPlan": {
       "name": "paymentPlan",
       "fields": {
         "dueDate": {
@@ -427,7 +427,7 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "name": "accounting",
       "fields": {
         "account": {
@@ -459,7 +459,7 @@
       },
       "javaQualifier": "factAcctHandler"
     },
-    "cInvoiceReverse": {
+    "reversedInvoices": {
       "name": "reversedInvoices",
       "fields": {
         "reversedInvoice": {
@@ -469,13 +469,13 @@
         }
       }
     },
-    "cInvoiceLineTax": {
+    "lineTax": {
       "exclude": true
     },
-    "finPaymentScheduleDetail": {
+    "paymentDetails": {
       "exclude": true
     },
-    "cConversionRateDocument": {
+    "exchangeRates": {
       "exclude": true
     }
   },
@@ -622,5 +622,6 @@
   "discardPatterns": [
     "CopyFrom*",
     "EM_*"
-  ]
+  ],
+  "version": 2
 }

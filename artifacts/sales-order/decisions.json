@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Sales Order"
   },
   "entities": {
-    "cOrder": {
+    "header": {
       "fields": {
         "documentAction": {
           "visibility": "system",
@@ -180,7 +180,7 @@
         }
       }
     },
-    "cOrderLine": {
+    "lines": {
       "fields": {
         "priceStd": {
           "name": "baseNetUnitPrice"
@@ -340,7 +340,7 @@
         }
       }
     },
-    "cOrderLineTax": {
+    "lineTax": {
       "fields": {
         "cOrderlinetaxId": {
           "name": "id"
@@ -363,7 +363,7 @@
         }
       }
     },
-    "mSolReservedStockV": {
+    "reservedStock": {
       "name": "reservedStock",
       "fields": {
         "mSolReservedStockVId": {
@@ -404,7 +404,7 @@
         }
       }
     },
-    "cOrderlineServicerelation": {
+    "relatedProducts": {
       "name": "relatedProducts",
       "fields": {
         "cOrderlineRelatedId": {
@@ -423,7 +423,7 @@
         }
       }
     },
-    "cOrderlineProductrelation": {
+    "relatedServices": {
       "name": "relatedServices",
       "fields": {
         "documentNo": {
@@ -446,7 +446,7 @@
         }
       }
     },
-    "cOrderDiscount": {
+    "basicDiscounts": {
       "name": "basicDiscounts",
       "fields": {
         "lineNo": {
@@ -472,7 +472,7 @@
         }
       }
     },
-    "cOrderTax": {
+    "tax": {
       "fields": {
         "lineNo": {
           "visibility": "readOnly",
@@ -489,7 +489,7 @@
         }
       }
     },
-    "finPaymentSchedOrdV": {
+    "paymentPlan": {
       "name": "paymentPlan",
       "fields": {
         "finPaymentSchedOrdVId": {
@@ -532,7 +532,7 @@
         }
       }
     },
-    "finPaymentDetailV": {
+    "paymentDetails": {
       "name": "paymentDetails",
       "fields": {
         "finPaymentDetailVId": {
@@ -615,7 +615,7 @@
         }
       }
     },
-    "cOrderReplacement": {
+    "replacementOrders": {
       "name": "replacementOrders",
       "fields": {
         "cReplacementId": {
@@ -2409,5 +2409,6 @@
   "discardPatterns": [
     "CopyFrom*",
     "EM_*"
-  ]
+  ],
+  "version": 2
 }
