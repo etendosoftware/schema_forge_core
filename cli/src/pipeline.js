@@ -255,6 +255,21 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
   // Holds resolved curated schema and rules between steps (set by resolve-curated, consumed by generate-contract)
   const pipelineContext = {};
 
+  // Always refresh raw files from DB when skipping steps (prevents stale data).
+  // If DB is unreachable, existing raws are used with a warning.
+  if (skipTo) {
+    try {
+      const { main: extractFields } = await import('./extract-fields.js');
+      const { main: extractRules } = await import('./extract-rules.js');
+      console.log('[pre] Refreshing raw files from DB...');
+      await extractFields(windowId, windowName);
+      await extractRules(windowId, windowName);
+      console.log('[pre] Raw files refreshed.\n');
+    } catch (err) {
+      console.warn(`[pre] Could not refresh raws from DB (${err.message}) — using existing files.\n`);
+    }
+  }
+
   let skipping = !!skipTo;
 
   for (const step of steps) {
