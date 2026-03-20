@@ -57,7 +57,9 @@ export default function OnboardingPage() {
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
 
-  const token = localStorage.getItem('token') || import.meta.env.VITE_SYSTEM_TOKEN;
+  // For onboarding, prefer system token over user token (user token may lack permissions)
+  const systemToken = import.meta.env.VITE_SYSTEM_TOKEN;
+  const token = systemToken || localStorage.getItem('token');
 
   // Load environments
   const loadEnvironments = useCallback(async () => {
@@ -81,27 +83,22 @@ export default function OnboardingPage() {
     loadEnvironments();
   }, [loadEnvironments]);
 
-  // Login to environment
+  // Login to environment via token generation (no password needed)
   const loginToEnvironment = async (env) => {
     setLoggingIn(env.clientId);
     try {
-      const res = await fetch('/sws/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: env.adminUser,
-          password: form.adminPassword || 'test1234', // TODO: ask for password
-        }),
+      const res = await fetch(`/sws/go/onboarding?action=login&userId=${env.adminUserId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
         const data = await res.json();
         if (data.token) {
           localStorage.setItem('token', data.token);
-          navigate('/');
+          window.location.href = '/dashboard';
+          return;
         }
-      } else {
-        alert('Login failed. Check credentials.');
       }
+      alert('Login failed.');
     } catch (err) {
       alert('Login error: ' + err.message);
     } finally {
