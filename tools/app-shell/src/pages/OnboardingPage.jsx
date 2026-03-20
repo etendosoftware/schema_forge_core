@@ -155,9 +155,36 @@ export default function OnboardingPage() {
       setResult({ result: 'failed', error: err.message });
     } finally {
       setRunning(false);
-      loadEnvironments();
     }
-  }, [form, token, loadEnvironments]);
+  }, [form, token]);
+
+  // Auto-login after successful creation
+  useEffect(() => {
+    if (result && result.status === 'success') {
+      (async () => {
+        try {
+          const res = await fetch('/sws/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: form.adminUser, password: form.adminPassword }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.token) {
+              localStorage.setItem('token', data.token);
+              navigate('/');
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Auto-login failed', err);
+        }
+        // If auto-login fails, go to environments list
+        loadEnvironments();
+        setView('list');
+      })();
+    }
+  }, [result, form, navigate, loadEnvironments]);
 
   const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }));
   const isFormValid = form.clientName && form.orgName && form.adminUser && form.adminPassword;
