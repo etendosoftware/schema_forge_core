@@ -9,10 +9,11 @@
  *   autoSimplifyEntityName(rawName) -> string
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { classifyRule } from './pre-classify.js';
+import { migrateDecisions, needsMigration, getVersion, CURRENT_VERSION } from './migrations/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -334,8 +335,13 @@ function resolveRules(rulesRaw, decisions) {
  * @returns {{ schema: Object, rules: Array }}
  */
 export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
-  // Load system columns for reference (not used directly here but kept for future use)
-  // Currently visibility comes from schema-raw which was already classified during extraction.
+  // Migrate decisions to current version if needed (in-memory only, no file write)
+  if (needsMigration(decisions)) {
+    const fromV = getVersion(decisions);
+    const result = migrateDecisions(decisions);
+    decisions = result.decisions;
+    console.log(`  decisions migrated in-memory: v${fromV} → v${result.toVersion}`);
+  }
 
   const discardPatterns = decisions.discardPatterns || [];
   const entitiesDecisions = decisions.entities || {};
@@ -445,8 +451,17 @@ async function runCli() {
   ]);
 
   let decisions = {};
+  const decisionsPath = join(artifactsDir, 'decisions.json');
   try {
-    decisions = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8').then(JSON.parse);
+    decisions = await readFile(decisionsPath, 'utf-8').then(JSON.parse);
+
+    // Auto-migrate and persist if needed
+    if (needsMigration(decisions)) {
+      const result = migrateDecisions(decisions);
+      decisions = result.decisions;
+      await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
+      console.log(`decisions.json auto-migrated: v${result.fromVersion} → v${result.toVersion}`);
+    }
   } catch {
     console.warn('No decisions.json found — using empty decisions (all defaults).');
   }

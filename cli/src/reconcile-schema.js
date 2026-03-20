@@ -40,7 +40,7 @@
  *   const diff = await reconcileSchema('sales-order');
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -91,7 +91,15 @@ async function reconcileWithDecisions(windowName) {
   ]);
 
   const raw = JSON.parse(rawText);
-  const decisions = JSON.parse(decisionsText);
+  let decisions = JSON.parse(decisionsText);
+
+  // Auto-migrate decisions schema version if needed
+  const { needsMigration, migrateDecisions } = await import('./migrations/index.js');
+  if (needsMigration(decisions)) {
+    const result = migrateDecisions(decisions);
+    decisions = result.decisions;
+    await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
+  }
 
   const rawEntities = raw.entities || [];
   // decisions.entities is a map: entityKey → { fields: { fieldKey → decision } }

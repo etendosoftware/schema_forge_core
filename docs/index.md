@@ -24,6 +24,7 @@
 | [TDD.md](TDD.md) | Technical design, data models, validation rules, generator specs |
 | [TDD-anex.md](TDD-anex.md) | API versioning implementation details |
 | [conventions.md](conventions.md) | Edge case conventions (13 rules for extraction, validation, DB access) |
+| [decisions-versioning.md](decisions-versioning.md) | Decisions.json versioning system: writing migrations, batch upgrades, FAQ |
 
 ## Etendo AD Reference
 

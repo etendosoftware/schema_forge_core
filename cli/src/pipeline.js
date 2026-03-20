@@ -344,6 +344,17 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           let decisions;
           try {
             decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
+
+            // Auto-migrate decisions schema version if needed
+            const { needsMigration: needsMig, getVersion: getVer, migrateDecisions: migDec } = await import('./migrations/index.js');
+            if (needsMig(decisions)) {
+              const fromV = getVer(decisions);
+              const result = migDec(decisions);
+              decisions = result.decisions;
+              const { writeFile } = await import('node:fs/promises');
+              await writeFile(decisionsPath, JSON.stringify(decisions, null, 2) + '\n', 'utf-8');
+              console.log(`  ✓ decisions.json auto-migrated: v${fromV} → v${result.toVersion}`);
+            }
           } catch (err) {
             if (err.code !== 'ENOENT') throw err;
 
