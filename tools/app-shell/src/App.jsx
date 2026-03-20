@@ -116,6 +116,16 @@ function AppRoutes({ menuGroups, windowMap }) {
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
       />
       <Route
+        path="/onboarding"
+        element={
+          <AuthGuard>
+            <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
+              <OnboardingPage />
+            </Suspense>
+          </AuthGuard>
+        }
+      />
+      <Route
         element={
           <AuthGuard>
             <AppLayout menuGroups={menuGroups} />
@@ -135,7 +145,6 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="crm" element={<CrmPage />} />
         <Route path="hr" element={<HrPage />} />
         <Route path="projects" element={<ProjectsPage />} />
-        <Route path="onboarding" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OnboardingPage /></Suspense>} />
         <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
