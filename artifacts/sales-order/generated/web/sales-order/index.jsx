@@ -16,10 +16,9 @@ const api = {
       "listUrl": "/sws/neo/sales-order/order",
       "detailUrl": "/sws/neo/sales-order/order/{id}",
       "supportedFilters": [
-        "businessPartner",
         "orderDate",
-        "orderReference",
-        "totalGrossAmount"
+        "businessPartner",
+        "orderReference"
       ]
     },
     "orderLine": {
@@ -57,17 +56,6 @@ const api = {
       "detailUrl": "/sws/neo/sales-order/reservedStock/{id}",
       "supportedFilters": []
     },
-    "relatedProducts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/relatedProducts",
-      "detailUrl": "/sws/neo/sales-order/relatedProducts/{id}",
-      "supportedFilters": []
-    },
     "relatedServices": {
       "get": true,
       "getById": true,
@@ -77,6 +65,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/sales-order/relatedServices",
       "detailUrl": "/sws/neo/sales-order/relatedServices/{id}",
+      "supportedFilters": []
+    },
+    "relatedProducts": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-order/relatedProducts",
+      "detailUrl": "/sws/neo/sales-order/relatedProducts/{id}",
       "supportedFilters": []
     },
     "basicDiscounts": {
@@ -141,6 +140,7 @@ const api = {
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/order/selectors/businessPartner"
     },
     {
@@ -148,6 +148,7 @@ const api = {
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
       "url": "/sws/neo/sales-order/order/selectors/partnerAddress"
     },
     {
@@ -155,6 +156,7 @@ const api = {
       "field": "priceList",
       "column": "M_PriceList_ID",
       "reference": "PriceList",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-order/order/selectors/priceList"
     },
     {
@@ -162,6 +164,7 @@ const api = {
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-order/order/selectors/paymentMethod"
     },
     {
@@ -169,6 +172,7 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-order/order/selectors/paymentTerms"
     },
     {
@@ -176,13 +180,23 @@ const api = {
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/order/selectors/warehouse"
+    },
+    {
+      "entity": "order",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/order/selectors/currency"
     },
     {
       "entity": "order",
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "SalesRepresentative",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/order/selectors/salesRepresentative"
     },
     {
@@ -190,6 +204,7 @@ const api = {
       "field": "invoiceAddress",
       "column": "BillTo_ID",
       "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
       "url": "/sws/neo/sales-order/order/selectors/invoiceAddress"
     },
     {
@@ -197,83 +212,103 @@ const api = {
       "field": "deliveryLocation",
       "column": "Delivery_Location_ID",
       "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
       "url": "/sws/neo/sales-order/order/selectors/deliveryLocation"
-    },
-    {
-      "entity": "order",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "url": "/sws/neo/sales-order/order/selectors/project"
-    },
-    {
-      "entity": "order",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "url": "/sws/neo/sales-order/order/selectors/costCenter"
-    },
-    {
-      "entity": "order",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "url": "/sws/neo/sales-order/order/selectors/asset"
-    },
-    {
-      "entity": "order",
-      "field": "dimension1",
-      "column": "User1_ID",
-      "reference": "UserDimension1",
-      "url": "/sws/neo/sales-order/order/selectors/dimension1"
-    },
-    {
-      "entity": "order",
-      "field": "dimension2",
-      "column": "User2_ID",
-      "reference": "UserDimension2",
-      "url": "/sws/neo/sales-order/order/selectors/dimension2"
     },
     {
       "entity": "order",
       "field": "quotation",
       "column": "Quotation_ID",
       "reference": "Order",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/order/selectors/quotation"
     },
     {
       "entity": "order",
-      "field": "canceledOrder",
+      "field": "cancelledorder",
       "column": "Cancelledorder_id",
       "reference": "Order",
-      "url": "/sws/neo/sales-order/order/selectors/canceledOrder"
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/order/selectors/cancelledorder"
     },
     {
       "entity": "order",
-      "field": "replacedOrder",
+      "field": "replacedorder",
       "column": "Replacedorder_id",
       "reference": "Order",
-      "url": "/sws/neo/sales-order/order/selectors/replacedOrder"
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/order/selectors/replacedorder"
+    },
+    {
+      "entity": "order",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "dependent",
+      "url": "/sws/neo/sales-order/order/selectors/project"
+    },
+    {
+      "entity": "order",
+      "field": "costcenter",
+      "column": "C_Costcenter_ID",
+      "reference": "Costcenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/order/selectors/costcenter"
+    },
+    {
+      "entity": "order",
+      "field": "asset",
+      "column": "A_Asset_ID",
+      "reference": "Asset",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/order/selectors/asset"
+    },
+    {
+      "entity": "order",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/order/selectors/stDimension"
+    },
+    {
+      "entity": "order",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/order/selectors/ndDimension"
     },
     {
       "entity": "orderLine",
       "field": "product",
       "column": "M_Product_ID",
       "reference": "Product",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/orderLine/selectors/product"
     },
     {
       "entity": "orderLine",
-      "field": "alternativeUOM",
+      "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
-      "url": "/sws/neo/sales-order/orderLine/selectors/alternativeUOM"
+      "inputMode": "dependent",
+      "url": "/sws/neo/sales-order/orderLine/selectors/operativeUOM"
+    },
+    {
+      "entity": "orderLine",
+      "field": "uOM",
+      "column": "C_UOM_ID",
+      "reference": "UOM",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/orderLine/selectors/uOM"
     },
     {
       "entity": "orderLine",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/orderLine/selectors/tax"
     },
     {
@@ -281,69 +316,71 @@ const api = {
       "field": "warehouseRule",
       "column": "M_Warehouse_Rule_ID",
       "reference": "WarehouseRule",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-order/orderLine/selectors/warehouseRule"
     },
     {
       "entity": "orderLine",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "url": "/sws/neo/sales-order/orderLine/selectors/project"
-    },
-    {
-      "entity": "orderLine",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "url": "/sws/neo/sales-order/orderLine/selectors/costCenter"
-    },
-    {
-      "entity": "orderLine",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "url": "/sws/neo/sales-order/orderLine/selectors/asset"
-    },
-    {
-      "entity": "orderLine",
-      "field": "dimension1",
-      "column": "User1_ID",
-      "reference": "UserDimension1",
-      "url": "/sws/neo/sales-order/orderLine/selectors/dimension1"
-    },
-    {
-      "entity": "orderLine",
-      "field": "dimension2",
-      "column": "User2_ID",
-      "reference": "UserDimension2",
-      "url": "/sws/neo/sales-order/orderLine/selectors/dimension2"
-    },
-    {
-      "entity": "orderLine",
-      "field": "uom",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "url": "/sws/neo/sales-order/orderLine/selectors/uom"
-    },
-    {
-      "entity": "orderLine",
-      "field": "replacedOrderLine",
+      "field": "replacedorderline",
       "column": "Replacedorderline_id",
       "reference": "OrderLine",
-      "url": "/sws/neo/sales-order/orderLine/selectors/replacedOrderLine"
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/orderLine/selectors/replacedorderline"
     },
     {
       "entity": "orderLine",
       "field": "quotationLine",
       "column": "Quotationline_ID",
       "reference": "OrderLine",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/orderLine/selectors/quotationLine"
+    },
+    {
+      "entity": "orderLine",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/orderLine/selectors/project"
+    },
+    {
+      "entity": "orderLine",
+      "field": "costcenter",
+      "column": "C_Costcenter_ID",
+      "reference": "Costcenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/orderLine/selectors/costcenter"
+    },
+    {
+      "entity": "orderLine",
+      "field": "asset",
+      "column": "A_Asset_ID",
+      "reference": "Asset",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/orderLine/selectors/asset"
+    },
+    {
+      "entity": "orderLine",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/orderLine/selectors/stDimension"
+    },
+    {
+      "entity": "orderLine",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/orderLine/selectors/ndDimension"
     },
     {
       "entity": "orderLineTax",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-order/orderLineTax/selectors/tax"
     },
     {
@@ -351,6 +388,7 @@ const api = {
       "field": "stockReservation",
       "column": "M_Reservation_ID",
       "reference": "Reservation",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/reservedStock/selectors/stockReservation"
     },
     {
@@ -358,48 +396,55 @@ const api = {
       "field": "storageBin",
       "column": "M_Locator_ID",
       "reference": "Locator",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/reservedStock/selectors/storageBin"
     },
     {
       "entity": "reservedStock",
-      "field": "purchaseOrderLine",
+      "field": "salesOrderLine",
       "column": "C_Orderline_ID",
-      "reference": "OrderLine",
-      "url": "/sws/neo/sales-order/reservedStock/selectors/purchaseOrderLine"
+      "reference": "Orderline",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/reservedStock/selectors/salesOrderLine"
     },
     {
       "entity": "reservedStock",
-      "field": "vendor",
+      "field": "businessPartner",
       "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/sales-order/reservedStock/selectors/vendor"
-    },
-    {
-      "entity": "relatedProducts",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "url": "/sws/neo/sales-order/relatedProducts/selectors/product"
+      "reference": "BPartner",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/reservedStock/selectors/businessPartner"
     },
     {
       "entity": "relatedServices",
       "field": "product",
       "column": "product",
       "reference": "Product",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/relatedServices/selectors/product"
     },
     {
+      "entity": "relatedProducts",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/relatedProducts/selectors/product"
+    },
+    {
       "entity": "basicDiscounts",
-      "field": "basicDiscount",
+      "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
-      "url": "/sws/neo/sales-order/basicDiscounts/selectors/basicDiscount"
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/basicDiscounts/selectors/discount"
     },
     {
       "entity": "orderTax",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-order/orderTax/selectors/tax"
     },
     {
@@ -407,6 +452,7 @@ const api = {
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/paymentPlan/selectors/paymentMethod"
     },
     {
@@ -414,38 +460,160 @@ const api = {
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
+      "inputMode": "search",
       "url": "/sws/neo/sales-order/paymentPlan/selectors/currency"
     },
     {
       "entity": "paymentDetails",
-      "field": "paymentIn",
+      "field": "payment",
       "column": "FIN_Payment_ID",
       "reference": "Payment",
-      "url": "/sws/neo/sales-order/paymentDetails/selectors/paymentIn"
-    },
-    {
-      "entity": "paymentDetails",
-      "field": "paymentMethod",
-      "column": "EM_APRM_Displayed_Paymmeth_ID",
-      "reference": "PaymentMethod",
-      "url": "/sws/neo/sales-order/paymentDetails/selectors/paymentMethod"
-    },
-    {
-      "entity": "paymentDetails",
-      "field": "financialAccount",
-      "column": "EM_APRM_Displayed_Acc_ID",
-      "reference": "FinancialAccount",
-      "url": "/sws/neo/sales-order/paymentDetails/selectors/financialAccount"
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/paymentDetails/selectors/payment"
     },
     {
       "entity": "replacementOrders",
-      "field": "replacementOrder",
+      "field": "cReplacementID",
       "column": "C_Replacement_ID",
       "reference": "Order",
-      "url": "/sws/neo/sales-order/replacementOrders/selectors/replacementOrder"
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/replacementOrders/selectors/cReplacementID"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "entity": "order",
+      "field": "rMPickFromShipment",
+      "column": "RM_PickFromShipment",
+      "url": "/sws/neo/sales-order/order/{id}/action/rMPickFromShipment"
+    },
+    {
+      "entity": "order",
+      "field": "rMReceiveMaterials",
+      "column": "RM_ReceiveMaterials",
+      "url": "/sws/neo/sales-order/order/{id}/action/rMReceiveMaterials"
+    },
+    {
+      "entity": "order",
+      "field": "rMCreateInvoice",
+      "column": "RM_CreateInvoice",
+      "url": "/sws/neo/sales-order/order/{id}/action/rMCreateInvoice"
+    },
+    {
+      "entity": "order",
+      "field": "aPRMAddPayment",
+      "column": "EM_APRM_AddPayment",
+      "url": "/sws/neo/sales-order/order/{id}/action/aPRMAddPayment"
+    },
+    {
+      "entity": "order",
+      "field": "documentAction",
+      "column": "DocAction",
+      "url": "/sws/neo/sales-order/order/{id}/action/documentAction"
+    },
+    {
+      "entity": "order",
+      "field": "copyFrom",
+      "column": "CopyFrom",
+      "url": "/sws/neo/sales-order/order/{id}/action/copyFrom"
+    },
+    {
+      "entity": "order",
+      "field": "copyFromPO",
+      "column": "CopyFromPO",
+      "url": "/sws/neo/sales-order/order/{id}/action/copyFromPO"
+    },
+    {
+      "entity": "order",
+      "field": "calculatePromotions",
+      "column": "Calculate_Promotions",
+      "url": "/sws/neo/sales-order/order/{id}/action/calculatePromotions"
+    },
+    {
+      "entity": "order",
+      "field": "rMAddOrphanLine",
+      "column": "RM_AddOrphanLine",
+      "url": "/sws/neo/sales-order/order/{id}/action/rMAddOrphanLine"
+    },
+    {
+      "entity": "order",
+      "field": "createOrder",
+      "column": "Convertquotation",
+      "url": "/sws/neo/sales-order/order/{id}/action/createOrder"
+    },
+    {
+      "entity": "order",
+      "field": "cancelAndReplace",
+      "column": "Cancelandreplace",
+      "url": "/sws/neo/sales-order/order/{id}/action/cancelAndReplace"
+    },
+    {
+      "entity": "order",
+      "field": "confirmCancelAndReplace",
+      "column": "Confirmcancelandreplace",
+      "url": "/sws/neo/sales-order/order/{id}/action/confirmCancelAndReplace"
+    },
+    {
+      "entity": "order",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-order/order/{id}/action/posted"
+    },
+    {
+      "entity": "order",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
+    },
+    {
+      "entity": "order",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/order/{id}/action/processNow"
+    },
+    {
+      "entity": "order",
+      "field": "createPOLines",
+      "column": "Create_POLines",
+      "url": "/sws/neo/sales-order/order/{id}/action/createPOLines"
+    },
+    {
+      "entity": "order",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/sales-order/order/{id}/action/rMPickfromreceipt"
+    },
+    {
+      "entity": "orderLine",
+      "field": "manageReservation",
+      "column": "Manage_Reservation",
+      "url": "/sws/neo/sales-order/orderLine/{id}/action/manageReservation"
+    },
+    {
+      "entity": "orderLine",
+      "field": "explode",
+      "column": "Explode",
+      "url": "/sws/neo/sales-order/orderLine/{id}/action/explode"
+    },
+    {
+      "entity": "orderLine",
+      "field": "selectOrderLine",
+      "column": "Relate_Orderline",
+      "url": "/sws/neo/sales-order/orderLine/{id}/action/selectOrderLine"
+    },
+    {
+      "entity": "orderLine",
+      "field": "managePrereservation",
+      "column": "Manage_Prereservation",
+      "url": "/sws/neo/sales-order/orderLine/{id}/action/managePrereservation"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "updatePaymentPlan",
+      "column": "Update_Payment_Plan",
+      "url": "/sws/neo/sales-order/paymentPlan/{id}/action/updatePaymentPlan"
+    }
+  ],
   "queryParams": {
     "pagination": {
       "startRow": "_startRow",

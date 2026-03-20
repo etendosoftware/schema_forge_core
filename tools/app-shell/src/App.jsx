@@ -70,6 +70,7 @@ async function loadAllMockData() {
     import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
     import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
     import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
+    import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
     import('@generated/payment-in/generated/web/payment-in/mockData.js'),
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),

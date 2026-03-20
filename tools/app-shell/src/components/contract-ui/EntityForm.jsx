@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -11,26 +11,103 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
  * Combobox-style search input for foreign key fields.
  * Filters results from catalogs when typing.
  */
-function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel }) {
+function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(displayValue || value || '');
+  const [serverResults, setServerResults] = useState(null);
+  const [fetching, setFetching] = useState(false);
+  // Tracks whether the user is actively typing so the sync effect doesn't fight keystrokes.
+  const isEditingRef = useRef(false);
+  const debounceRef = useRef(null);
 
   React.useEffect(() => {
-    setQuery(displayValue || value || '');
+    // Only sync from outside when the user is NOT actively editing.
+    // This prevents the parent state update (triggered by onChange while typing)
+    // from immediately reverting the input text.
+    if (!isEditingRef.current) {
+      setQuery(displayValue || value || '');
+    }
   }, [value, displayValue]);
 
-  const options = catalogs?.[field.reference] ?? [];
+  // Auto-resolve display name when we have a value but no $identifier (e.g. from /defaults endpoint).
+  // 1. Try local catalog first (zero cost). 2. Fall back to selector endpoint with ?id=.
+  React.useEffect(() => {
+    if (!value || displayValue || isEditingRef.current) return;
+    // Try local catalog
+    const localOptions = catalogs?.[field.reference] ?? [];
+    const local = localOptions.find(opt => opt.id === value);
+    if (local) { setQuery(local.name || value); return; }
+    // Try server selector with ?id=
+    if (!selectorUrl || !token) return;
+    fetch(`${selectorUrl}?id=${encodeURIComponent(value)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const match = (data?.items || []).find(i => i.id === value);
+        if (match) {
+          setQuery(match.label || match.name || value);
+        } else {
+          // ID from /defaults not in selector options — clear to avoid showing raw UUID
+          setQuery('');
+          onChange?.(null, '');
+        }
+      })
+      .catch(() => {});
+  }, [value, displayValue, selectorUrl, token, catalogs, field.reference]);
+
+  // Server-side search: fetch with ?q= when selectorUrl and token are available.
+  const fetchServerResults = useCallback((q) => {
+    if (!selectorUrl || !token) return;
+    if (!q || q.trim().length === 0) {
+      setServerResults(null);
+      return;
+    }
+    setFetching(true);
+    fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setServerResults((data.items || []).map(item => ({
+            id: item.id,
+            name: item.label || item.name || item.id,
+            ...item,
+          })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setFetching(false));
+  }, [selectorUrl, token]);
+
+  // Local fallback: filter the pre-loaded catalog (used when selectorUrl not available)
+  const localOptions = catalogs?.[field.reference] ?? [];
   const filtered = useMemo(() => {
-    if (!query || query.length === 0) return options.slice(0, 10);
+    // Server results take priority when available
+    if (serverResults !== null) return serverResults.slice(0, 20);
+    if (!query || query.length === 0) return localOptions.slice(0, 10);
     const q = query.toLowerCase();
-    return options.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [query, options]);
+    return localOptions.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
+  }, [serverResults, query, localOptions]);
 
   const handleSelect = (opt) => {
+    isEditingRef.current = false;
+    setServerResults(null);
     setQuery(opt.name);
     onChange?.(opt.id, opt.name, opt._aux);
     setOpen(false);
   };
+
+  const handleClear = () => {
+    isEditingRef.current = false;
+    setServerResults(null);
+    setQuery('');
+    onChange?.(null, '');
+    setOpen(false);
+  };
+
+  const hasSelection = value != null && value !== '';
 
   return (
     <div className="relative">
@@ -44,16 +121,38 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           placeholder={`Search ${resolvedLabel}...`}
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
-            onChange?.(e.target.value);
+            isEditingRef.current = true;
+            const newQuery = e.target.value;
+            setQuery(newQuery);
+            onChange?.(newQuery);
+            setOpen(true);
+            // Debounced server-side fetch (300ms)
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => fetchServerResults(newQuery), 300);
+          }}
+          onFocus={() => {
+            isEditingRef.current = true;
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 200)}
-          className="pl-8 focus:ring-2 focus:ring-primary focus:outline-none"
+          onBlur={() => {
+            isEditingRef.current = false;
+            setTimeout(() => setOpen(false), 200);
+          }}
+          className="pl-8 pr-8 focus:ring-2 focus:ring-primary focus:outline-none"
           required={field.required}
           autoComplete="off"
         />
+        {hasSelection && (
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
+            className="absolute right-2 top-2 h-5 w-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            tabIndex={-1}
+            aria-label="Clear"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
       {open && filtered.length > 0 && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
@@ -70,7 +169,12 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           ))}
         </div>
       )}
-      {open && query.length > 0 && filtered.length === 0 && (
+      {open && query.length > 0 && fetching && (
+        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
+          <div className="px-3 py-2 text-xs text-muted-foreground">Searching...</div>
+        </div>
+      )}
+      {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           <div className="px-3 py-2 text-xs text-muted-foreground">
             No results for "{query}"
@@ -201,9 +305,15 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     displayFields = fields;
   }
 
-  // Apply visibility from evaluate-display (hide fields where visibility === false)
+  // Apply visibility from evaluate-display (hide fields where visibility === false).
+  // Only honor the evaluate-display result if the field itself declares a displayLogic
+  // in its contract definition. Fields without displayLogic have a static visibility
+  // decision that evaluate-display must not override (prevents AD displayLogic bugs
+  // from incorrectly hiding fields like businessPartner).
   if (displayLogic?.visibility && Object.keys(displayLogic.visibility).length > 0) {
-    displayFields = displayFields.filter(f => displayLogic.visibility[f.key] !== false);
+    displayFields = displayFields.filter(f =>
+      !f.displayLogic || displayLogic.visibility[f.key] !== false
+    );
   }
 
   const gridClass = layout === 'horizontal'
@@ -213,9 +323,12 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   return (
     <div className={gridClass}>
       {displayFields.map(f => {
-        const label = t(f.column) ?? f.label ?? f.key;
-        // Field is read-only if statically declared OR dynamically set by evaluate-display
-        const isReadOnly = f.readOnly || displayLogic?.readOnly?.[f.key] === true || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
+        // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
+        const label = f.label ?? t(f.column) ?? f.key;
+        // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
+        const isReadOnly = f.readOnly
+          || displayLogic?.readOnly?.[f.key] === true
+          || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
         if (f.type === 'checkbox') {
           return (
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
@@ -281,7 +394,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 <DependentSelect
                   field={f}
                   value={data?.[f.key] ?? ''}
-                  displayValue={resolveIdentifier(data, f.key)}
+                  displayValue={data?.[f.key + '$_identifier']}
                   onChange={(val, label) => {
                     onChange?.(f.key, val);
                     if (label) onChange?.(f.key + '$_identifier', label);
@@ -357,7 +470,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 <SearchInput
                   field={f}
                   value={data?.[f.key] ?? ''}
-                  displayValue={resolveIdentifier(data, f.key)}
+                  displayValue={data?.[f.key + '$_identifier']}
                   onChange={(val, label, auxData) => {
                     onChange?.(f.key, val);
                     if (label) onChange?.(f.key + '$_identifier', label);
@@ -369,6 +482,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                   }}
                   catalogs={catalogs}
                   resolvedLabel={label}
+                  selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+                  token={token}
                 />
               </div>
             </FieldHighlight>

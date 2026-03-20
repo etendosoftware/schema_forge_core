@@ -179,7 +179,7 @@ describe('pushToNeo dry run', () => {
       },
     };
 
-    await writeFile(join(artifactsDir, 'schema-curated.json'), JSON.stringify(schema));
+    await writeFile(join(artifactsDir, 'schema-raw.json'), JSON.stringify(schema));
     await writeFile(join(artifactsDir, 'contract.json'), JSON.stringify(contract));
   });
 
@@ -255,7 +255,7 @@ describe('pushToNeo error handling', () => {
     );
   });
 
-  it('throws on missing schema-curated.json', async () => {
+  it('throws on missing schema-raw.json', async () => {
     const tmpDir = join(tmpdir(), `push-to-neo-err2-${Date.now()}`);
     const artifactsDir = join(tmpDir, 'artifacts', 'partial');
     await mkdir(artifactsDir, { recursive: true });
@@ -268,7 +268,7 @@ describe('pushToNeo error handling', () => {
         dryRun: true,
         projectRoot: tmpDir,
       }),
-      /Cannot read schema-curated\.json/,
+      /Cannot read schema-raw\.json/,
     );
   });
 });

@@ -1,16 +1,29 @@
 import { DataTable } from '@/components/contract-ui';
 
+const documentStatusLabels = {
+  'CL': 'Closed',
+  'CO': 'Completed',
+  'DR': 'Draft',
+  'NA': 'Not Accepted',
+  'WP': 'Not Paid',
+  'RE': 'Re-Opened',
+  'TEMP': 'Temporal',
+  'IP': 'Under Way',
+  '??': 'Unknown',
+  'VO': 'Voided',
+};
+
 // @sf-generated-start columns:goodsShipment
 const columns = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'movementDate', column: 'MovementDate', type: 'date' },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'enum', enumLabels: documentStatusLabels },
 ];
 // @sf-generated-end columns:goodsShipment
 
-const filters = ['businessPartner', 'movementDate', 'warehouse', 'orderReference', 'documentNo', 'documentStatus'];
+const filters = ['documentNo', 'warehouse', 'businessPartner', 'movementDate', 'documentStatus', 'orderReference'];
 
 // @sf-generated-start component:GoodsShipmentTable
 export default function GoodsShipmentTable(props) {

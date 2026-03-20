@@ -137,9 +137,19 @@ Schema Forge (this repo)  ──writes via webhooks──▶  com.etendoerp.go (
    (design + tooling)                                 (runtime API engine)
 ```
 
-**Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime.
+**etendo-go-architecture** is a separate repo with the production architecture decisions, infrastructure docs, and the `sf-radar` CLI tool. It tracks decisions across 7 teams (copilot, backend, frontend, infra, cloud, servicios, product). **This repo is optional** — only developers involved in architecture decisions need it locally. If an agent or developer doesn't have it, suggest cloning it but do NOT attempt to refresh or access it automatically.
 
-See `docs/architecture-overview.md` for the full system architecture.
+```
+Schema Forge (this repo)  ──writes via webhooks──▶  com.etendoerp.go (/modules/)
+   (design + tooling)                                 (runtime API engine)
+
+etendo-go-architecture (separate repo)  ──informs──▶  Schema Forge
+   (architecture decisions + sf-radar)                 (what to build and why)
+```
+
+**Key principle:** Schema Forge decides WHAT to expose. Etendo Go decides HOW to serve it at runtime. The architecture radar records WHY decisions were made.
+
+See `docs/architecture-overview.md` for the full system architecture and `docs/architecture-radar.md` for the sf-radar tool guide.
 
 ## Architecture
 
@@ -175,6 +185,9 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── generate-contract.js          # Frontend/backend contracts
 │       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows, processes + reports)
 │       ├── neo-writer.js                # Low-level DB writer for ETGO_SF_* tables
+│       ├── resolve-curated.js            # raw + decisions → curated schema + rules (in memory)
+│       ├── migrate-to-decisions.js       # One-time migration: curated files → decisions.json
+│       ├── reconcile-schema.js           # Diff raw vs decisions (unclassified/orphaned fields)
 │       ├── custom-section-markers.js      # Delimiter constants for code preservation
 │       ├── preserve-custom-sections.js   # Extract/inject custom sections on regeneration
 │       ├── generate-frontend.js          # React SPA generation (emits section markers)
@@ -223,10 +236,14 @@ Schema Forge CLI (extract-from-db.js / extract-from-process.js)
     │ Extracts process metadata + parameters (standalone processes)
     ▼
 Per-Window/Process Artifacts (artifacts/{name}/)
-    │ schema-curated.json, rules-curated.json
+    │ schema-raw.json + rules-raw.json (extracted, committed)
+    │ decisions.json (AI/human classifications, committed, ~200-300 lines)
     ▼
-Decision UIs (tools/decision-panel/) or AI classification (/classify)
-    │ Human or AI curates: visibility, rule decisions
+AI classification (/classify) — writes decisions.json
+    │ Only overrides vs tier-1/2 defaults are stored (90% smaller than curated files)
+    ▼
+resolve-curated.js (raw + decisions → curated in memory)
+    │ No intermediate files written — curated is ephemeral
     ▼
 Schema Forge Webhooks → Etendo Go DB tables
     │ ETGO_SF_SPEC, ETGO_SF_ENTITY, ETGO_SF_FIELD
@@ -523,6 +540,18 @@ e2e/
 ```bash
 BASE_URL=http://localhost:8080/etendo/web/com.etendoerp.go make test-e2e
 ```
+
+## Worked Windows
+
+A window is considered **"worked"** (i.e., has human curation applied) if it has either:
+- `artifacts/{window}/decisions.json` (current format), OR
+- `artifacts/{window}/schema-curated.json` (legacy format — **must be migrated** to decisions before running the pipeline)
+
+Windows without either file only have raw extraction — no human decisions have been applied.
+
+**Migration:** Legacy curated files should be migrated to `decisions.json` via `node cli/src/migrate-to-decisions.js --window <name>`. The migration requires `schema-raw.json` and `rules-raw.json` (extracted from DB). After migration, the curated files become redundant — the pipeline uses `raw + decisions → curated in memory` via `resolve-curated.js`.
+
+To list all worked windows: `ls artifacts/*/decisions.json artifacts/*/schema-curated.json 2>/dev/null`
 
 ## Project Management
 

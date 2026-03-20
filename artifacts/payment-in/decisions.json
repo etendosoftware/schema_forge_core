@@ -1,0 +1,408 @@
+{
+  "$schema": "decisions-v1",
+  "window": {
+    "category": "general",
+    "name": "Payment In"
+  },
+  "entities": {
+    "finPayment": {
+      "fields": {
+        "organization": {
+          "inputMode": "search"
+        },
+        "documentType": {
+          "inputMode": "search"
+        },
+        "documentNo": {
+          "inputMode": "text"
+        },
+        "referenceNo": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text"
+        },
+        "paymentDate": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "date",
+          "readOnlyLogic": null
+        },
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "description": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text"
+        },
+        "paymentMethod": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "inputMode": "search",
+          "readOnlyLogic": null
+        },
+        "amount": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "number",
+          "readOnlyLogic": null
+        },
+        "account": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "dependsOn": {
+            "field": "paymentMethod",
+            "filterKey": "Fin_Paymentmethod_ID"
+          }
+        },
+        "currency": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "dependsOn": {
+            "field": "account",
+            "filterKey": "FIN_Financial_Account_ID"
+          }
+        },
+        "financialTransactionAmount": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "number",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "financialTransactionConvertRate": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "aPRMAddScheduledpayments": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "displayLogic": null
+        },
+        "posted": {
+          "inputMode": "text"
+        },
+        "aPRMProcessPayment": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "displayLogic": null
+        },
+        "aprmExecutepayment": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "displayLogic": null
+        },
+        "status": {
+          "inputMode": "text"
+        },
+        "generatedCredit": {
+          "inputMode": "number"
+        },
+        "usedCredit": {
+          "inputMode": "number"
+        },
+        "writeoffAmount": {
+          "inputMode": "number"
+        },
+        "aPRMReversePayment": {
+          "inputMode": "text"
+        },
+        "reversedPayment": {
+          "grid": true,
+          "searchable": true,
+          "reference": "Payment Selector",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "project": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "costCenter": {
+          "grid": true,
+          "searchable": true,
+          "reference": "Cost Center Selector",
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "activity": {
+          "reference": "Activity selector",
+          "inputMode": "search"
+        },
+        "salesCampaign": {
+          "reference": "Campaign selector",
+          "inputMode": "search"
+        },
+        "stDimension": {
+          "grid": true,
+          "searchable": true,
+          "reference": "User Dimension 1",
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "ndDimension": {
+          "grid": true,
+          "searchable": true,
+          "reference": "User Dimension 2",
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "payment": {
+          "inputMode": "text"
+        },
+        "processNow": {
+          "inputMode": "checkbox"
+        },
+        "aPRMReconcilePayment": {
+          "inputMode": "text"
+        },
+        "processed": {
+          "inputMode": "checkbox"
+        },
+        "active": {
+          "inputMode": "checkbox"
+        },
+        "receipt": {
+          "inputMode": "checkbox"
+        },
+        "client": {
+          "inputMode": "search"
+        }
+      }
+    },
+    "finPaymentScheduleDetail": {
+      "fields": {
+        "dueDate": {
+          "grid": true,
+          "inputMode": "date"
+        },
+        "paymentDetails": {
+          "inputMode": "search"
+        },
+        "invoiceAmount": {
+          "grid": true,
+          "inputMode": "number"
+        },
+        "expected": {
+          "grid": true,
+          "inputMode": "number"
+        },
+        "amount": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "number"
+        },
+        "documentNo": {
+          "inputMode": "text",
+          "name": "documentNo2"
+        },
+        "active": {
+          "inputMode": "checkbox"
+        },
+        "orderPaymentSchedule": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "displayLogic": null
+        },
+        "writeoffAmount": {
+          "inputMode": "number"
+        },
+        "invoicePaymentSchedule": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "displayLogic": null
+        },
+        "gLItem": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "inputMode": "search"
+        },
+        "canceled": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "checkbox"
+        },
+        "doubtfulDebtAmount": {
+          "inputMode": "number"
+        },
+        "invoicePaid": {
+          "inputMode": "checkbox"
+        },
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "displayLogic": null
+        },
+        "activity": {
+          "grid": true,
+          "searchable": true,
+          "reference": "Activity selector",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "product": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "displayLogic": null
+        },
+        "salesCampaign": {
+          "grid": true,
+          "searchable": true,
+          "reference": "Campaign selector",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "project": {
+          "grid": true,
+          "searchable": true,
+          "reference": null,
+          "displayLogic": null
+        },
+        "salesRegion": {
+          "grid": true,
+          "searchable": true,
+          "reference": "Sales region selector",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "costCenter": {
+          "grid": true,
+          "searchable": true,
+          "reference": "Cost Center Selector",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "stDimension": {
+          "grid": true,
+          "searchable": true,
+          "reference": "User Dimension 1",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "ndDimension": {
+          "grid": true,
+          "searchable": true,
+          "reference": "User Dimension 2",
+          "inputMode": "search",
+          "displayLogic": null
+        },
+        "organization": {
+          "inputMode": "search"
+        },
+        "fINPaymentScheduledetailID": {
+          "inputMode": "text"
+        },
+        "client": {
+          "inputMode": "search"
+        }
+      }
+    },
+    "finPaymentExecHistoryV": {
+      "exclude": true
+    },
+    "cConversionRateDocument": {
+      "exclude": true
+    },
+    "finPaymentCredit": {
+      "exclude": true
+    },
+    "factAcct": {
+      "exclude": true
+    }
+  },
+  "rules": {
+    "SE_Payment_FinAccount": {},
+    "SE_Payment_MultiCurrency": {},
+    "SE_Payment_BPartner": {},
+    "SE_PaymentMethod_FinAccount": {},
+    "SL_AdvPayment_Document": {},
+    "SE_CalculateExchangeRate": {},
+    "AD_Client Trx Security validation": {
+      "type": "validation"
+    },
+    "AD_Org Trx Security validation": {
+      "type": "validation"
+    },
+    "AD_Client Security validation": {
+      "type": "validation"
+    },
+    "AD_Org Security validation": {
+      "type": "validation"
+    },
+    "Fin_FinancialAccountofPaymentMethod": {
+      "type": "validation"
+    },
+    "Currency of Financial Account": {
+      "type": "validation"
+    },
+    "FIN_Payment Status validation": {
+      "type": "validation"
+    },
+    "FIN_PaymentMethodsWithAccountIsReceiptControl": {
+      "type": "validation"
+    },
+    "C_DocType - Receive/Make Payment": {
+      "type": "validation"
+    },
+    "Document currency": {
+      "type": "validation"
+    },
+    "Accounting Schema currency": {
+      "type": "validation"
+    },
+    "undefined": {
+      "type": "readOnlyLogic",
+      "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
+    },
+    "Execute Payment": {
+      "type": "process"
+    },
+    "Payment Process": {
+      "type": "process"
+    },
+    "Reverse Payment": {
+      "type": "process"
+    },
+    "EM_APRM_Reconcile_Payment": {
+      "type": "process"
+    },
+    "Posted": {
+      "type": "process"
+    },
+    "Add Payment": {
+      "type": "process"
+    },
+    "Print payments process": {
+      "type": "process"
+    }
+  },
+  "discardPatterns": []
+}
