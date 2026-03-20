@@ -1,431 +1,415 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Building2,
-  User,
-  Blocks,
-  Upload,
-  Rocket,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  FileSpreadsheet,
-  Sparkles,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Circle,
+  ChevronDown,
 } from 'lucide-react';
 
 const STEPS = [
-  { label: 'Company Setup', icon: Building2 },
-  { label: 'User Profile', icon: User },
-  { label: 'Module Selection', icon: Blocks },
-  { label: 'Import Data', icon: Upload },
-  { label: 'Review & Launch', icon: Rocket },
+  { name: 'createClient', label: 'Create Client' },
+  { name: 'createOrganization', label: 'Create Organization' },
+  { name: 'createClientAdmin', label: 'Create Client Admin' },
+  { name: 'createOrgAdmin', label: 'Create Org Admin' },
+  { name: 'createRole', label: 'Create Role + Access' },
+  { name: 'seedReferenceData', label: 'Seed Reference Data' },
+  { name: 'createDocTypes', label: 'Document Types + Sequences' },
+  { name: 'markOrgReady', label: 'Mark Org Ready' },
 ];
 
-const INDUSTRIES = [
-  'Manufacturing', 'Retail', 'Wholesale', 'Services', 'Technology',
-  'Healthcare', 'Construction', 'Agriculture', 'Logistics', 'Other',
+const CURRENCIES = ['EUR', 'USD', 'ARS', 'GBP', 'BRL', 'MXN', 'CLP', 'COP'];
+
+const LANGUAGES = [
+  { value: 'es_ES', label: 'Español' },
+  { value: 'en_US', label: 'English' },
 ];
 
-const COMPANY_SIZES = ['1-10', '11-50', '51-200', '201-500', '500+'];
-
-const TIMEZONES = [
-  'UTC-8 (Pacific)', 'UTC-7 (Mountain)', 'UTC-6 (Central)', 'UTC-5 (Eastern)',
-  'UTC+0 (GMT)', 'UTC+1 (CET)', 'UTC+2 (EET)', 'UTC+8 (SGT)', 'UTC+9 (JST)',
+const COUNTRIES = [
+  { value: 'AR', label: 'Argentina' },
+  { value: 'ES', label: 'España' },
+  { value: 'US', label: 'United States' },
+  { value: 'MX', label: 'México' },
+  { value: 'BR', label: 'Brasil' },
+  { value: 'CL', label: 'Chile' },
+  { value: 'CO', label: 'Colombia' },
+  { value: 'GB', label: 'United Kingdom' },
 ];
 
-const MODULES = [
-  { key: 'sales', label: 'Sales', description: 'Quotations, orders, invoices' },
-  { key: 'purchases', label: 'Purchases', description: 'Purchase orders, receipts' },
-  { key: 'inventory', label: 'Inventory', description: 'Stock, movements, warehouses' },
-  { key: 'accounting', label: 'Accounting', description: 'GL, payments, reconciliation' },
-  { key: 'crm', label: 'CRM', description: 'Leads, deals, activities' },
-  { key: 'hr', label: 'HR', description: 'Employees, absences, payroll' },
-  { key: 'projects', label: 'Projects', description: 'Tasks, time tracking, docs' },
-];
-
-const IMPORT_OPTIONS = [
-  {
-    key: 'fresh',
-    label: 'Start Fresh',
-    description: 'Begin with an empty database and configure everything from scratch.',
-    icon: Sparkles,
-  },
-  {
-    key: 'csv',
-    label: 'Import from CSV',
-    description: 'Upload CSV files for products, contacts, and opening balances.',
-    icon: FileSpreadsheet,
-  },
-];
+const SELECT_CLASS =
+  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
 const INITIAL_FORM = {
-  companyName: '',
-  industry: '',
-  companySize: '',
-  timezone: '',
-  userName: '',
-  userEmail: '',
-  userRole: '',
-  modules: ['sales', 'inventory'],
-  importMethod: 'fresh',
+  clientName: '',
+  orgName: '',
+  adminUser: '',
+  adminPassword: '',
+  currency: '',
+  language: '',
+  country: '',
 };
 
+// -- Status helpers -----------------------------------------------------------
+
+function initStepState() {
+  return Object.fromEntries(
+    STEPS.map((s) => [s.name, { status: 'pending', messages: [], open: false }])
+  );
+}
+
+function StatusIcon({ status }) {
+  if (status === 'running') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+  if (status === 'done') return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+  if (status === 'failed') return <XCircle className="h-4 w-4 text-red-500" />;
+  return <Circle className="h-4 w-4 text-muted-foreground" />;
+}
+
+// -- Main component -----------------------------------------------------------
+
 export default function OnboardingPage() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(0);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [running, setRunning] = useState(false);
+  const [stepState, setStepState] = useState(initStepState);
+  const [result, setResult] = useState(null); // { success: bool, message: string }
 
   const set = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
-  const toggleModule = (key) =>
-    setForm((prev) => ({
+  const setStep = (name, patch) =>
+    setStepState((prev) => ({
       ...prev,
-      modules: prev.modules.includes(key)
-        ? prev.modules.filter((m) => m !== key)
-        : [...prev.modules, key],
+      [name]: { ...prev[name], ...patch },
     }));
 
-  const canNext =
-    step === 0
-      ? form.companyName && form.industry && form.companySize && form.timezone
-      : step === 1
-        ? form.userName && form.userEmail && form.userRole
-        : step === 2
-          ? form.modules.length > 0
-          : true;
+  const canSubmit =
+    form.clientName &&
+    form.orgName &&
+    form.adminUser &&
+    form.adminPassword &&
+    form.currency &&
+    form.language &&
+    form.country;
 
-  const handleLaunch = () => {
-    navigate('/dashboard');
-  };
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!canSubmit || running) return;
 
-  // -- Step renderers ----------------------------------------------------------
+    setRunning(true);
+    setResult(null);
+    setStepState(initStepState());
 
-  const renderCompanySetup = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-2">
-        <Label htmlFor="companyName">Company Name</Label>
-        <Input
-          id="companyName"
-          placeholder="Acme Corp"
-          value={form.companyName}
-          onChange={(e) => set('companyName', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="industry">Industry</Label>
-        <select
-          id="industry"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={form.industry}
-          onChange={(e) => set('industry', e.target.value)}
-        >
-          <option value="">Select industry...</option>
-          {INDUSTRIES.map((i) => (
-            <option key={i} value={i}>{i}</option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="companySize">Company Size</Label>
-        <select
-          id="companySize"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={form.companySize}
-          onChange={(e) => set('companySize', e.target.value)}
-        >
-          <option value="">Select size...</option>
-          {COMPANY_SIZES.map((s) => (
-            <option key={s} value={s}>{s} employees</option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="timezone">Timezone</Label>
-        <select
-          id="timezone"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={form.timezone}
-          onChange={(e) => set('timezone', e.target.value)}
-        >
-          <option value="">Select timezone...</option>
-          {TIMEZONES.map((tz) => (
-            <option key={tz} value={tz}>{tz}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
+    const token = localStorage.getItem('token');
 
-  const renderUserProfile = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="md:col-span-2 flex items-center gap-4">
-        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-2xl font-semibold">
-          {form.userName ? form.userName.charAt(0).toUpperCase() : '?'}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Avatar will be generated from your initials
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="userName">Full Name</Label>
-        <Input
-          id="userName"
-          placeholder="Jane Smith"
-          value={form.userName}
-          onChange={(e) => set('userName', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="userEmail">Email</Label>
-        <Input
-          id="userEmail"
-          type="email"
-          placeholder="jane@acme.com"
-          value={form.userEmail}
-          onChange={(e) => set('userEmail', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="userRole">Role</Label>
-        <select
-          id="userRole"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={form.userRole}
-          onChange={(e) => set('userRole', e.target.value)}
-        >
-          <option value="">Select role...</option>
-          <option value="admin">Administrator</option>
-          <option value="manager">Manager</option>
-          <option value="user">Standard User</option>
-          <option value="viewer">Viewer</option>
-        </select>
-      </div>
-    </div>
-  );
+    let response;
+    try {
+      response = await fetch('/sws/neo/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(form),
+      });
+    } catch (err) {
+      setResult({ success: false, message: `Network error: ${err.message}` });
+      setRunning(false);
+      return;
+    }
 
-  const renderModuleSelection = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {MODULES.map((mod) => {
-        const selected = form.modules.includes(mod.key);
-        return (
-          <Card
-            key={mod.key}
-            className={`cursor-pointer transition-all ${
-              selected
-                ? 'ring-2 ring-primary border-primary'
-                : 'hover:border-muted-foreground/50'
-            }`}
-            onClick={() => toggleModule(mod.key)}
-          >
-            <CardContent className="p-4 flex items-start gap-3">
-              <div
-                className={`mt-0.5 h-5 w-5 rounded border flex items-center justify-center ${
-                  selected
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'border-muted-foreground/30'
-                }`}
-              >
-                {selected && <Check className="h-3.5 w-3.5" />}
-              </div>
-              <div>
-                <p className="font-medium text-sm">{mod.label}</p>
-                <p className="text-xs text-muted-foreground">{mod.description}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+    if (!response.body) {
+      setResult({ success: false, message: 'No response body from server.' });
+      setRunning(false);
+      return;
+    }
 
-  const renderImportData = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {IMPORT_OPTIONS.map((opt) => {
-        const selected = form.importMethod === opt.key;
-        const Icon = opt.icon;
-        return (
-          <Card
-            key={opt.key}
-            className={`cursor-pointer transition-all ${
-              selected
-                ? 'ring-2 ring-primary border-primary'
-                : 'hover:border-muted-foreground/50'
-            }`}
-            onClick={() => set('importMethod', opt.key)}
-          >
-            <CardContent className="p-6 text-center space-y-3">
-              <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                <Icon className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="font-medium">{opt.label}</p>
-              <p className="text-xs text-muted-foreground">{opt.description}</p>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-  const renderReview = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Building2 className="h-4 w-4" /> Company
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">Name</span>
-            <p className="font-medium">{form.companyName}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Industry</span>
-            <p className="font-medium">{form.industry}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Size</span>
-            <p className="font-medium">{form.companySize}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Timezone</span>
-            <p className="font-medium">{form.timezone}</p>
-          </div>
-        </CardContent>
-      </Card>
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <User className="h-4 w-4" /> User Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">Name</span>
-            <p className="font-medium">{form.userName}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Email</span>
-            <p className="font-medium">{form.userEmail}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Role</span>
-            <p className="font-medium">{form.userRole}</p>
-          </div>
-        </CardContent>
-      </Card>
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep partial last line
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Blocks className="h-4 w-4" /> Selected Modules
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {form.modules.map((key) => {
-            const mod = MODULES.find((m) => m.key === key);
-            return (
-              <Badge key={key} variant="secondary">
-                {mod?.label ?? key}
-              </Badge>
-            );
-          })}
-        </CardContent>
-      </Card>
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Upload className="h-4 w-4" /> Data Import
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm">
-          <p className="font-medium">
-            {IMPORT_OPTIONS.find((o) => o.key === form.importMethod)?.label}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+          let event;
+          try {
+            event = JSON.parse(trimmed);
+          } catch {
+            continue;
+          }
 
-  const STEP_RENDERERS = [
-    renderCompanySetup,
-    renderUserProfile,
-    renderModuleSelection,
-    renderImportData,
-    renderReview,
-  ];
+          if (event.step) {
+            const { step: name, status, message } = event;
+            setStepState((prev) => {
+              const current = prev[name] ?? { status: 'pending', messages: [], open: false };
+              const isActive = status === 'running' || status === 'failed';
+              return {
+                ...prev,
+                [name]: {
+                  ...current,
+                  status,
+                  open: isActive ? true : current.open,
+                  messages: message
+                    ? [...current.messages, message]
+                    : current.messages,
+                },
+              };
+            });
+          }
 
-  const StepIcon = STEPS[step].icon;
+          if (event.type === 'result') {
+            setResult({ success: event.success, message: event.message });
+          }
+        }
+      }
+
+      // flush remaining buffer
+      if (buffer.trim()) {
+        try {
+          const event = JSON.parse(buffer.trim());
+          if (event.type === 'result') {
+            setResult({ success: event.success, message: event.message });
+          }
+        } catch {
+          // ignore unparseable tail
+        }
+      }
+    } catch (err) {
+      setResult({ success: false, message: `Stream error: ${err.message}` });
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const toggleOpen = (name) =>
+    setStepState((prev) => ({
+      ...prev,
+      [name]: { ...prev[name], open: !prev[name].open },
+    }));
+
+  // -- Render ------------------------------------------------------------------
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">Setup Wizard</h1>
-        <Badge variant="outline">Step {step + 1} of {STEPS.length}</Badge>
+        <p className="text-muted-foreground text-sm mt-1">
+          Configure a new client and organization in Etendo.
+        </p>
       </div>
 
-      {/* Progress bar */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          {STEPS.map((s, i) => (
-            <span
-              key={s.label}
-              className={i <= step ? 'text-primary font-medium' : ''}
-            >
-              {s.label}
-            </span>
-          ))}
-        </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Step content */}
+      {/* Form */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <StepIcon className="h-5 w-5" />
-            {STEPS[step].label}
-          </CardTitle>
+          <CardTitle className="text-base">Configuration</CardTitle>
         </CardHeader>
-        <CardContent>{STEP_RENDERERS[step]()}</CardContent>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Client Name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="clientName">Client Name</Label>
+              <Input
+                id="clientName"
+                placeholder="Acme Corp"
+                value={form.clientName}
+                onChange={(e) => set('clientName', e.target.value)}
+                disabled={running}
+              />
+            </div>
+
+            {/* Org Name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="orgName">Organization Name</Label>
+              <Input
+                id="orgName"
+                placeholder="Acme Spain"
+                value={form.orgName}
+                onChange={(e) => set('orgName', e.target.value)}
+                disabled={running}
+              />
+            </div>
+
+            {/* Admin User */}
+            <div className="space-y-1.5">
+              <Label htmlFor="adminUser">Admin Username</Label>
+              <Input
+                id="adminUser"
+                placeholder="admin"
+                value={form.adminUser}
+                onChange={(e) => set('adminUser', e.target.value)}
+                disabled={running}
+              />
+            </div>
+
+            {/* Admin Password */}
+            <div className="space-y-1.5">
+              <Label htmlFor="adminPassword">Admin Password</Label>
+              <Input
+                id="adminPassword"
+                type="password"
+                placeholder="••••••••"
+                value={form.adminPassword}
+                onChange={(e) => set('adminPassword', e.target.value)}
+                disabled={running}
+              />
+            </div>
+
+            {/* Currency */}
+            <div className="space-y-1.5">
+              <Label htmlFor="currency">Currency</Label>
+              <select
+                id="currency"
+                className={SELECT_CLASS}
+                value={form.currency}
+                onChange={(e) => set('currency', e.target.value)}
+                disabled={running}
+              >
+                <option value="">Select currency...</option>
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Language */}
+            <div className="space-y-1.5">
+              <Label htmlFor="language">Language</Label>
+              <select
+                id="language"
+                className={SELECT_CLASS}
+                value={form.language}
+                onChange={(e) => set('language', e.target.value)}
+                disabled={running}
+              >
+                <option value="">Select language...</option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.value} value={l.value}>{l.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Country */}
+            <div className="space-y-1.5 md:col-span-2">
+              <Label htmlFor="country">Country</Label>
+              <select
+                id="country"
+                className={SELECT_CLASS}
+                value={form.country}
+                onChange={(e) => set('country', e.target.value)}
+                disabled={running}
+              >
+                <option value="">Select country...</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Submit */}
+            <div className="md:col-span-2 flex justify-end pt-2">
+              <Button type="submit" disabled={!canSubmit || running}>
+                {running && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {running ? 'Running...' : 'Start Setup'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
       </Card>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={() => setStep((s) => s - 1)}
-          disabled={step === 0}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
+      {/* Accordion — step progress */}
+      <div className="space-y-2">
+        {STEPS.map((step) => {
+          const state = stepState[step.name];
+          const isActive = state.status !== 'pending';
 
-        {step < STEPS.length - 1 ? (
-          <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        ) : (
-          <Button onClick={handleLaunch}>
-            <Rocket className="h-4 w-4 mr-1" />
-            Launch
-          </Button>
-        )}
+          return (
+            <Collapsible
+              key={step.name}
+              open={state.open}
+              onOpenChange={() => toggleOpen(step.name)}
+            >
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className={`flex w-full items-center justify-between rounded-md border px-4 py-3 text-sm font-medium transition-colors hover:bg-muted/50 ${
+                    isActive ? 'bg-muted/30' : 'bg-background'
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <StatusIcon status={state.status} />
+                    {step.label}
+                  </span>
+                  {state.messages.length > 0 && (
+                    <ChevronDown
+                      className={`h-4 w-4 text-muted-foreground transition-transform ${
+                        state.open ? 'rotate-180' : ''
+                      }`}
+                    />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+
+              {state.messages.length > 0 && (
+                <CollapsibleContent>
+                  <div className="rounded-b-md border border-t-0 bg-muted/20 px-4 py-3 space-y-1">
+                    {state.messages.map((msg, i) => (
+                      <p key={i} className="text-xs text-muted-foreground font-mono">
+                        {msg}
+                      </p>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              )}
+            </Collapsible>
+          );
+        })}
       </div>
+
+      {/* Result card */}
+      {result && (
+        <Card
+          className={
+            result.success
+              ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+              : 'border-red-500 bg-red-50 dark:bg-red-950/20'
+          }
+        >
+          <CardContent className="flex items-start gap-3 pt-4">
+            {result.success ? (
+              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+            ) : (
+              <XCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+            )}
+            <div className="space-y-1">
+              <p className="font-medium text-sm">
+                {result.success ? 'Setup completed successfully' : 'Setup failed'}
+              </p>
+              <p className="text-sm text-muted-foreground">{result.message}</p>
+              {!result.success && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  All changes have been rolled back. You can fix the configuration and try again.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
