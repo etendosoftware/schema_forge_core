@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-20T14:37:52.067Z",
-  "checksum": "8114da79ddf4ea7e",
+  "generatedAt": "2026-03-20T14:26:53.883Z",
+  "checksum": "a63f9a15fdf43726",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -828,74 +828,6 @@
             "type": "text",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          }
-        ],
-        "searchableFields": [],
-        "computedFields": []
-      },
-      "accounting": {
-        "tableName": "Fact_Acct",
-        "tabName": "Accounting",
-        "fields": [
-          {
-            "name": "account",
-            "column": "Account_ID",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "accountingDate",
-            "column": "DateAcct",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "postingType",
-            "column": "PostingType",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "debit",
-            "column": "AmtAcctDr",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "credit",
-            "column": "AmtAcctCr",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "text",
-            "tsType": "string",
-            "visibility": "readOnly",
             "required": false,
             "grid": false,
             "form": true
@@ -1797,75 +1729,6 @@
           }
         ]
       },
-      "accounting": {
-        "tableName": "Fact_Acct",
-        "tabName": "Accounting",
-        "fields": [
-          {
-            "name": "account",
-            "column": "Account_ID",
-            "type": "string",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "accountingDate",
-            "column": "DateAcct",
-            "type": "date",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "postingType",
-            "column": "PostingType",
-            "type": "string",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "debit",
-            "column": "AmtAcctDr",
-            "type": "amount",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "credit",
-            "column": "AmtAcctCr",
-            "type": "amount",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "text",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "factAcct",
-            "column": "Fact_Acct_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "recordID",
-            "column": "Record_ID",
-            "type": "string",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "adTable",
-            "column": "AD_Table_ID",
-            "type": "string",
-            "visibility": "system",
-            "required": true
-          }
-        ]
-      },
       "reversedInvoices": {
         "tableName": "C_Invoice_Reverse",
         "tabName": "Reversed Invoices",
@@ -2074,36 +1937,6 @@
       },
       {
         "method": "GET",
-        "path": "/accounting",
-        "entity": "accounting",
-        "supportedFilters": []
-      },
-      {
-        "method": "GET",
-        "path": "/accounting/:id",
-        "entity": "accounting",
-        "supportedFilters": []
-      },
-      {
-        "method": "POST",
-        "path": "/accounting",
-        "entity": "accounting",
-        "supportedFilters": []
-      },
-      {
-        "method": "PUT",
-        "path": "/accounting/:id",
-        "entity": "accounting",
-        "supportedFilters": []
-      },
-      {
-        "method": "DELETE",
-        "path": "/accounting/:id",
-        "entity": "accounting",
-        "supportedFilters": []
-      },
-      {
-        "method": "GET",
         "path": "/reversedInvoices",
         "entity": "reversedInvoices",
         "supportedFilters": []
@@ -2198,17 +2031,6 @@
         "delete": true,
         "listUrl": "/sws/neo/purchase-invoice/paymentPlan",
         "detailUrl": "/sws/neo/purchase-invoice/paymentPlan/{id}",
-        "supportedFilters": []
-      },
-      "accounting": {
-        "get": true,
-        "getById": true,
-        "post": true,
-        "put": true,
-        "patch": true,
-        "delete": true,
-        "listUrl": "/sws/neo/purchase-invoice/accounting",
-        "detailUrl": "/sws/neo/purchase-invoice/accounting/{id}",
         "supportedFilters": []
       },
       "reversedInvoices": {
@@ -3755,116 +3577,13 @@
       {
         "id": "t-153",
         "category": "field-presence",
-        "entity": "accounting",
-        "field": "account",
-        "runner": "node",
-        "description": "Field 'account' should be present in accounting"
-      },
-      {
-        "id": "t-154",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Field 'accountingDate' should be present in accounting"
-      },
-      {
-        "id": "t-155",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "postingType",
-        "runner": "node",
-        "description": "Field 'postingType' should be present in accounting"
-      },
-      {
-        "id": "t-156",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "debit",
-        "runner": "node",
-        "description": "Field 'debit' should be present in accounting"
-      },
-      {
-        "id": "t-157",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "credit",
-        "runner": "node",
-        "description": "Field 'credit' should be present in accounting"
-      },
-      {
-        "id": "t-158",
-        "category": "field-presence",
-        "entity": "accounting",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in accounting"
-      },
-      {
-        "id": "t-159",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "account",
-        "runner": "node",
-        "description": "Field 'account' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-160",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Field 'accountingDate' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-161",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "postingType",
-        "runner": "node",
-        "description": "Field 'postingType' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-162",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "debit",
-        "runner": "node",
-        "description": "Field 'debit' should have type 'number' in accounting"
-      },
-      {
-        "id": "t-163",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "credit",
-        "runner": "node",
-        "description": "Field 'credit' should have type 'number' in accounting"
-      },
-      {
-        "id": "t-164",
-        "category": "field-type",
-        "entity": "accounting",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in accounting"
-      },
-      {
-        "id": "t-165",
-        "category": "visibility",
-        "entity": "accounting",
-        "runner": "node",
-        "description": "Entity 'accounting' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-166",
-        "category": "field-presence",
         "entity": "reversedInvoices",
         "field": "reversedInvoice",
         "runner": "node",
         "description": "Field 'reversedInvoice' should be present in reversedInvoices"
       },
       {
-        "id": "t-167",
+        "id": "t-154",
         "category": "field-type",
         "entity": "reversedInvoices",
         "field": "reversedInvoice",
@@ -3872,14 +3591,14 @@
         "description": "Field 'reversedInvoice' should have type 'string' in reversedInvoices"
       },
       {
-        "id": "t-168",
+        "id": "t-155",
         "category": "visibility",
         "entity": "reversedInvoices",
         "runner": "node",
         "description": "Entity 'reversedInvoices' should only expose visible fields in frontend"
       },
       {
-        "id": "t-169",
+        "id": "t-156",
         "category": "system-field",
         "entity": "invoice",
         "field": "organization",
@@ -3887,7 +3606,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-170",
+        "id": "t-157",
         "category": "system-field",
         "entity": "invoice",
         "field": "documentType",
@@ -3895,7 +3614,7 @@
         "description": "System field 'documentType' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-171",
+        "id": "t-158",
         "category": "system-field",
         "entity": "invoice",
         "field": "salesTransaction",
@@ -3903,7 +3622,7 @@
         "description": "System field 'salesTransaction' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-172",
+        "id": "t-159",
         "category": "system-field",
         "entity": "invoice",
         "field": "processed",
@@ -3911,7 +3630,7 @@
         "description": "System field 'processed' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-173",
+        "id": "t-160",
         "category": "system-field",
         "entity": "invoice",
         "field": "invoice",
@@ -3919,7 +3638,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-174",
+        "id": "t-161",
         "category": "system-field",
         "entity": "invoice",
         "field": "client",
@@ -3927,7 +3646,7 @@
         "description": "System field 'client' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-175",
+        "id": "t-162",
         "category": "system-field",
         "entity": "invoice",
         "field": "generateTo",
@@ -3935,7 +3654,7 @@
         "description": "System field 'generateTo' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-176",
+        "id": "t-163",
         "category": "system-field",
         "entity": "invoice",
         "field": "eMAPRMAddpayment",
@@ -3943,7 +3662,7 @@
         "description": "System field 'eMAPRMAddpayment' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-177",
+        "id": "t-164",
         "category": "system-field",
         "entity": "invoice",
         "field": "eMAPRMProcessinvoice",
@@ -3951,7 +3670,7 @@
         "description": "System field 'eMAPRMProcessinvoice' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-178",
+        "id": "t-165",
         "category": "system-field",
         "entity": "invoice",
         "field": "documentAction",
@@ -3959,7 +3678,7 @@
         "description": "System field 'documentAction' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-179",
+        "id": "t-166",
         "category": "system-field",
         "entity": "invoice",
         "field": "createLinesFromOrder",
@@ -3967,7 +3686,7 @@
         "description": "System field 'createLinesFromOrder' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-180",
+        "id": "t-167",
         "category": "system-field",
         "entity": "invoice",
         "field": "createLinesFromShipment",
@@ -3975,7 +3694,7 @@
         "description": "System field 'createLinesFromShipment' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-181",
+        "id": "t-168",
         "category": "system-field",
         "entity": "invoice",
         "field": "copyFrom",
@@ -3983,7 +3702,7 @@
         "description": "System field 'copyFrom' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-182",
+        "id": "t-169",
         "category": "system-field",
         "entity": "invoice",
         "field": "eMETBLKCBulkcompletion",
@@ -3991,7 +3710,7 @@
         "description": "System field 'eMETBLKCBulkcompletion' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-183",
+        "id": "t-170",
         "category": "system-field",
         "entity": "invoice",
         "field": "posted",
@@ -3999,7 +3718,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-184",
+        "id": "t-171",
         "category": "system-field",
         "entity": "invoice",
         "field": "trxOrganization",
@@ -4007,7 +3726,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-185",
+        "id": "t-172",
         "category": "system-field",
         "entity": "invoice",
         "field": "salesCampaign",
@@ -4015,7 +3734,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-186",
+        "id": "t-173",
         "category": "system-field",
         "entity": "invoice",
         "field": "withholding",
@@ -4023,7 +3742,7 @@
         "description": "System field 'withholding' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-187",
+        "id": "t-174",
         "category": "system-field",
         "entity": "invoice",
         "field": "percentageOverdue",
@@ -4031,7 +3750,7 @@
         "description": "System field 'percentageOverdue' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-188",
+        "id": "t-175",
         "category": "system-field",
         "entity": "invoice",
         "field": "finalSettlementDate",
@@ -4039,7 +3758,7 @@
         "description": "System field 'finalSettlementDate' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-189",
+        "id": "t-176",
         "category": "system-field",
         "entity": "invoice",
         "field": "daysSalesOutstanding",
@@ -4047,7 +3766,7 @@
         "description": "System field 'daysSalesOutstanding' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-190",
+        "id": "t-177",
         "category": "system-field",
         "entity": "invoice",
         "field": "daysTillDue",
@@ -4055,7 +3774,7 @@
         "description": "System field 'daysTillDue' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-191",
+        "id": "t-178",
         "category": "system-field",
         "entity": "invoice",
         "field": "printDiscount",
@@ -4063,7 +3782,7 @@
         "description": "System field 'printDiscount' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-192",
+        "id": "t-179",
         "category": "system-field",
         "entity": "invoice",
         "field": "processNow",
@@ -4071,7 +3790,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-193",
+        "id": "t-180",
         "category": "system-field",
         "entity": "invoice",
         "field": "activity",
@@ -4079,7 +3798,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-194",
+        "id": "t-181",
         "category": "system-field",
         "entity": "invoice",
         "field": "lastCalculatedOnDate",
@@ -4087,7 +3806,7 @@
         "description": "System field 'lastCalculatedOnDate' should exist in backend but not frontend for invoice"
       },
       {
-        "id": "t-195",
+        "id": "t-182",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "grossUnitPrice",
@@ -4095,7 +3814,7 @@
         "description": "System field 'grossUnitPrice' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-196",
+        "id": "t-183",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "grossAmount",
@@ -4103,7 +3822,7 @@
         "description": "System field 'grossAmount' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-197",
+        "id": "t-184",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "grossListPrice",
@@ -4111,7 +3830,7 @@
         "description": "System field 'grossListPrice' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-198",
+        "id": "t-185",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "baseGrossUnitPrice",
@@ -4119,7 +3838,7 @@
         "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-199",
+        "id": "t-186",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "standardPrice",
@@ -4127,7 +3846,7 @@
         "description": "System field 'standardPrice' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-200",
+        "id": "t-187",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "deferred",
@@ -4135,7 +3854,7 @@
         "description": "System field 'deferred' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-201",
+        "id": "t-188",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "deferredPlanType",
@@ -4143,7 +3862,7 @@
         "description": "System field 'deferredPlanType' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-202",
+        "id": "t-189",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "periodNumber",
@@ -4151,7 +3870,7 @@
         "description": "System field 'periodNumber' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-203",
+        "id": "t-190",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "period",
@@ -4159,7 +3878,7 @@
         "description": "System field 'period' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-204",
+        "id": "t-191",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "businessPartner",
@@ -4167,7 +3886,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-205",
+        "id": "t-192",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "explode",
@@ -4175,7 +3894,7 @@
         "description": "System field 'explode' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-206",
+        "id": "t-193",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "matchLCCosts",
@@ -4183,7 +3902,7 @@
         "description": "System field 'matchLCCosts' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-207",
+        "id": "t-194",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "financialInvoiceLine",
@@ -4191,7 +3910,7 @@
         "description": "System field 'financialInvoiceLine' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-208",
+        "id": "t-195",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "invoiceLine",
@@ -4199,7 +3918,7 @@
         "description": "System field 'invoiceLine' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-209",
+        "id": "t-196",
         "category": "system-field",
         "entity": "invoiceLine",
         "field": "invoice",
@@ -4207,7 +3926,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for invoiceLine"
       },
       {
-        "id": "t-210",
+        "id": "t-197",
         "category": "system-field",
         "entity": "invoiceTax",
         "field": "recalculate",
@@ -4215,7 +3934,7 @@
         "description": "System field 'recalculate' should exist in backend but not frontend for invoiceTax"
       },
       {
-        "id": "t-211",
+        "id": "t-198",
         "category": "system-field",
         "entity": "invoiceTax",
         "field": "cInvoiceTaxID",
@@ -4223,7 +3942,7 @@
         "description": "System field 'cInvoiceTaxID' should exist in backend but not frontend for invoiceTax"
       },
       {
-        "id": "t-212",
+        "id": "t-199",
         "category": "system-field",
         "entity": "invoiceTax",
         "field": "invoice",
@@ -4231,7 +3950,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for invoiceTax"
       },
       {
-        "id": "t-213",
+        "id": "t-200",
         "category": "system-field",
         "entity": "basicDiscounts",
         "field": "invoiceDiscount",
@@ -4239,7 +3958,7 @@
         "description": "System field 'invoiceDiscount' should exist in backend but not frontend for basicDiscounts"
       },
       {
-        "id": "t-214",
+        "id": "t-201",
         "category": "system-field",
         "entity": "basicDiscounts",
         "field": "invoice",
@@ -4247,7 +3966,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for basicDiscounts"
       },
       {
-        "id": "t-215",
+        "id": "t-202",
         "category": "system-field",
         "entity": "paymentPlan",
         "field": "finPaymentScheduleID",
@@ -4255,7 +3974,7 @@
         "description": "System field 'finPaymentScheduleID' should exist in backend but not frontend for paymentPlan"
       },
       {
-        "id": "t-216",
+        "id": "t-203",
         "category": "system-field",
         "entity": "paymentPlan",
         "field": "invoice",
@@ -4263,31 +3982,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for paymentPlan"
       },
       {
-        "id": "t-217",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "factAcct",
-        "runner": "node",
-        "description": "System field 'factAcct' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-218",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "recordID",
-        "runner": "node",
-        "description": "System field 'recordID' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-219",
-        "category": "system-field",
-        "entity": "accounting",
-        "field": "adTable",
-        "runner": "node",
-        "description": "System field 'adTable' should exist in backend but not frontend for accounting"
-      },
-      {
-        "id": "t-220",
+        "id": "t-204",
         "category": "system-field",
         "entity": "reversedInvoices",
         "field": "cInvoiceReverseID",
@@ -4295,7 +3990,7 @@
         "description": "System field 'cInvoiceReverseID' should exist in backend but not frontend for reversedInvoices"
       },
       {
-        "id": "t-221",
+        "id": "t-205",
         "category": "system-field",
         "entity": "reversedInvoices",
         "field": "invoice",
@@ -4303,7 +3998,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for reversedInvoices"
       },
       {
-        "id": "t-222",
+        "id": "t-206",
         "category": "system-field",
         "entity": "reversedInvoices",
         "field": "active",
@@ -4311,7 +4006,7 @@
         "description": "System field 'active' should exist in backend but not frontend for reversedInvoices"
       },
       {
-        "id": "t-223",
+        "id": "t-207",
         "category": "system-field",
         "entity": "reversedInvoices",
         "field": "organization",
@@ -4319,7 +4014,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for reversedInvoices"
       },
       {
-        "id": "t-224",
+        "id": "t-208",
         "category": "system-field",
         "entity": "reversedInvoices",
         "field": "client",
@@ -4327,203 +4022,196 @@
         "description": "System field 'client' should exist in backend but not frontend for reversedInvoices"
       },
       {
-        "id": "t-225",
+        "id": "t-209",
         "category": "rule-declared",
         "rule": "SE_Invoice_BPartner",
         "runner": "node",
         "description": "Rule 'SE_Invoice_BPartner' (callout) should be declared"
       },
       {
-        "id": "t-226",
+        "id": "t-210",
         "category": "rule-declared",
         "rule": "SE_Invoice_BPartnerLocation",
         "runner": "node",
         "description": "Rule 'SE_Invoice_BPartnerLocation' (callout) should be declared"
       },
       {
-        "id": "t-227",
+        "id": "t-211",
         "category": "rule-declared",
         "rule": "SL_Invoice_DocType",
         "runner": "node",
         "description": "Rule 'SL_Invoice_DocType' (callout) should be declared"
       },
       {
-        "id": "t-228",
+        "id": "t-212",
         "category": "rule-declared",
         "rule": "SE_Invoice_AccountingDate",
         "runner": "node",
         "description": "Rule 'SE_Invoice_AccountingDate' (callout) should be declared"
       },
       {
-        "id": "t-229",
+        "id": "t-213",
         "category": "rule-declared",
         "rule": "SL_Invoice_PriceList",
         "runner": "node",
         "description": "Rule 'SL_Invoice_PriceList' (callout) should be declared"
       },
       {
-        "id": "t-230",
+        "id": "t-214",
         "category": "rule-declared",
         "rule": "SL_Invoice_Product",
         "runner": "node",
         "description": "Rule 'SL_Invoice_Product' (callout) should be declared"
       },
       {
-        "id": "t-231",
+        "id": "t-215",
         "category": "rule-declared",
         "rule": "SL_Invoice_Amt",
         "runner": "node",
         "description": "Rule 'SL_Invoice_Amt' (callout) should be declared"
       },
       {
-        "id": "t-232",
+        "id": "t-216",
         "category": "rule-declared",
         "rule": "SL_Invoice_Conversion",
         "runner": "node",
         "description": "Rule 'SL_Invoice_Conversion' (callout) should be declared"
       },
       {
-        "id": "t-233",
+        "id": "t-217",
         "category": "rule-declared",
         "rule": "OperativeQuantity_To_BaseQuantity",
         "runner": "node",
         "description": "Rule 'OperativeQuantity_To_BaseQuantity' (callout) should be declared"
       },
       {
-        "id": "t-234",
+        "id": "t-218",
         "category": "rule-declared",
         "rule": "VAL_BPartnerLocation_BillTo",
         "runner": "node",
         "description": "Rule 'VAL_BPartnerLocation_BillTo' (validation) should be declared"
       },
       {
-        "id": "t-235",
+        "id": "t-219",
         "category": "rule-declared",
         "rule": "VAL_DocType_APInvoice",
         "runner": "node",
         "description": "Rule 'VAL_DocType_APInvoice' (validation) should be declared"
       },
       {
-        "id": "t-236",
+        "id": "t-220",
         "category": "rule-declared",
         "rule": "VAL_User_BPartnerContact",
         "runner": "node",
         "description": "Rule 'VAL_User_BPartnerContact' (validation) should be declared"
       },
       {
-        "id": "t-237",
+        "id": "t-221",
         "category": "rule-declared",
         "rule": "VAL_User_OrgTree",
         "runner": "node",
         "description": "Rule 'VAL_User_OrgTree' (validation) should be declared"
       },
       {
-        "id": "t-238",
+        "id": "t-222",
         "category": "rule-declared",
         "rule": "VAL_Project_StatusAndBPartner",
         "runner": "node",
         "description": "Rule 'VAL_Project_StatusAndBPartner' (validation) should be declared"
       },
       {
-        "id": "t-239",
+        "id": "t-223",
         "category": "rule-declared",
         "rule": "VAL_PriceList_IsSOTrx",
         "runner": "node",
         "description": "Rule 'VAL_PriceList_IsSOTrx' (validation) should be declared"
       },
       {
-        "id": "t-240",
+        "id": "t-224",
         "category": "rule-declared",
         "rule": "VAL_PaymentMethod_Account",
         "runner": "node",
         "description": "Rule 'VAL_PaymentMethod_Account' (validation) should be declared"
       },
       {
-        "id": "t-241",
+        "id": "t-225",
         "category": "rule-declared",
         "rule": "VAL_Tax_IsSOTrx_Date",
         "runner": "node",
         "description": "Rule 'VAL_Tax_IsSOTrx_Date' (validation) should be declared"
       },
       {
-        "id": "t-242",
+        "id": "t-226",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Header",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-243",
+        "id": "t-227",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Lines",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-244",
+        "id": "t-228",
         "category": "rule-declared",
         "rule": "READONLY_ReversedInvoice_Processed",
         "runner": "node",
         "description": "Rule 'READONLY_ReversedInvoice_Processed' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-245",
+        "id": "t-229",
         "category": "rule-declared",
         "rule": "DISPLAY_OperativeQty_WhenApplicable",
         "runner": "node",
         "description": "Rule 'DISPLAY_OperativeQty_WhenApplicable' (displayLogic) should be declared"
       },
       {
-        "id": "t-246",
+        "id": "t-230",
         "category": "crud-flags",
         "entity": "invoice",
         "runner": "node",
         "description": "CRUD flags for 'invoice' should all be booleans"
       },
       {
-        "id": "t-247",
+        "id": "t-231",
         "category": "crud-flags",
         "entity": "invoiceLine",
         "runner": "node",
         "description": "CRUD flags for 'invoiceLine' should all be booleans"
       },
       {
-        "id": "t-248",
+        "id": "t-232",
         "category": "crud-flags",
         "entity": "invoiceTax",
         "runner": "node",
         "description": "CRUD flags for 'invoiceTax' should all be booleans"
       },
       {
-        "id": "t-249",
+        "id": "t-233",
         "category": "crud-flags",
         "entity": "basicDiscounts",
         "runner": "node",
         "description": "CRUD flags for 'basicDiscounts' should all be booleans"
       },
       {
-        "id": "t-250",
+        "id": "t-234",
         "category": "crud-flags",
         "entity": "paymentPlan",
         "runner": "node",
         "description": "CRUD flags for 'paymentPlan' should all be booleans"
       },
       {
-        "id": "t-251",
-        "category": "crud-flags",
-        "entity": "accounting",
-        "runner": "node",
-        "description": "CRUD flags for 'accounting' should all be booleans"
-      },
-      {
-        "id": "t-252",
+        "id": "t-235",
         "category": "crud-flags",
         "entity": "reversedInvoices",
         "runner": "node",
         "description": "CRUD flags for 'reversedInvoices' should all be booleans"
       },
       {
-        "id": "t-253",
+        "id": "t-236",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "transactionDocument",
@@ -4531,7 +4219,7 @@
         "description": "Selector endpoint for 'transactionDocument' in invoice should exist"
       },
       {
-        "id": "t-254",
+        "id": "t-237",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "businessPartner",
@@ -4539,7 +4227,7 @@
         "description": "Selector endpoint for 'businessPartner' in invoice should exist"
       },
       {
-        "id": "t-255",
+        "id": "t-238",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "partnerAddress",
@@ -4547,7 +4235,7 @@
         "description": "Selector endpoint for 'partnerAddress' in invoice should exist"
       },
       {
-        "id": "t-256",
+        "id": "t-239",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "currency",
@@ -4555,7 +4243,7 @@
         "description": "Selector endpoint for 'currency' in invoice should exist"
       },
       {
-        "id": "t-257",
+        "id": "t-240",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "paymentTerms",
@@ -4563,7 +4251,7 @@
         "description": "Selector endpoint for 'paymentTerms' in invoice should exist"
       },
       {
-        "id": "t-258",
+        "id": "t-241",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "paymentMethod",
@@ -4571,7 +4259,7 @@
         "description": "Selector endpoint for 'paymentMethod' in invoice should exist"
       },
       {
-        "id": "t-259",
+        "id": "t-242",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "priceList",
@@ -4579,7 +4267,7 @@
         "description": "Selector endpoint for 'priceList' in invoice should exist"
       },
       {
-        "id": "t-260",
+        "id": "t-243",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "userContact",
@@ -4587,7 +4275,7 @@
         "description": "Selector endpoint for 'userContact' in invoice should exist"
       },
       {
-        "id": "t-261",
+        "id": "t-244",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "salesRepresentative",
@@ -4595,7 +4283,7 @@
         "description": "Selector endpoint for 'salesRepresentative' in invoice should exist"
       },
       {
-        "id": "t-262",
+        "id": "t-245",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "charge",
@@ -4603,7 +4291,7 @@
         "description": "Selector endpoint for 'charge' in invoice should exist"
       },
       {
-        "id": "t-263",
+        "id": "t-246",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "project",
@@ -4611,7 +4299,7 @@
         "description": "Selector endpoint for 'project' in invoice should exist"
       },
       {
-        "id": "t-264",
+        "id": "t-247",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "costcenter",
@@ -4619,7 +4307,7 @@
         "description": "Selector endpoint for 'costcenter' in invoice should exist"
       },
       {
-        "id": "t-265",
+        "id": "t-248",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "asset",
@@ -4627,7 +4315,7 @@
         "description": "Selector endpoint for 'asset' in invoice should exist"
       },
       {
-        "id": "t-266",
+        "id": "t-249",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "stDimension",
@@ -4635,7 +4323,7 @@
         "description": "Selector endpoint for 'stDimension' in invoice should exist"
       },
       {
-        "id": "t-267",
+        "id": "t-250",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "ndDimension",
@@ -4643,7 +4331,7 @@
         "description": "Selector endpoint for 'ndDimension' in invoice should exist"
       },
       {
-        "id": "t-268",
+        "id": "t-251",
         "category": "selector-endpoint",
         "entity": "invoice",
         "field": "salesOrder",
@@ -4651,7 +4339,7 @@
         "description": "Selector endpoint for 'salesOrder' in invoice should exist"
       },
       {
-        "id": "t-269",
+        "id": "t-252",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "product",
@@ -4659,7 +4347,7 @@
         "description": "Selector endpoint for 'product' in invoiceLine should exist"
       },
       {
-        "id": "t-270",
+        "id": "t-253",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "account",
@@ -4667,7 +4355,7 @@
         "description": "Selector endpoint for 'account' in invoiceLine should exist"
       },
       {
-        "id": "t-271",
+        "id": "t-254",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "attributeSetValue",
@@ -4675,7 +4363,7 @@
         "description": "Selector endpoint for 'attributeSetValue' in invoiceLine should exist"
       },
       {
-        "id": "t-272",
+        "id": "t-255",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "operativeUOM",
@@ -4683,7 +4371,7 @@
         "description": "Selector endpoint for 'operativeUOM' in invoiceLine should exist"
       },
       {
-        "id": "t-273",
+        "id": "t-256",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "uOM",
@@ -4691,7 +4379,7 @@
         "description": "Selector endpoint for 'uOM' in invoiceLine should exist"
       },
       {
-        "id": "t-274",
+        "id": "t-257",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "tax",
@@ -4699,7 +4387,7 @@
         "description": "Selector endpoint for 'tax' in invoiceLine should exist"
       },
       {
-        "id": "t-275",
+        "id": "t-258",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "salesOrderLine",
@@ -4707,7 +4395,7 @@
         "description": "Selector endpoint for 'salesOrderLine' in invoiceLine should exist"
       },
       {
-        "id": "t-276",
+        "id": "t-259",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "goodsShipmentLine",
@@ -4715,7 +4403,7 @@
         "description": "Selector endpoint for 'goodsShipmentLine' in invoiceLine should exist"
       },
       {
-        "id": "t-277",
+        "id": "t-260",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "project",
@@ -4723,7 +4411,7 @@
         "description": "Selector endpoint for 'project' in invoiceLine should exist"
       },
       {
-        "id": "t-278",
+        "id": "t-261",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "costcenter",
@@ -4731,7 +4419,7 @@
         "description": "Selector endpoint for 'costcenter' in invoiceLine should exist"
       },
       {
-        "id": "t-279",
+        "id": "t-262",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "asset",
@@ -4739,7 +4427,7 @@
         "description": "Selector endpoint for 'asset' in invoiceLine should exist"
       },
       {
-        "id": "t-280",
+        "id": "t-263",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "stDimension",
@@ -4747,7 +4435,7 @@
         "description": "Selector endpoint for 'stDimension' in invoiceLine should exist"
       },
       {
-        "id": "t-281",
+        "id": "t-264",
         "category": "selector-endpoint",
         "entity": "invoiceLine",
         "field": "ndDimension",
@@ -4755,7 +4443,7 @@
         "description": "Selector endpoint for 'ndDimension' in invoiceLine should exist"
       },
       {
-        "id": "t-282",
+        "id": "t-265",
         "category": "selector-endpoint",
         "entity": "invoiceTax",
         "field": "tax",
@@ -4763,7 +4451,7 @@
         "description": "Selector endpoint for 'tax' in invoiceTax should exist"
       },
       {
-        "id": "t-283",
+        "id": "t-266",
         "category": "selector-endpoint",
         "entity": "basicDiscounts",
         "field": "discount",
@@ -4771,7 +4459,7 @@
         "description": "Selector endpoint for 'discount' in basicDiscounts should exist"
       },
       {
-        "id": "t-284",
+        "id": "t-267",
         "category": "selector-endpoint",
         "entity": "paymentPlan",
         "field": "paymentMethod",
@@ -4779,7 +4467,7 @@
         "description": "Selector endpoint for 'paymentMethod' in paymentPlan should exist"
       },
       {
-        "id": "t-285",
+        "id": "t-268",
         "category": "selector-endpoint",
         "entity": "paymentPlan",
         "field": "currency",
@@ -4787,7 +4475,7 @@
         "description": "Selector endpoint for 'currency' in paymentPlan should exist"
       },
       {
-        "id": "t-286",
+        "id": "t-269",
         "category": "selector-endpoint",
         "entity": "reversedInvoices",
         "field": "reversedInvoice",
@@ -4795,7 +4483,7 @@
         "description": "Selector endpoint for 'reversedInvoice' in reversedInvoices should exist"
       },
       {
-        "id": "t-287",
+        "id": "t-270",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "generateTo",
@@ -4803,7 +4491,7 @@
         "description": "Action endpoint for 'generateTo' in invoice should exist"
       },
       {
-        "id": "t-288",
+        "id": "t-271",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "eMAPRMAddpayment",
@@ -4811,7 +4499,7 @@
         "description": "Action endpoint for 'eMAPRMAddpayment' in invoice should exist"
       },
       {
-        "id": "t-289",
+        "id": "t-272",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "eMAPRMProcessinvoice",
@@ -4819,7 +4507,7 @@
         "description": "Action endpoint for 'eMAPRMProcessinvoice' in invoice should exist"
       },
       {
-        "id": "t-290",
+        "id": "t-273",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "documentAction",
@@ -4827,7 +4515,7 @@
         "description": "Action endpoint for 'documentAction' in invoice should exist"
       },
       {
-        "id": "t-291",
+        "id": "t-274",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "createLinesFromOrder",
@@ -4835,7 +4523,7 @@
         "description": "Action endpoint for 'createLinesFromOrder' in invoice should exist"
       },
       {
-        "id": "t-292",
+        "id": "t-275",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "createLinesFromShipment",
@@ -4843,7 +4531,7 @@
         "description": "Action endpoint for 'createLinesFromShipment' in invoice should exist"
       },
       {
-        "id": "t-293",
+        "id": "t-276",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "copyFrom",
@@ -4851,7 +4539,7 @@
         "description": "Action endpoint for 'copyFrom' in invoice should exist"
       },
       {
-        "id": "t-294",
+        "id": "t-277",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "eMETBLKCBulkcompletion",
@@ -4859,7 +4547,7 @@
         "description": "Action endpoint for 'eMETBLKCBulkcompletion' in invoice should exist"
       },
       {
-        "id": "t-295",
+        "id": "t-278",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "posted",
@@ -4867,7 +4555,7 @@
         "description": "Action endpoint for 'posted' in invoice should exist"
       },
       {
-        "id": "t-296",
+        "id": "t-279",
         "category": "action-endpoint",
         "entity": "invoice",
         "field": "processNow",
@@ -4876,20 +4564,20 @@
       }
     ],
     "summary": {
-      "total": 296,
+      "total": 279,
       "byCategory": {
-        "field-presence": 78,
-        "field-type": 78,
+        "field-presence": 72,
+        "field-type": 72,
         "searchable-filters": 5,
-        "visibility": 7,
-        "system-field": 56,
+        "visibility": 6,
+        "system-field": 53,
         "rule-declared": 21,
-        "crud-flags": 7,
+        "crud-flags": 6,
         "selector-endpoint": 34,
         "action-endpoint": 10
       },
       "byRunner": {
-        "node": 296,
+        "node": 279,
         "junit": 0
       }
     }

@@ -11,6 +11,8 @@ import PaymentPlanTable from './PaymentPlanTable';
 import PaymentPlanForm from './PaymentPlanForm';
 import AccountingTable from './AccountingTable';
 import AccountingForm from './AccountingForm';
+import ReversedInvoicesTable from './ReversedInvoicesTable';
+import ReversedInvoicesForm from './ReversedInvoicesForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
@@ -137,6 +139,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/accounting",
       "detailUrl": "/sws/neo/purchase-invoice/accounting/{id}",
+      "supportedFilters": []
+    },
+    "reversedInvoices": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
+      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
       "supportedFilters": []
     }
   },
@@ -373,46 +386,11 @@ const api = {
       "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
     },
     {
-      "entity": "accounting",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "Account",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/account"
-    },
-    {
-      "entity": "accounting",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/businessPartner"
-    },
-    {
-      "entity": "accounting",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/product"
-    },
-    {
-      "entity": "accounting",
-      "field": "accountingSchema",
-      "column": "C_AcctSchema_ID",
-      "reference": "AccountingSchema",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/accountingSchema"
-    },
-    {
-      "entity": "accounting",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/currency"
-    },
-    {
-      "entity": "accounting",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/period"
+      "entity": "reversedInvoices",
+      "field": "reversedInvoice",
+      "column": "Reversed_C_Invoice_ID",
+      "reference": "Invoice",
+      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
     }
   ],
   "actions": [
@@ -509,7 +487,7 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Invoice"
-        detailLabel="Invoice Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
@@ -519,6 +497,7 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
           { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
           { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
+          { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
         ]}
         {...props}
       />

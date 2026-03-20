@@ -1,0 +1,173 @@
+{
+  "version": "0.1.0",
+  "rules": [
+    {
+      "name": "SE_Invoice_BPartner",
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Omit",
+      "description": "Auto-fill partner address, payment terms, price list from business partner. Classic UI only.",
+      "impactIfOmitted": "Users must manually set address, payment terms, and price list after choosing a business partner."
+    },
+    {
+      "name": "SE_Invoice_BPartnerLocation",
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Omit",
+      "description": "Cascade on partner address change. Classic UI only.",
+      "impactIfOmitted": "No cascade on address change."
+    },
+    {
+      "name": "SL_Invoice_DocType",
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Omit",
+      "description": "Auto-fill payment terms and method from document type. Classic UI only.",
+      "impactIfOmitted": "Users must manually set payment terms and method."
+    },
+    {
+      "name": "SE_Invoice_AccountingDate",
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Omit",
+      "description": "Auto-fill accounting date. Backend default applies on save.",
+      "impactIfOmitted": "Backend sets accounting date on save."
+    },
+    {
+      "name": "SL_Invoice_PriceList",
+      "type": "callout",
+      "entity": "invoice",
+      "decision": "Omit",
+      "description": "Cascade on price list change. Classic UI only.",
+      "impactIfOmitted": "No cascade on price list change."
+    },
+    {
+      "name": "SL_Invoice_Product",
+      "type": "callout",
+      "entity": "invoiceLine",
+      "decision": "Omit",
+      "description": "Auto-fill price, UOM, tax from product selection. Classic UI only.",
+      "impactIfOmitted": "Users must manually set price, UOM, and tax after selecting a product."
+    },
+    {
+      "name": "SL_Invoice_Amt",
+      "type": "callout",
+      "entity": "invoiceLine",
+      "decision": "Omit",
+      "description": "Recalculate line amount on quantity/price change. Backend handles on save.",
+      "impactIfOmitted": "Line amounts calculated by backend on save."
+    },
+    {
+      "name": "SL_Invoice_Conversion",
+      "type": "callout",
+      "entity": "invoiceLine",
+      "decision": "Omit",
+      "description": "UOM conversion calculation. Backend handles on save.",
+      "impactIfOmitted": "UOM conversion calculated by backend."
+    },
+    {
+      "name": "OperativeQuantity_To_BaseQuantity",
+      "type": "callout",
+      "entity": "invoiceLine",
+      "decision": "Omit",
+      "description": "Converts operative quantity to base quantity. Backend handles on save.",
+      "impactIfOmitted": "Base quantity calculated by backend."
+    },
+    {
+      "name": "VAL_BPartnerLocation_BillTo",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters partner address selector to bill-to locations of the selected business partner.",
+      "impactIfOmitted": "Users could select irrelevant addresses."
+    },
+    {
+      "name": "VAL_DocType_APInvoice",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters document type to AP invoices and credit memos (IsSOTrx=N).",
+      "impactIfOmitted": "Users could select wrong document types."
+    },
+    {
+      "name": "VAL_User_BPartnerContact",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters user/contact to contacts of the selected business partner.",
+      "impactIfOmitted": "Users could select contacts from other business partners."
+    },
+    {
+      "name": "VAL_User_OrgTree",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters company agent to users in the organization hierarchy.",
+      "impactIfOmitted": "Users could select agents outside their org tree."
+    },
+    {
+      "name": "VAL_Project_StatusAndBPartner",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters project to open/ordered projects for the selected business partner.",
+      "impactIfOmitted": "Users could select closed or unrelated projects."
+    },
+    {
+      "name": "VAL_PriceList_IsSOTrx",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters price list to purchase price lists (IsSOTrx=N).",
+      "impactIfOmitted": "Users could select sales price lists for purchase invoices."
+    },
+    {
+      "name": "VAL_PaymentMethod_Account",
+      "type": "validation",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Filters payment method to valid AP payment methods with accounts.",
+      "impactIfOmitted": "Users could select payment methods without AP accounts."
+    },
+    {
+      "name": "VAL_Tax_IsSOTrx_Date",
+      "type": "validation",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "Filters tax selector to purchase taxes valid for the invoice date.",
+      "impactIfOmitted": "Users could select sales taxes or expired taxes."
+    },
+    {
+      "name": "READONLY_Processed_Header",
+      "type": "readOnlyLogic",
+      "entity": "invoice",
+      "decision": "Keep",
+      "description": "Most header fields become read-only when document is processed (Processed=Y). Covers: documentNo, invoiceDate, businessPartner, partnerAddress, currency, paymentTerms, paymentMethod, priceList, transactionDocument.",
+      "impactIfOmitted": "Users could edit fields on confirmed invoices, breaking data integrity."
+    },
+    {
+      "name": "READONLY_Processed_Lines",
+      "type": "readOnlyLogic",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "Line fields become read-only when parent header is processed. Covers: lineNo, product, invoicedQuantity, unitPrice, tax, description.",
+      "impactIfOmitted": "Users could edit lines on confirmed invoices."
+    },
+    {
+      "name": "READONLY_ReversedInvoice_Processed",
+      "type": "readOnlyLogic",
+      "entity": "reversedInvoices",
+      "decision": "Keep",
+      "description": "Reversed invoice reference becomes read-only when document is processed.",
+      "impactIfOmitted": "Users could modify reversal links on processed invoices."
+    },
+    {
+      "name": "DISPLAY_OperativeQty_WhenApplicable",
+      "type": "displayLogic",
+      "entity": "invoiceLine",
+      "decision": "Keep",
+      "description": "Operative quantity and UOM shown only when product has UOM management active.",
+      "impactIfOmitted": "Operative quantity fields always visible."
+    }
+  ]
+}

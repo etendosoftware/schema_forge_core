@@ -77,6 +77,17 @@ const api = {
       "listUrl": "/sws/neo/purchase-invoice/accounting",
       "detailUrl": "/sws/neo/purchase-invoice/accounting/{id}",
       "supportedFilters": []
+    },
+    "reversedInvoices": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
+      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -312,46 +323,11 @@ const api = {
       "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
     },
     {
-      "entity": "accounting",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "Account",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/account"
-    },
-    {
-      "entity": "accounting",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/businessPartner"
-    },
-    {
-      "entity": "accounting",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/product"
-    },
-    {
-      "entity": "accounting",
-      "field": "accountingSchema",
-      "column": "C_AcctSchema_ID",
-      "reference": "AccountingSchema",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/accountingSchema"
-    },
-    {
-      "entity": "accounting",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/currency"
-    },
-    {
-      "entity": "accounting",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "url": "/sws/neo/purchase-invoice/accounting/selectors/period"
+      "entity": "reversedInvoices",
+      "field": "reversedInvoice",
+      "column": "Reversed_C_Invoice_ID",
+      "reference": "Invoice",
+      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
     }
   ],
   "actions": [
