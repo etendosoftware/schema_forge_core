@@ -2,23 +2,23 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
+import OrderLineForm from './OrderLineForm';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
 
 // @sf-generated-start summary:order
 const summary = [
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
-  { key: 'reservationStatus', column: 'SO_Res_Status', type: 'enum', label: 'Reservation Status' },
-  { key: 'quotation', column: 'Quotation_ID', type: 'string', label: 'Quotation' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'status', label: 'Delivery Status' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status', label: 'Invoice Status' },
-  { key: 'cancelledorder', column: 'Cancelledorder_id', type: 'string', label: 'Canceled Order' },
-  { key: 'replacedorder', column: 'Replacedorder_id', type: 'string', label: 'Replaced Order' },
-  { key: 'isCanceled', column: 'Iscancelled', type: 'boolean', label: 'Is Canceled' },
-  { key: 'externalBusinessPartnerReference', column: 'BPartner_ExtRef', type: 'string', label: 'CRM Reference' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'quotation', column: 'Quotation_ID', type: 'string' },
+  { key: 'cancelledorder', column: 'Cancelledorder_id', type: 'string' },
+  { key: 'replacedorder', column: 'Replacedorder_id', type: 'string' },
+  { key: 'isCanceled', column: 'Iscancelled', type: 'boolean' },
+  { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -26,8 +26,7 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:order
 const processes = [
-  { name: 'completeOrder', label: 'Complete Order', style: 'positive', columnName: 'docAction', params: [{"key":"docAction","value":"CO","hidden":true}] },
-  { name: 'voidOrder', label: 'Void Order', style: 'destructive', columnName: 'docAction', params: [{"key":"docAction","value":"VO","hidden":true}] },
+  { name: 'processOrder', label: 'Process Order', style: 'positive' },
 ];
 // @sf-generated-end processes:order
 
@@ -39,29 +38,15 @@ const addLineFields = {
     { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
     { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
-    { key: 'warehouseRule', column: 'M_Warehouse_Rule_ID', type: 'selector', reference: 'WarehouseRule', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea' },
     { key: 'stockReservation', column: 'Create_Reservation', type: 'text' },
-    { key: 'manageReservation', column: 'Manage_Reservation', type: 'text' },
-    { key: 'overdueReturnDays', column: 'Overdue_Return_Days', type: 'number' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
-    { key: 'asset', column: 'A_Asset_ID', type: 'search', reference: 'Asset', inputMode: 'search' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector' },
-    { key: 'explode', column: 'Explode', type: 'text' },
-    { key: 'selectOrderLine', column: 'Relate_Orderline', type: 'text', required: true },
   ],
   derived: [
     { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text' },
     { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number' },
     { key: 'tax', column: 'C_Tax_ID', type: 'search', reference: 'Tax', inputMode: 'search' },
     { key: 'listPrice', column: 'PriceList', type: 'text' },
     { key: 'discount', column: 'Discount', type: 'text' },
-    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
-    { key: 'cancelPriceAdjustment', column: 'CANCELPRICEAD', type: 'checkbox' },
-    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'Costcenter', inputMode: 'selector' },
   ],
 };
 // @sf-generated-end addLineFields:orderLine
@@ -619,15 +604,15 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-order/order/{id}/action/posted"
-    },
-    {
-      "entity": "order",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
+    },
+    {
+      "entity": "order",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-order/order/{id}/action/posted"
     },
     {
       "entity": "order",
@@ -703,17 +688,21 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         detailEntity="orderLine"
         Form={OrderForm}
         DetailTable={OrderLineTable}
+        DetailForm={OrderLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Order"
-        detailLabel="Order Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+        ]}
         {...props}
       />
     );
@@ -726,6 +715,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
       entityLabel="Orders"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

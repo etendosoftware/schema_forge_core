@@ -2,11 +2,11 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:order
 const columns = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'orderDate', column: 'DateOrdered', type: 'date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: 'orderReference', column: 'POReference', type: 'string' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'string' },
-  { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
+  { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
 ];
 // @sf-generated-end columns:order
 
