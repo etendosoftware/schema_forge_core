@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "processes": [
+    {
+      "name": "completeOrder",
+      "displayName": "Complete Order",
+      "entity": "Order",
+      "trigger": {
+        "type": "button",
+        "column": "DocAction",
+        "value": "CO"
+      },
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "equals",
+          "value": "DR",
+          "description": "Order must be in Draft status"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "validateLines",
+          "description": "Verify the order has at least one line",
+          "type": "validate",
+          "target": "OrderLine",
+          "operation": {
+            "type": "validate",
+            "assertion": "order.lines.length > 0",
+            "errorMessage": "Cannot complete an order with no lines",
+            "errorCode": "SO_NO_LINES"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "given": "an order with zero lines",
+            "when": "user clicks Complete",
+            "then": "error SO_NO_LINES is raised"
+          }
+        },
+        {
+          "order": 2,
+          "name": "setDocumentStatus",
+          "description": "Set document status to Completed",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "documentStatus",
+            "value": "CO"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "given": "a valid draft order",
+            "when": "completion succeeds",
+            "then": "documentStatus changes to CO"
+          }
+        },
+        {
+          "order": 3,
+          "name": "setProcessed",
+          "description": "Mark the order as processed",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "processed",
+            "value": true
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "given": "a valid draft order",
+            "when": "completion succeeds",
+            "then": "processed flag is set to true"
+          }
+        }
+      ],
+      "edgeCases": [
+        "Order has no lines: reject with error SO_NO_LINES",
+        "Order is already completed (documentStatus=CO): reject as no-op with warning",
+        "Business partner has credit hold: reject with credit limit exceeded error",
+        "Order total is zero: allow completion but log a warning",
+        "Warehouse on a line is inactive: reject with invalid warehouse error"
+      ],
+      "transactional": true
+    },
+    {
+      "name": "voidOrder",
+      "displayName": "Void Order",
+      "entity": "Order",
+      "trigger": {
+        "type": "button",
+        "column": "DocAction",
+        "value": "VO"
+      },
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "value": ["DR", "CO"],
+          "description": "Order must be in Draft or Completed status to void"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "name": "validateNoShipments",
+          "description": "Verify no goods shipments have been created from this order",
+          "type": "validate",
+          "target": "OrderLine",
+          "operation": {
+            "type": "validate",
+            "assertion": "order.lines.every(l => l.deliveredQuantity === 0)",
+            "errorMessage": "Cannot void an order with delivered shipments",
+            "errorCode": "SO_HAS_SHIPMENTS"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "given": "an order with partially shipped lines",
+            "when": "user clicks Void",
+            "then": "error SO_HAS_SHIPMENTS is raised"
+          }
+        },
+        {
+          "order": 2,
+          "name": "setDocumentStatus",
+          "description": "Set document status to Voided",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "documentStatus",
+            "value": "VO"
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "given": "a valid order with no shipments",
+            "when": "void succeeds",
+            "then": "documentStatus changes to VO"
+          }
+        },
+        {
+          "order": 3,
+          "name": "setProcessed",
+          "description": "Mark the order as processed",
+          "type": "mutation",
+          "target": "Order",
+          "operation": {
+            "type": "mutation",
+            "entity": "Order",
+            "field": "processed",
+            "value": true
+          },
+          "ruleDecision": "keep",
+          "existingClass": null,
+          "behavioral": {
+            "given": "a valid order with no shipments",
+            "when": "void succeeds",
+            "then": "processed flag is set to true"
+          }
+        }
+      ],
+      "edgeCases": [
+        "Order is already voided (documentStatus=VO): reject as no-op with warning",
+        "Order has been partially shipped: reject with error SO_HAS_SHIPMENTS",
+        "Order has linked invoices: reject with error SO_HAS_INVOICES",
+        "Order has active reservations: cancel reservations before voiding",
+        "Order was created from a quotation: update quotation status back to open"
+      ],
+      "transactional": true
+    }
+  ]
+}
