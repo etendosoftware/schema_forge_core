@@ -28,7 +28,7 @@
       "items": [
         { "name": "purchase-order", "label": "Purchase Orders" },
         { "name": "goods-receipt", "label": "Goods Receipt" },
-        { "name": "purchase-invoice", "label": "Invoices" },
+        { "name": "purchase-invoice", "label": "Purchase Invoice" },
         { "name": "return-to-vendor", "label": "Returns" },
         { "name": "return-to-vendor-shipment", "label": "Return Shipments" }
       ]

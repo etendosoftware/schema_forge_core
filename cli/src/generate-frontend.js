@@ -281,8 +281,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     { key: 'invoiceTax',      label: 'Tax',              TableName: 'InvoiceTaxTable',      FormName: 'InvoiceTaxForm' },
     { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
     { key: 'paymentPlan',     label: 'Payment Plan',     TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
-    { key: 'accounting',      label: 'Accounting',       TableName: 'AccountingTable',       FormName: 'AccountingForm' },
-    { key: 'landedCost',      label: 'Landed Cost',      TableName: 'LandedCostTable',       FormName: 'LandedCostForm' },
+    { key: 'accounting',        label: 'Accounting',        TableName: 'AccountingTable',         FormName: 'AccountingForm' },
+    { key: 'landedCost',        label: 'Landed Cost',       TableName: 'LandedCostTable',         FormName: 'LandedCostForm' },
+    { key: 'reversedInvoices',  label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable',   FormName: 'ReversedInvoicesForm' },
   ].filter(t => allEntityNames.includes(t.key));
 
   const secondaryTabsImports = secondaryTabDefs
@@ -346,7 +347,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="${toLabel(headerEntity)}"
-        detailLabel="${toLabel(detailEntity)}"
+        detailLabel="${contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity)}"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}${apiProp}${secondaryTabsProp}
