@@ -33,7 +33,7 @@ export function getProcessesForEntity(contract, entityName) {
  */
 export function getReadOnlyFields(contract, entityName) {
   const entity = contract.frontendContract.entities[entityName];
-  return entity.fields.filter(f => f.form && f.visibility === 'readOnly');
+  return entity.fields.filter(f => f.form && f.visibility === 'readOnly' && !f.grid);
 }
 
 /**
@@ -176,7 +176,13 @@ export function generateFormComponent(entityName, contract) {
       if (f.readOnlyLogic.evaluable === false) {
         readOnlyLogicPart = `, readOnlySource: 'server', readOnlyLogicReason: '${f.readOnlyLogic.reason || 'unknown'}'`;
       } else if (f.readOnlyLogic.js) {
-        readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
+        // Prefix bare variable names with record. so the function accesses field values correctly
+        const jsExpr = f.readOnlyLogic.js.replace(/\b([a-z][a-zA-Z0-9]*)\b(?!\s*[\('])/g, (match) => {
+          // Skip JS keywords and operators
+          const skip = new Set(['true', 'false', 'null', 'undefined', 'Y', 'N', 'RPAE']);
+          return skip.has(match) ? match : `record.${match}`;
+        });
+        readOnlyLogicPart = `, readOnlyLogic: (record) => ${jsExpr}`;
       }
     }
     // Custom slots for callout and onChangeFunction behavioral hints

@@ -1,7 +1,7 @@
 {
   "windowId": "E547CE89D4C04429B6340FFA44E70716",
   "windowName": "payment-in",
-  "extractedAt": "2026-03-18T17:45:08.795Z",
+  "extractedAt": "2026-03-19T11:18:24.396Z",
   "rules": [
     {
       "type": "callout",
@@ -604,22 +604,6 @@
     {
       "type": "displayLogic",
       "source": "AD_Field",
-      "fieldName": "Received (Financial Account)",
-      "column": "Finacc_Txn_Amount",
-      "rawExpression": "@FinancialAccountCurrencyId@!'' & @FinancialAccountCurrencyId@!@C_Currency_Id@",
-      "translated": "financialAccountCurrencyId!='' && financialAccountCurrencyId!=c_Currency_Id"
-    },
-    {
-      "type": "readOnlyLogic",
-      "source": "AD_Column",
-      "fieldName": "Received (Financial Account)",
-      "column": "Finacc_Txn_Amount",
-      "rawExpression": "@NotAllowChangeExchange@='Y' | @Processed@='Y' | @status@='RPAE'",
-      "translated": "notAllowChangeExchange==true || processed==true || status=='RPAE'"
-    },
-    {
-      "type": "displayLogic",
-      "source": "AD_Field",
       "fieldName": "Exchange Rate",
       "column": "Finacc_Txn_Convert_Rate",
       "rawExpression": "@FinancialAccountCurrencyId@!'' & @FinancialAccountCurrencyId@!@C_Currency_Id@",
@@ -632,6 +616,22 @@
       "column": "Finacc_Txn_Convert_Rate",
       "rawExpression": "@NotAllowChangeExchange@='Y' | (@Processed@='Y' & @status@!'RPAE' )",
       "translated": "notAllowChangeExchange==true || (processed==true && status!='RPAE' )"
+    },
+    {
+      "type": "displayLogic",
+      "source": "AD_Field",
+      "fieldName": "Received (Financial Account)",
+      "column": "Finacc_Txn_Amount",
+      "rawExpression": "@FinancialAccountCurrencyId@!'' & @FinancialAccountCurrencyId@!@C_Currency_Id@",
+      "translated": "financialAccountCurrencyId!='' && financialAccountCurrencyId!=c_Currency_Id"
+    },
+    {
+      "type": "readOnlyLogic",
+      "source": "AD_Column",
+      "fieldName": "Received (Financial Account)",
+      "column": "Finacc_Txn_Amount",
+      "rawExpression": "@NotAllowChangeExchange@='Y' | @Processed@='Y' | @status@='RPAE'",
+      "translated": "notAllowChangeExchange==true || processed==true || status=='RPAE'"
     },
     {
       "type": "displayLogic",
@@ -780,16 +780,16 @@
     {
       "type": "readOnlyLogic",
       "source": "AD_Column",
-      "fieldName": "Financial Account Transaction",
-      "column": "aprm_finacc_transaction_v_id",
+      "fieldName": "To Currency",
+      "column": "C_Currency_Id_To",
       "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
     {
       "type": "readOnlyLogic",
       "source": "AD_Column",
-      "fieldName": "To Currency",
-      "column": "C_Currency_Id_To",
+      "fieldName": "Financial Account Transaction",
+      "column": "aprm_finacc_transaction_v_id",
       "rawExpression": "@HASREVERSEDINVOICESO@='Y' | @HASREVERSEDINVOICEPO@='Y' | @Posted@='Y'",
       "translated": "hASREVERSEDINVOICESO==true || hASREVERSEDINVOICEPO==true || posted==true"
     },
