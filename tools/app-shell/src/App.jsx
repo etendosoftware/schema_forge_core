@@ -104,8 +104,13 @@ function AuthGuard({ children }) {
 
 function AppRoutes({ menuGroups, windowMap }) {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  if (menuGroups.length === 0) {
+  // Public routes render without waiting for menu data
+  const publicPaths = ['/login', '/onboarding'];
+  const isPublicRoute = publicPaths.some(p => location.pathname.startsWith(p));
+
+  if (!isPublicRoute && menuGroups.length === 0) {
     return <div className="p-8 text-muted-foreground">Loading...</div>;
   }
 
