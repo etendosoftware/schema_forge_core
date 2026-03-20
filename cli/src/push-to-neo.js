@@ -331,6 +331,7 @@ export async function pushToNeo(windowName, options = {}) {
           name,
           tabName: data.tabName,
           tableName: data.tableName,
+          javaQualifier: data.javaQualifier,
         }))
       : (schemaRawData.entities || []);
     if (contractEntities.length > 0) {

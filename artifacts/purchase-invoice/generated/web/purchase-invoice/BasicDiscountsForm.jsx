@@ -4,7 +4,7 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'lineNo', column: 'Line', type: 'number', required: true, section: 'principal' },
   { key: 'discount', column: 'C_Discount_ID', type: 'selector', required: true, section: 'principal', reference: 'Discount', inputMode: 'selector' },
-  { key: 'cascade', column: 'Cascade', type: 'checkbox', section: 'principal' },
+  { key: 'cascade', column: 'Cascade', type: 'checkbox', required: true, section: 'principal' },
 ];
 // @sf-generated-end fields:basicDiscounts
 

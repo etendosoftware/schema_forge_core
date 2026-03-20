@@ -2,8 +2,8 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:accounting
 const columns = [
-  { key: 'account', column: 'Account_ID', type: 'string' },
   { key: 'accountingDate', column: 'DateAcct', type: 'date' },
+  { key: 'account', column: 'Account_ID', type: 'string' },
   { key: 'debit', column: 'AmtAcctDr', type: 'amount' },
   { key: 'credit', column: 'AmtAcctCr', type: 'amount' },
 ];

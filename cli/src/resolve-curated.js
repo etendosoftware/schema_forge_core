@@ -387,6 +387,11 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
       fields: curatedFields,
     };
 
+    // Propagate javaQualifier from decisions (e.g., FactAcctHandler for Accounting tabs)
+    if (entityDecision.javaQualifier) {
+      entity.javaQualifier = entityDecision.javaQualifier;
+    }
+
     curatedEntities.push(entity);
   }
 

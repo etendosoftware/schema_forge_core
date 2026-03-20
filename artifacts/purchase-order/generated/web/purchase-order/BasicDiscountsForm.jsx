@@ -2,10 +2,10 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:basicDiscounts
 const fields = [
-  { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', required: true, readOnly: true, section: 'other' },
-  { key: 'discount', column: 'C_Discount_ID', type: 'search', label: 'Basic Discount', required: true, readOnly: true, section: 'other', reference: 'Discount' },
-  { key: 'cascade', column: 'Cascade', type: 'checkbox', label: 'Cascade', required: true, readOnly: true, section: 'other' },
-  { key: 'active', column: 'Isactive', type: 'checkbox', label: 'Active', required: true, readOnly: true, section: 'other' },
+  { key: 'lineNo', column: 'Line', type: 'number', required: true, readOnly: true, section: 'other' },
+  { key: 'discount', column: 'C_Discount_ID', type: 'search', required: true, readOnly: true, section: 'other', reference: 'Discount' },
+  { key: 'cascade', column: 'Cascade', type: 'checkbox', required: true, readOnly: true, section: 'other' },
+  { key: 'active', column: 'Isactive', type: 'checkbox', required: true, readOnly: true, section: 'other' },
 ];
 // @sf-generated-end fields:basicDiscounts
 

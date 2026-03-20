@@ -175,7 +175,9 @@ export function generateFrontendContract(schema, rules = []) {
       .filter(f => f.derivation)
       .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
+    const feEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
+    if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
+    entities[entity.name] = feEntity;
   }
 
   // Include layoutType from curated schema; default to "default" when absent
@@ -207,7 +209,9 @@ export function generateBackendContract(schema, rules = [], processes = []) {
       required: f.required,
     }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
+    const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
+    if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
+    entities[entity.name] = beEntity;
 
     const searchableFields = entity.fields
       .filter(f => f.searchable)
