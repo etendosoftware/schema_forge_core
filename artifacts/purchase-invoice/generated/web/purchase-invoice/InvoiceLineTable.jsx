@@ -2,7 +2,12 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:invoiceLine
 const columns = [
-
+  { key: 'lineNo', column: 'Line', type: 'number' },
+  { key: 'product', column: 'M_Product_ID', type: 'string' },
+  { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'amount' },
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string' },
 ];
 // @sf-generated-end columns:invoiceLine
 

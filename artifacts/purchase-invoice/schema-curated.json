@@ -1,0 +1,1558 @@
+{
+  "version": "0.1.0",
+  "window": {
+    "id": "183",
+    "name": "Purchase Invoice",
+    "primaryEntity": "invoice",
+    "category": "purchases"
+  },
+  "entities": [
+    {
+      "name": "invoice",
+      "tableName": "C_Invoice",
+      "tabName": "Header",
+      "fields": [
+        {
+          "name": "documentNo",
+          "column": "DocumentNo",
+          "type": "string",
+          "visibility": "readOnly",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": true
+        },
+        {
+          "name": "transactionDocument",
+          "column": "C_DocTypeTarget_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "DocumentType",
+          "inputMode": "selector"
+        },
+        {
+          "name": "invoiceDate",
+          "column": "DateInvoiced",
+          "type": "date",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": true
+        },
+        {
+          "name": "businessPartner",
+          "column": "C_BPartner_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "inputMode": "search"
+        },
+        {
+          "name": "partnerAddress",
+          "column": "C_BPartner_Location_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        {
+          "name": "currency",
+          "column": "C_Currency_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "Currency",
+          "inputMode": "selector"
+        },
+        {
+          "name": "accountingDate",
+          "column": "DateAcct",
+          "type": "date",
+          "visibility": "editable",
+          "required": true,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "paymentTerms",
+          "column": "C_PaymentTerm_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "PaymentTerm",
+          "inputMode": "selector"
+        },
+        {
+          "name": "paymentMethod",
+          "column": "FIN_Paymentmethod_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "PaymentMethod",
+          "inputMode": "selector"
+        },
+        {
+          "name": "priceList",
+          "column": "M_PriceList_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "PriceList",
+          "inputMode": "selector"
+        },
+        {
+          "name": "orderReference",
+          "column": "POReference",
+          "type": "string",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": true
+        },
+        {
+          "name": "taxDate",
+          "column": "Taxdate",
+          "type": "date",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "description",
+          "column": "Description",
+          "type": "text",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "userContact",
+          "column": "AD_User_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "User",
+          "inputMode": "search"
+        },
+        {
+          "name": "salesRepresentative",
+          "column": "SalesRep_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "User",
+          "inputMode": "search"
+        },
+        {
+          "name": "charge",
+          "column": "C_Charge_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Charge",
+          "inputMode": "selector"
+        },
+        {
+          "name": "chargeAmount",
+          "column": "ChargeAmt",
+          "type": "amount",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "project",
+          "column": "C_Project_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Project",
+          "inputMode": "search"
+        },
+        {
+          "name": "costcenter",
+          "column": "C_Costcenter_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "CostCenter",
+          "inputMode": "selector"
+        },
+        {
+          "name": "asset",
+          "column": "A_Asset_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Asset",
+          "inputMode": "selector"
+        },
+        {
+          "name": "stDimension",
+          "column": "User1_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "UserDimension1",
+          "inputMode": "selector"
+        },
+        {
+          "name": "ndDimension",
+          "column": "User2_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "UserDimension2",
+          "inputMode": "selector"
+        },
+        {
+          "name": "documentStatus",
+          "column": "DocStatus",
+          "type": "string",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": true
+        },
+        {
+          "name": "grandTotalAmount",
+          "column": "GrandTotal",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "summedLineAmount",
+          "column": "TotalLines",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "salesOrder",
+          "column": "C_Order_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Order",
+          "inputMode": "selector"
+        },
+        {
+          "name": "paymentComplete",
+          "column": "Ispaid",
+          "type": "boolean",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "totalPaid",
+          "column": "Totalpaid",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "outstandingAmount",
+          "column": "OutstandingAmt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "dueAmount",
+          "column": "DueAmt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "prepaymentAmount",
+          "column": "Prepaymentamt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "withholdingAmount",
+          "column": "Withholdingamount",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "orderDate",
+          "column": "DateOrdered",
+          "type": "date",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "organization",
+          "column": "AD_Org_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.adOrgId"
+          }
+        },
+        {
+          "name": "documentType",
+          "column": "C_DocType_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "transactionDocument"
+          }
+        },
+        {
+          "name": "salesTransaction",
+          "column": "IsSOTrx",
+          "type": "boolean",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "false"
+          }
+        },
+        {
+          "name": "processed",
+          "column": "Processed",
+          "type": "boolean",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "documentStatus"
+          }
+        },
+        {
+          "name": "invoice",
+          "column": "C_Invoice_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "client",
+          "column": "AD_Client_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.adClientId"
+          }
+        },
+        {
+          "name": "generateTo",
+          "column": "GenerateTo",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "eMAPRMAddpayment",
+          "column": "EM_APRM_Addpayment",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "eMAPRMProcessinvoice",
+          "column": "EM_APRM_Processinvoice",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "documentAction",
+          "column": "DocAction",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "createLinesFromOrder",
+          "column": "Createfromorders",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "createLinesFromShipment",
+          "column": "Createfrominouts",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "copyFrom",
+          "column": "CopyFrom",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "eMETBLKCBulkcompletion",
+          "column": "EM_Etblkc_Bulkcompletion",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "posted",
+          "column": "Posted",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "trxOrganization",
+          "column": "AD_OrgTrx_ID",
+          "type": "foreignKey",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "salesCampaign",
+          "column": "C_Campaign_ID",
+          "type": "foreignKey",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "withholding",
+          "column": "C_Withholding_ID",
+          "type": "foreignKey",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "percentageOverdue",
+          "column": "Percentageoverdue",
+          "type": "integer",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "finalSettlementDate",
+          "column": "Finalsettlement",
+          "type": "date",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "daysSalesOutstanding",
+          "column": "Daysoutstanding",
+          "type": "integer",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "daysTillDue",
+          "column": "DaysTillDue",
+          "type": "integer",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "printDiscount",
+          "column": "IsDiscountPrinted",
+          "type": "boolean",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "processNow",
+          "column": "Processing",
+          "type": "button",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "activity",
+          "column": "C_Activity_ID",
+          "type": "foreignKey",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "lastCalculatedOnDate",
+          "column": "LastCalculatedOnDate",
+          "type": "date",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "now()"
+          }
+        }
+      ]
+    },
+    {
+      "name": "invoiceLine",
+      "tableName": "C_InvoiceLine",
+      "tabName": "Lines",
+      "fields": [
+        {
+          "name": "lineNo",
+          "column": "Line",
+          "type": "integer",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "product",
+          "column": "M_Product_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "Product",
+          "inputMode": "search"
+        },
+        {
+          "name": "account",
+          "column": "Account_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "GLAccount",
+          "inputMode": "search"
+        },
+        {
+          "name": "attributeSetValue",
+          "column": "M_AttributeSetInstance_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "AttributeSetInstance",
+          "inputMode": "selector"
+        },
+        {
+          "name": "operativeQuantity",
+          "column": "Aumqty",
+          "type": "number",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "operativeUOM",
+          "column": "C_Aum",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "UOM",
+          "inputMode": "selector"
+        },
+        {
+          "name": "invoicedQuantity",
+          "column": "QtyInvoiced",
+          "type": "number",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "uOM",
+          "column": "C_UOM_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "UOM",
+          "inputMode": "selector"
+        },
+        {
+          "name": "unitPrice",
+          "column": "PriceActual",
+          "type": "amount",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "listPrice",
+          "column": "PriceList",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "lineNetAmount",
+          "column": "LineNetAmt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "tax",
+          "column": "C_Tax_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "Tax",
+          "inputMode": "selector"
+        },
+        {
+          "name": "taxableAmount",
+          "column": "Taxbaseamt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "description",
+          "column": "Description",
+          "type": "text",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "salesOrderLine",
+          "column": "C_OrderLine_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "OrderLine",
+          "inputMode": "selector"
+        },
+        {
+          "name": "goodsShipmentLine",
+          "column": "M_InOutLine_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "GoodsShipmentLine",
+          "inputMode": "selector"
+        },
+        {
+          "name": "project",
+          "column": "C_Project_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Project",
+          "inputMode": "search"
+        },
+        {
+          "name": "costcenter",
+          "column": "C_Costcenter_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "CostCenter",
+          "inputMode": "selector"
+        },
+        {
+          "name": "asset",
+          "column": "A_Asset_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Asset",
+          "inputMode": "selector"
+        },
+        {
+          "name": "stDimension",
+          "column": "User1_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "UserDimension1",
+          "inputMode": "selector"
+        },
+        {
+          "name": "ndDimension",
+          "column": "User2_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "UserDimension2",
+          "inputMode": "selector"
+        },
+        {
+          "name": "grossUnitPrice",
+          "column": "Gross_Unit_Price",
+          "type": "amount",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "grossAmount",
+          "column": "Line_Gross_Amount",
+          "type": "amount",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "grossListPrice",
+          "column": "Grosspricelist",
+          "type": "amount",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "baseGrossUnitPrice",
+          "column": "grosspricestd",
+          "type": "amount",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "standardPrice",
+          "column": "PriceStd",
+          "type": "amount",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "deferred",
+          "column": "IsDeferred",
+          "type": "boolean",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "deferredPlanType",
+          "column": "DefPlanType",
+          "type": "string",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "periodNumber",
+          "column": "Periodnumber",
+          "type": "integer",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "period",
+          "column": "C_Period_ID",
+          "type": "foreignKey",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "businessPartner",
+          "column": "C_Bpartner_ID",
+          "type": "foreignKey",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "explode",
+          "column": "Explode",
+          "type": "boolean",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "matchLCCosts",
+          "column": "Match_Lccosts",
+          "type": "boolean",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "financialInvoiceLine",
+          "column": "Financial_Invoice_Line",
+          "type": "boolean",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "invoiceLine",
+          "column": "C_InvoiceLine_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "invoice",
+          "column": "C_Invoice_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "invoice.id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "invoiceTax",
+      "tableName": "C_InvoiceTax",
+      "tabName": "Tax",
+      "fields": [
+        {
+          "name": "lineNo",
+          "column": "Line",
+          "type": "integer",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "tax",
+          "column": "C_Tax_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "Tax",
+          "inputMode": "selector"
+        },
+        {
+          "name": "taxableAmount",
+          "column": "TaxBaseAmt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "taxAmount",
+          "column": "TaxAmt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "recalculate",
+          "column": "Recalculate",
+          "type": "boolean",
+          "visibility": "discarded",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false
+        },
+        {
+          "name": "cInvoiceTaxID",
+          "column": "C_InvoiceTax_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "invoice",
+          "column": "C_Invoice_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "invoice.id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "basicDiscounts",
+      "tableName": "C_Invoice_Discount",
+      "tabName": "Basic Discounts",
+      "fields": [
+        {
+          "name": "lineNo",
+          "column": "Line",
+          "type": "integer",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "discount",
+          "column": "C_Discount_ID",
+          "type": "foreignKey",
+          "visibility": "editable",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "Discount",
+          "inputMode": "selector"
+        },
+        {
+          "name": "cascade",
+          "column": "Cascade",
+          "type": "boolean",
+          "visibility": "editable",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "invoiceDiscount",
+          "column": "C_Invoice_Discount_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "invoice",
+          "column": "C_Invoice_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "invoice.id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "paymentPlan",
+      "tableName": "FIN_Payment_Schedule",
+      "tabName": "Payment Plan",
+      "fields": [
+        {
+          "name": "dueDate",
+          "column": "Duedate",
+          "type": "date",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "expectedDate",
+          "column": "ExpectedDate",
+          "type": "date",
+          "visibility": "editable",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "paymentMethod",
+          "column": "Fin_Paymentmethod_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "PaymentMethod",
+          "inputMode": "selector"
+        },
+        {
+          "name": "amount",
+          "column": "Amount",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "paidAmount",
+          "column": "Paidamt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "outstandingAmount",
+          "column": "Outstandingamt",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "currency",
+          "column": "C_Currency_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false,
+          "reference": "Currency",
+          "inputMode": "selector"
+        },
+        {
+          "name": "lastPaymentDate",
+          "column": "LastPaymentDate",
+          "type": "date",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "daysOverdue",
+          "column": "daysOverDue",
+          "type": "integer",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "description",
+          "column": "Description",
+          "type": "text",
+          "visibility": "editable",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "finPaymentScheduleID",
+          "column": "Fin_Payment_Schedule_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "invoice",
+          "column": "C_Invoice_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": false,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "invoice.id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "accounting",
+      "tableName": "Fact_Acct",
+      "tabName": "Accounting",
+      "javaQualifier": "factAcctHandler",
+      "fields": [
+        {
+          "name": "account",
+          "column": "Account_ID",
+          "type": "string",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "accountingDate",
+          "column": "DateAcct",
+          "type": "date",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "postingType",
+          "column": "PostingType",
+          "type": "string",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "debit",
+          "column": "AmtAcctDr",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "credit",
+          "column": "AmtAcctCr",
+          "type": "amount",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": true,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "description",
+          "column": "Description",
+          "type": "text",
+          "visibility": "readOnly",
+          "required": false,
+          "grid": false,
+          "form": true,
+          "searchable": false
+        },
+        {
+          "name": "factAcct",
+          "column": "Fact_Acct_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "recordID",
+          "column": "Record_ID",
+          "type": "string",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "invoice.id"
+          }
+        },
+        {
+          "name": "adTable",
+          "column": "AD_Table_ID",
+          "type": "string",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "'318'"
+          }
+        }
+      ]
+    },
+    {
+      "name": "reversedInvoices",
+      "tableName": "C_Invoice_Reverse",
+      "tabName": "Reversed Invoices",
+      "fields": [
+        {
+          "name": "reversedInvoice",
+          "column": "Reversed_C_Invoice_ID",
+          "type": "foreignKey",
+          "visibility": "readOnly",
+          "required": true,
+          "grid": true,
+          "form": true,
+          "searchable": false,
+          "reference": "Invoice",
+          "inputMode": "search"
+        },
+        {
+          "name": "cInvoiceReverseID",
+          "column": "C_Invoice_Reverse_ID",
+          "type": "id",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "sequence"
+          }
+        },
+        {
+          "name": "invoice",
+          "column": "C_Invoice_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromParent",
+            "source": "invoice.id"
+          }
+        },
+        {
+          "name": "active",
+          "column": "Isactive",
+          "type": "boolean",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "computed",
+            "source": "true"
+          }
+        },
+        {
+          "name": "organization",
+          "column": "AD_Org_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.adOrgId"
+          }
+        },
+        {
+          "name": "client",
+          "column": "AD_Client_ID",
+          "type": "foreignKey",
+          "visibility": "system",
+          "required": true,
+          "grid": false,
+          "form": false,
+          "searchable": false,
+          "derivation": {
+            "type": "fromConfig",
+            "source": "context.adClientId"
+          }
+        }
+      ]
+    }
+  ]
+}

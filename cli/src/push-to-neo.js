@@ -339,8 +339,8 @@ export async function pushToNeo(windowName, options = {}) {
           || (ent.tableName && entityMapByTableName[ent.tableName]);
         if (entityId) {
           await client.query(
-            'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
-            [ent.name, entityId],
+            'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
+            [ent.name, ent.javaQualifier ?? null, entityId],
           );
         }
       }

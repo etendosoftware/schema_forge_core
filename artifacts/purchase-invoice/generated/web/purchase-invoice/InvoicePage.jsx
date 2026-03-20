@@ -2,25 +2,34 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import InvoiceTable from './InvoiceTable';
 import InvoiceForm from './InvoiceForm';
 import InvoiceLineTable from './InvoiceLineTable';
+import InvoiceLineForm from './InvoiceLineForm';
+import InvoiceTaxTable from './InvoiceTaxTable';
+import InvoiceTaxForm from './InvoiceTaxForm';
+import BasicDiscountsTable from './BasicDiscountsTable';
+import BasicDiscountsForm from './BasicDiscountsForm';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
+import AccountingTable from './AccountingTable';
+import AccountingForm from './AccountingForm';
+import ReversedInvoicesTable from './ReversedInvoicesTable';
+import ReversedInvoicesForm from './ReversedInvoicesForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
 // @sf-generated-start summary:invoice
 const summary = [
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'string', label: 'Purchase Order' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
-  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean', label: 'Payment Complete' },
-  { key: 'totalPaid', column: 'Totalpaid', type: 'amount', label: 'Total Paid' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: 'Total Outstanding' },
-  { key: 'dueAmount', column: 'DueAmt', type: 'amount', label: 'Amount Currently Due' },
-  { key: 'daysTillDue', column: 'DaysTillDue', type: 'number', label: 'Days Till Next Due' },
-  { key: 'percentageOverdue', column: 'Percentageoverdue', type: 'number', label: 'Percentage Paid Late' },
-  { key: 'finalSettlementDate', column: 'Finalsettlement', type: 'date', label: 'Paid In Full Date' },
-  { key: 'daysSalesOutstanding', column: 'Daysoutstanding', type: 'number', label: 'Days to Pay in Full' },
-  { key: 'prepaymentamt', column: 'Prepaymentamt', type: 'amount', label: 'Prepayment Amount' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
+  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
+  { key: 'totalPaid', column: 'Totalpaid', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'dueAmount', column: 'DueAmt', type: 'amount' },
+  { key: 'prepaymentAmount', column: 'Prepaymentamt', type: 'amount' },
+  { key: 'withholdingAmount', column: 'Withholdingamount', type: 'amount' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date' },
 ];
 
 const statusField = 'documentStatus';
@@ -36,34 +45,22 @@ const processes = [
 const addLineFields = {
   entry: [
     { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'financialInvoiceLine', column: 'Financial_Invoice_Line', type: 'checkbox', required: true },
-    { key: 'product', column: 'M_Product_ID', type: 'selector', reference: 'Product', inputMode: 'selector' },
-    { key: 'account', column: 'Account_ID', type: 'search', reference: 'Glitem', inputMode: 'search' },
-    { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'text', required: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
+    { key: 'account', column: 'Account_ID', type: 'search', reference: 'GLAccount', inputMode: 'search' },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'selector', reference: 'AttributeSetInstance', inputMode: 'selector' },
+    { key: 'operativeQuantity', column: 'Aumqty', type: 'number' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'selector', reference: 'UOM', inputMode: 'selector' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true },
     { key: 'description', column: 'Description', type: 'textarea' },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
-    { key: 'deferred', column: 'IsDeferred', type: 'checkbox', required: true },
-    { key: 'deferredPlanType', column: 'DefPlanType', type: 'text' },
-    { key: 'periodNumber', column: 'Periodnumber', type: 'number' },
-    { key: 'period', column: 'C_Period_ID', type: 'search', reference: 'Period', inputMode: 'search' },
-    { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', reference: 'BPartner', inputMode: 'search' },
     { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
     { key: 'asset', column: 'A_Asset_ID', type: 'selector', reference: 'Asset', inputMode: 'selector' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector' },
-    { key: 'explode', column: 'Explode', type: 'text' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'UserDimension1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'UserDimension2', inputMode: 'selector' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', reference: 'Tax', inputMode: 'search' },
-    { key: 'listPrice', column: 'PriceList', type: 'text' },
-    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
-    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'Costcenter', inputMode: 'selector' },
-    { key: 'matchLCCosts', column: 'Match_Lccosts', type: 'text' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'CostCenter', inputMode: 'selector' },
   ],
 };
 // @sf-generated-end addLineFields:invoiceLine
@@ -81,7 +78,13 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/invoice",
       "detailUrl": "/sws/neo/purchase-invoice/invoice/{id}",
-      "supportedFilters": []
+      "supportedFilters": [
+        "documentNo",
+        "invoiceDate",
+        "businessPartner",
+        "orderReference",
+        "documentStatus"
+      ]
     },
     "invoiceLine": {
       "get": true,
@@ -92,17 +95,6 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/invoiceLine",
       "detailUrl": "/sws/neo/purchase-invoice/invoiceLine/{id}",
-      "supportedFilters": []
-    },
-    "invoiceLineTax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoiceLineTax",
-      "detailUrl": "/sws/neo/purchase-invoice/invoiceLineTax/{id}",
       "supportedFilters": []
     },
     "invoiceTax": {
@@ -116,192 +108,190 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/invoiceTax/{id}",
       "supportedFilters": []
     },
-    "invoiceDiscount": {
+    "basicDiscounts": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoiceDiscount",
-      "detailUrl": "/sws/neo/purchase-invoice/invoiceDiscount/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
+      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
       "supportedFilters": []
     },
-    "finPaymentSchedule": {
+    "paymentPlan": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/finPaymentSchedule",
-      "detailUrl": "/sws/neo/purchase-invoice/finPaymentSchedule/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/paymentPlan",
+      "detailUrl": "/sws/neo/purchase-invoice/paymentPlan/{id}",
       "supportedFilters": []
     },
-    "finPaymentScheduleDetail": {
+    "accounting": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/finPaymentScheduleDetail",
-      "detailUrl": "/sws/neo/purchase-invoice/finPaymentScheduleDetail/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/accounting",
+      "detailUrl": "/sws/neo/purchase-invoice/accounting/{id}",
       "supportedFilters": []
     },
-    "invoiceReverse": {
+    "reversedInvoices": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoiceReverse",
-      "detailUrl": "/sws/neo/purchase-invoice/invoiceReverse/{id}",
-      "supportedFilters": []
-    },
-    "conversionRateDocument": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/conversionRateDocument",
-      "detailUrl": "/sws/neo/purchase-invoice/conversionRateDocument/{id}",
-      "supportedFilters": []
-    },
-    "factAcct": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/factAcct",
-      "detailUrl": "/sws/neo/purchase-invoice/factAcct/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
+      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
       "supportedFilters": []
     }
   },
   "selectors": [
     {
       "entity": "invoice",
+      "field": "transactionDocument",
+      "column": "C_DocTypeTarget_ID",
+      "reference": "DocumentType",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/transactionDocument"
+    },
+    {
+      "entity": "invoice",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
+      "reference": "BusinessPartner",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/businessPartner"
     },
     {
       "entity": "invoice",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
-      "reference": "BPartner_Location",
-      "inputMode": "dependent",
+      "reference": "BusinessPartnerLocation",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/partnerAddress"
-    },
-    {
-      "entity": "invoice",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/priceList"
-    },
-    {
-      "entity": "invoice",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/paymentTerms"
-    },
-    {
-      "entity": "invoice",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "Paymentmethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/paymentMethod"
-    },
-    {
-      "entity": "invoice",
-      "field": "salesOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/salesOrder"
     },
     {
       "entity": "invoice",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
-      "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/currency"
+    },
+    {
+      "entity": "invoice",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/paymentTerms"
+    },
+    {
+      "entity": "invoice",
+      "field": "paymentMethod",
+      "column": "FIN_Paymentmethod_ID",
+      "reference": "PaymentMethod",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/paymentMethod"
+    },
+    {
+      "entity": "invoice",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/priceList"
+    },
+    {
+      "entity": "invoice",
+      "field": "userContact",
+      "column": "AD_User_ID",
+      "reference": "User",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/userContact"
+    },
+    {
+      "entity": "invoice",
+      "field": "salesRepresentative",
+      "column": "SalesRep_ID",
+      "reference": "User",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/salesRepresentative"
+    },
+    {
+      "entity": "invoice",
+      "field": "charge",
+      "column": "C_Charge_ID",
+      "reference": "Charge",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/charge"
     },
     {
       "entity": "invoice",
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
-      "inputMode": "dependent",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/project"
     },
     {
       "entity": "invoice",
       "field": "costcenter",
       "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
+      "reference": "CostCenter",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/costcenter"
     },
     {
       "entity": "invoice",
-      "field": "salesCampaign",
-      "column": "C_Campaign_ID",
-      "reference": "Campaign",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/salesCampaign"
+      "field": "asset",
+      "column": "A_Asset_ID",
+      "reference": "Asset",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/asset"
     },
     {
       "entity": "invoice",
       "field": "stDimension",
       "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
+      "reference": "UserDimension1",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/stDimension"
     },
     {
       "entity": "invoice",
       "field": "ndDimension",
       "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
+      "reference": "UserDimension2",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/ndDimension"
+    },
+    {
+      "entity": "invoice",
+      "field": "salesOrder",
+      "column": "C_Order_ID",
+      "reference": "Order",
+      "url": "/sws/neo/purchase-invoice/invoice/selectors/salesOrder"
     },
     {
       "entity": "invoiceLine",
       "field": "product",
       "column": "M_Product_ID",
       "reference": "Product",
-      "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/product"
     },
     {
       "entity": "invoiceLine",
       "field": "account",
       "column": "Account_ID",
-      "reference": "Glitem",
-      "inputMode": "search",
+      "reference": "GLAccount",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/account"
+    },
+    {
+      "entity": "invoiceLine",
+      "field": "attributeSetValue",
+      "column": "M_AttributeSetInstance_ID",
+      "reference": "AttributeSetInstance",
+      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/attributeSetValue"
     },
     {
       "entity": "invoiceLine",
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
-      "inputMode": "dependent",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/operativeUOM"
     },
     {
@@ -309,7 +299,6 @@ const api = {
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
-      "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/uOM"
     },
     {
@@ -317,7 +306,6 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/tax"
     },
     {
@@ -325,47 +313,27 @@ const api = {
       "field": "salesOrderLine",
       "column": "C_OrderLine_ID",
       "reference": "OrderLine",
-      "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/salesOrderLine"
     },
     {
       "entity": "invoiceLine",
       "field": "goodsShipmentLine",
       "column": "M_InOutLine_ID",
-      "reference": "InOutLine",
-      "inputMode": "search",
+      "reference": "GoodsShipmentLine",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/goodsShipmentLine"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/period"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "businessPartner",
-      "column": "C_Bpartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/businessPartner"
     },
     {
       "entity": "invoiceLine",
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
-      "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/project"
     },
     {
       "entity": "invoiceLine",
       "field": "costcenter",
       "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
+      "reference": "CostCenter",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/costcenter"
     },
     {
@@ -373,200 +341,56 @@ const api = {
       "field": "asset",
       "column": "A_Asset_ID",
       "reference": "Asset",
-      "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/asset"
     },
     {
       "entity": "invoiceLine",
       "field": "stDimension",
       "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
+      "reference": "UserDimension1",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/stDimension"
     },
     {
       "entity": "invoiceLine",
       "field": "ndDimension",
       "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
+      "reference": "UserDimension2",
       "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/ndDimension"
-    },
-    {
-      "entity": "invoiceLineTax",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoiceLineTax/selectors/tax"
     },
     {
       "entity": "invoiceTax",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/invoiceTax/selectors/tax"
     },
     {
-      "entity": "invoiceDiscount",
+      "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoiceDiscount/selectors/discount"
+      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
     },
     {
-      "entity": "finPaymentSchedule",
-      "field": "finPaymentmethodID",
+      "entity": "paymentPlan",
+      "field": "paymentMethod",
       "column": "Fin_Paymentmethod_ID",
-      "reference": "Paymentmethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/finPaymentSchedule/selectors/finPaymentmethodID"
+      "reference": "PaymentMethod",
+      "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/paymentMethod"
     },
     {
-      "entity": "finPaymentSchedule",
+      "entity": "paymentPlan",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/finPaymentSchedule/selectors/currency"
+      "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
     },
     {
-      "entity": "finPaymentScheduleDetail",
-      "field": "paymentMethod",
-      "column": "Fin_Paymentmethod_ID",
-      "reference": "Paymentmethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/finPaymentScheduleDetail/selectors/paymentMethod"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "account",
-      "column": "Fin_Financial_Account_ID",
-      "reference": "Financial_Account",
-      "inputMode": "dependent",
-      "url": "/sws/neo/purchase-invoice/finPaymentScheduleDetail/selectors/account"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "finPaymentID",
-      "column": "Fin_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/finPaymentScheduleDetail/selectors/finPaymentID"
-    },
-    {
-      "entity": "invoiceReverse",
+      "entity": "reversedInvoices",
       "field": "reversedInvoice",
       "column": "Reversed_C_Invoice_ID",
       "reference": "Invoice",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/invoiceReverse/selectors/reversedInvoice"
-    },
-    {
-      "entity": "conversionRateDocument",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/conversionRateDocument/selectors/currency"
-    },
-    {
-      "entity": "conversionRateDocument",
-      "field": "toCurrency",
-      "column": "C_Currency_Id_To",
-      "reference": "Currency",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/conversionRateDocument/selectors/toCurrency"
-    },
-    {
-      "entity": "factAcct",
-      "field": "accountingSchema",
-      "column": "C_AcctSchema_ID",
-      "reference": "AcctSchema",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/accountingSchema"
-    },
-    {
-      "entity": "factAcct",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/currency"
-    },
-    {
-      "entity": "factAcct",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/period"
-    },
-    {
-      "entity": "factAcct",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "ElementValue",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/account"
-    },
-    {
-      "entity": "factAcct",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/businessPartner"
-    },
-    {
-      "entity": "factAcct",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/product"
-    },
-    {
-      "entity": "factAcct",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/project"
-    },
-    {
-      "entity": "factAcct",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/costcenter"
-    },
-    {
-      "entity": "factAcct",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/asset"
-    },
-    {
-      "entity": "factAcct",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/stDimension"
-    },
-    {
-      "entity": "factAcct",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/factAcct/selectors/ndDimension"
+      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
     }
   ],
   "actions": [
@@ -578,21 +402,15 @@ const api = {
     },
     {
       "entity": "invoice",
-      "field": "aPRMAddpayment",
+      "field": "eMAPRMAddpayment",
       "column": "EM_APRM_Addpayment",
-      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/aPRMAddpayment"
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/eMAPRMAddpayment"
     },
     {
       "entity": "invoice",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/posted"
-    },
-    {
-      "entity": "invoice",
-      "field": "aPRMProcessinvoice",
+      "field": "eMAPRMProcessinvoice",
       "column": "EM_APRM_Processinvoice",
-      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/aPRMProcessinvoice"
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/eMAPRMProcessinvoice"
     },
     {
       "entity": "invoice",
@@ -620,51 +438,21 @@ const api = {
     },
     {
       "entity": "invoice",
-      "field": "calculatePromotions",
-      "column": "Calculate_Promotions",
-      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/calculatePromotions"
+      "field": "eMETBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/eMETBLKCBulkcompletion"
+    },
+    {
+      "entity": "invoice",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/posted"
     },
     {
       "entity": "invoice",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/purchase-invoice/invoice/{id}/action/processNow"
-    },
-    {
-      "entity": "invoice",
-      "field": "createLinesFrom",
-      "column": "CreateFrom",
-      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/createLinesFrom"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "explode",
-      "column": "Explode",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/{id}/action/explode"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "matchLCCosts",
-      "column": "Match_Lccosts",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/{id}/action/matchLCCosts"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "updatePaymentPlan",
-      "column": "Update_Payment_Plan",
-      "url": "/sws/neo/purchase-invoice/finPaymentSchedule/{id}/action/updatePaymentPlan"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "aprmModifPaymentOUTPlan",
-      "column": "EM_Aprm_Modif_Paym_Out_Sched",
-      "url": "/sws/neo/purchase-invoice/finPaymentSchedule/{id}/action/aprmModifPaymentOUTPlan"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "aprmModifPaymentINPlan",
-      "column": "EM_Aprm_Modif_Paym_Sched",
-      "url": "/sws/neo/purchase-invoice/finPaymentSchedule/{id}/action/aprmModifPaymentINPlan"
     }
   ],
   "queryParams": {
@@ -692,17 +480,25 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         detailEntity="invoiceLine"
         Form={InvoiceForm}
         DetailTable={InvoiceLineTable}
+        DetailForm={InvoiceLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Invoice"
-        detailLabel="Invoice Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable, Form: InvoiceTaxForm },
+          { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
+          { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
+        ]}
         {...props}
       />
     );
@@ -715,6 +511,7 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
       entityLabel="Invoices"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

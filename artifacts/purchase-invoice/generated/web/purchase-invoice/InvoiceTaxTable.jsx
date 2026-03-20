@@ -2,7 +2,10 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:invoiceTax
 const columns = [
-
+  { key: 'lineNo', column: 'Line', type: 'number' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string' },
+  { key: 'taxableAmount', column: 'TaxBaseAmt', type: 'amount' },
+  { key: 'taxAmount', column: 'TaxAmt', type: 'amount' },
 ];
 // @sf-generated-end columns:invoiceTax
 

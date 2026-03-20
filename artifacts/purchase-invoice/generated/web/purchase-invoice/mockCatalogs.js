@@ -2,22 +2,169 @@
 
 const catalogs = {};
 
-catalogs['PriceList'] = [
+catalogs['BusinessPartner'] = [
   {
-    "id": "pl-001",
-    "name": "Standard Price List"
+    "id": "bp-001",
+    "name": "Acme Corp"
   },
   {
-    "id": "pl-002",
-    "name": "Wholesale Prices"
+    "id": "bp-002",
+    "name": "TechFlow Inc"
   },
   {
-    "id": "pl-003",
-    "name": "Retail Prices"
+    "id": "bp-003",
+    "name": "Global Trade Ltd"
   },
   {
-    "id": "pl-004",
-    "name": "VIP Pricing"
+    "id": "bp-004",
+    "name": "Summit Industries"
+  },
+  {
+    "id": "bp-005",
+    "name": "Pacific Partners"
+  },
+  {
+    "id": "bp-006",
+    "name": "Alpine Solutions"
+  },
+  {
+    "id": "bp-007",
+    "name": "Meridian Group"
+  },
+  {
+    "id": "bp-008",
+    "name": "Vertex Systems"
+  },
+  {
+    "id": "bp-009",
+    "name": "Atlas Manufacturing"
+  },
+  {
+    "id": "bp-010",
+    "name": "Nova Enterprises"
+  },
+  {
+    "id": "bp-011",
+    "name": "Pinnacle Services"
+  },
+  {
+    "id": "bp-012",
+    "name": "Horizon Labs"
+  },
+  {
+    "id": "bp-013",
+    "name": "Cedar Holdings"
+  },
+  {
+    "id": "bp-014",
+    "name": "Sterling & Co"
+  },
+  {
+    "id": "bp-015",
+    "name": "Quantum Logistics"
+  }
+];
+
+catalogs['BusinessPartnerLocation'] = [
+  {
+    "id": "bploc-001",
+    "name": "HQ - 100 Main St",
+    "businessPartnerId": "bp-001"
+  },
+  {
+    "id": "bploc-002",
+    "name": "Branch - 200 Oak Ave",
+    "businessPartnerId": "bp-001"
+  },
+  {
+    "id": "bploc-003",
+    "name": "Warehouse - 300 Elm Dr",
+    "businessPartnerId": "bp-002"
+  },
+  {
+    "id": "bploc-004",
+    "name": "Office - 50 Pine Rd",
+    "businessPartnerId": "bp-002"
+  },
+  {
+    "id": "bploc-005",
+    "name": "Factory - 400 Maple Ln",
+    "businessPartnerId": "bp-003"
+  },
+  {
+    "id": "bploc-006",
+    "name": "Store - 150 Cedar Blvd",
+    "businessPartnerId": "bp-003"
+  },
+  {
+    "id": "bploc-007",
+    "name": "Depot - 250 Birch Way",
+    "businessPartnerId": "bp-004"
+  },
+  {
+    "id": "bploc-008",
+    "name": "Lab - 75 Spruce Ct",
+    "businessPartnerId": "bp-004"
+  },
+  {
+    "id": "bploc-009",
+    "name": "HQ - 500 Willow St",
+    "businessPartnerId": "bp-005"
+  },
+  {
+    "id": "bploc-010",
+    "name": "Branch - 600 Ash Ave",
+    "businessPartnerId": "bp-005"
+  },
+  {
+    "id": "bploc-011",
+    "name": "Office - 10 Palm Dr",
+    "businessPartnerId": "bp-006"
+  },
+  {
+    "id": "bploc-012",
+    "name": "Store - 20 Ivy Rd",
+    "businessPartnerId": "bp-006"
+  },
+  {
+    "id": "bploc-013",
+    "name": "Depot - 30 Fern Ln",
+    "businessPartnerId": "bp-007"
+  },
+  {
+    "id": "bploc-014",
+    "name": "Lab - 40 Sage Blvd",
+    "businessPartnerId": "bp-007"
+  },
+  {
+    "id": "bploc-015",
+    "name": "HQ - 55 Rose Way",
+    "businessPartnerId": "bp-008"
+  },
+  {
+    "id": "bploc-016",
+    "name": "Branch - 65 Lily Ct",
+    "businessPartnerId": "bp-008"
+  },
+  {
+    "id": "bploc-017",
+    "name": "Office - 70 Daisy St",
+    "businessPartnerId": "bp-009"
+  },
+  {
+    "id": "bploc-018",
+    "name": "Store - 80 Tulip Ave",
+    "businessPartnerId": "bp-009"
+  },
+  {
+    "id": "bploc-019",
+    "name": "Depot - 90 Orchid Dr",
+    "businessPartnerId": "bp-010"
+  },
+  {
+    "id": "bploc-020",
+    "name": "Lab - 95 Violet Rd",
+    "businessPartnerId": "bp-010"
   }
 ];
 
@@ -41,6 +188,79 @@ catalogs['PaymentTerm'] = [
   {
     "id": "pt-005",
     "name": "2/10 Net 30"
+  }
+];
+
+catalogs['PaymentMethod'] = [
+  {
+    "id": "pm-001",
+    "name": "Wire Transfer"
+  },
+  {
+    "id": "pm-002",
+    "name": "Credit Card"
+  },
+  {
+    "id": "pm-003",
+    "name": "Check"
+  },
+  {
+    "id": "pm-004",
+    "name": "Cash"
+  }
+];
+
+catalogs['PriceList'] = [
+  {
+    "id": "pl-001",
+    "name": "Standard Price List"
+  },
+  {
+    "id": "pl-002",
+    "name": "Wholesale Prices"
+  },
+  {
+    "id": "pl-003",
+    "name": "Retail Prices"
+  },
+  {
+    "id": "pl-004",
+    "name": "VIP Pricing"
+  }
+];
+
+catalogs['User'] = [
+  {
+    "id": "user-001",
+    "name": "Alice Johnson"
+  },
+  {
+    "id": "user-002",
+    "name": "Bob Smith"
+  },
+  {
+    "id": "user-003",
+    "name": "Carol Williams"
+  },
+  {
+    "id": "user-004",
+    "name": "David Brown"
+  },
+  {
+    "id": "user-005",
+    "name": "Eva Martinez"
+  },
+  {
+    "id": "user-006",
+    "name": "Frank Lee"
+  },
+  {
+    "id": "user-007",
+    "name": "Grace Kim"
+  },
+  {
+    "id": "user-008",
+    "name": "Henry Davis"
   }
 ];
 
