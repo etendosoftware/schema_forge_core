@@ -142,6 +142,26 @@ export default function OnboardingPage() {
           const msg = JSON.parse(line);
           if (msg.result || msg.status === 'success') {
             setResult(msg);
+            if (msg.status === 'success') {
+              // Auto-login with the created credentials
+              try {
+                const loginRes = await fetch('/sws/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username: form.adminUser, password: form.adminPassword }),
+                });
+                if (loginRes.ok) {
+                  const loginData = await loginRes.json();
+                  if (loginData.token) {
+                    localStorage.setItem('token', loginData.token);
+                    window.location.href = '/';
+                    return;
+                  }
+                }
+              } catch (loginErr) {
+                console.error('Auto-login failed:', loginErr);
+              }
+            }
           } else if (msg.step) {
             setSteps(prev => prev.map((s, i) =>
               i === msg.step - 1
@@ -158,33 +178,6 @@ export default function OnboardingPage() {
     }
   }, [form, token]);
 
-  // Auto-login after successful creation
-  useEffect(() => {
-    if (result && result.status === 'success') {
-      (async () => {
-        try {
-          const res = await fetch('/sws/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: form.adminUser, password: form.adminPassword }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.token) {
-              localStorage.setItem('token', data.token);
-              navigate('/');
-              return;
-            }
-          }
-        } catch (err) {
-          console.error('Auto-login failed', err);
-        }
-        // If auto-login fails, go to environments list
-        loadEnvironments();
-        setView('list');
-      })();
-    }
-  }, [result, form, navigate, loadEnvironments]);
 
   const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }));
   const isFormValid = form.clientName && form.orgName && form.adminUser && form.adminPassword;
