@@ -57,7 +57,7 @@ export default function OnboardingPage() {
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || import.meta.env.VITE_SYSTEM_TOKEN;
 
   // Load environments
   const loadEnvironments = useCallback(async () => {
