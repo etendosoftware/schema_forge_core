@@ -8,29 +8,50 @@ import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { formatAmount } from '@/lib/formatAmount.js';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
  * Text input with filtered dropdown — lightweight alternative to full SearchInput.
  */
-function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef }) {
+function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, token }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [serverResults, setServerResults] = useState(null);
   const displayValue = options.find(o => o.id === value);
 
+  // Server-side search with debounce
+  const fetchTimer = useRef(null);
+  const fetchServerResults = useCallback((q) => {
+    if (!selectorUrl || !token || !q.trim()) { setServerResults(null); return; }
+    clearTimeout(fetchTimer.current);
+    fetchTimer.current = setTimeout(() => {
+      fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.items) setServerResults(data.items.map(it => ({ id: it.id, name: it.label || it.name, ...it })));
+        })
+        .catch(() => {});
+    }, 300);
+  }, [selectorUrl, token]);
+
   const filtered = useMemo(() => {
+    if (serverResults) return serverResults.slice(0, 20);
     if (!query) return options.slice(0, 15);
     const q = query.toLowerCase();
     return options.filter(o => {
       const name = o.name || o.label || o._identifier || '';
       return name.toLowerCase().includes(q);
     }).slice(0, 15);
-  }, [query, options]);
+  }, [query, options, serverResults]);
 
   const handleSelect = (opt) => {
     setQuery(opt.name || opt.label || opt._identifier || '');
     onChange(opt.id, opt.name || opt.label || opt._identifier || '', opt);
     setOpen(false);
+    setServerResults(null);
   };
 
   // Sync display when value is set externally
@@ -49,6 +70,8 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
+          setServerResults(null);
+          fetchServerResults(e.target.value);
           // Clear ID when typing (user is searching, not committed yet)
           if (value) onChange('', '');
         }}
@@ -69,7 +92,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
       />
       <ChevronDown className="absolute right-1.5 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
       {open && filtered.length > 0 && (
-        <div className="absolute z-50 top-full left-0 mt-0.5 bg-white border rounded-md shadow-lg max-h-40 overflow-auto min-w-[200px] w-max">
+        <div className="absolute z-50 bottom-full left-0 mb-0.5 bg-white border rounded-md shadow-lg max-h-40 overflow-auto min-w-[200px] w-max">
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -84,17 +107,6 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
       )}
     </div>
   );
-}
-
-/**
- * Format a number as currency with $ prefix and locale-aware separators.
- * e.g. 324000 → "$324.000,00"
- */
-function formatCurrency(value) {
-  if (value == null || value === '') return '\u2014';
-  const num = Number(value);
-  if (isNaN(num)) return value;
-  return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**
@@ -161,7 +173,7 @@ function EmptyState({ hasFilter, totalCount }) {
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity }) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -285,8 +297,9 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (isFirst) firstInputAssigned = true;
 
         // Search fields render as compact combobox (text input + filtered dropdown)
-        if (field.type === 'search' && catalogs?.[field.reference]) {
-          const options = catalogs[field.reference] || [];
+        if (field.type === 'search') {
+          const options = catalogs?.[field.reference] || [];
+          const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
           return (
             <TableCell key={col.key} className="py-1 px-2">
               <InlineSearchCombo
@@ -300,6 +313,8 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                   handleFieldChange(field.key, id, selectedItem);
                 }}
                 onKeyDown={handleKeyDown}
+                selectorUrl={selectorUrl}
+                token={token}
               />
             </TableCell>
           );
@@ -367,7 +382,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -443,7 +458,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'amount') {
-      return <span className="tabular-nums">{formatCurrency(row[col.key])}</span>;
+      return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
     }
     // Truncate long display values
     const val = display;
@@ -533,16 +548,23 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
             ) : (
               filteredData.map((row, idx) => {
                 const isChecked = selectedRows.has(row.id);
+                const isSelectedLine = row.id === selectedRowId;
                 return (
                   <TableRow
                     key={row.id ?? idx}
                     data-testid={`row-${row.id ?? idx}`}
-                    onClick={() => onNavigate ? onNavigate(row) : onRowSelect?.(row)}
+                    onClick={() => {
+                      if (onRowClick) onRowClick(row);
+                      else if (onNavigate) onNavigate(row);
+                      else onRowSelect?.(row);
+                    }}
                     className={[
-                      'cursor-pointer transition-colors h-12',
+                      'transition-colors h-12',
+                      onRowClick ? 'cursor-pointer' : 'cursor-pointer',
                       isChecked ? 'bg-primary/5' : '',
                       row.id === selectedId ? 'bg-primary/10' : '',
-                      'hover:bg-muted/50',
+                      isSelectedLine ? 'bg-zinc-700 text-white' : '',
+                      !isSelectedLine ? 'hover:bg-muted/50' : 'hover:bg-zinc-600',
                     ].filter(Boolean).join(' ')}
                   >
                     {selectable && (
@@ -575,6 +597,9 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
                 selectable={selectable}
+                token={token}
+                apiBaseUrl={apiBaseUrl}
+                entity={entity}
               />
             )}
           </TableBody>
@@ -585,7 +610,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 {columns.map((col, idx) => (
                   <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}>
                     {col.type === 'amount'
-                      ? formatCurrency(totals[col.key])
+                      ? formatAmount(totals[col.key], filteredData[0]?.['currency$_identifier'])
                       : ''}
                   </TableCell>
                 ))}

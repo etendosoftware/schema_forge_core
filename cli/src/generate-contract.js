@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
+import { autoSimplifyEntityName } from './resolve-curated.js';
 
 const TS_TYPE_MAP = {
   string: 'string',
@@ -111,6 +112,8 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.isFilterable) mapped.isFilterable = true;
       if (f.precision) mapped.precision = f.precision;
       if (f.isTranslated) mapped.isTranslated = true;
+      if (f.section) mapped.section = f.section;
+      if (f.statusBar) mapped.statusBar = true;
 
       // Behavioral metadata: callout
       if (f.callout) {
@@ -172,7 +175,9 @@ export function generateFrontendContract(schema, rules = []) {
       .filter(f => f.derivation)
       .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
+    const feEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
+    if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
+    entities[entity.name] = feEntity;
   }
 
   // Include layoutType from curated schema; default to "default" when absent
@@ -204,7 +209,9 @@ export function generateBackendContract(schema, rules = [], processes = []) {
       required: f.required,
     }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
+    const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
+    if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
+    entities[entity.name] = beEntity;
 
     const searchableFields = entity.fields
       .filter(f => f.searchable)
@@ -221,14 +228,31 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     );
   }
 
-  const processEndpoints = processes.map(p => ({
-    name: p.name,
-    method: 'POST',
-    path: `/process/${p.name}`,
-    entity: p.entity,
-    preconditions: p.preconditions ?? [],
-    steps: p.steps?.length ?? 0,
-  }));
+  // Build a set of known curated entity names for validation
+  const curatedEntityNames = new Set(schema.entities.map(e => e.name));
+
+  const processEndpoints = processes.map(p => {
+    const columnName = p.trigger?.field ?? null;
+    const params = p.params ?? (p.trigger
+      ? [{ key: p.trigger.field, value: p.trigger.value, hidden: true }]
+      : []);
+    // Map process entity name (raw OBDal name like "cOrder") to the curated
+    // entity name used by the frontend (e.g. "order") so that
+    // getProcessesForEntity() can match them correctly.
+    const curatedEntity = curatedEntityNames.has(p.entity)
+      ? p.entity
+      : autoSimplifyEntityName(p.entity);
+    return {
+      name: p.name,
+      method: 'POST',
+      path: columnName ? `/${curatedEntity}/:id/action/${columnName}` : `/process/${p.name}`,
+      entity: curatedEntity,
+      columnName,
+      params,
+      preconditions: p.preconditions ?? [],
+      steps: p.steps?.length ?? 0,
+    };
+  });
 
   return { window: schema.window, entities, endpoints, processEndpoints };
 }
@@ -497,6 +521,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
             field: field.name,
             column: field.column,
             reference: field.reference,
+            inputMode: field.inputMode,
             url: `${baseUrl}/${entityName}/selectors/${field.name}`,
           });
         }

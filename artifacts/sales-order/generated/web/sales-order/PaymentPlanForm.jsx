@@ -2,14 +2,14 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:paymentPlan
 const fields = [
-  { key: 'dueDate', column: 'Duedate', type: 'date', readOnly: true },
-  { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'search', required: true, readOnly: true, reference: 'PaymentMethod', inputMode: 'search' },
-  { key: 'expectedAmount', column: 'Expected', type: 'number', required: true, readOnly: true },
-  { key: 'received', column: 'Received', type: 'number', required: true, readOnly: true },
-  { key: 'outstanding', column: 'Outstanding', type: 'number', required: true, readOnly: true },
-  { key: 'lastPaymentDate', column: 'Lastpayment', type: 'date', readOnly: true },
-  { key: 'numberOfPayments', column: 'Numberofpayments', type: 'number', readOnly: true },
-  { key: 'currency', column: 'C_Currency_ID', type: 'search', required: true, readOnly: true, reference: 'Currency', inputMode: 'search' },
+  { key: 'dueDate', column: 'Duedate', type: 'date', label: 'Due Date', readOnly: true, section: 'other' },
+  { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'search', label: 'Payment Method', required: true, readOnly: true, section: 'other', reference: 'PaymentMethod', inputMode: 'search' },
+  { key: 'expectedAmount', column: 'Expected', type: 'number', label: 'Expected Amount', required: true, readOnly: true, section: 'other' },
+  { key: 'received', column: 'Received', type: 'number', label: 'Received', required: true, readOnly: true, section: 'other' },
+  { key: 'outstanding', column: 'Outstanding', type: 'number', label: 'Outstanding', required: true, readOnly: true, section: 'other' },
+  { key: 'lastPayment', column: 'Lastpayment', type: 'date', label: 'Last Payment Date', section: 'principal' },
+  { key: 'numberOfPayments', column: 'Numberofpayments', type: 'number', label: 'Number of Payments', readOnly: true, section: 'other' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'search', label: 'Currency', required: true, readOnly: true, section: 'other', reference: 'Currency', inputMode: 'search' },
 ];
 // @sf-generated-end fields:paymentPlan
 

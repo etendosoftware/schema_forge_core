@@ -1,0 +1,150 @@
+{
+  "$schema": "decisions-v1",
+  "window": {
+    "category": "sales",
+    "name": "Goods Shipment"
+  },
+  "entities": {
+    "mInOut": {
+      "name": "goodsShipment",
+      "fields": {
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "readOnlyLogic": null
+        },
+        "partnerAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
+          "readOnlyLogic": null
+        },
+        "movementDate": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "accountingDate": {
+          "readOnlyLogic": null
+        },
+        "warehouse": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "orderReference": {
+          "searchable": true
+        },
+        "active": {
+          "visibility": "discarded",
+          "form": true,
+          "name": "isActive"
+        },
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "documentStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true
+        },
+        "client": {
+          "name": "adClientId"
+        },
+        "organization": {
+          "name": "adOrgId"
+        },
+        "salesTransaction": {
+          "name": "isSotrx"
+        },
+        "documentType": {
+          "name": "cDocTypeId"
+        },
+        "created": {
+          "visibility": "system"
+        },
+        "updated": {
+          "visibility": "system"
+        },
+        "deliveryLocation": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "project": {
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        }
+      }
+    },
+    "mInOutLine": {
+      "name": "goodsShipmentLine",
+      "fields": {
+        "product": {
+          "grid": true,
+          "searchable": true,
+          "readOnlyLogic": null
+        },
+        "movementQuantity": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "storageBin": {
+          "grid": true,
+          "readOnlyLogic": null,
+          "dependsOn": {
+            "field": "warehouse",
+            "filterKey": "M_Warehouse_ID"
+          }
+        },
+        "lineNo": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "uOM": {
+          "grid": true,
+          "readOnlyLogic": null
+        },
+        "client": {
+          "name": "adClientId"
+        },
+        "organization": {
+          "name": "adOrgId"
+        },
+        "shipmentReceipt": {
+          "name": "mInoutId"
+        },
+        "movementDate": {
+          "visibility": "system"
+        },
+        "cBpartnerId": {
+          "visibility": "system"
+        },
+        "warehouse": {
+          "visibility": "system"
+        },
+        "operativeUOM": {
+          "dependsOn": {
+            "field": "product",
+            "filterKey": "M_Product_ID"
+          }
+        }
+      }
+    },
+    "factAcct": {
+      "exclude": true
+    }
+  },
+  "rules": {},
+  "discardPatterns": []
+}

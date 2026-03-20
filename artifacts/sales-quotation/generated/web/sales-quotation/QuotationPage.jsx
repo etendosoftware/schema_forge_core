@@ -8,8 +8,8 @@ const breadcrumb = 'Sales / Sales Quotation';
 
 // @sf-generated-start summary:quotation
 const summary = [
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
 ];
 
 const statusField = 'documentStatus';
@@ -24,15 +24,24 @@ const processes = [
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+    { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
     { key: 'description', column: 'Description', type: 'textarea' },
-    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'number' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
+    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
-    { key: 'discount', column: 'Discount', type: 'number' },
+    { key: 'listPrice', column: 'PriceList', type: 'text' },
+    { key: 'discount', column: 'Discount', type: 'text' },
+    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
   ],
 };
 // @sf-generated-end addLineFields:quotationLine
@@ -51,10 +60,9 @@ const api = {
       "listUrl": "/sws/neo/sales-quotation/quotation",
       "detailUrl": "/sws/neo/sales-quotation/quotation/{id}",
       "supportedFilters": [
-        "businessPartner",
-        "orderDate",
-        "scheduledDeliveryDate",
         "documentNo",
+        "orderDate",
+        "businessPartner",
         "documentStatus"
       ]
     },
@@ -78,6 +86,7 @@ const api = {
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner"
     },
     {
@@ -85,6 +94,7 @@ const api = {
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
       "url": "/sws/neo/sales-quotation/quotation/selectors/partnerAddress"
     },
     {
@@ -92,59 +102,248 @@ const api = {
       "field": "priceList",
       "column": "M_PriceList_ID",
       "reference": "PriceList",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
-    },
-    {
-      "entity": "quotation",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
     },
     {
       "entity": "quotation",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
     },
     {
       "entity": "quotation",
-      "field": "invoiceAddress",
-      "column": "BillTo_ID",
-      "reference": "BusinessPartnerLocation",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
+    },
+    {
+      "entity": "quotation",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/warehouse"
+    },
+    {
+      "entity": "quotation",
+      "field": "rejectReason",
+      "column": "C_Reject_Reason_ID",
+      "reference": "Reject_Reason",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
+    },
+    {
+      "entity": "quotation",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
     },
     {
       "entity": "quotation",
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "User",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
+    },
+    {
+      "entity": "quotation",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "dependent",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/project"
     },
     {
       "entity": "quotationLine",
       "field": "product",
       "column": "M_Product_ID",
       "reference": "Product",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/product"
     },
     {
       "entity": "quotationLine",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
+      "field": "operativeUOM",
+      "column": "C_Aum",
+      "reference": "UOM",
+      "inputMode": "dependent",
+      "url": "/sws/neo/sales-quotation/quotationLine/selectors/operativeUOM"
     },
     {
       "entity": "quotationLine",
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/uOM"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-quotation/quotationLine/selectors/project"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotationLine/selectors/stDimension"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotationLine/selectors/ndDimension"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "entity": "quotation",
+      "field": "rMPickFromShipment",
+      "column": "RM_PickFromShipment",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickFromShipment"
+    },
+    {
+      "entity": "quotation",
+      "field": "rMReceiveMaterials",
+      "column": "RM_ReceiveMaterials",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMReceiveMaterials"
+    },
+    {
+      "entity": "quotation",
+      "field": "rMCreateInvoice",
+      "column": "RM_CreateInvoice",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMCreateInvoice"
+    },
+    {
+      "entity": "quotation",
+      "field": "copyFrom",
+      "column": "CopyFrom",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/copyFrom"
+    },
+    {
+      "entity": "quotation",
+      "field": "copyFromPO",
+      "column": "CopyFromPO",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/copyFromPO"
+    },
+    {
+      "entity": "quotation",
+      "field": "documentAction",
+      "column": "DocAction",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/documentAction"
+    },
+    {
+      "entity": "quotation",
+      "field": "createOrder",
+      "column": "Convertquotation",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/createOrder"
+    },
+    {
+      "entity": "quotation",
+      "field": "calculatePromotions",
+      "column": "Calculate_Promotions",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/calculatePromotions"
+    },
+    {
+      "entity": "quotation",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted"
+    },
+    {
+      "entity": "quotation",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate"
+    },
+    {
+      "entity": "quotation",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow"
+    },
+    {
+      "entity": "quotation",
+      "field": "cancelandreplace",
+      "column": "Cancelandreplace",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/cancelandreplace"
+    },
+    {
+      "entity": "quotation",
+      "field": "confirmcancelandreplace",
+      "column": "Confirmcancelandreplace",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/confirmcancelandreplace"
+    },
+    {
+      "entity": "quotation",
+      "field": "createPOLines",
+      "column": "Create_POLines",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/createPOLines"
+    },
+    {
+      "entity": "quotation",
+      "field": "aPRMAddPayment",
+      "column": "EM_APRM_AddPayment",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/aPRMAddPayment"
+    },
+    {
+      "entity": "quotation",
+      "field": "rMAddOrphanLine",
+      "column": "RM_AddOrphanLine",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMAddOrphanLine"
+    },
+    {
+      "entity": "quotation",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickfromreceipt"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "explode",
+      "column": "Explode",
+      "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/explode"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "managePrereservation",
+      "column": "Manage_Prereservation",
+      "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/managePrereservation"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "manageReservation",
+      "column": "Manage_Reservation",
+      "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/manageReservation"
+    },
+    {
+      "entity": "quotationLine",
+      "field": "selectOrderLine",
+      "column": "Relate_Orderline",
+      "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/selectOrderLine"
+    }
+  ],
   "queryParams": {
     "pagination": {
       "startRow": "_startRow",

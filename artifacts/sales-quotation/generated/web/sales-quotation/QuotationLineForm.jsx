@@ -2,15 +2,37 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:quotationLine
 const fields = [
-  { key: 'product', column: 'M_Product_ID', type: 'search', required: true, section: 'principal', reference: 'Product', inputMode: 'search' },
-  { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, section: 'principal' },
-  { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, section: 'principal' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, section: 'principal', reference: 'Tax', inputMode: 'selector' },
-  { key: 'discount', column: 'Discount', type: 'number', section: 'other' },
-  { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
-  { key: 'lineNo', column: 'Line', type: 'number', required: true, section: 'other' },
-  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', readOnly: true, section: 'other' },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', readOnly: true, section: 'other', reference: 'UOM', inputMode: 'selector' },
+  { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', required: true, section: 'principal' },
+  // @sf-custom-slot callout:SL_Order_Product
+  { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', required: true, section: 'principal', reference: 'Product', inputMode: 'search' },
+  // @sf-custom-slot callout:OperativeQuantity_To_BaseQuantity
+  { key: 'operativeQuantity', column: 'Aumqty', type: 'text', label: 'Operative Quantity', section: 'principal' },
+  // @sf-custom-slot callout:OperativeQuantity_To_BaseQuantity
+  { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', label: 'Alternative UOM', section: 'principal', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', label: 'Ordered Quantity', required: true, section: 'other' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value', section: 'other' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM', required: true, readOnly: true, section: 'other', reference: 'UOM', inputMode: 'selector' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'unitPrice', column: 'PriceActual', type: 'text', label: 'Net Unit Price', required: true, section: 'other' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text', label: 'Gross Unit Price', section: 'other' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', label: 'Line Net Amount', required: true, readOnly: true, section: 'other' },
+  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'number', label: 'Line Gross Amount', readOnly: true, section: 'other' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', required: true, section: 'other', reference: 'Tax', inputMode: 'selector' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'listPrice', column: 'PriceList', type: 'text', label: 'Net List Price', required: true, section: 'other' },
+  { key: 'grossListPrice', column: 'GrossPriceList', type: 'text', label: 'Gross List Price', readOnly: true, section: 'other' },
+  // @sf-custom-slot callout:SL_Order_Amt
+  { key: 'discount', column: 'Discount', type: 'text', label: 'Discount', section: 'other' },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'other' },
+  { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number', label: 'Alternate Taxable Amount', section: 'other' },
+  { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'other', reference: 'Project', inputMode: 'search', visible: null, visibilitySource: 'server', displayLogicReason: 'server-macro' },
+  { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', section: 'other', reference: 'User1', inputMode: 'selector', visible: null, visibilitySource: 'server', displayLogicReason: 'server-macro' },
+  { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', section: 'other', reference: 'User2', inputMode: 'selector', visible: null, visibilitySource: 'server', displayLogicReason: 'server-macro' },
 ];
 // @sf-generated-end fields:quotationLine
 
