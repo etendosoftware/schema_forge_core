@@ -541,6 +541,18 @@ e2e/
 BASE_URL=http://localhost:8080/etendo/web/com.etendoerp.go make test-e2e
 ```
 
+## Worked Windows
+
+A window is considered **"worked"** (i.e., has human curation applied) if it has either:
+- `artifacts/{window}/decisions.json` (current format), OR
+- `artifacts/{window}/schema-curated.json` (legacy format — **must be migrated** to decisions before running the pipeline)
+
+Windows without either file only have raw extraction — no human decisions have been applied.
+
+**Migration:** Legacy curated files should be migrated to `decisions.json` via `node cli/src/migrate-to-decisions.js --window <name>`. The migration requires `schema-raw.json` and `rules-raw.json` (extracted from DB). After migration, the curated files become redundant — the pipeline uses `raw + decisions → curated in memory` via `resolve-curated.js`.
+
+To list all worked windows: `ls artifacts/*/decisions.json artifacts/*/schema-curated.json 2>/dev/null`
+
 ## Project Management
 
 All project management is handled in **GitHub** (repo: `etendosoftware/etendo_schema_forge`).
