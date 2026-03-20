@@ -110,7 +110,7 @@ export default function OnboardingPage() {
 
     let response;
     try {
-      response = await fetch('/sws/neo/onboarding', {
+      response = await fetch('/sws/go/onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
