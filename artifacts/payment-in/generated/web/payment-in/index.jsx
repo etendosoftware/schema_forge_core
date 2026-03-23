@@ -16,6 +16,7 @@ const api = {
       "listUrl": "/sws/neo/payment-in/finPayment",
       "detailUrl": "/sws/neo/payment-in/finPayment/{id}",
       "supportedFilters": [
+        "documentNo",
         "referenceNo",
         "paymentDate",
         "businessPartner",
@@ -23,17 +24,7 @@ const api = {
         "paymentMethod",
         "amount",
         "account",
-        "currency",
-        "financialTransactionAmount",
-        "financialTransactionConvertRate",
-        "aPRMAddScheduledpayments",
-        "aPRMProcessPayment",
-        "aprmExecutepayment",
-        "reversedPayment",
-        "project",
-        "costCenter",
-        "stDimension",
-        "ndDimension"
+        "currency"
       ]
     },
     "finPaymentScheduleDetail": {
@@ -88,37 +79,6 @@ const api = {
       "reference": "Payment Selector",
       "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/reversedPayment"
-    },
-    {
-      "entity": "finPayment",
-      "field": "project",
-      "column": "C_Project_ID",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/project"
-    },
-    {
-      "entity": "finPayment",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Cost Center Selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/costCenter"
-    },
-    {
-      "entity": "finPayment",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User Dimension 1",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/stDimension"
-    },
-    {
-      "entity": "finPayment",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User Dimension 2",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/ndDimension"
     },
     {
       "entity": "finPaymentScheduleDetail",

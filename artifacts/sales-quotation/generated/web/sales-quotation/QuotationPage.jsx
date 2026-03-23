@@ -2,14 +2,17 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
+import QuotationLineForm from './QuotationLineForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
 // @sf-generated-start summary:quotation
 const summary = [
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -17,7 +20,7 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:quotation
 const processes = [
-
+  { name: 'Process Quotation', label: 'Process  Quotation', style: 'positive' },
 ];
 // @sf-generated-end processes:quotation
 
@@ -26,22 +29,13 @@ const addLineFields = {
   entry: [
     { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-    { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
     { key: 'description', column: 'Description', type: 'textarea' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector' },
   ],
   derived: [
     { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
-    { key: 'listPrice', column: 'PriceList', type: 'text' },
     { key: 'discount', column: 'Discount', type: 'text' },
-    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
   ],
 };
 // @sf-generated-end addLineFields:quotationLine
@@ -63,6 +57,7 @@ const api = {
         "documentNo",
         "orderDate",
         "businessPartner",
+        "validUntil",
         "documentStatus"
       ]
     },
@@ -102,7 +97,7 @@ const api = {
       "field": "priceList",
       "column": "M_PriceList_ID",
       "reference": "PriceList",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
     },
     {
@@ -110,7 +105,7 @@ const api = {
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
     },
     {
@@ -118,29 +113,15 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
-    },
-    {
-      "entity": "quotation",
-      "field": "warehouse",
-      "column": "M_Warehouse_ID",
-      "reference": "Warehouse",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/warehouse"
-    },
-    {
-      "entity": "quotation",
-      "field": "rejectReason",
-      "column": "C_Reject_Reason_ID",
-      "reference": "Reject_Reason",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
     },
     {
       "entity": "quotation",
       "field": "currency",
       "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "text",
       "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
     },
     {
@@ -153,11 +134,11 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
+      "field": "invoiceAddress",
+      "column": "BillTo_ID",
+      "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/project"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
     },
     {
       "entity": "quotationLine",
@@ -169,18 +150,10 @@ const api = {
     },
     {
       "entity": "quotationLine",
-      "field": "operativeUOM",
-      "column": "C_Aum",
-      "reference": "UOM",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/operativeUOM"
-    },
-    {
-      "entity": "quotationLine",
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/uOM"
     },
     {
@@ -190,30 +163,6 @@ const api = {
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/project"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/stDimension"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/ndDimension"
     }
   ],
   "actions": [
@@ -369,13 +318,14 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         detailEntity="quotationLine"
         Form={QuotationForm}
         DetailTable={QuotationLineTable}
+        DetailForm={QuotationLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Quotation"
-        detailLabel="Quotation Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
@@ -392,6 +342,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       entityLabel="Quotations"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

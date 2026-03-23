@@ -78,17 +78,6 @@ const api = {
       "detailUrl": "/sws/neo/sales-order/relatedProducts/{id}",
       "supportedFilters": []
     },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/basicDiscounts",
-      "detailUrl": "/sws/neo/sales-order/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
     "orderTax": {
       "get": true,
       "getById": true,
@@ -430,14 +419,6 @@ const api = {
       "reference": "Product",
       "inputMode": "search",
       "url": "/sws/neo/sales-order/relatedProducts/selectors/product"
-    },
-    {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/basicDiscounts/selectors/discount"
     },
     {
       "entity": "orderTax",

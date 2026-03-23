@@ -8,11 +8,40 @@
     "mInOut": {
       "name": "goodsShipment",
       "fields": {
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "section": "principal"
+        },
         "businessPartner": {
           "grid": true,
           "searchable": true,
           "reference": "BusinessPartner",
-          "readOnlyLogic": null
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "movementDate": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "date",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "warehouse": {
+          "grid": true,
+          "searchable": true,
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "documentStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "form": false
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -21,51 +50,63 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
-        },
-        "movementDate": {
-          "grid": true,
-          "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "accountingDate": {
-          "readOnlyLogic": null
-        },
-        "warehouse": {
-          "grid": true,
-          "searchable": true,
-          "readOnlyLogic": null
+          "inputMode": "date",
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "orderReference": {
-          "searchable": true
+          "inputMode": "text",
+          "section": "other"
         },
-        "active": {
-          "visibility": "discarded",
-          "form": true,
-          "name": "isActive"
+        "description": {
+          "inputMode": "textarea",
+          "section": "other"
         },
-        "documentNo": {
-          "visibility": "readOnly",
-          "grid": true,
-          "searchable": true,
-          "readOnlyLogic": null
+        "shippingCompany": {
+          "visibility": "editable",
+          "inputMode": "search",
+          "section": "other"
         },
-        "documentStatus": {
-          "visibility": "readOnly",
-          "grid": true,
-          "searchable": true
+        "trackingNo": {
+          "visibility": "editable",
+          "inputMode": "text",
+          "section": "other"
+        },
+        "shipDate": {
+          "visibility": "editable",
+          "inputMode": "date",
+          "section": "other"
+        },
+        "deliveryTerms": {
+          "visibility": "discarded"
+        },
+        "deliveryMethod": {
+          "visibility": "discarded"
+        },
+        "freightCategory": {
+          "visibility": "discarded"
+        },
+        "calculateFreight": {
+          "visibility": "discarded"
+        },
+        "freightCurrency": {
+          "visibility": "discarded"
         },
         "client": {
-          "name": "adClientId"
+          "visibility": "system"
         },
         "organization": {
-          "name": "adOrgId"
+          "visibility": "system"
         },
         "salesTransaction": {
-          "name": "isSotrx"
+          "visibility": "system"
         },
         "documentType": {
-          "name": "cDocTypeId"
+          "visibility": "system"
         },
         "created": {
           "visibility": "system"
@@ -73,56 +114,117 @@
         "updated": {
           "visibility": "system"
         },
+        "active": {
+          "visibility": "discarded"
+        },
         "deliveryLocation": {
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "visibility": "discarded"
         },
         "project": {
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "visibility": "discarded"
+        },
+        "processed": {
+          "visibility": "discarded"
+        },
+        "movementType": {
+          "visibility": "discarded"
+        },
+        "freightCostRule": {
+          "visibility": "discarded"
+        },
+        "freightAmount": {
+          "visibility": "discarded"
+        },
+        "chargeAmount": {
+          "visibility": "discarded"
+        },
+        "costcenter": {
+          "visibility": "discarded"
+        },
+        "stDimension": {
+          "visibility": "discarded"
+        },
+        "ndDimension": {
+          "visibility": "discarded"
+        },
+        "printDescription": {
+          "visibility": "discarded"
+        },
+        "invoiceStatus": {
+          "visibility": "discarded"
+        },
+        "salesOrder": {
+          "visibility": "readOnly",
+          "grid": false,
+          "inputMode": "search",
+          "section": "principal"
+        },
+        "isnettingshipment": {
+          "visibility": "discarded"
+        },
+        "externalBusinessPartnerReference": {
+          "visibility": "discarded"
+        },
+        "createLinesFrom": {
+          "visibility": "discarded"
+        },
+        "processGoodsJava": {
+          "visibility": "discarded"
+        },
+        "completelyInvoiced": {
+          "visibility": "discarded"
+        },
+        "invoicefromshipment": {
+          "visibility": "discarded"
+        },
+        "asset": {
+          "visibility": "discarded"
         }
       }
     },
     "mInOutLine": {
       "name": "goodsShipmentLine",
       "fields": {
+        "lineNo": {
+          "grid": true,
+          "inputMode": "number"
+        },
         "product": {
           "grid": true,
           "searchable": true,
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "movementQuantity": {
           "grid": true,
-          "readOnlyLogic": null
-        },
-        "storageBin": {
-          "grid": true,
-          "readOnlyLogic": null,
-          "dependsOn": {
-            "field": "warehouse",
-            "filterKey": "M_Warehouse_ID"
-          }
-        },
-        "lineNo": {
-          "grid": true,
+          "inputMode": "number",
           "readOnlyLogic": null
         },
         "uOM": {
+          "visibility": "readOnly",
           "grid": true,
-          "readOnlyLogic": null
+          "inputMode": "search"
+        },
+        "orderQuantity": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "storageBin": {
+          "visibility": "discarded"
+        },
+        "description": {
+          "grid": false,
+          "form": true,
+          "inputMode": "textarea"
         },
         "client": {
-          "name": "adClientId"
+          "visibility": "system"
         },
         "organization": {
-          "name": "adOrgId"
+          "visibility": "system"
         },
         "shipmentReceipt": {
-          "name": "mInoutId"
+          "visibility": "system"
         },
         "movementDate": {
           "visibility": "system"
@@ -134,14 +236,56 @@
           "visibility": "system"
         },
         "operativeUOM": {
-          "dependsOn": {
-            "field": "product",
-            "filterKey": "M_Product_ID"
-          }
+          "visibility": "discarded"
+        },
+        "attributeSetValue": {
+          "visibility": "discarded"
+        },
+        "orderLine": {
+          "visibility": "discarded"
+        },
+        "locatorTo": {
+          "visibility": "discarded"
+        },
+        "costcenter": {
+          "visibility": "discarded"
+        },
+        "stDimension": {
+          "visibility": "discarded"
+        },
+        "ndDimension": {
+          "visibility": "discarded"
+        },
+        "printDescription": {
+          "visibility": "discarded"
+        },
+        "descriptionOnly": {
+          "visibility": "discarded"
+        },
+        "operativeQuantity": {
+          "visibility": "discarded"
+        },
+        "salesOrderLine": {
+          "visibility": "discarded"
+        },
+        "project": {
+          "visibility": "discarded"
+        },
+        "asset": {
+          "visibility": "discarded"
+        },
+        "explode": {
+          "visibility": "discarded"
+        },
+        "invoiceQuantity": {
+          "visibility": "discarded"
         }
       }
     },
     "factAcct": {
+      "exclude": true
+    },
+    "mInOutLineTax": {
       "exclude": true
     }
   },

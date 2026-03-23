@@ -21,11 +21,7 @@ export const finPayment = [
     "generatedCredit": 38907,
     "usedCredit": 38907,
     "writeoffAmount": 38907,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-002",
@@ -47,11 +43,7 @@ export const finPayment = [
     "generatedCredit": 9306,
     "usedCredit": 9306,
     "writeoffAmount": 9306,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-003",
@@ -73,11 +65,7 @@ export const finPayment = [
     "generatedCredit": 11544,
     "usedCredit": 11544,
     "writeoffAmount": 11544,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-004",
@@ -99,11 +87,7 @@ export const finPayment = [
     "generatedCredit": 11872,
     "usedCredit": 11872,
     "writeoffAmount": 11872,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-005",
@@ -125,11 +109,7 @@ export const finPayment = [
     "generatedCredit": 48460,
     "usedCredit": 48460,
     "writeoffAmount": 48460,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-006",
@@ -151,11 +131,7 @@ export const finPayment = [
     "generatedCredit": 45418,
     "usedCredit": 45418,
     "writeoffAmount": 45418,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-007",
@@ -177,11 +153,7 @@ export const finPayment = [
     "generatedCredit": 33840,
     "usedCredit": 33840,
     "writeoffAmount": 33840,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-008",
@@ -203,11 +175,7 @@ export const finPayment = [
     "generatedCredit": 25716,
     "usedCredit": 25716,
     "writeoffAmount": 25716,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-009",
@@ -229,11 +197,7 @@ export const finPayment = [
     "generatedCredit": 44780,
     "usedCredit": 44780,
     "writeoffAmount": 44780,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-010",
@@ -255,11 +219,7 @@ export const finPayment = [
     "generatedCredit": 12483,
     "usedCredit": 12483,
     "writeoffAmount": 12483,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-011",
@@ -281,11 +241,7 @@ export const finPayment = [
     "generatedCredit": 46022,
     "usedCredit": 46022,
     "writeoffAmount": 46022,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   },
   {
     "id": "mock-finPayment-012",
@@ -307,11 +263,7 @@ export const finPayment = [
     "generatedCredit": 38634,
     "usedCredit": 38634,
     "writeoffAmount": 38634,
-    "reversedPayment": "Sample reversedPayment",
-    "project": "Sample project",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension"
+    "reversedPayment": "Sample reversedPayment"
   }
 ];
 
@@ -327,14 +279,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Acme Corp",
-    "activity": "Sample activity",
-    "product": "Laptop Pro 15",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-001"
   },
   {
@@ -348,14 +292,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "TechFlow Inc",
-    "activity": "Sample activity",
-    "product": "USB-C Cable",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-002"
   },
   {
@@ -369,14 +305,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Global Trade Ltd",
-    "activity": "Sample activity",
-    "product": "Wireless Mouse",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-003"
   },
   {
@@ -390,14 +318,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Summit Industries",
-    "activity": "Sample activity",
-    "product": "Mechanical Keyboard",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-004"
   },
   {
@@ -411,14 +331,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Pacific Partners",
-    "activity": "Sample activity",
-    "product": "Monitor 27\"",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-005"
   },
   {
@@ -432,14 +344,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Alpine Solutions",
-    "activity": "Sample activity",
-    "product": "Webcam HD",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-006"
   },
   {
@@ -453,14 +357,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Meridian Group",
-    "activity": "Sample activity",
-    "product": "Headset Pro",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-007"
   },
   {
@@ -474,14 +370,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Vertex Systems",
-    "activity": "Sample activity",
-    "product": "Docking Station",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-008"
   },
   {
@@ -495,14 +383,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Atlas Manufacturing",
-    "activity": "Sample activity",
-    "product": "SSD 1TB",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-009"
   },
   {
@@ -516,14 +396,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Nova Enterprises",
-    "activity": "Sample activity",
-    "product": "RAM 16GB",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-010"
   },
   {
@@ -537,14 +409,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Pinnacle Services",
-    "activity": "Sample activity",
-    "product": "Power Supply 750W",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-011"
   },
   {
@@ -558,14 +422,6 @@ export const finPaymentScheduleDetail = [
     "gLItem": "Sample gLItem",
     "canceled": "Sample canceled",
     "businessPartner": "Horizon Labs",
-    "activity": "Sample activity",
-    "product": "Network Switch",
-    "salesCampaign": "Sample salesCampaign",
-    "project": "Sample project",
-    "salesRegion": "Sample salesRegion",
-    "costCenter": "Sample costCenter",
-    "stDimension": "Sample stDimension",
-    "ndDimension": "Sample ndDimension",
     "finPaymentId": "mock-finPayment-012"
   }
 ];

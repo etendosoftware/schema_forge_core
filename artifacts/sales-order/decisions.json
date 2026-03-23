@@ -447,6 +447,7 @@
       }
     },
     "cOrderDiscount": {
+      "exclude": true,
       "name": "basicDiscounts",
       "fields": {
         "lineNo": {

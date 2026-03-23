@@ -19,6 +19,7 @@ const api = {
         "documentNo",
         "orderDate",
         "businessPartner",
+        "validUntil",
         "documentStatus"
       ]
     },
@@ -58,7 +59,7 @@ const api = {
       "field": "priceList",
       "column": "M_PriceList_ID",
       "reference": "PriceList",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
     },
     {
@@ -66,7 +67,7 @@ const api = {
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
     },
     {
@@ -74,29 +75,15 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
-    },
-    {
-      "entity": "quotation",
-      "field": "warehouse",
-      "column": "M_Warehouse_ID",
-      "reference": "Warehouse",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/warehouse"
-    },
-    {
-      "entity": "quotation",
-      "field": "rejectReason",
-      "column": "C_Reject_Reason_ID",
-      "reference": "Reject_Reason",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
     },
     {
       "entity": "quotation",
       "field": "currency",
       "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "text",
       "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
     },
     {
@@ -109,11 +96,11 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
+      "field": "invoiceAddress",
+      "column": "BillTo_ID",
+      "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/project"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
     },
     {
       "entity": "quotationLine",
@@ -125,18 +112,10 @@ const api = {
     },
     {
       "entity": "quotationLine",
-      "field": "operativeUOM",
-      "column": "C_Aum",
-      "reference": "UOM",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/operativeUOM"
-    },
-    {
-      "entity": "quotationLine",
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/uOM"
     },
     {
@@ -146,30 +125,6 @@ const api = {
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/project"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/stDimension"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/ndDimension"
     }
   ],
   "actions": [

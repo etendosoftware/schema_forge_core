@@ -4,11 +4,12 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'dueDate', column: 'Duedate', type: 'date', readOnly: true, section: 'other' },
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'search', required: true, readOnly: true, section: 'other', reference: 'PaymentMethod', inputMode: 'search' },
-  { key: 'expected', column: 'Expected', type: 'number', required: true, readOnly: true, section: 'other' },
+  { key: 'expectedAmount', column: 'Expected', type: 'number', required: true, readOnly: true, section: 'other' },
   { key: 'received', column: 'Received', type: 'number', required: true, readOnly: true, section: 'other' },
   { key: 'outstanding', column: 'Outstanding', type: 'number', required: true, readOnly: true, section: 'other' },
   { key: 'lastPayment', column: 'Lastpayment', type: 'date', section: 'principal' },
   { key: 'numberOfPayments', column: 'Numberofpayments', type: 'number', readOnly: true, section: 'other' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'search', required: true, readOnly: true, section: 'other', reference: 'Currency', inputMode: 'search' },
 ];
 // @sf-generated-end fields:paymentPlan
 

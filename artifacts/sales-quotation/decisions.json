@@ -8,12 +8,21 @@
     "cOrder": {
       "name": "quotation",
       "fields": {
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "section": "principal"
+        },
         "businessPartner": {
           "grid": true,
           "searchable": true,
           "reference": "BusinessPartner",
+          "inputMode": "search",
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "principal"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -22,98 +31,105 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "inputMode": "date",
+          "readOnlyLogic": null,
+          "section": "principal"
         },
-        "scheduledDeliveryDate": {
+        "validUntil": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "inputMode": "date",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "scheduledDeliveryDate": {
+          "visibility": "discarded"
         },
         "priceList": {
-          "readOnlyLogic": null
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "currency": {
+          "visibility": "readOnly",
+          "inputMode": "text",
+          "section": "principal"
         },
         "paymentTerms": {
-          "readOnlyLogic": null
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
-          "readOnlyLogic": null
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "salesRepresentative": {
+          "visibility": "editable",
+          "grid": true,
+          "reference": "User",
+          "inputMode": "search",
+          "section": "principal"
+        },
+        "orderReference": {
+          "visibility": "editable",
+          "inputMode": "text",
+          "section": "principal"
+        },
+        "summedLineAmount": {
+          "visibility": "readOnly",
+          "inputMode": "number",
+          "section": "principal"
+        },
+        "grandTotalAmount": {
+          "visibility": "readOnly",
+          "grid": true,
+          "inputMode": "number",
+          "section": "principal"
+        },
+        "documentStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "form": false
         },
         "invoiceAddress": {
+          "visibility": "editable",
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
           "dependsOn": {
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
-        "salesRepresentative": {
-          "visibility": "editable",
-          "grid": true,
-          "reference": "User",
-          "inputMode": "search"
-        },
-        "documentNo": {
-          "visibility": "readOnly",
-          "grid": true,
-          "searchable": true,
-          "readOnlyLogic": null
-        },
-        "documentStatus": {
-          "visibility": "readOnly",
-          "grid": true,
-          "searchable": true
-        },
-        "grandTotalAmount": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "summedLineAmount": {
-          "visibility": "readOnly"
-        },
-        "currency": {
-          "visibility": "readOnly",
-          "reference": null,
-          "inputMode": null
+        "description": {
+          "inputMode": "textarea",
+          "section": "other"
         },
         "client": {
-          "name": "adClientId"
+          "visibility": "system"
         },
         "organization": {
-          "name": "adOrgId"
+          "visibility": "system"
         },
         "transactionDocument": {
-          "name": "cDocTypeTargetId"
+          "visibility": "system"
         },
         "documentType": {
-          "name": "cDocTypeId"
+          "visibility": "system"
         },
         "salesTransaction": {
-          "name": "isSotrx"
-        },
-        "accountingDate": {
-          "name": "dateAcct"
-        },
-        "invoiceTerms": {
-          "name": "invoiceRule"
-        },
-        "deliveryTerms": {
-          "name": "deliveryRule"
-        },
-        "deliveryMethod": {
-          "name": "deliveryViaRule"
-        },
-        "priority": {
-          "name": "priorityRule"
-        },
-        "formOfPayment": {
-          "name": "paymentRule"
+          "visibility": "system"
         },
         "created": {
           "visibility": "system"
@@ -121,82 +137,208 @@
         "updated": {
           "visibility": "system"
         },
+        "active": {
+          "visibility": "discarded"
+        },
+        "accountingDate": {
+          "visibility": "discarded"
+        },
+        "invoiceTerms": {
+          "visibility": "discarded"
+        },
+        "deliveryTerms": {
+          "visibility": "discarded"
+        },
+        "deliveryMethod": {
+          "visibility": "discarded"
+        },
+        "priority": {
+          "visibility": "discarded"
+        },
+        "formOfPayment": {
+          "visibility": "discarded"
+        },
         "project": {
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "visibility": "discarded"
+        },
+        "processed": {
+          "visibility": "discarded"
+        },
+        "posted": {
+          "visibility": "discarded"
+        },
+        "warehouse": {
+          "visibility": "discarded"
+        },
+        "costcenter": {
+          "visibility": "discarded"
+        },
+        "stDimension": {
+          "visibility": "discarded"
+        },
+        "ndDimension": {
+          "visibility": "discarded"
+        },
+        "freightCostRule": {
+          "visibility": "discarded"
+        },
+        "freightAmount": {
+          "visibility": "discarded"
+        },
+        "chargeAmount": {
+          "visibility": "discarded"
+        },
+        "printDescription": {
+          "visibility": "discarded"
+        },
+        "deliveryLocation": {
+          "visibility": "discarded"
+        },
+        "isSotrx": {
+          "visibility": "discarded"
+        },
+        "rejectReason": {
+          "visibility": "discarded"
+        },
+        "documentAction": {
+          "visibility": "discarded"
+        },
+        "createOrder": {
+          "visibility": "discarded"
         }
       }
     },
     "cOrderLine": {
       "name": "quotationLine",
       "fields": {
+        "lineNo": {
+          "grid": true,
+          "inputMode": "number"
+        },
         "product": {
           "grid": true,
           "searchable": true,
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "orderedQuantity": {
           "grid": true,
+          "inputMode": "number",
           "readOnlyLogic": null
+        },
+        "uOM": {
+          "visibility": "readOnly",
+          "grid": true,
+          "inputMode": "search"
         },
         "unitPrice": {
           "grid": true,
+          "inputMode": "number",
           "readOnlyLogic": null
+        },
+        "discount": {
+          "grid": true,
+          "inputMode": "number",
+          "readOnlyLogic": null
+        },
+        "lineNetAmount": {
+          "visibility": "readOnly",
+          "grid": true,
+          "inputMode": "number"
         },
         "tax": {
           "grid": true,
           "inputMode": "selector",
           "readOnlyLogic": null
         },
-        "discount": {
-          "grid": true,
-          "readOnlyLogic": null
-        },
-        "lineNo": {
-          "grid": true,
-          "readOnlyLogic": null
-        },
-        "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
-        },
-        "uOM": {
-          "grid": true,
-          "readOnlyLogic": null
+        "description": {
+          "grid": false,
+          "form": true,
+          "inputMode": "textarea"
         },
         "client": {
-          "name": "adClientId"
+          "visibility": "system"
         },
         "organization": {
-          "name": "adOrgId"
+          "visibility": "system"
         },
         "salesOrder": {
-          "name": "cOrderId"
+          "visibility": "system"
         },
         "orderDate": {
-          "visibility": "system",
-          "displayLogic": null,
-          "name": "dateOrdered"
+          "visibility": "system"
         },
         "scheduledDeliveryDate": {
-          "visibility": "system",
-          "displayLogic": null,
-          "name": "datePromised"
+          "visibility": "system"
         },
         "currency": {
-          "name": "cCurrencyId"
+          "visibility": "system"
         },
         "businessPartner": {
-          "name": "cBpartnerId"
+          "visibility": "system"
         },
         "operativeUOM": {
-          "dependsOn": {
-            "field": "product",
-            "filterKey": "M_Product_ID"
-          }
+          "visibility": "discarded"
+        },
+        "attributeSetValue": {
+          "visibility": "discarded"
+        },
+        "orderLine": {
+          "visibility": "discarded"
+        },
+        "project": {
+          "visibility": "discarded"
+        },
+        "costcenter": {
+          "visibility": "discarded"
+        },
+        "stDimension": {
+          "visibility": "discarded"
+        },
+        "ndDimension": {
+          "visibility": "discarded"
+        },
+        "printDescription": {
+          "visibility": "discarded"
+        },
+        "descriptionOnly": {
+          "visibility": "discarded"
+        },
+        "explode": {
+          "visibility": "discarded"
+        },
+        "cancelDiscountsAndPromotions": {
+          "visibility": "discarded"
+        },
+        "baseNetUnitPrice": {
+          "visibility": "discarded"
+        },
+        "lineGrossAmount": {
+          "visibility": "discarded"
+        },
+        "editLineNetAmount": {
+          "visibility": "discarded"
+        },
+        "resourceAssignment": {
+          "visibility": "discarded"
+        },
+        "priceLimit": {
+          "visibility": "discarded"
+        },
+        "operativeQuantity": {
+          "visibility": "discarded"
+        },
+        "grossUnitPrice": {
+          "visibility": "discarded"
+        },
+        "listPrice": {
+          "visibility": "discarded"
+        },
+        "grossListPrice": {
+          "visibility": "discarded"
+        },
+        "taxableAmount": {
+          "visibility": "discarded"
         }
       }
     },

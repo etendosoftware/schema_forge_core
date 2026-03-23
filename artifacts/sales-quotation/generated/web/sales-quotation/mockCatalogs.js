@@ -229,29 +229,6 @@ catalogs['PaymentTerm'] = [
   }
 ];
 
-catalogs['Warehouse'] = [
-  {
-    "id": "wh-001",
-    "name": "Main Warehouse"
-  },
-  {
-    "id": "wh-002",
-    "name": "East Distribution Center"
-  },
-  {
-    "id": "wh-003",
-    "name": "West Hub"
-  },
-  {
-    "id": "wh-004",
-    "name": "North Storage"
-  },
-  {
-    "id": "wh-005",
-    "name": "South Logistics"
-  }
-];
-
 catalogs['User'] = [
   {
     "id": "user-001",

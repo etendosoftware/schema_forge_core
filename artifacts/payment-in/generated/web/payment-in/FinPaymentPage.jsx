@@ -2,15 +2,18 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
 import FinPaymentScheduleDetailTable from './FinPaymentScheduleDetailTable';
+import FinPaymentScheduleDetailForm from './FinPaymentScheduleDetailForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'General / Payment In';
 
 // @sf-generated-start summary:finPayment
 const summary = [
-  { key: 'generatedCredit', column: 'Generated_Credit', type: 'amount', label: 'Generated Credit' },
-  { key: 'usedCredit', column: 'Used_Credit', type: 'amount', label: 'Used Credit' },
-  { key: 'writeoffAmount', column: 'Writeoffamt', type: 'amount', label: 'Write-off Amount' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'generatedCredit', column: 'Generated_Credit', type: 'amount' },
+  { key: 'usedCredit', column: 'Used_Credit', type: 'amount' },
+  { key: 'writeoffAmount', column: 'Writeoffamt', type: 'amount' },
+  { key: 'reversedPayment', column: 'FIN_Rev_Payment_ID', type: 'string' },
 ];
 
 const statusField = 'status';
@@ -18,8 +21,11 @@ const statusField = 'status';
 
 // @sf-generated-start processes:finPayment
 const processes = [
-  { name: 'paymentProcess', label: 'Payment Process', style: 'positive', params: [{"name":"action","label":"Action","type":"list","required":true,"options":[{"value":"P","label":"Process"},{"value":"RE","label":"Reactivate"},{"value":"R","label":"Reactivate and Delete Lines"},{"value":"V","label":"Void"}]}] },
-  { name: 'reversePayment', label: 'Reverse Payment', style: 'destructive', params: [{"name":"action","type":"hidden","defaultValue":"RV"},{"name":"paymentDate","label":"Payment Date","type":"date","required":true}] },
+  { name: 'Add Payment', label: 'Add  Payment', style: 'positive' },
+  { name: 'Payment Process', label: 'Payment  Process', style: 'positive' },
+  { name: 'Execute Payment', label: 'Execute  Payment', style: 'positive' },
+  { name: 'Reverse Payment', label: 'Reverse  Payment', style: 'positive' },
+  { name: 'Reconcile Payment', label: 'Reconcile  Payment', style: 'positive' },
 ];
 // @sf-generated-end processes:finPayment
 
@@ -52,6 +58,7 @@ const api = {
       "listUrl": "/sws/neo/payment-in/finPayment",
       "detailUrl": "/sws/neo/payment-in/finPayment/{id}",
       "supportedFilters": [
+        "documentNo",
         "referenceNo",
         "paymentDate",
         "businessPartner",
@@ -59,17 +66,7 @@ const api = {
         "paymentMethod",
         "amount",
         "account",
-        "currency",
-        "financialTransactionAmount",
-        "financialTransactionConvertRate",
-        "aPRMAddScheduledpayments",
-        "aPRMProcessPayment",
-        "aprmExecutepayment",
-        "reversedPayment",
-        "project",
-        "costCenter",
-        "stDimension",
-        "ndDimension"
+        "currency"
       ]
     },
     "finPaymentScheduleDetail": {
@@ -124,37 +121,6 @@ const api = {
       "reference": "Payment Selector",
       "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/reversedPayment"
-    },
-    {
-      "entity": "finPayment",
-      "field": "project",
-      "column": "C_Project_ID",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/project"
-    },
-    {
-      "entity": "finPayment",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Cost Center Selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/costCenter"
-    },
-    {
-      "entity": "finPayment",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User Dimension 1",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/stDimension"
-    },
-    {
-      "entity": "finPayment",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User Dimension 2",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/ndDimension"
     },
     {
       "entity": "finPaymentScheduleDetail",
@@ -248,13 +214,14 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
         detailEntity="finPaymentScheduleDetail"
         Form={FinPaymentForm}
         DetailTable={FinPaymentScheduleDetailTable}
+        DetailForm={FinPaymentScheduleDetailForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Fin Payment"
-        detailLabel="Fin Payment Schedule Detail"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
@@ -271,6 +238,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       entityLabel="Fin Payments"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

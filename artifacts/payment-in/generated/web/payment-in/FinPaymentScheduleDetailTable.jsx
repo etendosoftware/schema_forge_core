@@ -6,7 +6,6 @@ const columns = [
   { key: 'invoiceAmount', column: 'InvoiceAmount', type: 'amount' },
   { key: 'expected', column: 'ExpectedAmount', type: 'amount' },
   { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'writeoffAmount', column: 'Writeoffamt', type: 'amount' },
   { key: 'canceled', column: 'Iscanceled', type: 'boolean' },
   { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string' },
 ];

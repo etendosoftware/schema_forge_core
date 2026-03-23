@@ -6,7 +6,7 @@ const columns = [
   { key: 'product', column: 'M_Product_ID', type: 'string' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'string' },
   { key: 'uOM', column: 'C_UOM_ID', type: 'string' },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'string' },
+  { key: 'orderQuantity', column: 'QuantityOrder', type: 'string' },
 ];
 // @sf-generated-end columns:goodsShipmentLine
 
