@@ -12,15 +12,9 @@ const fields = [
   // @sf-custom-slot callout:SL_Order_PriceList
   { key: 'priceList', column: 'M_PriceList_ID', type: 'search', required: true, section: 'principal', reference: 'PriceList', inputMode: 'search' },
   { key: 'validUntil', column: 'validuntil', type: 'date', section: 'principal' },
-  { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'search', section: 'principal', reference: 'PaymentMethod', inputMode: 'search' },
   { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'search', required: true, section: 'principal', reference: 'PaymentTerm', inputMode: 'search' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'principal' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'principal' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'search', required: true, readOnly: true, section: 'principal', reference: 'Currency', inputMode: 'text' },
-  { key: 'orderReference', column: 'POReference', type: 'text', section: 'principal' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'search', section: 'principal', reference: 'User', inputMode: 'search' },
   { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
-  { key: 'invoiceAddress', column: 'BillTo_ID', type: 'dependent', required: true, section: 'other', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
 ];
 // @sf-generated-end fields:quotation
 

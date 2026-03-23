@@ -187,25 +187,6 @@ catalogs['PriceList'] = [
   }
 ];
 
-catalogs['PaymentMethod'] = [
-  {
-    "id": "pm-001",
-    "name": "Wire Transfer"
-  },
-  {
-    "id": "pm-002",
-    "name": "Credit Card"
-  },
-  {
-    "id": "pm-003",
-    "name": "Check"
-  },
-  {
-    "id": "pm-004",
-    "name": "Cash"
-  }
-];
-
 catalogs['PaymentTerm'] = [
   {
     "id": "pt-001",
@@ -226,41 +207,6 @@ catalogs['PaymentTerm'] = [
   {
     "id": "pt-005",
     "name": "2/10 Net 30"
-  }
-];
-
-catalogs['User'] = [
-  {
-    "id": "user-001",
-    "name": "Alice Johnson"
-  },
-  {
-    "id": "user-002",
-    "name": "Bob Smith"
-  },
-  {
-    "id": "user-003",
-    "name": "Carol Williams"
-  },
-  {
-    "id": "user-004",
-    "name": "David Brown"
-  },
-  {
-    "id": "user-005",
-    "name": "Eva Martinez"
-  },
-  {
-    "id": "user-006",
-    "name": "Frank Lee"
-  },
-  {
-    "id": "user-007",
-    "name": "Grace Kim"
-  },
-  {
-    "id": "user-008",
-    "name": "Henry Davis"
   }
 ];
 

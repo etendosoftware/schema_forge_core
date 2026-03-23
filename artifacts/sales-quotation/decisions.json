@@ -57,9 +57,7 @@
           "section": "principal"
         },
         "currency": {
-          "visibility": "readOnly",
-          "inputMode": "text",
-          "section": "principal"
+          "visibility": "discarded"
         },
         "paymentTerms": {
           "inputMode": "search",
@@ -67,27 +65,16 @@
           "section": "principal"
         },
         "paymentMethod": {
-          "reference": "PaymentMethod",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "discarded"
         },
         "salesRepresentative": {
-          "visibility": "editable",
-          "grid": true,
-          "reference": "User",
-          "inputMode": "search",
-          "section": "principal"
+          "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "editable",
-          "inputMode": "text",
-          "section": "principal"
+          "visibility": "discarded"
         },
         "summedLineAmount": {
-          "visibility": "readOnly",
-          "inputMode": "number",
-          "section": "principal"
+          "visibility": "discarded"
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
@@ -102,15 +89,7 @@
           "form": false
         },
         "invoiceAddress": {
-          "visibility": "editable",
-          "reference": "BusinessPartnerLocation",
-          "inputMode": "dependent",
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          },
-          "readOnlyLogic": null,
-          "section": "other"
+          "visibility": "discarded"
         },
         "description": {
           "inputMode": "textarea",

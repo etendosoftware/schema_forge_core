@@ -8,7 +8,6 @@ const columns = [
   { key: 'validUntil', column: 'validuntil', type: 'date' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'string' },
 ];
 // @sf-generated-end columns:quotation
 
