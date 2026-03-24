@@ -64,11 +64,35 @@ const api = {
     },
     {
       "entity": "quotation",
+      "field": "paymentMethod",
+      "column": "FIN_Paymentmethod_ID",
+      "reference": "Paymentmethod",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
+    },
+    {
+      "entity": "quotation",
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
       "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
+    },
+    {
+      "entity": "quotation",
+      "field": "salesRepresentative",
+      "column": "SalesRep_ID",
+      "reference": "SalesRepresentative",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
+    },
+    {
+      "entity": "quotation",
+      "field": "invoiceAddress",
+      "column": "BillTo_ID",
+      "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
     },
     {
       "entity": "quotationLine",

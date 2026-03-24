@@ -65,16 +65,21 @@
           "section": "principal"
         },
         "paymentMethod": {
-          "visibility": "discarded"
+          "section": "other"
         },
         "salesRepresentative": {
-          "visibility": "discarded"
+          "section": "other",
+          "reference": "SalesRepresentative",
+          "inputMode": "selector"
         },
         "orderReference": {
-          "visibility": "discarded"
+          "visibility": "editable",
+          "grid": false,
+          "section": "other"
         },
         "summedLineAmount": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "section": "other"
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
@@ -89,7 +94,13 @@
           "form": false
         },
         "invoiceAddress": {
-          "visibility": "discarded"
+          "visibility": "editable",
+          "section": "other",
+          "reference": "BusinessPartnerLocation",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
         },
         "description": {
           "inputMode": "textarea",

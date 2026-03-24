@@ -11,6 +11,7 @@ const breadcrumb = 'Sales / Sales Quotation';
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -100,11 +101,35 @@ const api = {
     },
     {
       "entity": "quotation",
+      "field": "paymentMethod",
+      "column": "FIN_Paymentmethod_ID",
+      "reference": "Paymentmethod",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
+    },
+    {
+      "entity": "quotation",
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
       "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
+    },
+    {
+      "entity": "quotation",
+      "field": "salesRepresentative",
+      "column": "SalesRep_ID",
+      "reference": "SalesRepresentative",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
+    },
+    {
+      "entity": "quotation",
+      "field": "invoiceAddress",
+      "column": "BillTo_ID",
+      "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
     },
     {
       "entity": "quotationLine",

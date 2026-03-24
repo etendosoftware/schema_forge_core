@@ -9,10 +9,15 @@ export const quotation = [
     "partnerAddress": "Acme Corp",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-15",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "DR",
     "grandTotalAmount": 38907,
-    "description": "Standard order for Q1 delivery"
+    "summedLineAmount": 38907,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Standard order for Q1 delivery",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-002",
@@ -22,10 +27,15 @@ export const quotation = [
     "partnerAddress": "TechFlow Inc",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-16",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "CO",
     "grandTotalAmount": 9306,
-    "description": "Rush order - priority shipping required"
+    "summedLineAmount": 9306,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Rush order - priority shipping required",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-003",
@@ -35,10 +45,15 @@ export const quotation = [
     "partnerAddress": "Global Trade Ltd",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-17",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "VO",
     "grandTotalAmount": 11544,
-    "description": "Bulk purchase for warehouse restocking"
+    "summedLineAmount": 11544,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Bulk purchase for warehouse restocking",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-004",
@@ -48,10 +63,15 @@ export const quotation = [
     "partnerAddress": "Summit Industries",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-18",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "IP",
     "grandTotalAmount": 11872,
-    "description": "Sample order for client evaluation"
+    "summedLineAmount": 11872,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Sample order for client evaluation",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-005",
@@ -61,10 +81,15 @@ export const quotation = [
     "partnerAddress": "Pacific Partners",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-19",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "DR",
     "grandTotalAmount": 48460,
-    "description": "Recurring monthly supply order"
+    "summedLineAmount": 48460,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Recurring monthly supply order",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-006",
@@ -74,10 +99,15 @@ export const quotation = [
     "partnerAddress": "Alpine Solutions",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-20",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "CO",
     "grandTotalAmount": 45418,
-    "description": "Special pricing agreement applies"
+    "summedLineAmount": 45418,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Special pricing agreement applies",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-007",
@@ -87,10 +117,15 @@ export const quotation = [
     "partnerAddress": "Meridian Group",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-21",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "VO",
     "grandTotalAmount": 33840,
-    "description": "Consolidated order from multiple requests"
+    "summedLineAmount": 33840,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Consolidated order from multiple requests",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-008",
@@ -100,10 +135,15 @@ export const quotation = [
     "partnerAddress": "Vertex Systems",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-22",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "IP",
     "grandTotalAmount": 25716,
-    "description": "Trial order for new product line"
+    "summedLineAmount": 25716,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Trial order for new product line",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-009",
@@ -113,10 +153,15 @@ export const quotation = [
     "partnerAddress": "Atlas Manufacturing",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-23",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "DR",
     "grandTotalAmount": 44780,
-    "description": "Replacement for damaged goods"
+    "summedLineAmount": 44780,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Replacement for damaged goods",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-010",
@@ -126,10 +171,15 @@ export const quotation = [
     "partnerAddress": "Nova Enterprises",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-24",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "CO",
     "grandTotalAmount": 12483,
-    "description": "Pre-season inventory build-up"
+    "summedLineAmount": 12483,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Pre-season inventory build-up",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-011",
@@ -139,10 +189,15 @@ export const quotation = [
     "partnerAddress": "Pinnacle Services",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-25",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "VO",
     "grandTotalAmount": 46022,
-    "description": "Customer-specific configuration"
+    "summedLineAmount": 46022,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Customer-specific configuration",
+    "invoiceAddress": "Sample invoiceAddress"
   },
   {
     "id": "mock-quotation-012",
@@ -152,10 +207,15 @@ export const quotation = [
     "partnerAddress": "Horizon Labs",
     "priceList": "Sample priceList",
     "validUntil": "2026-01-26",
+    "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
     "documentStatus": "IP",
     "grandTotalAmount": 38634,
-    "description": "Government contract fulfillment"
+    "summedLineAmount": 38634,
+    "orderReference": "Sample orderReference",
+    "salesRepresentative": "Sample salesRepresentative",
+    "description": "Government contract fulfillment",
+    "invoiceAddress": "Sample invoiceAddress"
   }
 ];
 
