@@ -12,7 +12,8 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "principal"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -21,34 +22,67 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "invoiceDate": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "accountingDate": {
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "paymentTerms": {
-          "readOnlyLogic": null
+          "grid": true,
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "priceList": {
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "currency": {
           "visibility": "editable",
-          "grid": true,
+          "grid": false,
+          "section": "other",
           "reference": "Currency",
           "inputMode": "selector"
         },
+        "description": {
+          "section": "other"
+        },
+        "aPRMAddpayment": {
+          "visibility": "discarded"
+        },
+        "aPRMProcessinvoice": {
+          "visibility": "discarded"
+        },
+        "documentAction": {
+          "visibility": "discarded"
+        },
+        "createLinesFromOrder": {
+          "visibility": "discarded"
+        },
+        "createLinesFromShipment": {
+          "visibility": "discarded"
+        },
+        "copyFrom": {
+          "visibility": "discarded"
+        },
+        "calculatePromotions": {
+          "visibility": "discarded"
+        },
         "orderReference": {
-          "searchable": true
+          "searchable": true,
+          "section": "other"
         },
         "active": {
           "visibility": "discarded",
@@ -59,12 +93,14 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "form": false
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
@@ -73,10 +109,54 @@
         "summedLineAmount": {
           "visibility": "readOnly"
         },
+        "outstandingAmount": {
+          "visibility": "readOnly"
+        },
         "isPaid": {
-          "visibility": "discarded",
+          "visibility": "readOnly",
           "grid": true,
-          "form": true
+          "form": false
+        },
+        "paymentComplete": {
+          "visibility": "readOnly",
+          "grid": true,
+          "form": false
+        },
+        "totalPaid": {
+          "visibility": "discarded"
+        },
+        "dueAmount": {
+          "visibility": "discarded"
+        },
+        "daysTillDue": {
+          "visibility": "discarded"
+        },
+        "percentageOverdue": {
+          "visibility": "discarded"
+        },
+        "finalSettlementDate": {
+          "visibility": "discarded"
+        },
+        "daysSalesOutstanding": {
+          "visibility": "discarded"
+        },
+        "salesOrder": {
+          "visibility": "discarded"
+        },
+        "externalBusinessPartnerReference": {
+          "visibility": "discarded"
+        },
+        "prepaymentamt": {
+          "visibility": "discarded"
+        },
+        "paidAmountAtInvoicing": {
+          "visibility": "discarded"
+        },
+        "salesRepresentative": {
+          "visibility": "editable",
+          "section": "other",
+          "reference": "User",
+          "inputMode": "selector"
         },
         "client": {
           "name": "adClientId"
@@ -103,56 +183,150 @@
           "visibility": "system"
         },
         "project": {
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "visibility": "discarded"
+        },
+        "costcenter": {
+          "visibility": "discarded"
+        },
+        "salesCampaign": {
+          "visibility": "discarded"
+        },
+        "stDimension": {
+          "visibility": "discarded"
+        },
+        "ndDimension": {
+          "visibility": "discarded"
+        },
+        "withholdingamount": {
+          "visibility": "discarded"
         }
       }
     },
     "cInvoiceLine": {
       "fields": {
+        "lineNo": {
+          "grid": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
         "product": {
           "grid": true,
           "searchable": true,
+          "section": "principal",
           "inputMode": "search",
           "readOnlyLogic": null,
           "displayLogic": null
         },
         "invoicedQuantity": {
           "grid": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
+        "uOM": {
+          "grid": true,
+          "section": "principal",
           "readOnlyLogic": null
         },
         "unitPrice": {
           "grid": true,
+          "section": "principal",
           "readOnlyLogic": null
-        },
-        "listPrice": {
-          "readOnlyLogic": null,
-          "displayLogic": null
         },
         "tax": {
           "grid": true,
+          "section": "principal",
           "inputMode": "selector",
-          "readOnlyLogic": null
-        },
-        "discount": {
-          "visibility": "discarded"
-        },
-        "lineNo": {
-          "grid": true,
           "readOnlyLogic": null
         },
         "lineNetAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "section": "principal",
           "readOnlyLogic": null
         },
-        "uOM": {
-          "grid": true,
-          "readOnlyLogic": null
+        "discount": {
+          "visibility": "editable",
+          "grid": false,
+          "section": "other"
+        },
+        "listPrice": {
+          "section": "other",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "description": {
+          "section": "other"
         },
         "taxAmount": {
+          "visibility": "discarded"
+        },
+        "operativeQuantity": {
+          "visibility": "discarded"
+        },
+        "operativeUOM": {
+          "visibility": "discarded"
+        },
+        "grossUnitPrice": {
+          "visibility": "discarded"
+        },
+        "grossAmount": {
+          "visibility": "discarded"
+        },
+        "grossListPrice": {
+          "visibility": "discarded"
+        },
+        "baseGrossUnitPrice": {
+          "visibility": "discarded"
+        },
+        "standardPrice": {
+          "visibility": "discarded"
+        },
+        "financialInvoiceLine": {
+          "visibility": "discarded"
+        },
+        "account": {
+          "visibility": "discarded"
+        },
+        "attributeSetValue": {
+          "visibility": "discarded"
+        },
+        "taxableAmount": {
+          "visibility": "discarded"
+        },
+        "deferred": {
+          "visibility": "discarded"
+        },
+        "deferredPlanType": {
+          "visibility": "discarded"
+        },
+        "periodNumber": {
+          "visibility": "discarded"
+        },
+        "period": {
+          "visibility": "discarded"
+        },
+        "cancelPriceAdjustment": {
+          "visibility": "discarded"
+        },
+        "explode": {
+          "visibility": "discarded"
+        },
+        "businessPartner": {
+          "visibility": "discarded"
+        },
+        "project": {
+          "visibility": "discarded"
+        },
+        "costcenter": {
+          "visibility": "discarded"
+        },
+        "asset": {
+          "visibility": "discarded"
+        },
+        "stDimension": {
+          "visibility": "discarded"
+        },
+        "ndDimension": {
           "visibility": "discarded"
         },
         "client": {
@@ -186,10 +360,7 @@
           "name": "mInoutlineId"
         },
         "operativeUOM": {
-          "dependsOn": {
-            "field": "product",
-            "filterKey": "M_Product_ID"
-          }
+          "visibility": "discarded"
         }
       }
     },
@@ -203,7 +374,32 @@
       "exclude": true
     },
     "finPaymentSchedule": {
-      "exclude": true
+      "fields": {
+        "dueDate": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "expectedAmount": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "received": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "outstanding": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "paymentMethod": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "lastPaymentDate": {
+          "visibility": "readOnly",
+          "grid": true
+        }
+      }
     },
     "finPaymentScheduleDetail": {
       "exclude": true

@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-24T15:18:35.750Z",
-  "checksum": "1567a8996f99ab2f",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-24T15:34:18.255Z",
+  "checksum": "dd1587f82d7a02b5",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -4401,7 +4401,18 @@
         "supportedFilters": []
       }
     ],
-    "processEndpoints": []
+    "processEndpoints": [
+      {
+        "name": "Process Order",
+        "method": "POST",
+        "path": "/order/:id/action/documentAction",
+        "entity": "order",
+        "columnName": "documentAction",
+        "params": [],
+        "preconditions": [],
+        "steps": 0
+      }
+    ]
   },
   "apiPrediction": {
     "specName": "sales-order",
@@ -10113,76 +10124,92 @@
       },
       {
         "id": "t-684",
+        "category": "process-happy",
+        "process": "Process Order",
+        "entity": "order",
+        "runner": "junit",
+        "description": "Process 'Process Order' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-685",
+        "category": "process-failure",
+        "process": "Process Order",
+        "entity": "order",
+        "runner": "junit",
+        "description": "Process 'Process Order' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-686",
         "category": "crud-flags",
         "entity": "order",
         "runner": "node",
         "description": "CRUD flags for 'order' should all be booleans"
       },
       {
-        "id": "t-685",
+        "id": "t-687",
         "category": "crud-flags",
         "entity": "orderLine",
         "runner": "node",
         "description": "CRUD flags for 'orderLine' should all be booleans"
       },
       {
-        "id": "t-686",
+        "id": "t-688",
         "category": "crud-flags",
         "entity": "orderLineTax",
         "runner": "node",
         "description": "CRUD flags for 'orderLineTax' should all be booleans"
       },
       {
-        "id": "t-687",
+        "id": "t-689",
         "category": "crud-flags",
         "entity": "reservedStock",
         "runner": "node",
         "description": "CRUD flags for 'reservedStock' should all be booleans"
       },
       {
-        "id": "t-688",
+        "id": "t-690",
         "category": "crud-flags",
         "entity": "relatedServices",
         "runner": "node",
         "description": "CRUD flags for 'relatedServices' should all be booleans"
       },
       {
-        "id": "t-689",
+        "id": "t-691",
         "category": "crud-flags",
         "entity": "relatedProducts",
         "runner": "node",
         "description": "CRUD flags for 'relatedProducts' should all be booleans"
       },
       {
-        "id": "t-690",
+        "id": "t-692",
         "category": "crud-flags",
         "entity": "orderTax",
         "runner": "node",
         "description": "CRUD flags for 'orderTax' should all be booleans"
       },
       {
-        "id": "t-691",
+        "id": "t-693",
         "category": "crud-flags",
         "entity": "paymentPlan",
         "runner": "node",
         "description": "CRUD flags for 'paymentPlan' should all be booleans"
       },
       {
-        "id": "t-692",
+        "id": "t-694",
         "category": "crud-flags",
         "entity": "paymentDetails",
         "runner": "node",
         "description": "CRUD flags for 'paymentDetails' should all be booleans"
       },
       {
-        "id": "t-693",
+        "id": "t-695",
         "category": "crud-flags",
         "entity": "replacementOrders",
         "runner": "node",
         "description": "CRUD flags for 'replacementOrders' should all be booleans"
       },
       {
-        "id": "t-694",
+        "id": "t-696",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "businessPartner",
@@ -10190,7 +10217,7 @@
         "description": "Selector endpoint for 'businessPartner' in order should exist"
       },
       {
-        "id": "t-695",
+        "id": "t-697",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "partnerAddress",
@@ -10198,7 +10225,7 @@
         "description": "Selector endpoint for 'partnerAddress' in order should exist"
       },
       {
-        "id": "t-696",
+        "id": "t-698",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "priceList",
@@ -10206,7 +10233,7 @@
         "description": "Selector endpoint for 'priceList' in order should exist"
       },
       {
-        "id": "t-697",
+        "id": "t-699",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "paymentMethod",
@@ -10214,7 +10241,7 @@
         "description": "Selector endpoint for 'paymentMethod' in order should exist"
       },
       {
-        "id": "t-698",
+        "id": "t-700",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "paymentTerms",
@@ -10222,7 +10249,7 @@
         "description": "Selector endpoint for 'paymentTerms' in order should exist"
       },
       {
-        "id": "t-699",
+        "id": "t-701",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "warehouse",
@@ -10230,7 +10257,7 @@
         "description": "Selector endpoint for 'warehouse' in order should exist"
       },
       {
-        "id": "t-700",
+        "id": "t-702",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "salesRepresentative",
@@ -10238,7 +10265,7 @@
         "description": "Selector endpoint for 'salesRepresentative' in order should exist"
       },
       {
-        "id": "t-701",
+        "id": "t-703",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "invoiceAddress",
@@ -10246,7 +10273,7 @@
         "description": "Selector endpoint for 'invoiceAddress' in order should exist"
       },
       {
-        "id": "t-702",
+        "id": "t-704",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "quotation",
@@ -10254,7 +10281,7 @@
         "description": "Selector endpoint for 'quotation' in order should exist"
       },
       {
-        "id": "t-703",
+        "id": "t-705",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "cancelledorder",
@@ -10262,7 +10289,7 @@
         "description": "Selector endpoint for 'cancelledorder' in order should exist"
       },
       {
-        "id": "t-704",
+        "id": "t-706",
         "category": "selector-endpoint",
         "entity": "order",
         "field": "replacedorder",
@@ -10270,7 +10297,7 @@
         "description": "Selector endpoint for 'replacedorder' in order should exist"
       },
       {
-        "id": "t-705",
+        "id": "t-707",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "product",
@@ -10278,7 +10305,7 @@
         "description": "Selector endpoint for 'product' in orderLine should exist"
       },
       {
-        "id": "t-706",
+        "id": "t-708",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "operativeUOM",
@@ -10286,7 +10313,7 @@
         "description": "Selector endpoint for 'operativeUOM' in orderLine should exist"
       },
       {
-        "id": "t-707",
+        "id": "t-709",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "uOM",
@@ -10294,7 +10321,7 @@
         "description": "Selector endpoint for 'uOM' in orderLine should exist"
       },
       {
-        "id": "t-708",
+        "id": "t-710",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "tax",
@@ -10302,7 +10329,7 @@
         "description": "Selector endpoint for 'tax' in orderLine should exist"
       },
       {
-        "id": "t-709",
+        "id": "t-711",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "replacedorderline",
@@ -10310,7 +10337,7 @@
         "description": "Selector endpoint for 'replacedorderline' in orderLine should exist"
       },
       {
-        "id": "t-710",
+        "id": "t-712",
         "category": "selector-endpoint",
         "entity": "orderLine",
         "field": "quotationLine",
@@ -10318,7 +10345,7 @@
         "description": "Selector endpoint for 'quotationLine' in orderLine should exist"
       },
       {
-        "id": "t-711",
+        "id": "t-713",
         "category": "selector-endpoint",
         "entity": "orderLineTax",
         "field": "tax",
@@ -10326,7 +10353,7 @@
         "description": "Selector endpoint for 'tax' in orderLineTax should exist"
       },
       {
-        "id": "t-712",
+        "id": "t-714",
         "category": "selector-endpoint",
         "entity": "reservedStock",
         "field": "stockReservation",
@@ -10334,7 +10361,7 @@
         "description": "Selector endpoint for 'stockReservation' in reservedStock should exist"
       },
       {
-        "id": "t-713",
+        "id": "t-715",
         "category": "selector-endpoint",
         "entity": "reservedStock",
         "field": "storageBin",
@@ -10342,7 +10369,7 @@
         "description": "Selector endpoint for 'storageBin' in reservedStock should exist"
       },
       {
-        "id": "t-714",
+        "id": "t-716",
         "category": "selector-endpoint",
         "entity": "reservedStock",
         "field": "salesOrderLine",
@@ -10350,7 +10377,7 @@
         "description": "Selector endpoint for 'salesOrderLine' in reservedStock should exist"
       },
       {
-        "id": "t-715",
+        "id": "t-717",
         "category": "selector-endpoint",
         "entity": "reservedStock",
         "field": "businessPartner",
@@ -10358,7 +10385,7 @@
         "description": "Selector endpoint for 'businessPartner' in reservedStock should exist"
       },
       {
-        "id": "t-716",
+        "id": "t-718",
         "category": "selector-endpoint",
         "entity": "relatedServices",
         "field": "product",
@@ -10366,7 +10393,7 @@
         "description": "Selector endpoint for 'product' in relatedServices should exist"
       },
       {
-        "id": "t-717",
+        "id": "t-719",
         "category": "selector-endpoint",
         "entity": "relatedProducts",
         "field": "product",
@@ -10374,7 +10401,7 @@
         "description": "Selector endpoint for 'product' in relatedProducts should exist"
       },
       {
-        "id": "t-718",
+        "id": "t-720",
         "category": "selector-endpoint",
         "entity": "orderTax",
         "field": "tax",
@@ -10382,7 +10409,7 @@
         "description": "Selector endpoint for 'tax' in orderTax should exist"
       },
       {
-        "id": "t-719",
+        "id": "t-721",
         "category": "selector-endpoint",
         "entity": "paymentPlan",
         "field": "paymentMethod",
@@ -10390,7 +10417,7 @@
         "description": "Selector endpoint for 'paymentMethod' in paymentPlan should exist"
       },
       {
-        "id": "t-720",
+        "id": "t-722",
         "category": "selector-endpoint",
         "entity": "paymentPlan",
         "field": "currency",
@@ -10398,7 +10425,7 @@
         "description": "Selector endpoint for 'currency' in paymentPlan should exist"
       },
       {
-        "id": "t-721",
+        "id": "t-723",
         "category": "selector-endpoint",
         "entity": "paymentDetails",
         "field": "payment",
@@ -10406,7 +10433,7 @@
         "description": "Selector endpoint for 'payment' in paymentDetails should exist"
       },
       {
-        "id": "t-722",
+        "id": "t-724",
         "category": "selector-endpoint",
         "entity": "replacementOrders",
         "field": "cReplacementID",
@@ -10414,7 +10441,7 @@
         "description": "Selector endpoint for 'cReplacementID' in replacementOrders should exist"
       },
       {
-        "id": "t-723",
+        "id": "t-725",
         "category": "action-endpoint",
         "entity": "order",
         "field": "rMPickFromShipment",
@@ -10422,7 +10449,7 @@
         "description": "Action endpoint for 'rMPickFromShipment' in order should exist"
       },
       {
-        "id": "t-724",
+        "id": "t-726",
         "category": "action-endpoint",
         "entity": "order",
         "field": "rMReceiveMaterials",
@@ -10430,7 +10457,7 @@
         "description": "Action endpoint for 'rMReceiveMaterials' in order should exist"
       },
       {
-        "id": "t-725",
+        "id": "t-727",
         "category": "action-endpoint",
         "entity": "order",
         "field": "rMCreateInvoice",
@@ -10438,7 +10465,7 @@
         "description": "Action endpoint for 'rMCreateInvoice' in order should exist"
       },
       {
-        "id": "t-726",
+        "id": "t-728",
         "category": "action-endpoint",
         "entity": "order",
         "field": "aPRMAddPayment",
@@ -10446,7 +10473,7 @@
         "description": "Action endpoint for 'aPRMAddPayment' in order should exist"
       },
       {
-        "id": "t-727",
+        "id": "t-729",
         "category": "action-endpoint",
         "entity": "order",
         "field": "documentAction",
@@ -10454,7 +10481,7 @@
         "description": "Action endpoint for 'documentAction' in order should exist"
       },
       {
-        "id": "t-728",
+        "id": "t-730",
         "category": "action-endpoint",
         "entity": "order",
         "field": "copyFrom",
@@ -10462,7 +10489,7 @@
         "description": "Action endpoint for 'copyFrom' in order should exist"
       },
       {
-        "id": "t-729",
+        "id": "t-731",
         "category": "action-endpoint",
         "entity": "order",
         "field": "copyFromPO",
@@ -10470,7 +10497,7 @@
         "description": "Action endpoint for 'copyFromPO' in order should exist"
       },
       {
-        "id": "t-730",
+        "id": "t-732",
         "category": "action-endpoint",
         "entity": "order",
         "field": "calculatePromotions",
@@ -10478,7 +10505,7 @@
         "description": "Action endpoint for 'calculatePromotions' in order should exist"
       },
       {
-        "id": "t-731",
+        "id": "t-733",
         "category": "action-endpoint",
         "entity": "order",
         "field": "rMAddOrphanLine",
@@ -10486,7 +10513,7 @@
         "description": "Action endpoint for 'rMAddOrphanLine' in order should exist"
       },
       {
-        "id": "t-732",
+        "id": "t-734",
         "category": "action-endpoint",
         "entity": "order",
         "field": "createOrder",
@@ -10494,7 +10521,7 @@
         "description": "Action endpoint for 'createOrder' in order should exist"
       },
       {
-        "id": "t-733",
+        "id": "t-735",
         "category": "action-endpoint",
         "entity": "order",
         "field": "cancelAndReplace",
@@ -10502,7 +10529,7 @@
         "description": "Action endpoint for 'cancelAndReplace' in order should exist"
       },
       {
-        "id": "t-734",
+        "id": "t-736",
         "category": "action-endpoint",
         "entity": "order",
         "field": "confirmCancelAndReplace",
@@ -10510,7 +10537,7 @@
         "description": "Action endpoint for 'confirmCancelAndReplace' in order should exist"
       },
       {
-        "id": "t-735",
+        "id": "t-737",
         "category": "action-endpoint",
         "entity": "order",
         "field": "generateTemplate",
@@ -10518,7 +10545,7 @@
         "description": "Action endpoint for 'generateTemplate' in order should exist"
       },
       {
-        "id": "t-736",
+        "id": "t-738",
         "category": "action-endpoint",
         "entity": "order",
         "field": "posted",
@@ -10526,7 +10553,7 @@
         "description": "Action endpoint for 'posted' in order should exist"
       },
       {
-        "id": "t-737",
+        "id": "t-739",
         "category": "action-endpoint",
         "entity": "order",
         "field": "processNow",
@@ -10534,7 +10561,7 @@
         "description": "Action endpoint for 'processNow' in order should exist"
       },
       {
-        "id": "t-738",
+        "id": "t-740",
         "category": "action-endpoint",
         "entity": "order",
         "field": "createPOLines",
@@ -10542,7 +10569,7 @@
         "description": "Action endpoint for 'createPOLines' in order should exist"
       },
       {
-        "id": "t-739",
+        "id": "t-741",
         "category": "action-endpoint",
         "entity": "order",
         "field": "rMPickfromreceipt",
@@ -10550,7 +10577,7 @@
         "description": "Action endpoint for 'rMPickfromreceipt' in order should exist"
       },
       {
-        "id": "t-740",
+        "id": "t-742",
         "category": "action-endpoint",
         "entity": "orderLine",
         "field": "manageReservation",
@@ -10558,7 +10585,7 @@
         "description": "Action endpoint for 'manageReservation' in orderLine should exist"
       },
       {
-        "id": "t-741",
+        "id": "t-743",
         "category": "action-endpoint",
         "entity": "orderLine",
         "field": "explode",
@@ -10566,7 +10593,7 @@
         "description": "Action endpoint for 'explode' in orderLine should exist"
       },
       {
-        "id": "t-742",
+        "id": "t-744",
         "category": "action-endpoint",
         "entity": "orderLine",
         "field": "selectOrderLine",
@@ -10574,7 +10601,7 @@
         "description": "Action endpoint for 'selectOrderLine' in orderLine should exist"
       },
       {
-        "id": "t-743",
+        "id": "t-745",
         "category": "action-endpoint",
         "entity": "orderLine",
         "field": "managePrereservation",
@@ -10582,7 +10609,7 @@
         "description": "Action endpoint for 'managePrereservation' in orderLine should exist"
       },
       {
-        "id": "t-744",
+        "id": "t-746",
         "category": "action-endpoint",
         "entity": "paymentPlan",
         "field": "updatePaymentPlan",
@@ -10591,7 +10618,7 @@
       }
     ],
     "summary": {
-      "total": 744,
+      "total": 746,
       "byCategory": {
         "field-presence": 82,
         "field-type": 82,
@@ -10603,13 +10630,15 @@
         "readonlylogic-evaluable": 3,
         "system-field": 228,
         "rule-declared": 254,
+        "process-happy": 1,
+        "process-failure": 1,
         "crud-flags": 10,
         "selector-endpoint": 29,
         "action-endpoint": 22
       },
       "byRunner": {
         "node": 744,
-        "junit": 0
+        "junit": 2
       }
     }
   }

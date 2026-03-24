@@ -28,7 +28,7 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:order
 const processes = [
-
+  { name: 'Process Order', label: 'Process  Order', style: 'positive' },
 ];
 // @sf-generated-end processes:order
 

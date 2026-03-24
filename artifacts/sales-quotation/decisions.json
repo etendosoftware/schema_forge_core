@@ -219,7 +219,8 @@
         "uOM": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "search"
+          "inputMode": "search",
+          "readOnlyLogic": null
         },
         "unitPrice": {
           "grid": true,
@@ -234,7 +235,8 @@
         "lineNetAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "number"
+          "inputMode": "number",
+          "readOnlyLogic": null
         },
         "tax": {
           "grid": true,
