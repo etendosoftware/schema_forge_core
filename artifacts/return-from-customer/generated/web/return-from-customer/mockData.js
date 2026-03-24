@@ -12,9 +12,7 @@ export const customerReturn = [
     "businessPartner": "Acme Corp",
     "partnerAddress": "Acme Corp",
     "warehouse": "Main Warehouse",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Standard order for Q1 delivery",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -28,9 +26,7 @@ export const customerReturn = [
     "businessPartner": "TechFlow Inc",
     "partnerAddress": "TechFlow Inc",
     "warehouse": "East Distribution Center",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Rush order - priority shipping required",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -44,9 +40,7 @@ export const customerReturn = [
     "businessPartner": "Global Trade Ltd",
     "partnerAddress": "Global Trade Ltd",
     "warehouse": "West Hub",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Bulk purchase for warehouse restocking",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -60,9 +54,7 @@ export const customerReturn = [
     "businessPartner": "Summit Industries",
     "partnerAddress": "Summit Industries",
     "warehouse": "North Storage",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Sample order for client evaluation",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -76,9 +68,7 @@ export const customerReturn = [
     "businessPartner": "Pacific Partners",
     "partnerAddress": "Pacific Partners",
     "warehouse": "South Logistics",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Recurring monthly supply order",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -92,9 +82,7 @@ export const customerReturn = [
     "businessPartner": "Alpine Solutions",
     "partnerAddress": "Alpine Solutions",
     "warehouse": "Central Depot",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Special pricing agreement applies",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -108,9 +96,7 @@ export const customerReturn = [
     "businessPartner": "Meridian Group",
     "partnerAddress": "Meridian Group",
     "warehouse": "Regional Warehouse A",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Consolidated order from multiple requests",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -124,9 +110,7 @@ export const customerReturn = [
     "businessPartner": "Vertex Systems",
     "partnerAddress": "Vertex Systems",
     "warehouse": "Regional Warehouse B",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Trial order for new product line",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -140,9 +124,7 @@ export const customerReturn = [
     "businessPartner": "Atlas Manufacturing",
     "partnerAddress": "Atlas Manufacturing",
     "warehouse": "Main Warehouse",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Replacement for damaged goods",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -156,9 +138,7 @@ export const customerReturn = [
     "businessPartner": "Nova Enterprises",
     "partnerAddress": "Nova Enterprises",
     "warehouse": "East Distribution Center",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Pre-season inventory build-up",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -172,9 +152,7 @@ export const customerReturn = [
     "businessPartner": "Pinnacle Services",
     "partnerAddress": "Pinnacle Services",
     "warehouse": "West Hub",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Customer-specific configuration",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -188,9 +166,7 @@ export const customerReturn = [
     "businessPartner": "Horizon Labs",
     "partnerAddress": "Horizon Labs",
     "warehouse": "North Storage",
-    "paymentTerms": "Sample paymentTerms",
     "description": "Government contract fulfillment",
-    "paymentMethod": "Sample paymentMethod",
     "salesRepresentative": "Sample salesRepresentative"
   }
 ];

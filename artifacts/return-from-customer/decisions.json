@@ -29,7 +29,7 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "section": "principal"
+          "section": "other"
         },
         "orderDate": {
           "visibility": "editable",
@@ -80,16 +80,10 @@
           "section": "other"
         },
         "paymentTerms": {
-          "visibility": "editable",
-          "grid": false,
-          "inputMode": "search",
-          "section": "other"
+          "visibility": "discarded"
         },
         "paymentMethod": {
-          "visibility": "editable",
-          "grid": false,
-          "inputMode": "search",
-          "section": "other"
+          "visibility": "discarded"
         },
         "rMReceiveMaterials": {
           "visibility": "system"

@@ -108,22 +108,6 @@ const api = {
     },
     {
       "entity": "customerReturn",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/paymentTerms"
-    },
-    {
-      "entity": "customerReturn",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "Paymentmethod",
-      "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/paymentMethod"
-    },
-    {
-      "entity": "customerReturn",
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "User",

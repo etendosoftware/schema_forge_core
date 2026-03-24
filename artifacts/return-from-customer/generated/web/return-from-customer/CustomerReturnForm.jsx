@@ -11,11 +11,9 @@ const fields = [
   // @sf-custom-slot callout:SE_Order_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, section: 'principal', reference: 'BPartner', inputMode: 'search' },
   // @sf-custom-slot callout:SE_Order_BPartnerLocation
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, section: 'principal', reference: 'BPartner_Location', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
+  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, section: 'other', reference: 'BPartner_Location', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'search', required: true, section: 'other', reference: 'Warehouse', inputMode: 'search' },
-  { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'search', required: true, section: 'other', reference: 'PaymentTerm', inputMode: 'search' },
   { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
-  { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'search', section: 'other', reference: 'Paymentmethod', inputMode: 'search' },
   { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'selector', section: 'other', reference: 'User', inputMode: 'selector' },
 ];
 // @sf-generated-end fields:customerReturn
