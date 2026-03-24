@@ -18,7 +18,7 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:customerReturn
 const processes = [
-
+  { name: 'Process Return', label: 'Process  Return', style: 'positive' },
 ];
 // @sf-generated-end processes:customerReturn
 
