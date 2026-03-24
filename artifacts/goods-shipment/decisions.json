@@ -187,27 +187,32 @@
       "fields": {
         "lineNo": {
           "grid": true,
-          "inputMode": "number"
+          "inputMode": "number",
+          "section": "principal"
         },
         "product": {
           "grid": true,
           "searchable": true,
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "movementQuantity": {
           "grid": true,
           "inputMode": "number",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "uOM": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "search"
+          "inputMode": "search",
+          "section": "principal"
         },
         "orderQuantity": {
           "visibility": "readOnly",
-          "grid": true
+          "grid": true,
+          "section": "principal"
         },
         "storageBin": {
           "visibility": "discarded"
@@ -215,7 +220,8 @@
         "description": {
           "grid": false,
           "form": true,
-          "inputMode": "textarea"
+          "inputMode": "textarea",
+          "section": "other"
         },
         "client": {
           "visibility": "system"
@@ -289,6 +295,25 @@
       "exclude": true
     }
   },
-  "rules": {},
+  "rules": {
+    "ReadOnly_When_Processed": {
+      "type": "displayLogic",
+      "entity": "goodsShipment",
+      "decision": "Keep",
+      "description": "Lock all editable fields when shipment status is Completed or Voided"
+    },
+    "BP_AutoFill_Address": {
+      "type": "callout",
+      "entity": "goodsShipment",
+      "decision": "Keep",
+      "description": "When changing business partner, auto-fill delivery address"
+    },
+    "Product_AutoFill_UOM": {
+      "type": "callout",
+      "entity": "goodsShipmentLine",
+      "decision": "Keep",
+      "description": "When selecting a product on a line, auto-fill UOM from product default"
+    }
+  },
   "discardPatterns": []
 }

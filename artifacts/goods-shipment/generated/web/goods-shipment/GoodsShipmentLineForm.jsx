@@ -6,10 +6,10 @@ const fields = [
   // @sf-custom-slot callout:SL_InOutLine_Product
   { key: 'product', column: 'M_Product_ID', type: 'search', section: 'principal', reference: 'Product', inputMode: 'search' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'text', required: true, section: 'principal' },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'search', required: true, readOnly: true, section: 'other', reference: 'UOM', inputMode: 'search' },
-  { key: 'description', column: 'Description', type: 'textarea', section: 'principal' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'search', required: true, readOnly: true, section: 'principal', reference: 'UOM', inputMode: 'search' },
+  { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
   // @sf-custom-slot callout:SL_InOut_Conversion
-  { key: 'orderQuantity', column: 'QuantityOrder', type: 'text', readOnly: true, section: 'other' },
+  { key: 'orderQuantity', column: 'QuantityOrder', type: 'text', readOnly: true, section: 'principal' },
 ];
 // @sf-generated-end fields:goodsShipmentLine
 

@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-23T15:50:23.920Z",
-  "checksum": "91a5e70c9952df01",
+  "version": "0.2.0",
+  "generatedAt": "2026-03-24T20:36:00.712Z",
+  "checksum": "b700c300fd095272",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -330,6 +330,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "section": "principal",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true
@@ -348,6 +349,7 @@
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOutLine_Product"
             }
@@ -362,7 +364,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "uOM",
@@ -377,6 +380,7 @@
             "form": true,
             "reference": "UOM",
             "inputMode": "search",
+            "section": "principal",
             "readOnlyLogic": {
               "raw": "@UomManagement@='Y'",
               "evaluable": true
@@ -392,7 +396,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "other"
           },
           {
             "name": "orderQuantity",
@@ -405,6 +410,7 @@
             "required": false,
             "grid": true,
             "form": true,
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_Conversion"
             },
@@ -1361,9 +1367,9 @@
       {
         "name": "Process Shipment",
         "method": "POST",
-        "path": "/goodsShipment/:id/action/docAction",
+        "path": "/goodsShipment/:id/action/documentAction",
         "entity": "goodsShipment",
-        "columnName": "docAction",
+        "columnName": "documentAction",
         "params": [],
         "preconditions": [],
         "steps": 0
@@ -2754,228 +2760,26 @@
       {
         "id": "t-151",
         "category": "rule-declared",
-        "rule": "SE_InOut_DocType_C_DocType_ID",
+        "rule": "ReadOnly_When_Processed",
         "runner": "node",
-        "description": "Rule 'SE_InOut_DocType_C_DocType_ID' (callout) should be declared"
+        "description": "Rule 'ReadOnly_When_Processed' (displayLogic) should be declared"
       },
       {
         "id": "t-152",
         "category": "rule-declared",
-        "rule": "SL_InOut_BPartner_C_BPartner_ID",
+        "rule": "BP_AutoFill_Address",
         "runner": "node",
-        "description": "Rule 'SL_InOut_BPartner_C_BPartner_ID' (callout) should be declared"
+        "description": "Rule 'BP_AutoFill_Address' (callout) should be declared"
       },
       {
         "id": "t-153",
         "category": "rule-declared",
-        "rule": "SL_InOut_Conversion_QuantityOrder",
+        "rule": "Product_AutoFill_UOM",
         "runner": "node",
-        "description": "Rule 'SL_InOut_Conversion_QuantityOrder' (callout) should be declared"
+        "description": "Rule 'Product_AutoFill_UOM' (callout) should be declared"
       },
       {
         "id": "t-154",
-        "category": "rule-declared",
-        "rule": "SL_InOut_Conversion_M_Product_Uom_Id",
-        "runner": "node",
-        "description": "Rule 'SL_InOut_Conversion_M_Product_Uom_Id' (callout) should be declared"
-      },
-      {
-        "id": "t-155",
-        "category": "rule-declared",
-        "rule": "SL_InOutLine_Product_M_Product_ID",
-        "runner": "node",
-        "description": "Rule 'SL_InOutLine_Product_M_Product_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-156",
-        "category": "rule-declared",
-        "rule": "OperativeQuantity_To_BaseQuantity_C_Aum",
-        "runner": "node",
-        "description": "Rule 'OperativeQuantity_To_BaseQuantity_C_Aum' (callout) should be declared"
-      },
-      {
-        "id": "t-157",
-        "category": "rule-declared",
-        "rule": "OperativeQuantity_To_BaseQuantity_Aumqty",
-        "runner": "node",
-        "description": "Rule 'OperativeQuantity_To_BaseQuantity_Aumqty' (callout) should be declared"
-      },
-      {
-        "id": "t-158",
-        "category": "rule-declared",
-        "rule": "SE_InOut_Warehouse_M_Warehouse_ID",
-        "runner": "node",
-        "description": "Rule 'SE_InOut_Warehouse_M_Warehouse_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-159",
-        "category": "rule-declared",
-        "rule": "SL_InOut_AccountingDate_MovementDate",
-        "runner": "node",
-        "description": "Rule 'SL_InOut_AccountingDate_MovementDate' (callout) should be declared"
-      },
-      {
-        "id": "t-160",
-        "category": "rule-declared",
-        "rule": "SE_InOut_Organization_AD_Org_ID",
-        "runner": "node",
-        "description": "Rule 'SE_InOut_Organization_AD_Org_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-161",
-        "category": "rule-declared",
-        "rule": "C_DocType Material Shipments/Receipts",
-        "runner": "node",
-        "description": "Rule 'C_DocType Material Shipments/Receipts' (validation) should be declared"
-      },
-      {
-        "id": "t-162",
-        "category": "rule-declared",
-        "rule": "C_BPartner Location - Ship To",
-        "runner": "node",
-        "description": "Rule 'C_BPartner Location - Ship To' (validation) should be declared"
-      },
-      {
-        "id": "t-163",
-        "category": "rule-declared",
-        "rule": "AD_User C_BPartner User/Contacts",
-        "runner": "node",
-        "description": "Rule 'AD_User C_BPartner User/Contacts' (validation) should be declared"
-      },
-      {
-        "id": "t-164",
-        "category": "rule-declared",
-        "rule": "AD_User - Org Tree",
-        "runner": "node",
-        "description": "Rule 'AD_User - Org Tree' (validation) should be declared"
-      },
-      {
-        "id": "t-165",
-        "category": "rule-declared",
-        "rule": "C_Project based on status and bpartner",
-        "runner": "node",
-        "description": "Rule 'C_Project based on status and bpartner' (validation) should be declared"
-      },
-      {
-        "id": "t-166",
-        "category": "rule-declared",
-        "rule": "AD_Org show child organizations",
-        "runner": "node",
-        "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
-      },
-      {
-        "id": "t-167",
-        "category": "rule-declared",
-        "rule": "M_Locator of Warehouse",
-        "runner": "node",
-        "description": "Rule 'M_Locator of Warehouse' (validation) should be declared"
-      },
-      {
-        "id": "t-168",
-        "category": "rule-declared",
-        "rule": "UOM Validation",
-        "runner": "node",
-        "description": "Rule 'UOM Validation' (validation) should be declared"
-      },
-      {
-        "id": "t-169",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-170",
-        "category": "rule-declared",
-        "rule": "Calculate Freight Amount",
-        "runner": "node",
-        "description": "Rule 'Calculate Freight Amount' (process) should be declared"
-      },
-      {
-        "id": "t-171",
-        "category": "rule-declared",
-        "rule": "Explode",
-        "runner": "node",
-        "description": "Rule 'Explode' (process) should be declared"
-      },
-      {
-        "id": "t-172",
-        "category": "rule-declared",
-        "rule": "Generate Invoice from Receipt",
-        "runner": "node",
-        "description": "Rule 'Generate Invoice from Receipt' (process) should be declared"
-      },
-      {
-        "id": "t-173",
-        "category": "rule-declared",
-        "rule": "Process Shipment",
-        "runner": "node",
-        "description": "Rule 'Process Shipment' (process) should be declared"
-      },
-      {
-        "id": "t-174",
-        "category": "rule-declared",
-        "rule": "Process Shipment Java",
-        "runner": "node",
-        "description": "Rule 'Process Shipment Java' (process) should be declared"
-      },
-      {
-        "id": "t-175",
-        "category": "rule-declared",
-        "rule": "Update Attributes from Shipment",
-        "runner": "node",
-        "description": "Rule 'Update Attributes from Shipment' (process) should be declared"
-      },
-      {
-        "id": "t-176",
-        "category": "rule-declared",
-        "rule": "CreateFrom",
-        "runner": "node",
-        "description": "Rule 'CreateFrom' (process) should be declared"
-      },
-      {
-        "id": "t-177",
-        "category": "rule-declared",
-        "rule": "Posted",
-        "runner": "node",
-        "description": "Rule 'Posted' (process) should be declared"
-      },
-      {
-        "id": "t-178",
-        "category": "rule-declared",
-        "rule": "Invoice From Shipment",
-        "runner": "node",
-        "description": "Rule 'Invoice From Shipment' (process) should be declared"
-      },
-      {
-        "id": "t-179",
-        "category": "rule-declared",
-        "rule": "Manage Prereservation Pick and Edit",
-        "runner": "node",
-        "description": "Rule 'Manage Prereservation Pick and Edit' (process) should be declared"
-      },
-      {
-        "id": "t-180",
-        "category": "rule-declared",
-        "rule": "RM Receipt Pick and Edit Lines",
-        "runner": "node",
-        "description": "Rule 'RM Receipt Pick and Edit Lines' (process) should be declared"
-      },
-      {
-        "id": "t-181",
-        "category": "rule-declared",
-        "rule": "RM Shipment Pick and Edit Lines",
-        "runner": "node",
-        "description": "Rule 'RM Shipment Pick and Edit Lines' (process) should be declared"
-      },
-      {
-        "id": "t-182",
-        "category": "rule-declared",
-        "rule": "Print shipments process",
-        "runner": "node",
-        "description": "Rule 'Print shipments process' (process) should be declared"
-      },
-      {
-        "id": "t-183",
         "category": "process-happy",
         "process": "Process Shipment",
         "entity": "goodsShipment",
@@ -2983,7 +2787,7 @@
         "description": "Process 'Process Shipment' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-184",
+        "id": "t-155",
         "category": "process-failure",
         "process": "Process Shipment",
         "entity": "goodsShipment",
@@ -2991,21 +2795,21 @@
         "description": "Process 'Process Shipment' should fail when preconditions are not met"
       },
       {
-        "id": "t-185",
+        "id": "t-156",
         "category": "crud-flags",
         "entity": "goodsShipment",
         "runner": "node",
         "description": "CRUD flags for 'goodsShipment' should all be booleans"
       },
       {
-        "id": "t-186",
+        "id": "t-157",
         "category": "crud-flags",
         "entity": "goodsShipmentLine",
         "runner": "node",
         "description": "CRUD flags for 'goodsShipmentLine' should all be booleans"
       },
       {
-        "id": "t-187",
+        "id": "t-158",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "warehouse",
@@ -3013,7 +2817,7 @@
         "description": "Selector endpoint for 'warehouse' in goodsShipment should exist"
       },
       {
-        "id": "t-188",
+        "id": "t-159",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "businessPartner",
@@ -3021,7 +2825,7 @@
         "description": "Selector endpoint for 'businessPartner' in goodsShipment should exist"
       },
       {
-        "id": "t-189",
+        "id": "t-160",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "partnerAddress",
@@ -3029,7 +2833,7 @@
         "description": "Selector endpoint for 'partnerAddress' in goodsShipment should exist"
       },
       {
-        "id": "t-190",
+        "id": "t-161",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "salesOrder",
@@ -3037,7 +2841,7 @@
         "description": "Selector endpoint for 'salesOrder' in goodsShipment should exist"
       },
       {
-        "id": "t-191",
+        "id": "t-162",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "shippingCompany",
@@ -3045,7 +2849,7 @@
         "description": "Selector endpoint for 'shippingCompany' in goodsShipment should exist"
       },
       {
-        "id": "t-192",
+        "id": "t-163",
         "category": "selector-endpoint",
         "entity": "goodsShipmentLine",
         "field": "product",
@@ -3053,7 +2857,7 @@
         "description": "Selector endpoint for 'product' in goodsShipmentLine should exist"
       },
       {
-        "id": "t-193",
+        "id": "t-164",
         "category": "selector-endpoint",
         "entity": "goodsShipmentLine",
         "field": "uOM",
@@ -3061,7 +2865,7 @@
         "description": "Selector endpoint for 'uOM' in goodsShipmentLine should exist"
       },
       {
-        "id": "t-194",
+        "id": "t-165",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "createLinesFrom",
@@ -3069,7 +2873,7 @@
         "description": "Action endpoint for 'createLinesFrom' in goodsShipment should exist"
       },
       {
-        "id": "t-195",
+        "id": "t-166",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "documentAction",
@@ -3077,7 +2881,7 @@
         "description": "Action endpoint for 'documentAction' in goodsShipment should exist"
       },
       {
-        "id": "t-196",
+        "id": "t-167",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "processGoodsJava",
@@ -3085,7 +2889,7 @@
         "description": "Action endpoint for 'processGoodsJava' in goodsShipment should exist"
       },
       {
-        "id": "t-197",
+        "id": "t-168",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "posted",
@@ -3093,7 +2897,7 @@
         "description": "Action endpoint for 'posted' in goodsShipment should exist"
       },
       {
-        "id": "t-198",
+        "id": "t-169",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "calculateFreight",
@@ -3101,7 +2905,7 @@
         "description": "Action endpoint for 'calculateFreight' in goodsShipment should exist"
       },
       {
-        "id": "t-199",
+        "id": "t-170",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "invoicefromshipment",
@@ -3109,7 +2913,7 @@
         "description": "Action endpoint for 'invoicefromshipment' in goodsShipment should exist"
       },
       {
-        "id": "t-200",
+        "id": "t-171",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "receiveMaterials",
@@ -3117,7 +2921,7 @@
         "description": "Action endpoint for 'receiveMaterials' in goodsShipment should exist"
       },
       {
-        "id": "t-201",
+        "id": "t-172",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "updateLines",
@@ -3125,7 +2929,7 @@
         "description": "Action endpoint for 'updateLines' in goodsShipment should exist"
       },
       {
-        "id": "t-202",
+        "id": "t-173",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "generateTo",
@@ -3133,7 +2937,7 @@
         "description": "Action endpoint for 'generateTo' in goodsShipment should exist"
       },
       {
-        "id": "t-203",
+        "id": "t-174",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "sendMaterials",
@@ -3141,7 +2945,7 @@
         "description": "Action endpoint for 'sendMaterials' in goodsShipment should exist"
       },
       {
-        "id": "t-204",
+        "id": "t-175",
         "category": "action-endpoint",
         "entity": "goodsShipmentLine",
         "field": "explode",
@@ -3149,7 +2953,7 @@
         "description": "Action endpoint for 'explode' in goodsShipmentLine should exist"
       },
       {
-        "id": "t-205",
+        "id": "t-176",
         "category": "action-endpoint",
         "entity": "goodsShipmentLine",
         "field": "managePrereservation",
@@ -3158,7 +2962,7 @@
       }
     ],
     "summary": {
-      "total": 205,
+      "total": 176,
       "byCategory": {
         "field-presence": 19,
         "field-type": 19,
@@ -3169,7 +2973,7 @@
         "displaylogic-evaluable": 4,
         "readonlylogic-evaluable": 6,
         "system-field": 84,
-        "rule-declared": 32,
+        "rule-declared": 3,
         "process-happy": 1,
         "process-failure": 1,
         "crud-flags": 2,
@@ -3177,7 +2981,7 @@
         "action-endpoint": 12
       },
       "byRunner": {
-        "node": 203,
+        "node": 174,
         "junit": 2
       }
     }
