@@ -9,7 +9,6 @@ const breadcrumb = 'Sales / Return from Customer';
 
 // @sf-generated-start summary:customerReturn
 const summary = [
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];

@@ -54,7 +54,8 @@
           "visibility": "readOnly",
           "grid": true,
           "inputMode": "number",
-          "section": "principal"
+          "section": "principal",
+          "form": false
         },
         "summedLineAmount": {
           "visibility": "readOnly",

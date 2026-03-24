@@ -2,7 +2,6 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:customerReturn
 const fields = [
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'principal' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'other' },
   { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true, section: 'principal' },
   { key: 'cReturnReasonID', column: 'C_Return_Reason_ID', type: 'search', section: 'principal', reference: 'Return_Reason', inputMode: 'search' },
