@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-24T20:48:33.386Z",
-  "checksum": "db887504fde95718",
+  "generatedAt": "2026-03-24T20:58:14.836Z",
+  "checksum": "a2a373fb20de6949",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -2004,6 +2004,16 @@
         "path": "/customerReturn/:id/action/documentAction",
         "entity": "customerReturn",
         "columnName": "documentAction",
+        "params": [],
+        "preconditions": [],
+        "steps": 0
+      },
+      {
+        "name": "Receive Materials",
+        "method": "POST",
+        "path": "/customerReturn/:id/action/rMReceiveMaterials",
+        "entity": "customerReturn",
+        "columnName": "rMReceiveMaterials",
         "params": [],
         "preconditions": [],
         "steps": 0
@@ -4163,13 +4173,29 @@
       {
         "id": "t-237",
         "category": "process-happy",
+        "process": "Receive Materials",
+        "entity": "customerReturn",
+        "runner": "junit",
+        "description": "Process 'Receive Materials' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-238",
+        "category": "process-failure",
+        "process": "Receive Materials",
+        "entity": "customerReturn",
+        "runner": "junit",
+        "description": "Process 'Receive Materials' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-239",
+        "category": "process-happy",
         "process": "Create Credit Note",
         "entity": "customerReturn",
         "runner": "junit",
         "description": "Process 'Create Credit Note' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-238",
+        "id": "t-240",
         "category": "process-failure",
         "process": "Create Credit Note",
         "entity": "customerReturn",
@@ -4177,21 +4203,21 @@
         "description": "Process 'Create Credit Note' should fail when preconditions are not met"
       },
       {
-        "id": "t-239",
+        "id": "t-241",
         "category": "crud-flags",
         "entity": "customerReturn",
         "runner": "node",
         "description": "CRUD flags for 'customerReturn' should all be booleans"
       },
       {
-        "id": "t-240",
+        "id": "t-242",
         "category": "crud-flags",
         "entity": "customerReturnLine",
         "runner": "node",
         "description": "CRUD flags for 'customerReturnLine' should all be booleans"
       },
       {
-        "id": "t-241",
+        "id": "t-243",
         "category": "selector-endpoint",
         "entity": "customerReturn",
         "field": "cReturnReasonID",
@@ -4199,7 +4225,7 @@
         "description": "Selector endpoint for 'cReturnReasonID' in customerReturn should exist"
       },
       {
-        "id": "t-242",
+        "id": "t-244",
         "category": "selector-endpoint",
         "entity": "customerReturn",
         "field": "businessPartner",
@@ -4207,7 +4233,7 @@
         "description": "Selector endpoint for 'businessPartner' in customerReturn should exist"
       },
       {
-        "id": "t-243",
+        "id": "t-245",
         "category": "selector-endpoint",
         "entity": "customerReturn",
         "field": "partnerAddress",
@@ -4215,7 +4241,7 @@
         "description": "Selector endpoint for 'partnerAddress' in customerReturn should exist"
       },
       {
-        "id": "t-244",
+        "id": "t-246",
         "category": "selector-endpoint",
         "entity": "customerReturn",
         "field": "warehouse",
@@ -4223,7 +4249,7 @@
         "description": "Selector endpoint for 'warehouse' in customerReturn should exist"
       },
       {
-        "id": "t-245",
+        "id": "t-247",
         "category": "selector-endpoint",
         "entity": "customerReturn",
         "field": "salesRepresentative",
@@ -4231,7 +4257,7 @@
         "description": "Selector endpoint for 'salesRepresentative' in customerReturn should exist"
       },
       {
-        "id": "t-246",
+        "id": "t-248",
         "category": "selector-endpoint",
         "entity": "customerReturnLine",
         "field": "product",
@@ -4239,7 +4265,7 @@
         "description": "Selector endpoint for 'product' in customerReturnLine should exist"
       },
       {
-        "id": "t-247",
+        "id": "t-249",
         "category": "selector-endpoint",
         "entity": "customerReturnLine",
         "field": "cReturnReasonID",
@@ -4247,7 +4273,7 @@
         "description": "Selector endpoint for 'cReturnReasonID' in customerReturnLine should exist"
       },
       {
-        "id": "t-248",
+        "id": "t-250",
         "category": "selector-endpoint",
         "entity": "customerReturnLine",
         "field": "uOM",
@@ -4255,7 +4281,7 @@
         "description": "Selector endpoint for 'uOM' in customerReturnLine should exist"
       },
       {
-        "id": "t-249",
+        "id": "t-251",
         "category": "selector-endpoint",
         "entity": "customerReturnLine",
         "field": "tax",
@@ -4263,7 +4289,7 @@
         "description": "Selector endpoint for 'tax' in customerReturnLine should exist"
       },
       {
-        "id": "t-250",
+        "id": "t-252",
         "category": "selector-endpoint",
         "entity": "customerReturnLine",
         "field": "goodsShipmentLine",
@@ -4271,7 +4297,7 @@
         "description": "Selector endpoint for 'goodsShipmentLine' in customerReturnLine should exist"
       },
       {
-        "id": "t-251",
+        "id": "t-253",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "rMReceiveMaterials",
@@ -4279,7 +4305,7 @@
         "description": "Action endpoint for 'rMReceiveMaterials' in customerReturn should exist"
       },
       {
-        "id": "t-252",
+        "id": "t-254",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "documentAction",
@@ -4287,7 +4313,7 @@
         "description": "Action endpoint for 'documentAction' in customerReturn should exist"
       },
       {
-        "id": "t-253",
+        "id": "t-255",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "rMAddOrphanLine",
@@ -4295,7 +4321,7 @@
         "description": "Action endpoint for 'rMAddOrphanLine' in customerReturn should exist"
       },
       {
-        "id": "t-254",
+        "id": "t-256",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "rMPickFromShipment",
@@ -4303,7 +4329,7 @@
         "description": "Action endpoint for 'rMPickFromShipment' in customerReturn should exist"
       },
       {
-        "id": "t-255",
+        "id": "t-257",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "rMCreateInvoice",
@@ -4311,7 +4337,7 @@
         "description": "Action endpoint for 'rMCreateInvoice' in customerReturn should exist"
       },
       {
-        "id": "t-256",
+        "id": "t-258",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "processNow",
@@ -4319,7 +4345,7 @@
         "description": "Action endpoint for 'processNow' in customerReturn should exist"
       },
       {
-        "id": "t-257",
+        "id": "t-259",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "copyFrom",
@@ -4327,7 +4353,7 @@
         "description": "Action endpoint for 'copyFrom' in customerReturn should exist"
       },
       {
-        "id": "t-258",
+        "id": "t-260",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "generateTemplate",
@@ -4335,7 +4361,7 @@
         "description": "Action endpoint for 'generateTemplate' in customerReturn should exist"
       },
       {
-        "id": "t-259",
+        "id": "t-261",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "copyFromPO",
@@ -4343,7 +4369,7 @@
         "description": "Action endpoint for 'copyFromPO' in customerReturn should exist"
       },
       {
-        "id": "t-260",
+        "id": "t-262",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "posted",
@@ -4351,7 +4377,7 @@
         "description": "Action endpoint for 'posted' in customerReturn should exist"
       },
       {
-        "id": "t-261",
+        "id": "t-263",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "calculatePromotions",
@@ -4359,7 +4385,7 @@
         "description": "Action endpoint for 'calculatePromotions' in customerReturn should exist"
       },
       {
-        "id": "t-262",
+        "id": "t-264",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "cancelandreplace",
@@ -4367,7 +4393,7 @@
         "description": "Action endpoint for 'cancelandreplace' in customerReturn should exist"
       },
       {
-        "id": "t-263",
+        "id": "t-265",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "confirmcancelandreplace",
@@ -4375,7 +4401,7 @@
         "description": "Action endpoint for 'confirmcancelandreplace' in customerReturn should exist"
       },
       {
-        "id": "t-264",
+        "id": "t-266",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "createOrder",
@@ -4383,7 +4409,7 @@
         "description": "Action endpoint for 'createOrder' in customerReturn should exist"
       },
       {
-        "id": "t-265",
+        "id": "t-267",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "createPOLines",
@@ -4391,7 +4417,7 @@
         "description": "Action endpoint for 'createPOLines' in customerReturn should exist"
       },
       {
-        "id": "t-266",
+        "id": "t-268",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "aPRMAddPayment",
@@ -4399,7 +4425,7 @@
         "description": "Action endpoint for 'aPRMAddPayment' in customerReturn should exist"
       },
       {
-        "id": "t-267",
+        "id": "t-269",
         "category": "action-endpoint",
         "entity": "customerReturn",
         "field": "rMPickfromreceipt",
@@ -4407,7 +4433,7 @@
         "description": "Action endpoint for 'rMPickfromreceipt' in customerReturn should exist"
       },
       {
-        "id": "t-268",
+        "id": "t-270",
         "category": "action-endpoint",
         "entity": "customerReturnLine",
         "field": "selectOrderLine",
@@ -4415,7 +4441,7 @@
         "description": "Action endpoint for 'selectOrderLine' in customerReturnLine should exist"
       },
       {
-        "id": "t-269",
+        "id": "t-271",
         "category": "action-endpoint",
         "entity": "customerReturnLine",
         "field": "explode",
@@ -4423,7 +4449,7 @@
         "description": "Action endpoint for 'explode' in customerReturnLine should exist"
       },
       {
-        "id": "t-270",
+        "id": "t-272",
         "category": "action-endpoint",
         "entity": "customerReturnLine",
         "field": "managePrereservation",
@@ -4431,7 +4457,7 @@
         "description": "Action endpoint for 'managePrereservation' in customerReturnLine should exist"
       },
       {
-        "id": "t-271",
+        "id": "t-273",
         "category": "action-endpoint",
         "entity": "customerReturnLine",
         "field": "manageReservation",
@@ -4440,7 +4466,7 @@
       }
     ],
     "summary": {
-      "total": 271,
+      "total": 273,
       "byCategory": {
         "field-presence": 22,
         "field-type": 22,
@@ -4452,15 +4478,15 @@
         "displaylogic-evaluable": 1,
         "system-field": 149,
         "rule-declared": 6,
-        "process-happy": 2,
-        "process-failure": 2,
+        "process-happy": 3,
+        "process-failure": 3,
         "crud-flags": 2,
         "selector-endpoint": 10,
         "action-endpoint": 21
       },
       "byRunner": {
         "node": 267,
-        "junit": 4
+        "junit": 6
       }
     }
   }
