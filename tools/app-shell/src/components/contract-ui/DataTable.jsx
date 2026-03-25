@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
+import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
@@ -14,7 +16,7 @@ import { formatAmount } from '@/lib/formatAmount.js';
  * Compact inline combobox for search-type FK fields in rapid line entry.
  * Text input with filtered dropdown — lightweight alternative to full SearchInput.
  */
-function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, token }) {
+function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [serverResults, setServerResults] = useState(null);
@@ -26,7 +28,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
     if (!selectorUrl || !token || !q.trim()) { setServerResults(null); return; }
     clearTimeout(fetchTimer.current);
     fetchTimer.current = setTimeout(() => {
-      fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+      fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: q.trim() }), {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       })
         .then(r => r.ok ? r.json() : null)
@@ -35,7 +37,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
         })
         .catch(() => {});
     }, 300);
-  }, [selectorUrl, token]);
+  }, [selectorUrl, selectorContext, token]);
 
   const filtered = useMemo(() => {
     if (serverResults) return serverResults.slice(0, 20);
@@ -173,7 +175,7 @@ function EmptyState({ hasFilter, totalCount }) {
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -212,8 +214,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     setValues(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleConfirm = () => {
-    onAdd(values);
+  const handleConfirm = async () => {
+    const result = await onAdd(values);
+    if (result === false || result == null) {
+      return;
+    }
     // Reset for next rapid entry — recompute lineNo
     const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(values.lineNo) || 0];
     const nextLineNo = Math.max(...nums) + 10;
@@ -256,7 +261,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleConfirm();
+      void handleConfirm();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
@@ -271,7 +276,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       {selectable && (
         <TableCell className="w-10 px-1">
           <div className="flex gap-0.5">
-            <button type="button" onClick={handleConfirm} title="Add (Enter)"
+            <button type="button" onClick={() => { void handleConfirm(); }} title="Add (Enter)"
               className="h-7 w-7 flex items-center justify-center rounded text-emerald-600 hover:bg-emerald-50">
               <Check className="h-3.5 w-3.5" />
             </button>
@@ -298,7 +303,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 
         // Search fields render as compact combobox (text input + filtered dropdown)
         if (field.type === 'search') {
-          const options = catalogs?.[field.reference] || [];
+          const options = getCatalogOptions(catalogs, entity, field);
           const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
           return (
             <TableCell key={col.key} className="py-1 px-2">
@@ -314,6 +319,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 }}
                 onKeyDown={handleKeyDown}
                 selectorUrl={selectorUrl}
+                selectorContext={selectorContext}
                 token={token}
               />
             </TableCell>
@@ -321,8 +327,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         }
 
         // Selector fields render as native <select> dropdowns (few options)
-        if (field.type === 'selector' && catalogs?.[field.reference]) {
-          const options = catalogs[field.reference] || [];
+        if (field.type === 'selector') {
+          const options = getCatalogOptions(catalogs, entity, field);
+          if (options.length === 0) {
+            return <TableCell key={col.key} className="py-1 px-2" />;
+          }
           return (
             <TableCell key={col.key} className="py-1 px-2">
               <select
@@ -339,7 +348,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 onKeyDown={handleKeyDown}
                 className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="">{t(field.column) ?? field.label ?? field.key}</option>
+                <option value="" disabled hidden>{t(field.column) ?? field.label ?? field.key}</option>
                 {options.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</option>
                 ))}
@@ -382,7 +391,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, selectorContext }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -596,12 +605,13 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 data={data}
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
-                selectable={selectable}
-                token={token}
-                apiBaseUrl={apiBaseUrl}
-                entity={entity}
-              />
-            )}
+                  selectable={selectable}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                  entity={entity}
+                  selectorContext={selectorContext}
+                />
+              )}
           </TableBody>
           {totals && (
             <TableFooter>

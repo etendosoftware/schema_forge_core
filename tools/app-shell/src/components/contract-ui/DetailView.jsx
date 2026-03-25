@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Trash2 } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
@@ -10,11 +10,13 @@ import { useCallout } from '@/hooks/useCallout';
 import { useMenuLabel } from '@/i18n';
 import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
+import { toast } from 'sonner';
 
 /**
  * Full-page detail view for a single entity record.
@@ -49,7 +51,22 @@ export function DetailView({
   const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.key ?? null, { token, apiBaseUrl });
   const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.key ?? null, { token, apiBaseUrl });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
-  const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
+  const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
+  const selectorContextByEntity = useMemo(() => {
+    if (!parentRecordId) return {};
+
+    const next = {};
+    if (detailEntity) {
+      next[detailEntity] = { parentId: parentRecordId };
+    }
+    for (const tab of secondaryTabs) {
+      if (tab?.key) {
+        next[tab.key] = { parentId: parentRecordId };
+      }
+    }
+    return next;
+  }, [detailEntity, parentRecordId, secondaryTabs]);
+  const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
@@ -59,23 +76,48 @@ export function DetailView({
   const [showPrint, setShowPrint] = useState(false);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
+  const [lineEdits, setLineEdits] = useState(null);
+  const [lineEditColumns, setLineEditColumns] = useState({});
+  const [savingLine, setSavingLine] = useState(false);
   const [isClosingLine, setIsClosingLine] = useState(false);
+  const [editingChild, setEditingChild] = useState(null);
+  const [savingChild, setSavingChild] = useState(false);
 
   const closeLine = useCallback(() => {
     setIsClosingLine(true);
     setTimeout(() => {
       setSelectedLine(null);
+      setLineEdits(null);
+      setLineEditColumns({});
       setIsClosingLine(false);
     }, 250);
   }, []);
 
   const [selectedSecondaryLine, setSelectedSecondaryLine] = useState(null);
+  const [secondaryLineEdits, setSecondaryLineEdits] = useState(null);
+  const [secondaryLineEditColumns, setSecondaryLineEditColumns] = useState({});
+  const [savingSecondaryLine, setSavingSecondaryLine] = useState(false);
   const [isClosingSecondaryLine, setIsClosingSecondaryLine] = useState(false);
+
+  const extractErrorMessage = useCallback(async (res) => {
+    try {
+      const data = await res.json();
+      const err = data?.response?.error;
+      if (err?.message) return err.message;
+      if (typeof err === 'string') return err;
+      if (data?.message) return data.message;
+    } catch {
+      // Ignore non-JSON error bodies.
+    }
+    return `Error ${res.status}`;
+  }, []);
 
   const closeSecondaryLine = useCallback(() => {
     setIsClosingSecondaryLine(true);
     setTimeout(() => {
       setSelectedSecondaryLine(null);
+      setSecondaryLineEdits(null);
+      setSecondaryLineEditColumns({});
       setIsClosingSecondaryLine(false);
     }, 250);
   }, []);
@@ -103,7 +145,7 @@ export function DetailView({
     for (const sel of api.selectors) {
       const val = hook.editing[sel.field];
       if (!val || hook.editing[sel.field + '$_identifier']) continue;
-      const options = catalogs[sel.reference];
+      const options = getCatalogOptions(catalogs, sel.entity, sel);
       if (!Array.isArray(options) || options.length === 0) continue;
       const match = options.find(o => o.id === val);
       if (match) {
@@ -264,6 +306,8 @@ export function DetailView({
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
 
   const allEntryFields = addLineFields.entry ?? [];
+  const hiddenEntryDefaults = addLineFields.hidden ?? [];
+  const editableChildFields = allEntryFields.filter(f => f.type === 'number' || f.type === 'amount');
 
   // Build tabs: child entity lines + secondary tabs + "Others" tab for non-principal header fields
   const tabs = [];
@@ -471,27 +515,113 @@ export function DetailView({
                         entity={detailEntity}
                         token={token}
                         apiBaseUrl={apiBaseUrl}
-                        onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
-                        selectedRowId={selectedLine?.id}
+                        selectorContext={selectorContextByEntity[detailEntity]}
+                        onRowClick={DetailForm
+                          ? (row) => { setSelectedLine(row); setLineEdits(null); }
+                          : (row) => {
+                            if (editingChild?.id === row.id) { setEditingChild(null); }
+                            else { setEditingChild({ ...row }); setAddingLine(false); }
+                          }
+                        }
+                        selectedRowId={DetailForm ? selectedLine?.id : editingChild?.id}
                         addRow={{
                           active: addingLine,
                           fields: allEntryFields,
-                          onAdd: (lineData) => {
+                          onAdd: async (lineData) => {
                             // Only send entry field keys to the API — exclude callout-derived values
                             const entryKeys = new Set(allEntryFields.map(f => f.key));
                             const filtered = {};
                             for (const [k, v] of Object.entries(lineData)) {
                               if (entryKeys.has(k)) filtered[k] = v;
                             }
-                            hook.handleAddChild?.(filtered);
+                            for (const hiddenField of hiddenEntryDefaults) {
+                              if (!(hiddenField.key in filtered)) {
+                                filtered[hiddenField.key] = hiddenField.value;
+                              }
+                            }
+                            return hook.handleAddChild?.(filtered);
                           },
                           onCancel: () => setAddingLine(false),
                           catalogs,
                           onFieldChange: handleLineFieldChange,
                         }}
                       />
+
+                      {/* Inline edit form for selected child row (when no DetailForm) */}
+                      {!DetailForm && editingChild && editableChildFields.length > 0 && (
+                        <div className="mt-3 p-4 border rounded-lg bg-muted/20">
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-3">
+                            {editableChildFields.map(f => (
+                              <div key={f.key} className="flex flex-col gap-1">
+                                <label className="text-xs font-medium text-muted-foreground">{f.label || f.key}</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={editingChild[f.key] ?? ''}
+                                  onChange={e => setEditingChild(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              disabled={savingChild}
+                              onClick={async () => {
+                                setSavingChild(true);
+                                try {
+                                  const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', editingChild.id)
+                                    || `${apiBaseUrl}/${detailEntity}/${editingChild.id}`;
+                                  const fieldValues = {};
+                                  for (const f of editableChildFields) {
+                                    fieldValues[f.column] = editingChild[f.key];
+                                  }
+                                  const res = await fetch(childUrl, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                    body: JSON.stringify({ fieldValues }),
+                                  });
+                                  if (res.ok) {
+                                    hook.handleUpdateChild(editingChild.id, editableChildFields.reduce((acc, f) => ({ ...acc, [f.key]: editingChild[f.key] }), {}));
+                                    setEditingChild(null);
+                                  }
+                                } finally { setSavingChild(false); }
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              {savingChild ? 'Saving…' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => setEditingChild(null)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              disabled={savingChild}
+                              onClick={async () => {
+                                if (!window.confirm('Delete this record?')) return;
+                                setSavingChild(true);
+                                try {
+                                  const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', editingChild.id)
+                                    || `${apiBaseUrl}/${detailEntity}/${editingChild.id}`;
+                                  const res = await fetch(childUrl, {
+                                    method: 'DELETE',
+                                    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                  });
+                                  if (res.ok) { hook.handleDeleteChild(editingChild.id); setEditingChild(null); }
+                                } finally { setSavingChild(false); }
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <button
-                        onClick={() => setAddingLine(!addingLine)}
+                        onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
                       >
                         + Add {detailLabel || 'line'}
@@ -511,11 +641,101 @@ export function DetailView({
                           </button>
                         </div>
                         <DetailForm
-                          data={selectedLine}
-                          readOnly={true}
+                          data={lineEdits ?? selectedLine}
+                          readOnly={!hook.editing}
+                          onChange={(key, val, column) => {
+                            setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
+                            if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
+                          }}
                           entity={detailEntity}
                           catalogs={catalogs}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                          selectorContext={selectorContextByEntity[detailEntity]}
                         />
+                        {hook.editing && (lineEdits || selectedLine?.id) && (
+                          <div className="flex gap-2 mt-4">
+                            {lineEdits && (
+                              <>
+                                <button
+                                  disabled={savingLine}
+                                  onClick={async () => {
+                                    setSavingLine(true);
+                                    try {
+                                      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', selectedLine.id)
+                                        || `${apiBaseUrl}/${detailEntity}/${selectedLine.id}`;
+                                      const fieldValues = {};
+                                      for (const [k, v] of Object.entries(lineEdits)) {
+                                        if (k.endsWith('$_identifier')) continue;
+                                        // Convert numeric strings to numbers for BigDecimal compatibility
+                                        if (typeof v === 'string' && v.match(/^-?\d[\d,]*(\.\d+)?$/)) {
+                                          fieldValues[k] = Number(v.replace(/,/g, ''));
+                                        } else {
+                                          fieldValues[k] = v;
+                                        }
+                                      }
+                                      const res = await fetch(childUrl, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                        body: JSON.stringify(fieldValues),
+                                      });
+                                      if (res.ok) {
+                                        hook.handleUpdateChild(selectedLine.id, lineEdits);
+                                        setSelectedLine(prev => ({ ...prev, ...lineEdits }));
+                                        setLineEdits(null);
+                                        setLineEditColumns({});
+                                        toast.success('Record saved');
+                                      } else {
+                                        toast.error(await extractErrorMessage(res));
+                                      }
+                                    } catch (err) {
+                                      toast.error(err.message || 'Network error');
+                                    } finally { setSavingLine(false); }
+                                  }}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                >
+                                  {savingLine ? 'Saving…' : 'Save'}
+                                </button>
+                                <button
+                                  onClick={() => setLineEdits(null)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                                >
+                                  Discard
+                                </button>
+                              </>
+                            )}
+                            {(api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && (
+                              <button
+                                disabled={savingLine}
+                                onClick={async () => {
+                                  if (!window.confirm('Delete this record?')) return;
+                                  setSavingLine(true);
+                                  try {
+                                    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', selectedLine.id)
+                                      || `${apiBaseUrl}/${detailEntity}/${selectedLine.id}`;
+                                    const res = await fetch(childUrl, {
+                                      method: 'DELETE',
+                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                    });
+                                    if (res.ok) {
+                                      hook.handleDeleteChild(selectedLine.id);
+                                      toast.success('Record deleted');
+                                      closeLine();
+                                    } else {
+                                      toast.error(await extractErrorMessage(res));
+                                    }
+                                  } catch (err) {
+                                    toast.error(err.message || 'Network error');
+                                  } finally { setSavingLine(false); }
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -528,7 +748,8 @@ export function DetailView({
                       <st.Table
                         data={secondaryHooks[stIdx]?.children ?? []}
                         entity={st.key}
-                        onRowClick={st.Form ? (row) => setSelectedSecondaryLine({ ...row, _tabKey: st.key }) : undefined}
+                        selectorContext={selectorContextByEntity[st.key]}
+                        onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
                       />
                     </div>
@@ -544,11 +765,98 @@ export function DetailView({
                           </button>
                         </div>
                         <st.Form
-                          data={selectedSecondaryLine}
-                          readOnly={true}
+                          data={secondaryLineEdits ?? selectedSecondaryLine}
+                          readOnly={!hook.editing}
+                          onChange={(key, val, column) => {
+                            setSecondaryLineEdits(prev => ({ ...(prev ?? selectedSecondaryLine), [key]: val }));
+                            if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
+                          }}
                           entity={st.key}
                           catalogs={catalogs}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                          selectorContext={selectorContextByEntity[st.key]}
                         />
+                        {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
+                          <div className="flex gap-2 mt-4">
+                            {secondaryLineEdits && (
+                              <>
+                                <button
+                                  disabled={savingSecondaryLine}
+                                  onClick={async () => {
+                                    setSavingSecondaryLine(true);
+                                    try {
+                                      const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
+                                      const fieldValues = {};
+                                      for (const [k, v] of Object.entries(secondaryLineEdits)) {
+                                        if (k.endsWith('$_identifier')) continue;
+                                        // Convert numeric strings to numbers for BigDecimal compatibility
+                                        if (typeof v === 'string' && v.match(/^-?\d[\d,]*(\.\d+)?$/)) {
+                                          fieldValues[k] = Number(v.replace(/,/g, ''));
+                                        } else {
+                                          fieldValues[k] = v;
+                                        }
+                                      }
+                                      const res = await fetch(secUrl, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                        body: JSON.stringify(fieldValues),
+                                      });
+                                      if (res.ok) {
+                                        setSelectedSecondaryLine(prev => ({ ...prev, ...secondaryLineEdits }));
+                                        setSecondaryLineEdits(null);
+                                        setSecondaryLineEditColumns({});
+                                        toast.success('Record saved');
+                                      } else {
+                                        toast.error(await extractErrorMessage(res));
+                                      }
+                                    } catch (err) {
+                                      toast.error(err.message || 'Network error');
+                                    } finally { setSavingSecondaryLine(false); }
+                                  }}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                >
+                                  {savingSecondaryLine ? 'Saving…' : 'Save'}
+                                </button>
+                                <button
+                                  onClick={() => setSecondaryLineEdits(null)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
+                                >
+                                  Discard
+                                </button>
+                              </>
+                            )}
+                            {(api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
+                              <button
+                                disabled={savingSecondaryLine}
+                                onClick={async () => {
+                                  if (!window.confirm('Delete this record?')) return;
+                                  setSavingSecondaryLine(true);
+                                  try {
+                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
+                                    const res = await fetch(secUrl, {
+                                      method: 'DELETE',
+                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                    });
+                                    if (res.ok) {
+                                      secondaryHooks[stIdx]?.handleDeleteChild(selectedSecondaryLine.id);
+                                      toast.success('Record deleted');
+                                      closeSecondaryLine();
+                                    } else {
+                                      toast.error(await extractErrorMessage(res));
+                                    }
+                                  } catch (err) {
+                                    toast.error(err.message || 'Network error');
+                                  } finally { setSavingSecondaryLine(false); }
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

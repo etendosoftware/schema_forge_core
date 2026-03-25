@@ -5,13 +5,16 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Search, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { getCatalogOptions } from '@/lib/selectorCatalog.js';
+import { ImageField } from './ImageField.jsx';
 
 /**
  * Combobox-style search input for foreign key fields.
  * Filters results from catalogs when typing.
  */
-function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
+function SearchInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(displayValue || value || '');
   const [serverResults, setServerResults] = useState(null);
@@ -34,12 +37,12 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
   React.useEffect(() => {
     if (!value || displayValue || isEditingRef.current) return;
     // Try local catalog
-    const localOptions = catalogs?.[field.reference] ?? [];
+    const localOptions = getCatalogOptions(catalogs, entityName, field);
     const local = localOptions.find(opt => opt.id === value);
     if (local) { setQuery(local.name || value); return; }
     // Try server selector with ?id=
     if (!selectorUrl || !token) return;
-    fetch(`${selectorUrl}?id=${encodeURIComponent(value)}`, {
+    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, id: value }), {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(res => res.ok ? res.json() : null)
@@ -53,8 +56,8 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           onChange?.(null, '');
         }
       })
-      .catch(() => {});
-  }, [value, displayValue, selectorUrl, token, catalogs, field.reference]);
+      .catch(() => { });
+  }, [value, displayValue, selectorUrl, selectorContext, token, catalogs, entityName, field]);
 
   // Server-side search: fetch with ?q= when selectorUrl and token are available.
   const fetchServerResults = useCallback((q) => {
@@ -64,7 +67,7 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
       return;
     }
     setFetching(true);
-    fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: q.trim() }), {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
       .then(res => res.ok ? res.json() : null)
@@ -77,12 +80,12 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
           })));
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setFetching(false));
-  }, [selectorUrl, token]);
+  }, [selectorUrl, selectorContext, token]);
 
   // Local fallback: filter the pre-loaded catalog (used when selectorUrl not available)
-  const localOptions = catalogs?.[field.reference] ?? [];
+  const localOptions = getCatalogOptions(catalogs, entityName, field);
   const filtered = useMemo(() => {
     // Server results take priority when available
     if (serverResults !== null) return serverResults.slice(0, 20);
@@ -189,8 +192,8 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedL
  * Dropdown selector for FK fields with few options (inputMode: selector).
  * Uses shadcn Select (Radix) for consistent styling.
  */
-function SelectorInput({ field, value, displayValue, onChange, catalogs, resolvedLabel }) {
-  const catalogOptions = catalogs?.[field.reference] ?? [];
+function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel }) {
+  const catalogOptions = getCatalogOptions(catalogs, entityName, field);
   // If the current value isn't in the catalog (real data vs mock), add it
   const hasValue = value && catalogOptions.some(opt => opt.id === value);
   const options = (!hasValue && value && displayValue)
@@ -222,7 +225,7 @@ function SelectorInput({ field, value, displayValue, onChange, catalogs, resolve
  * Dependent dropdown that filters options by a parent field value (inputMode: dependent).
  * Uses shadcn Select (Radix) for consistent styling.
  */
-function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel, selectorUrl, token }) {
+function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel, selectorUrl, selectorContext, token }) {
   const parentValue = formData?.[field.dependsOn?.field];
   const [dynamicOptions, setDynamicOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -234,7 +237,10 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
       return;
     }
     setLoading(true);
-    const url = `${selectorUrl}?${field.dependsOn?.filterKey}=${encodeURIComponent(parentValue)}`;
+    const url = buildUrlWithParams(selectorUrl, {
+      ...selectorContext,
+      [field.dependsOn?.filterKey]: parentValue,
+    });
     fetch(url, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
@@ -251,7 +257,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
       })
       .catch(() => setDynamicOptions([]))
       .finally(() => setLoading(false));
-  }, [parentValue, selectorUrl, token]);
+  }, [parentValue, selectorUrl, selectorContext, token, field.dependsOn?.filterKey]);
 
   // If the current value isn't in options (real data from existing record), add it
   const hasValue = value && dynamicOptions.some(opt => opt.id === value);
@@ -293,7 +299,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section, displayLogic, api, token, apiBaseUrl }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section, displayLogic, api, token, apiBaseUrl, selectorContext = {} }) {
   const t = useLabel();
   let displayFields;
   if (section) {
@@ -320,197 +326,259 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4'
     : 'grid grid-cols-2 gap-3 md:grid-cols-3';
 
-  return (
-    <div className={gridClass}>
-      {displayFields.map(f => {
-        // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
-        const label = f.label ?? t(f.column) ?? f.key;
-        // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
-        const isReadOnly = f.readOnly
-          || displayLogic?.readOnly?.[f.key] === true
-          || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
-        if (f.type === 'checkbox') {
-          return (
-            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-            <div className="flex items-center gap-2 pt-6">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={!!data?.[f.key]}
-                disabled={isReadOnly}
-                id={f.key}
-                data-testid={`field-${f.key}`}
-                onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key])}
-                className={[
-                  'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                  !!data?.[f.key]
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-transparent',
-                ].join(' ')}
-              >
-                {!!data?.[f.key] && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-              <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-              </Label>
-            </div>
-            </FieldHighlight>
-          );
-        }
-        if (f.type === 'dependent') {
-          if (isReadOnly) {
-            return (
-              <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-                <div className="space-y-1.5">
-                  <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-                    {label}
-                  </Label>
-                  <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-                </div>
-              </FieldHighlight>
-            );
-          }
-          return (
-            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-              <div className="space-y-1.5">
-                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-                </Label>
-                <DependentSelect
-                  field={f}
-                  value={data?.[f.key] ?? ''}
-                  displayValue={data?.[f.key + '$_identifier']}
-                  onChange={(val, label) => {
-                    onChange?.(f.key, val);
-                    if (label) onChange?.(f.key + '$_identifier', label);
-                  }}
-                  catalogs={catalogs}
-                  formData={data}
-                  resolvedLabel={label}
-                  selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
-                  token={token}
-                />
-              </div>
-            </FieldHighlight>
-          );
-        }
-        if (f.type === 'selector') {
-          if (isReadOnly) {
-            return (
-              <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-                <div className="space-y-1.5">
-                  <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-                    {label}
-                  </Label>
-                  <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-                </div>
-              </FieldHighlight>
-            );
-          }
-          return (
-            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-              <div className="space-y-1.5">
-                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-                </Label>
-                <SelectorInput
-                  field={f}
-                  value={data?.[f.key] ?? ''}
-                  displayValue={resolveIdentifier(data, f.key)}
-                  onChange={(val, label, auxData) => {
-                    onChange?.(f.key, val);
-                    if (label) onChange?.(f.key + '$_identifier', label);
-                    if (auxData) {
-                      for (const [suffix, auxVal] of Object.entries(auxData)) {
-                        onChange?.(f.key + suffix, auxVal);
-                      }
-                    }
-                  }}
-                  catalogs={catalogs}
-                  resolvedLabel={label}
-                />
-              </div>
-            </FieldHighlight>
-          );
-        }
-        if (f.type === 'search') {
-          if (isReadOnly) {
-            return (
-              <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-                <div className="space-y-1.5">
-                  <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-                    {label}
-                  </Label>
-                  <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-                </div>
-              </FieldHighlight>
-            );
-          }
-          return (
-            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-              <div className="space-y-1.5">
-                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-                </Label>
-                <SearchInput
-                  field={f}
-                  value={data?.[f.key] ?? ''}
-                  displayValue={data?.[f.key + '$_identifier']}
-                  onChange={(val, label, auxData) => {
-                    onChange?.(f.key, val);
-                    if (label) onChange?.(f.key + '$_identifier', label);
-                    if (auxData) {
-                      for (const [suffix, auxVal] of Object.entries(auxData)) {
-                        onChange?.(f.key + suffix, auxVal);
-                      }
-                    }
-                  }}
-                  catalogs={catalogs}
-                  resolvedLabel={label}
-                  selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
-                  token={token}
-                />
-              </div>
-            </FieldHighlight>
-          );
-        }
-        const inputType = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+  // If there's an image field, pin it to the right — rest of fields render in a 3-col grid on the left
+  const imageField = displayFields.find(f => f.type === 'image');
+  const fieldsToRender = imageField ? displayFields.filter(f => f.type !== 'image') : displayFields;
+
+  const renderField = (f) => {
+    // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
+    const label = f.label ?? t(f.column) ?? f.key;
+    // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
+    const isReadOnly = f.readOnly
+      || displayLogic?.readOnly?.[f.key] === true
+      || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
+    const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    if (f.type === 'checkbox') {
+      return (
+        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+          <div className="flex items-center gap-2 pt-6">
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={!!data?.[f.key]}
+              disabled={isReadOnly}
+              id={f.key}
+              data-testid={`field-${f.key}`}
+              onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key], f.column)}
+              className={[
+                'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                !!data?.[f.key]
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-transparent',
+              ].join(' ')}
+            >
+              {!!data?.[f.key] && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
+              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+          </div>
+        </FieldHighlight>
+      );
+    }
+    if (f.type === 'dependent') {
+      if (isReadOnly) {
         return (
           <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
             <div className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+              <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+                {label}
               </Label>
-              <Input
-                id={f.key}
-                name={f.key}
-                data-testid={`field-${f.key}`}
-                type={inputType}
-                value={data?.[f.key] ?? ''}
-                onChange={(e) => onChange?.(f.key, e.target.value)}
-                className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
-                required={f.required && !isReadOnly}
-                disabled={isReadOnly}
-              />
+              <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
             </div>
           </FieldHighlight>
         );
-      })}
+      }
+      return (
+        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+          <div className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+            <DependentSelect
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              onChange={(val, label) => {
+                onChange?.(f.key, val, f.column);
+                if (label) onChange?.(f.key + '$_identifier', label);
+              }}
+              catalogs={catalogs}
+              formData={data}
+              resolvedLabel={label}
+              selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+              selectorContext={selectorContext}
+              token={token}
+            />
+          </div>
+        </FieldHighlight>
+      );
+    }
+    if (f.type === 'selector') {
+      if (isReadOnly) {
+        return (
+          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+            <div className="space-y-1.5">
+              <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+                {label}
+              </Label>
+              <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+            </div>
+          </FieldHighlight>
+        );
+      }
+      return (
+        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+          <div className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+            <SelectorInput
+              entityName={entity}
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={resolveIdentifier(data, f.key)}
+              onChange={(val, label, auxData) => {
+                onChange?.(f.key, val, f.column);
+                if (label) onChange?.(f.key + '$_identifier', label);
+                if (auxData) {
+                  for (const [suffix, auxVal] of Object.entries(auxData)) {
+                    onChange?.(f.key + suffix, auxVal);
+                  }
+                }
+              }}
+              catalogs={catalogs}
+              resolvedLabel={label}
+            />
+          </div>
+        </FieldHighlight>
+      );
+    }
+    if (f.type === 'search') {
+      if (isReadOnly) {
+        return (
+          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+            <div className="space-y-1.5">
+              <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+                {label}
+              </Label>
+              <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+            </div>
+          </FieldHighlight>
+        );
+      }
+      return (
+        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+          <div className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+            <SearchInput
+              entityName={entity}
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              onChange={(val, label, auxData) => {
+                onChange?.(f.key, val, f.column);
+                if (label) onChange?.(f.key + '$_identifier', label);
+                if (auxData) {
+                  for (const [suffix, auxVal] of Object.entries(auxData)) {
+                    onChange?.(f.key + suffix, auxVal);
+                  }
+                }
+              }}
+              catalogs={catalogs}
+              resolvedLabel={label}
+              selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+              selectorContext={selectorContext}
+              token={token}
+            />
+          </div>
+        </FieldHighlight>
+      );
+    }
+    if (f.type === 'select' && f.options?.length) {
+      return (
+        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+          <div className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+            <Select
+              value={data?.[f.key] ?? ''}
+              onValueChange={(val) => onChange?.(f.key, val, f.column)}
+              disabled={isReadOnly}
+              required={f.required}
+            >
+              <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
+                <SelectValue placeholder={`Select ${label}...`} />
+              </SelectTrigger>
+              <SelectContent>
+                {f.options.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </FieldHighlight>
+      );
+    }
+    const inputType = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+    return (
+      <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+        <div className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <Input
+            id={f.key}
+            name={f.key}
+            data-testid={`field-${f.key}`}
+            type={inputType}
+            value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
+            onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+            className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
+            required={f.required && !isReadOnly}
+            disabled={isReadOnly}
+          />
+        </div>
+      </FieldHighlight>
+    );
+  };
+
+  if (imageField) {
+    const imgLabel = imageField.label ?? t(imageField.column) ?? imageField.key;
+    const imgReadOnly = imageField.readOnly
+      || displayLogic?.readOnly?.[imageField.key] === true
+      || (typeof imageField.readOnlyLogic === 'function' && !!imageField.readOnlyLogic(data ?? {}));
+    return (
+      <div className="flex gap-6 items-start">
+        <div className={`flex-1 min-w-0 ${gridClass}`}>
+          {fieldsToRender.map(renderField)}
+        </div>
+        <div className="shrink-0 w-56">
+          <Label className="text-sm text-foreground font-medium block mb-1.5">{imgLabel}</Label>
+          <ImageField
+            imageId={data?.[imageField.key] ?? ''}
+            onChange={(newId) => onChange?.(imageField.key, newId, imageField.column)}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            readOnly={imgReadOnly}
+            fieldKey={imageField.key}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={gridClass}>
+      {displayFields.map(renderField)}
     </div>
   );
 }
