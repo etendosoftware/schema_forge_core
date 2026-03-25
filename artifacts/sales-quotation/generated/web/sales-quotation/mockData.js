@@ -14,10 +14,10 @@ export const quotation = [
     "documentStatus": "DR",
     "grandTotalAmount": 38907,
     "summedLineAmount": 38907,
+    "currency": "USD",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Standard order for Q1 delivery",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Standard order for Q1 delivery"
   },
   {
     "id": "mock-quotation-002",
@@ -32,10 +32,10 @@ export const quotation = [
     "documentStatus": "CO",
     "grandTotalAmount": 9306,
     "summedLineAmount": 9306,
+    "currency": "EUR",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Rush order - priority shipping required",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Rush order - priority shipping required"
   },
   {
     "id": "mock-quotation-003",
@@ -50,10 +50,10 @@ export const quotation = [
     "documentStatus": "VO",
     "grandTotalAmount": 11544,
     "summedLineAmount": 11544,
+    "currency": "GBP",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Bulk purchase for warehouse restocking",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Bulk purchase for warehouse restocking"
   },
   {
     "id": "mock-quotation-004",
@@ -68,10 +68,10 @@ export const quotation = [
     "documentStatus": "IP",
     "grandTotalAmount": 11872,
     "summedLineAmount": 11872,
+    "currency": "USD",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Sample order for client evaluation",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Sample order for client evaluation"
   },
   {
     "id": "mock-quotation-005",
@@ -86,10 +86,10 @@ export const quotation = [
     "documentStatus": "DR",
     "grandTotalAmount": 48460,
     "summedLineAmount": 48460,
+    "currency": "EUR",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Recurring monthly supply order",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Recurring monthly supply order"
   },
   {
     "id": "mock-quotation-006",
@@ -104,10 +104,10 @@ export const quotation = [
     "documentStatus": "CO",
     "grandTotalAmount": 45418,
     "summedLineAmount": 45418,
+    "currency": "GBP",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Special pricing agreement applies",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Special pricing agreement applies"
   },
   {
     "id": "mock-quotation-007",
@@ -122,10 +122,10 @@ export const quotation = [
     "documentStatus": "VO",
     "grandTotalAmount": 33840,
     "summedLineAmount": 33840,
+    "currency": "USD",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Consolidated order from multiple requests",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Consolidated order from multiple requests"
   },
   {
     "id": "mock-quotation-008",
@@ -140,10 +140,10 @@ export const quotation = [
     "documentStatus": "IP",
     "grandTotalAmount": 25716,
     "summedLineAmount": 25716,
+    "currency": "EUR",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Trial order for new product line",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Trial order for new product line"
   },
   {
     "id": "mock-quotation-009",
@@ -158,10 +158,10 @@ export const quotation = [
     "documentStatus": "DR",
     "grandTotalAmount": 44780,
     "summedLineAmount": 44780,
+    "currency": "GBP",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Replacement for damaged goods",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Replacement for damaged goods"
   },
   {
     "id": "mock-quotation-010",
@@ -176,10 +176,10 @@ export const quotation = [
     "documentStatus": "CO",
     "grandTotalAmount": 12483,
     "summedLineAmount": 12483,
+    "currency": "USD",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Pre-season inventory build-up",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Pre-season inventory build-up"
   },
   {
     "id": "mock-quotation-011",
@@ -194,10 +194,10 @@ export const quotation = [
     "documentStatus": "VO",
     "grandTotalAmount": 46022,
     "summedLineAmount": 46022,
+    "currency": "EUR",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Customer-specific configuration",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Customer-specific configuration"
   },
   {
     "id": "mock-quotation-012",
@@ -212,10 +212,10 @@ export const quotation = [
     "documentStatus": "IP",
     "grandTotalAmount": 38634,
     "summedLineAmount": 38634,
+    "currency": "GBP",
     "orderReference": "Sample orderReference",
     "salesRepresentative": "Sample salesRepresentative",
-    "description": "Government contract fulfillment",
-    "invoiceAddress": "Sample invoiceAddress"
+    "description": "Government contract fulfillment"
   }
 ];
 

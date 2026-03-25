@@ -9,13 +9,18 @@ const breadcrumb = 'Sales / Sales Quotation';
 
 // @sf-generated-start summary:quotation
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:quotation
+
+// @sf-custom-slot extraBadges:quotation
+// @sf-generated-start extraBadges:quotation
+const extraBadges = [];
+// @sf-generated-end extraBadges:quotation
 
 // @sf-generated-start processes:quotation
 const processes = [
@@ -117,19 +122,19 @@ const api = {
     },
     {
       "entity": "quotation",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
+    },
+    {
+      "entity": "quotation",
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "SalesRepresentative",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
-    },
-    {
-      "entity": "quotation",
-      "field": "invoiceAddress",
-      "column": "BillTo_ID",
-      "reference": "BusinessPartnerLocation",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
     },
     {
       "entity": "quotationLine",
@@ -312,6 +317,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         DetailForm={QuotationLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}

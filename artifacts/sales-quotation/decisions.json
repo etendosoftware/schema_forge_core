@@ -57,7 +57,10 @@
           "section": "principal"
         },
         "currency": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": false,
+          "form": false,
+          "section": "summary"
         },
         "paymentTerms": {
           "inputMode": "search",
@@ -79,7 +82,7 @@
         },
         "summedLineAmount": {
           "visibility": "readOnly",
-          "section": "other"
+          "section": "summary"
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
@@ -94,13 +97,7 @@
           "form": false
         },
         "invoiceAddress": {
-          "visibility": "editable",
-          "section": "other",
-          "reference": "BusinessPartnerLocation",
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "visibility": "discarded"
         },
         "description": {
           "inputMode": "textarea",

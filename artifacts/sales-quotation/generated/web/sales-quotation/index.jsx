@@ -80,19 +80,19 @@ const api = {
     },
     {
       "entity": "quotation",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
+    },
+    {
+      "entity": "quotation",
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "SalesRepresentative",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
-    },
-    {
-      "entity": "quotation",
-      "field": "invoiceAddress",
-      "column": "BillTo_ID",
-      "reference": "BusinessPartnerLocation",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/invoiceAddress"
     },
     {
       "entity": "quotationLine",
