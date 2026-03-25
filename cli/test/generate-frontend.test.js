@@ -465,9 +465,10 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes("import catalogs from './mockCatalogs'"));
   });
 
-  it('does NOT import DetailForm (only DetailTable)', () => {
+  it('imports both DetailTable and DetailForm for inline line editing', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(!code.includes('OrderLineForm'));
+    assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"));
+    assert.ok(code.includes("import OrderLineForm from './OrderLineForm'"));
   });
 
   it('declares summary from readOnly header fields excluding status', () => {
