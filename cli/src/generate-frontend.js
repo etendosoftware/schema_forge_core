@@ -219,12 +219,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusField = docStatusField ?? readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
-  const summaryFields = allEntityFields.filter(f =>
-    f !== statusField && (
-      f.section === 'summary' ||
-      (f.section === 'principal' && f.visibility === 'readOnly' && ['amount', 'number', 'integer'].includes(f.type))
-    )
-  );
+  const summaryFields = readOnlyFields.filter(f => f !== statusField);
 
   // Summary config
   const summaryArray = summaryFields.map(f => {

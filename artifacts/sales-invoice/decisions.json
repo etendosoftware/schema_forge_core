@@ -45,7 +45,6 @@
           "section": "principal"
         },
         "priceList": {
-          "visibility": "readOnly",
           "section": "other"
         },
         "currency": {
