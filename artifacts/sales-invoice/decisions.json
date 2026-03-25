@@ -32,8 +32,7 @@
           "section": "principal"
         },
         "accountingDate": {
-          "readOnlyLogic": null,
-          "section": "other"
+          "visibility": "system"
         },
         "paymentTerms": {
           "grid": true,
@@ -46,13 +45,14 @@
           "section": "principal"
         },
         "priceList": {
-          "readOnlyLogic": null,
+          "visibility": "readOnly",
           "section": "other"
         },
         "currency": {
-          "visibility": "editable",
+          "visibility": "readOnly",
           "grid": false,
-          "section": "other",
+          "form": false,
+          "section": "summary",
           "reference": "Currency",
           "inputMode": "selector"
         },
@@ -82,7 +82,7 @@
         },
         "orderReference": {
           "searchable": true,
-          "section": "other"
+          "section": "principal"
         },
         "active": {
           "visibility": "discarded",
@@ -104,13 +104,16 @@
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
-          "grid": true
+          "grid": true,
+          "section": "principal"
         },
         "summedLineAmount": {
-          "visibility": "readOnly"
+          "visibility": "readOnly",
+          "section": "summary"
         },
         "outstandingAmount": {
-          "visibility": "readOnly"
+          "visibility": "readOnly",
+          "section": "summary"
         },
         "isPaid": {
           "visibility": "readOnly",
@@ -246,8 +249,8 @@
         },
         "discount": {
           "visibility": "editable",
-          "grid": false,
-          "section": "other"
+          "grid": true,
+          "section": "principal"
         },
         "listPrice": {
           "section": "other",

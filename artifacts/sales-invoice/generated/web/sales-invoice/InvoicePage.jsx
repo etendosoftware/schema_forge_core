@@ -9,14 +9,21 @@ const breadcrumb = 'Sales / Sales Invoice';
 
 // @sf-generated-start summary:invoice
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:invoice
+
+// @sf-custom-start extraBadges:invoice
+const extraBadges = [
+  { key: 'paymentComplete', label: 'Payment Complete' },
+  { key: 'paymentComplete', label: 'Pending Payment', when: false, style: 'warning', hideWhenStatus: ['DR'] },
+];
+// @sf-custom-end extraBadges:invoice
 
 // @sf-generated-start processes:invoice
 const processes = [
@@ -311,6 +318,7 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         DetailForm={InvoiceLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}

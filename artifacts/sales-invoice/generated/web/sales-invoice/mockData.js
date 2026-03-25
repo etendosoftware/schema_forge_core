@@ -18,8 +18,7 @@ export const invoice = [
     "outstandingAmount": 38907,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-15"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-002",
@@ -38,8 +37,7 @@ export const invoice = [
     "outstandingAmount": 9306,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-16"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-003",
@@ -58,8 +56,7 @@ export const invoice = [
     "outstandingAmount": 11544,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-17"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-004",
@@ -78,8 +75,7 @@ export const invoice = [
     "outstandingAmount": 11872,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-18"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-005",
@@ -98,8 +94,7 @@ export const invoice = [
     "outstandingAmount": 48460,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-19"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-006",
@@ -118,8 +113,7 @@ export const invoice = [
     "outstandingAmount": 45418,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-20"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-007",
@@ -138,8 +132,7 @@ export const invoice = [
     "outstandingAmount": 33840,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-21"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-008",
@@ -158,8 +151,7 @@ export const invoice = [
     "outstandingAmount": 25716,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-22"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-009",
@@ -178,8 +170,7 @@ export const invoice = [
     "outstandingAmount": 44780,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-23"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-010",
@@ -198,8 +189,7 @@ export const invoice = [
     "outstandingAmount": 12483,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-24"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-011",
@@ -218,8 +208,7 @@ export const invoice = [
     "outstandingAmount": 46022,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-25"
+    "orderReference": "Sample orderReference"
   },
   {
     "id": "mock-invoice-012",
@@ -238,8 +227,7 @@ export const invoice = [
     "outstandingAmount": 38634,
     "priceList": "Sample priceList",
     "salesRepresentative": "Sample salesRepresentative",
-    "orderReference": "Sample orderReference",
-    "accountingDate": "2026-01-26"
+    "orderReference": "Sample orderReference"
   }
 ];
 

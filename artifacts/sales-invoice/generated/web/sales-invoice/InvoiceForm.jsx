@@ -13,16 +13,13 @@ const fields = [
   { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', required: true, section: 'principal', reference: 'PaymentTerm', inputMode: 'selector' },
   // @sf-custom-slot callout:SE_Invoice_BPartner
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', required: true, section: 'principal', reference: 'PaymentMethod', inputMode: 'selector' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'other' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'other' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'selector', required: true, section: 'other', reference: 'Currency', inputMode: 'selector' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'number', required: true, readOnly: true, section: 'other' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'principal' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'summary' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'number', required: true, readOnly: true, section: 'summary' },
   // @sf-custom-slot callout:SL_Invoice_PriceList
-  { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', required: true, section: 'other', reference: 'PriceList', inputMode: 'selector' },
+  { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', required: true, readOnly: true, section: 'other', reference: 'PriceList', inputMode: 'selector' },
   { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'selector', section: 'other', reference: 'User', inputMode: 'selector' },
-  { key: 'orderReference', column: 'POReference', type: 'text', section: 'other' },
-  // @sf-custom-slot callout:SE_Invoice_TaxDate
-  { key: 'accountingDate', column: 'DateAcct', type: 'date', required: true, section: 'other' },
+  { key: 'orderReference', column: 'POReference', type: 'text', section: 'principal' },
 ];
 // @sf-generated-end fields:invoice
 
