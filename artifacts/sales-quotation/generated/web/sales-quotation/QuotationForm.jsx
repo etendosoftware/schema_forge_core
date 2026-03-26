@@ -10,7 +10,7 @@ const fields = [
   // @sf-custom-slot callout:SE_Order_BPartnerLocation
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, section: 'principal', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
   { key: 'validUntil', column: 'validuntil', type: 'date', section: 'principal' },
-  { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', section: 'other', reference: 'Paymentmethod', inputMode: 'selector' },
+  { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', section: 'principal', reference: 'Paymentmethod', inputMode: 'selector' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'summary' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'summary' },
   { key: 'orderReference', column: 'POReference', type: 'text', section: 'other' },

@@ -350,7 +350,20 @@ export function DetailView({
   for (const st of secondaryTabs) {
     tabs.push({ key: st.key, label: st.label });
   }
-  // Only add "Others" tab if there are fields with section='other' (not 'collapsed' or 'summary')
+  // "Others" tab is added dynamically via othersRef after first render
+  const [showOthers, setShowOthers] = useState(null); // null = unknown, true/false after mount
+  const othersRef = useRef(null);
+
+  useEffect(() => {
+    if (showOthers === null && othersRef.current) {
+      // Check if the hidden probe rendered any DOM content
+      setShowOthers(othersRef.current.childElementCount > 0);
+    }
+  });
+
+  if (showOthers === true) {
+    tabs.push({ key: 'others', label: 'Others' });
+  }
 
   if (hook.loading) {
     return (
@@ -939,6 +952,19 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                    />
+                  </div>
+                )}
+
+                {/* Hidden probe: detect if Others form has content */}
+                {showOthers === null && (
+                  <div ref={othersRef} className="hidden">
+                    <Form
+                      entity={entity}
+                      data={data}
+                      onChange={() => {}}
+                      catalogs={catalogs}
+                      section="other"
                     />
                   </div>
                 )}

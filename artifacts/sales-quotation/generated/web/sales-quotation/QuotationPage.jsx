@@ -3,6 +3,7 @@ import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
+import RelatedDocuments from './RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
@@ -305,6 +306,9 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
         {...props}
       />
     );

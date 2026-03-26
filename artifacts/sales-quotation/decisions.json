@@ -64,7 +64,7 @@
           "visibility": "system"
         },
         "paymentMethod": {
-          "section": "other"
+          "section": "principal"
         },
         "salesRepresentative": {
           "section": "other",
