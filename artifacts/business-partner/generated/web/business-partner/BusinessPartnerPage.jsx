@@ -5,6 +5,7 @@ import BpLocationTable from './BpLocationTable';
 import catalogs from './mockCatalogs';
 
 const summary = [
+  { key: 'businessPartnerCategory', column: 'C_BP_Group_ID', type: 'string' },
   { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 

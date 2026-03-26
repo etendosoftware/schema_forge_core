@@ -1,18 +1,17 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { Label } from '@/components/ui/label';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
-import { useLabel } from '@/i18n';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Search, X } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
+import { useLabel } from '@/i18n';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 
 /**
- * Dropdown selector for FK fields with many options (inputMode: search).
- * Supports both static catalog data (mock) and server-side filtering via API.
+ * Combobox-style search input for foreign key fields.
+ * Filters results from catalogs when typing.
  */
-function SearchInput({ field, value, displayValue, onChange, catalogs, selectorUrl, token }) {
+function SearchInput({ field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(displayValue || value || '');
   const [serverResults, setServerResults] = useState(null);
@@ -30,84 +29,84 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, selectorU
     }
   }, [value, displayValue]);
 
-  const catalogOptions = catalogs?.[field.reference];
-
-  // Resolve the label (per-field -> translation map -> fallback key)
-  const resolvedLabel = field.label ?? field.key;
-
-  // Search logic:
-  // 1. If static catalog exists, filter client-side.
-  // 2. If selectorUrl exists and we are actively searching, fetch from server.
-  // 3. Otherwise, return current server results or empty.
-  const filtered = useMemo(() => {
-    if (catalogOptions) {
-      if (!query) return catalogOptions.slice(0, 50);
-      const lowerQuery = query.toLowerCase();
-      return catalogOptions.filter(o =>
-        (o.name || o.id).toLowerCase().includes(lowerQuery)
-      ).slice(0, 50);
-    }
-    return serverResults || [];
-  }, [catalogOptions, query, serverResults]);
-
-  // If we have an initial value but no label yet (and no catalog), try to fetch the single record
+  // Auto-resolve display name when we have a value but no $identifier (e.g. from /defaults endpoint).
+  // 1. Try local catalog first (zero cost). 2. Fall back to selector endpoint with ?id=.
   React.useEffect(() => {
-    if (!catalogOptions && value && !displayValue && selectorUrl && token && !serverResults) {
-      fetch(`${selectorUrl}?id=${value}`, { headers: { 'Authorization': `Bearer ${token}` } })
+    if (!value || displayValue || isEditingRef.current) return;
+    // Try local catalog
+    const localOptions = catalogs?.[field.reference] ?? [];
+    const local = localOptions.find(opt => opt.id === value);
+    if (local) { setQuery(local.name || value); return; }
+    // Try server selector with ?id=
+    if (!selectorUrl || !token) return;
+    fetch(`${selectorUrl}?id=${encodeURIComponent(value)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         const match = (data?.items || []).find(i => i.id === value);
         if (match) {
           setQuery(match.label || match.name || value);
-          // Don't auto-select here, just set display text to avoid loop
+        } else {
+          // ID from /defaults not in selector options — clear to avoid showing raw UUID
+          setQuery('');
+          onChange?.(null, '');
         }
-      });
-    }
-  }, [catalogOptions, value, displayValue, selectorUrl, token, serverResults]);
+      })
+      .catch(() => {});
+  }, [value, displayValue, selectorUrl, token, catalogs, field.reference]);
 
-  // Server-side search triggered on typing
-  const triggerServerSearch = (searchQuery) => {
-    if (catalogOptions || !selectorUrl || !token) return;
-    
-    if (!searchQuery || searchQuery.length < 2) {
+  // Server-side search: fetch with ?q= when selectorUrl and token are available.
+  const fetchServerResults = useCallback((q) => {
+    if (!selectorUrl || !token) return;
+    if (!q || q.trim().length === 0) {
       setServerResults(null);
       return;
     }
-
     setFetching(true);
-    fetch(`${selectorUrl}?q=${encodeURIComponent(searchQuery)}`, { headers: { 'Authorization': `Bearer ${token}` } })
+    fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) {
           setServerResults((data.items || []).map(item => ({
             id: item.id,
             name: item.label || item.name || item.id,
-            ...item
+            ...item,
           })));
         }
       })
+      .catch(() => {})
       .finally(() => setFetching(false));
-  };
+  }, [selectorUrl, token]);
+
+  // Local fallback: filter the pre-loaded catalog (used when selectorUrl not available)
+  const localOptions = catalogs?.[field.reference] ?? [];
+  const filtered = useMemo(() => {
+    // Server results take priority when available
+    if (serverResults !== null) return serverResults.slice(0, 20);
+    if (!query || query.length === 0) return localOptions.slice(0, 10);
+    const q = query.toLowerCase();
+    return localOptions.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
+  }, [serverResults, query, localOptions]);
 
   const handleSelect = (opt) => {
-    isEditingRef.current = false; // Finished editing
+    isEditingRef.current = false;
+    setServerResults(null);
     setQuery(opt.name);
+    onChange?.(opt.id, opt.name, opt._aux);
     setOpen(false);
-    
-    // Pass full record as 3rd arg so auxiliary fields (like M_PriceList_ID) can be mapped
-    // by the parent Form (if the schema defines mapped column suffixes).
-    onChange(opt.id, opt.name, opt);
   };
 
   const handleClear = () => {
     isEditingRef.current = false;
-    setQuery('');
     setServerResults(null);
+    setQuery('');
+    onChange?.(null, '');
     setOpen(false);
-    onChange('', '');
   };
 
-  // If field is mandatory but value is empty, or if we have a value, don't show clear unless value exists
   const hasSelection = value != null && value !== '';
 
   return (
@@ -125,21 +124,17 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, selectorU
             isEditingRef.current = true;
             const newQuery = e.target.value;
             setQuery(newQuery);
-            if (!open) setOpen(true);
-            
+            onChange?.(newQuery);
+            setOpen(true);
+            // Debounced server-side fetch (300ms)
             if (debounceRef.current) clearTimeout(debounceRef.current);
-            debounceRef.current = setTimeout(() => {
-              triggerServerSearch(newQuery);
-            }, 300);
+            debounceRef.current = setTimeout(() => fetchServerResults(newQuery), 300);
           }}
           onFocus={() => {
+            isEditingRef.current = true;
             setOpen(true);
-            if (!catalogOptions && query.length >= 2 && !serverResults) {
-              triggerServerSearch(query);
-            }
           }}
           onBlur={() => {
-            // Delay closing so click events on dropdown items can fire first
             isEditingRef.current = false;
             setTimeout(() => setOpen(false), 200);
           }}
@@ -192,19 +187,15 @@ function SearchInput({ field, value, displayValue, onChange, catalogs, selectorU
 
 /**
  * Dropdown selector for FK fields with few options (inputMode: selector).
- * Fetches options upfront (no search param needed) and caches them.
+ * Uses shadcn Select (Radix) for consistent styling.
  */
-function SelectorInput({ field, value, displayValue, onChange, catalogs, selectorUrl, token }) {
-  const catalogOptions = catalogs?.[field.reference];
+function SelectorInput({ field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
+  const catalogOptions = catalogs?.[field.reference] ?? [];
   const [apiOptions, setApiOptions] = useState(null);
 
-  // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
-  const resolvedLabel = field.label ?? field.key;
-
+  // Fetch all options from the API on mount when selectorUrl is available and catalog is empty.
   React.useEffect(() => {
-    // If we have a mock catalog, use it. Otherwise, fetch all from backend.
-    if (catalogOptions || !selectorUrl || !token) return;
-    
+    if (!selectorUrl || !token || catalogOptions.length > 0) return;
     fetch(selectorUrl, { headers: { 'Authorization': `Bearer ${token}` } })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -212,29 +203,25 @@ function SelectorInput({ field, value, displayValue, onChange, catalogs, selecto
           setApiOptions(data.items.map(i => ({ id: i.id, name: i.label || i.name || i.id })));
         }
       })
-      .catch(console.error);
-  }, [catalogOptions, selectorUrl, token]);
+      .catch(() => {});
+  }, [selectorUrl, token, catalogOptions.length]);
 
   const baseOptions = apiOptions ?? catalogOptions;
   // If the current value isn't in the options (real data vs mock), add it.
   // Only use displayValue as fallback label when it differs from the raw value —
   // if they're equal, we don't have a real label yet (e.g. List refs before options load).
-  const hasValue = value && baseOptions?.some(opt => opt.id === value);
-  const options = (!hasValue && value && displayValue && displayValue !== value)
-    ? [...(baseOptions || []), { id: value, name: displayValue }]
-    : (baseOptions || []);
-
-  if (!apiOptions && !catalogOptions && !hasValue) {
-    // Loading state
-    return <Input value={displayValue || value || ''} disabled placeholder="Loading..." className="bg-muted/50" />;
-  }
+  const hasValue = value && baseOptions.some(opt => opt.id === value);
+  const hasRealLabel = displayValue && displayValue !== value;
+  const options = (!hasValue && value && hasRealLabel)
+    ? [{ id: value, name: displayValue }, ...baseOptions]
+    : baseOptions;
 
   return (
     <Select
-      value={value}
+      value={value ?? ''}
       onValueChange={(val) => {
         const opt = options.find(o => o.id === val);
-        onChange(val, opt?.name, opt);
+        onChange?.(val, opt?.name, opt?._aux);
       }}
       required={field.required}
     >
@@ -251,58 +238,52 @@ function SelectorInput({ field, value, displayValue, onChange, catalogs, selecto
 }
 
 /**
- * Dependent Select for FK fields that require a parent context.
- * Re-fetches options whenever the parent value changes.
+ * Dependent dropdown that filters options by a parent field value (inputMode: dependent).
+ * Uses shadcn Select (Radix) for consistent styling.
  */
 function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel, selectorUrl, token }) {
+  const parentValue = formData?.[field.dependsOn?.field];
   const [dynamicOptions, setDynamicOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const parentKey = field.dependsOn?.field;
-  const parentValue = formData?.[parentKey];
-
+  // Fetch options dynamically when parent value changes
   React.useEffect(() => {
     if (!parentValue || !selectorUrl || !token) {
       setDynamicOptions([]);
       return;
     }
-
     setLoading(true);
-    fetch(`${selectorUrl}?parentId=${encodeURIComponent(parentValue)}`, { headers: { 'Authorization': `Bearer ${token}` } })
+    const url = `${selectorUrl}?${field.dependsOn?.filterKey}=${encodeURIComponent(parentValue)}`;
+    fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data?.items) {
           const items = data.items.map(i => ({ id: i.id, name: i.label || i.name || i.id, ...i }));
           setDynamicOptions(items);
           // Auto-select first option if no current value
-          if (!value && items.length > 0 && field.required) {
-            onChange(items[0].id, items[0].name);
+          if (items.length > 0 && !value) {
+            onChange?.(items[0].id, items[0].name);
           }
         }
       })
-      .catch(console.error)
+      .catch(() => setDynamicOptions([]))
       .finally(() => setLoading(false));
   }, [parentValue, selectorUrl, token]);
 
   // If the current value isn't in options (real data from existing record), add it
   const hasValue = value && dynamicOptions.some(opt => opt.id === value);
   const options = (!hasValue && value && displayValue)
-    ? [...dynamicOptions, { id: value, name: displayValue }]
+    ? [{ id: value, name: displayValue }, ...dynamicOptions]
     : dynamicOptions;
-
-  // Auto-clear dependent field if parent is cleared
-  React.useEffect(() => {
-    if (!parentValue && value) {
-      onChange('', '');
-    }
-  }, [parentValue, value]);
 
   return (
     <Select
-      value={value}
+      value={value ?? ''}
       onValueChange={(val) => {
         const opt = options.find(o => o.id === val);
-        onChange(val, opt?.name, opt);
+        onChange?.(val, opt?.name);
       }}
       required={field.required}
       disabled={(!parentValue && !value) || loading}
@@ -322,9 +303,8 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 }
 
 /**
- * Generic Entity Form component.
- * Layouts: 'horizontal' (grid-based edit form) | 'vertical' (stack-based sidebar)
- * 
+ * Generic entity form driven by field declarations.
+ *
  * Props:
  *  - fields: Array<{ key, label, type, required, reference, inputMode, dependsOn }>
  *  - data: object with current field values
@@ -375,11 +355,6 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         const isReadOnly = f.readOnly
           || displayLogic?.readOnly?.[f.key] === true
           || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
-
-        // Special handling for Boolean parsing
-        const valRaw = data?.[f.key];
-        const isChecked = (valRaw === true || valRaw === 'Y' || valRaw === 'true');
-
         if (f.type === 'checkbox') {
           return (
             <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
@@ -387,21 +362,21 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               <button
                 type="button"
                 role="checkbox"
-                aria-checked={isChecked}
+                aria-checked={((data?.[f.key] === true || data?.[f.key] === 'Y') ? true : false)}
                 disabled={isReadOnly}
                 id={f.key}
                 data-testid={`field-${f.key}`}
-                onClick={() => !isReadOnly && onChange?.(f.key, !isChecked)}
+                onClick={() => !isReadOnly && onChange?.(f.key, (data?.[f.key] === true || data?.[f.key] === 'Y') ? false : true)}
                 className={[
                   'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
                   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   'disabled:cursor-not-allowed disabled:opacity-50',
-                  isChecked
+                  ((data?.[f.key] === true || data?.[f.key] === 'Y') ? true : false)
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-transparent',
                 ].join(' ')}
               >
-                {isChecked && (
+                {((data?.[f.key] === true || data?.[f.key] === 'Y') ? true : false) && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -488,14 +463,12 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                     if (label) onChange?.(f.key + '$_identifier', label);
                     if (auxData) {
                       for (const [suffix, auxVal] of Object.entries(auxData)) {
-                        if (suffix !== 'id' && suffix !== 'name' && suffix !== 'label' && suffix !== 'value') {
-                          // Allow selectors to map auxiliary columns (e.g. M_PriceList_ID from PaymentTerm selector)
-                          onChange?.(suffix, auxVal);
-                        }
+                        onChange?.(f.key + suffix, auxVal);
                       }
                     }
                   }}
                   catalogs={catalogs}
+                  resolvedLabel={label}
                   selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
                   token={token}
                 />
@@ -531,36 +504,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                     if (label) onChange?.(f.key + '$_identifier', label);
                     if (auxData) {
                       for (const [suffix, auxVal] of Object.entries(auxData)) {
-                        if (suffix !== 'id' && suffix !== 'name' && suffix !== 'label' && suffix !== 'value') {
-                          onChange?.(suffix, auxVal);
-                        }
+                        onChange?.(f.key + suffix, auxVal);
                       }
                     }
                   }}
                   catalogs={catalogs}
+                  resolvedLabel={label}
                   selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
                   token={token}
-                />
-              </div>
-            </FieldHighlight>
-          );
-        }
-        if (f.type === 'textarea') {
-          return (
-            <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-              <div className="col-span-2 space-y-1.5 md:col-span-full">
-                <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                  {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
-                </Label>
-                <textarea
-                  id={f.key}
-                  name={f.key}
-                  data-testid={`field-${f.key}`}
-                  value={data?.[f.key] ?? ''}
-                  onChange={(e) => onChange?.(f.key, e.target.value)}
-                  className={`flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px] ${isReadOnly ? 'bg-muted/50' : 'bg-transparent'}`}
-                  required={f.required && !isReadOnly}
-                  disabled={isReadOnly}
                 />
               </div>
             </FieldHighlight>

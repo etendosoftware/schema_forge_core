@@ -146,6 +146,9 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.displayLogic.reason = evalInfo.reason;
           mapped.displayLogic.js = null;
+        } else if (!mapped.displayLogic.js && !f.displayLogic.includes('@')) {
+          // Raw expression has no Etendo @Variable@ markers — treat as direct JS
+          mapped.displayLogic.js = f.displayLogic;
         }
       }
 
@@ -161,6 +164,9 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.readOnlyLogic.reason = evalInfo.reason;
           mapped.readOnlyLogic.js = null;
+        } else if (!mapped.readOnlyLogic.js && !f.readOnlyLogic.includes('@')) {
+          // Raw expression has no Etendo @Variable@ markers — treat as direct JS
+          mapped.readOnlyLogic.js = f.readOnlyLogic;
         }
       }
 

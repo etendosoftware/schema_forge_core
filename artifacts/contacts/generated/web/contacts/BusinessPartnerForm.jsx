@@ -6,6 +6,8 @@ const fields = [
   { key: 'searchKey', column: 'Value', type: 'text', required: true, section: 'principal' },
   { key: 'businessPartnerCategory', column: 'C_BP_Group_ID', type: 'selector', section: 'principal' },
   { key: 'description', column: 'Description', type: 'textarea', section: 'principal' },
+  { key: 'customer', column: 'IsCustomer', type: 'checkbox', section: 'principal' },
+  { key: 'vendor', column: 'IsVendor', type: 'checkbox', section: 'principal' },
   { key: 'taxID', column: 'TaxID', type: 'text', section: 'other' },
   { key: 'creditLimit', column: 'SO_CreditLimit', type: 'number', section: 'other' },
   { key: 'creditUsed', column: 'SO_CreditUsed', type: 'number', readOnly: true, section: 'other' },

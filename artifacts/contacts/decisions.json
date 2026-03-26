@@ -1,0 +1,187 @@
+{
+  "$schema": "decisions-v1",
+  "window": {
+    "category": "people",
+    "name": "Contacts"
+  },
+  "entities": {
+    "cBpartner": {
+      "fields": {
+        "name": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "searchKey": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "businessPartnerCategory": {
+          "visibility": "editable",
+          "grid": false,
+          "section": "principal",
+          "reference": "BusinessPartnerCategory",
+          "inputMode": "selector"
+        },
+        "description": {
+          "visibility": "editable",
+          "grid": false,
+          "section": "principal"
+        },
+        "taxID": {
+          "visibility": "editable",
+          "section": "other"
+        },
+        "creditLimit": {
+          "visibility": "editable",
+          "grid": false,
+          "section": "other"
+        },
+        "creditUsed": {
+          "visibility": "readOnly",
+          "grid": false,
+          "section": "other"
+        },
+        "active": {
+          "visibility": "readOnly",
+          "grid": false,
+          "section": "other"
+        },
+        "vendor": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "purchasePricelist": {
+          "visibility": "editable",
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "pOPaymentMethod": {
+          "visibility": "editable",
+          "reference": "PaymentMethod",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "pOPaymentTerms": {
+          "visibility": "editable",
+          "reference": "PaymentTerm",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "pOFinancialAccount": {
+          "visibility": "editable",
+          "reference": "FIN_Financial_Account",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "vendorBlocking": {
+          "visibility": "editable",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "customer": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "priceList": {
+          "visibility": "editable",
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "paymentMethod": {
+          "visibility": "editable",
+          "reference": "PaymentMethod",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "paymentTerms": {
+          "visibility": "editable",
+          "reference": "PaymentTerm",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "account": {
+          "visibility": "editable",
+          "reference": "FIN_Financial_Account",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "customerBlocking": {
+          "visibility": "editable",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        }
+      }
+    },
+    "cBpartnerLocation": {
+      "fields": {
+        "name": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "phone": {
+          "visibility": "editable",
+          "grid": false,
+          "section": "other"
+        },
+        "active": {
+          "visibility": "readOnly",
+          "grid": false,
+          "section": "other"
+        }
+      }
+    },
+    "user": {
+      "fields": {
+        "name": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "firstName": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "lastName": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "email": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "phone": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "position": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "active": {
+          "visibility": "readOnly",
+          "section": "other"
+        }
+      }
+    }
+  }
+}
