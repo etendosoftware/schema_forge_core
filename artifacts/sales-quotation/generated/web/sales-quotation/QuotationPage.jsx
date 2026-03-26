@@ -34,11 +34,11 @@ const addLineFields = {
     { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea' },
   ],
   derived: [
     { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
     { key: 'discount', column: 'Discount', type: 'text' },
   ],
 };
