@@ -667,11 +667,14 @@ export function DetailView({
                                       const fieldValues = {};
                                       for (const [k, v] of Object.entries(lineEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
-                                        // Convert numeric strings to numbers for BigDecimal compatibility
-                                        if (typeof v === 'string' && v.match(/^-?\d[\d,]*(\.\d+)?$/)) {
-                                          fieldValues[k] = Number(v.replace(/,/g, ''));
+                                        const colName = lineEditColumns[k] || k;
+                                        // Convert numeric strings to numbers for BigDecimal compatibility.
+                                        // Only strip when the value is already in standard format (no commas).
+                                        // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+                                        if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+                                          fieldValues[colName] = parseFloat(v);
                                         } else {
-                                          fieldValues[k] = v;
+                                          fieldValues[colName] = v;
                                         }
                                       }
                                       const res = await fetch(childUrl, {
@@ -790,11 +793,14 @@ export function DetailView({
                                       const fieldValues = {};
                                       for (const [k, v] of Object.entries(secondaryLineEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
-                                        // Convert numeric strings to numbers for BigDecimal compatibility
-                                        if (typeof v === 'string' && v.match(/^-?\d[\d,]*(\.\d+)?$/)) {
-                                          fieldValues[k] = Number(v.replace(/,/g, ''));
+                                        const colName = secondaryLineEditColumns[k] || k;
+                                        // Convert numeric strings to numbers for BigDecimal compatibility.
+                                        // Only strip when the value is already in standard format (no commas).
+                                        // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
+                                        if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
+                                          fieldValues[colName] = parseFloat(v);
                                         } else {
-                                          fieldValues[k] = v;
+                                          fieldValues[colName] = v;
                                         }
                                       }
                                       const res = await fetch(secUrl, {

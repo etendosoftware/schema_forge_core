@@ -394,6 +394,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, selectorContext }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
+  const [columnFilters, setColumnFilters] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
 
   // Report columns to parent (e.g., ListView sort popover)
@@ -403,18 +404,32 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
   }, [columns, onColumnsReady]);
 
-  const hasActiveFilter = searchQuery.length > 0;
+  const hasColumnFilter = useMemo(() => Object.values(columnFilters).some(v => v), [columnFilters]);
+  const hasActiveFilter = searchQuery.length > 0 || hasColumnFilter;
 
   const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
-    const q = searchQuery.toLowerCase();
-    return data.filter(row =>
-      filters.some(key => {
+    let result = data;
+    // Global search (existing behaviour)
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(row =>
+        filters.some(key => {
+          const val = resolveIdentifier(row, key);
+          return String(val ?? '').toLowerCase().includes(q);
+        })
+      );
+    }
+    // Per-column filters (AND logic)
+    for (const [key, query] of Object.entries(columnFilters)) {
+      if (!query) continue;
+      const q = query.toLowerCase();
+      result = result.filter(row => {
         const val = resolveIdentifier(row, key);
         return String(val ?? '').toLowerCase().includes(q);
-      })
-    );
-  }, [data, filters, searchQuery]);
+      });
+    }
+    return result;
+  }, [data, filters, searchQuery, columnFilters]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),
@@ -520,28 +535,69 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           <TableHeader>
             <TableRow className="border-b border-border/40">
               {selectable && (
-                <TableHead className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    ref={el => { if (el) el.indeterminate = someSelected; }}
-                    onChange={toggleAll}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                  />
+                <TableHead className="w-10 px-3 align-top" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={el => { if (el) el.indeterminate = someSelected; }}
+                      onChange={toggleAll}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                    />
+                    {hasColumnFilter && (
+                      <button
+                        onClick={() => setColumnFilters({})}
+                        title="Clear all filters"
+                        className="h-4 w-4 flex items-center justify-center rounded text-muted-foreground/50 hover:text-foreground transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </TableHead>
               )}
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
                 const isSorted = sortColumn === col.key;
+                const isRight = col.type === 'amount';
                 return (
-                  <TableHead key={col.key} className={`text-xs font-medium text-muted-foreground/70 tracking-wide ${col.type === 'amount' ? 'text-right' : ''}`}>
-                    <FieldHighlight entityName={entity} fieldName={col.key}>
-                      {colLabel}
-                      {isSorted && (
-                        <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                      )}
-                    </FieldHighlight>
+                  <TableHead key={col.key} className={`align-top ${isRight ? 'text-right' : ''}`}>
+                    <div className={`flex flex-col gap-1.5 pb-2 ${isRight ? 'items-end' : ''}`}>
+                      <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
+                        <FieldHighlight entityName={entity} fieldName={col.key}>
+                          {colLabel}
+                          {isSorted && (
+                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          )}
+                        </FieldHighlight>
+                      </span>
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          value={columnFilters[col.key] || ''}
+                          onChange={e => setColumnFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
+                          placeholder="Filter..."
+                          className={[
+                            'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
+                            'placeholder:text-muted-foreground/35 transition-colors',
+                            'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
+                            columnFilters[col.key]
+                              ? 'border-primary/40 bg-primary/5 pr-6'
+                              : 'border-border/35',
+                            isRight ? 'text-right' : '',
+                          ].filter(Boolean).join(' ')}
+                        />
+                        {columnFilters[col.key] && (
+                          <button
+                            onClick={() => setColumnFilters(prev => ({ ...prev, [col.key]: '' }))}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </TableHead>
                 );
               })}

@@ -187,66 +187,26 @@ catalogs['Product'] = [
   }
 ];
 
-catalogs['BusinessPartner'] = [
+catalogs['Warehouse'] = [
   {
-    "id": "bp-001",
-    "name": "Acme Corp"
+    "id": "wh-001",
+    "name": "Main Warehouse"
   },
   {
-    "id": "bp-002",
-    "name": "TechFlow Inc"
+    "id": "wh-002",
+    "name": "East Distribution Center"
   },
   {
-    "id": "bp-003",
-    "name": "Global Trade Ltd"
+    "id": "wh-003",
+    "name": "West Hub"
   },
   {
-    "id": "bp-004",
-    "name": "Summit Industries"
+    "id": "wh-004",
+    "name": "North Storage"
   },
   {
-    "id": "bp-005",
-    "name": "Pacific Partners"
-  },
-  {
-    "id": "bp-006",
-    "name": "Alpine Solutions"
-  },
-  {
-    "id": "bp-007",
-    "name": "Meridian Group"
-  },
-  {
-    "id": "bp-008",
-    "name": "Vertex Systems"
-  },
-  {
-    "id": "bp-009",
-    "name": "Atlas Manufacturing"
-  },
-  {
-    "id": "bp-010",
-    "name": "Nova Enterprises"
-  },
-  {
-    "id": "bp-011",
-    "name": "Pinnacle Services"
-  },
-  {
-    "id": "bp-012",
-    "name": "Horizon Labs"
-  },
-  {
-    "id": "bp-013",
-    "name": "Cedar Holdings"
-  },
-  {
-    "id": "bp-014",
-    "name": "Sterling & Co"
-  },
-  {
-    "id": "bp-015",
-    "name": "Quantum Logistics"
+    "id": "wh-005",
+    "name": "South Logistics"
   }
 ];
 

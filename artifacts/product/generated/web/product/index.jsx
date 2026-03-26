@@ -45,15 +45,26 @@ const api = {
       "detailUrl": "/sws/neo/product/productBom/{id}",
       "supportedFilters": []
     },
-    "productPo": {
+    "costing": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/product/productPo",
-      "detailUrl": "/sws/neo/product/productPo/{id}",
+      "listUrl": "/sws/neo/product/costing",
+      "detailUrl": "/sws/neo/product/costing/{id}",
+      "supportedFilters": []
+    },
+    "transaction": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/product/transaction",
+      "detailUrl": "/sws/neo/product/transaction/{id}",
       "supportedFilters": []
     },
     "productCharacteristic": {
@@ -164,28 +175,44 @@ const api = {
       "url": "/sws/neo/product/productBom/selectors/bOMProduct"
     },
     {
-      "entity": "productPo",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/product/productPo/selectors/businessPartner"
+      "entity": "costing",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "inputMode": "selector",
+      "url": "/sws/neo/product/costing/selectors/warehouse"
     },
     {
-      "entity": "productPo",
-      "field": "currency",
+      "entity": "costing",
+      "field": "cCurrencyID",
       "column": "C_Currency_ID",
       "reference": "Currency",
       "inputMode": "selector",
-      "url": "/sws/neo/product/productPo/selectors/currency"
+      "url": "/sws/neo/product/costing/selectors/cCurrencyID"
     },
     {
-      "entity": "productPo",
+      "entity": "transaction",
+      "field": "organization",
+      "column": "AD_Org_ID",
+      "reference": "Organization",
+      "inputMode": "selector",
+      "url": "/sws/neo/product/transaction/selectors/organization"
+    },
+    {
+      "entity": "transaction",
+      "field": "storageBin",
+      "column": "M_Locator_ID",
+      "reference": "StorageBin",
+      "inputMode": "selector",
+      "url": "/sws/neo/product/transaction/selectors/storageBin"
+    },
+    {
+      "entity": "transaction",
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/product/productPo/selectors/uOM"
+      "url": "/sws/neo/product/transaction/selectors/uOM"
     },
     {
       "entity": "productCharacteristic",
@@ -276,6 +303,12 @@ const api = {
       "field": "copyservicemodifytaxconfig",
       "column": "Copyservicemodifytaxconfig",
       "url": "/sws/neo/product/product/{id}/action/copyservicemodifytaxconfig"
+    },
+    {
+      "entity": "transaction",
+      "field": "manualcostadjustment",
+      "column": "Manualcostadjustment",
+      "url": "/sws/neo/product/transaction/{id}/action/manualcostadjustment"
     }
   ],
   "queryParams": {

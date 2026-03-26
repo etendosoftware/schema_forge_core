@@ -2,23 +2,33 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
+import OrderLineForm from './OrderLineForm';
+import OrderTaxTable from './OrderTaxTable';
+import OrderTaxForm from './OrderTaxForm';
+import BasicDiscountsTable from './BasicDiscountsTable';
+import BasicDiscountsForm from './BasicDiscountsForm';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
+import OrderLineTaxTable from './OrderLineTaxTable';
+import OrderLineTaxForm from './OrderLineTaxForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
 
 // @sf-generated-start summary:order
 const summary = [
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
-  { key: 'reservationStatus', column: 'SO_Res_Status', type: 'enum', label: 'Reservation Status' },
-  { key: 'quotation', column: 'Quotation_ID', type: 'string', label: 'Quotation' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'status', label: 'Delivery Status' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status', label: 'Invoice Status' },
-  { key: 'cancelledorder', column: 'Cancelledorder_id', type: 'string', label: 'Canceled Order' },
-  { key: 'replacedorder', column: 'Replacedorder_id', type: 'string', label: 'Replaced Order' },
-  { key: 'isCanceled', column: 'Iscancelled', type: 'boolean', label: 'Is Canceled' },
-  { key: 'externalBusinessPartnerReference', column: 'BPartner_ExtRef', type: 'string', label: 'CRM Reference' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'reservationStatus', column: 'SO_Res_Status', type: 'status' },
+  { key: 'quotation', column: 'Quotation_ID', type: 'string' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status' },
+  { key: 'cancelledorder', column: 'Cancelledorder_id', type: 'string' },
+  { key: 'replacedorder', column: 'Replacedorder_id', type: 'string' },
+  { key: 'isCanceled', column: 'Iscancelled', type: 'boolean' },
+  { key: 'externalBusinessPartnerReference', column: 'BPartner_ExtRef', type: 'string' },
+  { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -26,42 +36,45 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:order
 const processes = [
-  { name: 'completeOrder', label: 'Complete Order', style: 'positive', columnName: 'docAction', params: [{"key":"docAction","value":"CO","hidden":true}] },
-  { name: 'voidOrder', label: 'Void Order', style: 'destructive', columnName: 'docAction', params: [{"key":"docAction","value":"VO","hidden":true}] },
+  { name: 'completeOrder', label: 'Complete Order', style: 'positive' },
+  { name: 'voidOrder', label: 'Void Order', style: 'destructive' },
 ];
 // @sf-generated-end processes:order
 
 // @sf-generated-start addLineFields:orderLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-    { key: 'operativeQuantity', column: 'Aumqty', type: 'text' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
-    { key: 'warehouseRule', column: 'M_Warehouse_Rule_ID', type: 'selector', reference: 'WarehouseRule', inputMode: 'selector' },
-    { key: 'description', column: 'Description', type: 'textarea' },
-    { key: 'stockReservation', column: 'Create_Reservation', type: 'text' },
-    { key: 'manageReservation', column: 'Manage_Reservation', type: 'text' },
-    { key: 'overdueReturnDays', column: 'Overdue_Return_Days', type: 'number' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
-    { key: 'asset', column: 'A_Asset_ID', type: 'search', reference: 'Asset', inputMode: 'search' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'User1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'User2', inputMode: 'selector' },
-    { key: 'explode', column: 'Explode', type: 'text' },
-    { key: 'selectOrderLine', column: 'Relate_Orderline', type: 'text', required: true },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true, label: 'Line No.' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'operativeQuantity', column: 'Aumqty', type: 'text', label: 'Operative Quantity' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', label: 'Alternative UOM', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true, label: 'Ordered Quantity' },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'text', required: true, label: 'Net Unit Price' },
+    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'listPrice', column: 'PriceList', type: 'text', required: true, label: 'Net List Price' },
+    { key: 'warehouseRule', column: 'M_Warehouse_Rule_ID', type: 'selector', label: 'Warehouse Rule', reference: 'WarehouseRule', inputMode: 'selector' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'stockReservation', column: 'Create_Reservation', type: 'select', label: 'Stock Reservation' },
+    { key: 'manageReservation', column: 'Manage_Reservation', type: 'text', label: 'Manage Reservation' },
+    { key: 'overdueReturnDays', column: 'Overdue_Return_Days', type: 'number', label: 'Overdue Return Days' },
+    { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', reference: 'Project', inputMode: 'search' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector' },
+    { key: 'asset', column: 'A_Asset_ID', type: 'search', label: 'Asset', reference: 'Asset', inputMode: 'search' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'User1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'User2', inputMode: 'selector' },
+    { key: 'explode', column: 'Explode', type: 'text', label: 'Explode' },
+    { key: 'selectOrderLine', column: 'Relate_Orderline', type: 'text', required: true, label: 'Select Order Line' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', reference: 'Tax', inputMode: 'search' },
-    { key: 'listPrice', column: 'PriceList', type: 'text' },
-    { key: 'discount', column: 'Discount', type: 'text' },
-    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
-    { key: 'cancelPriceAdjustment', column: 'CANCELPRICEAD', type: 'checkbox' },
-    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'Costcenter', inputMode: 'selector' },
+    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'text', label: 'Gross Unit Price' },
+    { key: 'discount', column: 'Discount', type: 'text', label: 'Discount' },
+    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number', label: 'Alternate Taxable Amount' },
+    { key: 'cancelPriceAdjustment', column: 'CANCELPRICEAD', type: 'checkbox', label: 'Cancel Discounts and Promotions' },
+  ],
+  hidden: [
+
   ],
 };
 // @sf-generated-end addLineFields:orderLine
@@ -703,17 +716,24 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         detailEntity="orderLine"
         Form={OrderForm}
         DetailTable={OrderLineTable}
+        DetailForm={OrderLineForm}
         summary={summary}
         statusField={statusField}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Order"
-        detailLabel="Order Line"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'orderTax', label: 'Tax', Table: OrderTaxTable, Form: OrderTaxForm },
+          { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+          { key: 'orderLineTax', label: 'Line Tax', Table: OrderLineTaxTable, Form: OrderLineTaxForm },
+        ]}
         {...props}
       />
     );
@@ -726,6 +746,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
       entityLabel="Orders"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
       {...props}
     />
   );

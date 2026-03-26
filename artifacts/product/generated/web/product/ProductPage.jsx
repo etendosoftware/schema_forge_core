@@ -3,6 +3,10 @@ import ProductTable from './ProductTable';
 import ProductForm from './ProductForm';
 import ProductPriceTable from './ProductPriceTable';
 import ProductPriceForm from './ProductPriceForm';
+import CostingTable from './CostingTable';
+import CostingForm from './CostingForm';
+import TransactionTable from './TransactionTable';
+import TransactionForm from './TransactionForm';
 import StorageDetailTable from './StorageDetailTable';
 import StorageDetailForm from './StorageDetailForm';
 import catalogs from './mockCatalogs';
@@ -82,15 +86,26 @@ const api = {
       "detailUrl": "/sws/neo/product/productBom/{id}",
       "supportedFilters": []
     },
-    "productPo": {
+    "costing": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/product/productPo",
-      "detailUrl": "/sws/neo/product/productPo/{id}",
+      "listUrl": "/sws/neo/product/costing",
+      "detailUrl": "/sws/neo/product/costing/{id}",
+      "supportedFilters": []
+    },
+    "transaction": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/product/transaction",
+      "detailUrl": "/sws/neo/product/transaction/{id}",
       "supportedFilters": []
     },
     "productCharacteristic": {
@@ -201,28 +216,44 @@ const api = {
       "url": "/sws/neo/product/productBom/selectors/bOMProduct"
     },
     {
-      "entity": "productPo",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/product/productPo/selectors/businessPartner"
+      "entity": "costing",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "inputMode": "selector",
+      "url": "/sws/neo/product/costing/selectors/warehouse"
     },
     {
-      "entity": "productPo",
-      "field": "currency",
+      "entity": "costing",
+      "field": "cCurrencyID",
       "column": "C_Currency_ID",
       "reference": "Currency",
       "inputMode": "selector",
-      "url": "/sws/neo/product/productPo/selectors/currency"
+      "url": "/sws/neo/product/costing/selectors/cCurrencyID"
     },
     {
-      "entity": "productPo",
+      "entity": "transaction",
+      "field": "organization",
+      "column": "AD_Org_ID",
+      "reference": "Organization",
+      "inputMode": "selector",
+      "url": "/sws/neo/product/transaction/selectors/organization"
+    },
+    {
+      "entity": "transaction",
+      "field": "storageBin",
+      "column": "M_Locator_ID",
+      "reference": "StorageBin",
+      "inputMode": "selector",
+      "url": "/sws/neo/product/transaction/selectors/storageBin"
+    },
+    {
+      "entity": "transaction",
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/product/productPo/selectors/uOM"
+      "url": "/sws/neo/product/transaction/selectors/uOM"
     },
     {
       "entity": "productCharacteristic",
@@ -313,6 +344,12 @@ const api = {
       "field": "copyservicemodifytaxconfig",
       "column": "Copyservicemodifytaxconfig",
       "url": "/sws/neo/product/product/{id}/action/copyservicemodifytaxconfig"
+    },
+    {
+      "entity": "transaction",
+      "field": "manualcostadjustment",
+      "column": "Manualcostadjustment",
+      "url": "/sws/neo/product/transaction/{id}/action/manualcostadjustment"
     }
   ],
   "queryParams": {
@@ -353,6 +390,8 @@ export default function ProductPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         secondaryTabs={[
+          { key: 'costing', label: 'Costing', Table: CostingTable, Form: CostingForm },
+          { key: 'transaction', label: 'Transactions', Table: TransactionTable, Form: TransactionForm },
           { key: 'storageDetail', label: 'Stock', Table: StorageDetailTable, Form: StorageDetailForm },
         ]}
         {...props}
