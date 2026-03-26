@@ -9,9 +9,9 @@ const breadcrumb = 'Sales / Sales Quotation';
 
 // @sf-generated-start summary:quotation
 const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -31,14 +31,14 @@ const processes = [
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea' },
   ],
   derived: [
     { key: 'unitPrice', column: 'PriceActual', type: 'text' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
     { key: 'discount', column: 'Discount', type: 'text' },
   ],
 };
@@ -98,27 +98,11 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
-    },
-    {
-      "entity": "quotation",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
-    },
-    {
-      "entity": "quotation",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
     },
     {
       "entity": "quotation",
