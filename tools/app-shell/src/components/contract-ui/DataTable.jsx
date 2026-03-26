@@ -11,6 +11,7 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
@@ -301,6 +302,29 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         const isFirst = !firstInputAssigned;
         if (isFirst) firstInputAssigned = true;
 
+        // Lookup fields: click to open search modal (no inline combo)
+        if (field.type === 'search' && field.lookup) {
+          const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
+          const displayLabel = values[field.key + '$_identifier'] || '';
+          return (
+            <TableCell key={col.key} className="py-1 px-2">
+              <LookupField
+                value={displayLabel}
+                placeholder={t(field.column) ?? field.label ?? field.key}
+                selectorUrl={selectorUrl}
+                token={token}
+                inputRef={isFirst ? firstInputRef : undefined}
+                onSelect={(item) => {
+                  handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
+                  handleFieldChange(field.key, item.id, item);
+                }}
+                onKeyDown={handleKeyDown}
+                title={t(field.column) ?? field.label ?? field.key}
+              />
+            </TableCell>
+          );
+        }
+
         // Search fields render as compact combobox (text input + filtered dropdown)
         if (field.type === 'search') {
           const options = getCatalogOptions(catalogs, entity, field);
@@ -374,6 +398,76 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         );
       })}
     </TableRow>
+  );
+}
+
+/**
+ * Inline field that shows selected value and opens modal on click/focus.
+ */
+function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDown, inputRef, title }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+
+  // Forward ref so parent can focus this field
+  useEffect(() => {
+    if (inputRef) inputRef.current = btnRef.current;
+  }, [inputRef]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
+          else if (onKeyDown) onKeyDown(e);
+        }}
+        className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+      >
+        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        {value ? (
+          <span className="truncate text-foreground">{value}</span>
+        ) : (
+          <span className="truncate text-muted-foreground">{placeholder}</span>
+        )}
+      </button>
+      <ProductSearchDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(item) => { onSelect(item); setOpen(false); }}
+        selectorUrl={selectorUrl}
+        token={token}
+        title={title ? `Search ${title}` : undefined}
+      />
+    </>
+  );
+}
+
+/**
+ * Small button that opens the ProductSearchDrawer for lookup-enabled fields.
+ */
+function LookupButton({ selectorUrl, token, onSelect, title }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="h-8 w-8 flex items-center justify-center rounded border border-input hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+        title={`Search ${title || ''}`}
+      >
+        <Search className="h-3.5 w-3.5" />
+      </button>
+      <ProductSearchDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(item) => { onSelect(item); setOpen(false); }}
+        selectorUrl={selectorUrl}
+        token={token}
+        title={title ? `Search ${title}` : undefined}
+      />
+    </>
   );
 }
 
