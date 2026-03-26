@@ -14,43 +14,53 @@
           "inputMode": "search"
         },
         "documentNo": {
-          "inputMode": "text"
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "inputMode": "text",
+          "section": "principal"
         },
         "referenceNo": {
           "grid": true,
           "searchable": true,
-          "inputMode": "text"
+          "inputMode": "text",
+          "section": "principal"
         },
         "paymentDate": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "businessPartner": {
           "grid": true,
           "searchable": true,
           "reference": null,
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "principal"
         },
         "description": {
           "grid": true,
           "searchable": true,
-          "inputMode": "text"
+          "inputMode": "text",
+          "section": "principal"
         },
         "paymentMethod": {
           "grid": true,
           "searchable": true,
           "reference": null,
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "amount": {
           "grid": true,
           "searchable": true,
           "inputMode": "number",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "account": {
           "grid": true,
@@ -61,7 +71,8 @@
           "dependsOn": {
             "field": "paymentMethod",
             "filterKey": "Fin_Paymentmethod_ID"
-          }
+          },
+          "section": "principal"
         },
         "currency": {
           "grid": true,
@@ -72,103 +83,78 @@
           "dependsOn": {
             "field": "account",
             "filterKey": "FIN_Financial_Account_ID"
-          }
+          },
+          "section": "principal"
         },
         "financialTransactionAmount": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "number",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "editable",
+          "grid": false,
+          "form": true,
+          "section": "other"
         },
         "financialTransactionConvertRate": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "text",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "editable",
+          "grid": false,
+          "form": true,
+          "section": "other"
         },
         "aPRMAddScheduledpayments": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "text",
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "posted": {
-          "inputMode": "text"
+          "visibility": "discarded"
         },
         "aPRMProcessPayment": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "text",
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "aprmExecutepayment": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "text",
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "status": {
-          "inputMode": "text"
+          "inputMode": "text",
+          "section": "summary"
         },
         "generatedCredit": {
-          "inputMode": "number"
+          "inputMode": "number",
+          "section": "summary"
         },
         "usedCredit": {
-          "inputMode": "number"
+          "inputMode": "number",
+          "section": "summary"
         },
         "writeoffAmount": {
-          "inputMode": "number"
+          "inputMode": "number",
+          "section": "summary"
         },
         "aPRMReversePayment": {
           "inputMode": "text"
         },
         "reversedPayment": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
+          "searchable": false,
+          "form": true,
           "reference": "Payment Selector",
           "inputMode": "search",
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "other"
         },
         "project": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "costCenter": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Cost Center Selector",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "activity": {
-          "reference": "Activity selector",
-          "inputMode": "search"
+          "visibility": "discarded"
         },
         "salesCampaign": {
-          "reference": "Campaign selector",
-          "inputMode": "search"
+          "visibility": "discarded"
         },
         "stDimension": {
-          "grid": true,
-          "searchable": true,
-          "reference": "User Dimension 1",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "ndDimension": {
-          "grid": true,
-          "searchable": true,
-          "reference": "User Dimension 2",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "payment": {
           "inputMode": "text"
@@ -223,23 +209,21 @@
           "inputMode": "checkbox"
         },
         "orderPaymentSchedule": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
           "reference": null,
           "displayLogic": null
         },
         "writeoffAmount": {
+          "grid": true,
           "inputMode": "number"
         },
         "invoicePaymentSchedule": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
           "reference": null,
           "displayLogic": null
         },
         "gLItem": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
           "reference": null,
           "inputMode": "search"
         },
@@ -261,58 +245,36 @@
           "displayLogic": null
         },
         "activity": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Activity selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "product": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "salesCampaign": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Campaign selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "project": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "salesRegion": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Sales region selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "costCenter": {
-          "grid": true,
-          "searchable": true,
-          "reference": "Cost Center Selector",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "stDimension": {
-          "grid": true,
-          "searchable": true,
-          "reference": "User Dimension 1",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "ndDimension": {
-          "grid": true,
-          "searchable": true,
-          "reference": "User Dimension 2",
-          "inputMode": "search",
-          "displayLogic": null
+          "grid": false,
+          "visibility": "discarded"
         },
         "organization": {
           "inputMode": "search"

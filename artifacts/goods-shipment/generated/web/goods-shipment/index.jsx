@@ -20,8 +20,7 @@ const api = {
         "warehouse",
         "businessPartner",
         "movementDate",
-        "documentStatus",
-        "orderReference"
+        "documentStatus"
       ]
     },
     "goodsShipmentLine": {
@@ -44,7 +43,7 @@ const api = {
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/goods-shipment/goodsShipment/selectors/warehouse"
     },
     {
@@ -65,14 +64,6 @@ const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "deliveryLocation",
-      "column": "Delivery_Location_ID",
-      "reference": "BPartner_Location",
-      "inputMode": "dependent",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/deliveryLocation"
-    },
-    {
-      "entity": "goodsShipment",
       "field": "salesOrder",
       "column": "C_Order_ID",
       "reference": "Order",
@@ -81,43 +72,11 @@ const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "dependent",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/project"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/costcenter"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/asset"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/stDimension"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/ndDimension"
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "inputMode": "search",
+      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/shippingCompany"
     },
     {
       "entity": "goodsShipmentLine",
@@ -129,75 +88,11 @@ const api = {
     },
     {
       "entity": "goodsShipmentLine",
-      "field": "operativeUOM",
-      "column": "C_Aum",
-      "reference": "UOM",
-      "inputMode": "dependent",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/operativeUOM"
-    },
-    {
-      "entity": "goodsShipmentLine",
       "field": "uOM",
       "column": "C_UOM_ID",
       "reference": "UOM",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/uOM"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "storageBin",
-      "column": "M_Locator_ID",
-      "reference": "Locator",
-      "inputMode": "dependent",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/storageBin"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "salesOrderLine",
-      "column": "C_OrderLine_ID",
-      "reference": "OrderLine",
-      "inputMode": "search",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/salesOrderLine"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "search",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/project"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/costcenter"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/asset"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/stDimension"
-    },
-    {
-      "entity": "goodsShipmentLine",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/goods-shipment/goodsShipmentLine/selectors/ndDimension"
     }
   ],
   "actions": [
@@ -239,6 +134,12 @@ const api = {
     },
     {
       "entity": "goodsShipment",
+      "field": "receiveMaterials",
+      "column": "RM_Receipt_PickEdit",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials"
+    },
+    {
+      "entity": "goodsShipment",
       "field": "updateLines",
       "column": "UpdateLines",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines"
@@ -248,12 +149,6 @@ const api = {
       "field": "generateTo",
       "column": "GenerateTo",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "receiveMaterials",
-      "column": "RM_Receipt_PickEdit",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials"
     },
     {
       "entity": "goodsShipment",

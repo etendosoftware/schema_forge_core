@@ -1,15 +1,17 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
 import schemaApiPlugin from './vite-plugins/schema-api.js';
 import reportApiPlugin from './vite-plugins/report-api.js';
 
-// Target Etendo instance for dev proxy. Override via ETENDO_URL in .env.local
-// if your instance uses a different context.name (e.g. ETENDO_URL=http://localhost:8080/mycontext)
-const ETENDO_URL = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  // Target Etendo instance for dev proxy. Override via ETENDO_URL in .env.local
+  // if your instance uses a different context.name (e.g. ETENDO_URL=http://localhost:8080/mycontext)
+  const ETENDO_URL = env.ETENDO_URL || process.env.ETENDO_URL || 'http://localhost:8080/etendo';
 
-export default defineConfig({
+  return {
   base: './',
   plugins: [
     react(),
@@ -76,4 +78,5 @@ export default defineConfig({
       },
     },
   },
+  };
 });

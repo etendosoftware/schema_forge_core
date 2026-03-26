@@ -259,21 +259,31 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        console.error('Failed to save line:', text);
-        return;
+        const msg = await extractErrorMessage(res);
+        setSaveError(msg);
+        toast.error(msg);
+        return null;
       }
+      const data = await res.json().catch(() => null);
       // Refresh children from backend
       fetchChildren(selected.id);
+      setSaveError(null);
+      toast.success('Line added');
+      return data?.response?.data?.[0] ?? data ?? true;
     } catch (err) {
-      console.error('Error adding child:', err);
+      const msg = err?.message || 'Network error';
+      setSaveError(msg);
+      toast.error(msg);
+      return null;
     }
   }, [childEntity, apiBaseUrl, token, selected, headers, fetchChildren]);
 
-  const handleUpdateChild = useCallback((childId, field, value) => {
-    setChildren(prev => prev.map(c =>
-      String(c.id) === String(childId) ? { ...c, [field]: value } : c
-    ));
+  const handleUpdateChild = useCallback((childId, fieldOrObject, value) => {
+    setChildren(prev => prev.map(c => {
+      if (String(c.id) !== String(childId)) return c;
+      if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
+      return { ...c, [fieldOrObject]: value };
+    }));
   }, []);
 
   const handleDeleteChild = useCallback((childId) => {

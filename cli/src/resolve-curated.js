@@ -192,7 +192,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     name: fieldName,
     column: rawField.columnName,
     label: rawField.label,
-    type: rawField.type === 'id' ? 'id' : rawField.type,
+    type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
     visibility,
     required,
     grid,
@@ -203,6 +203,9 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // Section (only for visible fields)
   const section = fieldDecision.section || null;
   if (section) field.section = section;
+
+  // Optional sequence override for UI ordering within section
+  if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
 
   const isVisible = visibility !== 'system' && visibility !== 'discarded';
 
@@ -235,6 +238,10 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // derivation — carry from raw field
   if (rawField.derivation) {
     field.derivation = rawField.derivation;
+  }
+
+  if (rawField.defaultValue !== undefined) {
+    field.defaultValue = rawField.defaultValue;
   }
 
   // readOnlyLogic and displayLogic: only for visible fields
