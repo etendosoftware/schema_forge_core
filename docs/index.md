@@ -15,6 +15,13 @@
 |------|-------------|
 | [e2e-testing-guide.md](e2e-testing-guide.md) | E2E testing guide: discover with agent-browser, automate with Playwright |
 
+## Field & Pipeline Reference
+
+| File | Description |
+|------|-------------|
+| [decisions-reference.md](decisions-reference.md) | **Complete reference for all `decisions.json` options**: visibility, draftMode, sections, selectors, rules, discard patterns |
+| [field-visibility-types.md](field-visibility-types.md) | Field visibility types (editable, readOnly, system, discarded): behavior across pipeline, NEO Headless, and frontend |
+
 ## Design Specs
 
 | File | Description |
@@ -24,6 +31,7 @@
 | [TDD.md](TDD.md) | Technical design, data models, validation rules, generator specs |
 | [TDD-anex.md](TDD-anex.md) | API versioning implementation details |
 | [conventions.md](conventions.md) | Edge case conventions (13 rules for extraction, validation, DB access) |
+| [decisions-versioning.md](decisions-versioning.md) | Decisions.json versioning system: writing migrations, batch upgrades, FAQ |
 
 ## Etendo AD Reference
 
@@ -35,6 +43,12 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [etendo-ad/schema-mappings.md](etendo-ad/schema-mappings.md) | AD table relationships: callouts, logic columns, tab clauses |
 | [etendo-ad/process-mechanisms.md](etendo-ad/process-mechanisms.md) | The 3 process mechanisms: tab_process, classic_process, obuiapp_process |
 | [etendo-ad/display-logic-variables.md](etendo-ad/display-logic-variables.md) | The 6 types of variables in DisplayLogic: fields, auxiliary inputs, session, preferences, acct dimensions |
+
+## Guides
+
+| File | Description |
+|------|-------------|
+| [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
 
 ## Plans & Evaluations
 

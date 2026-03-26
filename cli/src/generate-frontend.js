@@ -43,7 +43,7 @@ function mapFieldType(field) {
   if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) return 'status';
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
-  if (field.type === 'number' || field.type === 'integer') return 'number';
+  if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
   return 'string';
 }
@@ -236,7 +236,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const processesArray = processes.map(p => {
     const isDestructive = /void|cancel|reject/i.test(p.name);
     const style = isDestructive ? 'destructive' : 'positive';
-    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}' },`;
+    const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
+    const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
+    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}'${colPart}${paramsPart} },`;
   }).join('\n');
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
@@ -296,6 +298,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
+  // Draft mode config from frontend contract
+  const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
+  const draftModeValue = draftModeConfig?.enabled
+    ? JSON.stringify(draftModeConfig, null, 2)
+    : 'null';
+  const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
+
   return `import { ListView, DetailView } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
@@ -318,6 +327,10 @@ const processes = [
 ${processesArray}
 ];
 ${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
+
+${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
+const draftMode = ${draftModeValue};
+${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
 
 ${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
@@ -350,7 +363,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity)}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${secondaryTabsProp}
+        breadcrumb={breadcrumb}${apiProp}${secondaryTabsProp}${draftModeProp}
         {...props}
       />
     );

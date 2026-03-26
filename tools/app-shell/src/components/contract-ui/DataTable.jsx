@@ -285,11 +285,14 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       {columns.map(col => {
         const field = fieldMap[col.key];
         if (!field) {
-          // Show callout-derived values if available, otherwise dash
-          const derivedVal = values[col.key];
+          // Show callout-derived values if available, otherwise dash.
+          // Prefer $_identifier (human-readable) over raw ID for FK fields.
+          const rawVal = values[col.key];
+          const identVal = values[col.key + '$_identifier'];
+          const displayVal = identVal || rawVal;
           return (
             <TableCell key={col.key} className="text-muted-foreground text-sm">
-              {derivedVal != null && derivedVal !== '' ? derivedVal : '\u2014'}
+              {displayVal != null && displayVal !== '' ? displayVal : '\u2014'}
             </TableCell>
           );
         }

@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  */
 export function useCatalogs(api, token, apiBaseUrl, fallback = {}) {
   const [catalogs, setCatalogs] = useState(fallback);
+  const [loaded, setLoaded] = useState(false);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -65,8 +66,9 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}) {
         }
       }
       setCatalogs(results);
+      setLoaded(true);
     });
   }, [api, token, apiBaseUrl]);
 
-  return catalogs;
+  return { catalogs, catalogsLoaded: loaded };
 }
