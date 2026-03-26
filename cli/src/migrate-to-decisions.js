@@ -84,6 +84,13 @@ function diffField(curatedField, defaultField) {
   // FK/behavioral props: compare against defaultField
   // Store explicit null when curated omits a property that resolve would auto-add.
   // This tells resolve-curated to NOT add the property for this field.
+  // type: record if curated type differs from raw type (e.g., 'image' override on an 'string' raw field)
+  const cv_type = curatedField.type ?? null;
+  const dv_type = defaultField ? (defaultField.type ?? null) : null;
+  if (cv_type !== null && cv_type !== dv_type) {
+    diff.type = cv_type;
+  }
+
   for (const prop of ['reference', 'inputMode', 'dependsOn', 'section', 'readOnlyLogic', 'displayLogic']) {
     const cv = curatedField[prop] ?? null;
     const dv = defaultField ? (defaultField[prop] ?? null) : null;

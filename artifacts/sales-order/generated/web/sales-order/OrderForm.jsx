@@ -4,7 +4,7 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true, section: 'principal' },
   // @sf-custom-slot callout:SL_Order_UpdateLinesDate
-  { key: 'orderDate', column: 'DateOrdered', type: 'date', required: true, section: 'principal' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', required: true, section: 'principal', defaultValue: '@#Date@' },
   // @sf-custom-slot callout:SE_Order_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search' },
   // @sf-custom-slot callout:SE_Order_BPartnerLocation
