@@ -132,6 +132,53 @@ etendo_core/                    ← branch: feature/ETP-3519
 └── gradle.properties
 ```
 
+## jsreport Installation (Draft)
+
+> ⚠️ **This section is in the process of official integration.** The `com.etendoerp:docker` dependency is not yet part of `com.etendoerp.go` — add it manually until it is integrated.
+
+jsreport is the report engine used by NEO Headless for PDF report generation. It runs as a Docker container managed by the `com.etendoerp:docker` module.
+
+### 1. Add the Docker dependency to build.gradle
+
+In the Etendo project's `build.gradle`, add inside the `dependencies` block:
+
+```groovy
+implementation 'com.etendoerp:docker:latest.release'
+```
+
+### 2. Configure gradle.properties
+
+Add the following to the project's `gradle.properties`:
+
+```properties
+docker_com.etendoerp.go=true
+JSREPORT_PORT=5488
+SCHEMA_FORGE_DIR=../../schema_forge
+```
+
+> **Note:** `SCHEMA_FORGE_DIR` is a placeholder — replace it with the actual path to your `schema_forge` directory (relative or absolute).
+
+### 3. Build the jsreport Docker image
+
+> **Temporary step:** This manual build will be removed once the image is published to a registry. In a future version, the image will be pulled automatically without needing to build from the Dockerfile.
+
+```bash
+cd modules/com.etendoerp.go/compose
+docker buildx build -f Dockerfile -t etendo-jsreport:latest .
+```
+
+### 4. Start jsreport
+
+From the Etendo root directory:
+
+```bash
+./gradlew resources.up
+```
+
+This starts the jsreport container (and any other configured Docker resources). The `com.etendoerp:docker` module manages the container lifecycle.
+
+---
+
 ## First Steps (Claude Guided) (Recommended)
 This tool is designed to be used iteratively through the Claude Code interface, interacting with the agent.
 
