@@ -44,6 +44,7 @@ export function DetailView({
   apiBaseUrl,
   breadcrumb,
   secondaryTabs = [],
+  headerContent = null,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -473,6 +474,7 @@ export function DetailView({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-auto px-6 pb-6">
+          {headerContent}
           <div className="max-w-full space-y-6">
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always

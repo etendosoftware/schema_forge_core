@@ -10,6 +10,8 @@ import TransactionForm from './TransactionForm';
 import StorageDetailTable from './StorageDetailTable';
 import StorageDetailForm from './StorageDetailForm';
 import catalogs from './mockCatalogs';
+import ProductGallery from '@/windows/custom/product/ProductGallery';
+import ProductDetailHeader from '@/windows/custom/product/ProductDetailHeader';
 
 const breadcrumb = 'Reference / Product';
 
@@ -388,7 +390,14 @@ export default function ProductPage({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-      api={api}
+        api={api}
+        headerContent={
+          <ProductDetailHeader
+            recordId={recordId}
+            token={props.token}
+            apiBaseUrl={api.baseUrl}
+          />
+        }
         secondaryTabs={[
           { key: 'costing', label: 'Costing', Table: CostingTable, Form: CostingForm },
           { key: 'transaction', label: 'Transactions', Table: TransactionTable, Form: TransactionForm },
@@ -407,6 +416,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      galleryRenderer={(gProps) => <ProductGallery {...gProps} />}
       {...props}
     />
   );
