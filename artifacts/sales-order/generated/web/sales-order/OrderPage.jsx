@@ -7,6 +7,10 @@ import OrderTaxTable from './OrderTaxTable';
 import OrderTaxForm from './OrderTaxForm';
 import PaymentPlanTable from './PaymentPlanTable';
 import PaymentPlanForm from './PaymentPlanForm';
+import OrderLineTaxTable from './OrderLineTaxTable';
+import OrderLineTaxForm from './OrderLineTaxForm';
+import RelatedServicesTable from './RelatedServicesTable';
+import RelatedServicesForm from './RelatedServicesForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
@@ -26,28 +30,36 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:order
 
+// @sf-custom-slot extraBadges:order
+// @sf-generated-start extraBadges:order
+const extraBadges = [];
+// @sf-generated-end extraBadges:order
+
 // @sf-generated-start processes:order
 const processes = [
-  { name: 'Process Order', label: 'Process  Order', style: 'positive' },
+
 ];
 // @sf-generated-end processes:order
 
 // @sf-generated-start addLineFields:orderLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'description', column: 'Description', type: 'textarea' },
-    { key: 'stockReservation', column: 'Create_Reservation', type: 'text' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true, label: 'Line No.' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'dependent', label: 'Alternative UOM', reference: 'UOM', inputMode: 'dependent', dependsOn: { field: 'product', filterKey: 'M_Product_ID' } },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true, label: 'Ordered Quantity' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'text', required: true, label: 'Net Unit Price' },
+    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'listPrice', column: 'PriceList', type: 'text', required: true, label: 'Net List Price' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'stockReservation', column: 'Create_Reservation', type: 'select', label: 'Stock Reservation' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', reference: 'Tax', inputMode: 'search' },
-    { key: 'listPrice', column: 'PriceList', type: 'text' },
-    { key: 'discount', column: 'Discount', type: 'text' },
+    { key: 'discount', column: 'Discount', type: 'text', label: 'Discount' },
+  ],
+  hidden: [
+
   ],
 };
 // @sf-generated-end addLineFields:orderLine
@@ -485,15 +497,15 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
-    },
-    {
-      "entity": "order",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/order/{id}/action/posted"
+    },
+    {
+      "entity": "order",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
     },
     {
       "entity": "order",
@@ -572,6 +584,7 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         DetailForm={OrderLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
@@ -584,6 +597,8 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         secondaryTabs={[
           { key: 'orderTax', label: 'Tax', Table: OrderTaxTable, Form: OrderTaxForm },
           { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+          { key: 'orderLineTax', label: 'Line Tax', Table: OrderLineTaxTable, Form: OrderLineTaxForm },
+          { key: 'relatedServices', label: 'Related Services', Table: RelatedServicesTable, Form: RelatedServicesForm },
         ]}
         {...props}
       />
