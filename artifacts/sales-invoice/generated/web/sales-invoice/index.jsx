@@ -35,6 +35,17 @@ const api = {
       "supportedFilters": [
         "product"
       ]
+    },
+    "finPaymentSchedule": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/finPaymentSchedule",
+      "detailUrl": "/sws/neo/sales-invoice/finPaymentSchedule/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -91,56 +102,8 @@ const api = {
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "User",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/invoice/selectors/salesRepresentative"
-    },
-    {
-      "entity": "invoice",
-      "field": "salesOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/salesOrder"
-    },
-    {
-      "entity": "invoice",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/project"
-    },
-    {
-      "entity": "invoice",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/costcenter"
-    },
-    {
-      "entity": "invoice",
-      "field": "salesCampaign",
-      "column": "C_Campaign_ID",
-      "reference": "Campaign",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/salesCampaign"
-    },
-    {
-      "entity": "invoice",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/stDimension"
-    },
-    {
-      "entity": "invoice",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/ndDimension"
     },
     {
       "entity": "invoiceLine",
@@ -149,14 +112,6 @@ const api = {
       "reference": "Product",
       "inputMode": "search",
       "url": "/sws/neo/sales-invoice/invoiceLine/selectors/product"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "operativeUOM",
-      "column": "C_Aum",
-      "reference": "UOM",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/operativeUOM"
     },
     {
       "entity": "invoiceLine",
@@ -175,68 +130,20 @@ const api = {
       "url": "/sws/neo/sales-invoice/invoiceLine/selectors/tax"
     },
     {
-      "entity": "invoiceLine",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "Glitem",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/account"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/period"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/project"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
+      "entity": "finPaymentSchedule",
+      "field": "finPaymentmethodID",
+      "column": "Fin_Paymentmethod_ID",
+      "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/costcenter"
+      "url": "/sws/neo/sales-invoice/finPaymentSchedule/selectors/finPaymentmethodID"
     },
     {
-      "entity": "invoiceLine",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
+      "entity": "finPaymentSchedule",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/asset"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/stDimension"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/ndDimension"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "businessPartner",
-      "column": "C_Bpartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/businessPartner"
+      "url": "/sws/neo/sales-invoice/finPaymentSchedule/selectors/currency"
     }
   ],
   "actions": [
@@ -290,15 +197,15 @@ const api = {
     },
     {
       "entity": "invoice",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/sales-invoice/invoice/{id}/action/generateTo"
-    },
-    {
-      "entity": "invoice",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-invoice/invoice/{id}/action/processNow"
+    },
+    {
+      "entity": "invoice",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/sales-invoice/invoice/{id}/action/generateTo"
     },
     {
       "entity": "invoice",
@@ -317,6 +224,24 @@ const api = {
       "field": "matchLCCosts",
       "column": "Match_Lccosts",
       "url": "/sws/neo/sales-invoice/invoiceLine/{id}/action/matchLCCosts"
+    },
+    {
+      "entity": "finPaymentSchedule",
+      "field": "updatePaymentPlan",
+      "column": "Update_Payment_Plan",
+      "url": "/sws/neo/sales-invoice/finPaymentSchedule/{id}/action/updatePaymentPlan"
+    },
+    {
+      "entity": "finPaymentSchedule",
+      "field": "aprmModifPaymentINPlan",
+      "column": "EM_Aprm_Modif_Paym_Sched",
+      "url": "/sws/neo/sales-invoice/finPaymentSchedule/{id}/action/aprmModifPaymentINPlan"
+    },
+    {
+      "entity": "finPaymentSchedule",
+      "field": "aprmModifPaymentOUTPlan",
+      "column": "EM_Aprm_Modif_Paym_Out_Sched",
+      "url": "/sws/neo/sales-invoice/finPaymentSchedule/{id}/action/aprmModifPaymentOUTPlan"
     }
   ],
   "queryParams": {
