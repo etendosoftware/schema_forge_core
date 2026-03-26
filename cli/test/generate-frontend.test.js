@@ -557,14 +557,13 @@ describe('generatePageComponent', () => {
 
   it('puts non-auto fields in entry and auto-pattern fields in derived', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    // product and quantity are entry; tax matches auto-pattern so goes to derived
-    // lineNetAmount is readOnly so excluded from addLineFields entirely
+    // product and quantity are entry; lineNetAmount is readOnly so excluded entirely
     const entryMatch = code.match(/entry: \[([\s\S]*?)\]/);
     assert.ok(entryMatch);
     assert.ok(entryMatch[1].includes("key: 'product'"));
     assert.ok(entryMatch[1].includes("key: 'quantity'"));
-    // tax matches /tax/ auto-pattern, so it goes to derived not entry
-    assert.ok(!entryMatch[1].includes("key: 'tax'"), 'tax should be in derived, not entry');
+    // tax has a reference (FK selector) and is required, so it stays in entry — not auto-derived
+    assert.ok(entryMatch[1].includes("key: 'tax'"), 'tax with reference should be in entry');
   });
 
   it('marks first entry field with lookup: true', () => {
