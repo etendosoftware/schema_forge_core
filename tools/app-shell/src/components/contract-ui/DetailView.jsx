@@ -28,6 +28,7 @@ export function DetailView({
   DetailForm,
   summary = [],
   statusField,
+  extraBadges = [],
   processes = [],
   addLineFields = { entry: [], derived: [] },
   catalogs: staticCatalogs,
@@ -370,6 +371,21 @@ export function DetailView({
                 {statusLabel(data[statusField])}
               </Badge>
             )}
+            {extraBadges.map(b => {
+              const when = b.when !== undefined ? b.when : true;
+              const show = when ? !!data[b.key] : !data[b.key];
+              if (!show) return null;
+              if (b.hideWhenStatus?.includes(data[statusField])) return null;
+              const cls = b.style === 'warning'
+                ? 'ml-1 border-amber-300 bg-amber-50 text-amber-700'
+                : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
+              const variant = b.style === 'warning' ? 'outline' : 'default';
+              return (
+                <Badge key={`${b.key}-${when}`} variant={variant} className={cls}>
+                  {b.label}
+                </Badge>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-2">

@@ -1,6 +1,37 @@
-import ReturnMaterialReceiptPage from './ReturnMaterialReceiptPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import ReturnMaterialReceiptTable from './ReturnMaterialReceiptTable';
+import ReturnMaterialReceiptForm from './ReturnMaterialReceiptForm';
+import ReturnMaterialReceiptLineTable from './ReturnMaterialReceiptLineTable';
+import ReturnMaterialReceiptLineForm from './ReturnMaterialReceiptLineForm';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'sales', name: 'Return Material Receipt' };
+const breadcrumb = 'Sales / Return Material Receipt';
+
+// @sf-generated-start summary:returnMaterialReceipt
+const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
+];
+
+const statusField = 'documentStatus';
+// @sf-generated-end summary:returnMaterialReceipt
+
+// @sf-generated-start processes:returnMaterialReceipt
+const processes = [
+
+];
+// @sf-generated-end processes:returnMaterialReceipt
+
+// @sf-generated-start addLineFields:returnMaterialReceiptLine
+const addLineFields = {
+  entry: [
+    { key: 'description', column: 'Description', type: 'textarea', lookup: true },
+  ],
+  derived: [
+
+  ],
+};
+// @sf-generated-end addLineFields:returnMaterialReceiptLine
 
 const api = {
   "specName": "return-material-receipt",
@@ -183,11 +214,45 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <ReturnMaterialReceiptPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:ReturnMaterialReceiptPage
+export default function ReturnMaterialReceiptPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:ReturnMaterialReceiptPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="returnMaterialReceipt"
+        detailEntity="returnMaterialReceiptLine"
+        Form={ReturnMaterialReceiptForm}
+        DetailTable={ReturnMaterialReceiptLineTable}
+        DetailForm={ReturnMaterialReceiptLineForm}
+        summary={summary}
+        statusField={statusField}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Return Material Receipt"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="returnMaterialReceipt"
+      Table={ReturnMaterialReceiptTable}
+      entityLabel="Return Material Receipts"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:ReturnMaterialReceiptPage
+
+// @sf-custom-slot section:ReturnMaterialReceiptPage-custom

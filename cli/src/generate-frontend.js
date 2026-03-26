@@ -214,14 +214,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailFields = contract.frontendContract.entities[detailEntity]?.fields ?? [];
   const detailEditableFields = detailFields.filter(f => f.form && f.visibility !== 'readOnly');
 
-  // Status field gets a badge in the header; others go in the summary strip.
+  // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
-  // Summary includes: readOnly form fields + any field marked statusBar:true (isshowninstatusbar in AD).
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusField = docStatusField ?? readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
-  const statusBarFields = allEntityFields.filter(f => f.statusBar && f !== statusField && !readOnlyFields.includes(f));
-  const summaryFields = [...readOnlyFields.filter(f => f !== statusField), ...statusBarFields];
+  const summaryFields = readOnlyFields.filter(f => f !== statusField);
 
   // Summary config
   const summaryArray = summaryFields.map(f => {
@@ -313,6 +311,11 @@ ${summaryArray}
 const statusField = ${statusFieldLine};
 ${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
+${MARKERS.CUSTOM_SLOT(`extraBadges:${headerEntity}`)}
+${MARKERS.GENERATED_START(`extraBadges:${headerEntity}`)}
+const extraBadges = [];
+${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
+
 ${MARKERS.GENERATED_START(`processes:${headerEntity}`)}
 const processes = [
 ${processesArray}
@@ -343,6 +346,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         DetailForm={${detailName}Form}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
