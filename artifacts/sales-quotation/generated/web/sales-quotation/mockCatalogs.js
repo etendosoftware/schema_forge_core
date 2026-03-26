@@ -168,48 +168,6 @@ catalogs['BusinessPartnerLocation'] = [
   }
 ];
 
-catalogs['PriceList'] = [
-  {
-    "id": "pl-001",
-    "name": "Standard Price List"
-  },
-  {
-    "id": "pl-002",
-    "name": "Wholesale Prices"
-  },
-  {
-    "id": "pl-003",
-    "name": "Retail Prices"
-  },
-  {
-    "id": "pl-004",
-    "name": "VIP Pricing"
-  }
-];
-
-catalogs['PaymentTerm'] = [
-  {
-    "id": "pt-001",
-    "name": "Immediate"
-  },
-  {
-    "id": "pt-002",
-    "name": "Net 15"
-  },
-  {
-    "id": "pt-003",
-    "name": "Net 30"
-  },
-  {
-    "id": "pt-004",
-    "name": "Net 60"
-  },
-  {
-    "id": "pt-005",
-    "name": "2/10 Net 30"
-  }
-];
-
 catalogs['Product'] = [
   {
     "id": "prod-001",
@@ -330,29 +288,6 @@ catalogs['Product'] = [
     "name": "CPU Cooler",
     "price": 49,
     "uomId": "uom-001"
-  }
-];
-
-catalogs['UOM'] = [
-  {
-    "id": "uom-001",
-    "name": "Each"
-  },
-  {
-    "id": "uom-002",
-    "name": "Box"
-  },
-  {
-    "id": "uom-003",
-    "name": "Kg"
-  },
-  {
-    "id": "uom-004",
-    "name": "Meter"
-  },
-  {
-    "id": "uom-005",
-    "name": "Liter"
   }
 ];
 
