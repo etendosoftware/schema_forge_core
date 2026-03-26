@@ -59,6 +59,8 @@ function mapFormFieldType(field) {
     return 'search';
   }
   if (field.type === 'boolean') return 'checkbox';
+  if (field.type === 'enum') return 'select';
+  if (field.type === 'image') return 'image';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
   if (/notes|description|comments|remarks/i.test(field.name)) return 'textarea';
@@ -111,7 +113,15 @@ ${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const formFields = entity.fields.filter(f => f.form);
+  // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
+  const formFields = entity.fields
+    .filter(f => f.form)
+    .sort((a, b) => {
+      if (a.seq != null && b.seq != null) return a.seq - b.seq;
+      if (a.seq != null) return -1;
+      if (b.seq != null) return 1;
+      return 0;
+    });
   const compName = `${capitalize(entityName)}Form`;
 
   // Classify fields into sections: first N editable non-readOnly fields are 'principal', rest are 'other'.
@@ -170,7 +180,10 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const optionsPart = (type === 'select' && f.enumValues?.length)
+      ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
+      : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -239,27 +252,39 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
   const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
-  const entryFields = detailEditableFields.filter(f => !autoPatterns.test(f.name));
-  const derivedFields = detailEditableFields.filter(f => autoPatterns.test(f.name));
+  const derivedFields = detailEditableFields.filter(f =>
+    autoPatterns.test(f.name) && !f.required && !f.reference
+  );
+  const entryFields = detailEditableFields.filter(f => !derivedFields.includes(f));
+  const hiddenDefaultFields = detailFields.filter(f =>
+    f.visibility !== 'readOnly' && !f.form && f.defaultValue !== undefined
+  );
 
   // The first entry field (usually product) triggers a lookup
   const entryArray = entryFields.map((f, i) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
     const lookupPart = i === 0 ? ', lookup: true' : '';
+    const labelPart = f.label ? `, label: '${f.label}'` : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
+    const labelPart = f.label ? `, label: '${f.label}'` : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
+  }).join('\n');
+
+  const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
+    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'");
+    return `    { key: '${f.name}', value: '${defaultValue}' },`;
   }).join('\n');
 
   // API prediction config
@@ -273,8 +298,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
   // Detect secondary child entities for additional tabs
-  const allEntityNames = Object.keys(contract.frontendContract.entities);
-  const secondaryTabDefs = [
+  const allEntityEntries = Object.entries(contract.frontendContract.entities);
+  const knownSecondaryTabDefs = [
     { key: 'orderTax',        label: 'Tax',              TableName: 'OrderTaxTable',        FormName: 'OrderTaxForm' },
     { key: 'invoiceTax',      label: 'Tax',              TableName: 'InvoiceTaxTable',      FormName: 'InvoiceTaxForm' },
     { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
@@ -282,7 +307,24 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     { key: 'accounting',        label: 'Accounting',        TableName: 'AccountingTable',         FormName: 'AccountingForm' },
     { key: 'landedCost',        label: 'Landed Cost',       TableName: 'LandedCostTable',         FormName: 'LandedCostForm' },
     { key: 'reversedInvoices',  label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable',   FormName: 'ReversedInvoicesForm' },
-  ].filter(t => allEntityNames.includes(t.key));
+  ].filter(t => allEntityEntries.some(([name]) => name === t.key));
+
+  const knownSecondaryKeys = new Set(knownSecondaryTabDefs.map(t => t.key));
+  const inferredSecondaryTabDefs = allEntityEntries
+    .filter(([name, entity]) => {
+      if (name === headerEntity || name === detailEntity) return false;
+      if (knownSecondaryKeys.has(name)) return false;
+      const editableFieldCount = (entity.fields || []).filter(f => f.visibility === 'editable').length;
+      return editableFieldCount === 0;
+    })
+    .map(([name, entity]) => ({
+      key: name,
+      label: entity.tabName || toLabel(name),
+      TableName: `${capitalize(name)}Table`,
+      FormName: `${capitalize(name)}Form`,
+    }));
+
+  const secondaryTabDefs = [...knownSecondaryTabDefs, ...inferredSecondaryTabDefs].slice(0, 4);
 
   const secondaryTabsImports = secondaryTabDefs
     .map(t => `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`)
@@ -329,6 +371,9 @@ ${entryArray}
   ],
   derived: [
 ${derivedArray}
+  ],
+  hidden: [
+${hiddenDefaultsArray}
   ],
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}

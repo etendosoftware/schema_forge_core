@@ -4,7 +4,7 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true, section: 'principal' },
   // @sf-custom-slot callout:SL_Order_UpdateLinesDate
-  { key: 'orderDate', column: 'DateOrdered', type: 'date', required: true, section: 'principal' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', required: true, section: 'principal', defaultValue: '@#Date@' },
   // @sf-custom-slot callout:SE_Order_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search' },
   // @sf-custom-slot callout:SE_Order_BPartnerLocation
@@ -12,7 +12,7 @@ const fields = [
   // @sf-custom-slot callout:SL_Order_PriceList
   { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', required: true, section: 'other', reference: 'PriceList', inputMode: 'selector' },
   // @sf-custom-slot callout:SL_Order_UpdateLinesDate
-  { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date', required: true, section: 'principal' },
+  { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date', required: true, section: 'principal', defaultValue: '@#Date@' },
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', section: 'other', reference: 'PaymentMethod', inputMode: 'selector' },
   { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', required: true, section: 'principal', reference: 'PaymentTerm', inputMode: 'selector' },
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'search', required: true, section: 'other', reference: 'Warehouse', inputMode: 'search' },
@@ -25,7 +25,7 @@ const fields = [
   { key: 'quotation', column: 'Quotation_ID', type: 'search', readOnly: true, section: 'other', reference: 'Order', inputMode: 'search' },
   { key: 'cancelledorder', column: 'Cancelledorder_id', type: 'search', readOnly: true, section: 'other', reference: 'Order', inputMode: 'search' },
   { key: 'replacedorder', column: 'Replacedorder_id', type: 'search', readOnly: true, section: 'other', reference: 'Order', inputMode: 'search' },
-  { key: 'isCanceled', column: 'Iscancelled', type: 'checkbox', required: true, readOnly: true, section: 'other' },
+  { key: 'isCanceled', column: 'Iscancelled', type: 'checkbox', required: true, readOnly: true, section: 'other', defaultValue: 'N' },
   { key: 'delivered', column: 'IsDelivered', type: 'checkbox', required: true, readOnly: true, section: 'other' },
 ];
 // @sf-generated-end fields:order

@@ -12,7 +12,7 @@ const fields = [
   { key: 'receivedAccountCurrency', column: 'PaidConverted', type: 'number', readOnly: true, section: 'other' },
   { key: 'exchangeRate', column: 'Finacc_Txn_Convert_Rate', type: 'text', readOnly: true, section: 'other' },
   { key: 'canceled', column: 'Iscanceled', type: 'checkbox', readOnly: true, section: 'other' },
-  { key: 'status', column: 'Status', type: 'text', required: true, readOnly: true, section: 'other' },
+  { key: 'status', column: 'Status', type: 'select', required: true, readOnly: true, section: 'other', options: [{ value: 'RPAP', label: 'Awaiting Payment' }, { value: 'RPAE', label: 'Awaiting Execution' }, { value: 'RPVOID', label: 'Void' }, { value: 'PPM', label: 'Payment Made' }, { value: 'RPR', label: 'Payment Received' }, { value: 'RDNC', label: 'Deposited not Cleared' }, { value: 'PWNC', label: 'Withdrawn not Cleared' }, { value: 'RPPC', label: 'Payment Cleared' }] },
 ];
 // @sf-generated-end fields:paymentDetails
 

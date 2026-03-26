@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
+import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
+import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
@@ -14,7 +16,7 @@ import { formatAmount } from '@/lib/formatAmount.js';
  * Compact inline combobox for search-type FK fields in rapid line entry.
  * Text input with filtered dropdown — lightweight alternative to full SearchInput.
  */
-function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, token }) {
+function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [serverResults, setServerResults] = useState(null);
@@ -26,7 +28,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
     if (!selectorUrl || !token || !q.trim()) { setServerResults(null); return; }
     clearTimeout(fetchTimer.current);
     fetchTimer.current = setTimeout(() => {
-      fetch(`${selectorUrl}?q=${encodeURIComponent(q.trim())}`, {
+      fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: q.trim() }), {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       })
         .then(r => r.ok ? r.json() : null)
@@ -35,7 +37,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
         })
         .catch(() => {});
     }, 300);
-  }, [selectorUrl, token]);
+  }, [selectorUrl, selectorContext, token]);
 
   const filtered = useMemo(() => {
     if (serverResults) return serverResults.slice(0, 20);
@@ -173,7 +175,7 @@ function EmptyState({ hasFilter, totalCount }) {
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -212,8 +214,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     setValues(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleConfirm = () => {
-    onAdd(values);
+  const handleConfirm = async () => {
+    const result = await onAdd(values);
+    if (result === false || result == null) {
+      return;
+    }
     // Reset for next rapid entry — recompute lineNo
     const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(values.lineNo) || 0];
     const nextLineNo = Math.max(...nums) + 10;
@@ -256,7 +261,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleConfirm();
+      void handleConfirm();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
@@ -271,7 +276,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       {selectable && (
         <TableCell className="w-10 px-1">
           <div className="flex gap-0.5">
-            <button type="button" onClick={handleConfirm} title="Add (Enter)"
+            <button type="button" onClick={() => { void handleConfirm(); }} title="Add (Enter)"
               className="h-7 w-7 flex items-center justify-center rounded text-emerald-600 hover:bg-emerald-50">
               <Check className="h-3.5 w-3.5" />
             </button>
@@ -298,7 +303,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 
         // Search fields render as compact combobox (text input + filtered dropdown)
         if (field.type === 'search') {
-          const options = catalogs?.[field.reference] || [];
+          const options = getCatalogOptions(catalogs, entity, field);
           const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
           return (
             <TableCell key={col.key} className="py-1 px-2">
@@ -314,6 +319,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 }}
                 onKeyDown={handleKeyDown}
                 selectorUrl={selectorUrl}
+                selectorContext={selectorContext}
                 token={token}
               />
             </TableCell>
@@ -321,8 +327,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         }
 
         // Selector fields render as native <select> dropdowns (few options)
-        if (field.type === 'selector' && catalogs?.[field.reference]) {
-          const options = catalogs[field.reference] || [];
+        if (field.type === 'selector') {
+          const options = getCatalogOptions(catalogs, entity, field);
+          if (options.length === 0) {
+            return <TableCell key={col.key} className="py-1 px-2" />;
+          }
           return (
             <TableCell key={col.key} className="py-1 px-2">
               <select
@@ -339,7 +348,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 onKeyDown={handleKeyDown}
                 className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="">{t(field.column) ?? field.label ?? field.key}</option>
+                <option value="" disabled hidden>{t(field.column) ?? field.label ?? field.key}</option>
                 {options.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</option>
                 ))}
@@ -382,9 +391,10 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, selectorContext }) {
   const t = useLabel();
   const [searchQuery, setSearchQuery] = useState('');
+  const [columnFilters, setColumnFilters] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
 
   // Report columns to parent (e.g., ListView sort popover)
@@ -394,18 +404,32 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
   }, [columns, onColumnsReady]);
 
-  const hasActiveFilter = searchQuery.length > 0;
+  const hasColumnFilter = useMemo(() => Object.values(columnFilters).some(v => v), [columnFilters]);
+  const hasActiveFilter = searchQuery.length > 0 || hasColumnFilter;
 
   const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
-    const q = searchQuery.toLowerCase();
-    return data.filter(row =>
-      filters.some(key => {
+    let result = data;
+    // Global search (existing behaviour)
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(row =>
+        filters.some(key => {
+          const val = resolveIdentifier(row, key);
+          return String(val ?? '').toLowerCase().includes(q);
+        })
+      );
+    }
+    // Per-column filters (AND logic)
+    for (const [key, query] of Object.entries(columnFilters)) {
+      if (!query) continue;
+      const q = query.toLowerCase();
+      result = result.filter(row => {
         const val = resolveIdentifier(row, key);
         return String(val ?? '').toLowerCase().includes(q);
-      })
-    );
-  }, [data, filters, searchQuery]);
+      });
+    }
+    return result;
+  }, [data, filters, searchQuery, columnFilters]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),
@@ -511,28 +535,69 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           <TableHeader>
             <TableRow className="border-b border-border/40">
               {selectable && (
-                <TableHead className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    ref={el => { if (el) el.indeterminate = someSelected; }}
-                    onChange={toggleAll}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                  />
+                <TableHead className="w-10 px-3 align-top" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={el => { if (el) el.indeterminate = someSelected; }}
+                      onChange={toggleAll}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                    />
+                    {hasColumnFilter && (
+                      <button
+                        onClick={() => setColumnFilters({})}
+                        title="Clear all filters"
+                        className="h-4 w-4 flex items-center justify-center rounded text-muted-foreground/50 hover:text-foreground transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </TableHead>
               )}
               {columns.map(col => {
                 const colLabel = t(col.column) ?? col.label ?? col.key;
                 const isSorted = sortColumn === col.key;
+                const isRight = col.type === 'amount';
                 return (
-                  <TableHead key={col.key} className={`text-xs font-medium text-muted-foreground/70 tracking-wide ${col.type === 'amount' ? 'text-right' : ''}`}>
-                    <FieldHighlight entityName={entity} fieldName={col.key}>
-                      {colLabel}
-                      {isSorted && (
-                        <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                      )}
-                    </FieldHighlight>
+                  <TableHead key={col.key} className={`align-top ${isRight ? 'text-right' : ''}`}>
+                    <div className={`flex flex-col gap-1.5 pb-2 ${isRight ? 'items-end' : ''}`}>
+                      <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
+                        <FieldHighlight entityName={entity} fieldName={col.key}>
+                          {colLabel}
+                          {isSorted && (
+                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          )}
+                        </FieldHighlight>
+                      </span>
+                      <div className="relative w-full">
+                        <input
+                          type="text"
+                          value={columnFilters[col.key] || ''}
+                          onChange={e => setColumnFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
+                          placeholder="Filter..."
+                          className={[
+                            'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
+                            'placeholder:text-muted-foreground/35 transition-colors',
+                            'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
+                            columnFilters[col.key]
+                              ? 'border-primary/40 bg-primary/5 pr-6'
+                              : 'border-border/35',
+                            isRight ? 'text-right' : '',
+                          ].filter(Boolean).join(' ')}
+                        />
+                        {columnFilters[col.key] && (
+                          <button
+                            onClick={() => setColumnFilters(prev => ({ ...prev, [col.key]: '' }))}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </TableHead>
                 );
               })}
@@ -596,12 +661,13 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 data={data}
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
-                selectable={selectable}
-                token={token}
-                apiBaseUrl={apiBaseUrl}
-                entity={entity}
-              />
-            )}
+                  selectable={selectable}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                  entity={entity}
+                  selectorContext={selectorContext}
+                />
+              )}
           </TableBody>
           {totals && (
             <TableFooter>

@@ -1,6 +1,47 @@
-import ProductPage from './ProductPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import ProductTable from './ProductTable';
+import ProductForm from './ProductForm';
+import ProductPriceTable from './ProductPriceTable';
+import ProductPriceForm from './ProductPriceForm';
+import CostingTable from './CostingTable';
+import CostingForm from './CostingForm';
+import TransactionTable from './TransactionTable';
+import TransactionForm from './TransactionForm';
+import StorageDetailTable from './StorageDetailTable';
+import StorageDetailForm from './StorageDetailForm';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'reference', name: 'Product' };
+const breadcrumb = 'Reference / Product';
+
+// @sf-generated-start summary:product
+const summary = [
+
+];
+
+const statusField = null;
+// @sf-generated-end summary:product
+
+// @sf-generated-start processes:product
+const processes = [
+
+];
+// @sf-generated-end processes:product
+
+// @sf-generated-start addLineFields:productPrice
+const addLineFields = {
+  entry: [
+    { key: 'priceListVersion', column: 'M_PriceList_Version_ID', type: 'selector', required: true, lookup: true, label: 'Price List Version', reference: 'PriceListVersion', inputMode: 'selector' },
+    { key: 'standardPrice', column: 'PriceStd', type: 'text', required: true, label: 'Unit Price' },
+    { key: 'listPrice', column: 'PriceList', type: 'text', required: true, label: 'List Price' },
+  ],
+  derived: [
+
+  ],
+  hidden: [
+    { key: 'cost', value: '0' },
+  ],
+};
+// @sf-generated-end addLineFields:productPrice
 
 const api = {
   "specName": "product",
@@ -326,11 +367,50 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <ProductPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:ProductPage
+export default function ProductPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:ProductPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="product"
+        detailEntity="productPrice"
+        Form={ProductForm}
+        DetailTable={ProductPriceTable}
+        DetailForm={ProductPriceForm}
+        summary={summary}
+        statusField={statusField}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Product"
+        detailLabel="Price"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        secondaryTabs={[
+          { key: 'costing', label: 'Costing', Table: CostingTable, Form: CostingForm },
+          { key: 'transaction', label: 'Transactions', Table: TransactionTable, Form: TransactionForm },
+          { key: 'storageDetail', label: 'Stock', Table: StorageDetailTable, Form: StorageDetailForm },
+        ]}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="product"
+      Table={ProductTable}
+      entityLabel="Products"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:ProductPage
+
+// @sf-custom-slot section:ProductPage-custom
