@@ -5,6 +5,7 @@ const columns = [
   { key: 'lineNo', column: 'Line', type: 'number' },
   { key: 'product', column: 'M_Product_ID', type: 'string' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'string' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'string' },
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount' },
   { key: 'tax', column: 'C_Tax_ID', type: 'string' },
   { key: 'discount', column: 'Discount', type: 'string' },

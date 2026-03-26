@@ -7,6 +7,18 @@
   "entities": {
     "cOrder": {
       "fields": {
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "documentStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "form": false
+        },
         "documentAction": {
           "visibility": "system",
           "displayLogic": null
@@ -40,7 +52,8 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "principal"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -48,25 +61,31 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "priceList": {
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "paymentTerms": {
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "warehouse": {
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "salesRepresentative": {
           "grid": true,
-          "reference": "SalesRepresentative"
+          "reference": "SalesRepresentative",
+          "section": "other"
         },
         "invoiceAddress": {
           "reference": "BusinessPartnerLocation",
@@ -74,109 +93,105 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
-        },
-        "deliveryLocation": {
-          "reference": "BusinessPartnerLocation",
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "project": {
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "dependsOn": {
-            "field": "businessPartner",
-            "filterKey": "C_BPartner_ID"
-          }
+          "visibility": "discarded"
         },
-        "cCostcenterId": {
-          "reference": "CostCenter",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "costCenter"
+        "costcenter": {
+          "visibility": "discarded"
         },
         "asset": {
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
-        "user1Id": {
-          "reference": "UserDimension1",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "dimension1"
+        "stDimension": {
+          "visibility": "discarded"
         },
-        "user2Id": {
-          "reference": "UserDimension2",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "dimension2"
+        "ndDimension": {
+          "visibility": "discarded"
         },
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "scheduledDeliveryDate": {
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "principal"
         },
         "invoiceTerms": {
-          "displayLogic": null,
-          "dependsOn": {
-            "field": "transactionDocument",
-            "filterKey": "C_DOCTYPETARGET_ID"
-          }
+          "visibility": "discarded"
         },
         "orderReference": {
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "section": "other"
         },
         "cancelandreplace": {
-          "displayLogic": null,
+          "visibility": "discarded",
           "name": "cancelAndReplace"
         },
         "confirmcancelandreplace": {
-          "displayLogic": null,
+          "visibility": "discarded",
           "name": "confirmCancelAndReplace"
         },
-        "grandTotal": {
+        "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "name": "totalGrossAmount"
+          "section": "principal"
         },
-        "totalLines": {
+        "summedLineAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "name": "totalNetAmount"
+          "section": "other"
         },
         "quotation": {
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "other"
         },
         "cancelledorderId": {
           "displayLogic": null,
-          "name": "canceledOrder"
+          "name": "canceledOrder",
+          "section": "other"
         },
         "replacedorderId": {
           "displayLogic": null,
-          "name": "replacedOrder"
+          "name": "replacedOrder",
+          "section": "other"
         },
         "iscancelled": {
-          "name": "isCanceled"
+          "name": "isCanceled",
+          "section": "other"
         },
         "delivered": {
           "grid": true,
-          "displayLogic": null
-        },
-        "bpartnerExtRef": {
           "displayLogic": null,
-          "name": "crmReference"
+          "section": "other"
+        },
+        "description": {
+          "section": "other"
+        },
+        "reservationStatus": {
+          "visibility": "discarded"
+        },
+        "deliveryStatus": {
+          "visibility": "discarded"
+        },
+        "invoiceStatus": {
+          "visibility": "discarded"
+        },
+        "currency": {
+          "visibility": "discarded"
+        },
+        "deliveryLocation": {
+          "visibility": "discarded"
+        },
+        "externalBusinessPartnerReference": {
+          "visibility": "discarded"
         }
       }
     },
@@ -200,143 +215,139 @@
         "product": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "orderedQuantity": {
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "operativeQuantity": {
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
+        },
+        "operativeUOM": {
+          "visibility": "discarded"
         },
         "cAum": {
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "alternativeUOM"
+          "visibility": "discarded"
         },
-        "priceActual": {
+        "unitPrice": {
           "grid": true,
           "readOnlyLogic": null,
-          "name": "netUnitPrice"
+          "section": "principal"
         },
         "grossUnitPrice": {
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "lineNetAmount": {
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "tax": {
           "grid": true,
-          "readOnlyLogic": null
-        },
-        "priceList": {
           "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "netListPrice"
+          "section": "principal"
+        },
+        "listPrice": {
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "discount": {
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "warehouseRule": {
-          "reference": "WarehouseRule"
+          "visibility": "discarded"
         },
         "createReservation": {
           "readOnlyLogic": null,
           "displayLogic": null,
-          "name": "stockReservation"
+          "name": "stockReservation",
+          "section": "other"
         },
-        "taxbaseamt": {
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "alternateTaxableAmount"
+        "taxableAmount": {
+          "visibility": "discarded"
         },
         "attributeSetValue": {
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
-        "cancelpricead": {
-          "displayLogic": null,
-          "name": "cancelDiscountsAndPromotions"
+        "cancelPriceAdjustment": {
+          "visibility": "discarded"
         },
         "manageReservation": {
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "explode": {
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "selectOrderLine": {
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "project": {
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
-        "cCostcenterId": {
-          "reference": "CostCenter",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "costCenter"
+        "costcenter": {
+          "visibility": "discarded"
         },
         "asset": {
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
-        "user1Id": {
-          "reference": "UserDimension1",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "dimension1"
+        "stDimension": {
+          "visibility": "discarded"
         },
-        "user2Id": {
-          "reference": "UserDimension2",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "name": "dimension2"
+        "ndDimension": {
+          "visibility": "discarded"
         },
         "lineNo": {
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "overdueReturnDays": {
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "lineGrossAmount": {
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "grossListPrice": {
-          "displayLogic": null
+          "visibility": "discarded"
         },
-        "cUomId": {
+        "uOM": {
           "readOnlyLogic": null,
-          "name": "uom"
+          "section": "principal"
         },
         "deliveredQuantity": {
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "other"
         },
         "replacedorderlineId": {
           "displayLogic": null,
-          "name": "replacedOrderLine"
+          "name": "replacedOrderLine",
+          "section": "other"
         },
         "quotationLine": {
-          "displayLogic": null
+          "displayLogic": null,
+          "section": "other"
         },
         "printDescription": {
-          "visibility": "readOnly",
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "operativeUOM": {
           "dependsOn": {
             "field": "product",
             "filterKey": "M_Product_ID"
-          }
+          },
+          "section": "other"
+        },
+        "description": {
+          "section": "other"
+        },
+        "invoicedQuantity": {
+          "visibility": "readOnly",
+          "section": "other"
         }
       }
     },
@@ -447,6 +458,7 @@
       }
     },
     "cOrderDiscount": {
+      "exclude": true,
       "name": "basicDiscounts",
       "fields": {
         "lineNo": {

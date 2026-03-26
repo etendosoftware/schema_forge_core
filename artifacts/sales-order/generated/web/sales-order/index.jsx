@@ -16,8 +16,11 @@ const api = {
       "listUrl": "/sws/neo/sales-order/order",
       "detailUrl": "/sws/neo/sales-order/order/{id}",
       "supportedFilters": [
+        "documentNo",
         "orderDate",
         "businessPartner",
+        "documentStatus",
+        "grandTotalAmount",
         "orderReference"
       ]
     },
@@ -76,17 +79,6 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/sales-order/relatedProducts",
       "detailUrl": "/sws/neo/sales-order/relatedProducts/{id}",
-      "supportedFilters": []
-    },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/basicDiscounts",
-      "detailUrl": "/sws/neo/sales-order/basicDiscounts/{id}",
       "supportedFilters": []
     },
     "orderTax": {
@@ -185,14 +177,6 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/currency"
-    },
-    {
-      "entity": "order",
       "field": "salesRepresentative",
       "column": "SalesRep_ID",
       "reference": "SalesRepresentative",
@@ -206,14 +190,6 @@ const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/sales-order/order/selectors/invoiceAddress"
-    },
-    {
-      "entity": "order",
-      "field": "deliveryLocation",
-      "column": "Delivery_Location_ID",
-      "reference": "BusinessPartnerLocation",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-order/order/selectors/deliveryLocation"
     },
     {
       "entity": "order",
@@ -238,46 +214,6 @@ const api = {
       "reference": "Order",
       "inputMode": "search",
       "url": "/sws/neo/sales-order/order/selectors/replacedorder"
-    },
-    {
-      "entity": "order",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-order/order/selectors/project"
-    },
-    {
-      "entity": "order",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/costcenter"
-    },
-    {
-      "entity": "order",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/asset"
-    },
-    {
-      "entity": "order",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/stDimension"
-    },
-    {
-      "entity": "order",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/ndDimension"
     },
     {
       "entity": "orderLine",
@@ -313,14 +249,6 @@ const api = {
     },
     {
       "entity": "orderLine",
-      "field": "warehouseRule",
-      "column": "M_Warehouse_Rule_ID",
-      "reference": "WarehouseRule",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderLine/selectors/warehouseRule"
-    },
-    {
-      "entity": "orderLine",
       "field": "replacedorderline",
       "column": "Replacedorderline_id",
       "reference": "OrderLine",
@@ -334,46 +262,6 @@ const api = {
       "reference": "OrderLine",
       "inputMode": "search",
       "url": "/sws/neo/sales-order/orderLine/selectors/quotationLine"
-    },
-    {
-      "entity": "orderLine",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/orderLine/selectors/project"
-    },
-    {
-      "entity": "orderLine",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderLine/selectors/costcenter"
-    },
-    {
-      "entity": "orderLine",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/orderLine/selectors/asset"
-    },
-    {
-      "entity": "orderLine",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderLine/selectors/stDimension"
-    },
-    {
-      "entity": "orderLine",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderLine/selectors/ndDimension"
     },
     {
       "entity": "orderLineTax",
@@ -430,14 +318,6 @@ const api = {
       "reference": "Product",
       "inputMode": "search",
       "url": "/sws/neo/sales-order/relatedProducts/selectors/product"
-    },
-    {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/basicDiscounts/selectors/discount"
     },
     {
       "entity": "orderTax",
