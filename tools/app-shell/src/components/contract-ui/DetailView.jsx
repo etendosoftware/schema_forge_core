@@ -42,6 +42,7 @@ export function DetailView({
   apiBaseUrl,
   breadcrumb,
   secondaryTabs = [],
+  customTabs = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -274,8 +275,7 @@ export function DetailView({
   for (const st of secondaryTabs) {
     tabs.push({ key: st.key, label: st.label });
   }
-  // Always add "Others" tab for secondary header fields
-  tabs.push({ key: 'others', label: 'Others' });
+  // Only add "Others" tab if there are fields with section='other' (not 'collapsed' or 'summary')
 
   if (hook.loading) {
     return (
@@ -448,6 +448,28 @@ export function DetailView({
               />
             </div>
 
+            {/* Collapsible secondary header fields */}
+            <details className="group">
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground py-1 select-none list-none flex items-center gap-1">
+                <svg className="h-4 w-4 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                More details
+              </summary>
+              <div className="pt-2">
+                <Form
+                  entity={entity}
+                  data={data}
+                  onChange={handleChangeWithCallout}
+                  catalogs={catalogs}
+                  layout="horizontal"
+                  section="collapsed"
+                  displayLogic={displayLogic}
+                  api={api}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                />
+              </div>
+            </details>
+
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
               <div>
@@ -489,6 +511,7 @@ export function DetailView({
                         apiBaseUrl={apiBaseUrl}
                         onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
                         selectedRowId={selectedLine?.id}
+                        showFooterTotals={!summary.some(f => f.type === 'amount')}
                         addRow={{
                           active: addingLine,
                           fields: allEntryFields,
@@ -601,40 +624,61 @@ export function DetailView({
               </>
             )}
 
-            {/* Footer totals (only when summary has amount fields) */}
-            {DetailTable && summary.some(f => f.type === 'amount') && (
-              <div className="flex justify-end pt-2 border-t border-border/50">
-                <div className="w-72 space-y-1.5">
-                  {summary.filter(f => f.type === 'amount').map(f => {
-                    const label = f.label ?? f.key.replace(/([A-Z])/g, ' $1').trim();
-                    const val = data[f.key];
-                    return (
-                      <div key={f.key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{label}</span>
-                        <span className="font-medium tabular-nums">
-                          {val == null ? '\u2014' : formatAmount(val, data['currency$_identifier'])}
-                        </span>
+            {/* Collapsible Related Documents (below lines, before totals) */}
+            {customTabs.length > 0 && customTabs.map(ct => {
+              const TabComponent = ct.Component;
+              return (
+                <details key={ct.key} className="group mt-6 border border-border/40 rounded-lg bg-muted/20">
+                  <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground px-4 py-3 select-none list-none flex items-center gap-2">
+                    <svg className="h-4 w-4 transition-transform group-open:rotate-90 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    {ct.label}
+                  </summary>
+                  <div className="px-4 pb-4">
+                    <TabComponent
+                      recordId={data?.id || recordId}
+                      data={data}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                      api={api}
+                    />
+                  </div>
+                </details>
+              );
+            })}
+
+            {/* Footer totals: Subtotal, Taxes, Total */}
+            {DetailTable && summary.some(f => f.type === 'amount') && (() => {
+              const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
+              const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+              const subtotal = subtotalField ? data[subtotalField.key] : null;
+              const total = totalField ? data[totalField.key] : null;
+              const taxes = (subtotal != null && total != null) ? total - subtotal : null;
+              const currency = data['currency$_identifier'];
+              return (
+                <div className="flex justify-end pt-2 border-t border-border/50">
+                  <div className="w-72 space-y-1.5">
+                    {subtotal != null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-medium tabular-nums">{formatAmount(subtotal, currency)}</span>
                       </div>
-                    );
-                  })}
-                  {(() => {
-                    const totalField = summary.find(
-                      f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || f.key.toLowerCase().includes('total'))
-                    );
-                    if (!totalField) return null;
-                    const val = data[totalField.key];
-                    return (
+                    )}
+                    {taxes != null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Taxes</span>
+                        <span className="font-medium tabular-nums">{formatAmount(taxes, currency)}</span>
+                      </div>
+                    )}
+                    {total != null && (
                       <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
                         <span>Total</span>
-                        <span className="tabular-nums">
-                          {val == null ? '\u2014' : formatAmount(val, data['currency$_identifier'])}
-                        </span>
+                        <span className="tabular-nums">{formatAmount(total, currency)}</span>
                       </div>
-                    );
-                  })()}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </div>
