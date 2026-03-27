@@ -192,12 +192,14 @@
         "deliveryStatus": {
           "visibility": "readOnly",
           "grid": true,
-          "form": false
+          "form": false,
+          "columnType": "percent"
         },
         "invoiceStatus": {
           "visibility": "readOnly",
           "grid": true,
-          "form": false
+          "form": false,
+          "columnType": "percent"
         },
         "currency": {
           "visibility": "readOnly",

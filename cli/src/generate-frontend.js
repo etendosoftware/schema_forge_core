@@ -40,11 +40,12 @@ export function getReadOnlyFields(contract, entityName) {
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
+  // Explicit columnType override from decisions (e.g. "percent" for progress bars)
+  if (field.columnType) return field.columnType;
   if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) {
-    // Integer status fields like deliveryStatus/invoiceStatus are percentage indicators
-    const nameLC = field.name.toLowerCase();
-    if ((field.type === 'integer' || field.type === 'number') && nameLC !== 'documentstatus') {
-      return 'percent';
+    // Integer/number status fields without explicit columnType → show as number, not badge
+    if ((field.type === 'integer' || field.type === 'number') && field.name.toLowerCase() !== 'documentstatus') {
+      return 'number';
     }
     return 'status';
   }

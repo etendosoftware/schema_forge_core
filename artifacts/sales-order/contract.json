@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-27T18:47:03.806Z",
-  "checksum": "1c8847daa0138cf6",
+  "version": "0.2.0",
+  "generatedAt": "2026-03-27T19:16:26.393Z",
+  "checksum": "b9de808ccf449ed7",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -283,7 +283,8 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": false
+            "form": false,
+            "columnType": "percent"
           },
           {
             "name": "invoiceStatus",
@@ -295,7 +296,8 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": false
+            "form": false,
+            "columnType": "percent"
           }
         ],
         "searchableFields": [
