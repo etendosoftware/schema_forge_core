@@ -4,17 +4,23 @@ import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import catalogs from './mockCatalogs';
+import RelatedDocuments from './RelatedDocuments';
+
 
 const breadcrumb = 'Sales / Goods Shipment';
 
 // @sf-generated-start summary:goodsShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:goodsShipment
+
+// @sf-custom-slot extraBadges:goodsShipment
+// @sf-generated-start extraBadges:goodsShipment
+const extraBadges = [];
+// @sf-generated-end extraBadges:goodsShipment
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
@@ -25,12 +31,15 @@ const processes = [
 // @sf-generated-start addLineFields:goodsShipmentLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'text', required: true },
-    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true, label: 'Line No.' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'text', required: true, label: 'Movement Quantity' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
+
+  ],
+  hidden: [
 
   ],
 };
@@ -95,22 +104,6 @@ const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "salesOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/salesOrder"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "shippingCompany",
-      "column": "M_Shipper_ID",
-      "reference": "Shipper",
-      "inputMode": "search",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/shippingCompany"
     },
     {
       "entity": "goodsShipmentLine",
@@ -231,7 +224,13 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         DetailForm={GoodsShipmentLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
+        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
+        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Goods Shipment"

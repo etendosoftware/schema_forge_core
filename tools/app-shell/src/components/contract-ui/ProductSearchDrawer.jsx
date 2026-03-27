@@ -21,13 +21,39 @@ function getColor(id) {
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-function Avatar({ name, id, imageUrl }) {
-  if (imageUrl) {
-    return <img src={imageUrl} alt={name} className="w-9 h-9 rounded-lg object-cover shrink-0" />;
+function Avatar({ name, id, imageUrl, imageId, neoBaseUrl, token }) {
+  const [src, setSrc] = useState(imageUrl || null);
+  const objectUrlRef = useRef(null);
+
+  useEffect(() => {
+    if (src || !imageId || !neoBaseUrl || !token) return;
+    let cancelled = false;
+    fetch(`${neoBaseUrl}/image/${imageId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.blob() : null)
+      .then(blob => {
+        if (blob && !cancelled) {
+          const url = URL.createObjectURL(blob);
+          objectUrlRef.current = url;
+          setSrc(url);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [imageId, neoBaseUrl, token, src]);
+
+  // Revoke object URL only on unmount
+  useEffect(() => {
+    return () => { if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current); };
+  }, []);
+
+  if (src) {
+    return <img src={src} alt={name} className="w-11 h-11 rounded-lg object-cover shrink-0" />;
   }
   const initial = (name || '?')[0].toUpperCase();
   return (
-    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-semibold shrink-0 ${getColor(id)}`}>
+    <div className={`w-11 h-11 rounded-lg flex items-center justify-center text-sm font-semibold shrink-0 ${getColor(id)}`}>
       {initial}
     </div>
   );
@@ -40,6 +66,7 @@ export default function ProductSearchDrawer({
   selectorUrl,
   token,
   title = 'Search Product',
+  imageEntityUrl,
 }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -49,10 +76,31 @@ export default function ProductSearchDrawer({
   const [totalCount, setTotalCount] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [imageMap, setImageMap] = useState({});
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const fetchTimer = useRef(null);
   const abortRef = useRef(null);
+
+  // Fetch all product image IDs once when modal opens, keyed by searchKey
+  const neoBaseUrl = selectorUrl ? selectorUrl.replace(/\/[^/]+\/[^/]+\/selectors\/.*$/, '') : '';
+  const resolvedImageUrl = imageEntityUrl || (neoBaseUrl ? `${neoBaseUrl}/product/product` : null);
+  const fetchAllImages = useCallback(() => {
+    if (!resolvedImageUrl || !token) return;
+    fetch(`${resolvedImageUrl}?_limit=500`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const rows = data?.response?.data || [];
+        const map = {};
+        for (const row of rows) {
+          if (row.searchKey && row.image) map[row.searchKey] = row.image;
+        }
+        setImageMap(map);
+      })
+      .catch(() => {});
+  }, [resolvedImageUrl, token]);
 
   const doFetch = useCallback((q, offset = 0, append = false) => {
     if (!append) {
@@ -87,6 +135,7 @@ export default function ProductSearchDrawer({
           setTotalCount(data?.totalCount ?? items.length);
           setLoading(false);
           setLoadingMore(false);
+          // Images are fetched once on modal open, no per-page fetch needed
         })
         .catch(err => {
           if (err.name !== 'AbortError') { if (!append) setResults([]); setLoading(false); setLoadingMore(false); }
@@ -104,8 +153,10 @@ export default function ProductSearchDrawer({
       setHasMore(false);
       setSelectedId(null);
       setActiveIdx(-1);
+      setImageMap({});
       setTimeout(() => inputRef.current?.focus(), 50);
       doFetch('', 0);
+      fetchAllImages();
     }
   }, [open, doFetch]);
 
@@ -142,7 +193,8 @@ export default function ProductSearchDrawer({
     if (p == null) return null;
     return typeof p === 'number' ? p.toFixed(2) : String(p);
   };
-  const getImage = (item) => item.imageUrl || item.imageurl || item.image || null;
+  const getImageId = (item) => item.image || null;
+  const getImage = (item) => item.imageUrl || item.imageurl || null;
 
   if (!open) return null;
 
@@ -210,7 +262,7 @@ export default function ProductSearchDrawer({
                           : 'hover:bg-muted/50'
                         }`}
                       >
-                        <Avatar name={name} id={item.id} imageUrl={image} />
+                        <Avatar name={name} id={item.id} imageUrl={image} imageId={getImageId(item) || imageMap[item.searchKey]} neoBaseUrl={neoBaseUrl} token={token} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{name}</p>
                           {code && <p className="text-xs text-muted-foreground">{code}</p>}

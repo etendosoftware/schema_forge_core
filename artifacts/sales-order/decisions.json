@@ -83,8 +83,7 @@
         "warehouse": {
           "inputMode": "search",
           "readOnlyLogic": null,
-          "section": "other",
-          "visibility": "system"
+          "section": "collapsed"
         },
         "salesRepresentative": {
           "visibility": "system"

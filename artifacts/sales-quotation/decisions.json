@@ -32,7 +32,7 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "collapsed"
         },
         "orderDate": {
           "grid": true,
@@ -64,17 +64,13 @@
           "visibility": "system"
         },
         "paymentMethod": {
-          "section": "principal"
+          "section": "collapsed"
         },
         "salesRepresentative": {
-          "section": "other",
-          "reference": "SalesRepresentative",
-          "inputMode": "selector"
+          "visibility": "system"
         },
         "orderReference": {
-          "visibility": "editable",
-          "grid": false,
-          "section": "other"
+          "visibility": "discarded"
         },
         "summedLineAmount": {
           "visibility": "readOnly",
@@ -96,7 +92,7 @@
         },
         "description": {
           "inputMode": "textarea",
-          "section": "other"
+          "section": "collapsed"
         },
         "client": {
           "visibility": "system"
