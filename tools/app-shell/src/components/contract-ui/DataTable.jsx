@@ -678,7 +678,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       <div className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/40">
+            <TableRow className="border-b border-border/40 bg-muted/30">
               {selectable && (
                 <TableHead className="w-10 px-3 align-top" onClick={(e) => e.stopPropagation()}>
                   <div className="flex flex-col gap-1.5 pt-1">

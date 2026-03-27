@@ -616,30 +616,44 @@ export function DetailView({
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
               <div>
-                <div className="flex items-center gap-0 border-b border-border/50">
-                  {tabs.map((tab, idx) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
-                      className={[
-                        'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
-                        activeTab === idx
-                          ? 'text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      ].join(' ')}
-                    >
-                      <List className="h-4 w-4" />
-                      {tab.label}
-                      {tab.count != null && (
-                        <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
-                          {tab.count}
-                        </span>
-                      )}
-                      {activeTab === idx && (
-                        <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
-                      )}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between border-b border-border/50">
+                  <div className="flex items-center gap-0">
+                    {tabs.map((tab, idx) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
+                        className={[
+                          'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
+                          activeTab === idx
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground',
+                        ].join(' ')}
+                      >
+                        <List className="h-4 w-4" />
+                        {tab.label}
+                        {tab.count != null && (
+                          <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
+                            {tab.count}
+                          </span>
+                        )}
+                        {activeTab === idx && (
+                          <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {(() => {
+                    const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+                    const total = totalField ? data[totalField.key] : null;
+                    const currency = data['currency$_identifier'];
+                    if (total == null) return null;
+                    return (
+                      <div className="flex items-center gap-2 pr-4 text-sm">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-bold tabular-nums">{formatAmount(total, currency)}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Tab content: Lines */}
@@ -1149,31 +1163,7 @@ export function DetailView({
                     </div>
                   )}
 
-                  {/* Totals aligned right */}
-                  {hasTotals && (
-                    <div className="flex justify-end pt-3 mt-2 border-t border-border/50">
-                      <div className="w-72 space-y-1.5">
-                        {subtotal != null && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Subtotal</span>
-                            <span className="font-medium tabular-nums">{formatAmount(subtotal, currency)}</span>
-                          </div>
-                        )}
-                        {taxes != null && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Taxes</span>
-                            <span className="font-medium tabular-nums">{formatAmount(taxes, currency)}</span>
-                          </div>
-                        )}
-                        {total != null && (
-                          <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
-                            <span>Total</span>
-                            <span className="tabular-nums">{formatAmount(total, currency)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  {/* Totals moved to tab header — no footer totals */}
                 </>
               );
             })()}
