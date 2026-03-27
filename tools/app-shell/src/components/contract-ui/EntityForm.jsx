@@ -1,18 +1,19 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
+import React, { useState, useRef, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Search, X } from 'lucide-react';
-import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 import { useLabel } from '@/i18n';
+import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
 
 /**
- * Combobox-style search input for foreign key fields.
- * Filters results from catalogs when typing.
+ * Dropdown selector for FK fields with many options (inputMode: search).
+ * Supports both static catalog data (mock) and server-side filtering via API.
  */
 function SearchInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
   const [open, setOpen] = useState(false);
@@ -32,8 +33,9 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
     }
   }, [value, displayValue]);
 
-  // Auto-resolve display name when we have a value but no $identifier (e.g. from /defaults endpoint).
-  // 1. Try local catalog first (zero cost). 2. Fall back to selector endpoint with ?id=.
+  const catalogOptions = catalogs?.[field.reference];
+
+  // If we have an initial value but no label yet (and no catalog), try to fetch the single record
   React.useEffect(() => {
     if (!value || displayValue || isEditingRef.current) return;
     // Try local catalog
@@ -50,24 +52,23 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         const match = (data?.items || []).find(i => i.id === value);
         if (match) {
           setQuery(match.label || match.name || value);
-        } else {
-          // ID from /defaults not in selector options — clear to avoid showing raw UUID
-          setQuery('');
-          onChange?.(null, '');
+          // Don't auto-select here, just set display text to avoid loop
         }
       })
       .catch(() => { });
   }, [value, displayValue, selectorUrl, selectorContext, token, catalogs, entityName, field]);
 
-  // Server-side search: fetch with ?q= when selectorUrl and token are available.
-  const fetchServerResults = useCallback((q) => {
-    if (!selectorUrl || !token) return;
-    if (!q || q.trim().length === 0) {
+  // Server-side search triggered on typing
+  const triggerServerSearch = (searchQuery) => {
+    if (catalogOptions || !selectorUrl || !token) return;
+    
+    if (!searchQuery || searchQuery.length < 2) {
       setServerResults(null);
       return;
     }
+
     setFetching(true);
-    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: q.trim() }), {
+    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: searchQuery.trim() }), {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
       .then(res => res.ok ? res.json() : null)
@@ -76,13 +77,13 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           setServerResults((data.items || []).map(item => ({
             id: item.id,
             name: item.label || item.name || item.id,
-            ...item,
+            ...item
           })));
         }
       })
       .catch(() => { })
       .finally(() => setFetching(false));
-  }, [selectorUrl, selectorContext, token]);
+  };
 
   // Local fallback: filter the pre-loaded catalog (used when selectorUrl not available)
   const localOptions = getCatalogOptions(catalogs, entityName, field);
@@ -95,21 +96,24 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   }, [serverResults, query, localOptions]);
 
   const handleSelect = (opt) => {
-    isEditingRef.current = false;
-    setServerResults(null);
+    isEditingRef.current = false; // Finished editing
     setQuery(opt.name);
-    onChange?.(opt.id, opt.name, opt._aux);
     setOpen(false);
+    
+    // Pass full record as 3rd arg so auxiliary fields (like M_PriceList_ID) can be mapped
+    // by the parent Form (if the schema defines mapped column suffixes).
+    onChange(opt.id, opt.name, opt);
   };
 
   const handleClear = () => {
     isEditingRef.current = false;
-    setServerResults(null);
     setQuery('');
-    onChange?.(null, '');
+    setServerResults(null);
     setOpen(false);
+    onChange('', '');
   };
 
+  // If field is mandatory but value is empty, or if we have a value, don't show clear unless value exists
   const hasSelection = value != null && value !== '';
 
   return (
@@ -127,17 +131,21 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
             isEditingRef.current = true;
             const newQuery = e.target.value;
             setQuery(newQuery);
-            onChange?.(newQuery);
-            setOpen(true);
-            // Debounced server-side fetch (300ms)
+            if (!open) setOpen(true);
+            
             if (debounceRef.current) clearTimeout(debounceRef.current);
-            debounceRef.current = setTimeout(() => fetchServerResults(newQuery), 300);
+            debounceRef.current = setTimeout(() => {
+              triggerServerSearch(newQuery);
+            }, 300);
           }}
           onFocus={() => {
-            isEditingRef.current = true;
             setOpen(true);
+            if (!catalogOptions && query.length >= 2 && !serverResults) {
+              triggerServerSearch(query);
+            }
           }}
           onBlur={() => {
+            // Delay closing so click events on dropdown items can fire first
             isEditingRef.current = false;
             setTimeout(() => setOpen(false), 200);
           }}
@@ -190,7 +198,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
 
 /**
  * Dropdown selector for FK fields with few options (inputMode: selector).
- * Uses shadcn Select (Radix) for consistent styling.
+ * Fetches options upfront (no search param needed) and caches them.
  */
 function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel }) {
   const catalogOptions = getCatalogOptions(catalogs, entityName, field);
@@ -202,10 +210,10 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
 
   return (
     <Select
-      value={value ?? ''}
+      value={value}
       onValueChange={(val) => {
         const opt = options.find(o => o.id === val);
-        onChange?.(val, opt?.name, opt?._aux);
+        onChange(val, opt?.name, opt);
       }}
       required={field.required}
     >
@@ -222,20 +230,22 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
 }
 
 /**
- * Dependent dropdown that filters options by a parent field value (inputMode: dependent).
- * Uses shadcn Select (Radix) for consistent styling.
+ * Dependent Select for FK fields that require a parent context.
+ * Re-fetches options whenever the parent value changes.
  */
 function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel, selectorUrl, selectorContext, token }) {
-  const parentValue = formData?.[field.dependsOn?.field];
   const [dynamicOptions, setDynamicOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch options dynamically when parent value changes
+  const parentKey = field.dependsOn?.field;
+  const parentValue = formData?.[parentKey];
+
   React.useEffect(() => {
     if (!parentValue || !selectorUrl || !token) {
       setDynamicOptions([]);
       return;
     }
+
     setLoading(true);
     const url = buildUrlWithParams(selectorUrl, {
       ...selectorContext,
@@ -250,27 +260,34 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
           const items = data.items.map(i => ({ id: i.id, name: i.label || i.name || i.id, ...i }));
           setDynamicOptions(items);
           // Auto-select first option if no current value
-          if (items.length > 0 && !value) {
-            onChange?.(items[0].id, items[0].name);
+          if (!value && items.length > 0 && field.required) {
+            onChange(items[0].id, items[0].name);
           }
         }
       })
-      .catch(() => setDynamicOptions([]))
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, [parentValue, selectorUrl, selectorContext, token, field.dependsOn?.filterKey]);
 
   // If the current value isn't in options (real data from existing record), add it
   const hasValue = value && dynamicOptions.some(opt => opt.id === value);
   const options = (!hasValue && value && displayValue)
-    ? [{ id: value, name: displayValue }, ...dynamicOptions]
+    ? [...dynamicOptions, { id: value, name: displayValue }]
     : dynamicOptions;
+
+  // Auto-clear dependent field if parent is cleared
+  React.useEffect(() => {
+    if (!parentValue && value) {
+      onChange('', '');
+    }
+  }, [parentValue, value]);
 
   return (
     <Select
-      value={value ?? ''}
+      value={value}
       onValueChange={(val) => {
         const opt = options.find(o => o.id === val);
-        onChange?.(val, opt?.name);
+        onChange(val, opt?.name, opt);
       }}
       required={field.required}
       disabled={(!parentValue && !value) || loading}
@@ -290,8 +307,9 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 }
 
 /**
- * Generic entity form driven by field declarations.
- *
+ * Generic Entity Form component.
+ * Layouts: 'horizontal' (grid-based edit form) | 'vertical' (stack-based sidebar)
+ * 
  * Props:
  *  - fields: Array<{ key, label, type, required, reference, inputMode, dependsOn }>
  *  - data: object with current field values
@@ -321,6 +339,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       !f.displayLogic || displayLogic.visibility[f.key] !== false
     );
   }
+
+  // Apply function-based displayLogic evaluated client-side against current data.
+  // This mirrors the readOnlyLogic pattern and handles fields like customer/vendor
+  // tabs where visibility depends on a sibling checkbox value (no server round-trip needed).
+  displayFields = displayFields.filter(f =>
+    typeof f.displayLogic !== 'function' || !!f.displayLogic(data ?? {})
+  );
 
   if (displayFields.length === 0) return null;
 

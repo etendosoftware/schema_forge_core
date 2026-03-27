@@ -413,7 +413,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
     version: '0.1.0',
     window: {
       id: rawWindow.id,
-      name: rawWindow.name,
+      name: windowDecisions.name || rawWindow.name,
       primaryEntity: curatedEntities[0]?.name || null,
       category: windowDecisions.category || inferCategory(rawWindow.name),
     },
@@ -426,6 +426,22 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.templateConfig) {
     schema.window.templateConfig = windowDecisions.templateConfig;
+  }
+  // Forward secondary tab config and label overrides from decisions
+  if (windowDecisions.entityLabel) {
+    schema.window.entityLabel = windowDecisions.entityLabel;
+  }
+  if (windowDecisions.detailLabel) {
+    schema.window.detailLabel = windowDecisions.detailLabel;
+  }
+  if (windowDecisions.detailTabIndex != null) {
+    schema.window.detailTabIndex = windowDecisions.detailTabIndex;
+  }
+  if (windowDecisions.secondaryTabs) {
+    schema.window.secondaryTabs = windowDecisions.secondaryTabs;
+  }
+  if (windowDecisions.detailEntity) {
+    schema.window.detailEntity = windowDecisions.detailEntity;
   }
 
   const rules = resolveRules(rulesRaw, decisions);
