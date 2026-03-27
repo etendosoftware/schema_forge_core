@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-24T20:51:46.212Z",
-  "checksum": "7640c317aefc94b6",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-25T17:13:16.168Z",
+  "checksum": "17be0a6fb8d06a73",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -1299,7 +1299,18 @@
         "supportedFilters": []
       }
     ],
-    "processEndpoints": []
+    "processEndpoints": [
+      {
+        "name": "Process Receipt",
+        "method": "POST",
+        "path": "/returnMaterialReceipt/:id/action/documentAction",
+        "entity": "returnMaterialReceipt",
+        "columnName": "documentAction",
+        "params": [],
+        "preconditions": [],
+        "steps": 0
+      }
+    ]
   },
   "apiPrediction": {
     "specName": "return-material-receipt",
@@ -2615,20 +2626,36 @@
       },
       {
         "id": "t-143",
+        "category": "process-happy",
+        "process": "Process Receipt",
+        "entity": "returnMaterialReceipt",
+        "runner": "junit",
+        "description": "Process 'Process Receipt' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-144",
+        "category": "process-failure",
+        "process": "Process Receipt",
+        "entity": "returnMaterialReceipt",
+        "runner": "junit",
+        "description": "Process 'Process Receipt' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-145",
         "category": "crud-flags",
         "entity": "returnMaterialReceipt",
         "runner": "node",
         "description": "CRUD flags for 'returnMaterialReceipt' should all be booleans"
       },
       {
-        "id": "t-144",
+        "id": "t-146",
         "category": "crud-flags",
         "entity": "returnMaterialReceiptLine",
         "runner": "node",
         "description": "CRUD flags for 'returnMaterialReceiptLine' should all be booleans"
       },
       {
-        "id": "t-145",
+        "id": "t-147",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "businessPartner",
@@ -2636,7 +2663,7 @@
         "description": "Selector endpoint for 'businessPartner' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-146",
+        "id": "t-148",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "warehouse",
@@ -2644,7 +2671,7 @@
         "description": "Selector endpoint for 'warehouse' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-147",
+        "id": "t-149",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "partnerAddress",
@@ -2652,7 +2679,7 @@
         "description": "Selector endpoint for 'partnerAddress' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-148",
+        "id": "t-150",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "salesOrder",
@@ -2660,7 +2687,7 @@
         "description": "Selector endpoint for 'salesOrder' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-149",
+        "id": "t-151",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "product",
@@ -2668,7 +2695,7 @@
         "description": "Selector endpoint for 'product' in returnMaterialReceiptLine should exist"
       },
       {
-        "id": "t-150",
+        "id": "t-152",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "uOM",
@@ -2676,7 +2703,7 @@
         "description": "Selector endpoint for 'uOM' in returnMaterialReceiptLine should exist"
       },
       {
-        "id": "t-151",
+        "id": "t-153",
         "category": "selector-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "salesOrderLine",
@@ -2684,7 +2711,7 @@
         "description": "Selector endpoint for 'salesOrderLine' in returnMaterialReceiptLine should exist"
       },
       {
-        "id": "t-152",
+        "id": "t-154",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "receiveMaterials",
@@ -2692,7 +2719,7 @@
         "description": "Action endpoint for 'receiveMaterials' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-153",
+        "id": "t-155",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "createLinesFrom",
@@ -2700,7 +2727,7 @@
         "description": "Action endpoint for 'createLinesFrom' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-154",
+        "id": "t-156",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "documentAction",
@@ -2708,7 +2735,7 @@
         "description": "Action endpoint for 'documentAction' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-155",
+        "id": "t-157",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "posted",
@@ -2716,7 +2743,7 @@
         "description": "Action endpoint for 'posted' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-156",
+        "id": "t-158",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "calculateFreight",
@@ -2724,7 +2751,7 @@
         "description": "Action endpoint for 'calculateFreight' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-157",
+        "id": "t-159",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "sendMaterials",
@@ -2732,7 +2759,7 @@
         "description": "Action endpoint for 'sendMaterials' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-158",
+        "id": "t-160",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "generateTo",
@@ -2740,7 +2767,7 @@
         "description": "Action endpoint for 'generateTo' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-159",
+        "id": "t-161",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "updateLines",
@@ -2748,7 +2775,7 @@
         "description": "Action endpoint for 'updateLines' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-160",
+        "id": "t-162",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "invoicefromshipment",
@@ -2756,7 +2783,7 @@
         "description": "Action endpoint for 'invoicefromshipment' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-161",
+        "id": "t-163",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "processGoodsJava",
@@ -2764,7 +2791,7 @@
         "description": "Action endpoint for 'processGoodsJava' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-162",
+        "id": "t-164",
         "category": "action-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "explode",
@@ -2772,7 +2799,7 @@
         "description": "Action endpoint for 'explode' in returnMaterialReceiptLine should exist"
       },
       {
-        "id": "t-163",
+        "id": "t-165",
         "category": "action-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "managePrereservation",
@@ -2781,7 +2808,7 @@
       }
     ],
     "summary": {
-      "total": 163,
+      "total": 165,
       "byCategory": {
         "field-presence": 16,
         "field-type": 16,
@@ -2793,13 +2820,15 @@
         "readonlylogic-evaluable": 4,
         "system-field": 87,
         "rule-declared": 4,
+        "process-happy": 1,
+        "process-failure": 1,
         "crud-flags": 2,
         "selector-endpoint": 7,
         "action-endpoint": 12
       },
       "byRunner": {
         "node": 163,
-        "junit": 0
+        "junit": 2
       }
     }
   }

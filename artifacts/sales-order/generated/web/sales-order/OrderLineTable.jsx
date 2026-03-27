@@ -2,7 +2,6 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:orderLine
 const columns = [
-  { key: 'lineNo', column: 'Line', type: 'number' },
   { key: 'product', column: 'M_Product_ID', type: 'string' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'string' },
   { key: 'unitPrice', column: 'PriceActual', type: 'string' },

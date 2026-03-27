@@ -347,6 +347,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     typeof f.displayLogic !== 'function' || !!f.displayLogic(data ?? {})
   );
 
+  if (displayFields.length === 0) return null;
+
   const gridClass = layout === 'horizontal'
     ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4'
     : 'grid grid-cols-2 gap-3 md:grid-cols-3';

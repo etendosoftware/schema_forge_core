@@ -56,27 +56,11 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
-    },
-    {
-      "entity": "quotation",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
-    },
-    {
-      "entity": "quotation",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
     },
     {
       "entity": "quotation",
@@ -101,14 +85,6 @@ const api = {
       "reference": "Product",
       "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/product"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "uOM",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/uOM"
     },
     {
       "entity": "quotationLine",
