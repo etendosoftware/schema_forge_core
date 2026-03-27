@@ -35,24 +35,6 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
 
   const catalogOptions = catalogs?.[field.reference];
 
-  // Resolve the label (per-field -> translation map -> fallback key)
-  const resolvedLabel = field.label ?? field.key;
-
-  // Search logic:
-  // 1. If static catalog exists, filter client-side.
-  // 2. If selectorUrl exists and we are actively searching, fetch from server.
-  // 3. Otherwise, return current server results or empty.
-  const filtered = useMemo(() => {
-    if (catalogOptions) {
-      if (!query) return catalogOptions.slice(0, 50);
-      const lowerQuery = query.toLowerCase();
-      return catalogOptions.filter(o =>
-        (o.name || o.id).toLowerCase().includes(lowerQuery)
-      ).slice(0, 50);
-    }
-    return serverResults || [];
-  }, [catalogOptions, query, serverResults]);
-
   // If we have an initial value but no label yet (and no catalog), try to fetch the single record
   React.useEffect(() => {
     if (!value || displayValue || isEditingRef.current) return;
@@ -86,7 +68,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
     }
 
     setFetching(true);
-    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: q.trim() }), {
+    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: searchQuery.trim() }), {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
       .then(res => res.ok ? res.json() : null)
@@ -101,7 +83,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       })
       .catch(() => { })
       .finally(() => setFetching(false));
-  }, [selectorUrl, selectorContext, token]);
+  };
 
   // Local fallback: filter the pre-loaded catalog (used when selectorUrl not available)
   const localOptions = getCatalogOptions(catalogs, entityName, field);
@@ -252,7 +234,6 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
  * Re-fetches options whenever the parent value changes.
  */
 function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel, selectorUrl, selectorContext, token }) {
-  const parentValue = formData?.[field.dependsOn?.field];
   const [dynamicOptions, setDynamicOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 

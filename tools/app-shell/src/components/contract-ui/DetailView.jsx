@@ -48,10 +48,10 @@ export function DetailView({
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
-  const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.key ?? null, { token, apiBaseUrl });
+  const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.isFormTab ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.isFormTab ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   const selectorContextByEntity = useMemo(() => {
@@ -770,6 +770,23 @@ export function DetailView({
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
                   <div key={st.key} className="pt-3 flex items-start gap-4">
+                    {st.isFormTab ? (
+                      <div className="flex-1 min-w-0">
+                        <st.Form
+                          data={data ?? {}}
+                          readOnly={!hook.editing}
+                          onChange={(key, val, column) => {
+                            setSecondaryLineEdits(prev => ({ ...(prev ?? {}), [key]: val }));
+                            if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
+                          }}
+                          entity={st.key}
+                          catalogs={catalogs}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                          selectorContext={selectorContextByEntity[st.key]}
+                        />
+                      </div>
+                    ) : (
                     <div className="flex-1 min-w-0">
                       <st.Table
                         data={secondaryHooks[stIdx]?.children ?? []}
@@ -779,6 +796,7 @@ export function DetailView({
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
                       />
                     </div>
+                    )}
                     {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
@@ -887,29 +905,8 @@ export function DetailView({
                           </div>
                         )}
                       </div>
-                      {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
-                        <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-medium text-foreground">{st.label} Detail</span>
-                            <button
-                              onClick={closeSecondaryLine}
-                              className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          <st.Form
-                            data={selectedSecondaryLine}
-                            readOnly={true}
-                            entity={st.key}
-                            catalogs={catalogs}
-                            token={token}
-                            apiBaseUrl={apiBaseUrl}
-                          />
-                        </div>
-                      )}
+                    )}
                     </div>
-                  )
                 ))}
 
                 {/* Tab content: Others (secondary header fields) */}
