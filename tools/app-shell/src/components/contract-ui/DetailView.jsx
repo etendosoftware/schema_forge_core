@@ -79,6 +79,7 @@ export function DetailView({
   breadcrumb,
   secondaryTabs = [],
   draftMode = null,
+  headerContent = null,
   customTabs = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
@@ -556,6 +557,7 @@ export function DetailView({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-auto px-6 pb-6">
+          {headerContent}
           <div className="max-w-full space-y-6">
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
