@@ -1,13 +1,15 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Sales Invoice",
-    "documentPreview": { "titlePrefix": "Invoice" },
+    "documentPreview": {
+      "titlePrefix": "Invoice"
+    },
     "notesField": "description"
   },
   "entities": {
-    "cInvoice": {
+    "header": {
       "fields": {
         "businessPartner": {
           "grid": true,
@@ -200,7 +202,7 @@
         }
       }
     },
-    "cInvoiceLine": {
+    "lines": {
       "fields": {
         "lineNo": {
           "visibility": "system"
@@ -322,13 +324,16 @@
           "visibility": "discarded"
         },
         "client": {
-          "name": "adClientId"
+          "name": "adClientId",
+          "visibility": "system"
         },
         "organization": {
-          "name": "adOrgId"
+          "name": "adOrgId",
+          "visibility": "system"
         },
         "invoice": {
-          "name": "cInvoiceId"
+          "name": "cInvoiceId",
+          "visibility": "system"
         },
         "dateInvoiced": {
           "visibility": "system"
@@ -350,34 +355,31 @@
           "reference": null,
           "inputMode": null,
           "name": "mInoutlineId"
-        },
-        "operativeUOM": {
-          "visibility": "discarded"
         }
       }
     },
-    "cInvoiceLineTax": {
+    "lineTax": {
       "exclude": true
     },
-    "cInvoiceTax": {
+    "tax": {
       "exclude": true
     },
-    "cInvoiceDiscount": {
+    "basicDiscounts": {
       "exclude": true
     },
-    "finPaymentSchedule": {
+    "paymentPlan": {
       "exclude": true
     },
-    "finPaymentScheduleDetail": {
+    "paymentDetails": {
       "exclude": true
     },
-    "cInvoiceReverse": {
+    "reversedInvoices": {
       "exclude": true
     },
-    "cConversionRateDocument": {
+    "exchangeRates": {
       "exclude": true
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     }
   },
@@ -431,5 +433,6 @@
       "description": "When price list changes, auto-fill currency from the selected price list"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

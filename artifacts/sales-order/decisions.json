@@ -1,14 +1,16 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Sales Order",
-    "documentPreview": { "titlePrefix": "Order" },
+    "documentPreview": {
+      "titlePrefix": "Order"
+    },
     "notesField": "description",
     "relatedDocuments": true
   },
   "entities": {
-    "cOrder": {
+    "header": {
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
@@ -211,22 +213,27 @@
         }
       }
     },
-    "cOrderLine": {
+    "lines": {
       "fields": {
         "priceStd": {
-          "name": "baseNetUnitPrice"
+          "name": "baseNetUnitPrice",
+          "visibility": "discarded"
         },
         "iseditlinenetamt": {
-          "name": "editLineNetAmount"
+          "name": "editLineNetAmount",
+          "visibility": "discarded"
         },
         "bomParentId": {
-          "name": "bomParent"
+          "name": "bomParent",
+          "visibility": "discarded"
         },
         "cOrderDiscountId": {
-          "name": "orderDiscount"
+          "name": "orderDiscount",
+          "visibility": "discarded"
         },
         "mOfferId": {
-          "name": "promotionDiscount"
+          "name": "promotionDiscount",
+          "visibility": "discarded"
         },
         "product": {
           "grid": true,
@@ -363,7 +370,7 @@
         }
       }
     },
-    "cOrderLineTax": {
+    "lineTax": {
       "fields": {
         "cOrderlinetaxId": {
           "name": "id"
@@ -387,7 +394,7 @@
       },
       "exclude": true
     },
-    "mSolReservedStockV": {
+    "reservedStock": {
       "name": "reservedStock",
       "fields": {
         "mSolReservedStockVId": {
@@ -429,7 +436,7 @@
       },
       "exclude": true
     },
-    "cOrderlineServicerelation": {
+    "relatedProducts": {
       "name": "relatedProducts",
       "fields": {
         "cOrderlineRelatedId": {
@@ -449,7 +456,7 @@
       },
       "exclude": true
     },
-    "cOrderlineProductrelation": {
+    "relatedServices": {
       "name": "relatedServices",
       "fields": {
         "documentNo": {
@@ -473,7 +480,7 @@
       },
       "exclude": true
     },
-    "cOrderDiscount": {
+    "basicDiscounts": {
       "exclude": true,
       "name": "basicDiscounts",
       "fields": {
@@ -500,7 +507,7 @@
         }
       }
     },
-    "cOrderTax": {
+    "tax": {
       "fields": {
         "lineNo": {
           "visibility": "readOnly",
@@ -518,7 +525,7 @@
       },
       "exclude": true
     },
-    "finPaymentSchedOrdV": {
+    "paymentPlan": {
       "name": "paymentPlan",
       "fields": {
         "finPaymentSchedOrdVId": {
@@ -562,7 +569,7 @@
       },
       "exclude": true
     },
-    "finPaymentDetailV": {
+    "paymentDetails": {
       "name": "paymentDetails",
       "fields": {
         "finPaymentDetailVId": {
@@ -646,7 +653,7 @@
       },
       "exclude": true
     },
-    "cOrderReplacement": {
+    "replacementOrders": {
       "name": "replacementOrders",
       "fields": {
         "cReplacementId": {
@@ -2451,5 +2458,6 @@
     "paymentPlan",
     "paymentDetails",
     "replacementOrders"
-  ]
+  ],
+  "version": 2
 }

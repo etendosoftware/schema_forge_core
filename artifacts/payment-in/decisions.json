@@ -1,19 +1,15 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
-    "category": "general",
+    "category": "sales",
     "name": "Payment In",
-    "documentPreview": { "titlePrefix": "Payment" }
+    "documentPreview": { "titlePrefix": "Payment" },
+    "notesField": "description"
   },
   "entities": {
-    "finPayment": {
+    "header": {
+      "name": "finPayment",
       "fields": {
-        "organization": {
-          "inputMode": "search"
-        },
-        "documentType": {
-          "inputMode": "search"
-        },
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
@@ -21,10 +17,10 @@
           "inputMode": "text",
           "section": "principal"
         },
-        "referenceNo": {
+        "businessPartner": {
           "grid": true,
           "searchable": true,
-          "inputMode": "text",
+          "readOnlyLogic": null,
           "section": "principal"
         },
         "paymentDate": {
@@ -34,70 +30,95 @@
           "readOnlyLogic": null,
           "section": "principal"
         },
-        "businessPartner": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "readOnlyLogic": null,
-          "displayLogic": null,
-          "section": "principal"
-        },
-        "description": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "text",
-          "section": "principal"
-        },
-        "paymentMethod": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
-        },
         "amount": {
           "grid": true,
-          "searchable": true,
           "inputMode": "number",
           "readOnlyLogic": null,
           "section": "principal"
         },
+        "paymentMethod": {
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "collapsed"
+        },
         "account": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
           "inputMode": "search",
           "readOnlyLogic": null,
           "dependsOn": {
             "field": "paymentMethod",
             "filterKey": "Fin_Paymentmethod_ID"
           },
-          "section": "principal"
+          "section": "collapsed"
         },
         "currency": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
           "inputMode": "search",
           "readOnlyLogic": null,
           "dependsOn": {
             "field": "account",
             "filterKey": "FIN_Financial_Account_ID"
           },
-          "section": "principal"
+          "section": "collapsed"
+        },
+        "referenceNo": {
+          "inputMode": "text",
+          "section": "collapsed"
+        },
+        "description": {
+          "inputMode": "textarea",
+          "section": "collapsed"
+        },
+        "status": {
+          "visibility": "readOnly",
+          "grid": true,
+          "form": false
+        },
+        "generatedCredit": {
+          "visibility": "discarded"
+        },
+        "usedCredit": {
+          "visibility": "discarded"
+        },
+        "organization": {
+          "visibility": "system"
+        },
+        "documentType": {
+          "visibility": "system"
+        },
+        "client": {
+          "visibility": "system"
+        },
+        "receipt": {
+          "visibility": "system"
+        },
+        "processed": {
+          "visibility": "system"
+        },
+        "payment": {
+          "visibility": "system"
+        },
+        "active": {
+          "visibility": "discarded"
         },
         "financialTransactionAmount": {
-          "visibility": "editable",
-          "grid": false,
-          "form": true,
-          "section": "other"
+          "visibility": "discarded"
         },
         "financialTransactionConvertRate": {
-          "visibility": "editable",
-          "grid": false,
-          "form": true,
-          "section": "other"
+          "visibility": "discarded"
+        },
+        "reversedPayment": {
+          "visibility": "discarded"
+        },
+        "processNow": {
+          "visibility": "discarded"
+        },
+        "aPRMReconcilePayment": {
+          "visibility": "discarded"
+        },
+        "aPRMReversePayment": {
+          "visibility": "discarded"
+        },
+        "writeoffAmount": {
+          "visibility": "discarded"
         },
         "aPRMAddScheduledpayments": {
           "visibility": "discarded"
@@ -111,34 +132,6 @@
         "aprmExecutepayment": {
           "visibility": "discarded"
         },
-        "status": {
-          "inputMode": "text",
-          "section": "summary"
-        },
-        "generatedCredit": {
-          "inputMode": "number",
-          "section": "summary"
-        },
-        "usedCredit": {
-          "inputMode": "number",
-          "section": "summary"
-        },
-        "writeoffAmount": {
-          "inputMode": "number",
-          "section": "summary"
-        },
-        "aPRMReversePayment": {
-          "inputMode": "text"
-        },
-        "reversedPayment": {
-          "grid": false,
-          "searchable": false,
-          "form": true,
-          "reference": "Payment Selector",
-          "inputMode": "search",
-          "displayLogic": null,
-          "section": "other"
-        },
         "project": {
           "visibility": "discarded"
         },
@@ -156,135 +149,92 @@
         },
         "ndDimension": {
           "visibility": "discarded"
-        },
-        "payment": {
-          "inputMode": "text"
-        },
-        "processNow": {
-          "inputMode": "checkbox"
-        },
-        "aPRMReconcilePayment": {
-          "inputMode": "text"
-        },
-        "processed": {
-          "inputMode": "checkbox"
-        },
-        "active": {
-          "inputMode": "checkbox"
-        },
-        "receipt": {
-          "inputMode": "checkbox"
-        },
-        "client": {
-          "inputMode": "search"
         }
       }
     },
-    "finPaymentScheduleDetail": {
+    "lines": {
+      "name": "finPaymentScheduleDetail",
       "fields": {
+        "invoicePaymentSchedule": {
+          "grid": true
+        },
+        "amount": {
+          "grid": true,
+          "inputMode": "number"
+        },
         "dueDate": {
           "grid": true,
           "inputMode": "date"
         },
+        "businessPartner": {
+          "visibility": "system"
+        },
+        "organization": {
+          "visibility": "system"
+        },
+        "client": {
+          "visibility": "system"
+        },
+        "fINPaymentScheduledetailID": {
+          "visibility": "system"
+        },
+        "writeoffAmount": {
+          "visibility": "discarded"
+        },
+        "canceled": {
+          "visibility": "discarded"
+        },
+        "doubtfulDebtAmount": {
+          "visibility": "discarded"
+        },
+        "invoicePaid": {
+          "visibility": "discarded"
+        },
         "paymentDetails": {
-          "inputMode": "search"
-        },
-        "invoiceAmount": {
-          "grid": true,
-          "inputMode": "number"
-        },
-        "expected": {
-          "grid": true,
-          "inputMode": "number"
-        },
-        "amount": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "number"
+          "visibility": "discarded"
         },
         "documentNo": {
-          "inputMode": "text",
+          "visibility": "discarded",
           "name": "documentNo2"
         },
         "active": {
-          "inputMode": "checkbox"
+          "visibility": "discarded"
         },
         "orderPaymentSchedule": {
-          "grid": false,
-          "reference": null,
-          "displayLogic": null
-        },
-        "writeoffAmount": {
-          "grid": true,
-          "inputMode": "number"
-        },
-        "invoicePaymentSchedule": {
-          "grid": false,
-          "reference": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "gLItem": {
-          "grid": false,
-          "reference": null,
-          "inputMode": "search"
+          "visibility": "discarded"
         },
-        "canceled": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "checkbox"
+        "expected": {
+          "visibility": "discarded"
         },
-        "doubtfulDebtAmount": {
-          "inputMode": "number"
-        },
-        "invoicePaid": {
-          "inputMode": "checkbox"
-        },
-        "businessPartner": {
-          "grid": true,
-          "searchable": true,
-          "reference": null,
-          "displayLogic": null
+        "invoiceAmount": {
+          "visibility": "discarded"
         },
         "activity": {
-          "grid": false,
           "visibility": "discarded"
         },
         "product": {
-          "grid": false,
           "visibility": "discarded"
         },
         "salesCampaign": {
-          "grid": false,
           "visibility": "discarded"
         },
         "project": {
-          "grid": false,
           "visibility": "discarded"
         },
         "salesRegion": {
-          "grid": false,
           "visibility": "discarded"
         },
         "costCenter": {
-          "grid": false,
           "visibility": "discarded"
         },
         "stDimension": {
-          "grid": false,
           "visibility": "discarded"
         },
         "ndDimension": {
-          "grid": false,
           "visibility": "discarded"
-        },
-        "organization": {
-          "inputMode": "search"
-        },
-        "fINPaymentScheduledetailID": {
-          "inputMode": "text"
-        },
-        "client": {
-          "inputMode": "search"
         }
       }
     },
@@ -367,5 +317,6 @@
       "type": "process"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

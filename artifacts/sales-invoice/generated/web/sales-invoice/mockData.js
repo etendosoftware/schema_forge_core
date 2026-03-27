@@ -1,9 +1,9 @@
 // Auto-generated mock data - do not edit manually
 
-export const invoice = [
+export const header = [
   {
-    "id": "mock-invoice-001",
-    "documentNo": "IN-00001",
+    "id": "mock-header-001",
+    "documentNo": "HE-00001",
     "invoiceDate": "2026-01-15",
     "businessPartner": "Acme Corp",
     "partnerAddress": "Acme Corp",
@@ -17,8 +17,8 @@ export const invoice = [
     "outstandingAmount": 38907
   },
   {
-    "id": "mock-invoice-002",
-    "documentNo": "IN-00002",
+    "id": "mock-header-002",
+    "documentNo": "HE-00002",
     "invoiceDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
     "partnerAddress": "TechFlow Inc",
@@ -32,8 +32,8 @@ export const invoice = [
     "outstandingAmount": 9306
   },
   {
-    "id": "mock-invoice-003",
-    "documentNo": "IN-00003",
+    "id": "mock-header-003",
+    "documentNo": "HE-00003",
     "invoiceDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
     "partnerAddress": "Global Trade Ltd",
@@ -47,8 +47,8 @@ export const invoice = [
     "outstandingAmount": 11544
   },
   {
-    "id": "mock-invoice-004",
-    "documentNo": "IN-00004",
+    "id": "mock-header-004",
+    "documentNo": "HE-00004",
     "invoiceDate": "2026-01-18",
     "businessPartner": "Summit Industries",
     "partnerAddress": "Summit Industries",
@@ -62,8 +62,8 @@ export const invoice = [
     "outstandingAmount": 11872
   },
   {
-    "id": "mock-invoice-005",
-    "documentNo": "IN-00005",
+    "id": "mock-header-005",
+    "documentNo": "HE-00005",
     "invoiceDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
     "partnerAddress": "Pacific Partners",
@@ -77,8 +77,8 @@ export const invoice = [
     "outstandingAmount": 48460
   },
   {
-    "id": "mock-invoice-006",
-    "documentNo": "IN-00006",
+    "id": "mock-header-006",
+    "documentNo": "HE-00006",
     "invoiceDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
     "partnerAddress": "Alpine Solutions",
@@ -92,8 +92,8 @@ export const invoice = [
     "outstandingAmount": 45418
   },
   {
-    "id": "mock-invoice-007",
-    "documentNo": "IN-00007",
+    "id": "mock-header-007",
+    "documentNo": "HE-00007",
     "invoiceDate": "2026-01-21",
     "businessPartner": "Meridian Group",
     "partnerAddress": "Meridian Group",
@@ -107,8 +107,8 @@ export const invoice = [
     "outstandingAmount": 33840
   },
   {
-    "id": "mock-invoice-008",
-    "documentNo": "IN-00008",
+    "id": "mock-header-008",
+    "documentNo": "HE-00008",
     "invoiceDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
     "partnerAddress": "Vertex Systems",
@@ -122,8 +122,8 @@ export const invoice = [
     "outstandingAmount": 25716
   },
   {
-    "id": "mock-invoice-009",
-    "documentNo": "IN-00009",
+    "id": "mock-header-009",
+    "documentNo": "HE-00009",
     "invoiceDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
     "partnerAddress": "Atlas Manufacturing",
@@ -137,8 +137,8 @@ export const invoice = [
     "outstandingAmount": 44780
   },
   {
-    "id": "mock-invoice-010",
-    "documentNo": "IN-00010",
+    "id": "mock-header-010",
+    "documentNo": "HE-00010",
     "invoiceDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
     "partnerAddress": "Nova Enterprises",
@@ -152,8 +152,8 @@ export const invoice = [
     "outstandingAmount": 12483
   },
   {
-    "id": "mock-invoice-011",
-    "documentNo": "IN-00011",
+    "id": "mock-header-011",
+    "documentNo": "HE-00011",
     "invoiceDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
     "partnerAddress": "Pinnacle Services",
@@ -167,8 +167,8 @@ export const invoice = [
     "outstandingAmount": 46022
   },
   {
-    "id": "mock-invoice-012",
-    "documentNo": "IN-00012",
+    "id": "mock-header-012",
+    "documentNo": "HE-00012",
     "invoiceDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
     "partnerAddress": "Horizon Labs",
@@ -183,125 +183,125 @@ export const invoice = [
   }
 ];
 
-export const invoiceLine = [
+export const lines = [
   {
-    "id": "mock-invoiceLine-001",
+    "id": "mock-lines-001",
     "product": "Laptop Pro 15",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38907,
     "tax": "VAT 21%",
     "description": "Standard order for Q1 delivery",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
-    "id": "mock-invoiceLine-002",
+    "id": "mock-lines-002",
     "product": "USB-C Cable",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 9306,
     "tax": "VAT 10%",
     "description": "Rush order - priority shipping required",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
-    "id": "mock-invoiceLine-003",
+    "id": "mock-lines-003",
     "product": "Wireless Mouse",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11544,
     "tax": "VAT 0%",
     "description": "Bulk purchase for warehouse restocking",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
-    "id": "mock-invoiceLine-004",
+    "id": "mock-lines-004",
     "product": "Mechanical Keyboard",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11872,
     "tax": "Sales Tax 8.5%",
     "description": "Sample order for client evaluation",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
-    "id": "mock-invoiceLine-005",
+    "id": "mock-lines-005",
     "product": "Monitor 27\"",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 48460,
     "tax": "Exempt",
     "description": "Recurring monthly supply order",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
-    "id": "mock-invoiceLine-006",
+    "id": "mock-lines-006",
     "product": "Webcam HD",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 45418,
     "tax": "Reduced Rate 5%",
     "description": "Special pricing agreement applies",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
-    "id": "mock-invoiceLine-007",
+    "id": "mock-lines-007",
     "product": "Headset Pro",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 33840,
     "tax": "Standard Rate 20%",
     "description": "Consolidated order from multiple requests",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
-    "id": "mock-invoiceLine-008",
+    "id": "mock-lines-008",
     "product": "Docking Station",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 25716,
     "tax": "VAT 21%",
     "description": "Trial order for new product line",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
-    "id": "mock-invoiceLine-009",
+    "id": "mock-lines-009",
     "product": "SSD 1TB",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 44780,
     "tax": "VAT 10%",
     "description": "Replacement for damaged goods",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
-    "id": "mock-invoiceLine-010",
+    "id": "mock-lines-010",
     "product": "RAM 16GB",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 12483,
     "tax": "VAT 0%",
     "description": "Pre-season inventory build-up",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
-    "id": "mock-invoiceLine-011",
+    "id": "mock-lines-011",
     "product": "Power Supply 750W",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 46022,
     "tax": "Sales Tax 8.5%",
     "description": "Customer-specific configuration",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
-    "id": "mock-invoiceLine-012",
+    "id": "mock-lines-012",
     "product": "Network Switch",
     "invoicedQuantity": "Sample invoicedQuantity",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38634,
     "tax": "Exempt",
     "description": "Government contract fulfillment",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
