@@ -3,7 +3,7 @@ import BpartnerTable from './BpartnerTable';
 import BpartnerForm from './BpartnerForm';
 import BpartnerLocationTable from './BpartnerLocationTable';
 import BpartnerLocationForm from './BpartnerLocationForm';
-import BillingPreferencesForm from './BillingPreferencesForm';
+import BillingPreferencesForm from '@/windows/custom/contacts/BillingPreferencesForm';
 import UserTable from './UserTable';
 import UserForm from './UserForm';
 import BpBankAccountTable from './BpBankAccountTable';
@@ -11,6 +11,7 @@ import BpBankAccountForm from './BpBankAccountForm';
 import BpartnerDiscountTable from './BpartnerDiscountTable';
 import BpartnerDiscountForm from './BpartnerDiscountForm';
 import catalogs from './mockCatalogs';
+
 
 const breadcrumb = 'People / Contacts';
 

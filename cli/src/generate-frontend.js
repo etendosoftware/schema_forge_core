@@ -327,7 +327,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, FormName, TableName, addLineEntries };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isCustomForm: !!cfg.customForm, FormName, TableName, addLineEntries };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -365,12 +365,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ].slice(0, 4);
   }
 
+  const specName = contract.apiPrediction?.specName;
   const secondaryTabsImports = secondaryTabDefs
     .map(t => {
+      const formImportPath = (t.isCustomForm && specName)
+        ? `@/windows/custom/${specName}/${t.FormName}`
+        : `./${t.FormName}`;
       if (t.isFormTab) {
-        return `import ${t.FormName} from './${t.FormName}';`;
+        return `import ${t.FormName} from '${formImportPath}';`;
       }
-      return `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`;
+      return `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from '${formImportPath}';`;
     })
     .join('\n');
 
