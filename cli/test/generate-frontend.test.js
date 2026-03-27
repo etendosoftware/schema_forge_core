@@ -457,11 +457,12 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('export default function OrderPage'));
   });
 
-  it('imports header Table, Form, detail Table, and mockCatalogs', () => {
+  it('imports header Table, Form, detail Table, detail Form, and mockCatalogs', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes("import OrderTable from './OrderTable'"));
     assert.ok(code.includes("import OrderForm from './OrderForm'"));
     assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"));
+    assert.ok(code.includes("import OrderLineForm from './OrderLineForm'"));
     assert.ok(code.includes("import catalogs from './mockCatalogs'"));
   });
 

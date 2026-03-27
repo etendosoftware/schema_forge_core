@@ -180,7 +180,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
       }
       payload = changes;
     } else {
-      payload = editing;
+      // For POST (create), strip empty strings — let backend injectMandatoryDefaults
+      // resolve proper values for fields not explicitly set by the user or callouts.
+      payload = {};
+      for (const [key, value] of Object.entries(editing)) {
+        if (value !== '' && value != null) payload[key] = value;
+      }
     }
     // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
     const body = JSON.stringify(payload);
@@ -232,8 +237,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     if (!childEntity || !apiBaseUrl || !token || !selected?.id) return;
     try {
       const body = {};
-      // Only include fields that are valid for the entity (from addLineFields entry + derived keys)
-      // and convert numeric strings to numbers for BigDecimal compatibility
+      // Include all fields from childData, skipping internal/companion keys.
+      // Send values as-is — backend coerceTypes handles String→BigDecimal conversion.
+      // Do NOT convert numeric strings to Number here: legacy FK IDs like "100" (uOM)
+      // or "102" (currency) must remain strings, not integers.
       for (const [key, val] of Object.entries(childData)) {
         // Skip internal/companion keys
         if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
@@ -241,17 +248,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
         if (key === 'CURSOR_FIELD' || key.startsWith('has')) continue;
         // Skip empty values — let backend defaults handle them
         if (val === '' || val == null) continue;
-        // Convert numeric strings to numbers for BigDecimal compatibility
-        if (typeof val === 'number') {
-          body[key] = val;
-        } else if (typeof val === 'string' && val.match(/^-?\d[\d,]*(\.\d+)?$/)) {
-          // Matches: "100", "0.89", "1,000.50", "-3.14"
-          body[key] = Number(val.replace(/,/g, ''));
-        } else {
-          body[key] = val;
-        }
+        body[key] = val;
       }
       // Include parentId in the body — the backend resolves it to the correct FK field name
+      // and uses it to load parent record values for @FieldName@ defaults (generic, no hardcoding).
       body.parentId = selected.id;
       const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
         method: 'POST',
@@ -290,6 +290,27 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
   }, []);
 
+  const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
+    const saved = await handleSave();
+    if (!saved?.id) return null;
+
+    const { processField, processValue } = draftModeConfig;
+    const url = `${apiBaseUrl}/${entity}/${saved.id}/action`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ fieldValues: { [processField]: processValue } }),
+    });
+    if (!res.ok) {
+      const msg = await extractErrorMessage(res);
+      toast.error(msg);
+      return saved;
+    }
+    toast.success('Record processed');
+    refresh();
+    return saved;
+  }, [handleSave, apiBaseUrl, entity, token, refresh]);
+
   const handleProcess = useCallback(async (process, paramValues = {}) => {
     if (!selected?.id) return;
     // Build field values: start with hidden params from process definition, then merge user-supplied values
@@ -312,7 +333,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
 
   return {
     items, selected, editing, children, loading, loadingMore, hasMore, saveError,
-    handleSelect, handleNew, handleChange, handleSave, handleDelete, handleProcess,
+    handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
     refresh, fetchById, loadMore,
     sortColumn, sortDirection, setSortColumn, setSortDirection,

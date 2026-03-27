@@ -227,6 +227,25 @@ export function buildReference(row) {
     };
   }
 
+  // Last-resort fallback for FK columns without _ID suffix (e.g., CreatedBy, UpdatedBy).
+  // These are known FK columns that don't follow the {Table}_ID naming convention.
+  // We use the column name itself as the best-effort target table hint.
+  const KNOWN_FK_COLUMNS = {
+    'CreatedBy':  { targetTable: 'AD_User', keyColumn: 'AD_User_ID', displayColumn: 'Name' },
+    'UpdatedBy':  { targetTable: 'AD_User', keyColumn: 'AD_User_ID', displayColumn: 'Name' },
+    'Createdby':  { targetTable: 'AD_User', keyColumn: 'AD_User_ID', displayColumn: 'Name' },
+    'Updatedby':  { targetTable: 'AD_User', keyColumn: 'AD_User_ID', displayColumn: 'Name' },
+  };
+
+  const knownRef = KNOWN_FK_COLUMNS[row.columnname];
+  if (knownRef) {
+    return {
+      type: refName || 'TableDir',
+      ...knownRef,
+      filterExpression: null,
+    };
+  }
+
   return null;
 }
 
@@ -384,8 +403,16 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
       }
 
       // Add processId for button-type fields (AD_Reference_ID = 28)
-      if (schemaType === 'button' && row.ad_process_id) {
-        fieldDef.processId = row.ad_process_id;
+      // Priority: OBUIAPP (modern) > Classic > Hardcoded (no ID)
+      if (schemaType === 'button') {
+        if (row.em_obuiapp_process_id) {
+          fieldDef.processId = row.em_obuiapp_process_id;
+          fieldDef.processType = 'obuiapp';
+        } else if (row.ad_process_id) {
+          fieldDef.processId = row.ad_process_id;
+          fieldDef.processType = 'classic';
+        }
+        // No processId + no processType = hardcoded button (resolved by convention)
       }
 
       // Attach enum values for List-type fields (AD_Reference_ID = 17)
@@ -407,12 +434,17 @@ export function buildSchema(rows, systemColumns, refMap, enumValuesMap = {}) {
     const semanticLevel = mapTabLevel(tab.tabLevel);
 
     // Track the primary entity (first header-level tab)
+    // Prefer tabName (human-readable tab label) over tableName (DB table)
+    const entityName = tab.tabName
+      ? toCamelCase(tab.tabName)
+      : toCamelCase(tab.tableName);
+
     if (semanticLevel === 'header' && !primaryEntity) {
-      primaryEntity = toCamelCase(tab.tableName);
+      primaryEntity = entityName;
     }
 
     const entity = {
-      name: toCamelCase(tab.tableName),
+      name: entityName,
       tableName: tab.tableName,
       tabId: tab.tabId,
       entityClassname,
@@ -478,6 +510,7 @@ SELECT
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
   c.AD_Process_ID,
+  c.EM_OBUIAPP_Process_ID,
   c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
@@ -551,16 +584,26 @@ SELECT
   c.AD_Val_Rule_ID, c.ReadOnlyLogic,
   c.AD_Reference_Value_ID,
   c.AD_Process_ID,
+  c.EM_OBUIAPP_Process_ID,
   c.AD_Module_ID AS column_module_id, NULL AS table_module_id,
   r.Name AS reference_name,
   vr.Name AS val_rule_name,
   vr.Code AS val_rule_code,
   mo.Classname AS callout_class,
-  NULL AS ref_table_target, NULL AS ref_table_display, NULL AS ref_table_key,
-  NULL AS ref_table_filter, NULL AS ref_table_orderby,
-  NULL AS ref_search_target, NULL AS ref_search_column,
-  NULL AS ref_selector_name, NULL AS ref_selector_target,
-  NULL AS ref_selector_filter, NULL AS ref_selector_hql,
+  -- Table/TableDir reference config
+  rt_tgt.TableName AS ref_table_target,
+  rt_disp.ColumnName AS ref_table_display,
+  rt_key.ColumnName AS ref_table_key,
+  rt.WhereClause AS ref_table_filter,
+  rt.OrderByClause AS ref_table_orderby,
+  -- Search reference config
+  rs_tgt.TableName AS ref_search_target,
+  rs_col.ColumnName AS ref_search_column,
+  -- Selector reference config
+  sel.Name AS ref_selector_name,
+  sel_tgt.TableName AS ref_selector_target,
+  sel.WhereClause AS ref_selector_filter,
+  sel.HQL AS ref_selector_hql,
   NULL AS onchangefunction,
   c.IsIdentifier, c.IsSelectionColumn, c.AllowFiltering AS IsFilterable,
   NULL AS Precision, c.IsTranslated,
@@ -573,6 +616,15 @@ LEFT JOIN AD_Package pkg ON tbl.AD_Package_ID = pkg.AD_Package_ID
 JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
 LEFT JOIN AD_Model_Object mo ON mo.AD_Callout_ID = c.AD_Callout_ID
 LEFT JOIN ad_val_rule vr ON c.ad_val_rule_id = vr.ad_val_rule_id
+LEFT JOIN ad_ref_table rt ON c.ad_reference_value_id = rt.ad_reference_id
+LEFT JOIN ad_table rt_tgt ON rt.ad_table_id = rt_tgt.ad_table_id
+LEFT JOIN ad_column rt_key ON rt.ad_key = rt_key.ad_column_id
+LEFT JOIN ad_column rt_disp ON rt.ad_display = rt_disp.ad_column_id
+LEFT JOIN ad_ref_search rs ON c.ad_reference_value_id = rs.ad_reference_id
+LEFT JOIN ad_table rs_tgt ON rs.ad_table_id = rs_tgt.ad_table_id
+LEFT JOIN ad_column rs_col ON rs.ad_column_id = rs_col.ad_column_id
+LEFT JOIN obuisel_selector sel ON sel.ad_reference_id = c.ad_reference_value_id
+LEFT JOIN ad_table sel_tgt ON sel.ad_table_id = sel_tgt.ad_table_id
 WHERE w.AD_Window_ID = $1
   AND t.IsActive = 'Y'
   AND NOT EXISTS (
