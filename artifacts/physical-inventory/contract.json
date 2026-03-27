@@ -1,7 +1,7 @@
 {
-  "version": "0.5.0",
-  "generatedAt": "2026-03-27T13:52:48.477Z",
-  "checksum": "14c9fd03d65fc46b",
+  "version": "0.8.0",
+  "generatedAt": "2026-03-27T16:27:44.903Z",
+  "checksum": "2d0835a6477db2ca",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -281,7 +281,7 @@
             "column": "QuantityOrderBook",
             "label": "Quantity order book",
             "type": "quantity",
-            "tsType": "string",
+            "tsType": "number",
             "visibility": "readOnly",
             "required": false,
             "grid": false,
@@ -296,17 +296,13 @@
             "name": "quantityCount",
             "apiKey": "quantityCount",
             "column": "QtyCount",
-            "label": "Quantity count",
+            "label": "User Count",
             "type": "quantity",
-            "tsType": "string",
+            "tsType": "number",
             "visibility": "editable",
             "required": true,
-            "grid": false,
-            "form": true,
-            "readOnlyLogic": {
-              "raw": "@Processed@='Y'",
-              "evaluable": true
-            }
+            "grid": true,
+            "form": true
           },
           {
             "name": "uOM",
@@ -326,10 +322,10 @@
             "name": "bookQuantity",
             "apiKey": "bookQuantity",
             "column": "QtyBook",
-            "label": "Book Quantity",
+            "label": "System Count",
             "type": "quantity",
-            "tsType": "string",
-            "visibility": "editable",
+            "tsType": "number",
+            "visibility": "readOnly",
             "required": true,
             "grid": true,
             "form": true
@@ -340,7 +336,7 @@
             "column": "Cost",
             "label": "Cost",
             "type": "decimal",
-            "tsType": "string",
+            "tsType": "number",
             "visibility": "editable",
             "required": false,
             "grid": false,
@@ -932,7 +928,7 @@
             "apiKey": "bookQuantity",
             "column": "QtyBook",
             "type": "quantity",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1723,19 +1719,25 @@
         "entity": "inventory",
         "field": "generateList",
         "column": "GenerateList",
-        "url": "/sws/neo/physical-inventory/inventory/{id}/action/generateList"
+        "url": "/sws/neo/physical-inventory/inventory/{id}/action/generateList",
+        "processId": "105",
+        "processType": "classic"
       },
       {
         "entity": "inventory",
         "field": "updateQuantities",
         "column": "UpdateQty",
-        "url": "/sws/neo/physical-inventory/inventory/{id}/action/updateQuantities"
+        "url": "/sws/neo/physical-inventory/inventory/{id}/action/updateQuantities",
+        "processId": "106",
+        "processType": "classic"
       },
       {
         "entity": "inventory",
         "field": "processNow",
         "column": "Processing",
-        "url": "/sws/neo/physical-inventory/inventory/{id}/action/processNow"
+        "url": "/sws/neo/physical-inventory/inventory/{id}/action/processNow",
+        "processId": "107",
+        "processType": "classic"
       },
       {
         "entity": "inventory",
@@ -2133,7 +2135,7 @@
         "entity": "inventoryLine",
         "field": "quantityOrderBook",
         "runner": "node",
-        "description": "Field 'quantityOrderBook' should have type 'string' in inventoryLine"
+        "description": "Field 'quantityOrderBook' should have type 'number' in inventoryLine"
       },
       {
         "id": "t-48",
@@ -2141,7 +2143,7 @@
         "entity": "inventoryLine",
         "field": "quantityCount",
         "runner": "node",
-        "description": "Field 'quantityCount' should have type 'string' in inventoryLine"
+        "description": "Field 'quantityCount' should have type 'number' in inventoryLine"
       },
       {
         "id": "t-49",
@@ -2157,7 +2159,7 @@
         "entity": "inventoryLine",
         "field": "bookQuantity",
         "runner": "node",
-        "description": "Field 'bookQuantity' should have type 'string' in inventoryLine"
+        "description": "Field 'bookQuantity' should have type 'number' in inventoryLine"
       },
       {
         "id": "t-51",
@@ -2165,7 +2167,7 @@
         "entity": "inventoryLine",
         "field": "cost",
         "runner": "node",
-        "description": "Field 'cost' should have type 'string' in inventoryLine"
+        "description": "Field 'cost' should have type 'number' in inventoryLine"
       },
       {
         "id": "t-52",
@@ -2202,20 +2204,12 @@
         "id": "t-56",
         "category": "readonlylogic-valid",
         "entity": "inventoryLine",
-        "field": "quantityCount",
-        "runner": "node",
-        "description": "Read-only logic for 'quantityCount' in inventoryLine should be valid JS"
-      },
-      {
-        "id": "t-57",
-        "category": "readonlylogic-valid",
-        "entity": "inventoryLine",
         "field": "cost",
         "runner": "node",
         "description": "Read-only logic for 'cost' in inventoryLine should be valid JS"
       },
       {
-        "id": "t-58",
+        "id": "t-57",
         "category": "displaylogic-evaluable",
         "entity": "inventoryLine",
         "field": "quantityOrderBook",
@@ -2223,7 +2217,7 @@
         "description": "Display logic for 'quantityOrderBook' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-59",
+        "id": "t-58",
         "category": "readonlylogic-evaluable",
         "entity": "inventoryLine",
         "field": "storageBin",
@@ -2231,7 +2225,7 @@
         "description": "Read-only logic for 'storageBin' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-60",
+        "id": "t-59",
         "category": "readonlylogic-evaluable",
         "entity": "inventoryLine",
         "field": "description",
@@ -2239,15 +2233,7 @@
         "description": "Read-only logic for 'description' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-61",
-        "category": "readonlylogic-evaluable",
-        "entity": "inventoryLine",
-        "field": "quantityCount",
-        "runner": "node",
-        "description": "Read-only logic for 'quantityCount' in inventoryLine should have evaluable flag"
-      },
-      {
-        "id": "t-62",
+        "id": "t-60",
         "category": "readonlylogic-evaluable",
         "entity": "inventoryLine",
         "field": "cost",
@@ -2255,7 +2241,7 @@
         "description": "Read-only logic for 'cost' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-63",
+        "id": "t-61",
         "category": "default-value-type",
         "entity": "inventoryLine",
         "field": "lineNo",
@@ -2263,7 +2249,7 @@
         "description": "Default value for 'lineNo' in inventoryLine should be a string"
       },
       {
-        "id": "t-64",
+        "id": "t-62",
         "category": "default-value-type",
         "entity": "inventoryLine",
         "field": "storageBin",
@@ -2271,7 +2257,7 @@
         "description": "Default value for 'storageBin' in inventoryLine should be a string"
       },
       {
-        "id": "t-65",
+        "id": "t-63",
         "category": "default-value-type",
         "entity": "inventoryLine",
         "field": "quantityOrderBook",
@@ -2279,7 +2265,7 @@
         "description": "Default value for 'quantityOrderBook' in inventoryLine should be a string"
       },
       {
-        "id": "t-66",
+        "id": "t-64",
         "category": "field-presence",
         "entity": "accounting",
         "field": "accountingSchema",
@@ -2287,7 +2273,7 @@
         "description": "Field 'accountingSchema' should be present in accounting"
       },
       {
-        "id": "t-67",
+        "id": "t-65",
         "category": "field-presence",
         "entity": "accounting",
         "field": "currency",
@@ -2295,7 +2281,7 @@
         "description": "Field 'currency' should be present in accounting"
       },
       {
-        "id": "t-68",
+        "id": "t-66",
         "category": "field-presence",
         "entity": "accounting",
         "field": "period",
@@ -2303,7 +2289,7 @@
         "description": "Field 'period' should be present in accounting"
       },
       {
-        "id": "t-69",
+        "id": "t-67",
         "category": "field-presence",
         "entity": "accounting",
         "field": "accountingDate",
@@ -2311,7 +2297,7 @@
         "description": "Field 'accountingDate' should be present in accounting"
       },
       {
-        "id": "t-70",
+        "id": "t-68",
         "category": "field-presence",
         "entity": "accounting",
         "field": "account",
@@ -2319,7 +2305,7 @@
         "description": "Field 'account' should be present in accounting"
       },
       {
-        "id": "t-71",
+        "id": "t-69",
         "category": "field-presence",
         "entity": "accounting",
         "field": "debit",
@@ -2327,7 +2313,7 @@
         "description": "Field 'debit' should be present in accounting"
       },
       {
-        "id": "t-72",
+        "id": "t-70",
         "category": "field-presence",
         "entity": "accounting",
         "field": "credit",
@@ -2335,7 +2321,7 @@
         "description": "Field 'credit' should be present in accounting"
       },
       {
-        "id": "t-73",
+        "id": "t-71",
         "category": "field-presence",
         "entity": "accounting",
         "field": "description",
@@ -2343,7 +2329,7 @@
         "description": "Field 'description' should be present in accounting"
       },
       {
-        "id": "t-74",
+        "id": "t-72",
         "category": "field-presence",
         "entity": "accounting",
         "field": "businessPartner",
@@ -2351,7 +2337,7 @@
         "description": "Field 'businessPartner' should be present in accounting"
       },
       {
-        "id": "t-75",
+        "id": "t-73",
         "category": "field-presence",
         "entity": "accounting",
         "field": "product",
@@ -2359,7 +2345,7 @@
         "description": "Field 'product' should be present in accounting"
       },
       {
-        "id": "t-76",
+        "id": "t-74",
         "category": "field-presence",
         "entity": "accounting",
         "field": "project",
@@ -2367,7 +2353,7 @@
         "description": "Field 'project' should be present in accounting"
       },
       {
-        "id": "t-77",
+        "id": "t-75",
         "category": "field-presence",
         "entity": "accounting",
         "field": "costcenter",
@@ -2375,7 +2361,7 @@
         "description": "Field 'costcenter' should be present in accounting"
       },
       {
-        "id": "t-78",
+        "id": "t-76",
         "category": "field-presence",
         "entity": "accounting",
         "field": "asset",
@@ -2383,7 +2369,7 @@
         "description": "Field 'asset' should be present in accounting"
       },
       {
-        "id": "t-79",
+        "id": "t-77",
         "category": "field-presence",
         "entity": "accounting",
         "field": "stDimension",
@@ -2391,7 +2377,7 @@
         "description": "Field 'stDimension' should be present in accounting"
       },
       {
-        "id": "t-80",
+        "id": "t-78",
         "category": "field-presence",
         "entity": "accounting",
         "field": "ndDimension",
@@ -2399,7 +2385,7 @@
         "description": "Field 'ndDimension' should be present in accounting"
       },
       {
-        "id": "t-81",
+        "id": "t-79",
         "category": "field-presence",
         "entity": "accounting",
         "field": "postingType",
@@ -2407,7 +2393,7 @@
         "description": "Field 'postingType' should be present in accounting"
       },
       {
-        "id": "t-82",
+        "id": "t-80",
         "category": "field-type",
         "entity": "accounting",
         "field": "accountingSchema",
@@ -2415,7 +2401,7 @@
         "description": "Field 'accountingSchema' should have type 'string' in accounting"
       },
       {
-        "id": "t-83",
+        "id": "t-81",
         "category": "field-type",
         "entity": "accounting",
         "field": "currency",
@@ -2423,7 +2409,7 @@
         "description": "Field 'currency' should have type 'string' in accounting"
       },
       {
-        "id": "t-84",
+        "id": "t-82",
         "category": "field-type",
         "entity": "accounting",
         "field": "period",
@@ -2431,7 +2417,7 @@
         "description": "Field 'period' should have type 'string' in accounting"
       },
       {
-        "id": "t-85",
+        "id": "t-83",
         "category": "field-type",
         "entity": "accounting",
         "field": "accountingDate",
@@ -2439,7 +2425,7 @@
         "description": "Field 'accountingDate' should have type 'string' in accounting"
       },
       {
-        "id": "t-86",
+        "id": "t-84",
         "category": "field-type",
         "entity": "accounting",
         "field": "account",
@@ -2447,7 +2433,7 @@
         "description": "Field 'account' should have type 'string' in accounting"
       },
       {
-        "id": "t-87",
+        "id": "t-85",
         "category": "field-type",
         "entity": "accounting",
         "field": "debit",
@@ -2455,7 +2441,7 @@
         "description": "Field 'debit' should have type 'number' in accounting"
       },
       {
-        "id": "t-88",
+        "id": "t-86",
         "category": "field-type",
         "entity": "accounting",
         "field": "credit",
@@ -2463,7 +2449,7 @@
         "description": "Field 'credit' should have type 'number' in accounting"
       },
       {
-        "id": "t-89",
+        "id": "t-87",
         "category": "field-type",
         "entity": "accounting",
         "field": "description",
@@ -2471,7 +2457,7 @@
         "description": "Field 'description' should have type 'string' in accounting"
       },
       {
-        "id": "t-90",
+        "id": "t-88",
         "category": "field-type",
         "entity": "accounting",
         "field": "businessPartner",
@@ -2479,7 +2465,7 @@
         "description": "Field 'businessPartner' should have type 'string' in accounting"
       },
       {
-        "id": "t-91",
+        "id": "t-89",
         "category": "field-type",
         "entity": "accounting",
         "field": "product",
@@ -2487,7 +2473,7 @@
         "description": "Field 'product' should have type 'string' in accounting"
       },
       {
-        "id": "t-92",
+        "id": "t-90",
         "category": "field-type",
         "entity": "accounting",
         "field": "project",
@@ -2495,7 +2481,7 @@
         "description": "Field 'project' should have type 'string' in accounting"
       },
       {
-        "id": "t-93",
+        "id": "t-91",
         "category": "field-type",
         "entity": "accounting",
         "field": "costcenter",
@@ -2503,7 +2489,7 @@
         "description": "Field 'costcenter' should have type 'string' in accounting"
       },
       {
-        "id": "t-94",
+        "id": "t-92",
         "category": "field-type",
         "entity": "accounting",
         "field": "asset",
@@ -2511,7 +2497,7 @@
         "description": "Field 'asset' should have type 'string' in accounting"
       },
       {
-        "id": "t-95",
+        "id": "t-93",
         "category": "field-type",
         "entity": "accounting",
         "field": "stDimension",
@@ -2519,7 +2505,7 @@
         "description": "Field 'stDimension' should have type 'string' in accounting"
       },
       {
-        "id": "t-96",
+        "id": "t-94",
         "category": "field-type",
         "entity": "accounting",
         "field": "ndDimension",
@@ -2527,7 +2513,7 @@
         "description": "Field 'ndDimension' should have type 'string' in accounting"
       },
       {
-        "id": "t-97",
+        "id": "t-95",
         "category": "field-type",
         "entity": "accounting",
         "field": "postingType",
@@ -2535,14 +2521,14 @@
         "description": "Field 'postingType' should have type 'string' in accounting"
       },
       {
-        "id": "t-98",
+        "id": "t-96",
         "category": "visibility",
         "entity": "accounting",
         "runner": "node",
         "description": "Entity 'accounting' should only expose visible fields in frontend"
       },
       {
-        "id": "t-99",
+        "id": "t-97",
         "category": "system-field",
         "entity": "inventory",
         "field": "organization",
@@ -2550,7 +2536,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-100",
+        "id": "t-98",
         "category": "system-field",
         "entity": "inventory",
         "field": "processNow",
@@ -2558,7 +2544,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-101",
+        "id": "t-99",
         "category": "system-field",
         "entity": "inventory",
         "field": "posted",
@@ -2566,7 +2552,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-102",
+        "id": "t-100",
         "category": "system-field",
         "entity": "inventory",
         "field": "costCenter",
@@ -2574,7 +2560,7 @@
         "description": "System field 'costCenter' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-103",
+        "id": "t-101",
         "category": "system-field",
         "entity": "inventory",
         "field": "asset",
@@ -2582,7 +2568,7 @@
         "description": "System field 'asset' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-104",
+        "id": "t-102",
         "category": "system-field",
         "entity": "inventory",
         "field": "activity",
@@ -2590,7 +2576,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-105",
+        "id": "t-103",
         "category": "system-field",
         "entity": "inventory",
         "field": "salesCampaign",
@@ -2598,7 +2584,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-106",
+        "id": "t-104",
         "category": "system-field",
         "entity": "inventory",
         "field": "stDimension",
@@ -2606,7 +2592,7 @@
         "description": "System field 'stDimension' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-107",
+        "id": "t-105",
         "category": "system-field",
         "entity": "inventory",
         "field": "ndDimension",
@@ -2614,7 +2600,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-108",
+        "id": "t-106",
         "category": "system-field",
         "entity": "inventory",
         "field": "trxOrganization",
@@ -2622,7 +2608,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-109",
+        "id": "t-107",
         "category": "system-field",
         "entity": "inventory",
         "field": "id",
@@ -2630,7 +2616,7 @@
         "description": "System field 'id' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-110",
+        "id": "t-108",
         "category": "system-field",
         "entity": "inventory",
         "field": "active",
@@ -2638,7 +2624,7 @@
         "description": "System field 'active' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-111",
+        "id": "t-109",
         "category": "system-field",
         "entity": "inventory",
         "field": "client",
@@ -2646,7 +2632,7 @@
         "description": "System field 'client' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-112",
+        "id": "t-110",
         "category": "system-field",
         "entity": "inventory",
         "field": "creationDate",
@@ -2654,7 +2640,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-113",
+        "id": "t-111",
         "category": "system-field",
         "entity": "inventory",
         "field": "createdBy",
@@ -2662,7 +2648,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-114",
+        "id": "t-112",
         "category": "system-field",
         "entity": "inventory",
         "field": "updated",
@@ -2670,7 +2656,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-115",
+        "id": "t-113",
         "category": "system-field",
         "entity": "inventory",
         "field": "updatedBy",
@@ -2678,7 +2664,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-116",
+        "id": "t-114",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "attributeSetValue",
@@ -2686,7 +2672,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-117",
+        "id": "t-115",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "orderQuantity",
@@ -2694,7 +2680,7 @@
         "description": "System field 'orderQuantity' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-118",
+        "id": "t-116",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "orderUOM",
@@ -2702,7 +2688,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-119",
+        "id": "t-117",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "relatedInventory",
@@ -2710,7 +2696,7 @@
         "description": "System field 'relatedInventory' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-120",
+        "id": "t-118",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "organization",
@@ -2718,7 +2704,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-121",
+        "id": "t-119",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "active",
@@ -2726,7 +2712,7 @@
         "description": "System field 'active' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-122",
+        "id": "t-120",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "physInventory",
@@ -2734,7 +2720,7 @@
         "description": "System field 'physInventory' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-123",
+        "id": "t-121",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "id",
@@ -2742,7 +2728,7 @@
         "description": "System field 'id' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-124",
+        "id": "t-122",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "client",
@@ -2750,7 +2736,7 @@
         "description": "System field 'client' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-125",
+        "id": "t-123",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "creationDate",
@@ -2758,7 +2744,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-126",
+        "id": "t-124",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "createdBy",
@@ -2766,7 +2752,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-127",
+        "id": "t-125",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "updated",
@@ -2774,7 +2760,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-128",
+        "id": "t-126",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "updatedBy",
@@ -2782,7 +2768,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-129",
+        "id": "t-127",
         "category": "system-field",
         "entity": "accounting",
         "field": "client",
@@ -2790,7 +2776,7 @@
         "description": "System field 'client' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-130",
+        "id": "t-128",
         "category": "system-field",
         "entity": "accounting",
         "field": "organization",
@@ -2798,7 +2784,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-131",
+        "id": "t-129",
         "category": "system-field",
         "entity": "accounting",
         "field": "active",
@@ -2806,7 +2792,7 @@
         "description": "System field 'active' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-132",
+        "id": "t-130",
         "category": "system-field",
         "entity": "accounting",
         "field": "recordID",
@@ -2814,7 +2800,7 @@
         "description": "System field 'recordID' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-133",
+        "id": "t-131",
         "category": "system-field",
         "entity": "accounting",
         "field": "sequenceNumber",
@@ -2822,7 +2808,7 @@
         "description": "System field 'sequenceNumber' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-134",
+        "id": "t-132",
         "category": "system-field",
         "entity": "accounting",
         "field": "value",
@@ -2830,7 +2816,7 @@
         "description": "System field 'value' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-135",
+        "id": "t-133",
         "category": "system-field",
         "entity": "accounting",
         "field": "accountingEntryDescription",
@@ -2838,7 +2824,7 @@
         "description": "System field 'accountingEntryDescription' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-136",
+        "id": "t-134",
         "category": "system-field",
         "entity": "accounting",
         "field": "groupID",
@@ -2846,7 +2832,7 @@
         "description": "System field 'groupID' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-137",
+        "id": "t-135",
         "category": "system-field",
         "entity": "accounting",
         "field": "foreignCurrencyDebit",
@@ -2854,7 +2840,7 @@
         "description": "System field 'foreignCurrencyDebit' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-138",
+        "id": "t-136",
         "category": "system-field",
         "entity": "accounting",
         "field": "salesCampaign",
@@ -2862,7 +2848,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-139",
+        "id": "t-137",
         "category": "system-field",
         "entity": "accounting",
         "field": "gLCategory",
@@ -2870,7 +2856,7 @@
         "description": "System field 'gLCategory' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-140",
+        "id": "t-138",
         "category": "system-field",
         "entity": "accounting",
         "field": "foreignCurrencyCredit",
@@ -2878,7 +2864,7 @@
         "description": "System field 'foreignCurrencyCredit' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-141",
+        "id": "t-139",
         "category": "system-field",
         "entity": "accounting",
         "field": "uOM",
@@ -2886,7 +2872,7 @@
         "description": "System field 'uOM' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-142",
+        "id": "t-140",
         "category": "system-field",
         "entity": "accounting",
         "field": "tax",
@@ -2894,7 +2880,7 @@
         "description": "System field 'tax' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-143",
+        "id": "t-141",
         "category": "system-field",
         "entity": "accounting",
         "field": "documentCategory",
@@ -2902,7 +2888,7 @@
         "description": "System field 'documentCategory' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-144",
+        "id": "t-142",
         "category": "system-field",
         "entity": "accounting",
         "field": "documentType",
@@ -2910,7 +2896,7 @@
         "description": "System field 'documentType' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-145",
+        "id": "t-143",
         "category": "system-field",
         "entity": "accounting",
         "field": "type",
@@ -2918,7 +2904,7 @@
         "description": "System field 'type' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-146",
+        "id": "t-144",
         "category": "system-field",
         "entity": "accounting",
         "field": "quantity",
@@ -2926,7 +2912,7 @@
         "description": "System field 'quantity' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-147",
+        "id": "t-145",
         "category": "system-field",
         "entity": "accounting",
         "field": "locationFromAddress",
@@ -2934,7 +2920,7 @@
         "description": "System field 'locationFromAddress' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-148",
+        "id": "t-146",
         "category": "system-field",
         "entity": "accounting",
         "field": "withholding",
@@ -2942,7 +2928,7 @@
         "description": "System field 'withholding' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-149",
+        "id": "t-147",
         "category": "system-field",
         "entity": "accounting",
         "field": "activity",
@@ -2950,7 +2936,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-150",
+        "id": "t-148",
         "category": "system-field",
         "entity": "accounting",
         "field": "id",
@@ -2958,7 +2944,7 @@
         "description": "System field 'id' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-151",
+        "id": "t-149",
         "category": "system-field",
         "entity": "accounting",
         "field": "trxOrganization",
@@ -2966,7 +2952,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-152",
+        "id": "t-150",
         "category": "system-field",
         "entity": "accounting",
         "field": "transactionDate",
@@ -2974,7 +2960,7 @@
         "description": "System field 'transactionDate' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-153",
+        "id": "t-151",
         "category": "system-field",
         "entity": "accounting",
         "field": "storageBin",
@@ -2982,7 +2968,7 @@
         "description": "System field 'storageBin' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-154",
+        "id": "t-152",
         "category": "system-field",
         "entity": "accounting",
         "field": "lineID",
@@ -2990,7 +2976,7 @@
         "description": "System field 'lineID' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-155",
+        "id": "t-153",
         "category": "system-field",
         "entity": "accounting",
         "field": "salesRegion",
@@ -2998,7 +2984,7 @@
         "description": "System field 'salesRegion' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-156",
+        "id": "t-154",
         "category": "system-field",
         "entity": "accounting",
         "field": "locationToAddress",
@@ -3006,7 +2992,7 @@
         "description": "System field 'locationToAddress' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-157",
+        "id": "t-155",
         "category": "system-field",
         "entity": "accounting",
         "field": "adTable",
@@ -3014,7 +3000,7 @@
         "description": "System field 'adTable' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-158",
+        "id": "t-156",
         "category": "system-field",
         "entity": "accounting",
         "field": "recordID2",
@@ -3022,7 +3008,7 @@
         "description": "System field 'recordID2' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-159",
+        "id": "t-157",
         "category": "system-field",
         "entity": "accounting",
         "field": "creationDate",
@@ -3030,7 +3016,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-160",
+        "id": "t-158",
         "category": "system-field",
         "entity": "accounting",
         "field": "createdBy",
@@ -3038,7 +3024,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-161",
+        "id": "t-159",
         "category": "system-field",
         "entity": "accounting",
         "field": "dateBalanced",
@@ -3046,7 +3032,7 @@
         "description": "System field 'dateBalanced' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-162",
+        "id": "t-160",
         "category": "system-field",
         "entity": "accounting",
         "field": "modify",
@@ -3054,7 +3040,7 @@
         "description": "System field 'modify' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-163",
+        "id": "t-161",
         "category": "system-field",
         "entity": "accounting",
         "field": "updated",
@@ -3062,7 +3048,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-164",
+        "id": "t-162",
         "category": "system-field",
         "entity": "accounting",
         "field": "updatedBy",
@@ -3070,105 +3056,105 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for accounting"
       },
       {
-        "id": "t-165",
+        "id": "t-163",
         "category": "rule-declared",
         "rule": "SL_Inventory_Conversion",
         "runner": "node",
         "description": "Rule 'SL_Inventory_Conversion' (undefined) should be declared"
       },
       {
-        "id": "t-166",
+        "id": "t-164",
         "category": "rule-declared",
         "rule": "SL_Inventory_Product",
         "runner": "node",
         "description": "Rule 'SL_Inventory_Product' (undefined) should be declared"
       },
       {
-        "id": "t-167",
+        "id": "t-165",
         "category": "rule-declared",
         "rule": "SL_Inventory_Locator",
         "runner": "node",
         "description": "Rule 'SL_Inventory_Locator' (undefined) should be declared"
       },
       {
-        "id": "t-168",
+        "id": "t-166",
         "category": "rule-declared",
         "rule": "AD_Org show child organizations",
         "runner": "node",
         "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
       },
       {
-        "id": "t-169",
+        "id": "t-167",
         "category": "rule-declared",
         "rule": "M_Locator of Warehouse",
         "runner": "node",
         "description": "Rule 'M_Locator of Warehouse' (validation) should be declared"
       },
       {
-        "id": "t-170",
+        "id": "t-168",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Header",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-171",
+        "id": "t-169",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Lines",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-172",
+        "id": "t-170",
         "category": "rule-declared",
         "rule": "PROCESS_ProcessInventoryCount",
         "runner": "node",
         "description": "Rule 'PROCESS_ProcessInventoryCount' (process) should be declared"
       },
       {
-        "id": "t-173",
+        "id": "t-171",
         "category": "rule-declared",
         "rule": "PROCESS_CreateInventoryCountList",
         "runner": "node",
         "description": "Rule 'PROCESS_CreateInventoryCountList' (process) should be declared"
       },
       {
-        "id": "t-174",
+        "id": "t-172",
         "category": "rule-declared",
         "rule": "PROCESS_UpdateQuantity",
         "runner": "node",
         "description": "Rule 'PROCESS_UpdateQuantity' (process) should be declared"
       },
       {
-        "id": "t-175",
+        "id": "t-173",
         "category": "rule-declared",
         "rule": "PROCESS_Posted",
         "runner": "node",
         "description": "Rule 'PROCESS_Posted' (process) should be declared"
       },
       {
-        "id": "t-176",
+        "id": "t-174",
         "category": "crud-flags",
         "entity": "inventory",
         "runner": "node",
         "description": "CRUD flags for 'inventory' should all be booleans"
       },
       {
-        "id": "t-177",
+        "id": "t-175",
         "category": "crud-flags",
         "entity": "inventoryLine",
         "runner": "node",
         "description": "CRUD flags for 'inventoryLine' should all be booleans"
       },
       {
-        "id": "t-178",
+        "id": "t-176",
         "category": "crud-flags",
         "entity": "accounting",
         "runner": "node",
         "description": "CRUD flags for 'accounting' should all be booleans"
       },
       {
-        "id": "t-179",
+        "id": "t-177",
         "category": "selector-endpoint",
         "entity": "inventory",
         "field": "warehouse",
@@ -3176,7 +3162,7 @@
         "description": "Selector endpoint for 'warehouse' in inventory should exist"
       },
       {
-        "id": "t-180",
+        "id": "t-178",
         "category": "selector-endpoint",
         "entity": "inventory",
         "field": "project",
@@ -3184,7 +3170,7 @@
         "description": "Selector endpoint for 'project' in inventory should exist"
       },
       {
-        "id": "t-181",
+        "id": "t-179",
         "category": "selector-endpoint",
         "entity": "inventoryLine",
         "field": "product",
@@ -3192,7 +3178,7 @@
         "description": "Selector endpoint for 'product' in inventoryLine should exist"
       },
       {
-        "id": "t-182",
+        "id": "t-180",
         "category": "selector-endpoint",
         "entity": "inventoryLine",
         "field": "storageBin",
@@ -3200,7 +3186,7 @@
         "description": "Selector endpoint for 'storageBin' in inventoryLine should exist"
       },
       {
-        "id": "t-183",
+        "id": "t-181",
         "category": "selector-endpoint",
         "entity": "inventoryLine",
         "field": "uOM",
@@ -3208,7 +3194,7 @@
         "description": "Selector endpoint for 'uOM' in inventoryLine should exist"
       },
       {
-        "id": "t-184",
+        "id": "t-182",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "accountingSchema",
@@ -3216,7 +3202,7 @@
         "description": "Selector endpoint for 'accountingSchema' in accounting should exist"
       },
       {
-        "id": "t-185",
+        "id": "t-183",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "currency",
@@ -3224,7 +3210,7 @@
         "description": "Selector endpoint for 'currency' in accounting should exist"
       },
       {
-        "id": "t-186",
+        "id": "t-184",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "period",
@@ -3232,7 +3218,7 @@
         "description": "Selector endpoint for 'period' in accounting should exist"
       },
       {
-        "id": "t-187",
+        "id": "t-185",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "account",
@@ -3240,7 +3226,7 @@
         "description": "Selector endpoint for 'account' in accounting should exist"
       },
       {
-        "id": "t-188",
+        "id": "t-186",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "businessPartner",
@@ -3248,7 +3234,7 @@
         "description": "Selector endpoint for 'businessPartner' in accounting should exist"
       },
       {
-        "id": "t-189",
+        "id": "t-187",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "product",
@@ -3256,7 +3242,7 @@
         "description": "Selector endpoint for 'product' in accounting should exist"
       },
       {
-        "id": "t-190",
+        "id": "t-188",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "project",
@@ -3264,7 +3250,7 @@
         "description": "Selector endpoint for 'project' in accounting should exist"
       },
       {
-        "id": "t-191",
+        "id": "t-189",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "costcenter",
@@ -3272,7 +3258,7 @@
         "description": "Selector endpoint for 'costcenter' in accounting should exist"
       },
       {
-        "id": "t-192",
+        "id": "t-190",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "asset",
@@ -3280,7 +3266,7 @@
         "description": "Selector endpoint for 'asset' in accounting should exist"
       },
       {
-        "id": "t-193",
+        "id": "t-191",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "stDimension",
@@ -3288,7 +3274,7 @@
         "description": "Selector endpoint for 'stDimension' in accounting should exist"
       },
       {
-        "id": "t-194",
+        "id": "t-192",
         "category": "selector-endpoint",
         "entity": "accounting",
         "field": "ndDimension",
@@ -3296,7 +3282,7 @@
         "description": "Selector endpoint for 'ndDimension' in accounting should exist"
       },
       {
-        "id": "t-195",
+        "id": "t-193",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "generateList",
@@ -3304,7 +3290,7 @@
         "description": "Action endpoint for 'generateList' in inventory should exist"
       },
       {
-        "id": "t-196",
+        "id": "t-194",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "updateQuantities",
@@ -3312,7 +3298,7 @@
         "description": "Action endpoint for 'updateQuantities' in inventory should exist"
       },
       {
-        "id": "t-197",
+        "id": "t-195",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "processNow",
@@ -3320,7 +3306,7 @@
         "description": "Action endpoint for 'processNow' in inventory should exist"
       },
       {
-        "id": "t-198",
+        "id": "t-196",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "posted",
@@ -3329,16 +3315,16 @@
       }
     ],
     "summary": {
-      "total": 198,
+      "total": 196,
       "byCategory": {
         "field-presence": 34,
         "field-type": 34,
         "searchable-filters": 3,
         "visibility": 3,
         "displaylogic-valid": 4,
-        "readonlylogic-valid": 5,
+        "readonlylogic-valid": 4,
         "displaylogic-evaluable": 4,
-        "readonlylogic-evaluable": 5,
+        "readonlylogic-evaluable": 4,
         "default-value-type": 6,
         "system-field": 66,
         "rule-declared": 11,
@@ -3347,7 +3333,7 @@
         "action-endpoint": 4
       },
       "byRunner": {
-        "node": 198,
+        "node": 196,
         "junit": 0
       }
     }
