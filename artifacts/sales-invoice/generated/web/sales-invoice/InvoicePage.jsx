@@ -9,9 +9,9 @@ const breadcrumb = 'Sales / Sales Invoice';
 
 // @sf-generated-start summary:invoice
 const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
 ];
 
@@ -35,15 +35,13 @@ const processes = [
 // @sf-generated-start addLineFields:invoiceLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, reference: 'Product', inputMode: 'search' },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'text', required: true },
     { key: 'description', column: 'Description', type: 'textarea' },
   ],
   derived: [
     { key: 'unitPrice', column: 'PriceActual', type: 'text' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
-    { key: 'listPrice', column: 'PriceList', type: 'text' },
   ],
 };
 // @sf-generated-end addLineFields:invoiceLine
@@ -81,17 +79,6 @@ const api = {
       "supportedFilters": [
         "product"
       ]
-    },
-    "finPaymentSchedule": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/finPaymentSchedule",
-      "detailUrl": "/sws/neo/sales-invoice/finPaymentSchedule/{id}",
-      "supportedFilters": []
     }
   },
   "selectors": [
@@ -113,14 +100,6 @@ const api = {
     },
     {
       "entity": "invoice",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/paymentTerms"
-    },
-    {
-      "entity": "invoice",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
@@ -134,14 +113,6 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/invoice/selectors/currency"
-    },
-    {
-      "entity": "invoice",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/priceList"
     },
     {
       "entity": "invoice",
@@ -161,35 +132,11 @@ const api = {
     },
     {
       "entity": "invoiceLine",
-      "field": "uOM",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoiceLine/selectors/uOM"
-    },
-    {
-      "entity": "invoiceLine",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/invoiceLine/selectors/tax"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "finPaymentmethodID",
-      "column": "Fin_Paymentmethod_ID",
-      "reference": "Paymentmethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/finPaymentSchedule/selectors/finPaymentmethodID"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/finPaymentSchedule/selectors/currency"
     }
   ],
   "actions": [
@@ -270,24 +217,6 @@ const api = {
       "field": "matchLCCosts",
       "column": "Match_Lccosts",
       "url": "/sws/neo/sales-invoice/invoiceLine/{id}/action/matchLCCosts"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "updatePaymentPlan",
-      "column": "Update_Payment_Plan",
-      "url": "/sws/neo/sales-invoice/finPaymentSchedule/{id}/action/updatePaymentPlan"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "aprmModifPaymentINPlan",
-      "column": "EM_Aprm_Modif_Paym_Sched",
-      "url": "/sws/neo/sales-invoice/finPaymentSchedule/{id}/action/aprmModifPaymentINPlan"
-    },
-    {
-      "entity": "finPaymentSchedule",
-      "field": "aprmModifPaymentOUTPlan",
-      "column": "EM_Aprm_Modif_Paym_Out_Sched",
-      "url": "/sws/neo/sales-invoice/finPaymentSchedule/{id}/action/aprmModifPaymentOUTPlan"
     }
   ],
   "queryParams": {
@@ -320,6 +249,8 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
+        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Invoice"

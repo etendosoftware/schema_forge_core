@@ -218,6 +218,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
         summary={summary}
         statusField={statusField}
         processes={processes}
+        documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Fin Payment"

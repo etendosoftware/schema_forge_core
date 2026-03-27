@@ -33,7 +33,7 @@
             "form": true
           },
           {
-            "name": "taxId",
+            "name": "taxID",
             "column": "TaxID",
             "type": "string",
             "tsType": "string",
@@ -63,7 +63,17 @@
             "form": true
           },
           {
-            "name": "isActive",
+            "name": "creditUsed",
+            "column": "SO_CreditUsed",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "active",
             "column": "IsActive",
             "type": "boolean",
             "tsType": "boolean",
@@ -175,7 +185,7 @@
             "required": true
           },
           {
-            "name": "taxId",
+            "name": "taxID",
             "column": "TaxID",
             "type": "string",
             "visibility": "editable",
@@ -196,7 +206,14 @@
             "required": false
           },
           {
-            "name": "isActive",
+            "name": "creditUsed",
+            "column": "SO_CreditUsed",
+            "type": "amount",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "active",
             "column": "IsActive",
             "type": "boolean",
             "visibility": "readOnly",

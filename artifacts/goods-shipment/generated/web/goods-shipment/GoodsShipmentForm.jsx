@@ -8,15 +8,9 @@ const fields = [
   // @sf-custom-slot callout:SL_InOut_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search' },
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, section: 'principal', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
-  { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
+  { key: 'description', column: 'Description', type: 'textarea', section: 'collapsed' },
   // @sf-custom-slot callout:SL_InOut_AccountingDate
-  { key: 'movementDate', column: 'MovementDate', type: 'date', required: true, section: 'principal' },
-  { key: 'accountingDate', column: 'DateAcct', type: 'date', required: true, section: 'other' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'search', readOnly: true, section: 'principal', reference: 'Order', inputMode: 'search' },
-  { key: 'orderReference', column: 'POReference', type: 'text', section: 'other' },
-  { key: 'shippingCompany', column: 'M_Shipper_ID', type: 'search', section: 'other', reference: 'Shipper', inputMode: 'search' },
-  { key: 'trackingNo', column: 'TrackingNo', type: 'text', section: 'other' },
-  { key: 'shipDate', column: 'ShipDate', type: 'text', section: 'other' },
+  { key: 'movementDate', column: 'MovementDate', type: 'date', required: true, section: 'principal', defaultValue: '@#Date@' },
 ];
 // @sf-generated-end fields:goodsShipment
 

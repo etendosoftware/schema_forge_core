@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Trash2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -71,6 +71,7 @@ export function DetailView({
   api,
   entityLabel,
   detailLabel,
+  detailTabIndex,
   titleField = 'documentNo',
   windowName,
   recordId,
@@ -81,13 +82,15 @@ export function DetailView({
   draftMode = null,
   headerContent = null,
   customTabs = [],
+  documentPreview,
+  notesField,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
-  const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.key ?? null, { token, apiBaseUrl });
-  const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.key ?? null, { token, apiBaseUrl });
+  const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.isFormTab ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.isFormTab ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   const selectorContextByEntity = useMemo(() => {
@@ -110,6 +113,7 @@ export function DetailView({
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
   const [addingLine, setAddingLine] = useState(false);
+  const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [showPrint, setShowPrint] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -361,11 +365,17 @@ export function DetailView({
 
   // Build tabs: child entity lines + secondary tabs + "Others" tab for non-principal header fields
   const tabs = [];
+  secondaryTabs.forEach((st, i) => {
+    const childCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
+    tabs.push({ key: st.key, label: st.label, count: childCount });
+  });
   if (DetailTable) {
-    tabs.push({ key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0 });
-  }
-  for (const st of secondaryTabs) {
-    tabs.push({ key: st.key, label: st.label });
+    const linesTab = { key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0 };
+    if (typeof detailTabIndex === 'number' && detailTabIndex >= 0 && detailTabIndex <= tabs.length) {
+      tabs.splice(detailTabIndex, 0, linesTab);
+    } else {
+      tabs.unshift(linesTab);
+    }
   }
   // "Others" tab is added dynamically via othersRef after first render
   const [showOthers, setShowOthers] = useState(null); // null = unknown, true/false after mount
@@ -400,9 +410,6 @@ export function DetailView({
           <div className="shrink-0">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{title}</h1>
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </button>
             </div>
             {breadcrumb && (
               <p className="text-sm text-muted-foreground mt-0.5">
@@ -483,8 +490,19 @@ export function DetailView({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Print document */}
-            {!isNew && recordId && (
+            {/* Send / Print document — uses DocumentPrintDrawer */}
+            {documentPreview && !isNew && recordId && (
+              <button
+                onClick={() => setShowPrint(true)}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                title="Send / Preview"
+                data-testid="action-document-preview"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            )}
+            {/* Print document — shown when documentPreview is not provided */}
+            {!documentPreview && !isNew && recordId && (
               <button
                 onClick={() => setShowPrint(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -508,8 +526,8 @@ export function DetailView({
             <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
               <MoreVertical className="h-4 w-4" />
             </button>
-            {/* Process buttons */}
-            {processes.map(p => {
+            {/* Process buttons — only shown for existing records */}
+            {!isNew && processes.map(p => {
               const btnClass = p.style === 'destructive'
                 ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
                 : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
@@ -586,6 +604,7 @@ export function DetailView({
                 catalogs={catalogs}
                 layout="horizontal"
                 section="collapsed"
+                excludeFields={notesField ? [notesField] : []}
                 displayLogic={displayLogic}
                 api={api}
                 token={token}
@@ -852,9 +871,26 @@ export function DetailView({
                   </div>
                 )}
 
-                {/* Tab content: secondary child entity tabs */}
+                {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
                   <div key={st.key} className="pt-3 flex items-start gap-4">
+                    {st.isFormTab ? (
+                      <div className="flex-1 min-w-0">
+                        <st.Form
+                          data={data ?? {}}
+                          readOnly={!hook.editing}
+                          onChange={(key, val, column) => {
+                            setSecondaryLineEdits(prev => ({ ...(prev ?? {}), [key]: val }));
+                            if (column) setSecondaryLineEditColumns(prev => ({ ...prev, [key]: column }));
+                          }}
+                          entity={st.key}
+                          catalogs={catalogs}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                          selectorContext={selectorContextByEntity[st.key]}
+                        />
+                      </div>
+                    ) : (
                     <div className="flex-1 min-w-0">
                       <st.Table
                         data={secondaryHooks[stIdx]?.children ?? []}
@@ -862,8 +898,33 @@ export function DetailView({
                         selectorContext={selectorContextByEntity[st.key]}
                         onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        addRow={st.addLineFields?.entry?.length > 0 ? {
+                          active: addingSecondaryLine[st.key] ?? false,
+                          fields: st.addLineFields.entry,
+                          onAdd: async (lineData) => {
+                            const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+                            const filtered = {};
+                            for (const [k, v] of Object.entries(lineData)) {
+                              if (entryKeys.has(k)) filtered[k] = v;
+                            }
+                            const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+                            if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
+                            return result;
+                          },
+                          onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
+                          catalogs,
+                        } : undefined}
                       />
+                      {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                        <button
+                          onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                        >
+                          + Add {st.label}
+                        </button>
+                      )}
                     </div>
+                    )}
                     {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
@@ -973,7 +1034,7 @@ export function DetailView({
                         )}
                       </div>
                     )}
-                  </div>
+                    </div>
                 ))}
 
                 {/* Tab content: Others (secondary header fields) */}
@@ -1041,6 +1102,20 @@ export function DetailView({
                 </details>
               );
             })}
+
+            {/* Notes section */}
+            {notesField && (
+              <div className="mt-4 px-1">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes</label>
+                <textarea
+                  value={data[notesField] || ''}
+                  onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+                  placeholder="Add notes..."
+                  rows={2}
+                  className="w-full text-sm rounded-md border border-border/50 bg-muted/20 px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                />
+              </div>
+            )}
 
             {/* Footer totals: Subtotal, Taxes, Total */}
             {DetailTable && summary.some(f => f.type === 'amount') && (() => {

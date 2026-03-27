@@ -3,8 +3,8 @@ import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
-import RelatedDocuments from './RelatedDocuments';
 import catalogs from './mockCatalogs';
+import RelatedDocuments from './RelatedDocuments';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
@@ -25,7 +25,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Process Quotation', label: 'Process  Quotation', style: 'positive' },
+  { name: 'Convert to Order', label: 'Convert to Order', style: 'positive' },
 ];
 // @sf-generated-end processes:quotation
 
@@ -114,14 +114,6 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
-    },
-    {
-      "entity": "quotation",
-      "field": "salesRepresentative",
-      "column": "SalesRep_ID",
-      "reference": "SalesRepresentative",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
     },
     {
       "entity": "quotationLine",
@@ -298,6 +290,11 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
+        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Quotation"
@@ -306,9 +303,6 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        customTabs={[
-          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
-        ]}
         {...props}
       />
     );

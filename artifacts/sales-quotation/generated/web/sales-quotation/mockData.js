@@ -13,8 +13,6 @@ export const quotation = [
     "grandTotalAmount": 38907,
     "summedLineAmount": 38907,
     "currency": "USD",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Standard order for Q1 delivery"
   },
   {
@@ -29,8 +27,6 @@ export const quotation = [
     "grandTotalAmount": 9306,
     "summedLineAmount": 9306,
     "currency": "EUR",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Rush order - priority shipping required"
   },
   {
@@ -45,8 +41,6 @@ export const quotation = [
     "grandTotalAmount": 11544,
     "summedLineAmount": 11544,
     "currency": "GBP",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Bulk purchase for warehouse restocking"
   },
   {
@@ -61,8 +55,6 @@ export const quotation = [
     "grandTotalAmount": 11872,
     "summedLineAmount": 11872,
     "currency": "USD",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Sample order for client evaluation"
   },
   {
@@ -77,8 +69,6 @@ export const quotation = [
     "grandTotalAmount": 48460,
     "summedLineAmount": 48460,
     "currency": "EUR",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Recurring monthly supply order"
   },
   {
@@ -93,8 +83,6 @@ export const quotation = [
     "grandTotalAmount": 45418,
     "summedLineAmount": 45418,
     "currency": "GBP",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Special pricing agreement applies"
   },
   {
@@ -109,8 +97,6 @@ export const quotation = [
     "grandTotalAmount": 33840,
     "summedLineAmount": 33840,
     "currency": "USD",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Consolidated order from multiple requests"
   },
   {
@@ -125,8 +111,6 @@ export const quotation = [
     "grandTotalAmount": 25716,
     "summedLineAmount": 25716,
     "currency": "EUR",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Trial order for new product line"
   },
   {
@@ -141,8 +125,6 @@ export const quotation = [
     "grandTotalAmount": 44780,
     "summedLineAmount": 44780,
     "currency": "GBP",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Replacement for damaged goods"
   },
   {
@@ -157,8 +139,6 @@ export const quotation = [
     "grandTotalAmount": 12483,
     "summedLineAmount": 12483,
     "currency": "USD",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Pre-season inventory build-up"
   },
   {
@@ -173,8 +153,6 @@ export const quotation = [
     "grandTotalAmount": 46022,
     "summedLineAmount": 46022,
     "currency": "EUR",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Customer-specific configuration"
   },
   {
@@ -189,8 +167,6 @@ export const quotation = [
     "grandTotalAmount": 38634,
     "summedLineAmount": 38634,
     "currency": "GBP",
-    "orderReference": "Sample orderReference",
-    "salesRepresentative": "Sample salesRepresentative",
     "description": "Government contract fulfillment"
   }
 ];

@@ -7,8 +7,8 @@ const columns = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status' },
 ];
 // @sf-generated-end columns:order
 
