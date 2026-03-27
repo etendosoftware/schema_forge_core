@@ -78,6 +78,7 @@ export function DetailView({
   headerContent = null,
   customTabs = [],
   documentPreview,
+  notesField,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -545,6 +546,7 @@ export function DetailView({
                 catalogs={catalogs}
                 layout="horizontal"
                 section="collapsed"
+                excludeFields={notesField ? [notesField] : []}
                 displayLogic={displayLogic}
                 api={api}
                 token={token}
@@ -1003,6 +1005,20 @@ export function DetailView({
                 </details>
               );
             })}
+
+            {/* Notes section */}
+            {notesField && (
+              <div className="mt-4 px-1">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes</label>
+                <textarea
+                  value={data[notesField] || ''}
+                  onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+                  placeholder="Add notes..."
+                  rows={2}
+                  className="w-full text-sm rounded-md border border-border/50 bg-muted/20 px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                />
+              </div>
+            )}
 
             {/* Footer totals: Subtotal, Taxes, Total */}
             {DetailTable && summary.some(f => f.type === 'amount') && (() => {

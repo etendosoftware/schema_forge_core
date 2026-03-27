@@ -54,32 +54,23 @@
           "section": "principal"
         },
         "accountingDate": {
-          "inputMode": "date",
-          "readOnlyLogic": null,
-          "section": "other"
+          "visibility": "system"
         },
         "orderReference": {
-          "inputMode": "text",
-          "section": "other"
+          "visibility": "discarded"
         },
         "description": {
           "inputMode": "textarea",
-          "section": "other"
+          "section": "collapsed"
         },
         "shippingCompany": {
-          "visibility": "editable",
-          "inputMode": "search",
-          "section": "other"
+          "visibility": "discarded"
         },
         "trackingNo": {
-          "visibility": "editable",
-          "inputMode": "text",
-          "section": "other"
+          "visibility": "discarded"
         },
         "shipDate": {
-          "visibility": "editable",
-          "inputMode": "date",
-          "section": "other"
+          "visibility": "discarded"
         },
         "deliveryTerms": {
           "visibility": "discarded"
@@ -154,10 +145,7 @@
           "visibility": "discarded"
         },
         "salesOrder": {
-          "visibility": "readOnly",
-          "grid": false,
-          "inputMode": "search",
-          "section": "principal"
+          "visibility": "system"
         },
         "isnettingshipment": {
           "visibility": "discarded"

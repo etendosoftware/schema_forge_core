@@ -299,12 +299,12 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section, displayLogic, api, token, apiBaseUrl, selectorContext = {} }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {} }) {
   const t = useLabel();
   let displayFields;
   if (section) {
     // When filtering by section, include all fields (editable + readOnly) for that section
-    displayFields = fields.filter(f => f.section === section);
+    displayFields = fields.filter(f => f.section === section && !excludeFields.includes(f.key));
   } else if (layout === 'horizontal') {
     displayFields = fields.filter(f => !f.readOnly);
   } else {

@@ -4,6 +4,7 @@ import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
 import catalogs from './mockCatalogs';
+import RelatedDocuments from './RelatedDocuments';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
@@ -290,6 +291,10 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         extraBadges={extraBadges}
         processes={processes}
         documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
+        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Quotation"

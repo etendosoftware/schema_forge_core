@@ -64,6 +64,14 @@ const api = {
     },
     {
       "entity": "order",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/order/selectors/warehouse"
+    },
+    {
+      "entity": "order",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
@@ -162,15 +170,15 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-order/order/{id}/action/posted"
-    },
-    {
-      "entity": "order",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
+    },
+    {
+      "entity": "order",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-order/order/{id}/action/posted"
     },
     {
       "entity": "order",
