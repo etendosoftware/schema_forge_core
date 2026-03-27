@@ -19,9 +19,9 @@ When a trigger fires, check and update **all** of the following that reference t
 **Always check:**
 | Document | What it contains |
 |----------|-----------------|
-| `CLAUDE.md` — Repository Structure | Directory tree, file descriptions |
-| `CLAUDE.md` — Key Data Flow | ASCII flow diagram |
-| `CLAUDE.md` — Key Components table | Component names, purposes, descriptions |
+| `docs/architecture-overview.md` — Repository Structure | Directory tree, file descriptions |
+| `docs/architecture-overview.md` — Data Flow | ASCII flow diagrams |
+| `docs/architecture-overview.md` — Java Classes table | Component names, purposes, descriptions |
 | `docs/architecture-overview.md` | System overview, ASCII diagrams, CLI tools inventory, data flow |
 | `docs/TDD.md` | Technical design, repository structure layout |
 | `docs/PRD.md` | Pipeline diagram, tool references |
