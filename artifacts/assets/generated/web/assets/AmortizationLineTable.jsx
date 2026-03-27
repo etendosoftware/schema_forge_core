@@ -4,7 +4,7 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'sEQNoAsset', column: 'SEQ_No_Asset', type: 'number' },
   { key: 'amortization', column: 'A_Amortization_ID', type: 'string' },
-  { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'string' },
+  { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number' },
   { key: 'amortizationAmount', column: 'Amortizationamt', type: 'amount' },
   { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
