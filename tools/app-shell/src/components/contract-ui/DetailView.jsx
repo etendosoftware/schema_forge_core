@@ -848,7 +848,31 @@ export function DetailView({
                         selectorContext={selectorContextByEntity[st.key]}
                         onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        addRow={st.addLineFields?.entry?.length > 0 ? {
+                          active: addingSecondaryLine[st.key] ?? false,
+                          fields: st.addLineFields.entry,
+                          onAdd: async (lineData) => {
+                            const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+                            const filtered = {};
+                            for (const [k, v] of Object.entries(lineData)) {
+                              if (entryKeys.has(k)) filtered[k] = v;
+                            }
+                            const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+                            if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
+                            return result;
+                          },
+                          onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
+                          catalogs,
+                        } : undefined}
                       />
+                      {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                        <button
+                          onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                        >
+                          + Add {st.label}
+                        </button>
+                      )}
                     </div>
                     )}
                     {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (

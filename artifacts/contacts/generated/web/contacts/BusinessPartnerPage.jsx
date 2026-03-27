@@ -56,7 +56,11 @@ const discountAddLineFields = {
 const bankAccountAddLineFields = {
   entry: [
     { key: 'bankName', column: 'Bank_Name', type: 'text', required: false },
-    { key: 'bankFormat', column: 'BankFormat', type: 'text', required: true },
+    { key: 'bankFormat', column: 'BankFormat', label: 'Bank Account Format', type: 'select', required: true, options: [
+      { value: 'GENERIC', label: 'Use Generic Account No.' },
+      { value: 'IBAN', label: 'Use IBAN' },
+      { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' },
+    ] },
     { key: 'accountNo', column: 'AccountNo', type: 'text', required: false },
     { key: 'iBAN', column: 'Iban', type: 'text', required: false },
   ],
