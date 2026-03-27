@@ -104,9 +104,10 @@ export function generateTableComponent(entityName, contract) {
     const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const badgePart = f.badge ? ', badge: true' : '';
     const summablePart = f.summable ? ', summable: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${enumLabelsPart}${selectionPart}${badgePart}${summablePart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${summablePart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -209,7 +210,8 @@ export function generateFormComponent(entityName, contract) {
     const optionsPart = (type === 'select' && f.enumValues?.length)
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
