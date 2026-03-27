@@ -115,6 +115,8 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.section) mapped.section = f.section;
       if (f.seq != null) mapped.seq = f.seq;
       if (f.statusBar) mapped.statusBar = true;
+      if (f.badge) mapped.badge = true;
+      if (f.summable) mapped.summable = true;
 
       // Behavioral metadata: callout
       if (f.callout) {

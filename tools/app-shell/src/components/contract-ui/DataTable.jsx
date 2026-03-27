@@ -574,16 +574,16 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (col.type === 'boolean') {
       const val = row[col.key];
       if (col.badge) {
+        const trueLabel  = col.badgeLabels?.true  ?? 'Completed';
+        const falseLabel = col.badgeLabels?.false ?? 'In Progress';
         if (val === true || val === 'Y') return (
-          <span className="inline-flex items-center gap-1.5 text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-emerald-700">Yes</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+            {trueLabel}
           </span>
         );
         if (val === false || val === 'N') return (
-          <span className="inline-flex items-center gap-1.5 text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-            <span className="text-slate-400">No</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+            {falseLabel}
           </span>
         );
       }

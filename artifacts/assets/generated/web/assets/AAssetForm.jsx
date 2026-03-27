@@ -18,7 +18,6 @@ const fields = [
   { key: 'amortize', column: 'Assetschedule', type: 'select', required: true, section: 'other', options: [{ value: 'MO', label: 'Monthly' }, { value: 'YE', label: 'Yearly' }] },
   { key: 'usableLifeYears', column: 'UseLifeYears', type: 'number', section: 'other' },
   { key: 'usableLifeMonths', column: 'UseLifeMonths', type: 'number', section: 'other' },
-  { key: 'everyMonthIs30Days', column: 'Is30DayMonth', type: 'checkbox', required: true, section: 'other', defaultValue: 'Y' },
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', section: 'other' },
   { key: 'cancellationDate', column: 'Datecancelled', type: 'date', section: 'other' },
   { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', section: 'other' },

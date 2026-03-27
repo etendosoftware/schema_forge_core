@@ -2,14 +2,14 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:aAsset
 const columns = [
-  { key: 'searchKey', column: 'Value', type: 'string' },
   { key: 'name', column: 'Name', type: 'string' },
   { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'string' },
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'depreciate', column: 'IsDepreciated', type: 'boolean' },
-  { key: 'depreciationType', column: 'Amortizationtype', type: 'string' },
   { key: 'calculateType', column: 'Amortizationcalctype', type: 'string' },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean' },
+  { key: 'purchaseDate', column: 'Datepurchased', type: 'date' },
+  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date' },
+  { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', summable: true },
+  { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', summable: true },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', badge: true },
 ];
 // @sf-generated-end columns:aAsset
 

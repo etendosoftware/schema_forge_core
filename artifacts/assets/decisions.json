@@ -8,7 +8,6 @@
     "aAsset": {
       "fields": {
         "searchKey": {
-          "grid": true,
           "searchable": true
         },
         "name": {
@@ -22,8 +21,7 @@
           "reference": "AssetGroup"
         },
         "documentNo": {
-          "visibility": "readOnly",
-          "grid": true
+          "visibility": "readOnly"
         },
         "product": {
           "inputMode": "search",
@@ -38,14 +36,28 @@
           "reason": "Tree positioning field not relevant in simplified UI"
         },
         "depreciate": {
-          "grid": true,
           "searchable": true
-        },
-        "depreciationType": {
-          "grid": true
         },
         "calculateType": {
           "grid": true
+        },
+        "everyMonthIs30Days": {
+          "visibility": "discarded",
+          "reason": "Technical calculation detail — default (30-day months) is appropriate for most users"
+        },
+        "purchaseDate": {
+          "grid": true
+        },
+        "depreciationStartDate": {
+          "grid": true
+        },
+        "assetValue": {
+          "grid": true,
+          "summable": true
+        },
+        "depreciatedValue": {
+          "grid": true,
+          "summable": true
         },
         "processed": {
           "visibility": "editable",
@@ -53,7 +65,8 @@
         },
         "fullyDepreciated": {
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "badge": true
         },
         "project": {
           "inputMode": "search",
