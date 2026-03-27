@@ -21,6 +21,26 @@ export function toLabel(name) {
 }
 
 /**
+ * Pluralize a label string.
+ * Handles common English rules: -y → -ies, -s/-x/-z/-sh/-ch → -es, else → -s.
+ */
+export function pluralize(label) {
+  if (!label) return '';
+  // Split on space to pluralize only the last word
+  const parts = label.split(' ');
+  const last = parts[parts.length - 1];
+  let plural;
+  if (/[^aeiou]y$/i.test(last)) {
+    plural = last.replace(/y$/i, 'ies');
+  } else if (/(s|x|z|sh|ch)$/i.test(last)) {
+    plural = last + 'es';
+  } else {
+    plural = last + 's';
+  }
+  return [...parts.slice(0, -1), plural].join(' ');
+}
+
+/**
  * Get process endpoints that match a given entity.
  */
 export function getProcessesForEntity(contract, entityName) {
@@ -45,6 +65,7 @@ function mapFieldType(field) {
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
+  if (field.type === 'enum') return 'enum';
   return 'string';
 }
 
@@ -80,9 +101,12 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
+    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
+      : '';
     const badgePart = f.badge ? ', badge: true' : '';
     const summablePart = f.summable ? ', summable: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart}${badgePart}${summablePart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${enumLabelsPart}${selectionPart}${badgePart}${summablePart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -117,7 +141,7 @@ export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
   // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
   const formFields = entity.fields
-    .filter(f => f.form)
+    .filter(f => f.form && f.type !== 'button')
     .sort((a, b) => {
       if (a.seq != null && b.seq != null) return a.seq - b.seq;
       if (a.seq != null) return -1;
@@ -247,14 +271,24 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Status field config
   const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
 
-  // Process config
-  const processesArray = processes.map(p => {
-    const isDestructive = /void|cancel|reject/i.test(p.name);
-    const style = isDestructive ? 'destructive' : 'positive';
-    const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
-    const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
-    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}'${colPart}${paramsPart} },`;
-  }).join('\n');
+  // Process config: backendContract process endpoints + button-type fields from frontendContract
+  const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
+  const processesArray = [
+    ...processes.map(p => {
+      const isDestructive = /void|cancel|reject/i.test(p.name);
+      const style = isDestructive ? 'destructive' : 'positive';
+      const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
+      const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
+      return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}'${colPart}${paramsPart} },`;
+    }),
+    ...buttonFields.map(f => {
+      const isDestructive = /void|cancel|reject/i.test(f.name);
+      const style = isDestructive ? 'destructive' : 'positive';
+      const label = f.label || toLabel(f.name);
+      const dlRaw = f.displayLogic?.raw ? `, displayLogicRaw: '${f.displayLogic.raw.replace(/'/g, "\\'")}'` : '';
+      return `  { name: '${f.name}', label: '${label}', style: '${style}'${dlRaw} },`;
+    }),
+  ].join('\n');
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
   const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
@@ -266,11 +300,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     f.visibility !== 'readOnly' && !f.form && f.defaultValue !== undefined
   );
 
-  // The first entry field (usually product) triggers a lookup
+  // The first search-type entry field (usually product) triggers a lookup modal
+  const firstSearchIdx = entryFields.findIndex(f => mapFormFieldType(f) === 'search');
   const entryArray = entryFields.map((f, i) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = i === 0 ? ', lookup: true' : '';
+    const lookupPart = (i === firstSearchIdx && firstSearchIdx !== -1) ? ', lookup: true' : '';
     const labelPart = f.label ? `, label: '${f.label}'` : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
@@ -497,7 +532,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${toLabel(headerEntity)}s"
+      entityLabel="${pluralize(toLabel(headerEntity))}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}

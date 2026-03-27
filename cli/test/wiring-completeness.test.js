@@ -166,7 +166,7 @@ describe('Wiring completeness', () => {
       const contract = JSON.parse(readText(resolve(ARTIFACTS, entity, 'contract.json')));
       const primary = contract.frontendContract.window.primaryEntity;
       const fields = contract.frontendContract.entities[primary].fields;
-      const contractFormFields = new Set(fields.filter(f => f.form).map(f => f.name));
+      const contractFormFields = new Set(fields.filter(f => f.form && f.type !== 'button').map(f => f.name));
 
       const cap = primary[0].toUpperCase() + primary.slice(1);
       const formPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, `${cap}Form.jsx`);

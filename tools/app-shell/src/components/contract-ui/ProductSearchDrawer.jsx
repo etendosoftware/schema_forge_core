@@ -81,6 +81,8 @@ export default function ProductSearchDrawer({
   const listRef = useRef(null);
   const fetchTimer = useRef(null);
   const abortRef = useRef(null);
+  // Tracks the raw server-side offset (total rows consumed), independent of dedup count.
+  const rawOffsetRef = useRef(0);
 
   // Fetch all product image IDs once when modal opens, keyed by searchKey
   const neoBaseUrl = selectorUrl ? selectorUrl.replace(/\/[^/]+\/[^/]+\/selectors\/.*$/, '') : '';
@@ -106,6 +108,7 @@ export default function ProductSearchDrawer({
     if (!append) {
       clearTimeout(fetchTimer.current);
       if (abortRef.current) abortRef.current.abort();
+      rawOffsetRef.current = 0;
     }
     if (!selectorUrl || !token) { setResults([]); setLoading(false); return; }
 
@@ -124,18 +127,37 @@ export default function ProductSearchDrawer({
       })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          const items = data?.items || [];
+          const raw = data?.items || [];
+          const seenKeys = new Set();
+          const items = raw.filter(item => {
+            // Deduplicate by searchKey (product code) — selectors may return one row per
+            // attribute set instance, all sharing the same product code.
+            const key = item.searchKey || item.id;
+            if (seenKeys.has(key)) return false;
+            seenKeys.add(key);
+            return true;
+          });
+          // Advance the raw server offset so scroll-based pagination is correct even after dedup.
+          rawOffsetRef.current = offset + raw.length;
           if (append) {
-            setResults(prev => [...prev, ...items]);
+            setResults(prev => {
+              const existingIds = new Set(prev.map(i => i.id));
+              return [...prev, ...items.filter(i => !existingIds.has(i.id))];
+            });
           } else {
             setResults(items);
             setActiveIdx(-1);
           }
-          setHasMore(data?.hasMore ?? false);
+          const stillHasMore = data?.hasMore ?? false;
+          setHasMore(stillHasMore);
           setTotalCount(data?.totalCount ?? items.length);
           setLoading(false);
           setLoadingMore(false);
-          // Images are fetched once on modal open, no per-page fetch needed
+          // Auto-waterfall: dedup may shrink the visible count far below PAGE_SIZE.
+          // Keep fetching until we have at least 15 visible results or no more data.
+          if (items.length < 15 && stillHasMore) {
+            doFetch(q, rawOffsetRef.current, true);
+          }
         })
         .catch(err => {
           if (err.name !== 'AbortError') { if (!append) setResults([]); setLoading(false); setLoadingMore(false); }
@@ -165,14 +187,14 @@ export default function ProductSearchDrawer({
     if (abortRef.current) abortRef.current.abort();
   }, []);
 
-  // Infinite scroll
+  // Infinite scroll — uses rawOffsetRef so offset is correct even after dedup shrinks visible count.
   const handleScroll = useCallback(() => {
     const el = listRef.current;
     if (!el || loadingMore || !hasMore) return;
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
-      doFetch(query, results.length, true);
+      doFetch(query, rawOffsetRef.current, true);
     }
-  }, [loadingMore, hasMore, query, results.length, doFetch]);
+  }, [loadingMore, hasMore, query, doFetch]);
 
   const handleSelect = (item) => {
     setSelectedId(item.id);
