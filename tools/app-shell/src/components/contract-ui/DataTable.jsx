@@ -350,6 +350,26 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           );
         }
 
+        // Select fields with inline static options array
+        if (field.type === 'select' && field.options?.length) {
+          return (
+            <TableCell key={col.key} className="py-1 px-2">
+              <select
+                ref={isFirst ? firstInputRef : undefined}
+                value={values[field.key] ?? ''}
+                onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              >
+                <option value="" disabled hidden>{field.label ?? field.key}</option>
+                {field.options.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </TableCell>
+          );
+        }
+
         // Selector fields render as native <select> dropdowns (few options)
         if (field.type === 'selector') {
           const options = getCatalogOptions(catalogs, entity, field);

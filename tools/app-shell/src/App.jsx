@@ -7,7 +7,6 @@ import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import SalesPage from './pages/SalesPage.jsx';
-import ContactsPage from './pages/ContactsPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PurchasesPage from './pages/PurchasesPage.jsx';
 import AccountingPage from './pages/AccountingPage.jsx';
@@ -127,7 +126,6 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
-        <Route path="contacts" element={<ContactsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />

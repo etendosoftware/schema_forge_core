@@ -147,6 +147,9 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.displayLogic.reason = evalInfo.reason;
           mapped.displayLogic.js = null;
+        } else if (!mapped.displayLogic.js && !f.displayLogic.includes('@')) {
+          // Raw expression has no Etendo @Variable@ markers — treat as direct JS
+          mapped.displayLogic.js = f.displayLogic;
         }
       }
 
@@ -162,6 +165,9 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.readOnlyLogic.reason = evalInfo.reason;
           mapped.readOnlyLogic.js = null;
+        } else if (!mapped.readOnlyLogic.js && !f.readOnlyLogic.includes('@')) {
+          // Raw expression has no Etendo @Variable@ markers — treat as direct JS
+          mapped.readOnlyLogic.js = f.readOnlyLogic;
         }
       }
 
@@ -542,12 +548,30 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     }
   }
 
+  // Deduplicate selectors and actions by entity+field (contract generator may iterate
+  // the same entity multiple times if schema.entities contains duplicate entries)
+  const seenSelectors = new Set();
+  const dedupedSelectors = selectors.filter(s => {
+    const key = `${s.entity}:${s.field}`;
+    if (seenSelectors.has(key)) return false;
+    seenSelectors.add(key);
+    return true;
+  });
+
+  const seenActions = new Set();
+  const dedupedActions = actions.filter(a => {
+    const key = `${a.entity}:${a.field}`;
+    if (seenActions.has(key)) return false;
+    seenActions.add(key);
+    return true;
+  });
+
   return {
     specName,
     baseUrl,
     crud,
-    selectors,
-    actions,
+    selectors: dedupedSelectors,
+    actions: dedupedActions,
     queryParams: {
       pagination: { startRow: '_startRow', endRow: '_endRow', default: '0-100' },
       sorting: { param: '_sortBy', example: `_sortBy=${specName}Date` },
