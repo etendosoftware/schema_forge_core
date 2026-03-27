@@ -1,13 +1,18 @@
 {
-  "version": "0.5.0",
-  "generatedAt": "2026-03-27T15:26:29.165Z",
-  "checksum": "42b9c5f8f008e61d",
+  "version": "0.7.0",
+  "generatedAt": "2026-03-27T17:33:56.692Z",
+  "checksum": "743cbf3227b70bd3",
   "frontendContract": {
     "window": {
       "id": "169",
       "name": "Goods Shipment",
       "primaryEntity": "goodsShipment",
       "category": "sales",
+      "documentPreview": {
+        "titlePrefix": "Shipment"
+      },
+      "notesField": "description",
+      "relatedDocuments": true,
       "layoutType": "default"
     },
     "entities": {
@@ -346,7 +351,12 @@
       "id": "169",
       "name": "Goods Shipment",
       "primaryEntity": "goodsShipment",
-      "category": "sales"
+      "category": "sales",
+      "documentPreview": {
+        "titlePrefix": "Shipment"
+      },
+      "notesField": "description",
+      "relatedDocuments": true
     },
     "entities": {
       "goodsShipment": {

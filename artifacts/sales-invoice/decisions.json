@@ -25,7 +25,7 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "collapsed"
         },
         "invoiceDate": {
           "grid": true,
@@ -56,7 +56,7 @@
           "inputMode": "selector"
         },
         "description": {
-          "section": "other"
+          "section": "collapsed"
         },
         "aPRMAddpayment": {
           "visibility": "discarded"
@@ -80,8 +80,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "searchable": true,
-          "section": "principal"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",
@@ -155,10 +154,7 @@
           "visibility": "discarded"
         },
         "salesRepresentative": {
-          "visibility": "editable",
-          "section": "other",
-          "reference": "User",
-          "inputMode": "selector"
+          "visibility": "system"
         },
         "client": {
           "name": "adClientId"
@@ -251,7 +247,7 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "other"
+          "section": "collapsed"
         },
         "taxAmount": {
           "visibility": "discarded"

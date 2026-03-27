@@ -4,22 +4,17 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true, section: 'principal' },
   // @sf-custom-slot callout:SE_Invoice_AccountingDate
-  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', required: true, section: 'principal' },
+  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', required: true, section: 'principal', defaultValue: '@#Date@' },
   // @sf-custom-slot callout:SE_Invoice_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search' },
   // @sf-custom-slot callout:SE_Invoice_BPartnerLocation
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, section: 'principal', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
-  { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
-  { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', required: true, section: 'principal', reference: 'PaymentTerm', inputMode: 'selector' },
+  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, section: 'collapsed', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
+  { key: 'description', column: 'Description', type: 'textarea', section: 'collapsed' },
   // @sf-custom-slot callout:SE_Invoice_BPartner
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', required: true, section: 'principal', reference: 'PaymentMethod', inputMode: 'selector' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'principal' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', required: true, readOnly: true, section: 'summary' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'summary' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'number', required: true, readOnly: true, section: 'summary' },
-  // @sf-custom-slot callout:SL_Invoice_PriceList
-  { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', required: true, readOnly: true, section: 'other', reference: 'PriceList', inputMode: 'selector' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'selector', section: 'other', reference: 'User', inputMode: 'selector' },
-  { key: 'orderReference', column: 'POReference', type: 'text', section: 'principal' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'number', required: true, readOnly: true, section: 'summary', defaultValue: '0' },
 ];
 // @sf-generated-end fields:invoice
 

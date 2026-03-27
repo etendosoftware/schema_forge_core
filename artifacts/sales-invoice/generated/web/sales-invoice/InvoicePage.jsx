@@ -5,6 +5,7 @@ import InvoiceLineTable from './InvoiceLineTable';
 import InvoiceLineForm from './InvoiceLineForm';
 import catalogs from './mockCatalogs';
 
+
 const breadcrumb = 'Sales / Sales Invoice';
 
 // @sf-generated-start summary:invoice
@@ -35,13 +36,17 @@ const processes = [
 // @sf-generated-start addLineFields:invoiceLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'text', required: true },
-    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'text', required: true, label: 'Invoiced Quantity' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'text', required: true, label: 'Net Unit Price' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
+
+  ],
+  hidden: [
+
   ],
 };
 // @sf-generated-end addLineFields:invoiceLine
@@ -63,8 +68,7 @@ const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
-        "documentStatus",
-        "orderReference"
+        "documentStatus"
       ]
     },
     "invoiceLine": {
@@ -113,14 +117,6 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/invoice/selectors/currency"
-    },
-    {
-      "entity": "invoice",
-      "field": "salesRepresentative",
-      "column": "SalesRep_ID",
-      "reference": "User",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/invoice/selectors/salesRepresentative"
     },
     {
       "entity": "invoiceLine",
@@ -249,8 +245,6 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
-        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Invoice"
@@ -259,6 +253,8 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
+        notesField="description"
         {...props}
       />
     );

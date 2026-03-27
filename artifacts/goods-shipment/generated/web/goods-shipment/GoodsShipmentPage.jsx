@@ -3,8 +3,8 @@ import GoodsShipmentTable from './GoodsShipmentTable';
 import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
-import catalogs from './mockCatalogs';
 import RelatedDocuments from './RelatedDocuments';
+import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Goods Shipment';
@@ -226,11 +226,6 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
-        customTabs={[
-          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
-        ]}
-        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Goods Shipment"
@@ -239,6 +234,9 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );
