@@ -220,6 +220,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
+  const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
+  const isGallery = layoutType === 'gallery';
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
@@ -400,6 +402,8 @@ import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}import catalogs from './mockCatalogs';
+${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';
+import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}
 
 const breadcrumb = '${windowCategory} / ${windowLabel}';
 
@@ -457,7 +461,14 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${isGallery ? `
+        headerContent={
+          <${headerName}DetailHeader
+            recordId={recordId}
+            token={props.token}
+            apiBaseUrl={api.baseUrl}
+          />
+        }` : ''}
         {...props}
       />
     );
@@ -469,7 +480,8 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       Table={${headerName}Table}
       entityLabel="${toLabel(headerEntity)}s"
       windowName={windowName}
-      breadcrumb={breadcrumb}${apiProp}
+      breadcrumb={breadcrumb}${apiProp}${isGallery ? `
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}
       {...props}
     />
   );

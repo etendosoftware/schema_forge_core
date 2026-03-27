@@ -12,6 +12,7 @@ artifacts/test-report.xml
 artifacts/test-report.html
 .DS_Store
 .mcp.json
+.playwright-mcp/
 .worktrees/
 window-locks.json
 tools/app-shell/dist/

@@ -2,7 +2,8 @@
   "$schema": "decisions-v1",
   "window": {
     "category": "reference",
-    "name": "Product"
+    "name": "Product",
+    "layoutType": "gallery"
   },
   "entities": {
     "mProduct": {
