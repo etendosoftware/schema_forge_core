@@ -3,8 +3,9 @@ import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
 import OrderLineForm from './OrderLineForm';
-import RelatedDocuments from './RelatedDocuments';
 import catalogs from './mockCatalogs';
+import RelatedDocuments from './RelatedDocuments';
+
 
 const breadcrumb = 'Sales / Sales Order';
 
@@ -27,22 +28,25 @@ const extraBadges = [
 
 // @sf-generated-start processes:order
 const processes = [
-
+  { name: 'Process Order', label: 'Process  Order', style: 'positive' },
 ];
 // @sf-generated-end processes:order
 
 // @sf-generated-start addLineFields:orderLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true, label: 'Ordered Quantity' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'text', required: true, label: 'Net Unit Price' },
+    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', reference: 'Tax', inputMode: 'search' },
-    { key: 'discount', column: 'Discount', type: 'text' },
+    { key: 'discount', column: 'Discount', type: 'text', label: 'Discount' },
+  ],
+  hidden: [
+
   ],
 };
 // @sf-generated-end addLineFields:orderLine
@@ -106,6 +110,14 @@ const api = {
       "reference": "PaymentMethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-order/order/selectors/paymentMethod"
+    },
+    {
+      "entity": "order",
+      "field": "warehouse",
+      "column": "M_Warehouse_ID",
+      "reference": "Warehouse",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/order/selectors/warehouse"
     },
     {
       "entity": "order",
@@ -207,15 +219,15 @@ const api = {
     },
     {
       "entity": "order",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-order/order/{id}/action/posted"
-    },
-    {
-      "entity": "order",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
+    },
+    {
+      "entity": "order",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-order/order/{id}/action/posted"
     },
     {
       "entity": "order",
@@ -290,6 +302,11 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        documentPreview={{ titlePrefix: 'Order', pdfUrl: null }}
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
+        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Order"
@@ -298,9 +315,6 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        customTabs={[
-          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
-        ]}
         {...props}
       />
     );

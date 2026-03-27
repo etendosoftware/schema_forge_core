@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Trash2 } from 'lucide-react';
+import { X, Check, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
 import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
@@ -78,6 +78,8 @@ export function DetailView({
   secondaryTabs = [],
   headerContent = null,
   customTabs = [],
+  documentPreview,
+  notesField,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -392,9 +394,6 @@ export function DetailView({
           <div className="shrink-0">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{title}</h1>
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </button>
             </div>
             {breadcrumb && (
               <p className="text-sm text-muted-foreground mt-0.5">
@@ -475,8 +474,19 @@ export function DetailView({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Print document */}
-            {!isNew && recordId && (
+            {/* Send / Print document — uses DocumentPrintDrawer */}
+            {documentPreview && !isNew && recordId && (
+              <button
+                onClick={() => setShowPrint(true)}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                title="Send / Preview"
+                data-testid="action-document-preview"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            )}
+            {/* Print document — shown when documentPreview is not provided */}
+            {!documentPreview && !isNew && recordId && (
               <button
                 onClick={() => setShowPrint(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -485,12 +495,8 @@ export function DetailView({
                 <Printer className="h-4 w-4" />
               </button>
             )}
-            {/* More actions */}
-            <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-              <MoreVertical className="h-4 w-4" />
-            </button>
-            {/* Process buttons */}
-            {processes.map(p => {
+            {/* Process buttons — only shown for existing records */}
+            {!isNew && processes.map(p => {
               const btnClass = p.style === 'destructive'
                 ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
                 : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
@@ -507,13 +513,6 @@ export function DetailView({
               );
             })}
 
-            <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
-              const saved = await hook.handleSave(data);
-              if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-            }}>
-              <Save className="h-3.5 w-3.5" />
-              Save draft
-            </Button>
             <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
               const saved = await hook.handleSave(data);
               if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
@@ -555,6 +554,7 @@ export function DetailView({
                 catalogs={catalogs}
                 layout="horizontal"
                 section="collapsed"
+                excludeFields={notesField ? [notesField] : []}
                 displayLogic={displayLogic}
                 api={api}
                 token={token}
@@ -1055,6 +1055,20 @@ export function DetailView({
                 </details>
               );
             })}
+
+            {/* Notes section */}
+            {notesField && (
+              <div className="mt-4 px-1">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes</label>
+                <textarea
+                  value={data[notesField] || ''}
+                  onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+                  placeholder="Add notes..."
+                  rows={2}
+                  className="w-full text-sm rounded-md border border-border/50 bg-muted/20 px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                />
+              </div>
+            )}
 
             {/* Footer totals: Subtotal, Taxes, Total */}
             {DetailTable && summary.some(f => f.type === 'amount') && (() => {

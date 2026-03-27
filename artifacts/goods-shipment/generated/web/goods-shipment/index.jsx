@@ -63,22 +63,6 @@ const api = {
       "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress"
     },
     {
-      "entity": "goodsShipment",
-      "field": "salesOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/salesOrder"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "shippingCompany",
-      "column": "M_Shipper_ID",
-      "reference": "Shipper",
-      "inputMode": "search",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/shippingCompany"
-    },
-    {
       "entity": "goodsShipmentLine",
       "field": "product",
       "column": "M_Product_ID",

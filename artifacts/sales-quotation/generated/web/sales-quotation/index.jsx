@@ -71,14 +71,6 @@ const api = {
       "url": "/sws/neo/sales-quotation/quotation/selectors/currency"
     },
     {
-      "entity": "quotation",
-      "field": "salesRepresentative",
-      "column": "SalesRep_ID",
-      "reference": "SalesRepresentative",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/salesRepresentative"
-    },
-    {
       "entity": "quotationLine",
       "field": "product",
       "column": "M_Product_ID",
