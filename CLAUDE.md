@@ -184,6 +184,9 @@ schema-forge/                             # THIS REPO — design + tooling
 │       ├── extract-fields.js             # Field extraction with FK resolution
 │       ├── extract-rules.js              # Rule + callout extraction
 │       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
+│       ├── migrations/                   # Decisions schema version migrations
+│       │   ├── index.js                  # Registry, version detection, migration runner
+│       │   └── migrate-all.js            # Batch CLI: upgrade all decisions.json files
 │       ├── validate-schema.js            # 4-level validation
 │       ├── generate-contract.js          # Frontend/backend contracts
 │       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (windows, processes + reports)
@@ -469,6 +472,32 @@ e2e/
 ```bash
 BASE_URL=http://localhost:8080/etendo/web/com.etendoerp.go make test-e2e
 ```
+
+## Decisions Configuration
+
+`decisions.json` files are the primary configuration mechanism for each window. They control field visibility, form layout, selectors, draft mode, business rules, and more.
+
+**IMPORTANT:** Before modifying or creating a `decisions.json`, always read `docs/decisions-reference.md` — it documents every configurable property with types, defaults, and examples.
+
+Key capabilities:
+- **Field visibility:** `editable`, `readOnly`, `system`, `discarded` (see `docs/field-visibility-types.md`)
+- **Draft mode:** `draftMode: { enabled, processField, processValue, label }` — Save Draft + Save & Complete workflow
+- **Selectors:** `reference`, `inputMode`, `dependsOn` — FK dropdown, search, cascading
+- **Layout:** `grid`, `form`, `searchable`, `section` — control where fields appear
+- **Discard patterns:** `discardPatterns: ["EM_*"]` — auto-exclude fields by pattern
+- **Rules:** `decision: "Keep"/"Omit"/"Simplify"/"Replace"` — business rule curation
+
+See `docs/decisions-reference.md` for the complete reference.
+
+## Decisions Versioning
+
+`decisions.json` files carry a `version` field (number) and a `$schema` tag (e.g., `decisions-v2`). When the decisions structure changes, migration scripts in `cli/src/migrations/` transform old formats automatically.
+
+- **Auto-migration:** Any tool that reads `decisions.json` (pipeline, resolve-curated, reconcile) auto-migrates and writes back to disk.
+- **Batch CLI:** `node cli/src/migrations/migrate-all.js [--dry-run] [--window <name>]` upgrades all windows at once.
+- **Writing migrations:** Each migration is a pure function `(decisions) → decisions` registered in `cli/src/migrations/index.js`.
+
+See `docs/decisions-versioning.md` for the full guide on writing and testing migrations.
 
 ## Worked Windows
 
