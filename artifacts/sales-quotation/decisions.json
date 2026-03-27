@@ -52,9 +52,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "system"
         },
         "currency": {
           "visibility": "readOnly",
@@ -63,12 +61,10 @@
           "section": "summary"
         },
         "paymentTerms": {
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "system"
         },
         "paymentMethod": {
-          "section": "other"
+          "section": "principal"
         },
         "salesRepresentative": {
           "section": "other",
@@ -87,8 +83,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "number",
-          "section": "principal"
+          "section": "summary"
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -199,8 +194,7 @@
       "name": "quotationLine",
       "fields": {
         "lineNo": {
-          "grid": true,
-          "inputMode": "number"
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -214,10 +208,7 @@
           "readOnlyLogic": null
         },
         "uOM": {
-          "visibility": "readOnly",
-          "grid": true,
-          "inputMode": "search",
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "unitPrice": {
           "grid": true,

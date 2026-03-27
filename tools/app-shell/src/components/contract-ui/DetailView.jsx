@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -20,6 +20,37 @@ import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
 import { toast } from 'sonner';
+
+/**
+ * Collapsible section that hides itself entirely when children render as null.
+ */
+function CollapsibleSection({ title, children }) {
+  const ref = useRef(null);
+  const [empty, setEmpty] = useState(false);
+
+  useEffect(() => {
+    // Check if the rendered children produced any DOM nodes
+    if (ref.current && ref.current.childElementCount === 0) {
+      setEmpty(true);
+    } else {
+      setEmpty(false);
+    }
+  });
+
+  if (empty) return <div ref={ref} className="hidden">{children}</div>;
+
+  return (
+    <details className="group">
+      <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground py-1 select-none list-none flex items-center gap-1">
+        <svg className="h-4 w-4 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+        {title}
+      </summary>
+      <div className="pt-2" ref={ref}>
+        {children}
+      </div>
+    </details>
+  );
+}
 
 /**
  * Full-page detail view for a single entity record.
@@ -48,6 +79,7 @@ export function DetailView({
   breadcrumb,
   secondaryTabs = [],
   draftMode = null,
+  customTabs = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -334,8 +366,20 @@ export function DetailView({
   for (const st of secondaryTabs) {
     tabs.push({ key: st.key, label: st.label });
   }
-  // Always add "Others" tab for secondary header fields
-  tabs.push({ key: 'others', label: 'Others' });
+  // "Others" tab is added dynamically via othersRef after first render
+  const [showOthers, setShowOthers] = useState(null); // null = unknown, true/false after mount
+  const othersRef = useRef(null);
+
+  useEffect(() => {
+    if (showOthers === null && othersRef.current) {
+      // Check if the hidden probe rendered any DOM content
+      setShowOthers(othersRef.current.childElementCount > 0);
+    }
+  });
+
+  if (showOthers === true) {
+    tabs.push({ key: 'others', label: 'Others' });
+  }
 
   if (hook.loading) {
     return (
@@ -531,6 +575,22 @@ export function DetailView({
               />
             </div>
 
+            {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
+            <CollapsibleSection title="More details">
+              <Form
+                entity={entity}
+                data={data}
+                onChange={handleChangeWithCallout}
+                catalogs={catalogs}
+                layout="horizontal"
+                section="collapsed"
+                displayLogic={displayLogic}
+                api={api}
+                token={token}
+                apiBaseUrl={apiBaseUrl}
+              />
+            </CollapsibleSection>
+
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
               <div>
@@ -570,15 +630,9 @@ export function DetailView({
                         entity={detailEntity}
                         token={token}
                         apiBaseUrl={apiBaseUrl}
-                        selectorContext={selectorContextByEntity[detailEntity]}
-                        onRowClick={DetailForm
-                          ? (row) => { setSelectedLine(row); setLineEdits(null); }
-                          : (row) => {
-                            if (editingChild?.id === row.id) { setEditingChild(null); }
-                            else { setEditingChild({ ...row }); setAddingLine(false); }
-                          }
-                        }
-                        selectedRowId={DetailForm ? selectedLine?.id : editingChild?.id}
+                        onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
+                        selectedRowId={selectedLine?.id}
+                        showFooterTotals={!summary.some(f => f.type === 'amount')}
                         addRow={{
                           active: addingLine,
                           fields: allEntryFields,
@@ -937,6 +991,19 @@ export function DetailView({
                     />
                   </div>
                 )}
+
+                {/* Hidden probe: detect if Others form has content */}
+                {showOthers === null && (
+                  <div ref={othersRef} className="hidden">
+                    <Form
+                      entity={entity}
+                      data={data}
+                      onChange={() => {}}
+                      catalogs={catalogs}
+                      section="other"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -951,40 +1018,61 @@ export function DetailView({
               </>
             )}
 
-            {/* Footer totals (only when summary has amount fields) */}
-            {DetailTable && summary.some(f => f.type === 'amount') && (
-              <div className="flex justify-end pt-2 border-t border-border/50">
-                <div className="w-72 space-y-1.5">
-                  {summary.filter(f => f.type === 'amount').map(f => {
-                    const label = f.label ?? f.key.replace(/([A-Z])/g, ' $1').trim();
-                    const val = data[f.key];
-                    return (
-                      <div key={f.key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{label}</span>
-                        <span className="font-medium tabular-nums">
-                          {val == null ? '\u2014' : formatAmount(val, data['currency$_identifier'])}
-                        </span>
+            {/* Collapsible Related Documents (below lines, before totals) */}
+            {customTabs.length > 0 && customTabs.map(ct => {
+              const TabComponent = ct.Component;
+              return (
+                <details key={ct.key} className="group mt-6 border border-border/40 rounded-lg bg-muted/20">
+                  <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground px-4 py-3 select-none list-none flex items-center gap-2">
+                    <svg className="h-4 w-4 transition-transform group-open:rotate-90 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    {ct.label}
+                  </summary>
+                  <div className="px-4 pb-4">
+                    <TabComponent
+                      recordId={data?.id || recordId}
+                      data={data}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                      api={api}
+                    />
+                  </div>
+                </details>
+              );
+            })}
+
+            {/* Footer totals: Subtotal, Taxes, Total */}
+            {DetailTable && summary.some(f => f.type === 'amount') && (() => {
+              const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
+              const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+              const subtotal = subtotalField ? data[subtotalField.key] : null;
+              const total = totalField ? data[totalField.key] : null;
+              const taxes = (subtotal != null && total != null) ? total - subtotal : null;
+              const currency = data['currency$_identifier'];
+              return (
+                <div className="flex justify-end pt-2 border-t border-border/50">
+                  <div className="w-72 space-y-1.5">
+                    {subtotal != null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-medium tabular-nums">{formatAmount(subtotal, currency)}</span>
                       </div>
-                    );
-                  })}
-                  {(() => {
-                    const totalField = summary.find(
-                      f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || f.key.toLowerCase().includes('total'))
-                    );
-                    if (!totalField) return null;
-                    const val = data[totalField.key];
-                    return (
+                    )}
+                    {taxes != null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Taxes</span>
+                        <span className="font-medium tabular-nums">{formatAmount(taxes, currency)}</span>
+                      </div>
+                    )}
+                    {total != null && (
                       <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
                         <span>Total</span>
-                        <span className="tabular-nums">
-                          {val == null ? '\u2014' : formatAmount(val, data['currency$_identifier'])}
-                        </span>
+                        <span className="tabular-nums">{formatAmount(total, currency)}</span>
                       </div>
-                    );
-                  })()}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </div>

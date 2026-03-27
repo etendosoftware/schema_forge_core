@@ -25,8 +25,8 @@ const processes = [
 // @sf-generated-start addLineFields:goodsShipmentLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
+    { key: 'lineNo', column: 'Line', type: 'number', required: true },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
     { key: 'movementQuantity', column: 'MovementQty', type: 'text', required: true },
     { key: 'description', column: 'Description', type: 'textarea' },
   ],
