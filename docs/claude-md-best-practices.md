@@ -173,6 +173,16 @@ See @docs/api-conventions.md for REST patterns.
 | **Correcting over and over**: failed approaches clutter context | After 2 failed corrections, `/clear` and write a better prompt |
 | **Claude ignores instructions**: file too bloated, instructions get deprioritized | Reduce to essentials |
 
+## Our Optimization (2026-03-27)
+
+Reduced CLAUDE.md from 760 lines (~11,700 tokens) to ~244 lines (~3,800 tokens) by:
+1. Moving detailed policies to `docs/self-documentation-policy.md`
+2. Replacing verbose sections with 1-2 line pointers to existing docs
+3. Keeping critical gotchas inline (spec naming, export.database, DB conventions)
+4. Removing info discoverable via code/CLI tools
+
+**Monitor:** If Claude stops following a rule after reduction, move it back to inline.
+
 ## Sources
 
 - [Using CLAUDE.MD files (Official Anthropic Blog)](https://claude.com/blog/using-claude-md-files)
