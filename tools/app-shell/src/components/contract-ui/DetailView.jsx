@@ -112,6 +112,7 @@ export function DetailView({
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [showPrint, setShowPrint] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [lineEdits, setLineEdits] = useState(null);
@@ -1056,51 +1057,74 @@ export function DetailView({
               );
             })}
 
-            {/* Notes section */}
-            {notesField && (
-              <div className="mt-4 px-1">
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes</label>
-                <textarea
-                  value={data[notesField] || ''}
-                  onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
-                  placeholder="Add notes..."
-                  rows={2}
-                  className="w-full text-sm rounded-md border border-border/50 bg-muted/20 px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
-                />
-              </div>
-            )}
+            {/* Notes toggle + Totals (Holded style) */}
+            {(() => {
+              const hasNotes = !!notesField;
+              const hasTotals = DetailTable && summary.some(f => f.type === 'amount');
+              if (!hasNotes && !hasTotals) return null;
 
-            {/* Footer totals: Subtotal, Taxes, Total */}
-            {DetailTable && summary.some(f => f.type === 'amount') && (() => {
-              const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
-              const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+              const subtotalField = hasTotals && summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
+              const totalField = hasTotals && summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
               const subtotal = subtotalField ? data[subtotalField.key] : null;
               const total = totalField ? data[totalField.key] : null;
               const taxes = (subtotal != null && total != null) ? total - subtotal : null;
               const currency = data['currency$_identifier'];
+              const hasNotesValue = hasNotes && !!data[notesField];
+
               return (
-                <div className="flex justify-end pt-2 border-t border-border/50">
-                  <div className="w-72 space-y-1.5">
-                    {subtotal != null && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span className="font-medium tabular-nums">{formatAmount(subtotal, currency)}</span>
+                <>
+                  {/* Notes: collapsible like Holded */}
+                  {hasNotes && (
+                    <div className="mt-2">
+                      {!hasNotesValue && !showNotes ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowNotes(true)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                          <span>+</span> Add notes to document
+                        </button>
+                      ) : (
+                        <div className="mt-1">
+                          <textarea
+                            value={data[notesField] || ''}
+                            onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+                            placeholder="Write a note..."
+                            rows={3}
+                            autoFocus={!hasNotesValue}
+                            className="w-full text-sm rounded-md border border-border/50 bg-muted/10 px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/40"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Totals aligned right */}
+                  {hasTotals && (
+                    <div className="flex justify-end pt-3 mt-2 border-t border-border/50">
+                      <div className="w-72 space-y-1.5">
+                        {subtotal != null && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="font-medium tabular-nums">{formatAmount(subtotal, currency)}</span>
+                          </div>
+                        )}
+                        {taxes != null && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Taxes</span>
+                            <span className="font-medium tabular-nums">{formatAmount(taxes, currency)}</span>
+                          </div>
+                        )}
+                        {total != null && (
+                          <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
+                            <span>Total</span>
+                            <span className="tabular-nums">{formatAmount(total, currency)}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {taxes != null && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Taxes</span>
-                        <span className="font-medium tabular-nums">{formatAmount(taxes, currency)}</span>
-                      </div>
-                    )}
-                    {total != null && (
-                      <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
-                        <span>Total</span>
-                        <span className="tabular-nums">{formatAmount(total, currency)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  )}
+                </>
               );
             })()}
           </div>

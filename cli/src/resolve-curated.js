@@ -423,6 +423,16 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.templateConfig) {
     schema.window.templateConfig = windowDecisions.templateConfig;
   }
+  // Pass through optional window-level UI config from decisions
+  if (windowDecisions.documentPreview) {
+    schema.window.documentPreview = windowDecisions.documentPreview;
+  }
+  if (windowDecisions.notesField) {
+    schema.window.notesField = windowDecisions.notesField;
+  }
+  if (windowDecisions.relatedDocuments) {
+    schema.window.relatedDocuments = windowDecisions.relatedDocuments;
+  }
   // Forward secondary tab config and label overrides from decisions
   if (windowDecisions.entityLabel) {
     schema.window.entityLabel = windowDecisions.entityLabel;

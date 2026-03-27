@@ -3,8 +3,8 @@ import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
 import OrderLineForm from './OrderLineForm';
-import catalogs from './mockCatalogs';
 import RelatedDocuments from './RelatedDocuments';
+import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Sales Order';
@@ -302,11 +302,6 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        documentPreview={{ titlePrefix: 'Order', pdfUrl: null }}
-        customTabs={[
-          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
-        ]}
-        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Order"
@@ -315,6 +310,9 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        documentPreview={{ titlePrefix: 'Order', pdfUrl: null }}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );

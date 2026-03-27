@@ -1,13 +1,18 @@
 {
-  "version": "0.18.0",
-  "generatedAt": "2026-03-27T15:12:50.827Z",
-  "checksum": "5761edbbb476b69e",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-27T16:25:43.718Z",
+  "checksum": "386c6261e3256381",
   "frontendContract": {
     "window": {
       "id": "143",
       "name": "Sales Order",
       "primaryEntity": "order",
       "category": "sales",
+      "documentPreview": {
+        "titlePrefix": "Order"
+      },
+      "notesField": "description",
+      "relatedDocuments": true,
       "layoutType": "default"
     },
     "entities": {
@@ -480,7 +485,12 @@
       "id": "143",
       "name": "Sales Order",
       "primaryEntity": "order",
-      "category": "sales"
+      "category": "sales",
+      "documentPreview": {
+        "titlePrefix": "Order"
+      },
+      "notesField": "description",
+      "relatedDocuments": true
     },
     "entities": {
       "order": {

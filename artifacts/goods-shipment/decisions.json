@@ -2,7 +2,10 @@
   "$schema": "decisions-v1",
   "window": {
     "category": "sales",
-    "name": "Goods Shipment"
+    "name": "Goods Shipment",
+    "documentPreview": { "titlePrefix": "Shipment" },
+    "notesField": "description",
+    "relatedDocuments": true
   },
   "entities": {
     "mInOut": {

@@ -2,7 +2,10 @@
   "$schema": "decisions-v1",
   "window": {
     "category": "sales",
-    "name": "Sales Quotation"
+    "name": "Sales Quotation",
+    "documentPreview": { "titlePrefix": "Quotation" },
+    "notesField": "description",
+    "relatedDocuments": true
   },
   "entities": {
     "cOrder": {

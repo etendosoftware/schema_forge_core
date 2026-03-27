@@ -3,8 +3,9 @@ import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
-import catalogs from './mockCatalogs';
 import RelatedDocuments from './RelatedDocuments';
+import catalogs from './mockCatalogs';
+
 
 const breadcrumb = 'Sales / Sales Quotation';
 
@@ -25,7 +26,9 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Convert to Order', label: 'Convert to Order', style: 'positive' },
+  { name: 'Convert to Order', label: 'Convert to  Order', style: 'positive' },
+  { name: 'Void', label: 'Void', style: 'destructive' },
+  { name: 'Reactivate', label: 'Reactivate', style: 'positive' },
 ];
 // @sf-generated-end processes:quotation
 
@@ -290,11 +293,6 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
-        customTabs={[
-          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
-        ]}
-        notesField="description"
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Quotation"
@@ -303,6 +301,9 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );

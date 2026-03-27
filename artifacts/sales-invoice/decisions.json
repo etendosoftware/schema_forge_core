@@ -2,7 +2,9 @@
   "$schema": "decisions-v1",
   "window": {
     "category": "sales",
-    "name": "Sales Invoice"
+    "name": "Sales Invoice",
+    "documentPreview": { "titlePrefix": "Invoice" },
+    "notesField": "description"
   },
   "entities": {
     "cInvoice": {
@@ -35,9 +37,7 @@
           "visibility": "system"
         },
         "paymentTerms": {
-          "grid": true,
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "system"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
@@ -45,7 +45,7 @@
           "section": "principal"
         },
         "priceList": {
-          "section": "other"
+          "visibility": "system"
         },
         "currency": {
           "visibility": "readOnly",
@@ -104,7 +104,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "section": "principal"
+          "section": "summary"
         },
         "summedLineAmount": {
           "visibility": "readOnly",
@@ -143,7 +143,7 @@
           "visibility": "discarded"
         },
         "salesOrder": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "externalBusinessPartnerReference": {
           "visibility": "discarded"
@@ -207,9 +207,7 @@
     "cInvoiceLine": {
       "fields": {
         "lineNo": {
-          "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -225,9 +223,7 @@
           "readOnlyLogic": null
         },
         "uOM": {
-          "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
@@ -252,9 +248,7 @@
           "section": "principal"
         },
         "listPrice": {
-          "section": "other",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "description": {
           "section": "other"
@@ -376,32 +370,7 @@
       "exclude": true
     },
     "finPaymentSchedule": {
-      "fields": {
-        "dueDate": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "expectedAmount": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "received": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "outstanding": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "paymentMethod": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "lastPaymentDate": {
-          "visibility": "readOnly",
-          "grid": true
-        }
-      }
+      "exclude": true
     },
     "finPaymentScheduleDetail": {
       "exclude": true

@@ -1,13 +1,18 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-27T13:37:48.726Z",
-  "checksum": "3e727b1e8ac42865",
+  "generatedAt": "2026-03-27T16:25:31.600Z",
+  "checksum": "7c9efa76aa66079e",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
       "name": "Sales Quotation",
       "primaryEntity": "quotation",
       "category": "sales",
+      "documentPreview": {
+        "titlePrefix": "Quotation"
+      },
+      "notesField": "description",
+      "relatedDocuments": true,
       "layoutType": "default"
     },
     "entities": {
@@ -438,7 +443,12 @@
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
       "name": "Sales Quotation",
       "primaryEntity": "quotation",
-      "category": "sales"
+      "category": "sales",
+      "documentPreview": {
+        "titlePrefix": "Quotation"
+      },
+      "notesField": "description",
+      "relatedDocuments": true
     },
     "entities": {
       "quotation": {
