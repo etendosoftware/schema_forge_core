@@ -454,7 +454,7 @@ export default function BpartnerPage({ windowName, recordId, ...props }) {
     <ListView
       entity="bpartner"
       Table={BpartnerTable}
-      entityLabel="Bpartners"
+      entityLabel="Contacts"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

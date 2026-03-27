@@ -87,7 +87,9 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart} },`;
+    const badgePart = f.badge ? ', badge: true' : '';
+    const summablePart = f.summable ? ', summable: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart}${badgePart}${summablePart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
