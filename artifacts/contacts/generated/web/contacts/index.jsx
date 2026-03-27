@@ -1,10 +1,10 @@
-import BusinessPartnerPage from './BusinessPartnerPage';
+import BpartnerPage from './BpartnerPage';
 
-const windowMeta = { category: 'people', name: 'Business Partner' };
+const windowMeta = { category: 'people', name: 'Contacts' };
 
 const api = {
-  "specName": "business-partner",
-  "baseUrl": "/sws/neo/business-partner",
+  "specName": "contacts",
+  "baseUrl": "/sws/neo/contacts",
   "crud": {
     "bpartner": {
       "get": true,
@@ -13,8 +13,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpartner",
-      "detailUrl": "/sws/neo/business-partner/bpartner/{id}",
+      "listUrl": "/sws/neo/contacts/bpartner",
+      "detailUrl": "/sws/neo/contacts/bpartner/{id}",
       "supportedFilters": [
         "name",
         "searchKey"
@@ -27,8 +27,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpCustomerAcct",
-      "detailUrl": "/sws/neo/business-partner/bpCustomerAcct/{id}",
+      "listUrl": "/sws/neo/contacts/bpCustomerAcct",
+      "detailUrl": "/sws/neo/contacts/bpCustomerAcct/{id}",
       "supportedFilters": []
     },
     "bpVendorAcct": {
@@ -38,8 +38,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpVendorAcct",
-      "detailUrl": "/sws/neo/business-partner/bpVendorAcct/{id}",
+      "listUrl": "/sws/neo/contacts/bpVendorAcct",
+      "detailUrl": "/sws/neo/contacts/bpVendorAcct/{id}",
       "supportedFilters": []
     },
     "bpEmployeeAcct": {
@@ -49,8 +49,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpEmployeeAcct",
-      "detailUrl": "/sws/neo/business-partner/bpEmployeeAcct/{id}",
+      "listUrl": "/sws/neo/contacts/bpEmployeeAcct",
+      "detailUrl": "/sws/neo/contacts/bpEmployeeAcct/{id}",
       "supportedFilters": []
     },
     "bpSalcategory": {
@@ -60,8 +60,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpSalcategory",
-      "detailUrl": "/sws/neo/business-partner/bpSalcategory/{id}",
+      "listUrl": "/sws/neo/contacts/bpSalcategory",
+      "detailUrl": "/sws/neo/contacts/bpSalcategory/{id}",
       "supportedFilters": []
     },
     "bpBankAccount": {
@@ -71,8 +71,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpBankAccount",
-      "detailUrl": "/sws/neo/business-partner/bpBankAccount/{id}",
+      "listUrl": "/sws/neo/contacts/bpBankAccount",
+      "detailUrl": "/sws/neo/contacts/bpBankAccount/{id}",
       "supportedFilters": []
     },
     "bpartnerDocType": {
@@ -82,8 +82,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpartnerDocType",
-      "detailUrl": "/sws/neo/business-partner/bpartnerDocType/{id}",
+      "listUrl": "/sws/neo/contacts/bpartnerDocType",
+      "detailUrl": "/sws/neo/contacts/bpartnerDocType/{id}",
       "supportedFilters": []
     },
     "bpartnerLocation": {
@@ -93,8 +93,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpartnerLocation",
-      "detailUrl": "/sws/neo/business-partner/bpartnerLocation/{id}",
+      "listUrl": "/sws/neo/contacts/bpartnerLocation",
+      "detailUrl": "/sws/neo/contacts/bpartnerLocation/{id}",
       "supportedFilters": [
         "name"
       ]
@@ -106,9 +106,12 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/user",
-      "detailUrl": "/sws/neo/business-partner/user/{id}",
-      "supportedFilters": []
+      "listUrl": "/sws/neo/contacts/user",
+      "detailUrl": "/sws/neo/contacts/user/{id}",
+      "supportedFilters": [
+        "name",
+        "email"
+      ]
     },
     "bpartnerDiscount": {
       "get": true,
@@ -117,8 +120,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/business-partner/bpartnerDiscount",
-      "detailUrl": "/sws/neo/business-partner/bpartnerDiscount/{id}",
+      "listUrl": "/sws/neo/contacts/bpartnerDiscount",
+      "detailUrl": "/sws/neo/contacts/bpartnerDiscount/{id}",
       "supportedFilters": []
     }
   },
@@ -129,7 +132,7 @@ const api = {
       "column": "C_Salary_Category_ID",
       "reference": "Salary_Category",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
+      "url": "/sws/neo/contacts/bpartner/selectors/salaryCategory"
     },
     {
       "entity": "bpartner",
@@ -137,7 +140,7 @@ const api = {
       "column": "C_BP_Group_ID",
       "reference": "BusinessPartnerCategory",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
+      "url": "/sws/neo/contacts/bpartner/selectors/businessPartnerCategory"
     },
     {
       "entity": "bpartner",
@@ -145,7 +148,7 @@ const api = {
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
+      "url": "/sws/neo/contacts/bpartner/selectors/paymentTerms"
     },
     {
       "entity": "bpartner",
@@ -153,7 +156,7 @@ const api = {
       "column": "FIN_Financial_Account_ID",
       "reference": "FIN_Financial_Account",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/account"
+      "url": "/sws/neo/contacts/bpartner/selectors/account"
     },
     {
       "entity": "bpartner",
@@ -161,7 +164,7 @@ const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
+      "url": "/sws/neo/contacts/bpartner/selectors/paymentMethod"
     },
     {
       "entity": "bpartner",
@@ -169,7 +172,7 @@ const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
+      "url": "/sws/neo/contacts/bpartner/selectors/priceList"
     },
     {
       "entity": "bpartner",
@@ -177,7 +180,7 @@ const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "FIN_Financial_Account",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/bpartner/selectors/pOFinancialAccount"
     },
     {
       "entity": "bpartner",
@@ -185,7 +188,7 @@ const api = {
       "column": "PO_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
+      "url": "/sws/neo/contacts/bpartner/selectors/pOPaymentMethod"
     },
     {
       "entity": "bpartner",
@@ -193,7 +196,7 @@ const api = {
       "column": "PO_PaymentTerm_ID",
       "reference": "PaymentTerm",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
+      "url": "/sws/neo/contacts/bpartner/selectors/pOPaymentTerms"
     },
     {
       "entity": "bpartner",
@@ -201,87 +204,7 @@ const api = {
       "column": "PO_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
-    },
-    {
-      "entity": "bpartner",
-      "field": "salaryCategory",
-      "column": "C_Salary_Category_ID",
-      "reference": "Salary_Category",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
-    },
-    {
-      "entity": "bpartner",
-      "field": "businessPartnerCategory",
-      "column": "C_BP_Group_ID",
-      "reference": "BusinessPartnerCategory",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
-    },
-    {
-      "entity": "bpartner",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
-    },
-    {
-      "entity": "bpartner",
-      "field": "account",
-      "column": "FIN_Financial_Account_ID",
-      "reference": "FIN_Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/account"
-    },
-    {
-      "entity": "bpartner",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
-    },
-    {
-      "entity": "bpartner",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOFinancialAccount",
-      "column": "PO_Financial_Account_ID",
-      "reference": "FIN_Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOPaymentMethod",
-      "column": "PO_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOPaymentTerms",
-      "column": "PO_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
-    },
-    {
-      "entity": "bpartner",
-      "field": "purchasePricelist",
-      "column": "PO_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
+      "url": "/sws/neo/contacts/bpartner/selectors/purchasePricelist"
     },
     {
       "entity": "bpCustomerAcct",
@@ -289,7 +212,7 @@ const api = {
       "column": "C_AcctSchema_ID",
       "reference": "AcctSchema",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpCustomerAcct/selectors/accountingSchema"
+      "url": "/sws/neo/contacts/bpCustomerAcct/selectors/accountingSchema"
     },
     {
       "entity": "bpCustomerAcct",
@@ -297,7 +220,7 @@ const api = {
       "column": "C_Receivable_Acct",
       "reference": "ValidCombination",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpCustomerAcct/selectors/customerReceivablesNo"
+      "url": "/sws/neo/contacts/bpCustomerAcct/selectors/customerReceivablesNo"
     },
     {
       "entity": "bpCustomerAcct",
@@ -305,87 +228,7 @@ const api = {
       "column": "C_Prepayment_Acct",
       "reference": "ValidCombination",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpCustomerAcct/selectors/customerPrepayment"
-    },
-    {
-      "entity": "bpartner",
-      "field": "salaryCategory",
-      "column": "C_Salary_Category_ID",
-      "reference": "Salary_Category",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
-    },
-    {
-      "entity": "bpartner",
-      "field": "businessPartnerCategory",
-      "column": "C_BP_Group_ID",
-      "reference": "BusinessPartnerCategory",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
-    },
-    {
-      "entity": "bpartner",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
-    },
-    {
-      "entity": "bpartner",
-      "field": "account",
-      "column": "FIN_Financial_Account_ID",
-      "reference": "FIN_Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/account"
-    },
-    {
-      "entity": "bpartner",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
-    },
-    {
-      "entity": "bpartner",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOFinancialAccount",
-      "column": "PO_Financial_Account_ID",
-      "reference": "FIN_Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOPaymentMethod",
-      "column": "PO_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOPaymentTerms",
-      "column": "PO_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
-    },
-    {
-      "entity": "bpartner",
-      "field": "purchasePricelist",
-      "column": "PO_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
+      "url": "/sws/neo/contacts/bpCustomerAcct/selectors/customerPrepayment"
     },
     {
       "entity": "bpVendorAcct",
@@ -393,7 +236,7 @@ const api = {
       "column": "C_AcctSchema_ID",
       "reference": "AcctSchema",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpVendorAcct/selectors/accountingSchema"
+      "url": "/sws/neo/contacts/bpVendorAcct/selectors/accountingSchema"
     },
     {
       "entity": "bpVendorAcct",
@@ -401,7 +244,7 @@ const api = {
       "column": "V_Liability_Acct",
       "reference": "ValidCombination",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpVendorAcct/selectors/vendorLiability"
+      "url": "/sws/neo/contacts/bpVendorAcct/selectors/vendorLiability"
     },
     {
       "entity": "bpVendorAcct",
@@ -409,87 +252,7 @@ const api = {
       "column": "V_Prepayment_Acct",
       "reference": "ValidCombination",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpVendorAcct/selectors/vendorPrepayment"
-    },
-    {
-      "entity": "bpartner",
-      "field": "salaryCategory",
-      "column": "C_Salary_Category_ID",
-      "reference": "Salary_Category",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
-    },
-    {
-      "entity": "bpartner",
-      "field": "businessPartnerCategory",
-      "column": "C_BP_Group_ID",
-      "reference": "BusinessPartnerCategory",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
-    },
-    {
-      "entity": "bpartner",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
-    },
-    {
-      "entity": "bpartner",
-      "field": "account",
-      "column": "FIN_Financial_Account_ID",
-      "reference": "FIN_Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/account"
-    },
-    {
-      "entity": "bpartner",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
-    },
-    {
-      "entity": "bpartner",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOFinancialAccount",
-      "column": "PO_Financial_Account_ID",
-      "reference": "FIN_Financial_Account",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOPaymentMethod",
-      "column": "PO_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
-    },
-    {
-      "entity": "bpartner",
-      "field": "pOPaymentTerms",
-      "column": "PO_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
-    },
-    {
-      "entity": "bpartner",
-      "field": "purchasePricelist",
-      "column": "PO_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
+      "url": "/sws/neo/contacts/bpVendorAcct/selectors/vendorPrepayment"
     },
     {
       "entity": "bpEmployeeAcct",
@@ -497,7 +260,7 @@ const api = {
       "column": "C_AcctSchema_ID",
       "reference": "AcctSchema",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpEmployeeAcct/selectors/accountingSchema"
+      "url": "/sws/neo/contacts/bpEmployeeAcct/selectors/accountingSchema"
     },
     {
       "entity": "bpSalcategory",
@@ -505,7 +268,7 @@ const api = {
       "column": "C_Salary_Category_ID",
       "reference": "Salary_Category",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpSalcategory/selectors/salaryCategory"
+      "url": "/sws/neo/contacts/bpSalcategory/selectors/salaryCategory"
     },
     {
       "entity": "bpBankAccount",
@@ -513,7 +276,7 @@ const api = {
       "column": "C_Country_ID",
       "reference": "Country",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpBankAccount/selectors/country"
+      "url": "/sws/neo/contacts/bpBankAccount/selectors/country"
     },
     {
       "entity": "bpBankAccount",
@@ -521,7 +284,7 @@ const api = {
       "column": "AD_User_ID",
       "reference": "User",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpBankAccount/selectors/userContact"
+      "url": "/sws/neo/contacts/bpBankAccount/selectors/userContact"
     },
     {
       "entity": "bpartnerDocType",
@@ -529,7 +292,7 @@ const api = {
       "column": "C_Doctype_ID",
       "reference": "DocType",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartnerDocType/selectors/cDoctypeID"
+      "url": "/sws/neo/contacts/bpartnerDocType/selectors/cDoctypeID"
     },
     {
       "entity": "bpartnerLocation",
@@ -537,7 +300,7 @@ const api = {
       "column": "C_Location_ID",
       "reference": "Location",
       "inputMode": "search",
-      "url": "/sws/neo/business-partner/bpartnerLocation/selectors/locationAddress"
+      "url": "/sws/neo/contacts/bpartnerLocation/selectors/locationAddress"
     },
     {
       "entity": "bpartnerDiscount",
@@ -545,7 +308,7 @@ const api = {
       "column": "C_Discount_ID",
       "reference": "Discount",
       "inputMode": "selector",
-      "url": "/sws/neo/business-partner/bpartnerDiscount/selectors/discount"
+      "url": "/sws/neo/contacts/bpartnerDiscount/selectors/discount"
     }
   ],
   "actions": [
@@ -553,37 +316,19 @@ const api = {
       "entity": "bpartner",
       "field": "setNewCurrency",
       "column": "Update_Currency",
-      "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
-    },
-    {
-      "entity": "bpartner",
-      "field": "setNewCurrency",
-      "column": "Update_Currency",
-      "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
-    },
-    {
-      "entity": "bpartner",
-      "field": "setNewCurrency",
-      "column": "Update_Currency",
-      "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
-    },
-    {
-      "entity": "bpartner",
-      "field": "setNewCurrency",
-      "column": "Update_Currency",
-      "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
+      "url": "/sws/neo/contacts/bpartner/{id}/action/setNewCurrency"
     },
     {
       "entity": "user",
       "field": "grantPortalAccess",
       "column": "Grant_Portal_Access",
-      "url": "/sws/neo/business-partner/user/{id}/action/grantPortalAccess"
+      "url": "/sws/neo/contacts/user/{id}/action/grantPortalAccess"
     },
     {
       "entity": "user",
       "field": "processNow",
       "column": "Processing",
-      "url": "/sws/neo/business-partner/user/{id}/action/processNow"
+      "url": "/sws/neo/contacts/user/{id}/action/processNow"
     }
   ],
   "queryParams": {
@@ -594,7 +339,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=business-partnerDate"
+      "example": "_sortBy=contactsDate"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -604,7 +349,7 @@ const api = {
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   // @sf-custom-slot hooks:App
-  return <BusinessPartnerPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
+  return <BpartnerPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
 

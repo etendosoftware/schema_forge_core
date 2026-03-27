@@ -346,9 +346,10 @@ export function DetailView({
 
   // Build tabs: child entity lines + secondary tabs + "Others" tab for non-principal header fields
   const tabs = [];
-  for (const st of secondaryTabs) {
-    tabs.push({ key: st.key, label: st.label });
-  }
+  secondaryTabs.forEach((st, i) => {
+    const childCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
+    tabs.push({ key: st.key, label: st.label, count: childCount });
+  });
   if (DetailTable) {
     const linesTab = { key: 'lines', label: detailLabel || detailEntity || 'Lines', count: hook.children?.length || 0 };
     if (typeof detailTabIndex === 'number' && detailTabIndex >= 0 && detailTabIndex <= tabs.length) {

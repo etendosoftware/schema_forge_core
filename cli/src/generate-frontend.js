@@ -298,42 +298,100 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
   // Detect secondary child entities for additional tabs
-  const allEntityEntries = Object.entries(contract.frontendContract.entities);
-  const knownSecondaryTabDefs = [
-    { key: 'orderTax',        label: 'Tax',              TableName: 'OrderTaxTable',        FormName: 'OrderTaxForm' },
-    { key: 'invoiceTax',      label: 'Tax',              TableName: 'InvoiceTaxTable',      FormName: 'InvoiceTaxForm' },
-    { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
-    { key: 'paymentPlan',     label: 'Payment Plan',     TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
-    { key: 'accounting',        label: 'Accounting',        TableName: 'AccountingTable',         FormName: 'AccountingForm' },
-    { key: 'landedCost',        label: 'Landed Cost',       TableName: 'LandedCostTable',         FormName: 'LandedCostForm' },
-    { key: 'reversedInvoices',  label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable',   FormName: 'ReversedInvoicesForm' },
-  ].filter(t => allEntityEntries.some(([name]) => name === t.key));
+  const windowConfig = contract.frontendContract.window;
+  const secondaryTabsDecl = windowConfig.secondaryTabs;
+  let secondaryTabDefs;
 
-  const knownSecondaryKeys = new Set(knownSecondaryTabDefs.map(t => t.key));
-  const inferredSecondaryTabDefs = allEntityEntries
-    .filter(([name, entity]) => {
-      if (name === headerEntity || name === detailEntity) return false;
-      if (knownSecondaryKeys.has(name)) return false;
-      const editableFieldCount = (entity.fields || []).filter(f => f.visibility === 'editable').length;
-      return editableFieldCount === 0;
-    })
-    .map(([name, entity]) => ({
-      key: name,
-      label: entity.tabName || toLabel(name),
-      TableName: `${capitalize(name)}Table`,
-      FormName: `${capitalize(name)}Form`,
-    }));
+  if (secondaryTabsDecl) {
+    // Declarative config from decisions.json — sorted by tabOrder
+    secondaryTabDefs = Object.entries(secondaryTabsDecl)
+      .sort((a, b) => (a[1].tabOrder ?? 99) - (b[1].tabOrder ?? 99))
+      .map(([key, cfg]) => {
+        const isFormTab = cfg.tabMode === 'form-only';
+        const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
+        const TableName = `${capitalize(key)}Table`;
+        const addLineFieldKeys = cfg.addLineFields ?? [];
+        const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
+        const addLineEntries = addLineFieldKeys.map(fk => {
+          const f = entityFields.find(ef => ef.name === fk);
+          if (!f) return null;
+          const type = mapFormFieldType(f);
+          const requiredPart = f.required ? ', required: true' : '';
+          const labelPart = f.label ? `, label: '${f.label}'` : '';
+          const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+          const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+          const optionsPart = (type === 'select' && f.enumValues?.length)
+            ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
+            : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
+        }).filter(Boolean);
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, FormName, TableName, addLineEntries };
+      });
+  } else {
+    // Fallback: hardcoded known list + entity inference (backward compat)
+    const allEntityEntries = Object.entries(contract.frontendContract.entities);
+    const knownSecondaryTabDefs = [
+      { key: 'orderTax',         label: 'Tax',               TableName: 'OrderTaxTable',         FormName: 'OrderTaxForm' },
+      { key: 'invoiceTax',       label: 'Tax',               TableName: 'InvoiceTaxTable',       FormName: 'InvoiceTaxForm' },
+      { key: 'basicDiscounts',   label: 'Basic Discounts',   TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
+      { key: 'paymentPlan',      label: 'Payment Plan',      TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
+      { key: 'accounting',       label: 'Accounting',        TableName: 'AccountingTable',       FormName: 'AccountingForm' },
+      { key: 'landedCost',       label: 'Landed Cost',       TableName: 'LandedCostTable',       FormName: 'LandedCostForm' },
+      { key: 'reversedInvoices', label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable', FormName: 'ReversedInvoicesForm' },
+    ].filter(t => allEntityEntries.some(([name]) => name === t.key));
 
-  const secondaryTabDefs = [...knownSecondaryTabDefs, ...inferredSecondaryTabDefs].slice(0, 4);
+    const knownSecondaryKeys = new Set(knownSecondaryTabDefs.map(t => t.key));
+    const inferredSecondaryTabDefs = allEntityEntries
+      .filter(([name, entity]) => {
+        if (name === headerEntity || name === detailEntity) return false;
+        if (knownSecondaryKeys.has(name)) return false;
+        const editableFieldCount = (entity.fields || []).filter(f => f.visibility === 'editable').length;
+        return editableFieldCount === 0;
+      })
+      .map(([name, entity]) => ({
+        key: name,
+        label: entity.tabName || toLabel(name),
+        isFormTab: false,
+        TableName: `${capitalize(name)}Table`,
+        FormName: `${capitalize(name)}Form`,
+        addLineEntries: [],
+      }));
+
+    secondaryTabDefs = [
+      ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
+      ...inferredSecondaryTabDefs,
+    ].slice(0, 4);
+  }
 
   const secondaryTabsImports = secondaryTabDefs
-    .map(t => `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`)
+    .map(t => {
+      if (t.isFormTab) {
+        return `import ${t.FormName} from './${t.FormName}';`;
+      }
+      return `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`;
+    })
     .join('\n');
-  const secondaryTabsPropEntries = secondaryTabDefs
-    .map(t => `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName} },`)
-    .join('\n');
+
+  const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
+    if (t.isFormTab) {
+      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName} },`;
+    }
+    const addLinePart = t.addLineEntries.length > 0
+      ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
+      : '';
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
+  }).join('\n');
+
   const secondaryTabsProp = secondaryTabDefs.length > 0
     ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
+    : '';
+
+  // entityLabel / detailLabel / detailTabIndex from window decisions config
+  const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
+  const entityDetailLabel = windowConfig.detailLabel
+    || (contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity));
+  const detailTabIndexProp = windowConfig.detailTabIndex != null
+    ? `\n        detailTabIndex={${windowConfig.detailTabIndex}}`
     : '';
 
   return `import { ListView, DetailView } from '@/components/contract-ui';
@@ -395,11 +453,11 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
-        entityLabel="${toLabel(headerEntity)}"
-        detailLabel="${contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity)}"
+        entityLabel="${entityLabel}"
+        detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${secondaryTabsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}
         {...props}
       />
     );
@@ -627,7 +685,7 @@ export function generateAll(contract) {
   const { window: win, entities } = frontendContract;
   const primaryEntity = win.primaryEntity;
   const entityNames = Object.keys(entities);
-  const detailEntity = entityNames.find(name => name !== primaryEntity);
+  const detailEntity = win.detailEntity || entityNames.find(name => name !== primaryEntity);
 
   const files = {};
 

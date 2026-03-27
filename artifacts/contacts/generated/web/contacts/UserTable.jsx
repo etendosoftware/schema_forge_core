@@ -4,12 +4,13 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'firstName', column: 'Firstname', type: 'string' },
   { key: 'lastName', column: 'Lastname', type: 'string' },
+  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'email', column: 'Email', type: 'string' },
   { key: 'phone', column: 'Phone', type: 'string' },
-  { key: 'position', column: 'Title', type: 'string' },
 ];
 // @sf-generated-end columns:user
 
-const filters = [];
+const filters = ['name', 'email'];
 
 // @sf-generated-start component:UserTable
 export default function UserTable(props) {

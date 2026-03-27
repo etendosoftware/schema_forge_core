@@ -1,13 +1,58 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-03-26T15:40:02.482Z",
-  "checksum": "377ec6d5c36dc77d",
+  "generatedAt": "2026-03-27T13:32:07.286Z",
+  "checksum": "e539a0d3e4549763",
   "frontendContract": {
     "window": {
       "id": "123",
-      "name": "Business Partner",
+      "name": "Contacts",
       "primaryEntity": "bpartner",
       "category": "people",
+      "entityLabel": "Contact",
+      "detailLabel": "Location/Address",
+      "detailTabIndex": 3,
+      "secondaryTabs": {
+        "billing": {
+          "tabMode": "form-only",
+          "tabOrder": 0,
+          "label": "Billing Preferences",
+          "customForm": "BillingPreferencesForm"
+        },
+        "user": {
+          "tabMode": "table-form",
+          "tabOrder": 1,
+          "label": "Contact",
+          "addLineFields": [
+            "firstName",
+            "lastName",
+            "phone",
+            "position"
+          ]
+        },
+        "bpBankAccount": {
+          "tabMode": "table-form",
+          "tabOrder": 2,
+          "label": "Bank Account",
+          "addLineFields": [
+            "bankName",
+            "bankFormat",
+            "accountNo",
+            "iBAN"
+          ]
+        },
+        "bpartnerDiscount": {
+          "tabMode": "table-form",
+          "tabOrder": 3,
+          "label": "Basic Discount",
+          "addLineFields": [
+            "lineNo",
+            "discount",
+            "customer",
+            "vendor"
+          ]
+        }
+      },
+      "detailEntity": "bpartnerLocation",
       "layoutType": "default"
     },
     "entities": {
@@ -27,7 +72,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "isSalesRepresentative",
@@ -39,7 +84,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "name",
@@ -64,7 +109,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
+            "defaultValue": "N",
             "displayLogic": {
               "raw": "@IsEmployee@='Y' & @showMRPandProductionFields@='Y'",
               "evaluable": true
@@ -80,7 +126,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Salary_Category",
             "inputMode": "selector",
             "displayLogic": {
@@ -112,6 +158,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "Y",
             "section": "other"
           },
           {
@@ -127,6 +174,7 @@
             "form": true,
             "reference": "BusinessPartnerCategory",
             "inputMode": "selector",
+            "defaultValue": "@SQL=SELECT MAX(C_BP_GROUP_ID) FROM C_BP_GROUP WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@",
             "section": "principal"
           },
           {
@@ -139,7 +187,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -159,7 +207,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
+            "defaultValue": "N",
             "section": "principal",
             "displayLogic": {
               "raw": "record.customer",
@@ -190,7 +239,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "FIN_Financial_Account",
             "inputMode": "selector",
             "section": "principal",
@@ -210,7 +259,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PaymentMethod",
             "inputMode": "selector",
             "section": "principal",
@@ -234,6 +283,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "Y",
             "section": "principal"
           },
           {
@@ -259,7 +309,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -279,7 +329,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "FIN_Financial_Account",
             "inputMode": "selector",
             "section": "principal",
@@ -299,7 +349,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PaymentMethod",
             "inputMode": "selector",
             "section": "principal",
@@ -322,7 +372,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -342,7 +392,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -401,7 +451,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
+            "defaultValue": "N",
             "section": "principal",
             "displayLogic": {
               "raw": "record.vendor",
@@ -638,8 +689,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "country",
@@ -653,7 +705,8 @@
             "grid": false,
             "form": true,
             "reference": "Country",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "defaultValue": "@COUNTRYDEF@"
           },
           {
             "name": "userContact",
@@ -678,7 +731,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "enumValues": [
               {
@@ -697,7 +750,9 @@
                 "value": "SPANISH",
                 "name": "Use Spanish"
               }
-            ]
+            ],
+            "defaultValue": "GENERIC",
+            "section": "principal"
           },
           {
             "name": "accountNo",
@@ -708,8 +763,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "iBAN",
@@ -720,8 +776,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "swiftCode",
@@ -745,7 +802,8 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal"
           }
         ],
         "searchableFields": [],
@@ -812,6 +870,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "N",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.BusinessPartnerDocTypeValidation"
             }
@@ -840,7 +899,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "defaultValue": "Y"
           }
         ],
         "searchableFields": [],
@@ -920,6 +980,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "defaultValue": ".",
             "section": "principal"
           },
           {
@@ -944,7 +1005,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "defaultValue": "Y"
           },
           {
             "name": "invoiceToAddress",
@@ -956,7 +1018,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "defaultValue": "Y"
           },
           {
             "name": "active",
@@ -982,6 +1045,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "N",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_BPartnerLocation"
             }
@@ -1043,8 +1107,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
             }
@@ -1058,8 +1123,25 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
+            "section": "principal",
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
+            }
+          },
+          {
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "label": "User",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
             }
@@ -1073,8 +1155,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "phone",
@@ -1085,8 +1168,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "alternativePhone",
@@ -1110,7 +1194,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "comments",
@@ -1125,6 +1210,19 @@
             "form": true
           },
           {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "label": "Active",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "section": "other"
+          },
+          {
             "name": "grantPortalAccess",
             "apiKey": "grantPortalAccess",
             "column": "Grant_Portal_Access",
@@ -1135,6 +1233,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "N",
             "displayLogic": {
               "raw": "@isPortalRolePresent@!0",
               "evaluable": true
@@ -1150,7 +1249,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "defaultValue": "N"
           },
           {
             "name": "viasms",
@@ -1163,6 +1263,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "N",
             "displayLogic": {
               "raw": "@Commercialauth@='Y'",
               "evaluable": true
@@ -1179,14 +1280,25 @@
             "required": true,
             "grid": false,
             "form": true,
+            "defaultValue": "N",
             "displayLogic": {
               "raw": "@Commercialauth@='Y'",
               "evaluable": true
             }
           }
         ],
-        "searchableFields": [],
+        "searchableFields": [
+          "name",
+          "email"
+        ],
         "computedFields": [
+          {
+            "name": "active",
+            "derivation": {
+              "type": "computed",
+              "source": "true"
+            }
+          },
           {
             "name": "grantPortalAccess",
             "derivation": {
@@ -1232,8 +1344,10 @@
             "tsType": "number",
             "visibility": "editable",
             "required": true,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_BPARTNER_DISCOUNT WHERE C_BPARTNER_ID=@C_BPARTNER_ID@",
+            "section": "principal"
           },
           {
             "name": "discount",
@@ -1244,10 +1358,11 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "reference": "Discount",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "section": "principal"
           },
           {
             "name": "customer",
@@ -1258,8 +1373,10 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "defaultValue": "Y",
+            "section": "principal"
           },
           {
             "name": "vendor",
@@ -1270,8 +1387,10 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "defaultValue": "N",
+            "section": "principal"
           },
           {
             "name": "applyInOrder",
@@ -1283,7 +1402,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "defaultValue": "N"
           },
           {
             "name": "cascade",
@@ -1295,7 +1415,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "defaultValue": "N"
           }
         ],
         "searchableFields": [],
@@ -1342,9 +1463,54 @@
   "backendContract": {
     "window": {
       "id": "123",
-      "name": "Business Partner",
+      "name": "Contacts",
       "primaryEntity": "bpartner",
-      "category": "people"
+      "category": "people",
+      "entityLabel": "Contact",
+      "detailLabel": "Location/Address",
+      "detailTabIndex": 3,
+      "secondaryTabs": {
+        "billing": {
+          "tabMode": "form-only",
+          "tabOrder": 0,
+          "label": "Billing Preferences",
+          "customForm": "BillingPreferencesForm"
+        },
+        "user": {
+          "tabMode": "table-form",
+          "tabOrder": 1,
+          "label": "Contact",
+          "addLineFields": [
+            "firstName",
+            "lastName",
+            "phone",
+            "position"
+          ]
+        },
+        "bpBankAccount": {
+          "tabMode": "table-form",
+          "tabOrder": 2,
+          "label": "Bank Account",
+          "addLineFields": [
+            "bankName",
+            "bankFormat",
+            "accountNo",
+            "iBAN"
+          ]
+        },
+        "bpartnerDiscount": {
+          "tabMode": "table-form",
+          "tabOrder": 3,
+          "label": "Basic Discount",
+          "addLineFields": [
+            "lineNo",
+            "discount",
+            "customer",
+            "vendor"
+          ]
+        }
+      },
+      "detailEntity": "bpartnerLocation"
     },
     "entities": {
       "bpartner": {
@@ -3141,7 +3307,7 @@
             "apiKey": "name",
             "column": "Name",
             "type": "string",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -3189,7 +3355,7 @@
             "apiKey": "active",
             "column": "IsActive",
             "type": "boolean",
-            "visibility": "system",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -3959,7 +4125,10 @@
         "method": "GET",
         "path": "/user",
         "entity": "user",
-        "supportedFilters": []
+        "supportedFilters": [
+          "name",
+          "email"
+        ]
       },
       {
         "method": "GET",
@@ -4019,8 +4188,8 @@
     "processEndpoints": []
   },
   "apiPrediction": {
-    "specName": "business-partner",
-    "baseUrl": "/sws/neo/business-partner",
+    "specName": "contacts",
+    "baseUrl": "/sws/neo/contacts",
     "crud": {
       "bpartner": {
         "get": true,
@@ -4029,8 +4198,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpartner",
-        "detailUrl": "/sws/neo/business-partner/bpartner/{id}",
+        "listUrl": "/sws/neo/contacts/bpartner",
+        "detailUrl": "/sws/neo/contacts/bpartner/{id}",
         "supportedFilters": [
           "name",
           "searchKey"
@@ -4043,8 +4212,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpCustomerAcct",
-        "detailUrl": "/sws/neo/business-partner/bpCustomerAcct/{id}",
+        "listUrl": "/sws/neo/contacts/bpCustomerAcct",
+        "detailUrl": "/sws/neo/contacts/bpCustomerAcct/{id}",
         "supportedFilters": []
       },
       "bpVendorAcct": {
@@ -4054,8 +4223,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpVendorAcct",
-        "detailUrl": "/sws/neo/business-partner/bpVendorAcct/{id}",
+        "listUrl": "/sws/neo/contacts/bpVendorAcct",
+        "detailUrl": "/sws/neo/contacts/bpVendorAcct/{id}",
         "supportedFilters": []
       },
       "bpEmployeeAcct": {
@@ -4065,8 +4234,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpEmployeeAcct",
-        "detailUrl": "/sws/neo/business-partner/bpEmployeeAcct/{id}",
+        "listUrl": "/sws/neo/contacts/bpEmployeeAcct",
+        "detailUrl": "/sws/neo/contacts/bpEmployeeAcct/{id}",
         "supportedFilters": []
       },
       "bpSalcategory": {
@@ -4076,8 +4245,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpSalcategory",
-        "detailUrl": "/sws/neo/business-partner/bpSalcategory/{id}",
+        "listUrl": "/sws/neo/contacts/bpSalcategory",
+        "detailUrl": "/sws/neo/contacts/bpSalcategory/{id}",
         "supportedFilters": []
       },
       "bpBankAccount": {
@@ -4087,8 +4256,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpBankAccount",
-        "detailUrl": "/sws/neo/business-partner/bpBankAccount/{id}",
+        "listUrl": "/sws/neo/contacts/bpBankAccount",
+        "detailUrl": "/sws/neo/contacts/bpBankAccount/{id}",
         "supportedFilters": []
       },
       "bpartnerDocType": {
@@ -4098,8 +4267,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpartnerDocType",
-        "detailUrl": "/sws/neo/business-partner/bpartnerDocType/{id}",
+        "listUrl": "/sws/neo/contacts/bpartnerDocType",
+        "detailUrl": "/sws/neo/contacts/bpartnerDocType/{id}",
         "supportedFilters": []
       },
       "bpartnerLocation": {
@@ -4109,8 +4278,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpartnerLocation",
-        "detailUrl": "/sws/neo/business-partner/bpartnerLocation/{id}",
+        "listUrl": "/sws/neo/contacts/bpartnerLocation",
+        "detailUrl": "/sws/neo/contacts/bpartnerLocation/{id}",
         "supportedFilters": [
           "name"
         ]
@@ -4122,9 +4291,12 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/user",
-        "detailUrl": "/sws/neo/business-partner/user/{id}",
-        "supportedFilters": []
+        "listUrl": "/sws/neo/contacts/user",
+        "detailUrl": "/sws/neo/contacts/user/{id}",
+        "supportedFilters": [
+          "name",
+          "email"
+        ]
       },
       "bpartnerDiscount": {
         "get": true,
@@ -4133,8 +4305,8 @@
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/business-partner/bpartnerDiscount",
-        "detailUrl": "/sws/neo/business-partner/bpartnerDiscount/{id}",
+        "listUrl": "/sws/neo/contacts/bpartnerDiscount",
+        "detailUrl": "/sws/neo/contacts/bpartnerDiscount/{id}",
         "supportedFilters": []
       }
     },
@@ -4145,7 +4317,7 @@
         "column": "C_Salary_Category_ID",
         "reference": "Salary_Category",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
+        "url": "/sws/neo/contacts/bpartner/selectors/salaryCategory"
       },
       {
         "entity": "bpartner",
@@ -4153,7 +4325,7 @@
         "column": "C_BP_Group_ID",
         "reference": "BusinessPartnerCategory",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
+        "url": "/sws/neo/contacts/bpartner/selectors/businessPartnerCategory"
       },
       {
         "entity": "bpartner",
@@ -4161,7 +4333,7 @@
         "column": "C_PaymentTerm_ID",
         "reference": "PaymentTerm",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
+        "url": "/sws/neo/contacts/bpartner/selectors/paymentTerms"
       },
       {
         "entity": "bpartner",
@@ -4169,7 +4341,7 @@
         "column": "FIN_Financial_Account_ID",
         "reference": "FIN_Financial_Account",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/account"
+        "url": "/sws/neo/contacts/bpartner/selectors/account"
       },
       {
         "entity": "bpartner",
@@ -4177,7 +4349,7 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
+        "url": "/sws/neo/contacts/bpartner/selectors/paymentMethod"
       },
       {
         "entity": "bpartner",
@@ -4185,7 +4357,7 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
+        "url": "/sws/neo/contacts/bpartner/selectors/priceList"
       },
       {
         "entity": "bpartner",
@@ -4193,7 +4365,7 @@
         "column": "PO_Financial_Account_ID",
         "reference": "FIN_Financial_Account",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
+        "url": "/sws/neo/contacts/bpartner/selectors/pOFinancialAccount"
       },
       {
         "entity": "bpartner",
@@ -4201,7 +4373,7 @@
         "column": "PO_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
+        "url": "/sws/neo/contacts/bpartner/selectors/pOPaymentMethod"
       },
       {
         "entity": "bpartner",
@@ -4209,7 +4381,7 @@
         "column": "PO_PaymentTerm_ID",
         "reference": "PaymentTerm",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
+        "url": "/sws/neo/contacts/bpartner/selectors/pOPaymentTerms"
       },
       {
         "entity": "bpartner",
@@ -4217,87 +4389,7 @@
         "column": "PO_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
-      },
-      {
-        "entity": "bpartner",
-        "field": "salaryCategory",
-        "column": "C_Salary_Category_ID",
-        "reference": "Salary_Category",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
-      },
-      {
-        "entity": "bpartner",
-        "field": "businessPartnerCategory",
-        "column": "C_BP_Group_ID",
-        "reference": "BusinessPartnerCategory",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
-      },
-      {
-        "entity": "bpartner",
-        "field": "paymentTerms",
-        "column": "C_PaymentTerm_ID",
-        "reference": "PaymentTerm",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
-      },
-      {
-        "entity": "bpartner",
-        "field": "account",
-        "column": "FIN_Financial_Account_ID",
-        "reference": "FIN_Financial_Account",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/account"
-      },
-      {
-        "entity": "bpartner",
-        "field": "paymentMethod",
-        "column": "FIN_Paymentmethod_ID",
-        "reference": "PaymentMethod",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
-      },
-      {
-        "entity": "bpartner",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOFinancialAccount",
-        "column": "PO_Financial_Account_ID",
-        "reference": "FIN_Financial_Account",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOPaymentMethod",
-        "column": "PO_Paymentmethod_ID",
-        "reference": "PaymentMethod",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOPaymentTerms",
-        "column": "PO_PaymentTerm_ID",
-        "reference": "PaymentTerm",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
-      },
-      {
-        "entity": "bpartner",
-        "field": "purchasePricelist",
-        "column": "PO_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
+        "url": "/sws/neo/contacts/bpartner/selectors/purchasePricelist"
       },
       {
         "entity": "bpCustomerAcct",
@@ -4305,7 +4397,7 @@
         "column": "C_AcctSchema_ID",
         "reference": "AcctSchema",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpCustomerAcct/selectors/accountingSchema"
+        "url": "/sws/neo/contacts/bpCustomerAcct/selectors/accountingSchema"
       },
       {
         "entity": "bpCustomerAcct",
@@ -4313,7 +4405,7 @@
         "column": "C_Receivable_Acct",
         "reference": "ValidCombination",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpCustomerAcct/selectors/customerReceivablesNo"
+        "url": "/sws/neo/contacts/bpCustomerAcct/selectors/customerReceivablesNo"
       },
       {
         "entity": "bpCustomerAcct",
@@ -4321,87 +4413,7 @@
         "column": "C_Prepayment_Acct",
         "reference": "ValidCombination",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpCustomerAcct/selectors/customerPrepayment"
-      },
-      {
-        "entity": "bpartner",
-        "field": "salaryCategory",
-        "column": "C_Salary_Category_ID",
-        "reference": "Salary_Category",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
-      },
-      {
-        "entity": "bpartner",
-        "field": "businessPartnerCategory",
-        "column": "C_BP_Group_ID",
-        "reference": "BusinessPartnerCategory",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
-      },
-      {
-        "entity": "bpartner",
-        "field": "paymentTerms",
-        "column": "C_PaymentTerm_ID",
-        "reference": "PaymentTerm",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
-      },
-      {
-        "entity": "bpartner",
-        "field": "account",
-        "column": "FIN_Financial_Account_ID",
-        "reference": "FIN_Financial_Account",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/account"
-      },
-      {
-        "entity": "bpartner",
-        "field": "paymentMethod",
-        "column": "FIN_Paymentmethod_ID",
-        "reference": "PaymentMethod",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
-      },
-      {
-        "entity": "bpartner",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOFinancialAccount",
-        "column": "PO_Financial_Account_ID",
-        "reference": "FIN_Financial_Account",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOPaymentMethod",
-        "column": "PO_Paymentmethod_ID",
-        "reference": "PaymentMethod",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOPaymentTerms",
-        "column": "PO_PaymentTerm_ID",
-        "reference": "PaymentTerm",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
-      },
-      {
-        "entity": "bpartner",
-        "field": "purchasePricelist",
-        "column": "PO_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
+        "url": "/sws/neo/contacts/bpCustomerAcct/selectors/customerPrepayment"
       },
       {
         "entity": "bpVendorAcct",
@@ -4409,7 +4421,7 @@
         "column": "C_AcctSchema_ID",
         "reference": "AcctSchema",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpVendorAcct/selectors/accountingSchema"
+        "url": "/sws/neo/contacts/bpVendorAcct/selectors/accountingSchema"
       },
       {
         "entity": "bpVendorAcct",
@@ -4417,7 +4429,7 @@
         "column": "V_Liability_Acct",
         "reference": "ValidCombination",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpVendorAcct/selectors/vendorLiability"
+        "url": "/sws/neo/contacts/bpVendorAcct/selectors/vendorLiability"
       },
       {
         "entity": "bpVendorAcct",
@@ -4425,87 +4437,7 @@
         "column": "V_Prepayment_Acct",
         "reference": "ValidCombination",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpVendorAcct/selectors/vendorPrepayment"
-      },
-      {
-        "entity": "bpartner",
-        "field": "salaryCategory",
-        "column": "C_Salary_Category_ID",
-        "reference": "Salary_Category",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/salaryCategory"
-      },
-      {
-        "entity": "bpartner",
-        "field": "businessPartnerCategory",
-        "column": "C_BP_Group_ID",
-        "reference": "BusinessPartnerCategory",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/businessPartnerCategory"
-      },
-      {
-        "entity": "bpartner",
-        "field": "paymentTerms",
-        "column": "C_PaymentTerm_ID",
-        "reference": "PaymentTerm",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentTerms"
-      },
-      {
-        "entity": "bpartner",
-        "field": "account",
-        "column": "FIN_Financial_Account_ID",
-        "reference": "FIN_Financial_Account",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/account"
-      },
-      {
-        "entity": "bpartner",
-        "field": "paymentMethod",
-        "column": "FIN_Paymentmethod_ID",
-        "reference": "PaymentMethod",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/paymentMethod"
-      },
-      {
-        "entity": "bpartner",
-        "field": "priceList",
-        "column": "M_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/priceList"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOFinancialAccount",
-        "column": "PO_Financial_Account_ID",
-        "reference": "FIN_Financial_Account",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOFinancialAccount"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOPaymentMethod",
-        "column": "PO_Paymentmethod_ID",
-        "reference": "PaymentMethod",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentMethod"
-      },
-      {
-        "entity": "bpartner",
-        "field": "pOPaymentTerms",
-        "column": "PO_PaymentTerm_ID",
-        "reference": "PaymentTerm",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/pOPaymentTerms"
-      },
-      {
-        "entity": "bpartner",
-        "field": "purchasePricelist",
-        "column": "PO_PriceList_ID",
-        "reference": "PriceList",
-        "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartner/selectors/purchasePricelist"
+        "url": "/sws/neo/contacts/bpVendorAcct/selectors/vendorPrepayment"
       },
       {
         "entity": "bpEmployeeAcct",
@@ -4513,7 +4445,7 @@
         "column": "C_AcctSchema_ID",
         "reference": "AcctSchema",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpEmployeeAcct/selectors/accountingSchema"
+        "url": "/sws/neo/contacts/bpEmployeeAcct/selectors/accountingSchema"
       },
       {
         "entity": "bpSalcategory",
@@ -4521,7 +4453,7 @@
         "column": "C_Salary_Category_ID",
         "reference": "Salary_Category",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpSalcategory/selectors/salaryCategory"
+        "url": "/sws/neo/contacts/bpSalcategory/selectors/salaryCategory"
       },
       {
         "entity": "bpBankAccount",
@@ -4529,7 +4461,7 @@
         "column": "C_Country_ID",
         "reference": "Country",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpBankAccount/selectors/country"
+        "url": "/sws/neo/contacts/bpBankAccount/selectors/country"
       },
       {
         "entity": "bpBankAccount",
@@ -4537,7 +4469,7 @@
         "column": "AD_User_ID",
         "reference": "User",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpBankAccount/selectors/userContact"
+        "url": "/sws/neo/contacts/bpBankAccount/selectors/userContact"
       },
       {
         "entity": "bpartnerDocType",
@@ -4545,7 +4477,7 @@
         "column": "C_Doctype_ID",
         "reference": "DocType",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartnerDocType/selectors/cDoctypeID"
+        "url": "/sws/neo/contacts/bpartnerDocType/selectors/cDoctypeID"
       },
       {
         "entity": "bpartnerLocation",
@@ -4553,7 +4485,7 @@
         "column": "C_Location_ID",
         "reference": "Location",
         "inputMode": "search",
-        "url": "/sws/neo/business-partner/bpartnerLocation/selectors/locationAddress"
+        "url": "/sws/neo/contacts/bpartnerLocation/selectors/locationAddress"
       },
       {
         "entity": "bpartnerDiscount",
@@ -4561,7 +4493,7 @@
         "column": "C_Discount_ID",
         "reference": "Discount",
         "inputMode": "selector",
-        "url": "/sws/neo/business-partner/bpartnerDiscount/selectors/discount"
+        "url": "/sws/neo/contacts/bpartnerDiscount/selectors/discount"
       }
     ],
     "actions": [
@@ -4569,37 +4501,19 @@
         "entity": "bpartner",
         "field": "setNewCurrency",
         "column": "Update_Currency",
-        "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
-      },
-      {
-        "entity": "bpartner",
-        "field": "setNewCurrency",
-        "column": "Update_Currency",
-        "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
-      },
-      {
-        "entity": "bpartner",
-        "field": "setNewCurrency",
-        "column": "Update_Currency",
-        "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
-      },
-      {
-        "entity": "bpartner",
-        "field": "setNewCurrency",
-        "column": "Update_Currency",
-        "url": "/sws/neo/business-partner/bpartner/{id}/action/setNewCurrency"
+        "url": "/sws/neo/contacts/bpartner/{id}/action/setNewCurrency"
       },
       {
         "entity": "user",
         "field": "grantPortalAccess",
         "column": "Grant_Portal_Access",
-        "url": "/sws/neo/business-partner/user/{id}/action/grantPortalAccess"
+        "url": "/sws/neo/contacts/user/{id}/action/grantPortalAccess"
       },
       {
         "entity": "user",
         "field": "processNow",
         "column": "Processing",
-        "url": "/sws/neo/business-partner/user/{id}/action/processNow"
+        "url": "/sws/neo/contacts/user/{id}/action/processNow"
       }
     ],
     "queryParams": {
@@ -4610,7 +4524,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=business-partnerDate"
+        "example": "_sortBy=contactsDate"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
@@ -5219,6 +5133,54 @@
       },
       {
         "id": "t-76",
+        "category": "default-value-type",
+        "entity": "bpartner",
+        "field": "operator",
+        "runner": "node",
+        "description": "Default value for 'operator' in bpartner should be a string"
+      },
+      {
+        "id": "t-77",
+        "category": "default-value-type",
+        "entity": "bpartner",
+        "field": "active",
+        "runner": "node",
+        "description": "Default value for 'active' in bpartner should be a string"
+      },
+      {
+        "id": "t-78",
+        "category": "default-value-type",
+        "entity": "bpartner",
+        "field": "businessPartnerCategory",
+        "runner": "node",
+        "description": "Default value for 'businessPartnerCategory' in bpartner should be a string"
+      },
+      {
+        "id": "t-79",
+        "category": "default-value-type",
+        "entity": "bpartner",
+        "field": "customerBlocking",
+        "runner": "node",
+        "description": "Default value for 'customerBlocking' in bpartner should be a string"
+      },
+      {
+        "id": "t-80",
+        "category": "default-value-type",
+        "entity": "bpartner",
+        "field": "customer",
+        "runner": "node",
+        "description": "Default value for 'customer' in bpartner should be a string"
+      },
+      {
+        "id": "t-81",
+        "category": "default-value-type",
+        "entity": "bpartner",
+        "field": "vendorBlocking",
+        "runner": "node",
+        "description": "Default value for 'vendorBlocking' in bpartner should be a string"
+      },
+      {
+        "id": "t-82",
         "category": "field-presence",
         "entity": "bpCustomerAcct",
         "field": "accountingSchema",
@@ -5226,7 +5188,7 @@
         "description": "Field 'accountingSchema' should be present in bpCustomerAcct"
       },
       {
-        "id": "t-77",
+        "id": "t-83",
         "category": "field-presence",
         "entity": "bpCustomerAcct",
         "field": "customerReceivablesNo",
@@ -5234,7 +5196,7 @@
         "description": "Field 'customerReceivablesNo' should be present in bpCustomerAcct"
       },
       {
-        "id": "t-78",
+        "id": "t-84",
         "category": "field-presence",
         "entity": "bpCustomerAcct",
         "field": "customerPrepayment",
@@ -5242,7 +5204,7 @@
         "description": "Field 'customerPrepayment' should be present in bpCustomerAcct"
       },
       {
-        "id": "t-79",
+        "id": "t-85",
         "category": "field-type",
         "entity": "bpCustomerAcct",
         "field": "accountingSchema",
@@ -5250,7 +5212,7 @@
         "description": "Field 'accountingSchema' should have type 'string' in bpCustomerAcct"
       },
       {
-        "id": "t-80",
+        "id": "t-86",
         "category": "field-type",
         "entity": "bpCustomerAcct",
         "field": "customerReceivablesNo",
@@ -5258,7 +5220,7 @@
         "description": "Field 'customerReceivablesNo' should have type 'string' in bpCustomerAcct"
       },
       {
-        "id": "t-81",
+        "id": "t-87",
         "category": "field-type",
         "entity": "bpCustomerAcct",
         "field": "customerPrepayment",
@@ -5266,14 +5228,14 @@
         "description": "Field 'customerPrepayment' should have type 'string' in bpCustomerAcct"
       },
       {
-        "id": "t-82",
+        "id": "t-88",
         "category": "visibility",
         "entity": "bpCustomerAcct",
         "runner": "node",
         "description": "Entity 'bpCustomerAcct' should only expose visible fields in frontend"
       },
       {
-        "id": "t-83",
+        "id": "t-89",
         "category": "field-presence",
         "entity": "bpVendorAcct",
         "field": "accountingSchema",
@@ -5281,7 +5243,7 @@
         "description": "Field 'accountingSchema' should be present in bpVendorAcct"
       },
       {
-        "id": "t-84",
+        "id": "t-90",
         "category": "field-presence",
         "entity": "bpVendorAcct",
         "field": "vendorLiability",
@@ -5289,7 +5251,7 @@
         "description": "Field 'vendorLiability' should be present in bpVendorAcct"
       },
       {
-        "id": "t-85",
+        "id": "t-91",
         "category": "field-presence",
         "entity": "bpVendorAcct",
         "field": "vendorPrepayment",
@@ -5297,7 +5259,7 @@
         "description": "Field 'vendorPrepayment' should be present in bpVendorAcct"
       },
       {
-        "id": "t-86",
+        "id": "t-92",
         "category": "field-type",
         "entity": "bpVendorAcct",
         "field": "accountingSchema",
@@ -5305,7 +5267,7 @@
         "description": "Field 'accountingSchema' should have type 'string' in bpVendorAcct"
       },
       {
-        "id": "t-87",
+        "id": "t-93",
         "category": "field-type",
         "entity": "bpVendorAcct",
         "field": "vendorLiability",
@@ -5313,7 +5275,7 @@
         "description": "Field 'vendorLiability' should have type 'string' in bpVendorAcct"
       },
       {
-        "id": "t-88",
+        "id": "t-94",
         "category": "field-type",
         "entity": "bpVendorAcct",
         "field": "vendorPrepayment",
@@ -5321,14 +5283,14 @@
         "description": "Field 'vendorPrepayment' should have type 'string' in bpVendorAcct"
       },
       {
-        "id": "t-89",
+        "id": "t-95",
         "category": "visibility",
         "entity": "bpVendorAcct",
         "runner": "node",
         "description": "Entity 'bpVendorAcct' should only expose visible fields in frontend"
       },
       {
-        "id": "t-90",
+        "id": "t-96",
         "category": "field-presence",
         "entity": "bpEmployeeAcct",
         "field": "accountingSchema",
@@ -5336,7 +5298,7 @@
         "description": "Field 'accountingSchema' should be present in bpEmployeeAcct"
       },
       {
-        "id": "t-91",
+        "id": "t-97",
         "category": "field-type",
         "entity": "bpEmployeeAcct",
         "field": "accountingSchema",
@@ -5344,14 +5306,14 @@
         "description": "Field 'accountingSchema' should have type 'string' in bpEmployeeAcct"
       },
       {
-        "id": "t-92",
+        "id": "t-98",
         "category": "visibility",
         "entity": "bpEmployeeAcct",
         "runner": "node",
         "description": "Entity 'bpEmployeeAcct' should only expose visible fields in frontend"
       },
       {
-        "id": "t-93",
+        "id": "t-99",
         "category": "field-presence",
         "entity": "bpSalcategory",
         "field": "startingDate",
@@ -5359,7 +5321,7 @@
         "description": "Field 'startingDate' should be present in bpSalcategory"
       },
       {
-        "id": "t-94",
+        "id": "t-100",
         "category": "field-presence",
         "entity": "bpSalcategory",
         "field": "salaryCategory",
@@ -5367,7 +5329,7 @@
         "description": "Field 'salaryCategory' should be present in bpSalcategory"
       },
       {
-        "id": "t-95",
+        "id": "t-101",
         "category": "field-type",
         "entity": "bpSalcategory",
         "field": "startingDate",
@@ -5375,7 +5337,7 @@
         "description": "Field 'startingDate' should have type 'string' in bpSalcategory"
       },
       {
-        "id": "t-96",
+        "id": "t-102",
         "category": "field-type",
         "entity": "bpSalcategory",
         "field": "salaryCategory",
@@ -5383,14 +5345,14 @@
         "description": "Field 'salaryCategory' should have type 'string' in bpSalcategory"
       },
       {
-        "id": "t-97",
+        "id": "t-103",
         "category": "visibility",
         "entity": "bpSalcategory",
         "runner": "node",
         "description": "Entity 'bpSalcategory' should only expose visible fields in frontend"
       },
       {
-        "id": "t-98",
+        "id": "t-104",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "bankName",
@@ -5398,7 +5360,7 @@
         "description": "Field 'bankName' should be present in bpBankAccount"
       },
       {
-        "id": "t-99",
+        "id": "t-105",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "country",
@@ -5406,7 +5368,7 @@
         "description": "Field 'country' should be present in bpBankAccount"
       },
       {
-        "id": "t-100",
+        "id": "t-106",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "userContact",
@@ -5414,7 +5376,7 @@
         "description": "Field 'userContact' should be present in bpBankAccount"
       },
       {
-        "id": "t-101",
+        "id": "t-107",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "bankFormat",
@@ -5422,7 +5384,7 @@
         "description": "Field 'bankFormat' should be present in bpBankAccount"
       },
       {
-        "id": "t-102",
+        "id": "t-108",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "accountNo",
@@ -5430,7 +5392,7 @@
         "description": "Field 'accountNo' should be present in bpBankAccount"
       },
       {
-        "id": "t-103",
+        "id": "t-109",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "iBAN",
@@ -5438,7 +5400,7 @@
         "description": "Field 'iBAN' should be present in bpBankAccount"
       },
       {
-        "id": "t-104",
+        "id": "t-110",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "swiftCode",
@@ -5446,7 +5408,7 @@
         "description": "Field 'swiftCode' should be present in bpBankAccount"
       },
       {
-        "id": "t-105",
+        "id": "t-111",
         "category": "field-presence",
         "entity": "bpBankAccount",
         "field": "displayedAccount",
@@ -5454,7 +5416,7 @@
         "description": "Field 'displayedAccount' should be present in bpBankAccount"
       },
       {
-        "id": "t-106",
+        "id": "t-112",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "bankName",
@@ -5462,7 +5424,7 @@
         "description": "Field 'bankName' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-107",
+        "id": "t-113",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "country",
@@ -5470,7 +5432,7 @@
         "description": "Field 'country' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-108",
+        "id": "t-114",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "userContact",
@@ -5478,7 +5440,7 @@
         "description": "Field 'userContact' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-109",
+        "id": "t-115",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "bankFormat",
@@ -5486,7 +5448,7 @@
         "description": "Field 'bankFormat' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-110",
+        "id": "t-116",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "accountNo",
@@ -5494,7 +5456,7 @@
         "description": "Field 'accountNo' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-111",
+        "id": "t-117",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "iBAN",
@@ -5502,7 +5464,7 @@
         "description": "Field 'iBAN' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-112",
+        "id": "t-118",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "swiftCode",
@@ -5510,7 +5472,7 @@
         "description": "Field 'swiftCode' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-113",
+        "id": "t-119",
         "category": "field-type",
         "entity": "bpBankAccount",
         "field": "displayedAccount",
@@ -5518,14 +5480,30 @@
         "description": "Field 'displayedAccount' should have type 'string' in bpBankAccount"
       },
       {
-        "id": "t-114",
+        "id": "t-120",
         "category": "visibility",
         "entity": "bpBankAccount",
         "runner": "node",
         "description": "Entity 'bpBankAccount' should only expose visible fields in frontend"
       },
       {
-        "id": "t-115",
+        "id": "t-121",
+        "category": "default-value-type",
+        "entity": "bpBankAccount",
+        "field": "country",
+        "runner": "node",
+        "description": "Default value for 'country' in bpBankAccount should be a string"
+      },
+      {
+        "id": "t-122",
+        "category": "default-value-type",
+        "entity": "bpBankAccount",
+        "field": "bankFormat",
+        "runner": "node",
+        "description": "Default value for 'bankFormat' in bpBankAccount should be a string"
+      },
+      {
+        "id": "t-123",
         "category": "field-presence",
         "entity": "bpartnerDocType",
         "field": "documentcategory",
@@ -5533,7 +5511,7 @@
         "description": "Field 'documentcategory' should be present in bpartnerDocType"
       },
       {
-        "id": "t-116",
+        "id": "t-124",
         "category": "field-presence",
         "entity": "bpartnerDocType",
         "field": "issotrx",
@@ -5541,7 +5519,7 @@
         "description": "Field 'issotrx' should be present in bpartnerDocType"
       },
       {
-        "id": "t-117",
+        "id": "t-125",
         "category": "field-presence",
         "entity": "bpartnerDocType",
         "field": "cDoctypeID",
@@ -5549,7 +5527,7 @@
         "description": "Field 'cDoctypeID' should be present in bpartnerDocType"
       },
       {
-        "id": "t-118",
+        "id": "t-126",
         "category": "field-presence",
         "entity": "bpartnerDocType",
         "field": "active",
@@ -5557,7 +5535,7 @@
         "description": "Field 'active' should be present in bpartnerDocType"
       },
       {
-        "id": "t-119",
+        "id": "t-127",
         "category": "field-type",
         "entity": "bpartnerDocType",
         "field": "documentcategory",
@@ -5565,7 +5543,7 @@
         "description": "Field 'documentcategory' should have type 'string' in bpartnerDocType"
       },
       {
-        "id": "t-120",
+        "id": "t-128",
         "category": "field-type",
         "entity": "bpartnerDocType",
         "field": "issotrx",
@@ -5573,7 +5551,7 @@
         "description": "Field 'issotrx' should have type 'boolean' in bpartnerDocType"
       },
       {
-        "id": "t-121",
+        "id": "t-129",
         "category": "field-type",
         "entity": "bpartnerDocType",
         "field": "cDoctypeID",
@@ -5581,7 +5559,7 @@
         "description": "Field 'cDoctypeID' should have type 'string' in bpartnerDocType"
       },
       {
-        "id": "t-122",
+        "id": "t-130",
         "category": "field-type",
         "entity": "bpartnerDocType",
         "field": "active",
@@ -5589,14 +5567,30 @@
         "description": "Field 'active' should have type 'boolean' in bpartnerDocType"
       },
       {
-        "id": "t-123",
+        "id": "t-131",
         "category": "visibility",
         "entity": "bpartnerDocType",
         "runner": "node",
         "description": "Entity 'bpartnerDocType' should only expose visible fields in frontend"
       },
       {
-        "id": "t-124",
+        "id": "t-132",
+        "category": "default-value-type",
+        "entity": "bpartnerDocType",
+        "field": "issotrx",
+        "runner": "node",
+        "description": "Default value for 'issotrx' in bpartnerDocType should be a string"
+      },
+      {
+        "id": "t-133",
+        "category": "default-value-type",
+        "entity": "bpartnerDocType",
+        "field": "active",
+        "runner": "node",
+        "description": "Default value for 'active' in bpartnerDocType should be a string"
+      },
+      {
+        "id": "t-134",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "locationAddress",
@@ -5604,7 +5598,7 @@
         "description": "Field 'locationAddress' should be present in bpartnerLocation"
       },
       {
-        "id": "t-125",
+        "id": "t-135",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "phone",
@@ -5612,7 +5606,7 @@
         "description": "Field 'phone' should be present in bpartnerLocation"
       },
       {
-        "id": "t-126",
+        "id": "t-136",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "alternativePhone",
@@ -5620,7 +5614,7 @@
         "description": "Field 'alternativePhone' should be present in bpartnerLocation"
       },
       {
-        "id": "t-127",
+        "id": "t-137",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "name",
@@ -5628,7 +5622,7 @@
         "description": "Field 'name' should be present in bpartnerLocation"
       },
       {
-        "id": "t-128",
+        "id": "t-138",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "fax",
@@ -5636,7 +5630,7 @@
         "description": "Field 'fax' should be present in bpartnerLocation"
       },
       {
-        "id": "t-129",
+        "id": "t-139",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "shipToAddress",
@@ -5644,7 +5638,7 @@
         "description": "Field 'shipToAddress' should be present in bpartnerLocation"
       },
       {
-        "id": "t-130",
+        "id": "t-140",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "invoiceToAddress",
@@ -5652,7 +5646,7 @@
         "description": "Field 'invoiceToAddress' should be present in bpartnerLocation"
       },
       {
-        "id": "t-131",
+        "id": "t-141",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "active",
@@ -5660,7 +5654,7 @@
         "description": "Field 'active' should be present in bpartnerLocation"
       },
       {
-        "id": "t-132",
+        "id": "t-142",
         "category": "field-presence",
         "entity": "bpartnerLocation",
         "field": "taxLocation",
@@ -5668,7 +5662,7 @@
         "description": "Field 'taxLocation' should be present in bpartnerLocation"
       },
       {
-        "id": "t-133",
+        "id": "t-143",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "locationAddress",
@@ -5676,7 +5670,7 @@
         "description": "Field 'locationAddress' should have type 'string' in bpartnerLocation"
       },
       {
-        "id": "t-134",
+        "id": "t-144",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "phone",
@@ -5684,7 +5678,7 @@
         "description": "Field 'phone' should have type 'string' in bpartnerLocation"
       },
       {
-        "id": "t-135",
+        "id": "t-145",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "alternativePhone",
@@ -5692,7 +5686,7 @@
         "description": "Field 'alternativePhone' should have type 'string' in bpartnerLocation"
       },
       {
-        "id": "t-136",
+        "id": "t-146",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "name",
@@ -5700,7 +5694,7 @@
         "description": "Field 'name' should have type 'string' in bpartnerLocation"
       },
       {
-        "id": "t-137",
+        "id": "t-147",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "fax",
@@ -5708,7 +5702,7 @@
         "description": "Field 'fax' should have type 'string' in bpartnerLocation"
       },
       {
-        "id": "t-138",
+        "id": "t-148",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "shipToAddress",
@@ -5716,7 +5710,7 @@
         "description": "Field 'shipToAddress' should have type 'boolean' in bpartnerLocation"
       },
       {
-        "id": "t-139",
+        "id": "t-149",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "invoiceToAddress",
@@ -5724,7 +5718,7 @@
         "description": "Field 'invoiceToAddress' should have type 'boolean' in bpartnerLocation"
       },
       {
-        "id": "t-140",
+        "id": "t-150",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "active",
@@ -5732,7 +5726,7 @@
         "description": "Field 'active' should have type 'boolean' in bpartnerLocation"
       },
       {
-        "id": "t-141",
+        "id": "t-151",
         "category": "field-type",
         "entity": "bpartnerLocation",
         "field": "taxLocation",
@@ -5740,7 +5734,7 @@
         "description": "Field 'taxLocation' should have type 'boolean' in bpartnerLocation"
       },
       {
-        "id": "t-142",
+        "id": "t-152",
         "category": "searchable-filters",
         "entity": "bpartnerLocation",
         "field": "name",
@@ -5748,14 +5742,46 @@
         "description": "Field 'name' should be a supported filter for bpartnerLocation"
       },
       {
-        "id": "t-143",
+        "id": "t-153",
         "category": "visibility",
         "entity": "bpartnerLocation",
         "runner": "node",
         "description": "Entity 'bpartnerLocation' should only expose visible fields in frontend"
       },
       {
-        "id": "t-144",
+        "id": "t-154",
+        "category": "default-value-type",
+        "entity": "bpartnerLocation",
+        "field": "name",
+        "runner": "node",
+        "description": "Default value for 'name' in bpartnerLocation should be a string"
+      },
+      {
+        "id": "t-155",
+        "category": "default-value-type",
+        "entity": "bpartnerLocation",
+        "field": "shipToAddress",
+        "runner": "node",
+        "description": "Default value for 'shipToAddress' in bpartnerLocation should be a string"
+      },
+      {
+        "id": "t-156",
+        "category": "default-value-type",
+        "entity": "bpartnerLocation",
+        "field": "invoiceToAddress",
+        "runner": "node",
+        "description": "Default value for 'invoiceToAddress' in bpartnerLocation should be a string"
+      },
+      {
+        "id": "t-157",
+        "category": "default-value-type",
+        "entity": "bpartnerLocation",
+        "field": "taxLocation",
+        "runner": "node",
+        "description": "Default value for 'taxLocation' in bpartnerLocation should be a string"
+      },
+      {
+        "id": "t-158",
         "category": "field-presence",
         "entity": "user",
         "field": "firstName",
@@ -5763,7 +5789,7 @@
         "description": "Field 'firstName' should be present in user"
       },
       {
-        "id": "t-145",
+        "id": "t-159",
         "category": "field-presence",
         "entity": "user",
         "field": "lastName",
@@ -5771,7 +5797,15 @@
         "description": "Field 'lastName' should be present in user"
       },
       {
-        "id": "t-146",
+        "id": "t-160",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in user"
+      },
+      {
+        "id": "t-161",
         "category": "field-presence",
         "entity": "user",
         "field": "email",
@@ -5779,7 +5813,7 @@
         "description": "Field 'email' should be present in user"
       },
       {
-        "id": "t-147",
+        "id": "t-162",
         "category": "field-presence",
         "entity": "user",
         "field": "phone",
@@ -5787,7 +5821,7 @@
         "description": "Field 'phone' should be present in user"
       },
       {
-        "id": "t-148",
+        "id": "t-163",
         "category": "field-presence",
         "entity": "user",
         "field": "alternativePhone",
@@ -5795,7 +5829,7 @@
         "description": "Field 'alternativePhone' should be present in user"
       },
       {
-        "id": "t-149",
+        "id": "t-164",
         "category": "field-presence",
         "entity": "user",
         "field": "position",
@@ -5803,7 +5837,7 @@
         "description": "Field 'position' should be present in user"
       },
       {
-        "id": "t-150",
+        "id": "t-165",
         "category": "field-presence",
         "entity": "user",
         "field": "comments",
@@ -5811,7 +5845,15 @@
         "description": "Field 'comments' should be present in user"
       },
       {
-        "id": "t-151",
+        "id": "t-166",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in user"
+      },
+      {
+        "id": "t-167",
         "category": "field-presence",
         "entity": "user",
         "field": "grantPortalAccess",
@@ -5819,7 +5861,7 @@
         "description": "Field 'grantPortalAccess' should be present in user"
       },
       {
-        "id": "t-152",
+        "id": "t-168",
         "category": "field-presence",
         "entity": "user",
         "field": "commercialauth",
@@ -5827,7 +5869,7 @@
         "description": "Field 'commercialauth' should be present in user"
       },
       {
-        "id": "t-153",
+        "id": "t-169",
         "category": "field-presence",
         "entity": "user",
         "field": "viasms",
@@ -5835,7 +5877,7 @@
         "description": "Field 'viasms' should be present in user"
       },
       {
-        "id": "t-154",
+        "id": "t-170",
         "category": "field-presence",
         "entity": "user",
         "field": "viaemail",
@@ -5843,7 +5885,7 @@
         "description": "Field 'viaemail' should be present in user"
       },
       {
-        "id": "t-155",
+        "id": "t-171",
         "category": "field-type",
         "entity": "user",
         "field": "firstName",
@@ -5851,7 +5893,7 @@
         "description": "Field 'firstName' should have type 'string' in user"
       },
       {
-        "id": "t-156",
+        "id": "t-172",
         "category": "field-type",
         "entity": "user",
         "field": "lastName",
@@ -5859,7 +5901,15 @@
         "description": "Field 'lastName' should have type 'string' in user"
       },
       {
-        "id": "t-157",
+        "id": "t-173",
+        "category": "field-type",
+        "entity": "user",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in user"
+      },
+      {
+        "id": "t-174",
         "category": "field-type",
         "entity": "user",
         "field": "email",
@@ -5867,7 +5917,7 @@
         "description": "Field 'email' should have type 'string' in user"
       },
       {
-        "id": "t-158",
+        "id": "t-175",
         "category": "field-type",
         "entity": "user",
         "field": "phone",
@@ -5875,7 +5925,7 @@
         "description": "Field 'phone' should have type 'string' in user"
       },
       {
-        "id": "t-159",
+        "id": "t-176",
         "category": "field-type",
         "entity": "user",
         "field": "alternativePhone",
@@ -5883,7 +5933,7 @@
         "description": "Field 'alternativePhone' should have type 'string' in user"
       },
       {
-        "id": "t-160",
+        "id": "t-177",
         "category": "field-type",
         "entity": "user",
         "field": "position",
@@ -5891,7 +5941,7 @@
         "description": "Field 'position' should have type 'string' in user"
       },
       {
-        "id": "t-161",
+        "id": "t-178",
         "category": "field-type",
         "entity": "user",
         "field": "comments",
@@ -5899,7 +5949,15 @@
         "description": "Field 'comments' should have type 'string' in user"
       },
       {
-        "id": "t-162",
+        "id": "t-179",
+        "category": "field-type",
+        "entity": "user",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in user"
+      },
+      {
+        "id": "t-180",
         "category": "field-type",
         "entity": "user",
         "field": "grantPortalAccess",
@@ -5907,7 +5965,7 @@
         "description": "Field 'grantPortalAccess' should have type 'string' in user"
       },
       {
-        "id": "t-163",
+        "id": "t-181",
         "category": "field-type",
         "entity": "user",
         "field": "commercialauth",
@@ -5915,7 +5973,7 @@
         "description": "Field 'commercialauth' should have type 'boolean' in user"
       },
       {
-        "id": "t-164",
+        "id": "t-182",
         "category": "field-type",
         "entity": "user",
         "field": "viasms",
@@ -5923,7 +5981,7 @@
         "description": "Field 'viasms' should have type 'boolean' in user"
       },
       {
-        "id": "t-165",
+        "id": "t-183",
         "category": "field-type",
         "entity": "user",
         "field": "viaemail",
@@ -5931,14 +5989,30 @@
         "description": "Field 'viaemail' should have type 'boolean' in user"
       },
       {
-        "id": "t-166",
+        "id": "t-184",
+        "category": "searchable-filters",
+        "entity": "user",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for user"
+      },
+      {
+        "id": "t-185",
+        "category": "searchable-filters",
+        "entity": "user",
+        "field": "email",
+        "runner": "node",
+        "description": "Field 'email' should be a supported filter for user"
+      },
+      {
+        "id": "t-186",
         "category": "visibility",
         "entity": "user",
         "runner": "node",
         "description": "Entity 'user' should only expose visible fields in frontend"
       },
       {
-        "id": "t-167",
+        "id": "t-187",
         "category": "displaylogic-valid",
         "entity": "user",
         "field": "grantPortalAccess",
@@ -5946,7 +6020,7 @@
         "description": "Display logic for 'grantPortalAccess' in user should be valid JS"
       },
       {
-        "id": "t-168",
+        "id": "t-188",
         "category": "displaylogic-valid",
         "entity": "user",
         "field": "viasms",
@@ -5954,7 +6028,7 @@
         "description": "Display logic for 'viasms' in user should be valid JS"
       },
       {
-        "id": "t-169",
+        "id": "t-189",
         "category": "displaylogic-valid",
         "entity": "user",
         "field": "viaemail",
@@ -5962,7 +6036,7 @@
         "description": "Display logic for 'viaemail' in user should be valid JS"
       },
       {
-        "id": "t-170",
+        "id": "t-190",
         "category": "displaylogic-evaluable",
         "entity": "user",
         "field": "grantPortalAccess",
@@ -5970,7 +6044,7 @@
         "description": "Display logic for 'grantPortalAccess' in user should have evaluable flag"
       },
       {
-        "id": "t-171",
+        "id": "t-191",
         "category": "displaylogic-evaluable",
         "entity": "user",
         "field": "viasms",
@@ -5978,7 +6052,7 @@
         "description": "Display logic for 'viasms' in user should have evaluable flag"
       },
       {
-        "id": "t-172",
+        "id": "t-192",
         "category": "displaylogic-evaluable",
         "entity": "user",
         "field": "viaemail",
@@ -5986,7 +6060,39 @@
         "description": "Display logic for 'viaemail' in user should have evaluable flag"
       },
       {
-        "id": "t-173",
+        "id": "t-193",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "grantPortalAccess",
+        "runner": "node",
+        "description": "Default value for 'grantPortalAccess' in user should be a string"
+      },
+      {
+        "id": "t-194",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "commercialauth",
+        "runner": "node",
+        "description": "Default value for 'commercialauth' in user should be a string"
+      },
+      {
+        "id": "t-195",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "viasms",
+        "runner": "node",
+        "description": "Default value for 'viasms' in user should be a string"
+      },
+      {
+        "id": "t-196",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "viaemail",
+        "runner": "node",
+        "description": "Default value for 'viaemail' in user should be a string"
+      },
+      {
+        "id": "t-197",
         "category": "field-presence",
         "entity": "bpartnerDiscount",
         "field": "lineNo",
@@ -5994,7 +6100,7 @@
         "description": "Field 'lineNo' should be present in bpartnerDiscount"
       },
       {
-        "id": "t-174",
+        "id": "t-198",
         "category": "field-presence",
         "entity": "bpartnerDiscount",
         "field": "discount",
@@ -6002,7 +6108,7 @@
         "description": "Field 'discount' should be present in bpartnerDiscount"
       },
       {
-        "id": "t-175",
+        "id": "t-199",
         "category": "field-presence",
         "entity": "bpartnerDiscount",
         "field": "customer",
@@ -6010,7 +6116,7 @@
         "description": "Field 'customer' should be present in bpartnerDiscount"
       },
       {
-        "id": "t-176",
+        "id": "t-200",
         "category": "field-presence",
         "entity": "bpartnerDiscount",
         "field": "vendor",
@@ -6018,7 +6124,7 @@
         "description": "Field 'vendor' should be present in bpartnerDiscount"
       },
       {
-        "id": "t-177",
+        "id": "t-201",
         "category": "field-presence",
         "entity": "bpartnerDiscount",
         "field": "applyInOrder",
@@ -6026,7 +6132,7 @@
         "description": "Field 'applyInOrder' should be present in bpartnerDiscount"
       },
       {
-        "id": "t-178",
+        "id": "t-202",
         "category": "field-presence",
         "entity": "bpartnerDiscount",
         "field": "cascade",
@@ -6034,7 +6140,7 @@
         "description": "Field 'cascade' should be present in bpartnerDiscount"
       },
       {
-        "id": "t-179",
+        "id": "t-203",
         "category": "field-type",
         "entity": "bpartnerDiscount",
         "field": "lineNo",
@@ -6042,7 +6148,7 @@
         "description": "Field 'lineNo' should have type 'number' in bpartnerDiscount"
       },
       {
-        "id": "t-180",
+        "id": "t-204",
         "category": "field-type",
         "entity": "bpartnerDiscount",
         "field": "discount",
@@ -6050,7 +6156,7 @@
         "description": "Field 'discount' should have type 'string' in bpartnerDiscount"
       },
       {
-        "id": "t-181",
+        "id": "t-205",
         "category": "field-type",
         "entity": "bpartnerDiscount",
         "field": "customer",
@@ -6058,7 +6164,7 @@
         "description": "Field 'customer' should have type 'boolean' in bpartnerDiscount"
       },
       {
-        "id": "t-182",
+        "id": "t-206",
         "category": "field-type",
         "entity": "bpartnerDiscount",
         "field": "vendor",
@@ -6066,7 +6172,7 @@
         "description": "Field 'vendor' should have type 'boolean' in bpartnerDiscount"
       },
       {
-        "id": "t-183",
+        "id": "t-207",
         "category": "field-type",
         "entity": "bpartnerDiscount",
         "field": "applyInOrder",
@@ -6074,7 +6180,7 @@
         "description": "Field 'applyInOrder' should have type 'boolean' in bpartnerDiscount"
       },
       {
-        "id": "t-184",
+        "id": "t-208",
         "category": "field-type",
         "entity": "bpartnerDiscount",
         "field": "cascade",
@@ -6082,14 +6188,54 @@
         "description": "Field 'cascade' should have type 'boolean' in bpartnerDiscount"
       },
       {
-        "id": "t-185",
+        "id": "t-209",
         "category": "visibility",
         "entity": "bpartnerDiscount",
         "runner": "node",
         "description": "Entity 'bpartnerDiscount' should only expose visible fields in frontend"
       },
       {
-        "id": "t-186",
+        "id": "t-210",
+        "category": "default-value-type",
+        "entity": "bpartnerDiscount",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Default value for 'lineNo' in bpartnerDiscount should be a string"
+      },
+      {
+        "id": "t-211",
+        "category": "default-value-type",
+        "entity": "bpartnerDiscount",
+        "field": "customer",
+        "runner": "node",
+        "description": "Default value for 'customer' in bpartnerDiscount should be a string"
+      },
+      {
+        "id": "t-212",
+        "category": "default-value-type",
+        "entity": "bpartnerDiscount",
+        "field": "vendor",
+        "runner": "node",
+        "description": "Default value for 'vendor' in bpartnerDiscount should be a string"
+      },
+      {
+        "id": "t-213",
+        "category": "default-value-type",
+        "entity": "bpartnerDiscount",
+        "field": "applyInOrder",
+        "runner": "node",
+        "description": "Default value for 'applyInOrder' in bpartnerDiscount should be a string"
+      },
+      {
+        "id": "t-214",
+        "category": "default-value-type",
+        "entity": "bpartnerDiscount",
+        "field": "cascade",
+        "runner": "node",
+        "description": "Default value for 'cascade' in bpartnerDiscount should be a string"
+      },
+      {
+        "id": "t-215",
         "category": "system-field",
         "entity": "bpartner",
         "field": "client",
@@ -6097,7 +6243,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-187",
+        "id": "t-216",
         "category": "system-field",
         "entity": "bpartner",
         "field": "id",
@@ -6105,7 +6251,7 @@
         "description": "System field 'id' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-188",
+        "id": "t-217",
         "category": "system-field",
         "entity": "bpartner",
         "field": "organization",
@@ -6113,7 +6259,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-189",
+        "id": "t-218",
         "category": "system-field",
         "entity": "bpartner",
         "field": "acquisitionCost",
@@ -6121,7 +6267,7 @@
         "description": "System field 'acquisitionCost' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-190",
+        "id": "t-219",
         "category": "system-field",
         "entity": "bpartner",
         "field": "lifetimeRevenueToDate",
@@ -6129,7 +6275,7 @@
         "description": "System field 'lifetimeRevenueToDate' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-191",
+        "id": "t-220",
         "category": "system-field",
         "entity": "bpartner",
         "field": "forcedOrg",
@@ -6137,7 +6283,7 @@
         "description": "System field 'forcedOrg' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-192",
+        "id": "t-221",
         "category": "system-field",
         "entity": "bpartner",
         "field": "language",
@@ -6145,7 +6291,7 @@
         "description": "System field 'language' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-193",
+        "id": "t-222",
         "category": "system-field",
         "entity": "bpartner",
         "field": "birthDay",
@@ -6153,7 +6299,7 @@
         "description": "System field 'birthDay' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-194",
+        "id": "t-223",
         "category": "system-field",
         "entity": "bpartner",
         "field": "birthPlace",
@@ -6161,7 +6307,7 @@
         "description": "System field 'birthPlace' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-195",
+        "id": "t-224",
         "category": "system-field",
         "entity": "bpartner",
         "field": "bPCurrencyID",
@@ -6169,7 +6315,7 @@
         "description": "System field 'bPCurrencyID' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-196",
+        "id": "t-225",
         "category": "system-field",
         "entity": "bpartner",
         "field": "partnerParent",
@@ -6177,7 +6323,7 @@
         "description": "System field 'partnerParent' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-197",
+        "id": "t-226",
         "category": "system-field",
         "entity": "bpartner",
         "field": "greeting",
@@ -6185,7 +6331,7 @@
         "description": "System field 'greeting' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-198",
+        "id": "t-227",
         "category": "system-field",
         "entity": "bpartner",
         "field": "invoiceSchedule",
@@ -6193,7 +6339,7 @@
         "description": "System field 'invoiceSchedule' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-199",
+        "id": "t-228",
         "category": "system-field",
         "entity": "bpartner",
         "field": "creationDate",
@@ -6201,7 +6347,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-200",
+        "id": "t-229",
         "category": "system-field",
         "entity": "bpartner",
         "field": "createdBy",
@@ -6209,7 +6355,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-201",
+        "id": "t-230",
         "category": "system-field",
         "entity": "bpartner",
         "field": "deliveryTerms",
@@ -6217,7 +6363,7 @@
         "description": "System field 'deliveryTerms' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-202",
+        "id": "t-231",
         "category": "system-field",
         "entity": "bpartner",
         "field": "deliveryMethod",
@@ -6225,7 +6371,7 @@
         "description": "System field 'deliveryMethod' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-203",
+        "id": "t-232",
         "category": "system-field",
         "entity": "bpartner",
         "field": "numberOfCopies",
@@ -6233,7 +6379,7 @@
         "description": "System field 'numberOfCopies' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-204",
+        "id": "t-233",
         "category": "system-field",
         "entity": "bpartner",
         "field": "dUNS",
@@ -6241,7 +6387,7 @@
         "description": "System field 'dUNS' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-205",
+        "id": "t-234",
         "category": "system-field",
         "entity": "bpartner",
         "field": "dateOfFirstSale",
@@ -6249,7 +6395,7 @@
         "description": "System field 'dateOfFirstSale' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-206",
+        "id": "t-235",
         "category": "system-field",
         "entity": "bpartner",
         "field": "fiscalcode",
@@ -6257,7 +6403,7 @@
         "description": "System field 'fiscalcode' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-207",
+        "id": "t-236",
         "category": "system-field",
         "entity": "bpartner",
         "field": "maturityDate1",
@@ -6265,7 +6411,7 @@
         "description": "System field 'maturityDate1' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-208",
+        "id": "t-237",
         "category": "system-field",
         "entity": "bpartner",
         "field": "maturityDate2",
@@ -6273,7 +6419,7 @@
         "description": "System field 'maturityDate2' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-209",
+        "id": "t-238",
         "category": "system-field",
         "entity": "bpartner",
         "field": "maturityDate3",
@@ -6281,7 +6427,7 @@
         "description": "System field 'maturityDate3' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-210",
+        "id": "t-239",
         "category": "system-field",
         "entity": "bpartner",
         "field": "invoicePrintformat",
@@ -6289,7 +6435,7 @@
         "description": "System field 'invoicePrintformat' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-211",
+        "id": "t-240",
         "category": "system-field",
         "entity": "bpartner",
         "field": "invoiceGrouping",
@@ -6297,7 +6443,7 @@
         "description": "System field 'invoiceGrouping' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-212",
+        "id": "t-241",
         "category": "system-field",
         "entity": "bpartner",
         "field": "invoiceTerms",
@@ -6305,7 +6451,7 @@
         "description": "System field 'invoiceTerms' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-213",
+        "id": "t-242",
         "category": "system-field",
         "entity": "bpartner",
         "field": "isCustomerConsent",
@@ -6313,7 +6459,7 @@
         "description": "System field 'isCustomerConsent' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-214",
+        "id": "t-243",
         "category": "system-field",
         "entity": "bpartner",
         "field": "cashVAT",
@@ -6321,7 +6467,7 @@
         "description": "System field 'cashVAT' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-215",
+        "id": "t-244",
         "category": "system-field",
         "entity": "bpartner",
         "field": "printDiscount",
@@ -6329,7 +6475,7 @@
         "description": "System field 'printDiscount' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-216",
+        "id": "t-245",
         "category": "system-field",
         "entity": "bpartner",
         "field": "isofiscalcode",
@@ -6337,7 +6483,7 @@
         "description": "System field 'isofiscalcode' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-217",
+        "id": "t-246",
         "category": "system-field",
         "entity": "bpartner",
         "field": "oneTimeTransaction",
@@ -6345,7 +6491,7 @@
         "description": "System field 'oneTimeTransaction' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-218",
+        "id": "t-247",
         "category": "system-field",
         "entity": "bpartner",
         "field": "potentialCustomer",
@@ -6353,7 +6499,7 @@
         "description": "System field 'potentialCustomer' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-219",
+        "id": "t-248",
         "category": "system-field",
         "entity": "bpartner",
         "field": "summaryLevel",
@@ -6361,7 +6507,7 @@
         "description": "System field 'summaryLevel' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-220",
+        "id": "t-249",
         "category": "system-field",
         "entity": "bpartner",
         "field": "taxExempt",
@@ -6369,7 +6515,7 @@
         "description": "System field 'taxExempt' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-221",
+        "id": "t-250",
         "category": "system-field",
         "entity": "bpartner",
         "field": "consumptionDays",
@@ -6377,7 +6523,7 @@
         "description": "System field 'consumptionDays' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-222",
+        "id": "t-251",
         "category": "system-field",
         "entity": "bpartner",
         "field": "nAICSSIC",
@@ -6385,7 +6531,7 @@
         "description": "System field 'nAICSSIC' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-223",
+        "id": "t-252",
         "category": "system-field",
         "entity": "bpartner",
         "field": "name2",
@@ -6393,7 +6539,7 @@
         "description": "System field 'name2' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-224",
+        "id": "t-253",
         "category": "system-field",
         "entity": "bpartner",
         "field": "noOfEmployees",
@@ -6401,7 +6547,7 @@
         "description": "System field 'noOfEmployees' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-225",
+        "id": "t-254",
         "category": "system-field",
         "entity": "bpartner",
         "field": "formOfPayment",
@@ -6409,7 +6555,7 @@
         "description": "System field 'formOfPayment' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-226",
+        "id": "t-255",
         "category": "system-field",
         "entity": "bpartner",
         "field": "pOFormOfPayment",
@@ -6417,7 +6563,7 @@
         "description": "System field 'pOFormOfPayment' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-227",
+        "id": "t-256",
         "category": "system-field",
         "entity": "bpartner",
         "field": "bankAccount",
@@ -6425,7 +6571,7 @@
         "description": "System field 'bankAccount' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-228",
+        "id": "t-257",
         "category": "system-field",
         "entity": "bpartner",
         "field": "taxCategory",
@@ -6433,7 +6579,7 @@
         "description": "System field 'taxCategory' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-229",
+        "id": "t-258",
         "category": "system-field",
         "entity": "bpartner",
         "field": "incotermsPO",
@@ -6441,7 +6587,7 @@
         "description": "System field 'incotermsPO' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-230",
+        "id": "t-259",
         "category": "system-field",
         "entity": "bpartner",
         "field": "pOMaturityDate1",
@@ -6449,7 +6595,7 @@
         "description": "System field 'pOMaturityDate1' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-231",
+        "id": "t-260",
         "category": "system-field",
         "entity": "bpartner",
         "field": "pOMaturityDate2",
@@ -6457,7 +6603,7 @@
         "description": "System field 'pOMaturityDate2' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-232",
+        "id": "t-261",
         "category": "system-field",
         "entity": "bpartner",
         "field": "pOMaturityDate3",
@@ -6465,7 +6611,7 @@
         "description": "System field 'pOMaturityDate3' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-233",
+        "id": "t-262",
         "category": "system-field",
         "entity": "bpartner",
         "field": "goodsReceipt",
@@ -6473,7 +6619,7 @@
         "description": "System field 'goodsReceipt' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-234",
+        "id": "t-263",
         "category": "system-field",
         "entity": "bpartner",
         "field": "purchaseInvoice",
@@ -6481,7 +6627,7 @@
         "description": "System field 'purchaseInvoice' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-235",
+        "id": "t-264",
         "category": "system-field",
         "entity": "bpartner",
         "field": "purchaseOrder",
@@ -6489,7 +6635,7 @@
         "description": "System field 'purchaseOrder' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-236",
+        "id": "t-265",
         "category": "system-field",
         "entity": "bpartner",
         "field": "paymentOut",
@@ -6497,7 +6643,7 @@
         "description": "System field 'paymentOut' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-237",
+        "id": "t-266",
         "category": "system-field",
         "entity": "bpartner",
         "field": "orderReference",
@@ -6505,7 +6651,7 @@
         "description": "System field 'orderReference' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-238",
+        "id": "t-267",
         "category": "system-field",
         "entity": "bpartner",
         "field": "expectedLifetimeRevenue",
@@ -6513,7 +6659,7 @@
         "description": "System field 'expectedLifetimeRevenue' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-239",
+        "id": "t-268",
         "category": "system-field",
         "entity": "bpartner",
         "field": "valuation",
@@ -6521,7 +6667,7 @@
         "description": "System field 'valuation' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-240",
+        "id": "t-269",
         "category": "system-field",
         "entity": "bpartner",
         "field": "referenceNo",
@@ -6529,7 +6675,7 @@
         "description": "System field 'referenceNo' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-241",
+        "id": "t-270",
         "category": "system-field",
         "entity": "bpartner",
         "field": "salesRepresentative",
@@ -6537,7 +6683,7 @@
         "description": "System field 'salesRepresentative' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-242",
+        "id": "t-271",
         "category": "system-field",
         "entity": "bpartner",
         "field": "volumeOfSales",
@@ -6545,7 +6691,7 @@
         "description": "System field 'volumeOfSales' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-243",
+        "id": "t-272",
         "category": "system-field",
         "entity": "bpartner",
         "field": "share",
@@ -6553,7 +6699,7 @@
         "description": "System field 'share' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-244",
+        "id": "t-273",
         "category": "system-field",
         "entity": "bpartner",
         "field": "pricesShownInOrder",
@@ -6561,7 +6707,7 @@
         "description": "System field 'pricesShownInOrder' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-245",
+        "id": "t-274",
         "category": "system-field",
         "entity": "bpartner",
         "field": "transactionalBankAccount",
@@ -6569,7 +6715,7 @@
         "description": "System field 'transactionalBankAccount' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-246",
+        "id": "t-275",
         "category": "system-field",
         "entity": "bpartner",
         "field": "sOBPTaxCategory",
@@ -6577,7 +6723,7 @@
         "description": "System field 'sOBPTaxCategory' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-247",
+        "id": "t-276",
         "category": "system-field",
         "entity": "bpartner",
         "field": "incotermsSO",
@@ -6585,7 +6731,7 @@
         "description": "System field 'incotermsSO' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-248",
+        "id": "t-277",
         "category": "system-field",
         "entity": "bpartner",
         "field": "orderDescription",
@@ -6593,7 +6739,7 @@
         "description": "System field 'orderDescription' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-249",
+        "id": "t-278",
         "category": "system-field",
         "entity": "bpartner",
         "field": "goodsShipment",
@@ -6601,7 +6747,7 @@
         "description": "System field 'goodsShipment' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-250",
+        "id": "t-279",
         "category": "system-field",
         "entity": "bpartner",
         "field": "salesInvoice",
@@ -6609,7 +6755,7 @@
         "description": "System field 'salesInvoice' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-251",
+        "id": "t-280",
         "category": "system-field",
         "entity": "bpartner",
         "field": "salesOrder",
@@ -6617,7 +6763,7 @@
         "description": "System field 'salesOrder' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-252",
+        "id": "t-281",
         "category": "system-field",
         "entity": "bpartner",
         "field": "paymentIn",
@@ -6625,7 +6771,7 @@
         "description": "System field 'paymentIn' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-253",
+        "id": "t-282",
         "category": "system-field",
         "entity": "bpartner",
         "field": "creditStatus",
@@ -6633,7 +6779,7 @@
         "description": "System field 'creditStatus' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-254",
+        "id": "t-283",
         "category": "system-field",
         "entity": "bpartner",
         "field": "uPCEAN",
@@ -6641,7 +6787,7 @@
         "description": "System field 'uPCEAN' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-255",
+        "id": "t-284",
         "category": "system-field",
         "entity": "bpartner",
         "field": "setNewCurrency",
@@ -6649,7 +6795,7 @@
         "description": "System field 'setNewCurrency' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-256",
+        "id": "t-285",
         "category": "system-field",
         "entity": "bpartner",
         "field": "updated",
@@ -6657,7 +6803,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-257",
+        "id": "t-286",
         "category": "system-field",
         "entity": "bpartner",
         "field": "updatedBy",
@@ -6665,7 +6811,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-258",
+        "id": "t-287",
         "category": "system-field",
         "entity": "bpartner",
         "field": "uRL",
@@ -6673,7 +6819,7 @@
         "description": "System field 'uRL' should exist in backend but not frontend for bpartner"
       },
       {
-        "id": "t-259",
+        "id": "t-288",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "active",
@@ -6681,7 +6827,7 @@
         "description": "System field 'active' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-260",
+        "id": "t-289",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "status",
@@ -6689,7 +6835,7 @@
         "description": "System field 'status' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-261",
+        "id": "t-290",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "cBpCustomerAcctID",
@@ -6697,7 +6843,7 @@
         "description": "System field 'cBpCustomerAcctID' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-262",
+        "id": "t-291",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "client",
@@ -6705,7 +6851,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-263",
+        "id": "t-292",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "businessPartner",
@@ -6713,7 +6859,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-264",
+        "id": "t-293",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "organization",
@@ -6721,7 +6867,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-265",
+        "id": "t-294",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "creationDate",
@@ -6729,7 +6875,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-266",
+        "id": "t-295",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "createdBy",
@@ -6737,7 +6883,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-267",
+        "id": "t-296",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "updated",
@@ -6745,7 +6891,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-268",
+        "id": "t-297",
         "category": "system-field",
         "entity": "bpCustomerAcct",
         "field": "updatedBy",
@@ -6753,7 +6899,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpCustomerAcct"
       },
       {
-        "id": "t-269",
+        "id": "t-298",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "active",
@@ -6761,7 +6907,7 @@
         "description": "System field 'active' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-270",
+        "id": "t-299",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "status",
@@ -6769,7 +6915,7 @@
         "description": "System field 'status' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-271",
+        "id": "t-300",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "vendorServiceLiability",
@@ -6777,7 +6923,7 @@
         "description": "System field 'vendorServiceLiability' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-272",
+        "id": "t-301",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "organization",
@@ -6785,7 +6931,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-273",
+        "id": "t-302",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "cBpVendorAcctID",
@@ -6793,7 +6939,7 @@
         "description": "System field 'cBpVendorAcctID' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-274",
+        "id": "t-303",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "businessPartner",
@@ -6801,7 +6947,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-275",
+        "id": "t-304",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "client",
@@ -6809,7 +6955,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-276",
+        "id": "t-305",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "creationDate",
@@ -6817,7 +6963,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-277",
+        "id": "t-306",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "createdBy",
@@ -6825,7 +6971,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-278",
+        "id": "t-307",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "updated",
@@ -6833,7 +6979,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-279",
+        "id": "t-308",
         "category": "system-field",
         "entity": "bpVendorAcct",
         "field": "updatedBy",
@@ -6841,7 +6987,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpVendorAcct"
       },
       {
-        "id": "t-280",
+        "id": "t-309",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "active",
@@ -6849,7 +6995,7 @@
         "description": "System field 'active' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-281",
+        "id": "t-310",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "employeeExpenses",
@@ -6857,7 +7003,7 @@
         "description": "System field 'employeeExpenses' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-282",
+        "id": "t-311",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "employeePrepayments",
@@ -6865,7 +7011,7 @@
         "description": "System field 'employeePrepayments' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-283",
+        "id": "t-312",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "businessPartner",
@@ -6873,7 +7019,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-284",
+        "id": "t-313",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "id",
@@ -6881,7 +7027,7 @@
         "description": "System field 'id' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-285",
+        "id": "t-314",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "organization",
@@ -6889,7 +7035,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-286",
+        "id": "t-315",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "client",
@@ -6897,7 +7043,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-287",
+        "id": "t-316",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "creationDate",
@@ -6905,7 +7051,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-288",
+        "id": "t-317",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "createdBy",
@@ -6913,7 +7059,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-289",
+        "id": "t-318",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "updated",
@@ -6921,7 +7067,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-290",
+        "id": "t-319",
         "category": "system-field",
         "entity": "bpEmployeeAcct",
         "field": "updatedBy",
@@ -6929,7 +7075,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpEmployeeAcct"
       },
       {
-        "id": "t-291",
+        "id": "t-320",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "active",
@@ -6937,7 +7083,7 @@
         "description": "System field 'active' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-292",
+        "id": "t-321",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "client",
@@ -6945,7 +7091,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-293",
+        "id": "t-322",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "creationDate",
@@ -6953,7 +7099,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-294",
+        "id": "t-323",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "organization",
@@ -6961,7 +7107,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-295",
+        "id": "t-324",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "cBpSalcategoryID",
@@ -6969,7 +7115,7 @@
         "description": "System field 'cBpSalcategoryID' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-296",
+        "id": "t-325",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "businessPartner",
@@ -6977,7 +7123,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-297",
+        "id": "t-326",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "createdBy",
@@ -6985,7 +7131,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-298",
+        "id": "t-327",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "updated",
@@ -6993,7 +7139,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-299",
+        "id": "t-328",
         "category": "system-field",
         "entity": "bpSalcategory",
         "field": "updatedBy",
@@ -7001,7 +7147,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpSalcategory"
       },
       {
-        "id": "t-300",
+        "id": "t-329",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "active",
@@ -7009,7 +7155,7 @@
         "description": "System field 'active' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-301",
+        "id": "t-330",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "routingNo",
@@ -7017,7 +7163,7 @@
         "description": "System field 'routingNo' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-302",
+        "id": "t-331",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "city",
@@ -7025,7 +7171,7 @@
         "description": "System field 'city' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-303",
+        "id": "t-332",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "email",
@@ -7033,7 +7179,7 @@
         "description": "System field 'email' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-304",
+        "id": "t-333",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "driversLicenseNo",
@@ -7041,7 +7187,7 @@
         "description": "System field 'driversLicenseNo' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-305",
+        "id": "t-334",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "socialSecurityNo",
@@ -7049,7 +7195,7 @@
         "description": "System field 'socialSecurityNo' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-306",
+        "id": "t-335",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "name",
@@ -7057,7 +7203,7 @@
         "description": "System field 'name' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-307",
+        "id": "t-336",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "state",
@@ -7065,7 +7211,7 @@
         "description": "System field 'state' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-308",
+        "id": "t-337",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "street",
@@ -7073,7 +7219,7 @@
         "description": "System field 'street' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-309",
+        "id": "t-338",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "postalCode",
@@ -7081,7 +7227,7 @@
         "description": "System field 'postalCode' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-310",
+        "id": "t-339",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "accountType",
@@ -7089,7 +7235,7 @@
         "description": "System field 'accountType' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-311",
+        "id": "t-340",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "expiryMonth",
@@ -7097,7 +7243,7 @@
         "description": "System field 'expiryMonth' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-312",
+        "id": "t-341",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "expiryYear",
@@ -7105,7 +7251,7 @@
         "description": "System field 'expiryYear' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-313",
+        "id": "t-342",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "creditCardNo",
@@ -7113,7 +7259,7 @@
         "description": "System field 'creditCardNo' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-314",
+        "id": "t-343",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "cCType",
@@ -7121,7 +7267,7 @@
         "description": "System field 'cCType' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-315",
+        "id": "t-344",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "zipVerified",
@@ -7129,7 +7275,7 @@
         "description": "System field 'zipVerified' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-316",
+        "id": "t-345",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "countryName",
@@ -7137,7 +7283,7 @@
         "description": "System field 'countryName' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-317",
+        "id": "t-346",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "organization",
@@ -7145,7 +7291,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-318",
+        "id": "t-347",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "businessPartner",
@@ -7153,7 +7299,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-319",
+        "id": "t-348",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "id",
@@ -7161,7 +7307,7 @@
         "description": "System field 'id' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-320",
+        "id": "t-349",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "creationDate",
@@ -7169,7 +7315,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-321",
+        "id": "t-350",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "client",
@@ -7177,7 +7323,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-322",
+        "id": "t-351",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "createdBy",
@@ -7185,7 +7331,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-323",
+        "id": "t-352",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "updated",
@@ -7193,7 +7339,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-324",
+        "id": "t-353",
         "category": "system-field",
         "entity": "bpBankAccount",
         "field": "updatedBy",
@@ -7201,7 +7347,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpBankAccount"
       },
       {
-        "id": "t-325",
+        "id": "t-354",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "organization",
@@ -7209,7 +7355,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-326",
+        "id": "t-355",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "isForceAutomation",
@@ -7217,7 +7363,7 @@
         "description": "System field 'isForceAutomation' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-327",
+        "id": "t-356",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "businessPartner",
@@ -7225,7 +7371,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-328",
+        "id": "t-357",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "cBpartnerDoctypeID",
@@ -7233,7 +7379,7 @@
         "description": "System field 'cBpartnerDoctypeID' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-329",
+        "id": "t-358",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "client",
@@ -7241,7 +7387,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-330",
+        "id": "t-359",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "creationDate",
@@ -7249,7 +7395,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-331",
+        "id": "t-360",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "createdBy",
@@ -7257,7 +7403,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-332",
+        "id": "t-361",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "updated",
@@ -7265,7 +7411,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-333",
+        "id": "t-362",
         "category": "system-field",
         "entity": "bpartnerDocType",
         "field": "updatedBy",
@@ -7273,7 +7419,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpartnerDocType"
       },
       {
-        "id": "t-334",
+        "id": "t-363",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "salesRegion",
@@ -7281,7 +7427,7 @@
         "description": "System field 'salesRegion' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-335",
+        "id": "t-364",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "payFromAddress",
@@ -7289,7 +7435,7 @@
         "description": "System field 'payFromAddress' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-336",
+        "id": "t-365",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "remitToAddress",
@@ -7297,7 +7443,7 @@
         "description": "System field 'remitToAddress' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-337",
+        "id": "t-366",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "uPCEAN",
@@ -7305,7 +7451,7 @@
         "description": "System field 'uPCEAN' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-338",
+        "id": "t-367",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "organization",
@@ -7313,7 +7459,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-339",
+        "id": "t-368",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "id",
@@ -7321,7 +7467,7 @@
         "description": "System field 'id' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-340",
+        "id": "t-369",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "client",
@@ -7329,7 +7475,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-341",
+        "id": "t-370",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "businessPartner",
@@ -7337,7 +7483,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-342",
+        "id": "t-371",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "creationDate",
@@ -7345,7 +7491,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-343",
+        "id": "t-372",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "createdBy",
@@ -7353,7 +7499,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-344",
+        "id": "t-373",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "updated",
@@ -7361,7 +7507,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-345",
+        "id": "t-374",
         "category": "system-field",
         "entity": "bpartnerLocation",
         "field": "updatedBy",
@@ -7369,23 +7515,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpartnerLocation"
       },
       {
-        "id": "t-346",
-        "category": "system-field",
-        "entity": "user",
-        "field": "name",
-        "runner": "node",
-        "description": "System field 'name' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-347",
-        "category": "system-field",
-        "entity": "user",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-348",
+        "id": "t-375",
         "category": "system-field",
         "entity": "user",
         "field": "description",
@@ -7393,7 +7523,7 @@
         "description": "System field 'description' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-349",
+        "id": "t-376",
         "category": "system-field",
         "entity": "user",
         "field": "greeting",
@@ -7401,7 +7531,7 @@
         "description": "System field 'greeting' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-350",
+        "id": "t-377",
         "category": "system-field",
         "entity": "user",
         "field": "birthday",
@@ -7409,7 +7539,7 @@
         "description": "System field 'birthday' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-351",
+        "id": "t-378",
         "category": "system-field",
         "entity": "user",
         "field": "partnerAddress",
@@ -7417,7 +7547,7 @@
         "description": "System field 'partnerAddress' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-352",
+        "id": "t-379",
         "category": "system-field",
         "entity": "user",
         "field": "fax",
@@ -7425,7 +7555,7 @@
         "description": "System field 'fax' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-353",
+        "id": "t-380",
         "category": "system-field",
         "entity": "user",
         "field": "lastContactResult",
@@ -7433,7 +7563,7 @@
         "description": "System field 'lastContactResult' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-354",
+        "id": "t-381",
         "category": "system-field",
         "entity": "user",
         "field": "lastContactDate",
@@ -7441,7 +7571,7 @@
         "description": "System field 'lastContactDate' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-355",
+        "id": "t-382",
         "category": "system-field",
         "entity": "user",
         "field": "supervisor",
@@ -7449,7 +7579,7 @@
         "description": "System field 'supervisor' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-356",
+        "id": "t-383",
         "category": "system-field",
         "entity": "user",
         "field": "password",
@@ -7457,7 +7587,7 @@
         "description": "System field 'password' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-357",
+        "id": "t-384",
         "category": "system-field",
         "entity": "user",
         "field": "client",
@@ -7465,7 +7595,7 @@
         "description": "System field 'client' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-358",
+        "id": "t-385",
         "category": "system-field",
         "entity": "user",
         "field": "organization",
@@ -7473,7 +7603,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-359",
+        "id": "t-386",
         "category": "system-field",
         "entity": "user",
         "field": "id",
@@ -7481,7 +7611,7 @@
         "description": "System field 'id' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-360",
+        "id": "t-387",
         "category": "system-field",
         "entity": "user",
         "field": "emailServerPassword",
@@ -7489,7 +7619,7 @@
         "description": "System field 'emailServerPassword' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-361",
+        "id": "t-388",
         "category": "system-field",
         "entity": "user",
         "field": "emailServerUsername",
@@ -7497,7 +7627,7 @@
         "description": "System field 'emailServerUsername' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-362",
+        "id": "t-389",
         "category": "system-field",
         "entity": "user",
         "field": "trxOrganization",
@@ -7505,7 +7635,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-363",
+        "id": "t-390",
         "category": "system-field",
         "entity": "user",
         "field": "processNow",
@@ -7513,7 +7643,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-364",
+        "id": "t-391",
         "category": "system-field",
         "entity": "user",
         "field": "businessPartner",
@@ -7521,7 +7651,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-365",
+        "id": "t-392",
         "category": "system-field",
         "entity": "user",
         "field": "image",
@@ -7529,7 +7659,7 @@
         "description": "System field 'image' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-366",
+        "id": "t-393",
         "category": "system-field",
         "entity": "user",
         "field": "creationDate",
@@ -7537,7 +7667,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-367",
+        "id": "t-394",
         "category": "system-field",
         "entity": "user",
         "field": "createdBy",
@@ -7545,7 +7675,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-368",
+        "id": "t-395",
         "category": "system-field",
         "entity": "user",
         "field": "defaultClient",
@@ -7553,7 +7683,7 @@
         "description": "System field 'defaultClient' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-369",
+        "id": "t-396",
         "category": "system-field",
         "entity": "user",
         "field": "defaultLanguage",
@@ -7561,7 +7691,7 @@
         "description": "System field 'defaultLanguage' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-370",
+        "id": "t-397",
         "category": "system-field",
         "entity": "user",
         "field": "defaultOrganization",
@@ -7569,7 +7699,7 @@
         "description": "System field 'defaultOrganization' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-371",
+        "id": "t-398",
         "category": "system-field",
         "entity": "user",
         "field": "defaultRole",
@@ -7577,7 +7707,7 @@
         "description": "System field 'defaultRole' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-372",
+        "id": "t-399",
         "category": "system-field",
         "entity": "user",
         "field": "defaultWarehouse",
@@ -7585,7 +7715,7 @@
         "description": "System field 'defaultWarehouse' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-373",
+        "id": "t-400",
         "category": "system-field",
         "entity": "user",
         "field": "smfswsDefaultWsRole",
@@ -7593,7 +7723,7 @@
         "description": "System field 'smfswsDefaultWsRole' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-374",
+        "id": "t-401",
         "category": "system-field",
         "entity": "user",
         "field": "isPasswordExpired",
@@ -7601,7 +7731,7 @@
         "description": "System field 'isPasswordExpired' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-375",
+        "id": "t-402",
         "category": "system-field",
         "entity": "user",
         "field": "locked",
@@ -7609,7 +7739,7 @@
         "description": "System field 'locked' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-376",
+        "id": "t-403",
         "category": "system-field",
         "entity": "user",
         "field": "lastPasswordUpdate",
@@ -7617,7 +7747,7 @@
         "description": "System field 'lastPasswordUpdate' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-377",
+        "id": "t-404",
         "category": "system-field",
         "entity": "user",
         "field": "updated",
@@ -7625,7 +7755,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-378",
+        "id": "t-405",
         "category": "system-field",
         "entity": "user",
         "field": "updatedBy",
@@ -7633,7 +7763,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-379",
+        "id": "t-406",
         "category": "system-field",
         "entity": "user",
         "field": "username",
@@ -7641,7 +7771,7 @@
         "description": "System field 'username' should exist in backend but not frontend for user"
       },
       {
-        "id": "t-380",
+        "id": "t-407",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "active",
@@ -7649,7 +7779,7 @@
         "description": "System field 'active' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-381",
+        "id": "t-408",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "businessPartner",
@@ -7657,7 +7787,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-382",
+        "id": "t-409",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "organization",
@@ -7665,7 +7795,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-383",
+        "id": "t-410",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "client",
@@ -7673,7 +7803,7 @@
         "description": "System field 'client' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-384",
+        "id": "t-411",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "cBpartnerDiscountID",
@@ -7681,7 +7811,7 @@
         "description": "System field 'cBpartnerDiscountID' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-385",
+        "id": "t-412",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "creationDate",
@@ -7689,7 +7819,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-386",
+        "id": "t-413",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "createdBy",
@@ -7697,7 +7827,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-387",
+        "id": "t-414",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "updated",
@@ -7705,7 +7835,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-388",
+        "id": "t-415",
         "category": "system-field",
         "entity": "bpartnerDiscount",
         "field": "updatedBy",
@@ -7713,272 +7843,272 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for bpartnerDiscount"
       },
       {
-        "id": "t-389",
+        "id": "t-416",
         "category": "rule-declared",
         "rule": "SL_BP_Category_Default_AD_Org_ID",
         "runner": "node",
         "description": "Rule 'SL_BP_Category_Default_AD_Org_ID' (callout) should be declared"
       },
       {
-        "id": "t-390",
+        "id": "t-417",
         "category": "rule-declared",
         "rule": "SE_PaymentMethod_FinAccount_FIN_Paymentmethod_ID",
         "runner": "node",
         "description": "Rule 'SE_PaymentMethod_FinAccount_FIN_Paymentmethod_ID' (callout) should be declared"
       },
       {
-        "id": "t-391",
+        "id": "t-418",
         "category": "rule-declared",
         "rule": "SE_PaymentMethod_FinAccount_PO_Paymentmethod_ID",
         "runner": "node",
         "description": "Rule 'SE_PaymentMethod_FinAccount_PO_Paymentmethod_ID' (callout) should be declared"
       },
       {
-        "id": "t-392",
+        "id": "t-419",
         "category": "rule-declared",
         "rule": "SL_BPartnerLocation_C_Location_ID",
         "runner": "node",
         "description": "Rule 'SL_BPartnerLocation_C_Location_ID' (callout) should be declared"
       },
       {
-        "id": "t-393",
+        "id": "t-420",
         "category": "rule-declared",
         "rule": "SL_BPartnerLocation_IsTaxLocation",
         "runner": "node",
         "description": "Rule 'SL_BPartnerLocation_IsTaxLocation' (callout) should be declared"
       },
       {
-        "id": "t-394",
+        "id": "t-421",
         "category": "rule-declared",
         "rule": "SL_User_Name_Name",
         "runner": "node",
         "description": "Rule 'SL_User_Name_Name' (callout) should be declared"
       },
       {
-        "id": "t-395",
+        "id": "t-422",
         "category": "rule-declared",
         "rule": "SL_User_Name_Firstname",
         "runner": "node",
         "description": "Rule 'SL_User_Name_Firstname' (callout) should be declared"
       },
       {
-        "id": "t-396",
+        "id": "t-423",
         "category": "rule-declared",
         "rule": "SL_User_Name_Lastname",
         "runner": "node",
         "description": "Rule 'SL_User_Name_Lastname' (callout) should be declared"
       },
       {
-        "id": "t-397",
+        "id": "t-424",
         "category": "rule-declared",
         "rule": "Business partner docType validation_Documentcategory",
         "runner": "node",
         "description": "Rule 'Business partner docType validation_Documentcategory' (callout) should be declared"
       },
       {
-        "id": "t-398",
+        "id": "t-425",
         "category": "rule-declared",
         "rule": "Business partner docType validation_AD_Org_ID",
         "runner": "node",
         "description": "Rule 'Business partner docType validation_AD_Org_ID' (callout) should be declared"
       },
       {
-        "id": "t-399",
+        "id": "t-426",
         "category": "rule-declared",
         "rule": "Business partner docType validation_Issotrx",
         "runner": "node",
         "description": "Rule 'Business partner docType validation_Issotrx' (callout) should be declared"
       },
       {
-        "id": "t-400",
+        "id": "t-427",
         "category": "rule-declared",
         "rule": "FIN_PaymentMethodsWithAccountIsReceiptControl",
         "runner": "node",
         "description": "Rule 'FIN_PaymentMethodsWithAccountIsReceiptControl' (validation) should be declared"
       },
       {
-        "id": "t-401",
+        "id": "t-428",
         "category": "rule-declared",
         "rule": "Financial Account - Customer",
         "runner": "node",
         "description": "Rule 'Financial Account - Customer' (validation) should be declared"
       },
       {
-        "id": "t-402",
+        "id": "t-429",
         "category": "rule-declared",
         "rule": "Financial Account - Vendor",
         "runner": "node",
         "description": "Rule 'Financial Account - Vendor' (validation) should be declared"
       },
       {
-        "id": "t-403",
+        "id": "t-430",
         "category": "rule-declared",
         "rule": "AD_User C_BPartner User/Contacts",
         "runner": "node",
         "description": "Rule 'AD_User C_BPartner User/Contacts' (validation) should be declared"
       },
       {
-        "id": "t-404",
+        "id": "t-431",
         "category": "rule-declared",
         "rule": "BankFormat List exclude Spanish",
         "runner": "node",
         "description": "Rule 'BankFormat List exclude Spanish' (validation) should be declared"
       },
       {
-        "id": "t-405",
+        "id": "t-432",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
         "runner": "node",
         "description": "Rule 'AD_Client Security validation' (validation) should be declared"
       },
       {
-        "id": "t-406",
+        "id": "t-433",
         "category": "rule-declared",
         "rule": "C_BPartner Location",
         "runner": "node",
         "description": "Rule 'C_BPartner Location' (validation) should be declared"
       },
       {
-        "id": "t-407",
+        "id": "t-434",
         "category": "rule-declared",
         "rule": "AD_Client of Role",
         "runner": "node",
         "description": "Rule 'AD_Client of Role' (validation) should be declared"
       },
       {
-        "id": "t-408",
+        "id": "t-435",
         "category": "rule-declared",
         "rule": "AD_Org of a Role",
         "runner": "node",
         "description": "Rule 'AD_Org of a Role' (validation) should be declared"
       },
       {
-        "id": "t-409",
+        "id": "t-436",
         "category": "rule-declared",
         "rule": "AD_Role_of_User",
         "runner": "node",
         "description": "Rule 'AD_Role_of_User' (validation) should be declared"
       },
       {
-        "id": "t-410",
+        "id": "t-437",
         "category": "rule-declared",
         "rule": "M_Warehouse of Role",
         "runner": "node",
         "description": "Rule 'M_Warehouse of Role' (validation) should be declared"
       },
       {
-        "id": "t-411",
+        "id": "t-438",
         "category": "rule-declared",
         "runner": "node",
         "description": "Rule 'undefined' (displayLogic) should be declared"
       },
       {
-        "id": "t-412",
+        "id": "t-439",
         "category": "rule-declared",
         "rule": "Create Invoice  (Volume Discount)",
         "runner": "node",
         "description": "Rule 'Create Invoice  (Volume Discount)' (process) should be declared"
       },
       {
-        "id": "t-413",
+        "id": "t-440",
         "category": "rule-declared",
         "rule": "Processing",
         "runner": "node",
         "description": "Rule 'Processing' (process) should be declared"
       },
       {
-        "id": "t-414",
+        "id": "t-441",
         "category": "rule-declared",
         "rule": "Grant Portal Access",
         "runner": "node",
         "description": "Rule 'Grant Portal Access' (process) should be declared"
       },
       {
-        "id": "t-415",
+        "id": "t-442",
         "category": "rule-declared",
         "rule": "Set New Currency",
         "runner": "node",
         "description": "Rule 'Set New Currency' (process) should be declared"
       },
       {
-        "id": "t-416",
+        "id": "t-443",
         "category": "rule-declared",
         "rule": "Bpartner print",
         "runner": "node",
         "description": "Rule 'Bpartner print' (process) should be declared"
       },
       {
-        "id": "t-417",
+        "id": "t-444",
         "category": "crud-flags",
         "entity": "bpartner",
         "runner": "node",
         "description": "CRUD flags for 'bpartner' should all be booleans"
       },
       {
-        "id": "t-418",
+        "id": "t-445",
         "category": "crud-flags",
         "entity": "bpCustomerAcct",
         "runner": "node",
         "description": "CRUD flags for 'bpCustomerAcct' should all be booleans"
       },
       {
-        "id": "t-419",
+        "id": "t-446",
         "category": "crud-flags",
         "entity": "bpVendorAcct",
         "runner": "node",
         "description": "CRUD flags for 'bpVendorAcct' should all be booleans"
       },
       {
-        "id": "t-420",
+        "id": "t-447",
         "category": "crud-flags",
         "entity": "bpEmployeeAcct",
         "runner": "node",
         "description": "CRUD flags for 'bpEmployeeAcct' should all be booleans"
       },
       {
-        "id": "t-421",
+        "id": "t-448",
         "category": "crud-flags",
         "entity": "bpSalcategory",
         "runner": "node",
         "description": "CRUD flags for 'bpSalcategory' should all be booleans"
       },
       {
-        "id": "t-422",
+        "id": "t-449",
         "category": "crud-flags",
         "entity": "bpBankAccount",
         "runner": "node",
         "description": "CRUD flags for 'bpBankAccount' should all be booleans"
       },
       {
-        "id": "t-423",
+        "id": "t-450",
         "category": "crud-flags",
         "entity": "bpartnerDocType",
         "runner": "node",
         "description": "CRUD flags for 'bpartnerDocType' should all be booleans"
       },
       {
-        "id": "t-424",
+        "id": "t-451",
         "category": "crud-flags",
         "entity": "bpartnerLocation",
         "runner": "node",
         "description": "CRUD flags for 'bpartnerLocation' should all be booleans"
       },
       {
-        "id": "t-425",
+        "id": "t-452",
         "category": "crud-flags",
         "entity": "user",
         "runner": "node",
         "description": "CRUD flags for 'user' should all be booleans"
       },
       {
-        "id": "t-426",
+        "id": "t-453",
         "category": "crud-flags",
         "entity": "bpartnerDiscount",
         "runner": "node",
         "description": "CRUD flags for 'bpartnerDiscount' should all be booleans"
       },
       {
-        "id": "t-427",
+        "id": "t-454",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "salaryCategory",
@@ -7986,7 +8116,7 @@
         "description": "Selector endpoint for 'salaryCategory' in bpartner should exist"
       },
       {
-        "id": "t-428",
+        "id": "t-455",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "businessPartnerCategory",
@@ -7994,7 +8124,7 @@
         "description": "Selector endpoint for 'businessPartnerCategory' in bpartner should exist"
       },
       {
-        "id": "t-429",
+        "id": "t-456",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "paymentTerms",
@@ -8002,7 +8132,7 @@
         "description": "Selector endpoint for 'paymentTerms' in bpartner should exist"
       },
       {
-        "id": "t-430",
+        "id": "t-457",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "account",
@@ -8010,7 +8140,7 @@
         "description": "Selector endpoint for 'account' in bpartner should exist"
       },
       {
-        "id": "t-431",
+        "id": "t-458",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "paymentMethod",
@@ -8018,7 +8148,7 @@
         "description": "Selector endpoint for 'paymentMethod' in bpartner should exist"
       },
       {
-        "id": "t-432",
+        "id": "t-459",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "priceList",
@@ -8026,7 +8156,7 @@
         "description": "Selector endpoint for 'priceList' in bpartner should exist"
       },
       {
-        "id": "t-433",
+        "id": "t-460",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "pOFinancialAccount",
@@ -8034,7 +8164,7 @@
         "description": "Selector endpoint for 'pOFinancialAccount' in bpartner should exist"
       },
       {
-        "id": "t-434",
+        "id": "t-461",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "pOPaymentMethod",
@@ -8042,7 +8172,7 @@
         "description": "Selector endpoint for 'pOPaymentMethod' in bpartner should exist"
       },
       {
-        "id": "t-435",
+        "id": "t-462",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "pOPaymentTerms",
@@ -8050,7 +8180,7 @@
         "description": "Selector endpoint for 'pOPaymentTerms' in bpartner should exist"
       },
       {
-        "id": "t-436",
+        "id": "t-463",
         "category": "selector-endpoint",
         "entity": "bpartner",
         "field": "purchasePricelist",
@@ -8058,87 +8188,7 @@
         "description": "Selector endpoint for 'purchasePricelist' in bpartner should exist"
       },
       {
-        "id": "t-437",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "salaryCategory",
-        "runner": "node",
-        "description": "Selector endpoint for 'salaryCategory' in bpartner should exist"
-      },
-      {
-        "id": "t-438",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "businessPartnerCategory",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartnerCategory' in bpartner should exist"
-      },
-      {
-        "id": "t-439",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "paymentTerms",
-        "runner": "node",
-        "description": "Selector endpoint for 'paymentTerms' in bpartner should exist"
-      },
-      {
-        "id": "t-440",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "account",
-        "runner": "node",
-        "description": "Selector endpoint for 'account' in bpartner should exist"
-      },
-      {
-        "id": "t-441",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "paymentMethod",
-        "runner": "node",
-        "description": "Selector endpoint for 'paymentMethod' in bpartner should exist"
-      },
-      {
-        "id": "t-442",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "priceList",
-        "runner": "node",
-        "description": "Selector endpoint for 'priceList' in bpartner should exist"
-      },
-      {
-        "id": "t-443",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOFinancialAccount",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOFinancialAccount' in bpartner should exist"
-      },
-      {
-        "id": "t-444",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOPaymentMethod",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOPaymentMethod' in bpartner should exist"
-      },
-      {
-        "id": "t-445",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOPaymentTerms",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOPaymentTerms' in bpartner should exist"
-      },
-      {
-        "id": "t-446",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "purchasePricelist",
-        "runner": "node",
-        "description": "Selector endpoint for 'purchasePricelist' in bpartner should exist"
-      },
-      {
-        "id": "t-447",
+        "id": "t-464",
         "category": "selector-endpoint",
         "entity": "bpCustomerAcct",
         "field": "accountingSchema",
@@ -8146,7 +8196,7 @@
         "description": "Selector endpoint for 'accountingSchema' in bpCustomerAcct should exist"
       },
       {
-        "id": "t-448",
+        "id": "t-465",
         "category": "selector-endpoint",
         "entity": "bpCustomerAcct",
         "field": "customerReceivablesNo",
@@ -8154,7 +8204,7 @@
         "description": "Selector endpoint for 'customerReceivablesNo' in bpCustomerAcct should exist"
       },
       {
-        "id": "t-449",
+        "id": "t-466",
         "category": "selector-endpoint",
         "entity": "bpCustomerAcct",
         "field": "customerPrepayment",
@@ -8162,87 +8212,7 @@
         "description": "Selector endpoint for 'customerPrepayment' in bpCustomerAcct should exist"
       },
       {
-        "id": "t-450",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "salaryCategory",
-        "runner": "node",
-        "description": "Selector endpoint for 'salaryCategory' in bpartner should exist"
-      },
-      {
-        "id": "t-451",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "businessPartnerCategory",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartnerCategory' in bpartner should exist"
-      },
-      {
-        "id": "t-452",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "paymentTerms",
-        "runner": "node",
-        "description": "Selector endpoint for 'paymentTerms' in bpartner should exist"
-      },
-      {
-        "id": "t-453",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "account",
-        "runner": "node",
-        "description": "Selector endpoint for 'account' in bpartner should exist"
-      },
-      {
-        "id": "t-454",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "paymentMethod",
-        "runner": "node",
-        "description": "Selector endpoint for 'paymentMethod' in bpartner should exist"
-      },
-      {
-        "id": "t-455",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "priceList",
-        "runner": "node",
-        "description": "Selector endpoint for 'priceList' in bpartner should exist"
-      },
-      {
-        "id": "t-456",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOFinancialAccount",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOFinancialAccount' in bpartner should exist"
-      },
-      {
-        "id": "t-457",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOPaymentMethod",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOPaymentMethod' in bpartner should exist"
-      },
-      {
-        "id": "t-458",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOPaymentTerms",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOPaymentTerms' in bpartner should exist"
-      },
-      {
-        "id": "t-459",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "purchasePricelist",
-        "runner": "node",
-        "description": "Selector endpoint for 'purchasePricelist' in bpartner should exist"
-      },
-      {
-        "id": "t-460",
+        "id": "t-467",
         "category": "selector-endpoint",
         "entity": "bpVendorAcct",
         "field": "accountingSchema",
@@ -8250,7 +8220,7 @@
         "description": "Selector endpoint for 'accountingSchema' in bpVendorAcct should exist"
       },
       {
-        "id": "t-461",
+        "id": "t-468",
         "category": "selector-endpoint",
         "entity": "bpVendorAcct",
         "field": "vendorLiability",
@@ -8258,7 +8228,7 @@
         "description": "Selector endpoint for 'vendorLiability' in bpVendorAcct should exist"
       },
       {
-        "id": "t-462",
+        "id": "t-469",
         "category": "selector-endpoint",
         "entity": "bpVendorAcct",
         "field": "vendorPrepayment",
@@ -8266,87 +8236,7 @@
         "description": "Selector endpoint for 'vendorPrepayment' in bpVendorAcct should exist"
       },
       {
-        "id": "t-463",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "salaryCategory",
-        "runner": "node",
-        "description": "Selector endpoint for 'salaryCategory' in bpartner should exist"
-      },
-      {
-        "id": "t-464",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "businessPartnerCategory",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartnerCategory' in bpartner should exist"
-      },
-      {
-        "id": "t-465",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "paymentTerms",
-        "runner": "node",
-        "description": "Selector endpoint for 'paymentTerms' in bpartner should exist"
-      },
-      {
-        "id": "t-466",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "account",
-        "runner": "node",
-        "description": "Selector endpoint for 'account' in bpartner should exist"
-      },
-      {
-        "id": "t-467",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "paymentMethod",
-        "runner": "node",
-        "description": "Selector endpoint for 'paymentMethod' in bpartner should exist"
-      },
-      {
-        "id": "t-468",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "priceList",
-        "runner": "node",
-        "description": "Selector endpoint for 'priceList' in bpartner should exist"
-      },
-      {
-        "id": "t-469",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOFinancialAccount",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOFinancialAccount' in bpartner should exist"
-      },
-      {
         "id": "t-470",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOPaymentMethod",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOPaymentMethod' in bpartner should exist"
-      },
-      {
-        "id": "t-471",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "pOPaymentTerms",
-        "runner": "node",
-        "description": "Selector endpoint for 'pOPaymentTerms' in bpartner should exist"
-      },
-      {
-        "id": "t-472",
-        "category": "selector-endpoint",
-        "entity": "bpartner",
-        "field": "purchasePricelist",
-        "runner": "node",
-        "description": "Selector endpoint for 'purchasePricelist' in bpartner should exist"
-      },
-      {
-        "id": "t-473",
         "category": "selector-endpoint",
         "entity": "bpEmployeeAcct",
         "field": "accountingSchema",
@@ -8354,7 +8244,7 @@
         "description": "Selector endpoint for 'accountingSchema' in bpEmployeeAcct should exist"
       },
       {
-        "id": "t-474",
+        "id": "t-471",
         "category": "selector-endpoint",
         "entity": "bpSalcategory",
         "field": "salaryCategory",
@@ -8362,7 +8252,7 @@
         "description": "Selector endpoint for 'salaryCategory' in bpSalcategory should exist"
       },
       {
-        "id": "t-475",
+        "id": "t-472",
         "category": "selector-endpoint",
         "entity": "bpBankAccount",
         "field": "country",
@@ -8370,7 +8260,7 @@
         "description": "Selector endpoint for 'country' in bpBankAccount should exist"
       },
       {
-        "id": "t-476",
+        "id": "t-473",
         "category": "selector-endpoint",
         "entity": "bpBankAccount",
         "field": "userContact",
@@ -8378,7 +8268,7 @@
         "description": "Selector endpoint for 'userContact' in bpBankAccount should exist"
       },
       {
-        "id": "t-477",
+        "id": "t-474",
         "category": "selector-endpoint",
         "entity": "bpartnerDocType",
         "field": "cDoctypeID",
@@ -8386,7 +8276,7 @@
         "description": "Selector endpoint for 'cDoctypeID' in bpartnerDocType should exist"
       },
       {
-        "id": "t-478",
+        "id": "t-475",
         "category": "selector-endpoint",
         "entity": "bpartnerLocation",
         "field": "locationAddress",
@@ -8394,7 +8284,7 @@
         "description": "Selector endpoint for 'locationAddress' in bpartnerLocation should exist"
       },
       {
-        "id": "t-479",
+        "id": "t-476",
         "category": "selector-endpoint",
         "entity": "bpartnerDiscount",
         "field": "discount",
@@ -8402,7 +8292,7 @@
         "description": "Selector endpoint for 'discount' in bpartnerDiscount should exist"
       },
       {
-        "id": "t-480",
+        "id": "t-477",
         "category": "action-endpoint",
         "entity": "bpartner",
         "field": "setNewCurrency",
@@ -8410,31 +8300,7 @@
         "description": "Action endpoint for 'setNewCurrency' in bpartner should exist"
       },
       {
-        "id": "t-481",
-        "category": "action-endpoint",
-        "entity": "bpartner",
-        "field": "setNewCurrency",
-        "runner": "node",
-        "description": "Action endpoint for 'setNewCurrency' in bpartner should exist"
-      },
-      {
-        "id": "t-482",
-        "category": "action-endpoint",
-        "entity": "bpartner",
-        "field": "setNewCurrency",
-        "runner": "node",
-        "description": "Action endpoint for 'setNewCurrency' in bpartner should exist"
-      },
-      {
-        "id": "t-483",
-        "category": "action-endpoint",
-        "entity": "bpartner",
-        "field": "setNewCurrency",
-        "runner": "node",
-        "description": "Action endpoint for 'setNewCurrency' in bpartner should exist"
-      },
-      {
-        "id": "t-484",
+        "id": "t-478",
         "category": "action-endpoint",
         "entity": "user",
         "field": "grantPortalAccess",
@@ -8442,7 +8308,7 @@
         "description": "Action endpoint for 'grantPortalAccess' in user should exist"
       },
       {
-        "id": "t-485",
+        "id": "t-479",
         "category": "action-endpoint",
         "entity": "user",
         "field": "processNow",
@@ -8451,22 +8317,23 @@
       }
     ],
     "summary": {
-      "total": 485,
+      "total": 479,
       "byCategory": {
-        "field-presence": 71,
-        "field-type": 71,
-        "searchable-filters": 3,
+        "field-presence": 73,
+        "field-type": 73,
+        "searchable-filters": 5,
         "visibility": 10,
         "displaylogic-valid": 15,
         "displaylogic-evaluable": 15,
-        "system-field": 203,
+        "default-value-type": 23,
+        "system-field": 201,
         "rule-declared": 28,
         "crud-flags": 10,
-        "selector-endpoint": 53,
-        "action-endpoint": 6
+        "selector-endpoint": 23,
+        "action-endpoint": 3
       },
       "byRunner": {
-        "node": 485,
+        "node": 479,
         "junit": 0
       }
     }
