@@ -24,7 +24,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Convert to Order', label: 'Convert to Order', style: 'positive', action: 'createOrder' },
+  { name: 'Convert to Order', label: 'Convert to Order', style: 'positive' },
 ];
 // @sf-generated-end processes:quotation
 
@@ -289,6 +289,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Quotation"
@@ -296,8 +297,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-        api={api}
-        documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
+      api={api}
         {...props}
       />
     );

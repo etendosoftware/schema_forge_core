@@ -1,7 +1,7 @@
 {
-  "version": "0.12.0",
-  "generatedAt": "2026-03-27T11:19:57.907Z",
-  "checksum": "a15ff61f1786ccf2",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-27T13:37:48.726Z",
+  "checksum": "3e727b1e8ac42865",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -117,7 +117,7 @@
             "form": true,
             "reference": "Paymentmethod",
             "inputMode": "selector",
-            "section": "principal",
+            "section": "collapsed",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true
@@ -1896,11 +1896,31 @@
     ],
     "processEndpoints": [
       {
-        "name": "Process Quotation",
+        "name": "Convert to Order",
         "method": "POST",
-        "path": "/quotation/:id/action/docAction",
+        "path": "/process/Convert to Order",
         "entity": "quotation",
-        "columnName": "docAction",
+        "columnName": null,
+        "params": [],
+        "preconditions": [],
+        "steps": 0
+      },
+      {
+        "name": "Void",
+        "method": "POST",
+        "path": "/process/Void",
+        "entity": "quotation",
+        "columnName": null,
+        "params": [],
+        "preconditions": [],
+        "steps": 0
+      },
+      {
+        "name": "Reactivate",
+        "method": "POST",
+        "path": "/process/Reactivate",
+        "entity": "quotation",
+        "columnName": null,
         "params": [],
         "preconditions": [],
         "steps": 0
@@ -3841,35 +3861,67 @@
       {
         "id": "t-215",
         "category": "process-happy",
-        "process": "Process Quotation",
+        "process": "Convert to Order",
         "entity": "quotation",
         "runner": "junit",
-        "description": "Process 'Process Quotation' should complete successfully with valid preconditions"
+        "description": "Process 'Convert to Order' should complete successfully with valid preconditions"
       },
       {
         "id": "t-216",
         "category": "process-failure",
-        "process": "Process Quotation",
+        "process": "Convert to Order",
         "entity": "quotation",
         "runner": "junit",
-        "description": "Process 'Process Quotation' should fail when preconditions are not met"
+        "description": "Process 'Convert to Order' should fail when preconditions are not met"
       },
       {
         "id": "t-217",
+        "category": "process-happy",
+        "process": "Void",
+        "entity": "quotation",
+        "runner": "junit",
+        "description": "Process 'Void' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-218",
+        "category": "process-failure",
+        "process": "Void",
+        "entity": "quotation",
+        "runner": "junit",
+        "description": "Process 'Void' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-219",
+        "category": "process-happy",
+        "process": "Reactivate",
+        "entity": "quotation",
+        "runner": "junit",
+        "description": "Process 'Reactivate' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-220",
+        "category": "process-failure",
+        "process": "Reactivate",
+        "entity": "quotation",
+        "runner": "junit",
+        "description": "Process 'Reactivate' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-221",
         "category": "crud-flags",
         "entity": "quotation",
         "runner": "node",
         "description": "CRUD flags for 'quotation' should all be booleans"
       },
       {
-        "id": "t-218",
+        "id": "t-222",
         "category": "crud-flags",
         "entity": "quotationLine",
         "runner": "node",
         "description": "CRUD flags for 'quotationLine' should all be booleans"
       },
       {
-        "id": "t-219",
+        "id": "t-223",
         "category": "selector-endpoint",
         "entity": "quotation",
         "field": "businessPartner",
@@ -3877,7 +3929,7 @@
         "description": "Selector endpoint for 'businessPartner' in quotation should exist"
       },
       {
-        "id": "t-220",
+        "id": "t-224",
         "category": "selector-endpoint",
         "entity": "quotation",
         "field": "partnerAddress",
@@ -3885,7 +3937,7 @@
         "description": "Selector endpoint for 'partnerAddress' in quotation should exist"
       },
       {
-        "id": "t-221",
+        "id": "t-225",
         "category": "selector-endpoint",
         "entity": "quotation",
         "field": "paymentMethod",
@@ -3893,7 +3945,7 @@
         "description": "Selector endpoint for 'paymentMethod' in quotation should exist"
       },
       {
-        "id": "t-222",
+        "id": "t-226",
         "category": "selector-endpoint",
         "entity": "quotation",
         "field": "currency",
@@ -3901,7 +3953,7 @@
         "description": "Selector endpoint for 'currency' in quotation should exist"
       },
       {
-        "id": "t-223",
+        "id": "t-227",
         "category": "selector-endpoint",
         "entity": "quotationLine",
         "field": "product",
@@ -3909,7 +3961,7 @@
         "description": "Selector endpoint for 'product' in quotationLine should exist"
       },
       {
-        "id": "t-224",
+        "id": "t-228",
         "category": "selector-endpoint",
         "entity": "quotationLine",
         "field": "tax",
@@ -3917,7 +3969,7 @@
         "description": "Selector endpoint for 'tax' in quotationLine should exist"
       },
       {
-        "id": "t-225",
+        "id": "t-229",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "rMPickFromShipment",
@@ -3925,7 +3977,7 @@
         "description": "Action endpoint for 'rMPickFromShipment' in quotation should exist"
       },
       {
-        "id": "t-226",
+        "id": "t-230",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "rMReceiveMaterials",
@@ -3933,7 +3985,7 @@
         "description": "Action endpoint for 'rMReceiveMaterials' in quotation should exist"
       },
       {
-        "id": "t-227",
+        "id": "t-231",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "rMCreateInvoice",
@@ -3941,7 +3993,7 @@
         "description": "Action endpoint for 'rMCreateInvoice' in quotation should exist"
       },
       {
-        "id": "t-228",
+        "id": "t-232",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "copyFrom",
@@ -3949,7 +4001,7 @@
         "description": "Action endpoint for 'copyFrom' in quotation should exist"
       },
       {
-        "id": "t-229",
+        "id": "t-233",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "copyFromPO",
@@ -3957,7 +4009,7 @@
         "description": "Action endpoint for 'copyFromPO' in quotation should exist"
       },
       {
-        "id": "t-230",
+        "id": "t-234",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "documentAction",
@@ -3965,7 +4017,7 @@
         "description": "Action endpoint for 'documentAction' in quotation should exist"
       },
       {
-        "id": "t-231",
+        "id": "t-235",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "createOrder",
@@ -3973,7 +4025,7 @@
         "description": "Action endpoint for 'createOrder' in quotation should exist"
       },
       {
-        "id": "t-232",
+        "id": "t-236",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "calculatePromotions",
@@ -3981,7 +4033,7 @@
         "description": "Action endpoint for 'calculatePromotions' in quotation should exist"
       },
       {
-        "id": "t-233",
+        "id": "t-237",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "posted",
@@ -3989,7 +4041,7 @@
         "description": "Action endpoint for 'posted' in quotation should exist"
       },
       {
-        "id": "t-234",
+        "id": "t-238",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "generateTemplate",
@@ -3997,7 +4049,7 @@
         "description": "Action endpoint for 'generateTemplate' in quotation should exist"
       },
       {
-        "id": "t-235",
+        "id": "t-239",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "processNow",
@@ -4005,7 +4057,7 @@
         "description": "Action endpoint for 'processNow' in quotation should exist"
       },
       {
-        "id": "t-236",
+        "id": "t-240",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "cancelandreplace",
@@ -4013,7 +4065,7 @@
         "description": "Action endpoint for 'cancelandreplace' in quotation should exist"
       },
       {
-        "id": "t-237",
+        "id": "t-241",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "confirmcancelandreplace",
@@ -4021,7 +4073,7 @@
         "description": "Action endpoint for 'confirmcancelandreplace' in quotation should exist"
       },
       {
-        "id": "t-238",
+        "id": "t-242",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "createPOLines",
@@ -4029,7 +4081,7 @@
         "description": "Action endpoint for 'createPOLines' in quotation should exist"
       },
       {
-        "id": "t-239",
+        "id": "t-243",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "aPRMAddPayment",
@@ -4037,7 +4089,7 @@
         "description": "Action endpoint for 'aPRMAddPayment' in quotation should exist"
       },
       {
-        "id": "t-240",
+        "id": "t-244",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "rMAddOrphanLine",
@@ -4045,7 +4097,7 @@
         "description": "Action endpoint for 'rMAddOrphanLine' in quotation should exist"
       },
       {
-        "id": "t-241",
+        "id": "t-245",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "rMPickfromreceipt",
@@ -4053,7 +4105,7 @@
         "description": "Action endpoint for 'rMPickfromreceipt' in quotation should exist"
       },
       {
-        "id": "t-242",
+        "id": "t-246",
         "category": "action-endpoint",
         "entity": "quotationLine",
         "field": "explode",
@@ -4061,7 +4113,7 @@
         "description": "Action endpoint for 'explode' in quotationLine should exist"
       },
       {
-        "id": "t-243",
+        "id": "t-247",
         "category": "action-endpoint",
         "entity": "quotationLine",
         "field": "managePrereservation",
@@ -4069,7 +4121,7 @@
         "description": "Action endpoint for 'managePrereservation' in quotationLine should exist"
       },
       {
-        "id": "t-244",
+        "id": "t-248",
         "category": "action-endpoint",
         "entity": "quotationLine",
         "field": "manageReservation",
@@ -4077,7 +4129,7 @@
         "description": "Action endpoint for 'manageReservation' in quotationLine should exist"
       },
       {
-        "id": "t-245",
+        "id": "t-249",
         "category": "action-endpoint",
         "entity": "quotationLine",
         "field": "selectOrderLine",
@@ -4086,7 +4138,7 @@
       }
     ],
     "summary": {
-      "total": 245,
+      "total": 249,
       "byCategory": {
         "field-presence": 18,
         "field-type": 18,
@@ -4097,15 +4149,15 @@
         "default-value-type": 5,
         "system-field": 153,
         "rule-declared": 8,
-        "process-happy": 1,
-        "process-failure": 1,
+        "process-happy": 3,
+        "process-failure": 3,
         "crud-flags": 2,
         "selector-endpoint": 6,
         "action-endpoint": 21
       },
       "byRunner": {
         "node": 243,
-        "junit": 2
+        "junit": 6
       }
     }
   }

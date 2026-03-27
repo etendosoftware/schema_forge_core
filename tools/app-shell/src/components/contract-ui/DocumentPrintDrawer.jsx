@@ -9,6 +9,7 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
   const iframeRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
 
   const reportId = `print-${windowName}`;
@@ -44,6 +45,41 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
   useEffect(() => { if (open && currentDocId) renderDocument(currentDocId); }, [open, currentDocId, renderDocument]);
   useEffect(() => { if (open) setCurrentIndex(0); }, [open]);
 
+  const handleDownload = async () => {
+    if (!currentDocId || downloading) return;
+    setDownloading(true);
+    try {
+      // Get HTML
+      const res = await fetch(`/api/reports/${reportId}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ format: 'html', params: { documentId: currentDocId } }),
+      });
+      if (!res.ok) throw new Error('Failed to render');
+      const html = await res.text();
+      // Generate PDF via jsreport
+      const pdfRes = await fetch('/jsreport/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template: { content: html, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } },
+          data: {},
+        }),
+      });
+      if (!pdfRes.ok) throw new Error('PDF generation failed');
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${windowName}-${currentDocId.slice(0, 8)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    }
+    setDownloading(false);
+  };
+
   if (!open || !reportId) return null;
 
   return (
@@ -69,12 +105,12 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
           </div>
           <div className="flex items-center gap-2">
             <button
-              disabled
-              title="Coming soon"
-              className="h-8 px-3 flex items-center gap-1.5 rounded-md border border-border/50 text-muted-foreground/50 bg-white text-xs font-medium cursor-not-allowed"
+              onClick={handleDownload}
+              disabled={downloading || !currentDocId}
+              className="h-8 px-3 flex items-center gap-1.5 rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 bg-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <Download className="h-3.5 w-3.5" />
-              Download
+              {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {downloading ? 'Generating...' : 'Download'}
             </button>
             <button
               disabled
