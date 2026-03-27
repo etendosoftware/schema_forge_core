@@ -8,7 +8,7 @@
       "name": "Product",
       "primaryEntity": "product",
       "category": "reference",
-      "layoutType": "default"
+      "layoutType": "gallery"
     },
     "entities": {
       "product": {
