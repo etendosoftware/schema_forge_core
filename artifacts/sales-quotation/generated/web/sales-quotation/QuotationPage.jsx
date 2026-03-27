@@ -3,15 +3,16 @@ import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
+import RelatedDocuments from './RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
 // @sf-generated-start summary:quotation
 const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -31,15 +32,17 @@ const processes = [
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true, label: 'Ordered Quantity' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'text', required: true, label: 'Net Unit Price' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
-    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
-    { key: 'discount', column: 'Discount', type: 'text' },
+    { key: 'discount', column: 'Discount', type: 'text', label: 'Discount' },
+  ],
+  hidden: [
+
   ],
 };
 // @sf-generated-end addLineFields:quotationLine
@@ -98,27 +101,11 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
-    },
-    {
-      "entity": "quotation",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
-    },
-    {
-      "entity": "quotation",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
     },
     {
       "entity": "quotation",
@@ -143,14 +130,6 @@ const api = {
       "reference": "Product",
       "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/product"
-    },
-    {
-      "entity": "quotationLine",
-      "field": "uOM",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/uOM"
     },
     {
       "entity": "quotationLine",
@@ -327,6 +306,9 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
         {...props}
       />
     );

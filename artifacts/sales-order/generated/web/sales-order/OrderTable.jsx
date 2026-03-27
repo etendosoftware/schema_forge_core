@@ -7,14 +7,12 @@ const columns = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'orderReference', column: 'POReference', type: 'string' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'string' },
-  { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent' },
 ];
 // @sf-generated-end columns:order
 
-const filters = ['documentNo', 'orderDate', 'businessPartner', 'documentStatus', 'grandTotalAmount', 'orderReference'];
+const filters = ['documentNo', 'orderDate', 'businessPartner', 'documentStatus', 'orderReference'];
 
 // @sf-generated-start component:OrderTable
 export default function OrderTable(props) {
