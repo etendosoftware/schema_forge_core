@@ -35,6 +35,10 @@ const processes = [
 ];
 // @sf-generated-end processes:bpartner
 
+// @sf-generated-start draftMode:bpartner
+const draftMode = null;
+// @sf-generated-end draftMode:bpartner
+
 // @sf-generated-start addLineFields:bpartnerLocation
 const addLineFields = {
   entry: [

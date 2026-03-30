@@ -497,7 +497,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${toLabel(headerEntity)}s"
+      entityLabel="${entityLabel}s"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}
