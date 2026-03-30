@@ -3,8 +3,6 @@ import InventoryTable from './InventoryTable';
 import InventoryForm from './InventoryForm';
 import InventoryLineTable from './InventoryLineTable';
 import InventoryLineForm from './InventoryLineForm';
-import AccountingTable from './AccountingTable';
-import AccountingForm from './AccountingForm';
 import catalogs from './mockCatalogs';
 
 
@@ -81,17 +79,6 @@ const api = {
       "listUrl": "/sws/neo/physical-inventory/inventoryLine",
       "detailUrl": "/sws/neo/physical-inventory/inventoryLine/{id}",
       "supportedFilters": []
-    },
-    "accounting": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/physical-inventory/accounting",
-      "detailUrl": "/sws/neo/physical-inventory/accounting/{id}",
-      "supportedFilters": []
     }
   },
   "selectors": [
@@ -134,92 +121,6 @@ const api = {
       "reference": "UOM",
       "inputMode": "selector",
       "url": "/sws/neo/physical-inventory/inventoryLine/selectors/uOM"
-    },
-    {
-      "entity": "accounting",
-      "field": "accountingSchema",
-      "column": "C_AcctSchema_ID",
-      "reference": "AcctSchema",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/accountingSchema"
-    },
-    {
-      "entity": "accounting",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/currency"
-    },
-    {
-      "entity": "accounting",
-      "field": "period",
-      "column": "C_Period_ID",
-      "reference": "Period",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/period"
-    },
-    {
-      "entity": "accounting",
-      "field": "account",
-      "column": "Account_ID",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/account"
-    },
-    {
-      "entity": "accounting",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/businessPartner"
-    },
-    {
-      "entity": "accounting",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/product"
-    },
-    {
-      "entity": "accounting",
-      "field": "project",
-      "column": "C_Project_ID",
-      "reference": "Project",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/project"
-    },
-    {
-      "entity": "accounting",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "Costcenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/costcenter"
-    },
-    {
-      "entity": "accounting",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/asset"
-    },
-    {
-      "entity": "accounting",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "User1",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/stDimension"
-    },
-    {
-      "entity": "accounting",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "User2",
-      "inputMode": "selector",
-      "url": "/sws/neo/physical-inventory/accounting/selectors/ndDimension"
     }
   ],
   "actions": [
@@ -292,9 +193,6 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={[
-          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
-        ]}
         {...props}
       />
     );
