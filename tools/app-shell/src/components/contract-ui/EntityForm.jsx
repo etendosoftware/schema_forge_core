@@ -67,7 +67,9 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
     }
   }, [value, displayValue]);
 
-  const catalogOptions = catalogs?.[field.reference];
+  // When a selectorUrl is configured, always use server search — ignore local catalog.
+  // Mock catalog data is only a fallback for when no server is available (e.g. mock mode).
+  const catalogOptions = selectorUrl ? null : catalogs?.[field.reference];
 
   // If we have an initial value but no label yet (and no catalog), try to fetch the single record
   React.useEffect(() => {
@@ -92,17 +94,16 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       .catch(() => { });
   }, [value, displayValue, selectorUrl, selectorContext, token, catalogs, entityName, field]);
 
-  // Server-side search triggered on typing
+  // Server-side search triggered on typing or on focus (empty query = load initial options).
   const triggerServerSearch = (searchQuery) => {
     if (catalogOptions || !selectorUrl || !token) return;
 
-    if (!searchQuery || searchQuery.length < 2) {
-      setServerResults(null);
-      return;
-    }
+    // Build params: include q only when the user has typed enough to filter
+    const params = { ...selectorContext };
+    if (searchQuery && searchQuery.length >= 2) params.q = searchQuery.trim();
 
     setFetching(true);
-    fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: searchQuery.trim() }), {
+    fetch(buildUrlWithParams(selectorUrl, params), {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
       .then(res => res.ok ? res.json() : null)
@@ -176,7 +177,8 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           }}
           onFocus={() => {
             setOpen(true);
-            if (!catalogOptions && query.length >= 2 && !serverResults) {
+            // Always load options on focus when none are cached yet (covers empty/cleared field)
+            if (!catalogOptions && !serverResults) {
               triggerServerSearch(query);
             }
           }}
@@ -566,7 +568,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 if (label) onChange?.(f.key + '$_identifier', label);
                 if (auxData) {
                   for (const [suffix, auxVal] of Object.entries(auxData)) {
-                    onChange?.(f.key + suffix, auxVal);
+                    if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+                      for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
+                        onChange?.(f.key + auxSuffix, auxSuffixVal);
+                      }
+                    } else {
+                      onChange?.(f.key + suffix, auxVal);
+                    }
                   }
                 }
               }}
@@ -631,7 +639,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 if (label) onChange?.(f.key + '$_identifier', label);
                 if (auxData) {
                   for (const [suffix, auxVal] of Object.entries(auxData)) {
-                    onChange?.(f.key + suffix, auxVal);
+                    if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+                      for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
+                        onChange?.(f.key + auxSuffix, auxSuffixVal);
+                      }
+                    } else {
+                      onChange?.(f.key + suffix, auxVal);
+                    }
                   }
                 }
               }}

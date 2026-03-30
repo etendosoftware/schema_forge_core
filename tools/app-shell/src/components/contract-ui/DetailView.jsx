@@ -406,6 +406,14 @@ export function DetailView({
           if (match) result[key + '$_identifier'] = match.label || match.name || match._identifier || '';
         }
       }
+      // Last resort: check snapshot for a display hint passed by the selector item.
+      // Pattern: field='product', result key='uOM' → look for rowValues['product_uOM'] = "Unit"
+      for (const key of Object.keys(result)) {
+        if (key.includes('$_identifier')) continue;
+        if (result[key + '$_identifier']) continue;
+        const hint = rowValues[field + '_' + key];
+        if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
     } catch {
       // Callout is best-effort
