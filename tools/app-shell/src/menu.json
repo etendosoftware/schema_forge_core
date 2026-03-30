@@ -93,7 +93,8 @@
         { "name": "tax", "label": "Taxes" },
         { "name": "uom", "label": "Units of Measure" },
         { "name": "user", "label": "Users" },
-        { "name": "smart-scan", "label": "Smart Scan" }
+        { "name": "smart-scan", "label": "Smart Scan" },
+        { "name": "oauth2-clients", "label": "OAuth2 Clients", "icon": "Shield" }
       ]
     }
   ]

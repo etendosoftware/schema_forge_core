@@ -27,6 +27,7 @@ import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
 const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
+const OAuth2ClientsPage = lazy(() => import('./pages/OAuth2ClientsPage.jsx'));
 
 function detectBasePath() {
   const path = window.location.pathname;
@@ -149,6 +150,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="hr" element={<HrPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
+        <Route path="oauth2-clients" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OAuth2ClientsPage /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
