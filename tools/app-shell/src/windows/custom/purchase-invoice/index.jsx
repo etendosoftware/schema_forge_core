@@ -5,7 +5,28 @@ import { Button } from '@/components/ui/button.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import InvoiceTable from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTable';
 import InvoicePage from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoicePage';
+import InvoiceTaxTable from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTaxTable';
+import InvoiceTaxForm from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTaxForm';
+import BasicDiscountsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsTable';
+import BasicDiscountsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsForm';
+import PaymentDetailsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/PaymentDetailsTable';
+import PaymentDetailsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/PaymentDetailsForm';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
+
+// Secondary tabs: Tax, Basic Discounts, Payment Details (no Payment Plan / Reversed Invoices / Accounting)
+const SECONDARY_TABS = [
+  { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable, Form: InvoiceTaxForm },
+  { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
+  { key: 'paymentDetails', label: 'Payment Details', Table: PaymentDetailsTable, Form: PaymentDetailsForm },
+];
+
+// Summary bar: only the four relevant totals
+const SUMMARY = [
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: 'Total Net Amount' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
+  { key: 'totalPaid', column: 'Totalpaid', type: 'amount', label: 'Paid Amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: 'Outstanding Amount' },
+];
 
 /**
  * PurchaseInvoiceListView — custom list view with Holded-style preview modal.
@@ -103,7 +124,12 @@ export default function PurchaseInvoiceWindow(props) {
   if (recordId) {
     return (
       <>
-        <InvoicePage {...props} onAfterSave={handleAfterSave} />
+        <InvoicePage
+          {...props}
+          secondaryTabs={SECONDARY_TABS}
+          summary={SUMMARY}
+          onAfterSave={handleAfterSave}
+        />
         {savedRecord && (
           <InvoicePreviewModal
             invoice={savedRecord}
