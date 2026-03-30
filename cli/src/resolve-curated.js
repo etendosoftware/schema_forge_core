@@ -191,7 +191,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   const field = {
     name: fieldName,
     column: rawField.columnName,
-    label: rawField.label,
+    label: fieldDecision.label || rawField.label,
     type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
     visibility,
     required,
