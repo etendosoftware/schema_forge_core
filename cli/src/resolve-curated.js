@@ -207,9 +207,10 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // Optional sequence override for UI ordering within section
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
 
-  // Visual hints — badge (boolean pill) and summable (numeric footer total)
+  // Visual hints — badge (boolean pill), summable (numeric footer total), columnType override
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
+  if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
 
   const isVisible = visibility !== 'system' && visibility !== 'discarded';
 
@@ -484,6 +485,16 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.templateConfig) {
     schema.window.templateConfig = windowDecisions.templateConfig;
+  }
+  // Pass through optional window-level UI config from decisions
+  if (windowDecisions.documentPreview) {
+    schema.window.documentPreview = windowDecisions.documentPreview;
+  }
+  if (windowDecisions.notesField) {
+    schema.window.notesField = windowDecisions.notesField;
+  }
+  if (windowDecisions.relatedDocuments) {
+    schema.window.relatedDocuments = windowDecisions.relatedDocuments;
   }
   // Forward secondary tab config and label overrides from decisions
   if (windowDecisions.entityLabel) {

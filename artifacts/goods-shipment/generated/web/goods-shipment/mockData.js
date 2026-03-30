@@ -126,120 +126,96 @@ export const goodsShipment = [
 export const goodsShipmentLine = [
   {
     "id": "mock-goodsShipmentLine-001",
-    "lineNo": 10,
     "product": "Laptop Pro 15",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Standard order for Q1 delivery",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-001"
   },
   {
     "id": "mock-goodsShipmentLine-002",
-    "lineNo": 20,
     "product": "USB-C Cable",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Rush order - priority shipping required",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-002"
   },
   {
     "id": "mock-goodsShipmentLine-003",
-    "lineNo": 30,
     "product": "Wireless Mouse",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Bulk purchase for warehouse restocking",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-003"
   },
   {
     "id": "mock-goodsShipmentLine-004",
-    "lineNo": 40,
     "product": "Mechanical Keyboard",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Sample order for client evaluation",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-004"
   },
   {
     "id": "mock-goodsShipmentLine-005",
-    "lineNo": 50,
     "product": "Monitor 27\"",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Recurring monthly supply order",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-005"
   },
   {
     "id": "mock-goodsShipmentLine-006",
-    "lineNo": 60,
     "product": "Webcam HD",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Special pricing agreement applies",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-006"
   },
   {
     "id": "mock-goodsShipmentLine-007",
-    "lineNo": 70,
     "product": "Headset Pro",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Consolidated order from multiple requests",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-007"
   },
   {
     "id": "mock-goodsShipmentLine-008",
-    "lineNo": 80,
     "product": "Docking Station",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Trial order for new product line",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-008"
   },
   {
     "id": "mock-goodsShipmentLine-009",
-    "lineNo": 90,
     "product": "SSD 1TB",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Replacement for damaged goods",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-009"
   },
   {
     "id": "mock-goodsShipmentLine-010",
-    "lineNo": 100,
     "product": "RAM 16GB",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Pre-season inventory build-up",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-010"
   },
   {
     "id": "mock-goodsShipmentLine-011",
-    "lineNo": 110,
     "product": "Power Supply 750W",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Customer-specific configuration",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-011"
   },
   {
     "id": "mock-goodsShipmentLine-012",
-    "lineNo": 120,
     "product": "Network Switch",
     "movementQuantity": "Sample movementQuantity",
-    "uOM": "Sample uOM",
     "description": "Government contract fulfillment",
     "orderQuantity": "Sample orderQuantity",
     "goodsShipmentId": "mock-goodsShipment-012"

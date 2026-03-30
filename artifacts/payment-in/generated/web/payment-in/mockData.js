@@ -12,16 +12,9 @@ export const finPayment = [
     "amount": 38907,
     "account": "Sample account",
     "currency": "USD",
-    "financialTransactionAmount": 38907,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "DR",
     "generatedCredit": 38907,
-    "usedCredit": 38907,
-    "writeoffAmount": 38907,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 38907
   },
   {
     "id": "mock-finPayment-002",
@@ -34,16 +27,9 @@ export const finPayment = [
     "amount": 9306,
     "account": "Sample account",
     "currency": "EUR",
-    "financialTransactionAmount": 9306,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "CO",
     "generatedCredit": 9306,
-    "usedCredit": 9306,
-    "writeoffAmount": 9306,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 9306
   },
   {
     "id": "mock-finPayment-003",
@@ -56,16 +42,9 @@ export const finPayment = [
     "amount": 11544,
     "account": "Sample account",
     "currency": "GBP",
-    "financialTransactionAmount": 11544,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "VO",
     "generatedCredit": 11544,
-    "usedCredit": 11544,
-    "writeoffAmount": 11544,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 11544
   },
   {
     "id": "mock-finPayment-004",
@@ -78,16 +57,9 @@ export const finPayment = [
     "amount": 11872,
     "account": "Sample account",
     "currency": "USD",
-    "financialTransactionAmount": 11872,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "IP",
     "generatedCredit": 11872,
-    "usedCredit": 11872,
-    "writeoffAmount": 11872,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 11872
   },
   {
     "id": "mock-finPayment-005",
@@ -100,16 +72,9 @@ export const finPayment = [
     "amount": 48460,
     "account": "Sample account",
     "currency": "EUR",
-    "financialTransactionAmount": 48460,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "DR",
     "generatedCredit": 48460,
-    "usedCredit": 48460,
-    "writeoffAmount": 48460,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 48460
   },
   {
     "id": "mock-finPayment-006",
@@ -122,16 +87,9 @@ export const finPayment = [
     "amount": 45418,
     "account": "Sample account",
     "currency": "GBP",
-    "financialTransactionAmount": 45418,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "CO",
     "generatedCredit": 45418,
-    "usedCredit": 45418,
-    "writeoffAmount": 45418,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 45418
   },
   {
     "id": "mock-finPayment-007",
@@ -144,16 +102,9 @@ export const finPayment = [
     "amount": 33840,
     "account": "Sample account",
     "currency": "USD",
-    "financialTransactionAmount": 33840,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "VO",
     "generatedCredit": 33840,
-    "usedCredit": 33840,
-    "writeoffAmount": 33840,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 33840
   },
   {
     "id": "mock-finPayment-008",
@@ -166,16 +117,9 @@ export const finPayment = [
     "amount": 25716,
     "account": "Sample account",
     "currency": "EUR",
-    "financialTransactionAmount": 25716,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "IP",
     "generatedCredit": 25716,
-    "usedCredit": 25716,
-    "writeoffAmount": 25716,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 25716
   },
   {
     "id": "mock-finPayment-009",
@@ -188,16 +132,9 @@ export const finPayment = [
     "amount": 44780,
     "account": "Sample account",
     "currency": "GBP",
-    "financialTransactionAmount": 44780,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "DR",
     "generatedCredit": 44780,
-    "usedCredit": 44780,
-    "writeoffAmount": 44780,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 44780
   },
   {
     "id": "mock-finPayment-010",
@@ -210,16 +147,9 @@ export const finPayment = [
     "amount": 12483,
     "account": "Sample account",
     "currency": "USD",
-    "financialTransactionAmount": 12483,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "CO",
     "generatedCredit": 12483,
-    "usedCredit": 12483,
-    "writeoffAmount": 12483,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 12483
   },
   {
     "id": "mock-finPayment-011",
@@ -232,16 +162,9 @@ export const finPayment = [
     "amount": 46022,
     "account": "Sample account",
     "currency": "EUR",
-    "financialTransactionAmount": 46022,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "VO",
     "generatedCredit": 46022,
-    "usedCredit": 46022,
-    "writeoffAmount": 46022,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 46022
   },
   {
     "id": "mock-finPayment-012",
@@ -254,16 +177,9 @@ export const finPayment = [
     "amount": 38634,
     "account": "Sample account",
     "currency": "GBP",
-    "financialTransactionAmount": 38634,
-    "financialTransactionConvertRate": "Sample financialTransactionConvertRate",
-    "aPRMAddScheduledpayments": "Sample aPRMAddScheduledpayments",
-    "aPRMProcessPayment": "Sample aPRMProcessPayment",
-    "aprmExecutepayment": "Sample aprmExecutepayment",
     "status": "IP",
     "generatedCredit": 38634,
-    "usedCredit": 38634,
-    "writeoffAmount": 38634,
-    "reversedPayment": "Sample reversedPayment"
+    "usedCredit": 38634
   }
 ];
 
@@ -271,157 +187,85 @@ export const finPaymentScheduleDetail = [
   {
     "id": "mock-finPaymentScheduleDetail-001",
     "dueDate": "2026-01-15",
-    "invoiceAmount": 38907,
-    "expected": 38907,
     "amount": 38907,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Acme Corp",
     "finPaymentId": "mock-finPayment-001"
   },
   {
     "id": "mock-finPaymentScheduleDetail-002",
     "dueDate": "2026-01-16",
-    "invoiceAmount": 9306,
-    "expected": 9306,
     "amount": 9306,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "TechFlow Inc",
     "finPaymentId": "mock-finPayment-002"
   },
   {
     "id": "mock-finPaymentScheduleDetail-003",
     "dueDate": "2026-01-17",
-    "invoiceAmount": 11544,
-    "expected": 11544,
     "amount": 11544,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Global Trade Ltd",
     "finPaymentId": "mock-finPayment-003"
   },
   {
     "id": "mock-finPaymentScheduleDetail-004",
     "dueDate": "2026-01-18",
-    "invoiceAmount": 11872,
-    "expected": 11872,
     "amount": 11872,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Summit Industries",
     "finPaymentId": "mock-finPayment-004"
   },
   {
     "id": "mock-finPaymentScheduleDetail-005",
     "dueDate": "2026-01-19",
-    "invoiceAmount": 48460,
-    "expected": 48460,
     "amount": 48460,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Pacific Partners",
     "finPaymentId": "mock-finPayment-005"
   },
   {
     "id": "mock-finPaymentScheduleDetail-006",
     "dueDate": "2026-01-20",
-    "invoiceAmount": 45418,
-    "expected": 45418,
     "amount": 45418,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Alpine Solutions",
     "finPaymentId": "mock-finPayment-006"
   },
   {
     "id": "mock-finPaymentScheduleDetail-007",
     "dueDate": "2026-01-21",
-    "invoiceAmount": 33840,
-    "expected": 33840,
     "amount": 33840,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Meridian Group",
     "finPaymentId": "mock-finPayment-007"
   },
   {
     "id": "mock-finPaymentScheduleDetail-008",
     "dueDate": "2026-01-22",
-    "invoiceAmount": 25716,
-    "expected": 25716,
     "amount": 25716,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Vertex Systems",
     "finPaymentId": "mock-finPayment-008"
   },
   {
     "id": "mock-finPaymentScheduleDetail-009",
     "dueDate": "2026-01-23",
-    "invoiceAmount": 44780,
-    "expected": 44780,
     "amount": 44780,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Atlas Manufacturing",
     "finPaymentId": "mock-finPayment-009"
   },
   {
     "id": "mock-finPaymentScheduleDetail-010",
     "dueDate": "2026-01-24",
-    "invoiceAmount": 12483,
-    "expected": 12483,
     "amount": 12483,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Nova Enterprises",
     "finPaymentId": "mock-finPayment-010"
   },
   {
     "id": "mock-finPaymentScheduleDetail-011",
     "dueDate": "2026-01-25",
-    "invoiceAmount": 46022,
-    "expected": 46022,
     "amount": 46022,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Pinnacle Services",
     "finPaymentId": "mock-finPayment-011"
   },
   {
     "id": "mock-finPaymentScheduleDetail-012",
     "dueDate": "2026-01-26",
-    "invoiceAmount": 38634,
-    "expected": 38634,
     "amount": 38634,
-    "orderPaymentSchedule": "Sample orderPaymentSchedule",
     "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
-    "gLItem": "Sample gLItem",
-    "canceled": "Sample canceled",
-    "businessPartner": "Horizon Labs",
     "finPaymentId": "mock-finPayment-012"
   }
 ];

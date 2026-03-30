@@ -1,6 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
-// @sf-generated-start fields:invoice
+// @sf-generated-start fields:header
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true, section: 'principal' },
   // @sf-custom-slot callout:SE_Invoice_AccountingDate
@@ -16,13 +16,13 @@ const fields = [
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', required: true, readOnly: true, section: 'summary' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'number', required: true, readOnly: true, section: 'summary', defaultValue: '0' },
 ];
-// @sf-generated-end fields:invoice
+// @sf-generated-end fields:header
 
-// @sf-generated-start component:InvoiceForm
-export default function InvoiceForm(props) {
-  // @sf-custom-slot hooks:InvoiceForm
+// @sf-generated-start component:HeaderForm
+export default function HeaderForm(props) {
+  // @sf-custom-slot hooks:HeaderForm
   return <EntityForm fields={fields} {...props} />;
 }
-// @sf-generated-end component:InvoiceForm
+// @sf-generated-end component:HeaderForm
 
-// @sf-custom-slot section:InvoiceForm-custom
+// @sf-custom-slot section:HeaderForm-custom

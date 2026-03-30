@@ -3,9 +3,10 @@ import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import OrderLineTable from './OrderLineTable';
 import OrderLineForm from './OrderLineForm';
+// @sf-custom-start imports:order
 import RelatedDocuments from './RelatedDocuments';
+// @sf-custom-end imports:order
 import catalogs from './mockCatalogs';
-
 
 const breadcrumb = 'Sales / Sales Order';
 
@@ -35,18 +36,17 @@ const processes = [
 // @sf-generated-start addLineFields:orderLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true, label: 'Ordered Quantity' },
-    { key: 'unitPrice', column: 'PriceActual', type: 'text', required: true, label: 'Net Unit Price' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
+    { key: 'description', column: 'Description', type: 'textarea' },
+    { key: 'stockReservation', column: 'Create_Reservation', type: 'text' },
   ],
   derived: [
-    { key: 'discount', column: 'Discount', type: 'text', label: 'Discount' },
-  ],
-  hidden: [
-
+    { key: 'unitPrice', column: 'PriceActual', type: 'text' },
+    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', reference: 'Tax', inputMode: 'search' },
+    { key: 'listPrice', column: 'PriceList', type: 'text' },
+    { key: 'discount', column: 'Discount', type: 'text' },
   ],
 };
 // @sf-generated-end addLineFields:orderLine
@@ -112,22 +112,6 @@ const api = {
       "url": "/sws/neo/sales-order/order/selectors/paymentMethod"
     },
     {
-      "entity": "order",
-      "field": "warehouse",
-      "column": "M_Warehouse_ID",
-      "reference": "Warehouse",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/warehouse"
-    },
-    {
-      "entity": "order",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/currency"
-    },
-    {
       "entity": "orderLine",
       "field": "product",
       "column": "M_Product_ID",
@@ -137,11 +121,27 @@ const api = {
     },
     {
       "entity": "orderLine",
+      "field": "uOM",
+      "column": "C_UOM_ID",
+      "reference": "UOM",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/orderLine/selectors/uOM"
+    },
+    {
+      "entity": "orderLine",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "search",
       "url": "/sws/neo/sales-order/orderLine/selectors/tax"
+    },
+    {
+      "entity": "orderLine",
+      "field": "replacedorderline",
+      "column": "Replacedorderline_id",
+      "reference": "OrderLine",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/orderLine/selectors/replacedorderline"
     }
   ],
   "actions": [
@@ -310,9 +310,11 @@ export default function OrderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Order', pdfUrl: null }}
-        notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        // @sf-custom-start customTabs:order
+        customTabs={[
+          { key: 'related', label: 'Related Documents', Component: RelatedDocuments },
+        ]}
+        // @sf-custom-end customTabs:order
         {...props}
       />
     );

@@ -5,7 +5,7 @@ const columns = [
   { key: 'paymentDate', column: 'Paymentdate', type: 'date' },
   { key: 'dueDate', column: 'Duedate', type: 'date' },
   { key: 'expectedAmount', column: 'Expected', type: 'amount' },
-  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'status', column: 'Status', type: 'status', display: 'dot' },
 ];
 // @sf-generated-end columns:paymentDetails
 

@@ -1,6 +1,57 @@
-import HeaderPage from './HeaderPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import HeaderTable from './HeaderTable';
+import HeaderForm from './HeaderForm';
+import LinesTable from './LinesTable';
+import LinesForm from './LinesForm';
+import catalogs from './mockCatalogs';
+import RelatedDocuments from './RelatedDocuments';
 
-const windowMeta = { category: 'sales', name: 'Sales Invoice' };
+
+const breadcrumb = 'Sales / Sales Invoice';
+
+// @sf-generated-start summary:header
+const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+];
+
+const statusField = 'documentStatus';
+// @sf-generated-end summary:header
+
+// @sf-custom-slot extraBadges:header
+// @sf-generated-start extraBadges:header
+const extraBadges = [];
+// @sf-generated-end extraBadges:header
+
+// @sf-generated-start processes:header
+const processes = [
+
+];
+// @sf-generated-end processes:header
+
+// @sf-generated-start draftMode:header
+const draftMode = null;
+// @sf-generated-end draftMode:header
+
+// @sf-generated-start addLineFields:lines
+const addLineFields = {
+  entry: [
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+  ],
+  derived: [
+
+  ],
+  hidden: [
+
+  ],
+};
+// @sf-generated-end addLineFields:lines
 
 const api = {
   "specName": "sales-invoice",
@@ -203,11 +254,49 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:HeaderPage
+export default function HeaderPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:HeaderPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="header"
+        detailEntity="lines"
+        Form={HeaderForm}
+        DetailTable={LinesTable}
+        DetailForm={LinesForm}
+        summary={summary}
+        statusField={statusField}
+        extraBadges={extraBadges}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Header"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="header"
+      Table={HeaderTable}
+      entityLabel="Headers"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:HeaderPage
+
+// @sf-custom-slot section:HeaderPage-custom

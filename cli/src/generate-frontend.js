@@ -60,7 +60,15 @@ export function getReadOnlyFields(contract, entityName) {
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
-  if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) return 'status';
+  // Explicit columnType override from decisions (e.g. "percent" for progress bars)
+  if (field.columnType) return field.columnType;
+  if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) {
+    // Integer/number status fields without explicit columnType → show as number, not badge
+    if ((field.type === 'integer' || field.type === 'number') && field.name.toLowerCase() !== 'documentstatus') {
+      return 'number';
+    }
+    return 'status';
+  }
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
@@ -340,8 +348,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
+  // Window-level UI config from decisions.json
+  const windowConfig = contract?.frontendContract?.window ?? {};
+  const documentPreview = windowConfig.documentPreview ?? null;
+  const notesField = windowConfig.notesField ?? null;
+  const relatedDocuments = windowConfig.relatedDocuments ?? false;
+
   // Detect secondary child entities for additional tabs
-  const windowConfig = contract.frontendContract.window;
   const secondaryTabsDecl = windowConfig.secondaryTabs;
   let secondaryTabDefs;
 
@@ -433,6 +446,22 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
+  // Build optional DetailView props from window-level decisions config
+  const documentPreviewProp = documentPreview
+    ? `\n        documentPreview={{ titlePrefix: '${documentPreview.titlePrefix || ''}', pdfUrl: null }}`
+    : '';
+  const notesFieldProp = notesField
+    ? `\n        notesField="${notesField}"`
+    : '';
+  const customTabsProp = relatedDocuments
+    ? `\n        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}`
+    : '';
+
+  // Build optional import for RelatedDocuments
+  const relatedDocsImport = relatedDocuments
+    ? `import RelatedDocuments from './RelatedDocuments';\n`
+    : '';
+
   // Draft mode config from frontend contract
   const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
   const draftModeValue = draftModeConfig?.enabled
@@ -453,7 +482,7 @@ import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${relatedDocsImport}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}
 
@@ -517,7 +546,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${draftModeProp}${isGallery ? `
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${documentPreviewProp}${notesFieldProp}${customTabsProp}${draftModeProp}${isGallery ? `
         headerContent={
           <${headerName}DetailHeader
             recordId={recordId}
