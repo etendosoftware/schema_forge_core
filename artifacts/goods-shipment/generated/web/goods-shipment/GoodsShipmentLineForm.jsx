@@ -2,14 +2,12 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:goodsShipmentLine
 const fields = [
-  { key: 'lineNo', column: 'Line', type: 'number', required: true, section: 'principal', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@' },
   // @sf-custom-slot callout:SL_InOutLine_Product
   { key: 'product', column: 'M_Product_ID', type: 'search', section: 'principal', reference: 'Product', inputMode: 'search' },
-  { key: 'movementQuantity', column: 'MovementQty', type: 'text', required: true, section: 'principal', defaultValue: '0' },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'search', required: true, readOnly: true, section: 'principal', reference: 'UOM', inputMode: 'search' },
+  { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, section: 'principal', defaultValue: '0' },
   { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
   // @sf-custom-slot callout:SL_InOut_Conversion
-  { key: 'orderQuantity', column: 'QuantityOrder', type: 'text', readOnly: true, section: 'principal' },
+  { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', readOnly: true, section: 'principal' },
 ];
 // @sf-generated-end fields:goodsShipmentLine
 

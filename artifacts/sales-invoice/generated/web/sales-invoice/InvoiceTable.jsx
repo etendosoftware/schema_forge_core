@@ -5,14 +5,13 @@ const columns = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'string' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', display: 'dot' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
+  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean', badge: true, badgeLabels: { true: 'Paid', false: 'Pending' } },
 ];
 // @sf-generated-end columns:invoice
 
-const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'documentStatus', 'orderReference'];
+const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'documentStatus'];
 
 // @sf-generated-start component:InvoiceTable
 export default function InvoiceTable(props) {

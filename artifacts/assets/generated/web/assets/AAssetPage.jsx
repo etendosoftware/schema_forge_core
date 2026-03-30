@@ -26,14 +26,19 @@ const extraBadges = [];
 
 // @sf-generated-start processes:aAsset
 const processes = [
-
+  { name: 'processed', label: 'Create Amortization', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
+  { name: 'processAsset', label: 'Generate Amortization Plan', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
 ];
 // @sf-generated-end processes:aAsset
+
+// @sf-generated-start draftMode:aAsset
+const draftMode = null;
+// @sf-generated-end draftMode:aAsset
 
 // @sf-generated-start addLineFields:amortizationLine
 const addLineFields = {
   entry: [
-    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'text', lookup: true, label: 'Amortization Percentage' },
+    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'text', label: 'Amortization Percentage' },
     { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', reference: 'Currency', inputMode: 'selector' },
   ],
   derived: [

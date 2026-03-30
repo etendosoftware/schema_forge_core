@@ -1,12 +1,12 @@
 // Auto-generated mock data - do not edit manually
 
-export const aAsset = [
+export const assets = [
   {
-    "id": "mock-aAsset-001",
+    "id": "mock-assets-001",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00001",
+    "documentNo": "AS-00001",
     "description": "Standard order for Q1 delivery",
     "currency": "USD",
     "product": "Laptop Pro 15",
@@ -33,11 +33,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-002",
+    "id": "mock-assets-002",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00002",
+    "documentNo": "AS-00002",
     "description": "Rush order - priority shipping required",
     "currency": "EUR",
     "product": "USB-C Cable",
@@ -64,11 +64,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-003",
+    "id": "mock-assets-003",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00003",
+    "documentNo": "AS-00003",
     "description": "Bulk purchase for warehouse restocking",
     "currency": "GBP",
     "product": "Wireless Mouse",
@@ -95,11 +95,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-004",
+    "id": "mock-assets-004",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00004",
+    "documentNo": "AS-00004",
     "description": "Sample order for client evaluation",
     "currency": "USD",
     "product": "Mechanical Keyboard",
@@ -126,11 +126,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-005",
+    "id": "mock-assets-005",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00005",
+    "documentNo": "AS-00005",
     "description": "Recurring monthly supply order",
     "currency": "EUR",
     "product": "Monitor 27\"",
@@ -157,11 +157,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-006",
+    "id": "mock-assets-006",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00006",
+    "documentNo": "AS-00006",
     "description": "Special pricing agreement applies",
     "currency": "GBP",
     "product": "Webcam HD",
@@ -188,11 +188,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-007",
+    "id": "mock-assets-007",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00007",
+    "documentNo": "AS-00007",
     "description": "Consolidated order from multiple requests",
     "currency": "USD",
     "product": "Headset Pro",
@@ -219,11 +219,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-008",
+    "id": "mock-assets-008",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00008",
+    "documentNo": "AS-00008",
     "description": "Trial order for new product line",
     "currency": "EUR",
     "product": "Docking Station",
@@ -250,11 +250,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-009",
+    "id": "mock-assets-009",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00009",
+    "documentNo": "AS-00009",
     "description": "Replacement for damaged goods",
     "currency": "GBP",
     "product": "SSD 1TB",
@@ -281,11 +281,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-010",
+    "id": "mock-assets-010",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00010",
+    "documentNo": "AS-00010",
     "description": "Pre-season inventory build-up",
     "currency": "USD",
     "product": "RAM 16GB",
@@ -312,11 +312,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-011",
+    "id": "mock-assets-011",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00011",
+    "documentNo": "AS-00011",
     "description": "Customer-specific configuration",
     "currency": "EUR",
     "product": "Power Supply 750W",
@@ -343,11 +343,11 @@ export const aAsset = [
     "processAsset": "Sample processAsset"
   },
   {
-    "id": "mock-aAsset-012",
+    "id": "mock-assets-012",
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AA-00012",
+    "documentNo": "AS-00012",
     "description": "Government contract fulfillment",
     "currency": "GBP",
     "product": "Network Switch",
@@ -383,7 +383,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 38907,
     "currency": "USD",
-    "aAssetId": "mock-aAsset-001"
+    "assetsId": "mock-assets-001"
   },
   {
     "id": "mock-amortizationLine-002",
@@ -392,7 +392,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 9306,
     "currency": "EUR",
-    "aAssetId": "mock-aAsset-002"
+    "assetsId": "mock-assets-002"
   },
   {
     "id": "mock-amortizationLine-003",
@@ -401,7 +401,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 11544,
     "currency": "GBP",
-    "aAssetId": "mock-aAsset-003"
+    "assetsId": "mock-assets-003"
   },
   {
     "id": "mock-amortizationLine-004",
@@ -410,7 +410,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 11872,
     "currency": "USD",
-    "aAssetId": "mock-aAsset-004"
+    "assetsId": "mock-assets-004"
   },
   {
     "id": "mock-amortizationLine-005",
@@ -419,7 +419,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 48460,
     "currency": "EUR",
-    "aAssetId": "mock-aAsset-005"
+    "assetsId": "mock-assets-005"
   },
   {
     "id": "mock-amortizationLine-006",
@@ -428,7 +428,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 45418,
     "currency": "GBP",
-    "aAssetId": "mock-aAsset-006"
+    "assetsId": "mock-assets-006"
   },
   {
     "id": "mock-amortizationLine-007",
@@ -437,7 +437,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 33840,
     "currency": "USD",
-    "aAssetId": "mock-aAsset-007"
+    "assetsId": "mock-assets-007"
   },
   {
     "id": "mock-amortizationLine-008",
@@ -446,7 +446,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 25716,
     "currency": "EUR",
-    "aAssetId": "mock-aAsset-008"
+    "assetsId": "mock-assets-008"
   },
   {
     "id": "mock-amortizationLine-009",
@@ -455,7 +455,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 44780,
     "currency": "GBP",
-    "aAssetId": "mock-aAsset-009"
+    "assetsId": "mock-assets-009"
   },
   {
     "id": "mock-amortizationLine-010",
@@ -464,7 +464,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 12483,
     "currency": "USD",
-    "aAssetId": "mock-aAsset-010"
+    "assetsId": "mock-assets-010"
   },
   {
     "id": "mock-amortizationLine-011",
@@ -473,7 +473,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 46022,
     "currency": "EUR",
-    "aAssetId": "mock-aAsset-011"
+    "assetsId": "mock-assets-011"
   },
   {
     "id": "mock-amortizationLine-012",
@@ -482,7 +482,7 @@ export const amortizationLine = [
     "amortizationPercentage": "Sample amortizationPercentage",
     "amortizationAmount": 38634,
     "currency": "GBP",
-    "aAssetId": "mock-aAsset-012"
+    "assetsId": "mock-assets-012"
   }
 ];
 
@@ -492,83 +492,83 @@ export const assetAcct = [
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-001"
+    "assetsId": "mock-assets-001"
   },
   {
     "id": "mock-assetAcct-002",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-002"
+    "assetsId": "mock-assets-002"
   },
   {
     "id": "mock-assetAcct-003",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-003"
+    "assetsId": "mock-assets-003"
   },
   {
     "id": "mock-assetAcct-004",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-004"
+    "assetsId": "mock-assets-004"
   },
   {
     "id": "mock-assetAcct-005",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-005"
+    "assetsId": "mock-assets-005"
   },
   {
     "id": "mock-assetAcct-006",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-006"
+    "assetsId": "mock-assets-006"
   },
   {
     "id": "mock-assetAcct-007",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-007"
+    "assetsId": "mock-assets-007"
   },
   {
     "id": "mock-assetAcct-008",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-008"
+    "assetsId": "mock-assets-008"
   },
   {
     "id": "mock-assetAcct-009",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-009"
+    "assetsId": "mock-assets-009"
   },
   {
     "id": "mock-assetAcct-010",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-010"
+    "assetsId": "mock-assets-010"
   },
   {
     "id": "mock-assetAcct-011",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-011"
+    "assetsId": "mock-assets-011"
   },
   {
     "id": "mock-assetAcct-012",
     "accountingSchema": "Sample accountingSchema",
     "accumulatedDepreciation": "Sample accumulatedDepreciation",
     "depreciation": "Sample depreciation",
-    "aAssetId": "mock-aAsset-012"
+    "assetsId": "mock-assets-012"
   }
 ];

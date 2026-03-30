@@ -3,88 +3,143 @@ import { useNavigate } from 'react-router-dom';
 
 const STATUS_LABELS = {
   CO: 'Completed', DR: 'Draft', VO: 'Voided', CL: 'Closed',
-};
-const STATUS_COLORS = {
-  CO: 'bg-emerald-500', CL: 'bg-emerald-500', DR: 'bg-gray-400', VO: 'bg-red-400',
+  RPPC: 'Received', RPR: 'Received', PWNC: 'Pending', RDNC: 'Deposited',
 };
 
-function StatusDot({ value }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground min-w-[80px]">
-      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_COLORS[value] || 'bg-gray-400'}`} />
-      {STATUS_LABELS[value] || value}
-    </span>
-  );
-}
+const STATUS_BADGE = {
+  CO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  CL: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  RPPC: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  RPR: 'bg-blue-50 text-blue-700 border-blue-200',
+  RDNC: 'bg-blue-50 text-blue-700 border-blue-200',
+  DR: 'bg-gray-50 text-gray-600 border-gray-200',
+  PWNC: 'bg-amber-50 text-amber-700 border-amber-200',
+  VO: 'bg-red-50 text-red-700 border-red-200',
+};
 
-function formatDate(val) {
-  if (!val) return '';
-  return new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function formatAmount(val) {
-  if (val == null) return '';
-  const num = typeof val === 'string' ? parseFloat(val) : val;
-  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+const CHIP_ICONS = {
+  order: (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+    </svg>
+  ),
+  invoice: (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
+    </svg>
+  ),
+};
 
 function neoBase(apiBaseUrl) {
   return (apiBaseUrl || '').replace(/\/[^/]+$/, '');
 }
 
+function formatAmount(val, currency) {
+  if (val == null) return '';
+  const num = typeof val === 'string' ? parseFloat(val) : val;
+  const formatted = num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return currency ? `${formatted} ${currency}` : formatted;
+}
+
+function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) {
+  const badgeClass = STATUS_BADGE[status] || 'bg-gray-50 text-gray-600 border-gray-200';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-border/40 rounded-full bg-white hover:bg-muted/30 transition-colors text-sm cursor-pointer"
+      style={{ borderWidth: '0.5px' }}
+    >
+      <span className={`shrink-0 ${iconColor}`}>{icon}</span>
+      <span className="font-medium text-foreground/80">{title}</span>
+      {amount != null && (
+        <span className="text-xs text-muted-foreground tabular-nums">{formatAmount(amount, currency)}</span>
+      )}
+      {status && (
+        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${badgeClass}`} style={{ borderWidth: '0.5px' }}>
+          {STATUS_LABELS[status] || status}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [order, setOrder] = useState(null);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!recordId || !data) { setLoading(false); return; }
-    // The shipment's salesOrder field contains the C_Order_ID
     const orderId = data.salesOrder;
     if (!orderId) { setLoading(false); return; }
 
     const base = neoBase(apiBaseUrl);
-    fetch(`${base}/sales-order/order/${orderId}`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    })
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+    const orderPromise = fetch(`${base}/sales-order/header/${orderId}`, { headers })
       .then(r => r.ok ? r.json() : null)
-      .then(j => {
-        const row = j?.response?.data?.[0] || j?.response?.data || null;
-        setOrder(row);
-        setLoading(false);
-      })
-      .catch(() => { setOrder(null); setLoading(false); });
+      .then(j => j?.response?.data?.[0] || null)
+      .catch(() => null);
+
+    const criteria = JSON.stringify([{ fieldName: 'salesOrder', operator: 'equals', value: orderId }]);
+    const params = new URLSearchParams({ criteria, _limit: '50' });
+    const invoicePromise = fetch(`${base}/sales-invoice/header?${params}`, { headers })
+      .then(r => r.ok ? r.json() : { response: { data: [] } })
+      .then(j => j.response?.data || [])
+      .catch(() => []);
+
+    Promise.all([orderPromise, invoicePromise]).then(([o, inv]) => {
+      setOrder(o);
+      setInvoices(inv);
+      setLoading(false);
+    });
   }, [recordId, data, token, apiBaseUrl]);
 
-  if (loading) return <div className="text-xs text-muted-foreground py-3 px-3">Loading...</div>;
-  if (!order) return null;
+  if (loading) return <span className="text-xs text-muted-foreground">Loading...</span>;
+
+  const chips = [];
+
+  if (order) {
+    chips.push(
+      <DocChip
+        key="order"
+        icon={CHIP_ICONS.order}
+        iconColor="text-amber-600"
+        title={`Order #${order.documentNo}`}
+        amount={order.grandTotalAmount}
+        currency={order['currency$_identifier']}
+        status={order.documentStatus}
+        onClick={() => navigate(`/sales-order/${order.id}`)}
+      />
+    );
+  }
+
+  for (const inv of invoices) {
+    chips.push(
+      <DocChip
+        key={`inv-${inv.id}`}
+        icon={CHIP_ICONS.invoice}
+        iconColor="text-purple-600"
+        title={`Invoice #${inv.documentNo}`}
+        amount={inv.grandTotalAmount}
+        currency={inv['currency$_identifier']}
+        status={inv.documentStatus}
+        onClick={() => navigate(`/sales-invoice/${inv.id}`)}
+      />
+    );
+  }
+
+  if (chips.length === 0) {
+    return <span className="text-xs text-muted-foreground/50">No related documents</span>;
+  }
 
   return (
-    <div className="max-w-3xl">
-      <div className="space-y-0.5">
-        <div className="flex items-center gap-2 px-3 py-1.5">
-          <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-            <rect x="9" y="3" width="6" height="4" rx="1" />
-          </svg>
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sales Order</span>
-        </div>
-        <div
-          onClick={() => navigate(`/sales-order/${order.id}`)}
-          className="flex items-center justify-between py-2.5 px-3 rounded-md hover:bg-muted/50 cursor-pointer transition-colors group"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-sm font-medium text-blue-600 group-hover:underline">#{order.documentNo}</span>
-            <span className="text-xs text-muted-foreground">{formatDate(order.orderDate)}</span>
-          </div>
-          <div className="flex items-center gap-4 shrink-0">
-            {order.grandTotalAmount != null && (
-              <span className="text-sm font-medium tabular-nums">{formatAmount(order.grandTotalAmount)}</span>
-            )}
-            {order.documentStatus && <StatusDot value={order.documentStatus} />}
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-wrap items-center gap-1.5">
+      {chips}
     </div>
   );
 }

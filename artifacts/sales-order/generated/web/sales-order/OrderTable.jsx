@@ -5,10 +5,10 @@ const columns = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'orderDate', column: 'DateOrdered', type: 'date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', display: 'dot' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'status' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'status' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent' },
 ];
 // @sf-generated-end columns:order
 
