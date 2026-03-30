@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { createApiFetch } from '@/auth/api.js';
 import { listClients, deleteClient, regenerateSecret, revokeTokens } from '@/lib/oauth2Api.js';
+import OAuth2ClientDialog, { SecretRevealDialog, ConfirmDialog } from '@/components/OAuth2ClientDialog.jsx';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Shield, Plus, RefreshCw, Trash2, Key, MoreHorizontal, Copy, Ban } from 'lucide-react';
+import { Shield, Plus, RefreshCw, Trash2, Key, MoreHorizontal, Copy, Ban, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
 function detectBaseUrl() {
@@ -51,42 +52,111 @@ export default function OAuth2ClientsPage() {
     fetchClients();
   }, [fetchClients]);
 
-  const handleDelete = async (client) => {
-    if (!window.confirm(`Delete client "${client.name}"? This cannot be undone.`)) return;
-    try {
-      await deleteClient(apiFetch, client.id);
-      toast.success('Client deleted');
-      fetchClients();
-    } catch (err) {
-      toast.error('Failed to delete client', { description: err.message });
-    }
+  // Create/Edit dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+
+  // Confirmation dialog state
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: '',
+    description: '',
+    confirmLabel: 'Confirm',
+    variant: 'default',
+    onConfirm: null,
+  });
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Secret reveal after regenerate
+  const [revealSecret, setRevealSecret] = useState(null);
+
+  const handleCreate = () => {
+    setEditingClient(null);
+    setDialogOpen(true);
   };
 
-  const handleRegenerateSecret = async (client) => {
-    if (!window.confirm(`Regenerate secret for "${client.name}"? The current secret will stop working immediately.`)) return;
-    try {
-      const result = await regenerateSecret(apiFetch, client.id);
-      if (result.clientSecret) {
-        await navigator.clipboard.writeText(result.clientSecret).catch(() => {});
-        toast.success('Secret regenerated and copied to clipboard', {
-          description: 'Store it securely — it will not be shown again.',
-          duration: 10000,
-        });
-      } else {
-        toast.success('Secret regenerated');
-      }
-    } catch (err) {
-      toast.error('Failed to regenerate secret', { description: err.message });
-    }
+  const handleEdit = (client) => {
+    setEditingClient(client);
+    setDialogOpen(true);
   };
 
-  const handleRevokeTokens = async (client) => {
-    try {
-      await revokeTokens(apiFetch, client.id);
-      toast.success('All tokens revoked', { description: `Tokens for "${client.name}" have been invalidated.` });
-    } catch (err) {
-      toast.error('Failed to revoke tokens', { description: err.message });
-    }
+  const handleDelete = (client) => {
+    setConfirmState({
+      open: true,
+      title: `Delete "${client.name}"?`,
+      description:
+        'This will permanently delete the client and revoke all its tokens. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await deleteClient(apiFetch, client.id);
+          toast.success('Client deleted');
+          setConfirmState((s) => ({ ...s, open: false }));
+          fetchClients();
+        } catch (err) {
+          toast.error('Failed to delete client', { description: err.message });
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
+  };
+
+  const handleRegenerateSecret = (client) => {
+    setConfirmState({
+      open: true,
+      title: `Regenerate secret for "${client.name}"?`,
+      description:
+        'Are you sure? The current secret will be invalidated immediately. Any agents using the old secret will stop working.',
+      confirmLabel: 'Regenerate',
+      variant: 'destructive',
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          const result = await regenerateSecret(apiFetch, client.id);
+          setConfirmState((s) => ({ ...s, open: false }));
+          if (result.clientSecret) {
+            setRevealSecret({
+              clientId: result.clientId || client.clientId,
+              clientSecret: result.clientSecret,
+            });
+          } else {
+            toast.success('Secret regenerated');
+          }
+        } catch (err) {
+          toast.error('Failed to regenerate secret', { description: err.message });
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
+  };
+
+  const handleRevokeTokens = (client) => {
+    setConfirmState({
+      open: true,
+      title: `Revoke tokens for "${client.name}"?`,
+      description:
+        'This will invalidate all active tokens for this client. Agents will need to re-authenticate.',
+      confirmLabel: 'Revoke All',
+      variant: 'destructive',
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await revokeTokens(apiFetch, client.id);
+          toast.success('All tokens revoked', {
+            description: `Tokens for "${client.name}" have been invalidated.`,
+          });
+          setConfirmState((s) => ({ ...s, open: false }));
+        } catch (err) {
+          toast.error('Failed to revoke tokens', { description: err.message });
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
   };
 
   const copyClientId = async (clientId) => {
@@ -96,11 +166,6 @@ export default function OAuth2ClientsPage() {
     } catch {
       toast.error('Failed to copy');
     }
-  };
-
-  const handleCreate = () => {
-    // D3 will add the create/edit dialog — for now show a placeholder toast
-    toast.info('Create client dialog coming soon');
   };
 
   return (
@@ -181,7 +246,7 @@ export default function OAuth2ClientsPage() {
                           </Badge>
                         ))}
                         {(!client.scopes || client.scopes.length === 0) && (
-                          <span className="text-xs text-muted-foreground">\u2014</span>
+                          <span className="text-xs text-muted-foreground">{'\u2014'}</span>
                         )}
                       </div>
                     </TableCell>
@@ -198,6 +263,10 @@ export default function OAuth2ClientsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(client)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleRegenerateSecret(client)}>
                             <Key className="h-4 w-4 mr-2" />
                             Regenerate Secret
@@ -224,6 +293,39 @@ export default function OAuth2ClientsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create/Edit dialog */}
+      <OAuth2ClientDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        client={editingClient}
+        apiFetch={apiFetch}
+        onSuccess={fetchClients}
+      />
+
+      {/* Confirmation dialog (delete, regenerate, revoke) */}
+      <ConfirmDialog
+        open={confirmState.open}
+        onOpenChange={(v) => {
+          if (!v) setConfirmState((s) => ({ ...s, open: false }));
+        }}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel={confirmState.confirmLabel}
+        variant={confirmState.variant}
+        loading={confirmLoading}
+        onConfirm={confirmState.onConfirm}
+      />
+
+      {/* Secret reveal after regenerate */}
+      {revealSecret && (
+        <SecretRevealDialog
+          open={!!revealSecret}
+          onClose={() => setRevealSecret(null)}
+          clientId={revealSecret.clientId}
+          clientSecret={revealSecret.clientSecret}
+        />
+      )}
     </div>
   );
 }
