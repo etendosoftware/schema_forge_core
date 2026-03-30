@@ -72,11 +72,12 @@ describe('Wiring completeness', () => {
 
   describe('Every entity artifact has mockData.js', () => {
     for (const entity of entityArtifacts) {
-      it(`${entity} should have generated mockData.js`, () => {
-        const mockPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
+      it(`${entity} should have mockData.js`, () => {
+        const generatedPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
+        const customPath = resolve(ARTIFACTS, entity, 'custom', 'mockData.js');
         assert.ok(
-          existsSync(mockPath),
-          `Missing: artifacts/${entity}/generated/web/${entity}/mockData.js`
+          existsSync(generatedPath) || existsSync(customPath),
+          `Missing: artifacts/${entity}/generated/web/${entity}/mockData.js or artifacts/${entity}/custom/mockData.js`
         );
       });
     }
@@ -166,7 +167,7 @@ describe('Wiring completeness', () => {
       const contract = JSON.parse(readText(resolve(ARTIFACTS, entity, 'contract.json')));
       const primary = contract.frontendContract.window.primaryEntity;
       const fields = contract.frontendContract.entities[primary].fields;
-      const contractFormFields = new Set(fields.filter(f => f.form).map(f => f.name));
+      const contractFormFields = new Set(fields.filter(f => f.form && f.type !== 'button').map(f => f.name));
 
       const cap = primary[0].toUpperCase() + primary.slice(1);
       const formPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, `${cap}Form.jsx`);

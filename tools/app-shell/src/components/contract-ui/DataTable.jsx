@@ -8,7 +8,7 @@ import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
@@ -571,13 +571,34 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (col.type === 'enum') {
       const raw = row[col.key];
       const label = col.enumLabels?.[raw] ?? raw;
+      if (col.display === 'dot') {
+        const dotColor = getStatusDotColor(raw);
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+            {label}
+          </span>
+        );
+      }
       const badgeProps = getStatusBadgeProps(raw);
       return <Badge {...badgeProps}>{label}</Badge>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
-      const badgeProps = getStatusBadgeProps(raw);
       const label = col.enumLabels?.[raw] ?? statusLabel(raw);
+      if (col.display === 'dot') {
+        const dotColor = getStatusDotColor(raw);
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+            {label}
+          </span>
+        );
+      }
+      const badgeProps = getStatusBadgeProps(raw);
+      if (badgeProps.variant === 'outline' && !badgeProps.className) {
+        return <span className="text-sm text-muted-foreground">{label}</span>;
+      }
       return <Badge {...badgeProps}>{label}</Badge>;
     }
     if (col.type === 'percent') {
@@ -678,7 +699,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       <div className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/40">
+            <TableRow className="border-b border-border/40 bg-muted/30">
               {selectable && (
                 <TableHead className="w-10 px-3 align-top" onClick={(e) => e.stopPropagation()}>
                   <div className="flex flex-col gap-1.5 pt-1">
@@ -703,7 +724,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = t(col.column) ?? col.label ?? col.key;
+                const colLabel = col.label ?? t(col.column) ?? col.key;
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (

@@ -1,6 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
-// @sf-generated-start fields:order
+// @sf-generated-start fields:header
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true, section: 'principal' },
   // @sf-custom-slot callout:SL_Order_UpdateLinesDate
@@ -16,13 +16,13 @@ const fields = [
   { key: 'orderReference', column: 'POReference', type: 'text', section: 'collapsed' },
   { key: 'description', column: 'Description', type: 'textarea', section: 'collapsed' },
 ];
-// @sf-generated-end fields:order
+// @sf-generated-end fields:header
 
-// @sf-generated-start component:OrderForm
-export default function OrderForm(props) {
-  // @sf-custom-slot hooks:OrderForm
+// @sf-generated-start component:HeaderForm
+export default function HeaderForm(props) {
+  // @sf-custom-slot hooks:HeaderForm
   return <EntityForm fields={fields} {...props} />;
 }
-// @sf-generated-end component:OrderForm
+// @sf-generated-end component:HeaderForm
 
-// @sf-custom-slot section:OrderForm-custom
+// @sf-custom-slot section:HeaderForm-custom

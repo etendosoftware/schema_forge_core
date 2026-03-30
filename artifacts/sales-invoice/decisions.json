@@ -1,11 +1,16 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
-    "name": "Sales Invoice"
+    "name": "Sales Invoice",
+    "documentPreview": {
+      "titlePrefix": "Invoice"
+    },
+    "notesField": "description",
+    "relatedDocuments": true
   },
   "entities": {
-    "cInvoice": {
+    "header": {
       "fields": {
         "businessPartner": {
           "grid": true,
@@ -23,7 +28,7 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "collapsed"
         },
         "invoiceDate": {
           "grid": true,
@@ -35,9 +40,7 @@
           "visibility": "system"
         },
         "paymentTerms": {
-          "grid": true,
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "system"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
@@ -45,7 +48,7 @@
           "section": "principal"
         },
         "priceList": {
-          "section": "other"
+          "visibility": "system"
         },
         "currency": {
           "visibility": "readOnly",
@@ -56,7 +59,7 @@
           "inputMode": "selector"
         },
         "description": {
-          "section": "other"
+          "section": "collapsed"
         },
         "aPRMAddpayment": {
           "visibility": "discarded"
@@ -80,8 +83,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "searchable": true,
-          "section": "principal"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",
@@ -104,7 +106,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "section": "principal"
+          "section": "summary"
         },
         "summedLineAmount": {
           "visibility": "readOnly",
@@ -143,7 +145,7 @@
           "visibility": "discarded"
         },
         "salesOrder": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "externalBusinessPartnerReference": {
           "visibility": "discarded"
@@ -155,10 +157,7 @@
           "visibility": "discarded"
         },
         "salesRepresentative": {
-          "visibility": "editable",
-          "section": "other",
-          "reference": "User",
-          "inputMode": "selector"
+          "visibility": "system"
         },
         "client": {
           "name": "adClientId"
@@ -204,12 +203,10 @@
         }
       }
     },
-    "cInvoiceLine": {
+    "lines": {
       "fields": {
         "lineNo": {
-          "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -225,9 +222,7 @@
           "readOnlyLogic": null
         },
         "uOM": {
-          "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
@@ -252,12 +247,10 @@
           "section": "principal"
         },
         "listPrice": {
-          "section": "other",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "description": {
-          "section": "other"
+          "section": "collapsed"
         },
         "taxAmount": {
           "visibility": "discarded"
@@ -332,13 +325,16 @@
           "visibility": "discarded"
         },
         "client": {
-          "name": "adClientId"
+          "name": "adClientId",
+          "visibility": "system"
         },
         "organization": {
-          "name": "adOrgId"
+          "name": "adOrgId",
+          "visibility": "system"
         },
         "invoice": {
-          "name": "cInvoiceId"
+          "name": "cInvoiceId",
+          "visibility": "system"
         },
         "dateInvoiced": {
           "visibility": "system"
@@ -360,59 +356,31 @@
           "reference": null,
           "inputMode": null,
           "name": "mInoutlineId"
-        },
-        "operativeUOM": {
-          "visibility": "discarded"
         }
       }
     },
-    "cInvoiceLineTax": {
+    "lineTax": {
       "exclude": true
     },
-    "cInvoiceTax": {
+    "tax": {
       "exclude": true
     },
-    "cInvoiceDiscount": {
+    "basicDiscounts": {
       "exclude": true
     },
-    "finPaymentSchedule": {
-      "fields": {
-        "dueDate": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "expectedAmount": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "received": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "outstanding": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "paymentMethod": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "lastPaymentDate": {
-          "visibility": "readOnly",
-          "grid": true
-        }
-      }
-    },
-    "finPaymentScheduleDetail": {
+    "paymentPlan": {
       "exclude": true
     },
-    "cInvoiceReverse": {
+    "paymentDetails": {
       "exclude": true
     },
-    "cConversionRateDocument": {
+    "reversedInvoices": {
       "exclude": true
     },
-    "factAcct": {
+    "exchangeRates": {
+      "exclude": true
+    },
+    "accounting": {
       "exclude": true
     }
   },
@@ -466,5 +434,6 @@
       "description": "When price list changes, auto-fill currency from the selected price list"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

@@ -1,0 +1,26 @@
+import { EntityForm } from '@/components/contract-ui';
+
+// @sf-generated-start fields:lines
+const fields = [
+  // @sf-custom-slot callout:SL_Invoice_Product
+  { key: 'product', column: 'M_Product_ID', type: 'search', section: 'principal', reference: 'Product', inputMode: 'search' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, section: 'principal', defaultValue: '1' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, section: 'principal' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, readOnly: true, section: 'principal' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', section: 'principal', reference: 'Tax', inputMode: 'selector' },
+  { key: 'description', column: 'Description', type: 'textarea', section: 'collapsed' },
+];
+// @sf-generated-end fields:lines
+
+// @sf-generated-start component:LinesForm
+export default function LinesForm(props) {
+  // @sf-custom-slot hooks:LinesForm
+  return <EntityForm fields={fields} {...props} />;
+}
+// @sf-generated-end component:LinesForm
+
+// @sf-custom-slot section:LinesForm-custom

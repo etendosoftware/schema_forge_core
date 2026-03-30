@@ -3,11 +3,11 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:quotationLine
 const columns = [
   { key: 'product', column: 'M_Product_ID', type: 'string' },
-  { key: 'orderedQuantity', column: 'QtyOrdered', type: 'string' },
-  { key: 'unitPrice', column: 'PriceActual', type: 'string' },
+  { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'number' },
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount' },
   { key: 'tax', column: 'C_Tax_ID', type: 'string' },
-  { key: 'discount', column: 'Discount', type: 'string' },
+  { key: 'discount', column: 'Discount', type: 'number' },
 ];
 // @sf-generated-end columns:quotationLine
 

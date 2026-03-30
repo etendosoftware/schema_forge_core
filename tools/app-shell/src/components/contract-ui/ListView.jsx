@@ -291,7 +291,7 @@ export function ListView({
                   onClick={() => navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
-                  New {label.replace(/s$/, '')}
+                  New {label.endsWith('ies') ? label.slice(0, -3) + 'y' : label.replace(/s$/, '')}
                 </Button>
                 <div className="w-px bg-primary-foreground/20" />
                 <Button

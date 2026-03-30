@@ -2,9 +2,9 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:assetAcct
 const columns = [
-  { key: 'accountingSchema', column: 'C_AcctSchema_ID', type: 'string' },
-  { key: 'accumulatedDepreciation', column: 'A_Accumdepreciation_Acct', type: 'string' },
-  { key: 'depreciation', column: 'A_Depreciation_Acct', type: 'string' },
+  { key: 'accountingSchema', column: 'C_AcctSchema_ID', type: 'string', label: 'General Ledger' },
+  { key: 'accumulatedDepreciation', column: 'A_Accumdepreciation_Acct', type: 'string', label: 'Accumulated Depreciation' },
+  { key: 'depreciation', column: 'A_Depreciation_Acct', type: 'string', label: 'Depreciation' },
 ];
 // @sf-generated-end columns:assetAcct
 

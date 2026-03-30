@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "accounting",
     "name": "Assets"
   },
   "entities": {
-    "aAsset": {
+    "assets": {
       "fields": {
         "searchKey": {
           "searchable": true
@@ -74,7 +74,7 @@
         }
       }
     },
-    "aAmortizationline": {
+    "assetAmortization": {
       "name": "amortizationLine",
       "fields": {
         "sEQNoAsset": {
@@ -98,7 +98,7 @@
         }
       }
     },
-    "aAssetAcct": {
+    "accounting": {
       "name": "assetAcct",
       "fields": {
         "accountingSchema": {
@@ -226,5 +226,6 @@
       "impactIfOmitted": "No user-facing impact",
       "reason": "Internal mechanism, not a user-facing action"
     }
-  }
+  },
+  "version": 2
 }

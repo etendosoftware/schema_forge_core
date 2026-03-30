@@ -1,9 +1,9 @@
 // Auto-generated mock data - do not edit manually
 
-export const order = [
+export const header = [
   {
-    "id": "mock-order-001",
-    "documentNo": "SO-00001",
+    "id": "mock-header-001",
+    "documentNo": "HE-00001",
     "orderDate": "2026-01-15",
     "businessPartner": "Acme Corp",
     "partnerAddress": "Acme Corp",
@@ -19,8 +19,8 @@ export const order = [
     "invoiceStatus": "DR"
   },
   {
-    "id": "mock-order-002",
-    "documentNo": "SO-00002",
+    "id": "mock-header-002",
+    "documentNo": "HE-00002",
     "orderDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
     "partnerAddress": "TechFlow Inc",
@@ -36,8 +36,8 @@ export const order = [
     "invoiceStatus": "CO"
   },
   {
-    "id": "mock-order-003",
-    "documentNo": "SO-00003",
+    "id": "mock-header-003",
+    "documentNo": "HE-00003",
     "orderDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
     "partnerAddress": "Global Trade Ltd",
@@ -53,8 +53,8 @@ export const order = [
     "invoiceStatus": "VO"
   },
   {
-    "id": "mock-order-004",
-    "documentNo": "SO-00004",
+    "id": "mock-header-004",
+    "documentNo": "HE-00004",
     "orderDate": "2026-01-18",
     "businessPartner": "Summit Industries",
     "partnerAddress": "Summit Industries",
@@ -70,8 +70,8 @@ export const order = [
     "invoiceStatus": "IP"
   },
   {
-    "id": "mock-order-005",
-    "documentNo": "SO-00005",
+    "id": "mock-header-005",
+    "documentNo": "HE-00005",
     "orderDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
     "partnerAddress": "Pacific Partners",
@@ -87,8 +87,8 @@ export const order = [
     "invoiceStatus": "DR"
   },
   {
-    "id": "mock-order-006",
-    "documentNo": "SO-00006",
+    "id": "mock-header-006",
+    "documentNo": "HE-00006",
     "orderDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
     "partnerAddress": "Alpine Solutions",
@@ -104,8 +104,8 @@ export const order = [
     "invoiceStatus": "CO"
   },
   {
-    "id": "mock-order-007",
-    "documentNo": "SO-00007",
+    "id": "mock-header-007",
+    "documentNo": "HE-00007",
     "orderDate": "2026-01-21",
     "businessPartner": "Meridian Group",
     "partnerAddress": "Meridian Group",
@@ -121,8 +121,8 @@ export const order = [
     "invoiceStatus": "VO"
   },
   {
-    "id": "mock-order-008",
-    "documentNo": "SO-00008",
+    "id": "mock-header-008",
+    "documentNo": "HE-00008",
     "orderDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
     "partnerAddress": "Vertex Systems",
@@ -138,8 +138,8 @@ export const order = [
     "invoiceStatus": "IP"
   },
   {
-    "id": "mock-order-009",
-    "documentNo": "SO-00009",
+    "id": "mock-header-009",
+    "documentNo": "HE-00009",
     "orderDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
     "partnerAddress": "Atlas Manufacturing",
@@ -155,8 +155,8 @@ export const order = [
     "invoiceStatus": "DR"
   },
   {
-    "id": "mock-order-010",
-    "documentNo": "SO-00010",
+    "id": "mock-header-010",
+    "documentNo": "HE-00010",
     "orderDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
     "partnerAddress": "Nova Enterprises",
@@ -172,8 +172,8 @@ export const order = [
     "invoiceStatus": "CO"
   },
   {
-    "id": "mock-order-011",
-    "documentNo": "SO-00011",
+    "id": "mock-header-011",
+    "documentNo": "HE-00011",
     "orderDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
     "partnerAddress": "Pinnacle Services",
@@ -189,8 +189,8 @@ export const order = [
     "invoiceStatus": "VO"
   },
   {
-    "id": "mock-order-012",
-    "documentNo": "SO-00012",
+    "id": "mock-header-012",
+    "documentNo": "HE-00012",
     "orderDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
     "partnerAddress": "Horizon Labs",
@@ -207,9 +207,9 @@ export const order = [
   }
 ];
 
-export const orderLine = [
+export const lines = [
   {
-    "id": "mock-orderLine-001",
+    "id": "mock-lines-001",
     "product": "Laptop Pro 15",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -217,10 +217,10 @@ export const orderLine = [
     "tax": "VAT 21%",
     "discount": 6,
     "description": "Standard order for Q1 delivery",
-    "orderId": "mock-order-001"
+    "headerId": "mock-header-001"
   },
   {
-    "id": "mock-orderLine-002",
+    "id": "mock-lines-002",
     "product": "USB-C Cable",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -228,10 +228,10 @@ export const orderLine = [
     "tax": "VAT 10%",
     "discount": 21,
     "description": "Rush order - priority shipping required",
-    "orderId": "mock-order-002"
+    "headerId": "mock-header-002"
   },
   {
-    "id": "mock-orderLine-003",
+    "id": "mock-lines-003",
     "product": "Wireless Mouse",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -239,10 +239,10 @@ export const orderLine = [
     "tax": "VAT 0%",
     "discount": 0,
     "description": "Bulk purchase for warehouse restocking",
-    "orderId": "mock-order-003"
+    "headerId": "mock-header-003"
   },
   {
-    "id": "mock-orderLine-004",
+    "id": "mock-lines-004",
     "product": "Mechanical Keyboard",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -250,10 +250,10 @@ export const orderLine = [
     "tax": "Sales Tax 8.5%",
     "discount": 6,
     "description": "Sample order for client evaluation",
-    "orderId": "mock-order-004"
+    "headerId": "mock-header-004"
   },
   {
-    "id": "mock-orderLine-005",
+    "id": "mock-lines-005",
     "product": "Monitor 27\"",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -261,10 +261,10 @@ export const orderLine = [
     "tax": "Exempt",
     "discount": 14,
     "description": "Recurring monthly supply order",
-    "orderId": "mock-order-005"
+    "headerId": "mock-header-005"
   },
   {
-    "id": "mock-orderLine-006",
+    "id": "mock-lines-006",
     "product": "Webcam HD",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -272,10 +272,10 @@ export const orderLine = [
     "tax": "Reduced Rate 5%",
     "discount": 4,
     "description": "Special pricing agreement applies",
-    "orderId": "mock-order-006"
+    "headerId": "mock-header-006"
   },
   {
-    "id": "mock-orderLine-007",
+    "id": "mock-lines-007",
     "product": "Headset Pro",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -283,10 +283,10 @@ export const orderLine = [
     "tax": "Standard Rate 20%",
     "discount": 6,
     "description": "Consolidated order from multiple requests",
-    "orderId": "mock-order-007"
+    "headerId": "mock-header-007"
   },
   {
-    "id": "mock-orderLine-008",
+    "id": "mock-lines-008",
     "product": "Docking Station",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -294,10 +294,10 @@ export const orderLine = [
     "tax": "VAT 21%",
     "discount": 10,
     "description": "Trial order for new product line",
-    "orderId": "mock-order-008"
+    "headerId": "mock-header-008"
   },
   {
-    "id": "mock-orderLine-009",
+    "id": "mock-lines-009",
     "product": "SSD 1TB",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -305,10 +305,10 @@ export const orderLine = [
     "tax": "VAT 10%",
     "discount": 17,
     "description": "Replacement for damaged goods",
-    "orderId": "mock-order-009"
+    "headerId": "mock-header-009"
   },
   {
-    "id": "mock-orderLine-010",
+    "id": "mock-lines-010",
     "product": "RAM 16GB",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -316,10 +316,10 @@ export const orderLine = [
     "tax": "VAT 0%",
     "discount": 14,
     "description": "Pre-season inventory build-up",
-    "orderId": "mock-order-010"
+    "headerId": "mock-header-010"
   },
   {
-    "id": "mock-orderLine-011",
+    "id": "mock-lines-011",
     "product": "Power Supply 750W",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -327,10 +327,10 @@ export const orderLine = [
     "tax": "Sales Tax 8.5%",
     "discount": 19,
     "description": "Customer-specific configuration",
-    "orderId": "mock-order-011"
+    "headerId": "mock-header-011"
   },
   {
-    "id": "mock-orderLine-012",
+    "id": "mock-lines-012",
     "product": "Network Switch",
     "orderedQuantity": "Sample orderedQuantity",
     "unitPrice": "Sample unitPrice",
@@ -338,6 +338,6 @@ export const orderLine = [
     "tax": "Exempt",
     "discount": 12,
     "description": "Government contract fulfillment",
-    "orderId": "mock-order-012"
+    "headerId": "mock-header-012"
   }
 ];

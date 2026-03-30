@@ -16,6 +16,24 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
+
+/**
+ * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
+ * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
+ */
+function evalDisplayLogicRaw(expr, data) {
+  if (!expr) return true;
+  const clauses = [...expr.matchAll(/@(\w+)@\s*(!?=)\s*'([^']*)'/g)];
+  if (clauses.length === 0) return true;
+  return clauses.every(([, fieldRef, op, expected]) => {
+    const key = fieldRef[0].toLowerCase() + fieldRef.slice(1);
+    if (!(key in (data || {}))) return true; // field absent → default visible
+    const rawVal = data[key];
+    // Normalize boolean API values to Etendo string equivalents (true→'Y', false→'N')
+    const actual = typeof rawVal === 'boolean' ? (rawVal ? 'Y' : 'N') : String(rawVal ?? '');
+    return op === '=' ? actual === expected : actual !== expected;
+  });
+}
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
@@ -84,6 +102,7 @@ export function DetailView({
   customTabs = [],
   documentPreview,
   notesField,
+  extraActions = [],
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -116,6 +135,7 @@ export function DetailView({
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [showPrint, setShowPrint] = useState(false);
+  // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
@@ -348,11 +368,24 @@ export function DetailView({
           }
         }
       }
+      // Resolve missing $_identifier from loaded catalogs for FK fields returned by callout
+      // (e.g., callout sets uOM='100' but server omits the display name)
+      if (api?.selectors) {
+        for (const key of Object.keys(result)) {
+          if (key.includes('$_identifier')) continue;
+          if (result[key + '$_identifier']) continue;
+          const selConfig = api.selectors.find(s => s.field === key && s.entity === detailEntity);
+          if (!selConfig) continue;
+          const opts = getCatalogOptions(catalogs, detailEntity, selConfig);
+          const match = opts.find(o => o.id === result[key]);
+          if (match) result[key + '$_identifier'] = match.label || match.name || match._identifier || '';
+        }
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
     } catch {
       // Callout is best-effort
     }
-  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected]);
+  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api]);
 
   const data = hook.editing || currentItem || {};
   const title = isNew
@@ -379,6 +412,7 @@ export function DetailView({
   }
   // "Others" tab is added dynamically via othersRef after first render
   const [showOthers, setShowOthers] = useState(null); // null = unknown, true/false after mount
+  const [notesFocused, setNotesFocused] = useState(false);
   const othersRef = useRef(null);
 
   useEffect(() => {
@@ -526,23 +560,41 @@ export function DetailView({
             <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
               <MoreVertical className="h-4 w-4" />
             </button>
-            {/* Process buttons — only shown for existing records */}
-            {!isNew && processes.map(p => {
-              const btnClass = p.style === 'destructive'
-                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
-              return (
+            {/* Extra action buttons from page */}
+            {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
+              action.visible !== false && (
                 <Button
-                  key={p.name}
+                  key={action.key || i}
                   variant="outline"
                   size="sm"
-                  className={btnClass}
-                  onClick={() => hook.handleProcess?.(p)}
+                  className={action.className || ''}
+                  onClick={action.onClick}
                 >
-                  {p.label}
+                  {action.label}
                 </Button>
-              );
-            })}
+              )
+            ))}
+            {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
+            {!isNew && processes
+              .filter(p => p.displayLogicRaw
+                ? evalDisplayLogicRaw(p.displayLogicRaw, data)
+                : displayLogic?.visibility?.[p.name] !== false)
+              .map(p => {
+                const btnClass = p.style === 'destructive'
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                return (
+                  <Button
+                    key={p.name}
+                    variant="outline"
+                    size="sm"
+                    className={btnClass}
+                    onClick={() => hook.handleProcess?.(p)}
+                  >
+                    {p.label}
+                  </Button>
+                );
+              })}
 
             {draftMode?.enabled ? (
               <>
@@ -615,30 +667,32 @@ export function DetailView({
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
               <div>
-                <div className="flex items-center gap-0 border-b border-border/50">
-                  {tabs.map((tab, idx) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
-                      className={[
-                        'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
-                        activeTab === idx
-                          ? 'text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      ].join(' ')}
-                    >
-                      <List className="h-4 w-4" />
-                      {tab.label}
-                      {tab.count != null && (
-                        <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
-                          {tab.count}
-                        </span>
-                      )}
-                      {activeTab === idx && (
-                        <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
-                      )}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between border-b border-border/50">
+                  <div className="flex items-center gap-0">
+                    {tabs.map((tab, idx) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
+                        className={[
+                          'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
+                          activeTab === idx
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground',
+                        ].join(' ')}
+                      >
+                        <List className="h-4 w-4" />
+                        {tab.label}
+                        {tab.count != null && (
+                          <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
+                            {tab.count}
+                          </span>
+                        )}
+                        {activeTab === idx && (
+                          <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Tab content: Lines */}
@@ -1081,67 +1135,32 @@ export function DetailView({
               </>
             )}
 
-            {/* Collapsible Related Documents (below lines, before totals) */}
-            {customTabs.length > 0 && customTabs.map(ct => {
-              const TabComponent = ct.Component;
-              return (
-                <details key={ct.key} className="group mt-6 border border-border/40 rounded-lg bg-muted/20">
-                  <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground px-4 py-3 select-none list-none flex items-center gap-2">
-                    <svg className="h-4 w-4 transition-transform group-open:rotate-90 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                    {ct.label}
-                  </summary>
-                  <div className="px-4 pb-4">
-                    <TabComponent
-                      recordId={data?.id || recordId}
-                      data={data}
-                      token={token}
-                      apiBaseUrl={apiBaseUrl}
-                      api={api}
-                    />
-                  </div>
-                </details>
-              );
-            })}
-
-            {/* Notes section */}
-            {notesField && (
-              <div className="mt-4 px-1">
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes</label>
-                <textarea
-                  value={data[notesField] || ''}
-                  onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
-                  placeholder="Add notes..."
-                  rows={2}
-                  className="w-full text-sm rounded-md border border-border/50 bg-muted/20 px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
-                />
-              </div>
-            )}
-
-            {/* Footer totals: Subtotal, Taxes, Total */}
-            {DetailTable && summary.some(f => f.type === 'amount') && (() => {
+            {/* Totals block: Subtotal / Tax / Total */}
+            {(() => {
               const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
               const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+              if (!subtotalField && !totalField) return null;
               const subtotal = subtotalField ? data[subtotalField.key] : null;
               const total = totalField ? data[totalField.key] : null;
               const taxes = (subtotal != null && total != null) ? total - subtotal : null;
               const currency = data['currency$_identifier'];
               return (
-                <div className="flex justify-end pt-2 border-t border-border/50">
-                  <div className="w-72 space-y-1.5">
+                <div className="mt-3 flex justify-end">
+                  <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
                     {subtotal != null && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between py-1.5 px-2">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span className="font-medium tabular-nums">{formatAmount(subtotal, currency)}</span>
+                        <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
                       </div>
                     )}
-                    {taxes != null && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Taxes</span>
-                        <span className="font-medium tabular-nums">{formatAmount(taxes, currency)}</span>
+                    {taxes != null && taxes !== 0 && (
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-muted-foreground">Tax</span>
+                        <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
                       </div>
                     )}
                     {total != null && (
-                      <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
+                      <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
                         <span>Total</span>
                         <span className="tabular-nums">{formatAmount(total, currency)}</span>
                       </div>
@@ -1150,6 +1169,70 @@ export function DetailView({
                 </div>
               );
             })()}
+
+            {/* Footer: Related Docs + Notes */}
+            {(customTabs.length > 0 || !!notesField) && (
+              <div className="mt-3 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
+                {/* Row 1: Related Documents as chips */}
+                {customTabs.length > 0 && (
+                  <div className="flex items-start gap-3 px-4 py-2.5 border-b border-border/30" style={{ borderBottomWidth: '0.5px' }}>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">Docs</span>
+                    <div className="flex-1">
+                      {customTabs.map(ct => {
+                        const TabComponent = ct.Component;
+                        return (
+                          <TabComponent
+                            key={ct.key}
+                            recordId={data?.id || recordId}
+                            data={data}
+                            token={token}
+                            apiBaseUrl={apiBaseUrl}
+                            api={api}
+                            layout="chips"
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {/* Row 2: Notes input */}
+                {notesField && (
+                  <div className="flex items-start gap-3 px-4 py-2.5">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">Notes</span>
+                    <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all ${notesFocused ? 'py-1.5' : 'py-1.5'}`} style={{ borderWidth: '0.5px' }}>
+                      {notesFocused && (
+                        <div className="flex items-center gap-0.5 px-2 pb-1.5 border-b border-border/30" style={{ borderBottomWidth: '0.5px' }}>
+                          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { const v = data[notesField] || ''; handleChangeWithCallout(notesField, v + '<b></b>'); }} className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40" title="Bold"><span className="text-xs font-bold">B</span></button>
+                          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { const v = data[notesField] || ''; handleChangeWithCallout(notesField, v + '<i></i>'); }} className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40" title="Italic"><span className="text-xs italic">I</span></button>
+                          <button type="button" onMouseDown={(e) => e.preventDefault()} className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40" title="Mention"><span className="text-xs">@</span></button>
+                        </div>
+                      )}
+                      {notesFocused ? (
+                        <textarea
+                          value={data[notesField] || ''}
+                          onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+                          onBlur={() => setNotesFocused(false)}
+                          placeholder="Description"
+                          rows={3}
+                          autoFocus
+                          className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+                        />
+                      ) : (
+                        <div
+                          tabIndex={0}
+                          role="textbox"
+                          onClick={() => setNotesFocused(true)}
+                          onFocus={() => setNotesFocused(true)}
+                          className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+                        >
+                          {data[notesField] || <span className="text-muted-foreground/40">Description</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

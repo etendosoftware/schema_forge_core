@@ -101,6 +101,7 @@ export function generateFrontendContract(schema, rules = []) {
         grid: f.grid,
         form: f.form,
       };
+      if (f.columnType) mapped.columnType = f.columnType;
       if (f.reference) mapped.reference = f.reference;
       if (f.enumValues) mapped.enumValues = f.enumValues;
       if (f.inputMode) mapped.inputMode = f.inputMode;

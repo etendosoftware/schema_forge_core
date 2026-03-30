@@ -25,6 +25,17 @@ export function getStatusBadgeProps(status) {
   return { variant: 'outline' };
 }
 
+export function getStatusDotColor(status) {
+  const s = String(status ?? '').toLowerCase();
+  if (s === 'draft' || s === 'dr') return 'bg-gray-400';
+  if (s === 'completed' || s === 'complete' || s === 'booked' || s === 'co' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc') return 'bg-emerald-500';
+  if (s === 'closed' || s === 'cl' || s === 'paid' || s === 'pa') return 'bg-blue-500';
+  if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo' || s === 'ca' || s === 'rpvoid') return 'bg-red-500';
+  if (s === 'in process' || s === 'ip' || s === 'rpae' || s === 'rpap' || s === 'rpr') return 'bg-amber-400';
+  if (s === 'under evaluation' || s === 'ue') return 'bg-purple-500';
+  return 'bg-gray-400';
+}
+
 export function statusLabel(status) {
   const MAP = {
     // Document statuses

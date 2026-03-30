@@ -1,6 +1,6 @@
 import FinPaymentPage from './FinPaymentPage';
 
-const windowMeta = { category: 'general', name: 'Payment In' };
+const windowMeta = { category: 'sales', name: 'Payment In' };
 
 const api = {
   "specName": "payment-in",
@@ -17,14 +17,8 @@ const api = {
       "detailUrl": "/sws/neo/payment-in/finPayment/{id}",
       "supportedFilters": [
         "documentNo",
-        "referenceNo",
         "paymentDate",
-        "businessPartner",
-        "description",
-        "paymentMethod",
-        "amount",
-        "account",
-        "currency"
+        "businessPartner"
       ]
     },
     "finPaymentScheduleDetail": {
@@ -36,11 +30,7 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/payment-in/finPaymentScheduleDetail",
       "detailUrl": "/sws/neo/payment-in/finPaymentScheduleDetail/{id}",
-      "supportedFilters": [
-        "amount",
-        "canceled",
-        "businessPartner"
-      ]
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -48,6 +38,7 @@ const api = {
       "entity": "finPayment",
       "field": "businessPartner",
       "column": "C_Bpartner_ID",
+      "reference": "BPartner",
       "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/businessPartner"
     },
@@ -55,6 +46,7 @@ const api = {
       "entity": "finPayment",
       "field": "paymentMethod",
       "column": "Fin_Paymentmethod_ID",
+      "reference": "Paymentmethod",
       "inputMode": "search",
       "url": "/sws/neo/payment-in/finPayment/selectors/paymentMethod"
     },
@@ -62,6 +54,7 @@ const api = {
       "entity": "finPayment",
       "field": "account",
       "column": "Fin_Financial_Account_ID",
+      "reference": "Financial_Account",
       "inputMode": "dependent",
       "url": "/sws/neo/payment-in/finPayment/selectors/account"
     },
@@ -69,44 +62,17 @@ const api = {
       "entity": "finPayment",
       "field": "currency",
       "column": "C_Currency_ID",
+      "reference": "Currency",
       "inputMode": "dependent",
       "url": "/sws/neo/payment-in/finPayment/selectors/currency"
-    },
-    {
-      "entity": "finPayment",
-      "field": "reversedPayment",
-      "column": "FIN_Rev_Payment_ID",
-      "reference": "Payment Selector",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPayment/selectors/reversedPayment"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "orderPaymentSchedule",
-      "column": "FIN_Payment_Schedule_Order",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/orderPaymentSchedule"
     },
     {
       "entity": "finPaymentScheduleDetail",
       "field": "invoicePaymentSchedule",
       "column": "FIN_Payment_Schedule_Invoice",
+      "reference": "Payment_Schedule",
       "inputMode": "search",
       "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/invoicePaymentSchedule"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "gLItem",
-      "column": "C_Glitem_ID",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/gLItem"
-    },
-    {
-      "entity": "finPaymentScheduleDetail",
-      "field": "businessPartner",
-      "column": "C_Bpartner_ID",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-in/finPaymentScheduleDetail/selectors/businessPartner"
     }
   ],
   "actions": [
@@ -114,7 +80,9 @@ const api = {
       "entity": "finPayment",
       "field": "aPRMAddScheduledpayments",
       "column": "EM_Aprm_Add_Scheduledpayments",
-      "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMAddScheduledpayments"
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMAddScheduledpayments",
+      "processId": "9BED7889E1034FE68BD85D5D16857320",
+      "processType": "obuiapp"
     },
     {
       "entity": "finPayment",
@@ -126,19 +94,25 @@ const api = {
       "entity": "finPayment",
       "field": "aPRMProcessPayment",
       "column": "EM_APRM_Process_Payment",
-      "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMProcessPayment"
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMProcessPayment",
+      "processId": "6255BE488882480599C81284B70CD9B3",
+      "processType": "classic"
     },
     {
       "entity": "finPayment",
       "field": "aprmExecutepayment",
       "column": "EM_Aprm_Executepayment",
-      "url": "/sws/neo/payment-in/finPayment/{id}/action/aprmExecutepayment"
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/aprmExecutepayment",
+      "processId": "E011F492B0814A74B63CD1F3B9FF0526",
+      "processType": "classic"
     },
     {
       "entity": "finPayment",
       "field": "aPRMReversePayment",
       "column": "EM_APRM_ReversePayment",
-      "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReversePayment"
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReversePayment",
+      "processId": "29D17F515727436DBCE32BC6CA28382B",
+      "processType": "classic"
     },
     {
       "entity": "finPayment",

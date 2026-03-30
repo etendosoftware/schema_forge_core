@@ -6,7 +6,7 @@ const columns = [
   { key: 'orderDate', column: 'DateOrdered', type: 'date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'validUntil', column: 'validuntil', type: 'date' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', display: 'dot' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
 ];
 // @sf-generated-end columns:quotation
