@@ -7,7 +7,7 @@ const columns = [
   { key: 'paymentMethod', column: 'Fin_Paymentmethod_ID', type: 'string' },
   { key: 'amount', column: 'Amount', type: 'amount' },
   { key: 'account', column: 'Fin_Financial_Account_ID', type: 'string' },
-  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'status', column: 'Status', type: 'status', display: 'dot' },
 ];
 // @sf-generated-end columns:paymentIn
 

@@ -6,7 +6,7 @@ const columns = [
   { key: 'paymentDate', column: 'Paymentdate', type: 'date' },
   { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string' },
   { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'status', column: 'Status', type: 'status' },
+  { key: 'status', column: 'Status', type: 'status', display: 'dot' },
 ];
 // @sf-generated-end columns:finPayment
 

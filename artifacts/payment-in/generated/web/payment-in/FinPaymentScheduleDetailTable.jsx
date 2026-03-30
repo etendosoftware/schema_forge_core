@@ -2,9 +2,9 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:finPaymentScheduleDetail
 const columns = [
+  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string' },
   { key: 'dueDate', column: 'DueDate', type: 'date' },
   { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'string' },
 ];
 // @sf-generated-end columns:finPaymentScheduleDetail
 

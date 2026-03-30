@@ -6,38 +6,50 @@ const STATUS_LABELS = {
   RPPC: 'Received', RPR: 'Received', PWNC: 'Pending', RDNC: 'Deposited',
 };
 
-const STATUS_COLORS = {
-  CO: 'bg-emerald-500', CL: 'bg-emerald-500', RPPC: 'bg-emerald-500', RPR: 'bg-emerald-500', RDNC: 'bg-emerald-500',
-  DR: 'bg-gray-400', PWNC: 'bg-amber-400', VO: 'bg-red-400',
+const STATUS_BADGE = {
+  CO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  CL: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  RPPC: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  RPR: 'bg-blue-50 text-blue-700 border-blue-200',
+  RDNC: 'bg-blue-50 text-blue-700 border-blue-200',
+  DR: 'bg-gray-50 text-gray-600 border-gray-200',
+  PWNC: 'bg-amber-50 text-amber-700 border-amber-200',
+  VO: 'bg-red-50 text-red-700 border-red-200',
 };
 
-const ICONS = {
+const CHIP_ICONS = {
   shipments: (
-    <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M20 21v-2a4 4 0 00-3-3.87M9 7a4 4 0 01-4 4H3l3 7h12l3-7h-2a4 4 0 01-4-4V3H9v4z" />
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="1" y="3" width="22" height="5" rx="1" />
       <path d="M1 8l2 13h18l2-13" />
     </svg>
   ),
   invoices: (
-    <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
       <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
     </svg>
   ),
   payments: (
-    <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="12" cy="12" r="10" />
       <path d="M16 8h-4a2 2 0 100 4h2a2 2 0 110 4H8M12 6v2m0 8v2" />
     </svg>
   ),
   quotation: (
-    <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
       <rect x="9" y="3" width="6" height="4" rx="1" />
       <path d="M9 14l2 2 4-4" />
     </svg>
   ),
+};
+
+const CHIP_COLORS = {
+  shipments: 'text-blue-600',
+  invoices: 'text-purple-600',
+  payments: 'text-emerald-600',
+  quotation: 'text-amber-600',
 };
 
 const RELATED_SPECS = [
@@ -50,7 +62,7 @@ const RELATED_SPECS = [
     filterColumn: 'salesOrder',
     route: '/goods-shipment',
     format: (row) => ({
-      title: `#${row.documentNo}`,
+      title: `Shipment #${row.documentNo}`,
       date: row.movementDate,
       status: row.documentStatus,
     }),
@@ -64,7 +76,7 @@ const RELATED_SPECS = [
     filterColumn: 'salesOrder',
     route: '/sales-invoice',
     format: (row) => ({
-      title: `#${row.documentNo}`,
+      title: `Invoice #${row.documentNo}`,
       date: row.invoiceDate,
       amount: row.grandTotalAmount,
       currency: row['currency$_identifier'],
@@ -129,50 +141,26 @@ function formatAmount(val, currency) {
   return currency ? `${formatted} ${currency}` : formatted;
 }
 
-function formatDate(val) {
-  if (!val) return '';
-  return new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function DocRow({ title, date, amount, currency, status, onClick }) {
+function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) {
+  const badgeClass = STATUS_BADGE[status] || 'bg-gray-50 text-gray-600 border-gray-200';
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="flex items-center justify-between py-2.5 px-3 rounded-md hover:bg-muted/50 cursor-pointer transition-colors group"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-border/40 rounded-full bg-white hover:bg-muted/30 transition-colors text-sm cursor-pointer"
+      style={{ borderWidth: '0.5px' }}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-sm font-medium text-blue-600 group-hover:underline">{title}</span>
-        <span className="text-xs text-muted-foreground">{formatDate(date)}</span>
-      </div>
-      <div className="flex items-center gap-4 shrink-0">
-        {amount != null && (
-          <span className="text-sm font-medium tabular-nums">{formatAmount(amount, currency)}</span>
-        )}
-        {status && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground min-w-[80px]">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_COLORS[status] || 'bg-gray-400'}`} />
-            {STATUS_LABELS[status] || status}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Section({ icon, label, count, children }) {
-  return (
-    <div className="space-y-0.5">
-      <div className="flex items-center gap-2 px-3 py-1.5">
-        {ICONS[icon]}
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
-        <span className="text-xs text-muted-foreground/60">{count}</span>
-      </div>
-      {count === 0 ? (
-        <p className="text-xs text-muted-foreground/50 px-3 py-1">No records</p>
-      ) : (
-        <div>{children}</div>
+      <span className={`shrink-0 ${iconColor}`}>{icon}</span>
+      <span className="font-medium text-foreground/80">{title}</span>
+      {amount != null && (
+        <span className="text-xs text-muted-foreground tabular-nums">{formatAmount(amount, currency)}</span>
       )}
-    </div>
+      {status && (
+        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${badgeClass}`} style={{ borderWidth: '0.5px' }}>
+          {STATUS_LABELS[status] || status}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -200,72 +188,66 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   }, [recordId, token, apiBaseUrl]);
 
   if (loading) {
-    return <div className="text-xs text-muted-foreground py-3 px-3">Loading...</div>;
+    return <span className="text-xs text-muted-foreground">Loading...</span>;
   }
+
+  const chips = [];
 
   const quotationId = data?.quotation;
   const quotationLabel = data?.['quotation$_identifier'];
-
-  const sections = [];
-
   if (quotationId) {
-    sections.push(
-      <Section key="quotation" icon="quotation" label="Quotation" count={1}>
-        <DocRow
-          title={quotationLabel || quotationId}
-          onClick={() => navigate(`/sales-quotation/${quotationId}`)}
-        />
-      </Section>
+    chips.push(
+      <DocChip
+        key="quotation"
+        icon={CHIP_ICONS.quotation}
+        iconColor={CHIP_COLORS.quotation}
+        title={quotationLabel || quotationId}
+        onClick={() => navigate(`/sales-quotation/${quotationId}`)}
+      />
     );
   }
 
   for (const spec of RELATED_SPECS) {
     const rows = related[spec.key] || [];
-    if (rows.length > 0) {
-      sections.push(
-        <Section key={spec.key} icon={spec.icon} label={spec.label} count={rows.length}>
-          {rows.map((row, i) => {
-            const f = spec.format(row);
-            return (
-              <DocRow
-                key={row.id || i}
-                title={f.title}
-                date={f.date}
-                amount={f.amount}
-                currency={f.currency}
-                status={f.status}
-                onClick={() => navigate(`${spec.route}/${row.id}`)}
-              />
-            );
-          })}
-        </Section>
+    for (const row of rows) {
+      const f = spec.format(row);
+      chips.push(
+        <DocChip
+          key={`${spec.key}-${row.id}`}
+          icon={CHIP_ICONS[spec.icon]}
+          iconColor={CHIP_COLORS[spec.icon]}
+          title={f.title}
+          amount={f.amount}
+          currency={f.currency}
+          status={f.status}
+          onClick={() => navigate(`${spec.route}/${row.id}`)}
+        />
       );
     }
   }
 
-  if (payments.length > 0) {
-    sections.push(
-      <Section key="payments" icon="payments" label="Payments" count={payments.length}>
-        {payments.map((p, i) => (
-          <DocRow
-            key={p.id || i}
-            title={`#${p.documentNo || p.id}`}
-            date={p.paymentDate}
-            amount={p.amount}
-            currency={p['currency$_identifier']}
-            status={p.status}
-            onClick={() => navigate(`/payment-in/${p.id}`)}
-          />
-        ))}
-      </Section>
+  for (const p of payments) {
+    chips.push(
+      <DocChip
+        key={`payment-${p.id}`}
+        icon={CHIP_ICONS.payments}
+        iconColor={CHIP_COLORS.payments}
+        title={`Payment #${p.documentNo || p.id}`}
+        amount={p.amount}
+        currency={p['currency$_identifier']}
+        status={p.status}
+        onClick={() => navigate(`/payment-in/${p.id}`)}
+      />
     );
   }
 
-  if (sections.length === 0) return null;
+  if (chips.length === 0) {
+    return <span className="text-xs text-muted-foreground/50">No related documents</span>;
+  }
 
   return (
-    <div className="max-w-3xl divide-y divide-border/30">
-      {sections}
+    <div className="flex flex-wrap items-center gap-1.5">
+      {chips}
     </div>
   );
 }

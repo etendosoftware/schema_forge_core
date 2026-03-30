@@ -4,6 +4,7 @@ import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import catalogs from './mockCatalogs';
+import RelatedDocuments from './RelatedDocuments';
 
 
 const breadcrumb = 'Sales / Sales Invoice';
@@ -278,6 +279,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
         notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );

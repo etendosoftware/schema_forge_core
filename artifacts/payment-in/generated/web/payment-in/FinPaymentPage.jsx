@@ -5,7 +5,6 @@ import FinPaymentScheduleDetailTable from './FinPaymentScheduleDetailTable';
 import FinPaymentScheduleDetailForm from './FinPaymentScheduleDetailForm';
 import catalogs from './mockCatalogs';
 
-
 const breadcrumb = 'Sales / Payment In';
 
 // @sf-generated-start summary:finPayment

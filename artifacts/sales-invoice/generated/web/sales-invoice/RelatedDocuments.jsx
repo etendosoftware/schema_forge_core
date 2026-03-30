@@ -3,17 +3,12 @@ import { useNavigate } from 'react-router-dom';
 
 const STATUS_LABELS = {
   CO: 'Completed', DR: 'Draft', VO: 'Voided', CL: 'Closed',
-  RPPC: 'Received', RPR: 'Received', PWNC: 'Pending', RDNC: 'Deposited',
 };
 
 const STATUS_BADGE = {
   CO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   CL: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  RPPC: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  RPR: 'bg-blue-50 text-blue-700 border-blue-200',
-  RDNC: 'bg-blue-50 text-blue-700 border-blue-200',
   DR: 'bg-gray-50 text-gray-600 border-gray-200',
-  PWNC: 'bg-amber-50 text-amber-700 border-amber-200',
   VO: 'bg-red-50 text-red-700 border-red-200',
 };
 
@@ -24,10 +19,10 @@ const CHIP_ICONS = {
       <rect x="9" y="3" width="6" height="4" rx="1" />
     </svg>
   ),
-  invoice: (
+  shipment: (
     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
+      <rect x="1" y="3" width="22" height="5" rx="1" />
+      <path d="M1 8l2 13h18l2-13" />
     </svg>
   ),
 };
@@ -68,35 +63,37 @@ function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) 
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [order, setOrder] = useState(null);
-  const [invoices, setInvoices] = useState([]);
+  const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!recordId || !data) { setLoading(false); return; }
     const orderId = data.salesOrder;
-    if (!orderId) { setLoading(false); return; }
-
     const base = neoBase(apiBaseUrl);
     const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const promises = [];
 
-    const orderPromise = fetch(`${base}/sales-order/header/${orderId}`, { headers })
-      .then(r => r.ok ? r.json() : null)
-      .then(j => j?.response?.data?.[0] || null)
-      .catch(() => null);
+    if (orderId) {
+      promises.push(
+        fetch(`${base}/sales-order/header/${orderId}`, { headers })
+          .then(r => r.ok ? r.json() : null)
+          .then(j => { setOrder(j?.response?.data?.[0] || null); })
+          .catch(() => setOrder(null))
+      );
 
-    const criteria = JSON.stringify([{ fieldName: 'salesOrder', operator: 'equals', value: orderId }]);
-    const params = new URLSearchParams({ criteria, _limit: '50' });
-    const invoicePromise = fetch(`${base}/sales-invoice/header?${params}`, { headers })
-      .then(r => r.ok ? r.json() : { response: { data: [] } })
-      .then(j => j.response?.data || [])
-      .catch(() => []);
+      const criteria = JSON.stringify([{ fieldName: 'salesOrder', operator: 'equals', value: orderId }]);
+      const params = new URLSearchParams({ criteria, _limit: '50' });
+      promises.push(
+        fetch(`${base}/goods-shipment/goodsShipment?${params}`, { headers })
+          .then(r => r.ok ? r.json() : { response: { data: [] } })
+          .then(j => setShipments(j.response?.data || []))
+          .catch(() => setShipments([]))
+      );
+    }
 
-    Promise.all([orderPromise, invoicePromise]).then(([o, inv]) => {
-      setOrder(o);
-      setInvoices(inv);
-      setLoading(false);
-    });
+    if (promises.length === 0) { setLoading(false); return; }
+    Promise.all(promises).then(() => setLoading(false));
   }, [recordId, data, token, apiBaseUrl]);
 
   if (loading) return <span className="text-xs text-muted-foreground">Loading...</span>;
@@ -118,17 +115,15 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     );
   }
 
-  for (const inv of invoices) {
+  for (const s of shipments) {
     chips.push(
       <DocChip
-        key={`inv-${inv.id}`}
-        icon={CHIP_ICONS.invoice}
-        iconColor="text-purple-600"
-        title={`Invoice #${inv.documentNo}`}
-        amount={inv.grandTotalAmount}
-        currency={inv['currency$_identifier']}
-        status={inv.documentStatus}
-        onClick={() => navigate(`/sales-invoice/${inv.id}`)}
+        key={`ship-${s.id}`}
+        icon={CHIP_ICONS.shipment}
+        iconColor="text-blue-600"
+        title={`Shipment #${s.documentNo}`}
+        status={s.documentStatus}
+        onClick={() => navigate(`/goods-shipment/${s.id}`)}
       />
     );
   }
