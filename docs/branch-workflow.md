@@ -69,6 +69,17 @@ Based on the answer:
 - **Independent task →** Create new branch from the current epic (with `git pull` first to update)
 - **Dependent task →** Create new branch from the current feature branch
 
+## Parallel Repo Workflow (Schema Forge + Etendo Go)
+
+Schema Forge (tooling/frontend) and Etendo Go (`{etendo_root}/modules/com.etendoerp.go/`, backend/runtime) are developed in lockstep. Most features require a branch in **both repos** under the same epic, with parallel PRs:
+
+```
+Schema Forge:  feature/ETP-XXXX  →  PR to epic/ETP-3504
+Etendo Go:     feature/ETP-XXXX  →  PR to epic/ETP-3504
+```
+
+When working on a feature, always check if there's a corresponding branch/PR in the other repo.
+
 ## Branch Safety (MANDATORY)
 
-When Schema Forge is on a feature branch (e.g., `feature/ETP-3505`), the target module repository (e.g., `com.etendoerp.go`) **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module. Always verify both repos are on matching branches before generating or committing code.
+Both repos **MUST** be on the same branch. This prevents accidental commits to `main` or `develop` in the module. Always verify both repos are on matching branches before generating or committing code.

@@ -155,7 +155,7 @@ Full diagram: see `docs/architecture-overview.md`.
 
 ## Runtime Module
 
-com.etendoerp.go at `/modules/com.etendoerp.go/`. See `docs/architecture-overview.md` for components, DB tables, URL patterns. Full API reference: `modules/com.etendoerp.go/docs/neo-headless.md`.
+com.etendoerp.go at `{etendo_root}/modules/com.etendoerp.go/` (sibling of schema_forge). See `docs/architecture-overview.md` for components, DB tables, URL patterns. Full API reference: `{etendo_root}/modules/com.etendoerp.go/docs/neo-headless.md`. Both repos share branches — see `docs/branch-workflow.md` for the parallel workflow.
 
 ## Menu Discovery
 

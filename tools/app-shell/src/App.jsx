@@ -123,7 +123,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         }
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage apiBaseUrl={API_BASE_URL} />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="inventory" element={<InventoryPage />} />
