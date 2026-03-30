@@ -265,7 +265,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                       <Trash2 size={14} />
                     </button>
                   </div>
-                  {/* iframe viewer — wrapper div needed so flex-1 gives iframe real height */}
+                  {/* iframe with #toolbar=0 hides Chrome's PDF viewer toolbar */}
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <iframe
                       src={`${pdfFile.url}#toolbar=0&navpanes=0&scrollbar=1`}
