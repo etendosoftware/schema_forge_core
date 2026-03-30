@@ -626,7 +626,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
         if (val === false || val === 'N') return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
             {falseLabel}
           </span>
         );

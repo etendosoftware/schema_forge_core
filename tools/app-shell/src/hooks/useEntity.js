@@ -37,7 +37,7 @@ function resolveSortKey(sortColumn, sampleRow) {
   return sortColumn;
 }
 
-export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
+export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -99,7 +99,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl }) {
   const fetchChildren = useCallback((parentId) => {
     if (!childEntity || !parentId) { setChildren([]); return; }
     // NEO Headless uses ?parentId= to filter child entity records
-    fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}`, { headers })
+    fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}${childSortBy ? `&_sortBy=${childSortBy}` : ''}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
