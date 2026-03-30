@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Info,
   ChevronRight,
+  ChevronDown,
   Clock,
   Search,
   Sparkles,
@@ -44,49 +45,79 @@ const PAD_X = 40;
 const PAD_Y = 20;
 const PAD_BOTTOM = 30;
 
-function RevenueChart({ labels = [], values = [] }) {
-  const chartMonths = labels;
-  const chartValues = values;
-  const maxVal = Math.max(...chartValues);
-  const minVal = Math.min(...chartValues);
+function useCollapsed(key) {
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(key) === 'true');
+  const toggle = () => setCollapsed((c) => { const next = !c; localStorage.setItem(key, String(next)); return next; });
+  return [collapsed, toggle];
+}
+
+function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
+  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
+  const hasExpenses = expenseValues.length === values.length && expenseValues.some((v) => v > 0);
+  const allValues = hasExpenses ? [...values, ...expenseValues] : values;
+  const maxVal = Math.max(...allValues, 0);
+  const minVal = Math.min(...allValues, 0);
   const range = maxVal - minVal || 1;
 
   const plotW = CHART_W - PAD_X * 2;
   const plotH = CHART_H - PAD_Y - PAD_BOTTOM;
 
-  const points = chartValues.map((v, i) => {
-    const x = PAD_X + (i / (chartValues.length - 1)) * plotW;
-    const y = PAD_Y + plotH - ((v - minVal) / range) * plotH;
-    return { x, y };
+  const toPoint = (v, i, len) => ({
+    x: PAD_X + (i / (len - 1)) * plotW,
+    y: PAD_Y + plotH - ((v - minVal) / range) * plotH,
   });
 
-  const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
+  const revPoints = values.map((v, i) => toPoint(v, i, values.length));
+  const expPoints = hasExpenses ? expenseValues.map((v, i) => toPoint(v, i, expenseValues.length)) : [];
 
-  // Closed polygon for gradient fill (goes down to bottom, back along x-axis)
-  const fillPath = [
-    `M ${points[0].x},${points[0].y}`,
-    ...points.slice(1).map((p) => `L ${p.x},${p.y}`),
-    `L ${points[points.length - 1].x},${PAD_Y + plotH}`,
-    `L ${points[0].x},${PAD_Y + plotH}`,
+  const toPolyline = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
+  const toFillPath = (pts) => [
+    `M ${pts[0].x},${pts[0].y}`,
+    ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
+    `L ${pts[pts.length - 1].x},${PAD_Y + plotH}`,
+    `L ${pts[0].x},${PAD_Y + plotH}`,
     'Z',
   ].join(' ');
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Revenue Trend (12 months)</CardTitle>
+      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+            <CardTitle className="text-sm font-medium">
+              {hasExpenses ? 'Revenue vs Expenses (12 months)' : 'Revenue Trend (12 months)'}
+            </CardTitle>
+          </div>
+          {hasExpenses && !collapsed && (
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-primary" />
+                Revenue
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
+                Expenses
+              </span>
+            </div>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      {!collapsed && <CardContent className="p-4 pt-0">
         <svg
           viewBox={`0 0 ${CHART_W} ${CHART_H}`}
           className="w-full h-auto"
           role="img"
-          aria-label="Revenue trend line chart for the last 12 months"
+          aria-label="Revenue and expenses trend chart for the last 12 months"
         >
           <defs>
             <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.02" />
+            </linearGradient>
+            <linearGradient id="expense-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity="0.01" />
             </linearGradient>
           </defs>
 
@@ -118,12 +149,31 @@ function RevenueChart({ labels = [], values = [] }) {
             );
           })}
 
-          {/* Fill area */}
-          <path d={fillPath} fill="url(#chart-gradient)" />
+          {/* Expense fill + line (drawn first, below revenue) */}
+          {hasExpenses && (
+            <>
+              <path d={toFillPath(expPoints)} fill="url(#expense-gradient)" />
+              <polyline
+                points={toPolyline(expPoints)}
+                fill="none"
+                stroke="hsl(var(--destructive))"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="5 3"
+              />
+              {expPoints.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
+              ))}
+            </>
+          )}
 
-          {/* Line */}
+          {/* Revenue fill area */}
+          <path d={toFillPath(revPoints)} fill="url(#chart-gradient)" />
+
+          {/* Revenue line */}
           <polyline
-            points={polyline}
+            points={toPolyline(revPoints)}
             fill="none"
             stroke="hsl(var(--primary))"
             strokeWidth="2.5"
@@ -131,37 +181,62 @@ function RevenueChart({ labels = [], values = [] }) {
             strokeLinejoin="round"
           />
 
-          {/* Data dots */}
-          {points.map((p, i) => (
-            <circle
-              key={i}
-              cx={p.x}
-              cy={p.y}
-              r="3"
-              fill="hsl(var(--background))"
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-            />
+          {/* Revenue dots */}
+          {revPoints.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth="2" />
           ))}
 
           {/* X-axis labels */}
-          {chartMonths.map((m, i) => {
-            const x = PAD_X + (i / (chartMonths.length - 1)) * plotW;
+          {labels.map((m, i) => {
+            const x = PAD_X + (i / (labels.length - 1)) * plotW;
             return (
-              <text
-                key={m}
-                x={x}
-                y={CHART_H - 6}
-                textAnchor="middle"
-                className="fill-muted-foreground"
-                fontSize="10"
-              >
+              <text key={m} x={x} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
                 {m}
               </text>
             );
           })}
         </svg>
-      </CardContent>
+      </CardContent>}
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------
+ * Top Clients
+ * ----------------------------------------------------------------*/
+
+function TopClients({ clients = [] }) {
+  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
+  return (
+    <Card>
+      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+        <div className="flex items-center gap-2">
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+          <CardTitle className="text-sm font-medium">Top Clients (12 months)</CardTitle>
+        </div>
+      </CardHeader>
+      {!collapsed && <CardContent className="p-4 pt-0">
+        {clients.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No data available</p>
+        ) : (
+          <div className="space-y-0">
+            {clients.map((c, i) => (
+              <React.Fragment key={c.name}>
+                {i > 0 && <Separator />}
+                <div className="flex items-center justify-between py-2 px-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}</span>
+                    <span className="text-sm truncate">{c.name}</span>
+                  </div>
+                  <span className="text-sm font-medium shrink-0 ml-2">
+                    ${Number(c.total).toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                  </span>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+      </CardContent>}
     </Card>
   );
 }
@@ -200,12 +275,16 @@ function QuickActions({ actions = [] }) {
  * ----------------------------------------------------------------*/
 
 function PendingTasks({ tasks = [] }) {
+  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+        <div className="flex items-center gap-2">
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+          <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      {!collapsed && <CardContent className="p-4 pt-0">
         <div className="space-y-1">
           {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
@@ -246,8 +325,74 @@ function PendingTasks({ tasks = [] }) {
             );
           })}
         </div>
-      </CardContent>
+      </CardContent>}
     </Card>
+  );
+}
+
+/* ------------------------------------------------------------------
+ * Loading Skeleton
+ * ----------------------------------------------------------------*/
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto animate-pulse">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-24 bg-muted rounded" />
+              <div className="h-8 w-8 bg-muted rounded-full" />
+            </div>
+            <div className="h-7 w-32 bg-muted rounded" />
+            <div className="h-3 w-20 bg-muted rounded" />
+          </div>
+        ))}
+      </div>
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: chart + top clients */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="h-4 w-48 bg-muted rounded" />
+            <div className="h-48 w-full bg-muted rounded" />
+          </div>
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="h-4 w-40 bg-muted rounded" />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center justify-between py-1">
+                <div className="h-3 w-36 bg-muted rounded" />
+                <div className="h-3 w-20 bg-muted rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: pending tasks + quick actions */}
+        <div className="space-y-6">
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="h-4 w-32 bg-muted rounded" />
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-1">
+                <div className="h-4 w-4 bg-muted rounded-full shrink-0" />
+                <div className="flex-1 h-3 bg-muted rounded" />
+                <div className="h-5 w-8 bg-muted rounded-full" />
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="h-4 w-28 bg-muted rounded" />
+            <div className="flex flex-wrap gap-2">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-8 w-24 bg-muted rounded-md" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -257,7 +402,7 @@ function PendingTasks({ tasks = [] }) {
 
 export default function DashboardPage() {
   const [showUserContext, setShowUserContext] = useState(false);
-  const { kpis, revenueTrend, pendingTasks, actions } = useDashboardData();
+  const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
 
   // Resolve icons for KPIs and actions
@@ -312,7 +457,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    <div className="space-y-6 p-6 bg-white rounded-tl-2xl flex-1">
+    {loading ? <DashboardSkeleton /> : (
+    <div className="space-y-6 p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto">
       {/* KPI Row */}
       <KPIHeader kpis={resolvedKpis} />
 
@@ -320,7 +466,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - 2/3 */}
         <div className="lg:col-span-2 space-y-6">
-          <RevenueChart labels={revenueTrend.labels} values={revenueTrend.values} />
+          <RevenueChart labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} />
+          <TopClients clients={topClients} />
         </div>
 
         {/* Right column - 1/3 */}
@@ -330,6 +477,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    )}
     </div>
   );
 }

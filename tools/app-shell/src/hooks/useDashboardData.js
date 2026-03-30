@@ -163,6 +163,47 @@ function buildRevenueTrend(allSalesInvoices) {
 }
 
 /* ------------------------------------------------------------------
+ * Aggregation: Expense Trend (12 months)
+ * ----------------------------------------------------------------*/
+
+function buildExpenseTrend(allPurchaseInvoices) {
+  const completedPurchases = allPurchaseInvoices.filter((r) => r.documentStatus === 'CO');
+  const now = new Date();
+  const values = [];
+
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthRecords = filterByMonth(completedPurchases, 'invoiceDate', d.getFullYear(), d.getMonth());
+    values.push(sumField(monthRecords, 'grandTotalAmount'));
+  }
+
+  return values;
+}
+
+/* ------------------------------------------------------------------
+ * Aggregation: Top Clients (last 12 months)
+ * ----------------------------------------------------------------*/
+
+function buildTopClients(allSalesInvoices) {
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const completedSales = allSalesInvoices.filter((r) => {
+    if (r.documentStatus !== 'CO') return false;
+    const d = parseDate(r.invoiceDate);
+    return d && d >= cutoff;
+  });
+  const totals = {};
+  for (const r of completedSales) {
+    const name = r['businessPartner$_identifier'] || r.businessPartner || 'Unknown';
+    totals[name] = (totals[name] || 0) + (Number(r.grandTotalAmount) || 0);
+  }
+  return Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, total]) => ({ name, total }));
+}
+
+/* ------------------------------------------------------------------
  * Aggregation: Pending Tasks
  * ----------------------------------------------------------------*/
 
@@ -292,6 +333,12 @@ export function useDashboardData() {
         revenueTrend: salesInvoices
           ? buildRevenueTrend(salesInvoices)
           : mock.revenueTrend,
+        expenseTrend: purchaseInvoices
+          ? buildExpenseTrend(purchaseInvoices)
+          : mock.revenueTrend.values.map(() => 0),
+        topClients: salesInvoices
+          ? buildTopClients(salesInvoices)
+          : [],
         pendingTasks: (salesInvoices && purchaseOrders && shipments)
           ? buildPendingTasks(salesInvoices, purchaseInvoices, purchaseOrders, shipments)
           : mock.pendingTasks,
@@ -314,6 +361,8 @@ export function useDashboardData() {
   return {
     kpis: resolved.kpis,
     revenueTrend: resolved.revenueTrend,
+    expenseTrend: resolved.expenseTrend ?? [],
+    topClients: resolved.topClients ?? [],
     pendingTasks: resolved.pendingTasks,
     recentMessages: resolved.recentMessages,
     actions,
