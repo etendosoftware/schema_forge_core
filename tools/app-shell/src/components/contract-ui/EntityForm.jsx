@@ -90,10 +90,12 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const filtered = useMemo(() => {
     // Server results take priority when available
     if (serverResults !== null) return serverResults.slice(0, 20);
+    // When a real API selector is configured, don't show mock locals — wait for user to type
+    if (selectorUrl) return [];
     if (!query || query.length === 0) return localOptions.slice(0, 10);
     const q = query.toLowerCase();
     return localOptions.filter(opt => opt.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [serverResults, query, localOptions]);
+  }, [serverResults, query, localOptions, selectorUrl]);
 
   const handleSelect = (opt) => {
     isEditingRef.current = false; // Finished editing
