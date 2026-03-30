@@ -459,7 +459,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Build optional import for RelatedDocuments
   const relatedDocsImport = relatedDocuments
-    ? `import RelatedDocuments from './RelatedDocuments';\n`
+    ? `import RelatedDocuments from '../../../custom/RelatedDocuments';\n`
     : '';
 
   // Draft mode config from frontend contract
