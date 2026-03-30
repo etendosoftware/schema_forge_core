@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { KPIHeader } from '@/components/contract-ui/KPIHeader';
-import { Chatter } from '@/components/contract-ui/Chatter';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,34 +25,14 @@ import {
   Bell,
   Mic,
 } from 'lucide-react';
-import { kpisConfig, actions } from '@generated/dashboard/generated/config';
-import * as mockData from '@generated/dashboard/generated/mockData';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useCopilot } from '@/components/CopilotContext';
 
 /* ------------------------------------------------------------------
- * Data derived from aggregate contract
+ * Icon lookup
  * ----------------------------------------------------------------*/
 
 const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box };
-
-const kpis = kpisConfig.map((k) => ({
-  ...k,
-  value: mockData.kpis[k.key].value,
-  trend: mockData.kpis[k.key].trend,
-  icon: ICON_MAP[k.icon] || DollarSign,
-}));
-
-const chartMonths = mockData.revenueTrend.labels;
-const chartValues = mockData.revenueTrend.values;
-
-const quickActions = actions.map((a) => ({
-  label: a.label,
-  to: a.route,
-  icon: ICON_MAP[a.icon] || FileText,
-}));
-
-const pendingTasks = mockData.pendingTasks;
-
-const recentMessages = mockData.recentMessages;
 
 /* ------------------------------------------------------------------
  * SVG Revenue Chart
@@ -65,7 +44,9 @@ const PAD_X = 40;
 const PAD_Y = 20;
 const PAD_BOTTOM = 30;
 
-function RevenueChart() {
+function RevenueChart({ labels = [], values = [] }) {
+  const chartMonths = labels;
+  const chartValues = values;
   const maxVal = Math.max(...chartValues);
   const minVal = Math.min(...chartValues);
   const range = maxVal - minVal || 1;
@@ -189,7 +170,7 @@ function RevenueChart() {
  * Quick Actions
  * ----------------------------------------------------------------*/
 
-function QuickActions() {
+function QuickActions({ actions = [] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -197,7 +178,7 @@ function QuickActions() {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="flex flex-wrap gap-2">
-          {quickActions.map((action) => {
+          {actions.map((action) => {
             const Icon = action.icon;
             return (
               <Button key={action.to} variant="outline" size="sm" asChild>
@@ -218,7 +199,7 @@ function QuickActions() {
  * Pending Tasks
  * ----------------------------------------------------------------*/
 
-function PendingTasks() {
+function PendingTasks({ tasks = [] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -226,7 +207,7 @@ function PendingTasks() {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="space-y-1">
-          {pendingTasks.map((task, i) => {
+          {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
             return (
               <React.Fragment key={i}>
@@ -248,6 +229,17 @@ function PendingTasks() {
                       </p>
                     )}
                   </div>
+                  {task.count != null && (
+                    <span
+                      className={
+                        isWarning
+                          ? 'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700'
+                          : 'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700'
+                      }
+                    >
+                      {task.count}
+                    </span>
+                  )}
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </React.Fragment>
@@ -265,6 +257,20 @@ function PendingTasks() {
 
 export default function DashboardPage() {
   const [showUserContext, setShowUserContext] = useState(false);
+  const { kpis, revenueTrend, pendingTasks, actions } = useDashboardData();
+  const { open: openCopilot } = useCopilot();
+
+  // Resolve icons for KPIs and actions
+  const resolvedKpis = kpis.map((k) => ({
+    ...k,
+    icon: ICON_MAP[k.icon] || DollarSign,
+  }));
+
+  const quickActions = actions.map((a) => ({
+    label: a.label,
+    to: a.route,
+    icon: ICON_MAP[a.icon] || FileText,
+  }));
 
   return (
     <div className="h-full flex flex-col">
@@ -288,7 +294,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={openCopilot}
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            >
               <Sparkles className="h-4 w-4" />
             </button>
             <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
@@ -305,25 +314,19 @@ export default function DashboardPage() {
       </div>
     <div className="space-y-6 p-6 bg-white rounded-tl-2xl flex-1">
       {/* KPI Row */}
-      <KPIHeader kpis={kpis} />
+      <KPIHeader kpis={resolvedKpis} />
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - 2/3 */}
         <div className="lg:col-span-2 space-y-6">
-          <RevenueChart />
-          <QuickActions />
+          <RevenueChart labels={revenueTrend.labels} values={revenueTrend.values} />
         </div>
 
         {/* Right column - 1/3 */}
         <div className="space-y-6">
-          <PendingTasks />
-          <Chatter
-            entityType="dashboard"
-            entityId="home"
-            messages={recentMessages}
-            collapsed={false}
-          />
+          <PendingTasks tasks={pendingTasks} />
+          <QuickActions actions={quickActions} />
         </div>
       </div>
     </div>

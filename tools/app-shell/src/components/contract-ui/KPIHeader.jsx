@@ -38,7 +38,7 @@ function formatValue(value, format) {
 /**
  * A single KPI metric card.
  */
-function KPICard({ label, value, format, trend, icon: Icon }) {
+function KPICard({ label, value, format, trend, previousValue, icon: Icon }) {
   const hasTrend = trend != null && trend !== 0;
   const isPositive = trend > 0;
 
@@ -79,6 +79,12 @@ function KPICard({ label, value, format, trend, icon: Icon }) {
             </span>
           </div>
         )}
+
+        {previousValue != null && hasTrend && (
+          <p className="text-xs text-muted-foreground mt-1">
+            vs {formatValue(previousValue, format)} prev. month
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -103,6 +109,7 @@ export function KPIHeader({ kpis = [] }) {
           value={kpi.value}
           format={kpi.format}
           trend={kpi.trend}
+          previousValue={kpi.previousValue}
           icon={kpi.icon}
         />
       ))}

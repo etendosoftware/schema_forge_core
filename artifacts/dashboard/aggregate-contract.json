@@ -56,25 +56,25 @@
   "actions": [
     { "label": "+ Invoice", "route": "/sales-invoice", "icon": "FileText" },
     { "label": "+ Order", "route": "/sales-order", "icon": "ShoppingCart" },
-    { "label": "+ Contact", "route": "/business-partner", "icon": "Users" },
+    { "label": "+ Contact", "route": "/contacts", "icon": "Users" },
     { "label": "+ Product", "route": "/product", "icon": "Box" }
   ],
   "mockData": {
     "kpi-header": {
-      "revenueThisMonth": { "value": 48250, "trend": 12.5 },
-      "expensesThisMonth": { "value": 31800, "trend": 3.2 },
-      "netProfit": { "value": 16450, "trend": 28.7 },
-      "pendingInvoices": { "value": 7, "trend": -2 }
+      "revenueThisMonth": { "value": 48250, "trend": 12.5, "previousValue": 42889 },
+      "expensesThisMonth": { "value": 31800, "trend": 3.2, "previousValue": 30814 },
+      "netProfit": { "value": 16450, "trend": 28.7, "previousValue": 12782 },
+      "pendingInvoices": { "value": 7, "trend": -2, "previousValue": 7 }
     },
     "revenue-trend": {
       "labels": ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
       "values": [32000, 35000, 28000, 41000, 38000, 45000, 42000, 39000, 44000, 47000, 43000, 48250]
     },
     "pending-tasks": [
-      { "type": "warning", "text": "3 overdue invoices", "link": "/sales-invoice", "amount": "$12,400" },
-      { "type": "info", "text": "2 orders pending shipment", "link": "/goods-shipment" },
-      { "type": "info", "text": "5 purchase orders to confirm", "link": "/purchase-order" },
-      { "type": "warning", "text": "1 low stock alert", "link": "/physical-inventory", "detail": "Cerveza Ale 0.5L" }
+      { "type": "warning", "text": "3 overdue invoices", "link": "/sales-invoice", "filter": { "documentStatus": "overdue" }, "amount": "$12,400", "count": 3 },
+      { "type": "info", "text": "2 orders pending shipment", "link": "/goods-shipment", "filter": { "documentStatus": "pending" }, "count": 2 },
+      { "type": "info", "text": "5 purchase orders to confirm", "link": "/purchase-order", "filter": { "documentStatus": "draft" }, "count": 5 },
+      { "type": "warning", "text": "1 low stock alert", "link": "/physical-inventory", "detail": "Cerveza Ale 0.5L", "count": 1 }
     ],
     "recent-messages": [
       { "id": "1", "author": "System", "text": "Invoice INV-2026-0142 was paid by Empresa ABC", "timestamp": "2026-03-09T08:30:00", "type": "system" },
