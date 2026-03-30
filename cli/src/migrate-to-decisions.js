@@ -500,6 +500,7 @@ async function migrate(windowName, dryRun) {
   // Step 5: Assemble decisions.json (first pass)
   let decisions = {
     $schema: 'decisions-v1',
+    version: 1,
     window: windowEntry,
     entities: entityDecisions,
     rules: ruleDecisions,

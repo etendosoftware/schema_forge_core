@@ -15,6 +15,7 @@ import { getSelectorCatalogKeys } from '@/lib/selectorCatalog.js';
  */
 export function useCatalogs(api, token, apiBaseUrl, fallback = {}, selectorContext = {}) {
   const [catalogs, setCatalogs] = useState(fallback);
+  const [loaded, setLoaded] = useState(false);
   const fetchedRef = useRef(null);
   const selectorContextKey = JSON.stringify(selectorContext ?? {});
   const selectorsKey = JSON.stringify(
@@ -89,8 +90,9 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}, selectorConte
         }
       }
       setCatalogs({ ...fallback, ...results });
+      setLoaded(true);
     });
   }, [api, token, apiBaseUrl, fallback, selectorContextKey, selectorsKey]);
 
-  return catalogs;
+  return { catalogs, catalogsLoaded: loaded };
 }

@@ -2,7 +2,10 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { X, Check, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
+} from '@/components/ui/dialog.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
@@ -76,6 +79,7 @@ export function DetailView({
   apiBaseUrl,
   breadcrumb,
   secondaryTabs = [],
+  draftMode = null,
   headerContent = null,
   customTabs = [],
   documentPreview,
@@ -103,7 +107,7 @@ export function DetailView({
     }
     return next;
   }, [detailEntity, parentRecordId, secondaryTabs]);
-  const catalogs = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
+  const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
@@ -112,6 +116,7 @@ export function DetailView({
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [showPrint, setShowPrint] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [lineEdits, setLineEdits] = useState(null);
@@ -175,25 +180,36 @@ export function DetailView({
     }
   }, [isNew, hook.editing, hook.handleNew]);
 
-  // Resolve $_identifier for default FK values using already-loaded catalogs.
-  // If a default ID isn't in the selector options (e.g., generic preference doesn't match
-  // this window's filtered list), clear it — the callout will set the correct value later.
+  // Resolve $_identifier for default FK values and auto-select first option for
+  // mandatory combo selectors (inputMode: "selector") that have no value.
+  // This matches classic Etendo behavior: TableDir combos pre-select the first record
+  // when the field is mandatory, while search fields don't (they require user input).
   useEffect(() => {
-    if (!isNew || !hook.editing || !catalogs || !api?.selectors) return;
+    if (!isNew || !hook.editing || !catalogsLoaded || !api?.selectors) return;
     for (const sel of api.selectors) {
       const val = hook.editing[sel.field];
-      if (!val || hook.editing[sel.field + '$_identifier']) continue;
       const options = getCatalogOptions(catalogs, sel.entity, sel);
       if (!Array.isArray(options) || options.length === 0) continue;
-      const match = options.find(o => o.id === val);
-      if (match) {
-        hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
-      } else {
-        // Default ID not in filtered options — clear it to avoid showing a raw UUID
-        hook.handleChange(sel.field, '');
+
+      if (val) {
+        // Has a value — resolve its identifier if missing
+        if (!hook.editing[sel.field + '$_identifier']) {
+          const match = options.find(o => o.id === val);
+          if (match) {
+            hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
+          }
+        }
+      } else if (sel.inputMode === 'selector') {
+        // Combo/dropdown with no value — auto-select first option (Etendo TableDir behavior).
+        // Only for editable fields; search/dependent fields require explicit user selection.
+        const first = options[0];
+        if (first) {
+          hook.handleChange(sel.field, first.id);
+          hook.handleChange(sel.field + '$_identifier', first.label || first.name || first._identifier);
+        }
       }
     }
-  }, [isNew, hook.editing, catalogs, api]);
+  }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
 
   useEffect(() => {
     if (isNew) return;
@@ -495,6 +511,21 @@ export function DetailView({
                 <Printer className="h-4 w-4" />
               </button>
             )}
+            {/* Delete record */}
+            {!isNew && recordId && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                title="Delete"
+                data-testid="action-delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            {/* More actions */}
+            <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+              <MoreVertical className="h-4 w-4" />
+            </button>
             {/* Process buttons — only shown for existing records */}
             {!isNew && processes.map(p => {
               const btnClass = p.style === 'destructive'
@@ -513,13 +544,32 @@ export function DetailView({
               );
             })}
 
-            <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
-              const saved = await hook.handleSave(data);
-              if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-            }}>
-              <Check className="h-3.5 w-3.5" />
-              Save
-            </Button>
+            {draftMode?.enabled ? (
+              <>
+                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
+                  const saved = await hook.handleSave(data);
+                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                }}>
+                  <Save className="h-3.5 w-3.5" />
+                  Save draft
+                </Button>
+                <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                  const saved = await hook.handleSaveAndProcess(draftMode);
+                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                }}>
+                  <Check className="h-3.5 w-3.5" />
+                  Save &amp; {draftMode.label || 'Process'}
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                const saved = await hook.handleSave(data);
+                if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+              }}>
+                <Check className="h-3.5 w-3.5" />
+                Save
+              </Button>
+            )}
           </div>
         </div>
 
@@ -608,18 +658,15 @@ export function DetailView({
                           active: addingLine,
                           fields: allEntryFields,
                           onAdd: async (lineData) => {
-                            // Only send entry field keys to the API — exclude callout-derived values
-                            const entryKeys = new Set(allEntryFields.map(f => f.key));
-                            const filtered = {};
-                            for (const [k, v] of Object.entries(lineData)) {
-                              if (entryKeys.has(k)) filtered[k] = v;
-                            }
+                            // Send all values: entry fields + callout-derived values (tax, prices, uOM, etc.).
+                            // handleAddChild filters out internal keys (_identifier, _aux, CURSOR_FIELD, etc.)
+                            // Also include hidden entry defaults (e.g., fields with predefined values).
                             for (const hiddenField of hiddenEntryDefaults) {
-                              if (!(hiddenField.key in filtered)) {
-                                filtered[hiddenField.key] = hiddenField.value;
+                              if (!(hiddenField.key in lineData)) {
+                                lineData[hiddenField.key] = hiddenField.value;
                               }
                             }
-                            return hook.handleAddChild?.(filtered);
+                            return hook.handleAddChild?.(lineData);
                           },
                           onCancel: () => setAddingLine(false),
                           catalogs,
@@ -1113,6 +1160,33 @@ export function DetailView({
         documentIds={recordId ? [recordId] : []}
         token={token}
       />
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete record</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this record? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" size="sm">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              data-testid="action-delete-confirm"
+              onClick={async () => {
+                setShowDeleteConfirm(false);
+                await hook.handleDelete();
+                navigate(`/${windowName}`);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
