@@ -724,7 +724,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = t(col.column) ?? col.label ?? col.key;
+                const colLabel = col.label ?? t(col.column) ?? col.key;
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (

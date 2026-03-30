@@ -74,6 +74,7 @@ async function loadAllMockData() {
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
+    import('@generated/assets/generated/web/assets/mockData.js'),
     import('@generated/deal/generated/web/deal/mockData.js'),
     import('@generated/activity/generated/web/activity/mockData.js'),
     import('@generated/lead/generated/web/lead/mockData.js'),

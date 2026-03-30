@@ -16,6 +16,24 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
+
+/**
+ * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
+ * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
+ */
+function evalDisplayLogicRaw(expr, data) {
+  if (!expr) return true;
+  const clauses = [...expr.matchAll(/@(\w+)@\s*(!?=)\s*'([^']*)'/g)];
+  if (clauses.length === 0) return true;
+  return clauses.every(([, fieldRef, op, expected]) => {
+    const key = fieldRef[0].toLowerCase() + fieldRef.slice(1);
+    if (!(key in (data || {}))) return true; // field absent → default visible
+    const rawVal = data[key];
+    // Normalize boolean API values to Etendo string equivalents (true→'Y', false→'N')
+    const actual = typeof rawVal === 'boolean' ? (rawVal ? 'Y' : 'N') : String(rawVal ?? '');
+    return op === '=' ? actual === expected : actual !== expected;
+  });
+}
 import { cn } from '@/lib/utils.js';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
@@ -350,11 +368,24 @@ export function DetailView({
           }
         }
       }
+      // Resolve missing $_identifier from loaded catalogs for FK fields returned by callout
+      // (e.g., callout sets uOM='100' but server omits the display name)
+      if (api?.selectors) {
+        for (const key of Object.keys(result)) {
+          if (key.includes('$_identifier')) continue;
+          if (result[key + '$_identifier']) continue;
+          const selConfig = api.selectors.find(s => s.field === key && s.entity === detailEntity);
+          if (!selConfig) continue;
+          const opts = getCatalogOptions(catalogs, detailEntity, selConfig);
+          const match = opts.find(o => o.id === result[key]);
+          if (match) result[key + '$_identifier'] = match.label || match.name || match._identifier || '';
+        }
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
     } catch {
       // Callout is best-effort
     }
-  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected]);
+  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api]);
 
   const data = hook.editing || currentItem || {};
   const title = isNew
@@ -543,23 +574,27 @@ export function DetailView({
                 </Button>
               )
             ))}
-            {/* Process buttons — only shown for existing records */}
-            {!isNew && processes.map(p => {
-              const btnClass = p.style === 'destructive'
-                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
-              return (
-                <Button
-                  key={p.name}
-                  variant="outline"
-                  size="sm"
-                  className={btnClass}
-                  onClick={() => hook.handleProcess?.(p)}
-                >
-                  {p.label}
-                </Button>
-              );
-            })}
+            {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
+            {!isNew && processes
+              .filter(p => p.displayLogicRaw
+                ? evalDisplayLogicRaw(p.displayLogicRaw, data)
+                : displayLogic?.visibility?.[p.name] !== false)
+              .map(p => {
+                const btnClass = p.style === 'destructive'
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                return (
+                  <Button
+                    key={p.name}
+                    variant="outline"
+                    size="sm"
+                    className={btnClass}
+                    onClick={() => hook.handleProcess?.(p)}
+                  >
+                    {p.label}
+                  </Button>
+                );
+              })}
 
             {draftMode?.enabled ? (
               <>
