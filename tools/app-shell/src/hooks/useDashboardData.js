@@ -265,7 +265,7 @@ export function useDashboardData() {
       // Fetch all records — filtering is done client-side because NEO
       // does not reliably apply field-level query parameters as filters.
       const [salesRes, purchasesRes, posRes, shipmentsRes] = await Promise.allSettled([
-        fetchAllRecords(apiBase, token, 'sales-invoice', 'invoice'),
+        fetchAllRecords(apiBase, token, 'sales-invoice', 'header'),
         fetchAllRecords(apiBase, token, 'purchase-invoice', 'invoice'),
         fetchAllRecords(apiBase, token, 'purchase-order', 'order'),
         fetchAllRecords(apiBase, token, 'goods-shipment', 'goodsShipment'),
