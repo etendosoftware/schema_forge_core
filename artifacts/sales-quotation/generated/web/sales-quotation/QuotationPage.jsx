@@ -3,7 +3,7 @@ import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
-import RelatedDocuments from './RelatedDocuments';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 

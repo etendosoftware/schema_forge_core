@@ -6,7 +6,8 @@
     "documentPreview": {
       "titlePrefix": "Invoice"
     },
-    "notesField": "description"
+    "notesField": "description",
+    "relatedDocuments": true
   },
   "entities": {
     "header": {
