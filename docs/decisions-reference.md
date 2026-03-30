@@ -37,6 +37,9 @@ Complete reference for all configurable options in `decisions.json` files. These
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
 | `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
 | `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts (e.g., `groupBy`, `dateField`). |
+| `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
+| `notesField` | string | `null` | Any entity field name | Field to display as a notes/description panel in the detail view footer (e.g., `"description"`). Rendered as an expandable text input. |
+| `documentPreview` | object | `null` | `{ titlePrefix: string }` | Enables the document preview button in the detail header. `titlePrefix` is shown in the preview drawer title (e.g., `"Order"`, `"Invoice"`). |
 
 ## Entity Properties (`entities.{entityName}.*`)
 
