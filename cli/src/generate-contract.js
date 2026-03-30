@@ -38,6 +38,21 @@ function findMatchingRule(rules, identifier, type) {
 }
 
 /**
+ * Convert an Etendo readOnly/displayLogic expression into a JS expression string.
+ * Uses a column→propertyName map built from the schema to resolve @Column@ references.
+ * Falls back to camelCase of the column name when not found in the map.
+ */
+function convertLogicToJs(rawExpr, columnMap) {
+  return rawExpr
+    .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => {
+      const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
+      return `record['${prop}'] === '${val}'`;
+    })
+    .replace(/\s*\|\s*/g, ' || ')
+    .replace(/\s*&\s*/g, ' && ');
+}
+
+/**
  * Classify whether a raw display/readOnly logic expression can be evaluated client-side.
  * Returns { evaluable: true } or { evaluable: false, reason: string }.
  */
@@ -81,6 +96,16 @@ function classifyEvaluability(rawExpr) {
  */
 export function generateFrontendContract(schema, rules = []) {
   const entities = {};
+
+  // Build a column→propertyName map from all entities for readOnly/display logic JS conversion
+  // Curated fields use field.column (the DB column name) and field.name (the JS property name)
+  const columnMap = {};
+  for (const entity of schema.entities) {
+    for (const field of entity.fields ?? []) {
+      const col = field.column || field.columnName;
+      if (col && field.name) columnMap[col] = field.name;
+    }
+  }
 
   for (const entity of schema.entities) {
     const visibleFields = entity.fields.filter(isVisible);
@@ -161,6 +186,8 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.readOnlyLogic.reason = evalInfo.reason;
           mapped.readOnlyLogic.js = null;
+        } else if (!mapped.readOnlyLogic.js) {
+          mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap);
         }
       }
 

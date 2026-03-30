@@ -67,6 +67,17 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/paymentPlan/{id}",
       "supportedFilters": []
     },
+    "paymentDetails": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
+      "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
+      "supportedFilters": []
+    },
     "reversedInvoices": {
       "get": true,
       "getById": true,
@@ -348,6 +359,14 @@ const api = {
       "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
     },
     {
+      "entity": "paymentDetails",
+      "field": "finPaymentID",
+      "column": "Fin_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
+    },
+    {
       "entity": "reversedInvoices",
       "field": "reversedInvoice",
       "column": "Reversed_C_Invoice_ID",
@@ -496,6 +515,12 @@ const api = {
       "field": "calculatePromotions",
       "column": "Calculate_Promotions",
       "url": "/sws/neo/purchase-invoice/invoice/{id}/action/calculatePromotions"
+    },
+    {
+      "entity": "invoice",
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/eTBLKCBulkcompletion"
     },
     {
       "entity": "invoice",

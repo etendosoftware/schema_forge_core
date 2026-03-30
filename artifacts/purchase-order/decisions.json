@@ -12,15 +12,14 @@
           "grid": true,
           "reference": "DocumentType",
           "section": "other",
-          "inputMode": null,
-          "readOnlyLogic": null
+          "inputMode": null
         },
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "readOnlyLogic": null
+          "order": 1
         },
         "documentStatus": {
           "grid": true,
@@ -36,16 +35,16 @@
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "principal",
+          "order": 3
         },
         "businessPartner": {
           "grid": true,
           "searchable": true,
           "reference": "BusinessPartner",
           "section": "principal",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "order": 2
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -54,31 +53,26 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "warehouse": {
           "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "scheduledDeliveryDate": {
           "section": "principal",
-          "readOnlyLogic": null
+          "order": 4
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "paymentTerms": {
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "priceList": {
           "grid": true,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "invoiceAddress": {
           "reference": "BusinessPartnerLocation",
@@ -88,7 +82,6 @@
             "filterKey": "C_BPartner_ID"
           },
           "section": "other",
-          "readOnlyLogic": null,
           "name": "invoiceFrom"
         },
         "description": {
@@ -116,30 +109,25 @@
         },
         "project": {
           "section": "other",
-          "readOnlyLogic": null,
           "displayLogic": null
         },
         "costcenter": {
           "reference": "CostCenter",
           "section": "other",
-          "readOnlyLogic": null,
           "displayLogic": null
         },
         "asset": {
           "section": "other",
-          "readOnlyLogic": null,
           "displayLogic": null
         },
         "stDimension": {
           "reference": "UserDimension1",
           "section": "other",
-          "readOnlyLogic": null,
           "displayLogic": null
         },
         "ndDimension": {
           "reference": "UserDimension2",
           "section": "other",
-          "readOnlyLogic": null,
           "displayLogic": null
         },
         "salesRepresentative": {
@@ -153,8 +141,7 @@
         "accountingDate": {
           "visibility": "readOnly",
           "form": false,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "incoterms": {
           "visibility": "editable",
@@ -176,35 +163,30 @@
         "deliveryMethod": {
           "visibility": "editable",
           "form": false,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "priority": {
           "visibility": "editable",
           "grid": true,
           "form": false,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "chargeAmount": {
           "visibility": "readOnly",
           "form": false,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "charge": {
           "visibility": "editable",
           "form": false,
           "section": "other",
           "reference": null,
-          "inputMode": null,
-          "readOnlyLogic": null
+          "inputMode": null
         },
         "deliveryTerms": {
           "visibility": "editable",
           "form": false,
-          "section": "other",
-          "readOnlyLogic": null
+          "section": "other"
         },
         "deliveryStatusPurchase": {
           "grid": true,

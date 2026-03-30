@@ -272,17 +272,15 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
-  // Detect secondary child entities for additional tabs
+  // Detect secondary child entities for additional tabs (all entities except primary and detail)
   const allEntityNames = Object.keys(contract.frontendContract.entities);
-  const secondaryTabDefs = [
-    { key: 'orderTax',        label: 'Tax',              TableName: 'OrderTaxTable',        FormName: 'OrderTaxForm' },
-    { key: 'invoiceTax',      label: 'Tax',              TableName: 'InvoiceTaxTable',      FormName: 'InvoiceTaxForm' },
-    { key: 'basicDiscounts',  label: 'Basic Discounts',  TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
-    { key: 'paymentPlan',     label: 'Payment Plan',     TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
-    { key: 'accounting',        label: 'Accounting',        TableName: 'AccountingTable',         FormName: 'AccountingForm' },
-    { key: 'landedCost',        label: 'Landed Cost',       TableName: 'LandedCostTable',         FormName: 'LandedCostForm' },
-    { key: 'reversedInvoices',  label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable',   FormName: 'ReversedInvoicesForm' },
-  ].filter(t => allEntityNames.includes(t.key));
+  const secondaryTabDefs = allEntityNames
+    .filter(key => key !== headerEntity && key !== detailEntity)
+    .map(key => {
+      const tabName = contract.frontendContract.entities[key]?.tabName ?? toLabel(key);
+      const Name = capitalize(key);
+      return { key, label: tabName, TableName: `${Name}Table`, FormName: `${Name}Form` };
+    });
 
   const secondaryTabsImports = secondaryTabDefs
     .map(t => `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`)

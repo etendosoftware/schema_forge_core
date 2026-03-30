@@ -473,7 +473,17 @@
       "exclude": true
     },
     "finPaymentScheduleDetail": {
-      "exclude": true
+      "name": "paymentDetails",
+      "fields": {
+        "amount": { "visibility": "readOnly", "grid": true },
+        "writeoffAmount": { "visibility": "readOnly", "grid": false },
+        "invoicePaid": { "visibility": "readOnly", "grid": true },
+        "canceled": { "visibility": "readOnly", "grid": false },
+        "paymentDate": { "visibility": "discarded" },
+        "paymentMethod": { "visibility": "discarded" },
+        "account": { "visibility": "discarded" },
+        "status": { "visibility": "discarded" }
+      }
     },
     "cConversionRateDocument": {
       "exclude": true
