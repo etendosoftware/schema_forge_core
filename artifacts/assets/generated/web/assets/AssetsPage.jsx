@@ -232,7 +232,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
     <ListView
       entity="assets"
       Table={AssetsTable}
-      entityLabel="Assetss"
+      entityLabel="Assets"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
