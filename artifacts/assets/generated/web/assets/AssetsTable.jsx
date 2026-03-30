@@ -2,15 +2,14 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:assets
 const columns = [
-  { key: 'searchKey', column: 'Value', type: 'string' },
-  { key: 'name', column: 'Name', type: 'string' },
-  { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'string' },
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
-  { key: 'depreciate', column: 'IsDepreciated', type: 'boolean' },
-  { key: 'depreciationType', column: 'Amortizationtype', type: 'string' },
-  { key: 'calculateType', column: 'Amortizationcalctype', type: 'string' },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', badge: true },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
+  { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'string', label: 'Asset Category' },
+  { key: 'calculateType', column: 'Amortizationcalctype', type: 'enum', label: 'Calculate Type', enumLabels: { 'PE': 'Percentage', 'TI': 'Time' } },
+  { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
+  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
+  { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
+  { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', badge: true },
 ];
 // @sf-generated-end columns:assets
 

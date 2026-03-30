@@ -1,4 +1,5 @@
 import { ListView, DetailView } from '@/components/contract-ui';
+import { TrendingDown, CheckCircle2 } from 'lucide-react';
 import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
 import AmortizationLineTable from './AmortizationLineTable';
@@ -6,34 +7,31 @@ import AmortizationLineForm from './AmortizationLineForm';
 import AssetAcctTable from './AssetAcctTable';
 import AssetAcctForm from './AssetAcctForm';
 import catalogs from './mockCatalogs';
-import { TrendingDown, CheckCircle2 } from 'lucide-react';
+
+
+const breadcrumb = 'Accounting / Assets';
 
 function AssetsStatusBar({ data }) {
   if (!data) return null;
   const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
-  const fullyDep = data.fullyDepreciated === true || data.fullyDepreciated === 'Y';
   const depreciate = data.depreciate === true || data.depreciate === 'Y';
   const assetValue = Number(data.assetValue ?? 0);
   const depreciatedValue = Number(data.depreciatedValue ?? 0);
   const pct = (depreciate && assetValue > 0)
     ? Math.min(100, Math.round((depreciatedValue / assetValue) * 100))
     : null;
-
   const colorMap = {
-    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',   text: 'text-blue-800',   sub: 'text-blue-500',   icon: 'text-blue-500',   bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
-    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',   text: 'text-teal-800',   sub: 'text-teal-500',   icon: 'text-teal-500',   bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
-    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500', text: 'text-orange-700', sub: 'text-orange-500', icon: 'text-orange-500', bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
-    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500',text: 'text-emerald-800',sub: 'text-emerald-500',icon: 'text-emerald-500',bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
+    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',    text: 'text-blue-800',    sub: 'text-blue-500',    icon: 'text-blue-500',    bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
+    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',    text: 'text-teal-800',    sub: 'text-teal-500',    icon: 'text-teal-500',    bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
+    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500',  text: 'text-orange-700',  sub: 'text-orange-500',  icon: 'text-orange-500',  bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
+    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500', text: 'text-emerald-800', sub: 'text-emerald-500', icon: 'text-emerald-500', bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
   };
-
   const cards = [
-    { label: 'Depreciated Value', value: fmt(data.depreciatedValue), color: 'blue', Icon: TrendingDown },
-    { label: 'Depreciated Plan',  value: fmt(data.depreciatedPlan),  color: 'teal', Icon: TrendingDown },
+    { label: 'Depreciated Value', value: fmt(data.depreciatedValue), color: 'blue',  Icon: TrendingDown },
+    { label: 'Depreciated Plan',  value: fmt(data.depreciatedPlan),  color: 'teal',  Icon: TrendingDown },
   ];
-
   const progressColor = pct === 100 ? 'green' : 'orange';
   const pc = colorMap[progressColor];
-
   return (
     <div className="flex flex-wrap gap-3 pt-2 pb-3 mb-2 border-b border-gray-100">
       {cards.map(({ label, value, color, Icon }) => {
@@ -64,9 +62,6 @@ function AssetsStatusBar({ data }) {
   );
 }
 
-
-const breadcrumb = 'Accounting / Assets';
-
 // @sf-generated-start summary:assets
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
@@ -85,7 +80,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:assets
 const processes = [
-  { name: 'processAsset', label: 'Create Amortization', columnName: 'processAsset', displayLogicRaw: "@Depreciate@ = 'Y'" },
+  { name: 'processAsset', label: 'Create Amortization', columnName: 'processAsset', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
 ];
 // @sf-generated-end processes:assets
 
@@ -96,7 +91,7 @@ const draftMode = null;
 // @sf-generated-start addLineFields:amortizationLine
 const addLineFields = {
   entry: [
-    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', lookup: true, label: 'Amortization Percentage' },
+    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', label: 'Amortization Percentage' },
     { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', reference: 'Currency', inputMode: 'selector' },
   ],
   derived: [
@@ -281,12 +276,12 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
+        api={api}
         headerContent={(data) => <AssetsStatusBar data={data} />}
         detailSortBy="sEQNoAsset asc"
         secondaryTabs={[
           { key: 'assetAcct', label: 'Accounting', Table: AssetAcctTable, Form: AssetAcctForm },
         ]}
-        api={api}
         {...props}
       />
     );
