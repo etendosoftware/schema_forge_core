@@ -57,11 +57,7 @@
       "name": "inventoryLine",
       "fields": {
         "locator": {
-          "inputMode": "selector",
-          "dependsOn": {
-            "field": "warehouse",
-            "filterKey": "M_Warehouse_ID"
-          },
+          "visibility": "discarded",
           "readOnlyLogic": null
         },
         "product": {
