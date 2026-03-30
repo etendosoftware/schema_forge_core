@@ -1,6 +1,53 @@
-import AssetsPage from './AssetsPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import AssetsTable from './AssetsTable';
+import AssetsForm from './AssetsForm';
+import AmortizationLineTable from './AmortizationLineTable';
+import AmortizationLineForm from './AmortizationLineForm';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'accounting', name: 'Assets' };
+
+const breadcrumb = 'Accounting / Assets';
+
+// @sf-generated-start summary:assets
+const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount' },
+  { key: 'depreciatedPlan', column: 'Depreciatedplan', type: 'amount' },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean' },
+];
+
+const statusField = null;
+// @sf-generated-end summary:assets
+
+// @sf-custom-slot extraBadges:assets
+// @sf-generated-start extraBadges:assets
+const extraBadges = [];
+// @sf-generated-end extraBadges:assets
+
+// @sf-generated-start processes:assets
+const processes = [
+
+];
+// @sf-generated-end processes:assets
+
+// @sf-generated-start draftMode:assets
+const draftMode = null;
+// @sf-generated-end draftMode:assets
+
+// @sf-generated-start addLineFields:amortizationLine
+const addLineFields = {
+  entry: [
+    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', lookup: true, label: 'Amortization Percentage' },
+    { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', reference: 'Currency', inputMode: 'selector' },
+  ],
+  derived: [
+    { key: 'amortizationAmount', column: 'Amortizationamt', type: 'number', label: 'Amortization Amount' },
+  ],
+  hidden: [
+
+  ],
+};
+// @sf-generated-end addLineFields:amortizationLine
 
 const api = {
   "specName": "assets",
@@ -153,11 +200,46 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <AssetsPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:AssetsPage
+export default function AssetsPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:AssetsPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="assets"
+        detailEntity="amortizationLine"
+        Form={AssetsForm}
+        DetailTable={AmortizationLineTable}
+        DetailForm={AmortizationLineForm}
+        summary={summary}
+        statusField={statusField}
+        extraBadges={extraBadges}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Assets"
+        detailLabel="Asset Amortization"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="assets"
+      Table={AssetsTable}
+      entityLabel="Assetss"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:AssetsPage
+
+// @sf-custom-slot section:AssetsPage-custom

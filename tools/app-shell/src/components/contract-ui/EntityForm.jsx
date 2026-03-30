@@ -336,9 +336,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // in its contract definition. Fields without displayLogic have a static visibility
   // decision that evaluate-display must not override (prevents AD displayLogic bugs
   // from incorrectly hiding fields like businessPartner).
+  // Fields with a function-based displayLogic are handled entirely client-side (second
+  // filter below) and must NOT be removed here — the server result is irrelevant for them.
   if (displayLogic?.visibility && Object.keys(displayLogic.visibility).length > 0) {
     displayFields = displayFields.filter(f =>
-      !f.displayLogic || displayLogic.visibility[f.key] !== false
+      typeof f.displayLogic === 'function' || !f.displayLogic || displayLogic.visibility[f.key] !== false
     );
   }
 
