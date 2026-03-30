@@ -3,7 +3,7 @@ import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import RelatedDocuments from './RelatedDocuments';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 

@@ -1,9 +1,11 @@
+import { useState, useCallback } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import GoodsShipmentTable from './GoodsShipmentTable';
 import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
-import RelatedDocuments from './RelatedDocuments';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
+import ReturnWizard from '../../../custom/ReturnWizard';
 import catalogs from './mockCatalogs';
 
 
@@ -229,31 +231,59 @@ const api = {
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:GoodsShipmentPage
+  const [returnWizard, setReturnWizard] = useState({ open: false, data: null, lines: [] });
+
+  const extraActions = useCallback(({ data, children }) => {
+    const isCompleted = data?.documentStatus === 'CO';
+    if (!isCompleted) return [];
+    return [{
+      key: 'create-return',
+      label: 'Create return',
+      className: 'border-border text-muted-foreground hover:text-foreground',
+      onClick: () => setReturnWizard({ open: true, data, lines: children || [] }),
+    }];
+  }, []);
+
   if (recordId) {
     return (
-      <DetailView
-        entity="goodsShipment"
-        detailEntity="goodsShipmentLine"
-        Form={GoodsShipmentForm}
-        DetailTable={GoodsShipmentLineTable}
-        DetailForm={GoodsShipmentLineForm}
-        summary={summary}
-        statusField={statusField}
-        extraBadges={extraBadges}
-        processes={processes}
-        addLineFields={addLineFields}
-        catalogs={catalogs}
-        entityLabel="Goods Shipment"
-        detailLabel="Lines"
-        windowName={windowName}
-        recordId={recordId}
-        breadcrumb={breadcrumb}
-      api={api}
-        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
-        notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
-        {...props}
-      />
+      <>
+        <DetailView
+          entity="goodsShipment"
+          detailEntity="goodsShipmentLine"
+          Form={GoodsShipmentForm}
+          DetailTable={GoodsShipmentLineTable}
+          DetailForm={GoodsShipmentLineForm}
+          summary={summary}
+          statusField={statusField}
+          extraBadges={extraBadges}
+          processes={processes}
+          addLineFields={addLineFields}
+          catalogs={catalogs}
+          entityLabel="Goods Shipment"
+          detailLabel="Lines"
+          windowName={windowName}
+          recordId={recordId}
+          breadcrumb={breadcrumb}
+          api={api}
+          documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
+          notesField="description"
+          customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+          extraActions={extraActions}
+          {...props}
+        />
+        <ReturnWizard
+          open={returnWizard.open}
+          onClose={() => setReturnWizard({ open: false, data: null, lines: [] })}
+          shipmentData={returnWizard.data}
+          lines={returnWizard.lines}
+          token={props.token}
+          apiBaseUrl={props.apiBaseUrl}
+          onSuccess={(docs) => {
+            setReturnWizard({ open: false, data: null, lines: [] });
+            // TODO: show toast and refresh related docs
+          }}
+        />
+      </>
     );
   }
 

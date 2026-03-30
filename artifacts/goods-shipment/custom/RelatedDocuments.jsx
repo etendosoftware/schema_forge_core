@@ -30,6 +30,13 @@ const CHIP_ICONS = {
       <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
     </svg>
   ),
+  returnReceipt: (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M9 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-5" />
+      <path d="M12 15l-3 3 3 3" />
+      <path d="M9 18h8" />
+    </svg>
+  ),
 };
 
 function neoBase(apiBaseUrl) {
@@ -129,6 +136,22 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         currency={inv['currency$_identifier']}
         status={inv.documentStatus}
         onClick={() => navigate(`/sales-invoice/${inv.id}`)}
+      />
+    );
+  }
+
+  // Return receipts — populated after backend implementation of createReturn action.
+  // The shipment data may contain _returnReceipts set by the page after the wizard succeeds.
+  const returnReceipts = data?._returnReceipts || [];
+  for (const ret of returnReceipts) {
+    chips.push(
+      <DocChip
+        key={`return-${ret.returnReceiptId}`}
+        icon={CHIP_ICONS.returnReceipt}
+        iconColor="text-amber-600"
+        title={`Return #${ret.returnReceiptDocNo}`}
+        status={ret.returnReceiptStatus}
+        onClick={ret.returnReceiptId ? () => navigate(`/goods-shipment/${ret.returnReceiptId}`) : undefined}
       />
     );
   }
