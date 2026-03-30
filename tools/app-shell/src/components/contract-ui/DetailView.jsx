@@ -42,6 +42,7 @@ export function DetailView({
   apiBaseUrl,
   breadcrumb,
   secondaryTabs = [],
+  onAfterSave,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -413,6 +414,7 @@ export function DetailView({
             <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
               const saved = await hook.handleSave(data);
               if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+              onAfterSave?.(saved ?? data);
             }}>
               <Save className="h-3.5 w-3.5" />
               Save draft
@@ -420,6 +422,7 @@ export function DetailView({
             <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
               const saved = await hook.handleSave(data);
               if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+              onAfterSave?.(saved ?? data);
             }}>
               <Check className="h-3.5 w-3.5" />
               Save

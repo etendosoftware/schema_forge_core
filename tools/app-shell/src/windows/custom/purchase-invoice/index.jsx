@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
@@ -92,11 +92,33 @@ function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }
  *   - no recordId       → custom list view with preview modal
  */
 export default function PurchaseInvoiceWindow(props) {
-  const { recordId } = props;
+  const { recordId, token, apiBaseUrl, windowName } = props;
+  const navigate = useNavigate();
+  const [savedRecord, setSavedRecord] = useState(null);
+
+  const handleAfterSave = useCallback((record) => {
+    if (record) setSavedRecord(record);
+  }, []);
 
   if (recordId) {
-    // Edit / new mode — delegate to the standard generated page
-    return <InvoicePage {...props} />;
+    return (
+      <>
+        <InvoicePage {...props} onAfterSave={handleAfterSave} />
+        {savedRecord && (
+          <InvoicePreviewModal
+            invoice={savedRecord}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            windowName={windowName}
+            onClose={() => setSavedRecord(null)}
+            onEdit={(id) => {
+              setSavedRecord(null);
+              navigate(`/${windowName}/${id}`);
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   return <PurchaseInvoiceListView {...props} />;

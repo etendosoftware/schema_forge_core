@@ -30,7 +30,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   // Payments added locally (cache until real endpoint exists)
   const [localPayments, setLocalPayments] = useState([]);
 
-  // Animation state: 'opening' → 'open' → 'closing'
+  // Animation state: 'opening' → 'open' → 'closing' → 'closingUp'
   const [animState, setAnimState] = useState('opening');
 
   // PDF drop zone state
@@ -81,10 +81,16 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     return () => cancelAnimationFrame(t);
   }, []);
 
-  // Close with exit animation
+  // Close with exit animation (downward)
   function handleClose() {
     setAnimState('closing');
     setTimeout(onClose, 280);
+  }
+
+  // Close with upward animation, then navigate to edit view
+  function handleEdit() {
+    setAnimState('closingUp');
+    setTimeout(() => onEdit?.(invoice.id), 280);
   }
 
   // Two-step fetch: paymentPlan schedules → paymentDetails per schedule
@@ -165,7 +171,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     ? 'opacity-0 translate-y-4 scale-[0.98]'
     : animState === 'closing'
       ? 'opacity-0 translate-y-4 scale-[0.98] transition-all duration-[280ms]'
-      : 'opacity-100 translate-y-0 scale-100 transition-all duration-[280ms]';
+      : animState === 'closingUp'
+        ? 'opacity-0 -translate-y-8 scale-[0.98] transition-all duration-[280ms]'
+        : 'opacity-100 translate-y-0 scale-100 transition-all duration-[280ms]';
 
   return (
     <>
@@ -185,7 +193,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
             {/* Left: title + doc actions */}
             <div className="flex items-center gap-3">
               <span className="font-semibold text-gray-900 text-base">
-                {invoice.documentNo || 'Compra'}
+                Purchase Invoice
               </span>
               <button
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -210,7 +218,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                 <Plus size={13} />
                 Añadir pago
               </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onEdit?.(invoice.id)}>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={handleEdit}>
                 <Edit2 size={13} />
                 Editar
               </Button>
