@@ -30,9 +30,11 @@ export function pluralize(label) {
   const parts = label.split(' ');
   const last = parts[parts.length - 1];
   let plural;
-  if (/[^aeiou]y$/i.test(last)) {
+  if (/[^s]s$/i.test(last)) {
+    plural = last; // already plural (e.g. "Assets", "Items")
+  } else if (/[^aeiou]y$/i.test(last)) {
     plural = last.replace(/y$/i, 'ies');
-  } else if (/(s|x|z|sh|ch)$/i.test(last)) {
+  } else if (/(ss|x|z|sh|ch)$/i.test(last)) {
     plural = last + 'es';
   } else {
     plural = last + 's';
@@ -192,10 +194,10 @@ export function generateFormComponent(entityName, contract) {
     // Behavioral metadata: displayLogic and readOnlyLogic
     let displayLogicPart = '';
     if (f.displayLogic) {
-      if (f.displayLogic.evaluable === false) {
-        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
-      } else if (f.displayLogic.js) {
+      if (f.displayLogic.js) {
         displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
+      } else if (f.displayLogic.evaluable === false) {
+        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
       }
     }
     let readOnlyLogicPart = '';
@@ -246,6 +248,129 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
 
 ${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
+}
+
+/**
+ * Generate a StatusBar component for windows with a statusBar config.
+ * Returns an object with { componentCode, lucideImports } strings.
+ */
+function generateStatusBarComponent(headerEntity, statusBarConfig) {
+  const headerName = capitalize(headerEntity);
+  const { cards = [], progress } = statusBarConfig;
+
+  // Collect unique lucide icon names
+  const iconNames = new Set();
+  for (const card of cards) {
+    if (card.icon) iconNames.add(card.icon);
+  }
+  if (progress?.completedIcon) iconNames.add(progress.completedIcon);
+  // The progress bar also uses a card icon as its "in-progress" icon
+  // (matching the first card's icon or TrendingDown by convention)
+  if (progress && cards.length > 0 && cards[0].icon) iconNames.add(cards[0].icon);
+  const lucideImports = `import { ${[...iconNames].join(', ')} } from 'lucide-react';`;
+
+  // Build cards array literal
+  const cardsLiteral = cards.map(card => {
+    return `    { label: '${card.label}', value: fmt(data.${card.field}), color: '${card.color}',  Icon: ${card.icon} },`;
+  }).join('\n');
+
+  // Build progress section
+  let progressSection = '';
+  if (progress) {
+    const { numerator, denominator, condition, label, color, completedColor, completedIcon } = progress;
+    // Determine the in-progress icon (first card icon, or first icon in the set)
+    const inProgressIcon = (cards.length > 0 && cards[0].icon) ? cards[0].icon : [...iconNames][0];
+    progressSection = `  const progressColor = pct === 100 ? '${completedColor}' : '${color}';
+  const pc = colorMap[progressColor];`;
+
+    const progressJsx = `      {pct !== null && (
+        <div className={\`flex items-center gap-3 \${pc.bg} border-l-4 \${pc.border} rounded-lg px-4 py-2.5 min-w-[170px]\`}>
+          {pct === 100 ? <${completedIcon} size={18} className={pc.icon} /> : <${inProgressIcon} size={18} className={pc.icon} />}
+          <div>
+            <div className={\`text-lg font-semibold leading-tight \${pc.text}\`}>{pct}%</div>
+            <div className={\`text-xs \${pc.sub} mt-0.5\`}>${label}</div>
+            <div className={\`mt-1.5 h-1.5 w-24 \${pc.barTrack} rounded-full overflow-hidden\`}>
+              <div className={\`h-full \${pc.bar} rounded-full transition-all\`} style={{ width: \`\${pct}%\` }} />
+            </div>
+          </div>
+        </div>
+      )}`;
+
+    const componentCode = `${MARKERS.GENERATED_START(`statusBar:${headerEntity}`)}
+function ${headerName}StatusBar({ data }) {
+  if (!data) return null;
+  const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+  const ${condition} = data.${condition} === true || data.${condition} === 'Y';
+  const ${numerator} = Number(data.${numerator} ?? 0);
+  const ${denominator} = Number(data.${denominator} ?? 0);
+  const pct = (${condition} && ${denominator} > 0) ? Math.min(100, Math.round((${numerator} / ${denominator}) * 100)) : null;
+  const colorMap = {
+    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',    text: 'text-blue-800',    sub: 'text-blue-500',    icon: 'text-blue-500',    bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
+    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',    text: 'text-teal-800',    sub: 'text-teal-500',    icon: 'text-teal-500',    bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
+    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500',  text: 'text-orange-700',  sub: 'text-orange-500',  icon: 'text-orange-500',  bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
+    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500', text: 'text-emerald-800', sub: 'text-emerald-500', icon: 'text-emerald-500', bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
+  };
+  const cards = [
+${cardsLiteral}
+  ];
+  ${progressSection}
+  return (
+    <div className="flex flex-wrap gap-3 pt-2 pb-3 mb-2 border-b border-gray-100">
+      {cards.map(({ label, value, color, Icon }) => {
+        const c = colorMap[color];
+        return (
+          <div key={label} className={\`flex items-center gap-3 \${c.bg} border-l-4 \${c.border} rounded-lg px-4 py-2.5 min-w-[160px]\`}>
+            <Icon size={18} className={c.icon} />
+            <div>
+              <div className={\`text-lg font-semibold leading-tight \${c.text}\`}>{value}</div>
+              <div className={\`text-xs \${c.sub} mt-0.5\`}>{label}</div>
+            </div>
+          </div>
+        );
+      })}
+${progressJsx}
+    </div>
+  );
+}
+${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
+
+    return { componentCode, lucideImports };
+  }
+
+  // No progress section
+  const componentCode = `${MARKERS.GENERATED_START(`statusBar:${headerEntity}`)}
+function ${headerName}StatusBar({ data }) {
+  if (!data) return null;
+  const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+  const colorMap = {
+    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',    text: 'text-blue-800',    sub: 'text-blue-500',    icon: 'text-blue-500',    bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
+    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',    text: 'text-teal-800',    sub: 'text-teal-500',    icon: 'text-teal-500',    bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
+    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500',  text: 'text-orange-700',  sub: 'text-orange-500',  icon: 'text-orange-500',  bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
+    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500', text: 'text-emerald-800', sub: 'text-emerald-500', icon: 'text-emerald-500', bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
+  };
+  const cards = [
+${cardsLiteral}
+  ];
+  return (
+    <div className="flex flex-wrap gap-3 pt-2 pb-3 mb-2 border-b border-gray-100">
+      {cards.map(({ label, value, color, Icon }) => {
+        const c = colorMap[color];
+        return (
+          <div key={label} className={\`flex items-center gap-3 \${c.bg} border-l-4 \${c.border} rounded-lg px-4 py-2.5 min-w-[160px]\`}>
+            <Icon size={18} className={c.icon} />
+            <div>
+              <div className={\`text-lg font-semibold leading-tight \${c.text}\`}>{value}</div>
+              <div className={\`text-xs \${c.sub} mt-0.5\`}>{label}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
+
+  return { componentCode, lucideImports };
 }
 
 /**
@@ -353,6 +478,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const documentPreview = windowConfig.documentPreview ?? null;
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
+  const statusBar = windowConfig.statusBar ?? null;
+  const detailSortBy = windowConfig.detailSortBy ?? null;
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -477,6 +604,23 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        detailTabIndex={${windowConfig.detailTabIndex}}`
     : '';
 
+  // StatusBar component generation
+  const statusBarResult = statusBar ? generateStatusBarComponent(headerEntity, statusBar) : null;
+  const statusBarImport = statusBarResult ? `\n${statusBarResult.lucideImports}` : '';
+  const statusBarCode = statusBarResult ? `\n${statusBarResult.componentCode}\n` : '';
+  const headerContentProp = statusBar
+    ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
+    : (isGallery ? `\n        headerContent={
+          <${headerName}DetailHeader
+            recordId={recordId}
+            token={props.token}
+            apiBaseUrl={api.baseUrl}
+          />
+        }` : '');
+
+  // detailSortBy prop
+  const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
+
   return `import { ListView, DetailView } from '@/components/contract-ui';
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
@@ -484,9 +628,10 @@ import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${relatedDocsImport}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';
-import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}
+import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}${statusBarImport}
 
 const breadcrumb = '${windowCategory} / ${windowLabel}';
+${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -546,14 +691,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${documentPreviewProp}${notesFieldProp}${customTabsProp}${draftModeProp}${isGallery ? `
-        headerContent={
-          <${headerName}DetailHeader
-            recordId={recordId}
-            token={props.token}
-            apiBaseUrl={api.baseUrl}
-          />
-        }` : ''}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${documentPreviewProp}${notesFieldProp}${customTabsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
         {...props}
       />
     );

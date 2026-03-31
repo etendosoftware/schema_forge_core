@@ -4,7 +4,7 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
   { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'string', label: 'Asset Category' },
-  { key: 'calculateType', column: 'Amortizationcalctype', type: 'enum', label: 'Calculate Type', enumLabels: { 'PE': 'Percentage', 'TI': 'Time' } },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
   { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
