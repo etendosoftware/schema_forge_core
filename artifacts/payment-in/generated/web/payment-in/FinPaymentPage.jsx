@@ -1,15 +1,24 @@
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
+import FinPaymentScheduleDetailTable from './FinPaymentScheduleDetailTable';
+import FinPaymentScheduleDetailForm from './FinPaymentScheduleDetailForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import PaymentBottomPanel from '../../../custom/PaymentBottomPanel';
+import PaymentActivityPanel from '../../../custom/PaymentActivityPanel';
 import catalogs from './mockCatalogs';
+
 
 const breadcrumb = 'Sales / Payment In';
 
-// @sf-generated-start summary:finPayment
-const summary = [];
 
-const statusField = 'status';
+// @sf-generated-start summary:finPayment
+const summary = [
+
+];
+
+const statusField = null;
 // @sf-generated-end summary:finPayment
 
 // @sf-custom-slot extraBadges:finPayment
@@ -19,9 +28,11 @@ const extraBadges = [];
 
 // @sf-generated-start processes:finPayment
 const processes = [
-  // Process payment (Awaiting Payment → Received/Deposited)
-  { name: 'Process Payment', label: 'Process Payment', style: 'positive', columnName: 'aPRMProcessPayment',
-    displayLogicRaw: "@status@='RPAP'" },
+  { name: 'Add Payment', label: 'Add  Payment', style: 'positive', columnName: 'aPRMAddScheduledpayments' },
+  { name: 'Payment Process', label: 'Payment  Process', style: 'positive', columnName: 'aPRMProcessPayment' },
+  { name: 'Execute Payment', label: 'Execute  Payment', style: 'positive', columnName: 'aprmExecutepayment' },
+  { name: 'Reverse Payment', label: 'Reverse  Payment', style: 'positive', columnName: 'aPRMReversePayment' },
+  { name: 'Reconcile Payment', label: 'Reconcile  Payment', style: 'positive', columnName: 'aPRMReconcilePayment' },
 ];
 // @sf-generated-end processes:finPayment
 
@@ -30,7 +41,18 @@ const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
 // @sf-generated-start addLineFields:finPaymentScheduleDetail
-const addLineFields = { entry: [], derived: [], hidden: [] };
+const addLineFields = {
+  entry: [
+    { key: 'amount', column: 'Amount', type: 'number', required: true, label: 'Received Amount' },
+    { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', lookup: true, label: 'Invoice Payment Schedule', reference: 'Payment_Schedule', inputMode: 'search' },
+  ],
+  derived: [
+
+  ],
+  hidden: [
+
+  ],
+};
 // @sf-generated-end addLineFields:finPaymentScheduleDetail
 
 const api = {
@@ -174,24 +196,33 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
     return (
       <DetailView
         entity="finPayment"
+        detailEntity="finPaymentScheduleDetail"
         Form={FinPaymentForm}
+        DetailTable={FinPaymentScheduleDetailTable}
+        DetailForm={FinPaymentScheduleDetailForm}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        addLineFields={addLineFields}
         catalogs={catalogs}
-        entityLabel="Payment"
+        entityLabel="Fin Payment"
+        detailLabel="Lines"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-        api={api}
+      api={api}
         documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
-        notesField="description"
-        customTabs={[{ key: 'docs', label: 'Docs', Component: RelatedDocuments }]}
         hideDeleteWhenComplete
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        bottomSection={PaymentBottomPanel}
+        sidePanel={PaymentActivityPanel}
+        sidePanelStyle={{"width":"40%","minWidth":260,"backgroundColor":"#f9fafb","borderLeft":"1px solid #e5e7eb","padding":0}}
         menuActions={({ status }) => [
-          { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: status === 'RPPC' || status === 'RPR' || status === 'RDNC', columnName: 'aPRMReversePayment' },
+          { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment',  }
         ]}
+        salesTheme
         {...props}
       />
     );
@@ -201,7 +232,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
     <ListView
       entity="finPayment"
       Table={FinPaymentTable}
-      entityLabel="Payments"
+      entityLabel="Payment In"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

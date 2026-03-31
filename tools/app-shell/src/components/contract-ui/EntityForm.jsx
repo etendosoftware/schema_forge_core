@@ -406,7 +406,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {} }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {} }) {
   const t = useLabel();
   let displayFields;
   if (section) {
@@ -440,9 +440,12 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
   if (displayFields.length === 0) return null;
 
-  const gridClass = layout === 'horizontal'
-    ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4'
-    : 'grid grid-cols-2 gap-3 md:grid-cols-3';
+  const gridClass = cols
+    ? 'grid'
+    : (layout === 'horizontal'
+      ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4'
+      : 'grid grid-cols-2 gap-3 md:grid-cols-3');
+  const gridStyle = cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 } : undefined;
 
   // If there's an image field, pin it to the right — rest of fields render in a 3-col grid on the left
   const imageField = displayFields.find(f => f.type === 'image');
@@ -701,7 +704,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       || (typeof imageField.readOnlyLogic === 'function' && !!imageField.readOnlyLogic(data ?? {}));
     return (
       <div className="flex gap-6 items-start">
-        <div className={`flex-1 min-w-0 ${gridClass}`}>
+        <div className={`flex-1 min-w-0 ${gridClass}`} style={gridStyle}>
           {fieldsToRender.map(renderField)}
         </div>
         <div className="shrink-0 w-56">
@@ -720,7 +723,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   }
 
   return (
-    <div className={gridClass}>
+    <div className={gridClass} style={gridStyle}>
       {displayFields.map(renderField)}
     </div>
   );

@@ -10,6 +10,7 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
+
 // @sf-generated-start summary:quotation
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
@@ -27,18 +28,9 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  // Complete the quotation (confirm it)
-  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
-  // Void a confirmed quotation
-  { name: 'Void', label: 'Void', style: 'destructive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='CO'" },
-  // Reactivate a voided quotation
-  { name: 'Reactivate', label: 'Reactivate', style: 'positive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='VO'" },
-  // TODO: "Convert to Order" — wire to createOrder action (process A3FE1F9892394386A49FB707AA50A0FA)
-  // Needs OBUIAPP process parameter UI. Visible when status is Complete.
-  // On success: navigate to the newly created Sales Order.
+  { name: 'Convert to Order', label: 'Convert to  Order', style: 'positive' },
+  { name: 'Void', label: 'Void', style: 'destructive' },
+  { name: 'Reactivate', label: 'Reactivate', style: 'positive' },
 ];
 // @sf-generated-end processes:quotation
 
@@ -356,13 +348,14 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
+        hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
-        hideDeleteWhenComplete
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => toast('Coming soon') },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => toast('Coming soon') },
+          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        salesTheme
         {...props}
       />
     );
@@ -372,7 +365,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
     <ListView
       entity="quotation"
       Table={QuotationTable}
-      entityLabel="Quotations"
+      entityLabel="Sales Quotation"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

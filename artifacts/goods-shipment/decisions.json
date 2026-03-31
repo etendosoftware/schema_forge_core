@@ -3,6 +3,7 @@
   "window": {
     "category": "sales",
     "name": "Goods Shipment",
+    "salesTheme": true,
     "documentPreview": {
       "titlePrefix": "Shipment"
     },

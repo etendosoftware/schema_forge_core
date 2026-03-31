@@ -109,10 +109,12 @@ export function DetailView({
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
+  sidePanelStyle = null,
   afterTotals = null,
   bottomSection = null,
   topbarExtra = null,
   topbarRight = null,
+  salesTheme = false,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -653,11 +655,17 @@ export function DetailView({
                 : displayLogic?.visibility?.[p.name] !== false)
               .map(p => {
                 const isPrimary = p.style === 'positive';
-                const btnClass = p.style === 'destructive'
-                  ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                  : isPrimary
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
-                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                const btnClass = salesTheme
+                  ? (p.style === 'destructive'
+                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    : isPrimary
+                      ? 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium'
+                      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')
+                  : (p.style === 'destructive'
+                    ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20'
+                    : isPrimary
+                      ? ''
+                      : '');
                 return (
                   <Button
                     key={p.name}
@@ -703,12 +711,12 @@ export function DetailView({
         {/* Scrollable content */}
         <div className="flex-1 overflow-auto px-6 pb-6">
           {headerContent}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'}`}>
+          <div className={`${sidePanel ? 'flex items-stretch gap-0 min-h-full' : ''}`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0 flex flex-col' : 'max-w-full'}`}>
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div>
+            <div style={{ padding: '24px 0 8px' }}>
               <Form
                 entity={entity}
                 data={data}
@@ -724,7 +732,7 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className="mt-6">
+            <div className={sidePanel ? 'mt-2' : 'mt-6'}>
             <CollapsibleSection title="More details">
               <Form
                 entity={entity}
@@ -1356,8 +1364,13 @@ export function DetailView({
             )}
           </div>
           {sidePanel && (
-            <div className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4" style={{ borderLeftWidth: '1px' }}>
-              {typeof sidePanel === 'function' ? sidePanel({ recordId: data?.id || recordId, data, token, apiBaseUrl, api }) : sidePanel}
+            <div
+              className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4"
+              style={{ borderLeftWidth: '1px', ...sidePanelStyle }}
+            >
+              {typeof sidePanel === 'function'
+                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
+                : sidePanel}
             </div>
           )}
           </div>

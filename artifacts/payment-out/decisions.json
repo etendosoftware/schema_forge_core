@@ -1,0 +1,13 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "accounting",
+    "name": "Payment Out",
+    "salesTheme": true,
+    "customComponents": {
+      "sidePanel": "PaymentOutActivityPanel",
+      "sidePanelStyle": {"width": "40%", "minWidth": 260, "backgroundColor": "#f9fafb", "borderLeft": "1px solid #e5e7eb", "padding": 0}
+    }
+  },
+  "entities": {}
+}

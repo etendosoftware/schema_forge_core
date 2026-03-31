@@ -121,6 +121,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.statusBar) mapped.statusBar = true;
       if (f.badge) mapped.badge = true;
       if (f.summable) mapped.summable = true;
+      if (f.display) mapped.display = f.display;
 
       // Behavioral metadata: callout
       if (f.callout) {
@@ -195,6 +196,7 @@ export function generateFrontendContract(schema, rules = []) {
     const feEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
     if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
     if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
+    if (entity.formCols != null) feEntity.formCols = entity.formCols;
     entities[entity.name] = feEntity;
   }
 

@@ -117,7 +117,8 @@ export function generateTableComponent(entityName, contract) {
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const badgePart = f.badge ? ', badge: true' : '';
     const summablePart = f.summable ? ', summable: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${summablePart} },`;
+    const displayPart = f.display ? `, display: '${f.display}'` : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${summablePart}${displayPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -150,6 +151,8 @@ ${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
+  const formCols = entity.formCols ?? null;
+  const colsProp = formCols != null ? ` cols={${formCols}}` : '';
   // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
   const formFields = entity.fields
     .filter(f => f.form && f.type !== 'button')
@@ -242,7 +245,7 @@ ${MARKERS.GENERATED_END(`fields:${entityName}`)}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
-  return <EntityForm fields={fields} {...props} />;
+  return <EntityForm fields={fields}${colsProp} {...props} />;
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 
@@ -483,6 +486,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
   const detailSortBy = windowConfig.detailSortBy ?? null;
+  const salesTheme = windowConfig.salesTheme ?? false;
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -601,6 +605,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
+  if (customComponents.sidePanel) {
+    customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
+    customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
+    if (customComponents.sidePanelStyle) {
+      customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
+    }
+  }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
     : '';
@@ -663,6 +674,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // detailSortBy prop
   const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
+
+  // salesTheme prop
+  const salesThemeProp = salesTheme ? '\n        salesTheme' : '';
 
   // listKpiCards → headerContent prop in ListView
   const listKpiCardsConfig = windowConfig.listKpiCards ?? null;
@@ -754,7 +768,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}
         {...props}
       />
     );
@@ -808,6 +822,25 @@ ${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
   }
 
+  const windowConfig = contract?.frontendContract?.window ?? {};
+  const customComponents = windowConfig.customComponents ?? {};
+  const salesTheme = windowConfig.salesTheme ?? false;
+
+  const indexCustomComponentImports = [];
+  const indexCustomComponentProps = [];
+  if (customComponents.sidePanel) {
+    indexCustomComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
+    indexCustomComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
+    if (customComponents.sidePanelStyle) {
+      indexCustomComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
+    }
+  }
+  const indexCustomCompImportBlock = indexCustomComponentImports.length > 0
+    ? indexCustomComponentImports.join('\n') + '\n'
+    : '';
+  const indexCustomCompPropsBlock = indexCustomComponentProps.join('');
+  const indexSalesThemeProp = salesTheme ? '\n        salesTheme' : '';
+
   const apiBlock = apiPrediction
     ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
@@ -817,7 +850,7 @@ ${MARKERS.CUSTOM_SLOT('section:App-custom')}
 import ${headerName}Table from './${headerName}Table';
 import ${headerName}Form from './${headerName}Form';
 import catalogs from './mockCatalogs';
-
+${indexCustomCompImportBlock}
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
 ${MARKERS.GENERATED_START('component:App')}
@@ -832,7 +865,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="${toLabel(headerEntity)}"
         windowName={windowName}
         recordId={recordId}
-        window={windowMeta}${apiProp}
+        window={windowMeta}${apiProp}${indexCustomCompPropsBlock}${indexSalesThemeProp}
         {...props}
       />
     );

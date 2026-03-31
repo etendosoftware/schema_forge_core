@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-27T18:47:02.594Z",
-  "checksum": "981303c42b39591a",
+  "version": "0.2.0",
+  "generatedAt": "2026-03-31T19:54:12.399Z",
+  "checksum": "df9ce3adb310b2e6",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -13,6 +13,20 @@
       },
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "menuActions": [
+        {
+          "key": "duplicate",
+          "label": "Duplicate"
+        },
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "salesTheme": true,
       "layoutType": "default"
     },
     "entities": {
@@ -91,7 +105,7 @@
               "field": "businessPartner",
               "filterKey": "C_BPartner_ID"
             },
-            "section": "collapsed",
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartnerLocation"
             }
@@ -448,7 +462,21 @@
         "titlePrefix": "Quotation"
       },
       "notesField": "description",
-      "relatedDocuments": true
+      "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "menuActions": [
+        {
+          "key": "duplicate",
+          "label": "Duplicate"
+        },
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "salesTheme": true
     },
     "entities": {
       "quotation": {

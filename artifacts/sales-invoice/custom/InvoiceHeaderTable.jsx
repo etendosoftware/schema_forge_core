@@ -120,13 +120,13 @@ export default function InvoiceHeaderTable(props) {
               onClick={() => setTypeFilter(opt.value)}
               className={`text-xs px-2.5 py-1.5 transition-colors relative ${
                 typeFilter === opt.value
-                  ? 'text-foreground font-medium'
+                  ? 'text-foreground font-semibold bg-muted/50 rounded-t-md'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {opt.label}
               {typeFilter === opt.value && (
-                <span className="absolute bottom-0 left-1 right-1 h-0.5 bg-foreground rounded-full" />
+                <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-primary rounded-full" />
               )}
             </button>
           ))}

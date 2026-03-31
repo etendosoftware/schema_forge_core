@@ -10,6 +10,7 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
 
+
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
@@ -27,14 +28,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  // Complete the order
-  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
-  // TODO: "Create Shipment" — wire to rMPickFromShipment (process A2C19D0EF6594D14A64BC62E99A89CC3, obuiapp)
-  // Needs OBUIAPP process with parameter UI. Visible when CO and no shipment exists.
-  // On success: navigate to newly created Shipment. Replace with "View Shipment" once exists.
-  // TODO: "Create Invoice" — wire to rMCreateInvoice (process FF80808133362F6A013336781FCE0066, classic)
-  // Visible when CO, for service orders or after shipment. On success: navigate to Invoice.
+
 ];
 // @sf-generated-end processes:header
 
@@ -361,13 +355,14 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         documentPreview={{ titlePrefix: 'Order', pdfUrl: null }}
+        hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
-        hideDeleteWhenComplete
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => toast('Coming soon') },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => toast('Coming soon') },
+          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        salesTheme
         {...props}
       />
     );
@@ -377,7 +372,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
     <ListView
       entity="header"
       Table={HeaderTable}
-      entityLabel="Headers"
+      entityLabel="Sales Order"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

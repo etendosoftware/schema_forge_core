@@ -2,6 +2,7 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import PaymentOutTable from './PaymentOutTable';
 import PaymentOutForm from './PaymentOutForm';
 import catalogs from './mockCatalogs';
+import PaymentOutActivityPanel from '../../../custom/PaymentOutActivityPanel';
 
 const windowMeta = { category: 'accounting', name: 'Payment Out' };
 
@@ -16,6 +17,9 @@ export default function App({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         window={windowMeta}
+        salesTheme
+        sidePanel={PaymentOutActivityPanel}
+        sidePanelStyle={{ width: '40%', minWidth: 260, backgroundColor: '#f9fafb', borderLeft: '1px solid #e5e7eb', padding: 0 }}
         {...props}
       />
     );

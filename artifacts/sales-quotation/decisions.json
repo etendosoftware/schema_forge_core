@@ -3,6 +3,7 @@
   "window": {
     "category": "sales",
     "name": "Sales Quotation",
+    "salesTheme": true,
     "documentPreview": {
       "titlePrefix": "Quotation"
     },
@@ -42,7 +43,7 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "section": "collapsed"
+          "section": "principal"
         },
         "orderDate": {
           "grid": true,

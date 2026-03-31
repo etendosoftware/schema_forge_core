@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import GoodsShipmentTable from './GoodsShipmentTable';
@@ -6,11 +5,11 @@ import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
-import ReturnWizard from '../../../custom/ReturnWizard';
 import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Goods Shipment';
+
 
 // @sf-generated-start summary:goodsShipment
 const summary = [
@@ -27,12 +26,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  // Complete the shipment
-  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
-  // TODO: "Create Invoice" — wire to invoicefromshipment (process 62250E8866EA4D96A66C309878DC039E, obuiapp)
-  // Needs OBUIAPP process with parameter UI. Visible when CO and no invoice exists.
-  // On success: navigate to newly created Invoice. Replace with "View Invoice" once exists.
+  { name: 'Process Shipment', label: 'Process  Shipment', style: 'positive', columnName: 'documentAction' },
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -237,63 +231,36 @@ const api = {
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:GoodsShipmentPage
-  const [returnWizard, setReturnWizard] = useState({ open: false, data: null, lines: [] });
-
-  const extraActions = useCallback(({ data, children }) => {
-    const isCompleted = data?.documentStatus === 'CO';
-    if (!isCompleted) return [];
-    return [{
-      key: 'create-return',
-      label: 'Create return',
-      className: 'border-border text-muted-foreground hover:text-foreground',
-      onClick: () => setReturnWizard({ open: true, data, lines: children || [] }),
-    }];
-  }, []);
-
   if (recordId) {
     return (
-      <>
-        <DetailView
-          entity="goodsShipment"
-          detailEntity="goodsShipmentLine"
-          Form={GoodsShipmentForm}
-          DetailTable={GoodsShipmentLineTable}
-          DetailForm={GoodsShipmentLineForm}
-          summary={summary}
-          statusField={statusField}
-          extraBadges={extraBadges}
-          processes={processes}
-          addLineFields={addLineFields}
-          catalogs={catalogs}
-          entityLabel="Goods Shipment"
-          detailLabel="Lines"
-          windowName={windowName}
-          recordId={recordId}
-          breadcrumb={breadcrumb}
-          api={api}
-          documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
-          notesField="description"
-          customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
-          extraActions={extraActions}
-          hideDeleteWhenComplete
+      <DetailView
+        entity="goodsShipment"
+        detailEntity="goodsShipmentLine"
+        Form={GoodsShipmentForm}
+        DetailTable={GoodsShipmentLineTable}
+        DetailForm={GoodsShipmentLineForm}
+        summary={summary}
+        statusField={statusField}
+        extraBadges={extraBadges}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Goods Shipment"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
+        hideDeleteWhenComplete
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         menuActions={({ status }) => [
-            { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => toast('Coming soon') },
-          ]}
-          {...props}
-        />
-        <ReturnWizard
-          open={returnWizard.open}
-          onClose={() => setReturnWizard({ open: false, data: null, lines: [] })}
-          shipmentData={returnWizard.data}
-          lines={returnWizard.lines}
-          token={props.token}
-          apiBaseUrl={props.apiBaseUrl}
-          onSuccess={(docs) => {
-            setReturnWizard({ open: false, data: null, lines: [] });
-            // TODO: show toast and refresh related docs
-          }}
-        />
-      </>
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+        ]}
+        salesTheme
+        {...props}
+      />
     );
   }
 
@@ -301,7 +268,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
     <ListView
       entity="goodsShipment"
       Table={GoodsShipmentTable}
-      entityLabel="Goods Shipments"
+      entityLabel="Goods Shipment"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

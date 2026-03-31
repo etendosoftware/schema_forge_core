@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-03-27T18:47:04.744Z",
-  "checksum": "4f6180a0da7a8b00",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-31T19:54:18.134Z",
+  "checksum": "162be858b37d139c",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -13,6 +13,16 @@
       },
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "salesTheme": true,
       "layoutType": "default"
     },
     "entities": {
@@ -312,7 +322,17 @@
         "titlePrefix": "Shipment"
       },
       "notesField": "description",
-      "relatedDocuments": true
+      "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "salesTheme": true
     },
     "entities": {
       "goodsShipment": {
