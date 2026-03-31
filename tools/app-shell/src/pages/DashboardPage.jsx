@@ -1132,7 +1132,7 @@ function DashboardSkeleton() {
  * Dashboard Page
  * ----------------------------------------------------------------*/
 
-export default function DashboardPage() {
+export default function DashboardPage({ apiBaseUrl }) {
   const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
@@ -1233,12 +1233,13 @@ export default function DashboardPage() {
               (resizingId === item.id && resizePreviewSize) ? resizePreviewSize
               : item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
             const getColSpan = (item) => SIZE_COLS[getSize(item)] ?? 1;
+            const TALL_DEFAULT = new Set(['pending-tasks', 'top-clients']);
             const getHeight = (item) => {
               if (resizingHeightId === item.id && resizeHeightPreview != null) return resizeHeightPreview;
               if (item.height != null) return item.height;
-              // Default height: 2 rows for all resizable widgets
-              if (item.id !== 'revenue-chart') return ROW_STEP * MIN_ROWS;
-              return null;
+              if (item.id === 'revenue-chart') return null;
+              // pending-tasks and top-clients default to 4 rows, all others to 2
+              return TALL_DEFAULT.has(item.id) ? ROW_STEP * 4 : ROW_STEP * MIN_ROWS;
             };
 
             const SPAN_TO_SIZE = { 1: 'small', 2: 'medium', 3: 'wide', 4: 'large' };

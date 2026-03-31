@@ -4,7 +4,7 @@ import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import catalogs from './mockCatalogs';
-import RelatedDocuments from './RelatedDocuments';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 
 
 const breadcrumb = 'Sales / Sales Invoice';

@@ -102,8 +102,10 @@ export function DetailView({
   customTabs = [],
   documentPreview,
   notesField,
+  detailSortBy = null,
+  extraActions = [],
 }) {
-  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, childSortBy: detailSortBy });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
   const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
   const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
@@ -559,6 +561,20 @@ export function DetailView({
             <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
               <MoreVertical className="h-4 w-4" />
             </button>
+            {/* Extra action buttons from page */}
+            {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
+              action.visible !== false && (
+                <Button
+                  key={action.key || i}
+                  variant="outline"
+                  size="sm"
+                  className={action.className || ''}
+                  onClick={action.onClick}
+                >
+                  {action.label}
+                </Button>
+              )
+            ))}
             {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
             {!isNew && processes
               .filter(p => p.displayLogicRaw
@@ -612,7 +628,7 @@ export function DetailView({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-auto px-6 pb-6">
-          {headerContent}
+          {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className="max-w-full space-y-6">
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always

@@ -37,6 +37,58 @@ Complete reference for all configurable options in `decisions.json` files. These
 | `name` | string | From AD | — | Display name for breadcrumbs and titles. |
 | `layoutType` | string | `"default"` | `"default"`, `"kanban"`, `"calendar"`, `"custom"` | Frontend rendering mode. See `docs/window-templates.md`. |
 | `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts (e.g., `groupBy`, `dateField`). |
+| `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
+| `notesField` | string | `null` | Any entity field name | Field to display as a notes/description panel in the detail view footer (e.g., `"description"`). Rendered as an expandable text input. |
+| `documentPreview` | object | `null` | `{ titlePrefix: string }` | Enables the document preview button in the detail header. `titlePrefix` is shown in the preview drawer title (e.g., `"Order"`, `"Invoice"`). |
+| `detailSortBy` | string | `null` | Any valid sort expression | Default sort order for the detail entity tab (e.g., `"sEQNoAsset asc"`). Passed directly to DetailView as the `detailSortBy` prop. |
+| `statusBar` | object | `null` | See below | Generates a summary status bar above the detail form showing key numeric fields and an optional progress indicator. |
+
+### Status Bar (`window.statusBar`)
+
+Generates a `{WindowName}StatusBar` component inside `@sf-generated` markers. The component renders colored metric cards and an optional progress bar.
+
+```json
+{
+  "statusBar": {
+    "cards": [
+      { "field": "depreciatedValue", "label": "Depreciated Value", "color": "blue", "icon": "TrendingDown" },
+      { "field": "depreciatedPlan",  "label": "Depreciated Plan",  "color": "teal", "icon": "TrendingDown" }
+    ],
+    "progress": {
+      "numerator": "depreciatedValue",
+      "denominator": "assetValue",
+      "condition": "depreciate",
+      "label": "Depreciation",
+      "color": "orange",
+      "completedColor": "green",
+      "completedIcon": "CheckCircle2"
+    }
+  }
+}
+```
+
+**`cards` array** — each card is a colored metric tile:
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `field` | string | Entity field name to display (formatted as a number). |
+| `label` | string | Label shown below the value. |
+| `color` | string | One of `blue`, `teal`, `orange`, `green`. Controls Tailwind color classes. |
+| `icon` | string | Lucide icon name (e.g., `TrendingDown`, `CheckCircle2`). Auto-imported. |
+
+**`progress` object** — optional progress bar card (shows percentage):
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `numerator` | string | Entity field for the numerator of the percentage. |
+| `denominator` | string | Entity field for the denominator. |
+| `condition` | string | Boolean entity field — progress only renders when this is `true` or `'Y'`. |
+| `label` | string | Label shown below the percentage. |
+| `color` | string | Color when progress is incomplete (e.g., `orange`). |
+| `completedColor` | string | Color when progress reaches 100% (e.g., `green`). |
+| `completedIcon` | string | Lucide icon shown at 100% (e.g., `CheckCircle2`). |
+
+The generator emits `headerContent={(data) => <{WindowName}StatusBar data={data} />}` on the DetailView prop automatically.
 
 ## Entity Properties (`entities.{entityName}.*`)
 

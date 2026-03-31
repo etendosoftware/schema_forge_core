@@ -72,11 +72,12 @@ describe('Wiring completeness', () => {
 
   describe('Every entity artifact has mockData.js', () => {
     for (const entity of entityArtifacts) {
-      it(`${entity} should have generated mockData.js`, () => {
-        const mockPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
+      it(`${entity} should have mockData.js`, () => {
+        const generatedPath = resolve(ARTIFACTS, entity, 'generated', 'web', entity, 'mockData.js');
+        const customPath = resolve(ARTIFACTS, entity, 'custom', 'mockData.js');
         assert.ok(
-          existsSync(mockPath),
-          `Missing: artifacts/${entity}/generated/web/${entity}/mockData.js`
+          existsSync(generatedPath) || existsSync(customPath),
+          `Missing: artifacts/${entity}/generated/web/${entity}/mockData.js or artifacts/${entity}/custom/mockData.js`
         );
       });
     }

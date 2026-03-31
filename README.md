@@ -177,6 +177,52 @@ From the Etendo root directory:
 
 This starts the jsreport container (and any other configured Docker resources). The `com.etendoerp:docker` module manages the container lifecycle.
 
+### 5. Server Deployment: Apache Proxy for jsreport
+
+When deploying to a server (production, staging, experimental), the frontend accesses jsreport through a relative path (`/jsreport/api/report`). In development, Vite proxies this automatically. In a deployed environment, you need to configure your web server to proxy these requests to the jsreport container.
+
+#### Apache (with SSL / Let's Encrypt)
+
+Edit your Apache virtual host config (e.g., `/etc/apache2/sites-available/000-default-le-ssl.conf`) and add the jsreport proxy **before** the catch-all `ProxyPass "/"` rule:
+
+```apache
+<VirtualHost *:443>
+    # ... existing config ...
+
+    # jsreport proxy — must be BEFORE the catch-all ProxyPass
+    ProxyPass "/jsreport/" "http://127.0.0.1:5488/"
+    ProxyPassReverse "/jsreport/" "http://127.0.0.1:5488/"
+
+    # Existing Etendo/app proxy (catch-all, must be last)
+    ProxyPass "/" "http://127.0.0.1:3000/"
+    ProxyPassReverse "/" "http://127.0.0.1:3000/"
+
+    # ... SSL config ...
+</VirtualHost>
+```
+
+> **Important:** Apache evaluates `ProxyPass` rules in order. The more specific `/jsreport/` rule must appear before the generic `/` rule, otherwise all requests will be caught by the generic rule first.
+
+After editing, restart Apache:
+
+```bash
+sudo systemctl restart apache2
+```
+
+Verify the proxy is working:
+
+```bash
+curl https://your-domain.com/jsreport/api/ping
+```
+
+#### How it works
+
+```
+Browser → HTTPS (443) → Apache (SSL termination) → HTTP (5488) → jsreport
+```
+
+Apache handles SSL — jsreport does not need its own SSL configuration. The same build works across all environments as long as each server has this proxy rule configured.
+
 ---
 
 ## First Steps (Claude Guided) (Recommended)

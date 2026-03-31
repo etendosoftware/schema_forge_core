@@ -46,7 +46,7 @@ const API_BASE_URL = import.meta.env.VITE_MOCK === 'true'
 
 async function loadAllMockData() {
   const modules = await Promise.all([
-    import('@generated/sales-order/generated/web/sales-order/mockData.js'),
+    import('@generated/sales-order/custom/mockData.js'),
     import('@generated/business-partner/generated/web/business-partner/mockData.js'),
     import('@generated/warehouse/generated/web/warehouse/mockData.js'),
     import('@generated/price-list/generated/web/price-list/mockData.js'),
@@ -64,13 +64,13 @@ async function loadAllMockData() {
     import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),
     import('@generated/goods-movements/generated/web/goods-movements/mockData.js'),
     import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/mockData.js'),
-    import('@generated/sales-quotation/generated/web/sales-quotation/mockData.js'),
-    import('@generated/goods-shipment/generated/web/goods-shipment/mockData.js'),
+    import('@generated/sales-quotation/custom/mockData.js'),
+    import('@generated/goods-shipment/custom/mockData.js'),
     import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
     import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
-    import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
+    import('@generated/sales-invoice/custom/mockData.js'),
     import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
-    import('@generated/payment-in/generated/web/payment-in/mockData.js'),
+    import('@generated/payment-in/custom/mockData.js'),
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
@@ -124,7 +124,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         }
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage apiBaseUrl={API_BASE_URL} />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="inventory" element={<InventoryPage />} />

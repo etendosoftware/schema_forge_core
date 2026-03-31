@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,40 @@ import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
+import ProductSearchDrawer from './ProductSearchDrawer.jsx';
+
+/**
+ * Button that opens the ProductSearchDrawer popup for fields with popup: true.
+ */
+function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, token }) {
+  const [open, setOpen] = useState(false);
+  const displayText = displayValue || (value ? value : '');
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        data-testid={`field-${field.key}`}
+        className="w-full h-10 text-sm rounded-md border border-input bg-background px-3 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+      >
+        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        {displayText ? (
+          <span className="truncate text-foreground">{displayText}</span>
+        ) : (
+          <span className="truncate text-muted-foreground">Search {label}...</span>
+        )}
+      </button>
+      <ProductSearchDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(item) => { onChange(item.id, item.label || item.name); setOpen(false); }}
+        selectorUrl={selectorUrl}
+        token={token}
+        title={label}
+      />
+    </>
+  );
+}
 
 /**
  * Dropdown selector for FK fields with many options (inputMode: search).
@@ -198,17 +232,67 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   );
 }
 
+const SELECTOR_PAGE = 50;
+
 /**
  * Dropdown selector for FK fields with few options (inputMode: selector).
- * Fetches options upfront (no search param needed) and caches them.
+ * Fetches options from the server with lazy pagination triggered by scrolling.
+ * Falls back to catalog when no selectorUrl is provided.
  */
-function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel }) {
+function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
   const catalogOptions = getCatalogOptions(catalogs, entityName, field);
-  // If the current value isn't in the catalog (real data vs mock), add it
-  const hasValue = value && catalogOptions.some(opt => opt.id === value);
+  const [serverOptions, setServerOptions] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const offsetRef = useRef(0);
+
+  const fetchPage = useCallback((offset) => {
+    if (!selectorUrl || !token || loadingRef.current || !hasMoreRef.current) return;
+    loadingRef.current = true;
+    fetch(`${selectorUrl}?limit=${SELECTOR_PAGE}&offset=${offset}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const items = data?.items ?? data?.response?.data ?? (Array.isArray(data) ? data : null);
+        if (items) {
+          const mapped = items.map(i => ({ id: i.id, name: i.label ?? i.name ?? i.id }));
+          setServerOptions(prev => offset === 0 ? mapped : [...(prev ?? []), ...mapped]);
+          offsetRef.current = offset + items.length;
+          if (items.length < SELECTOR_PAGE) { setHasMore(false); hasMoreRef.current = false; }
+        }
+        loadingRef.current = false;
+      })
+      .catch(() => { loadingRef.current = false; });
+  }, [selectorUrl, token]);
+
+  // Load first page when selectorUrl/token available
+  useEffect(() => {
+    if (!selectorUrl || !token) return;
+    offsetRef.current = 0;
+    hasMoreRef.current = true;
+    setHasMore(true);
+    setServerOptions(null);
+    fetchPage(0);
+  }, [selectorUrl, token, fetchPage]);
+
+  // Callback ref: fires when SelectContent mounts (dropdown opens) — attaches scroll listener
+  const contentCallbackRef = useCallback((node) => {
+    if (!node || !selectorUrl) return;
+    // Radix renders [data-radix-select-viewport] as the actual scrollable element
+    const viewport = node.querySelector('[data-radix-select-viewport]') ?? node;
+    viewport.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = viewport;
+      if (scrollHeight - scrollTop - clientHeight < 100) fetchPage(offsetRef.current);
+    }, { passive: true });
+  }, [fetchPage, selectorUrl]);
+
+  const baseOptions = serverOptions ?? catalogOptions;
+  const hasValue = value && baseOptions.some(opt => opt.id === value);
   const options = (!hasValue && value && displayValue)
-    ? [{ id: value, name: displayValue }, ...catalogOptions]
-    : catalogOptions;
+    ? [{ id: value, name: displayValue }, ...baseOptions]
+    : baseOptions;
 
   return (
     <Select
@@ -222,10 +306,13 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
       <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
         <SelectValue placeholder={`Select ${resolvedLabel}...`} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent ref={contentCallbackRef}>
         {options.map(opt => (
           <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
+        {hasMore && selectorUrl && (
+          <div className="py-1 text-center text-xs text-muted-foreground select-none pointer-events-none">Loading…</div>
+        )}
       </SelectContent>
     </Select>
   );
@@ -485,6 +572,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               }}
               catalogs={catalogs}
               resolvedLabel={label}
+              selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+              token={token}
             />
           </div>
         </FieldHighlight>
@@ -499,6 +588,29 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 {label}
               </Label>
               <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+            </div>
+          </FieldHighlight>
+        );
+      }
+      if (f.popup) {
+        return (
+          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+            <div className="space-y-1.5">
+              <Label className="text-sm text-foreground font-medium">
+                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+              </Label>
+              <PopupSearchInput
+                field={f}
+                value={data?.[f.key] ?? ''}
+                displayValue={data?.[f.key + '$_identifier']}
+                onChange={(val, lbl) => {
+                  onChange?.(f.key, val, f.column);
+                  if (lbl) onChange?.(f.key + '$_identifier', lbl);
+                }}
+                label={label}
+                selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+                token={token}
+              />
             </div>
           </FieldHighlight>
         );
