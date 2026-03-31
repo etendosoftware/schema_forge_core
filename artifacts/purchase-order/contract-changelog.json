@@ -801,5 +801,96 @@
     ],
     "author": "pipeline",
     "date": "2026-03-20"
+  },
+  {
+    "from": "0.2.0",
+    "to": "0.3.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"eTBLKCBulkcompletion\" added to entity \"order\" in backend",
+      "Field \"eSLUCAum\" added to entity \"reservedStock\" in backend",
+      "Field \"eSLUOperativeQty\" added to entity \"reservedStock\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-03-26"
+  },
+  {
+    "from": "0.1.0",
+    "to": "0.2.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"transactionDocument\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"documentNo\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"orderDate\" property \"section\" changed from \"other\" to \"principal\" in frontend (additive)",
+      "Field \"orderDate\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"businessPartner\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"warehouse\" property \"section\" changed from \"principal\" to \"other\" in frontend (additive)",
+      "Field \"warehouse\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"scheduledDeliveryDate\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"paymentMethod\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"paymentTerms\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"priceList\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"invoiceFrom\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"deliveryMethod\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"priority\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"chargeAmount\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"charge\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"project\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"costcenter\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"asset\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"stDimension\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"ndDimension\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"deliveryTerms\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)",
+      "Field \"accountingDate\" property \"readOnlyLogic\" changed from \"undefined\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-03-26"
+  },
+  {
+    "from": "0.2.0",
+    "to": "0.3.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"transactionDocument\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"documentNo\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"orderDate\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"businessPartner\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"warehouse\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"scheduledDeliveryDate\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"paymentMethod\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"paymentTerms\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"priceList\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"invoiceFrom\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"deliveryMethod\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"priority\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"chargeAmount\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"charge\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"project\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"costcenter\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"asset\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"stDimension\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"ndDimension\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"deliveryTerms\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"accountingDate\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-03-26"
+  },
+  {
+    "from": "0.3.0",
+    "to": "0.4.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"businessPartner\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"transactionDocument\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"priceList\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"invoiceFrom\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-03-26"
   }
 ]

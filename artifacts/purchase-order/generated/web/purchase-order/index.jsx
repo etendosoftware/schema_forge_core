@@ -17,8 +17,8 @@ const api = {
       "detailUrl": "/sws/neo/purchase-order/order/{id}",
       "supportedFilters": [
         "documentNo",
-        "orderDate",
         "businessPartner",
+        "orderDate",
         "documentStatus",
         "orderReference"
       ]
@@ -104,18 +104,18 @@ const api = {
   "selectors": [
     {
       "entity": "order",
-      "field": "transactionDocument",
-      "column": "C_DocTypeTarget_ID",
-      "reference": "DocumentType",
-      "url": "/sws/neo/purchase-order/order/selectors/transactionDocument"
-    },
-    {
-      "entity": "order",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
       "url": "/sws/neo/purchase-order/order/selectors/businessPartner"
+    },
+    {
+      "entity": "order",
+      "field": "transactionDocument",
+      "column": "C_DocTypeTarget_ID",
+      "reference": "DocumentType",
+      "url": "/sws/neo/purchase-order/order/selectors/transactionDocument"
     },
     {
       "entity": "order",
@@ -485,6 +485,12 @@ const api = {
       "field": "createPOLines",
       "column": "Create_POLines",
       "url": "/sws/neo/purchase-order/order/{id}/action/createPOLines"
+    },
+    {
+      "entity": "order",
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/purchase-order/order/{id}/action/eTBLKCBulkcompletion"
     },
     {
       "entity": "order",

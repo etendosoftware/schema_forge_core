@@ -804,11 +804,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                     }}
                     className={[
                       'transition-colors h-12',
-                      onRowClick ? 'cursor-pointer' : 'cursor-pointer',
+                      (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
                       isChecked ? 'bg-primary/5' : '',
                       row.id === selectedId ? 'bg-primary/10' : '',
                       isSelectedLine ? 'bg-zinc-700 text-white' : '',
-                      !isSelectedLine ? 'hover:bg-muted/50' : 'hover:bg-zinc-600',
+                      isSelectedLine ? 'hover:bg-zinc-600' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
                     ].filter(Boolean).join(' ')}
                   >
                     {selectable && (
