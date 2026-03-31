@@ -78,8 +78,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:assets
 const processes = [
-  { name: 'processed', label: 'Create Amortization', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
-  { name: 'processAsset', label: 'Generate Amortization Plan', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
+
 ];
 // @sf-generated-end processes:assets
 
@@ -290,7 +289,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
     <ListView
       entity="assets"
       Table={AssetsTable}
-      entityLabel="Assetses"
+      entityLabel="Assets"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

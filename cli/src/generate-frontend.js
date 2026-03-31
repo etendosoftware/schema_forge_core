@@ -30,9 +30,11 @@ export function pluralize(label) {
   const parts = label.split(' ');
   const last = parts[parts.length - 1];
   let plural;
-  if (/[^aeiou]y$/i.test(last)) {
+  if (/[^s]s$/i.test(last)) {
+    plural = last; // already plural (e.g. "Assets", "Items")
+  } else if (/[^aeiou]y$/i.test(last)) {
     plural = last.replace(/y$/i, 'ies');
-  } else if (/(s|x|z|sh|ch)$/i.test(last)) {
+  } else if (/(ss|x|z|sh|ch)$/i.test(last)) {
     plural = last + 'es';
   } else {
     plural = last + 's';
@@ -192,10 +194,10 @@ export function generateFormComponent(entityName, contract) {
     // Behavioral metadata: displayLogic and readOnlyLogic
     let displayLogicPart = '';
     if (f.displayLogic) {
-      if (f.displayLogic.evaluable === false) {
-        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
-      } else if (f.displayLogic.js) {
+      if (f.displayLogic.js) {
         displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
+      } else if (f.displayLogic.evaluable === false) {
+        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
       }
     }
     let readOnlyLogicPart = '';

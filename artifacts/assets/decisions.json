@@ -122,7 +122,11 @@
         },
         "processed": {
           "visibility": "editable",
-          "reason": "Create Amortization process button — primary action for this window, was discarded in raw"
+          "form": false,
+          "reason": "Create Amortization process button — rendered as process action, not a form field"
+        },
+        "processAsset": {
+          "form": false
         },
         "fullyDepreciated": {
           "grid": true,

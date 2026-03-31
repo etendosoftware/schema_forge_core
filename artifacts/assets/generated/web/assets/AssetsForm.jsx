@@ -30,7 +30,7 @@ const fields = [
   // @sf-custom-slot callout:SL_Assets
   { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'number', label: 'Depreciation Amt.', section: 'other', displayLogic: (record) => record.depreciate === true || record.depreciate === 'Y' },
   { key: 'previouslyDepreciatedAmt', column: 'Depreciatedpreviousamt', type: 'number', label: 'Previously Depreciated Amt.', section: 'other', defaultValue: '0', displayLogic: (record) => record.depreciate === true || record.depreciate === 'Y' },
-  { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'other', reference: 'Project', inputMode: 'search', visible: null, visibilitySource: 'server', displayLogicReason: 'accounting-dimension' },
+  { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'other', reference: 'Project', inputMode: 'search', displayLogic: (record) => record.depreciate === true || record.depreciate === 'Y' },
 ];
 // @sf-generated-end fields:assets
 

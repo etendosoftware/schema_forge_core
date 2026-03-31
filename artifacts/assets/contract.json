@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-30T23:59:46.304Z",
-  "checksum": "7bc7d89672389da9",
+  "version": "0.1.1",
+  "generatedAt": "2026-03-31T12:10:56.173Z",
+  "checksum": "d5c03c6682c517b5",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -465,7 +465,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
@@ -555,7 +555,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
