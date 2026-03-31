@@ -443,12 +443,22 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
       return buildCuratedField(rawField, fieldDecision, discardPatterns);
     });
 
+    // Apply explicit field ordering from decisions (order: number on individual fields)
+    const hasOrderOverrides = Object.values(fieldsDecisions).some(d => d.order != null);
+    const orderedFields = hasOrderOverrides
+      ? curatedFields.slice().sort((a, b) => {
+          const oa = fieldsDecisions[a.name]?.order ?? fieldsDecisions[a.columnName]?.order ?? Infinity;
+          const ob = fieldsDecisions[b.name]?.order ?? fieldsDecisions[b.columnName]?.order ?? Infinity;
+          return oa - ob;
+        })
+      : curatedFields;
+
     const entity = {
       name: simplifiedName,
       tableName: rawEntity.tableName,
       tabId: rawEntity.tabId,
       tabName: rawEntity.tabName,
-      fields: curatedFields,
+      fields: orderedFields,
     };
 
     // Propagate javaQualifier from decisions (e.g., FactAcctHandler for Accounting tabs)
