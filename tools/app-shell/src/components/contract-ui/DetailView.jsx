@@ -114,6 +114,7 @@ export function DetailView({
   bottomSection = null,
   topbarExtra = null,
   topbarRight = null,
+  sidebarContent = null,
   onAfterSave,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
@@ -731,11 +732,12 @@ export function DetailView({
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-auto px-6 pb-6">
-          {headerContent}
+        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
+        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
+          {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'}`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
@@ -1079,6 +1081,7 @@ export function DetailView({
                         />
                       </div>
                     ) : (
+                    <>
                     <div className="flex-1 min-w-0">
                       {st.Panel ? (
                         <st.Panel
@@ -1232,6 +1235,8 @@ export function DetailView({
                           </div>
                         )}
                       </div>
+                    )}
+                    </>
                     )}
                     </div>
                 ))}
@@ -1403,6 +1408,12 @@ export function DetailView({
             </div>
           )}
           </div>
+        </div>
+        {sidebarContent && (
+          <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto p-5 bg-gray-50/40">
+            {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
+          </div>
+        )}
         </div>
       </div>
       <DocumentPrintDrawer
