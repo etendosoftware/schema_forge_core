@@ -172,9 +172,9 @@
     "PROCESS_UpdateQuantity": {
       "type": "process",
       "entity": "inventory",
-      "decision": "Omit",
-      "description": "Update Quantity classic button. Not applicable to simplified UI.",
-      "impactIfOmitted": "Quantity update handled through backend."
+      "decision": "Keep",
+      "description": "Update Quantity process button. Updates book quantity with current inventory count.",
+      "impactIfOmitted": "Users cannot trigger quantity updates from the UI."
     },
     "PROCESS_Posted": {
       "type": "process",
