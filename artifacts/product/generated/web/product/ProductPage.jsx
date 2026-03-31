@@ -15,6 +15,7 @@ import ProductDetailHeader from '@/windows/custom/product/ProductDetailHeader';
 
 const breadcrumb = 'Reference / Product';
 
+
 // @sf-generated-start summary:product
 const summary = [
 

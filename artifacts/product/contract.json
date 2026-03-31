@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-31T13:32:17.047Z",
-  "checksum": "83a256784e923334",
+  "version": "0.1.1",
+  "generatedAt": "2026-03-31T14:28:14.758Z",
+  "checksum": "2fe0b4341d55bb0d",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -82,7 +82,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "reference": "UOM",
             "inputMode": "selector",
@@ -130,7 +130,7 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "defaultValue": "Y",
             "section": "other"
@@ -144,7 +144,7 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "defaultValue": "Y",
             "section": "other"

@@ -55,6 +55,7 @@
           "seq": 5
         },
         "uOM": {
+          "grid": true,
           "section": "principal",
           "seq": 6
         },
@@ -79,12 +80,12 @@
           "displayLogic": null
         },
         "sale": {
-          "grid": true,
+          "grid": false,
           "section": "other",
           "displayLogic": null
         },
         "purchase": {
-          "grid": true,
+          "grid": false,
           "section": "other",
           "displayLogic": null
         },

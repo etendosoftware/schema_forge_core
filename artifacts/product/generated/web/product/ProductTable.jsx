@@ -4,9 +4,8 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'searchKey', column: 'Value', type: 'string', label: 'Search Key' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'string', label: 'UOM' },
   { key: 'productCategory', column: 'M_Product_Category_ID', type: 'string', label: 'Product Category' },
-  { key: 'purchase', column: 'IsPurchased', type: 'boolean', label: 'Purchase' },
-  { key: 'sale', column: 'IsSold', type: 'boolean', label: 'Sale' },
   { key: 'productType', column: 'ProductType', type: 'enum', label: 'Product Type', enumLabels: { 'E': 'Expense type', 'I': 'Item', 'R': 'Resource', 'S': 'Service' } },
 ];
 // @sf-generated-end columns:product
