@@ -1,19 +1,6 @@
 import { useState, useEffect } from 'react';
 import { formatAmount } from '@/lib/formatAmount.js';
-
-const PAYMENT_STATUS = {
-  E:      'Executed',
-  P:      'Pending',
-  PE:     'Partially Executed',
-  PPM:    'Payment Made',
-  PWNC:   'Withdrawn not Cleared',
-  RDNC:   'Deposited not Cleared',
-  RPAE:   'Awaiting Execution',
-  RPAP:   'Awaiting Payment',
-  RPPC:   'Payment Cleared',
-  RPR:    'Payment Received',
-  RPVOID: 'Void',
-};
+import { Check } from 'lucide-react';
 
 /**
  * PaymentDetailsPanelCustom — two-step fetch for payment details in the classic view.
@@ -26,6 +13,13 @@ const PAYMENT_STATUS = {
  *   1. Fetch paymentPlan schedules for the invoice.
  *   2. Fetch paymentDetails for each schedule in parallel.
  *   3. Flatten and render.
+ *
+ * Fields available directly from the NEO API:
+ *   - _identifier: "{docNo} - {date} - {partner} - ..." (parsed for docNo + date)
+ *   - amount, writeoffAmount, invoicePaid (direct fields of FIN_Payment_ScheduleDetail)
+ *
+ * Fields from FIN_Payment (paymentMethod, financialAccount, status) require NEO spec
+ * configuration changes to be exposed — not available in the current response.
  */
 export default function PaymentDetailsPanelCustom({ parentId, token, apiBaseUrl }) {
   const [rows, setRows] = useState([]);
@@ -71,28 +65,32 @@ export default function PaymentDetailsPanelCustom({ parentId, token, apiBaseUrl 
           <tr className="border-b border-border text-left text-muted-foreground text-xs">
             <th className="py-2 px-3 font-medium">Document No.</th>
             <th className="py-2 px-3 font-medium">Payment Date</th>
-            <th className="py-2 px-3 font-medium">Payment Method</th>
-            <th className="py-2 px-3 font-medium">Financial Account</th>
             <th className="py-2 px-3 font-medium text-right">Received Amount</th>
-            <th className="py-2 px-3 font-medium">Status</th>
-            <th className="py-2 px-3 font-medium">Payment</th>
+            <th className="py-2 px-3 font-medium text-right">Write-off Amount</th>
+            <th className="py-2 px-3 font-medium text-center">Invoice Paid</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row, i) => {
-            const paymentDate = row.paymentDate
-              ? new Date(row.paymentDate).toLocaleDateString()
-              : '—';
-            const status = PAYMENT_STATUS[row.status] ?? row.status ?? '—';
+            // _identifier format: "{docNo} - {dd-mm-yyyy} - {partner} - {amount} - ..."
+            const parts = (row._identifier ?? '').split(' - ');
+            const docNo = parts[0] || '—';
+            const date  = parts[1] || '—';
+
             return (
               <tr key={row.id ?? i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                <td className="py-2 px-3 text-foreground font-medium">{row.documentNo ?? '—'}</td>
-                <td className="py-2 px-3 text-muted-foreground">{paymentDate}</td>
-                <td className="py-2 px-3 text-muted-foreground">{row['paymentMethod$_identifier'] ?? row.paymentMethod ?? '—'}</td>
-                <td className="py-2 px-3 text-muted-foreground">{row['account$_identifier'] ?? row.account ?? '—'}</td>
+                <td className="py-2 px-3 font-medium text-foreground">{docNo}</td>
+                <td className="py-2 px-3 text-muted-foreground">{date}</td>
                 <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.amount)}</td>
-                <td className="py-2 px-3 text-muted-foreground">{status}</td>
-                <td className="py-2 px-3 text-muted-foreground">{row['finPaymentID$_identifier'] ?? '—'}</td>
+                <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
+                  {row.writeoffAmount ? formatAmount(row.writeoffAmount) : '—'}
+                </td>
+                <td className="py-2 px-3 text-center">
+                  {row.invoicePaid
+                    ? <Check size={14} className="text-green-500 inline-block" />
+                    : <span className="text-muted-foreground">—</span>
+                  }
+                </td>
               </tr>
             );
           })}
