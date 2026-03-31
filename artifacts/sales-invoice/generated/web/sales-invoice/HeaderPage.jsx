@@ -4,12 +4,16 @@ import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import catalogs from './mockCatalogs';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
 import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
+import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Sales Invoice';
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -331,14 +335,18 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+        ]}
         documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
         hideDeleteWhenComplete
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         bottomSection={InvoiceBottomPanel}
         topbarRight={InvoiceTopbarExtra}
-        notesField="description"
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => toast('Coming soon') },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => toast('Coming soon') },
+          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
         {...props}
       />
