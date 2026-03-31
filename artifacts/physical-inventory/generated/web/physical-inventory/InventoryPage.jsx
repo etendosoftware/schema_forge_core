@@ -23,7 +23,6 @@ const extraBadges = [];
 
 // @sf-generated-start processes:inventory
 const processes = [
-  { name: 'generateList', label: 'Create Inventory Count List', style: 'positive', displayLogicRaw: '@Processed@=\'N\'' },
   { name: 'processNow', label: 'Process Inventory Count', style: 'positive', displayLogicRaw: '@Processed@=\'N\'' },
 ];
 // @sf-generated-end processes:inventory

@@ -48,6 +48,9 @@
         "processNow": {
           "visibility": "editable"
         },
+        "generateList": {
+          "visibility": "discarded"
+        },
         "updateQuantities": {
           "visibility": "discarded"
         },
