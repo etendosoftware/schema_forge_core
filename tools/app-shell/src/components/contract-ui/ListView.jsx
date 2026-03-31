@@ -22,6 +22,7 @@ export function ListView({
   apiBaseUrl,
   breadcrumb,
   galleryRenderer,
+  hideCreate = false,
 }) {
   const hook = useEntity(entity, null, { token, apiBaseUrl });
   const navigate = useNavigate();
@@ -284,6 +285,7 @@ export function ListView({
                 </div>
               )}
               {/* Split "New" button */}
+              {!hideCreate && (
               <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">
                 <Button
                   className="rounded-none rounded-l-lg gap-1.5 px-4"
@@ -300,6 +302,7 @@ export function ListView({
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </div>
+              )}
             </div>
           </div>
         )}

@@ -1,20 +1,15 @@
 import { ListView, DetailView } from '@/components/contract-ui';
 import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
-import FinPaymentScheduleDetailTable from './FinPaymentScheduleDetailTable';
-import FinPaymentScheduleDetailForm from './FinPaymentScheduleDetailForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Payment In';
 
 // @sf-generated-start summary:finPayment
-const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'generatedCredit', column: 'Generated_Credit', type: 'amount' },
-  { key: 'usedCredit', column: 'Used_Credit', type: 'amount' },
-];
+const summary = [];
 
-const statusField = null;
+const statusField = 'status';
 // @sf-generated-end summary:finPayment
 
 // @sf-custom-slot extraBadges:finPayment
@@ -24,11 +19,9 @@ const extraBadges = [];
 
 // @sf-generated-start processes:finPayment
 const processes = [
-  { name: 'Add Payment', label: 'Add  Payment', style: 'positive', columnName: 'aPRMAddScheduledpayments' },
-  { name: 'Payment Process', label: 'Payment  Process', style: 'positive', columnName: 'aPRMProcessPayment' },
-  { name: 'Execute Payment', label: 'Execute  Payment', style: 'positive', columnName: 'aprmExecutepayment' },
-  { name: 'Reverse Payment', label: 'Reverse  Payment', style: 'positive', columnName: 'aPRMReversePayment' },
-  { name: 'Reconcile Payment', label: 'Reconcile  Payment', style: 'positive', columnName: 'aPRMReconcilePayment' },
+  // Process payment (Awaiting Payment → Received/Deposited)
+  { name: 'Process Payment', label: 'Process Payment', style: 'positive', columnName: 'aPRMProcessPayment',
+    displayLogicRaw: "@status@='RPAP'" },
 ];
 // @sf-generated-end processes:finPayment
 
@@ -37,18 +30,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
 // @sf-generated-start addLineFields:finPaymentScheduleDetail
-const addLineFields = {
-  entry: [
-    { key: 'amount', column: 'Amount', type: 'number', required: true, lookup: true, label: 'Received Amount' },
-    { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', label: 'Invoice Payment Schedule', reference: 'Payment_Schedule', inputMode: 'search' },
-  ],
-  derived: [
-
-  ],
-  hidden: [
-
-  ],
-};
+const addLineFields = { entry: [], derived: [], hidden: [] };
 // @sf-generated-end addLineFields:finPaymentScheduleDetail
 
 const api = {
@@ -192,24 +174,24 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
     return (
       <DetailView
         entity="finPayment"
-        detailEntity="finPaymentScheduleDetail"
         Form={FinPaymentForm}
-        DetailTable={FinPaymentScheduleDetailTable}
-        DetailForm={FinPaymentScheduleDetailForm}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        addLineFields={addLineFields}
         catalogs={catalogs}
-        entityLabel="Fin Payment"
-        detailLabel="Lines"
+        entityLabel="Payment"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-      api={api}
+        api={api}
         documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
         notesField="description"
+        customTabs={[{ key: 'docs', label: 'Docs', Component: RelatedDocuments }]}
+        hideDeleteWhenComplete
+        menuActions={({ status }) => [
+          { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: status === 'RPPC' || status === 'RPR' || status === 'RDNC', columnName: 'aPRMReversePayment' },
+        ]}
         {...props}
       />
     );
@@ -219,7 +201,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
     <ListView
       entity="finPayment"
       Table={FinPaymentTable}
-      entityLabel="Fin Payments"
+      entityLabel="Payments"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

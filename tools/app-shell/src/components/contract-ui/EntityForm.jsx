@@ -95,7 +95,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   // Server-side search triggered on typing
   const triggerServerSearch = (searchQuery) => {
     if (catalogOptions || !selectorUrl || !token) return;
-    
+
     if (!searchQuery || searchQuery.length < 2) {
       setServerResults(null);
       return;
