@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { useWidget } from '@/hooks/useWidget.js';
 import { KPIHeader } from '@/components/contract-ui/KPIHeader';
 import { Chatter } from '@/components/contract-ui/Chatter';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -26,34 +28,19 @@ import {
   Bell,
   Mic,
 } from 'lucide-react';
-import { kpisConfig, actions } from '@generated/dashboard/generated/config';
-import * as mockData from '@generated/dashboard/generated/mockData';
+import { actions } from '@generated/dashboard/generated/config';
 
 /* ------------------------------------------------------------------
- * Data derived from aggregate contract
+ * Static configuration (icons & actions)
  * ----------------------------------------------------------------*/
 
 const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box };
-
-const kpis = kpisConfig.map((k) => ({
-  ...k,
-  value: mockData.kpis[k.key].value,
-  trend: mockData.kpis[k.key].trend,
-  icon: ICON_MAP[k.icon] || DollarSign,
-}));
-
-const chartMonths = mockData.revenueTrend.labels;
-const chartValues = mockData.revenueTrend.values;
 
 const quickActions = actions.map((a) => ({
   label: a.label,
   to: a.route,
   icon: ICON_MAP[a.icon] || FileText,
 }));
-
-const pendingTasks = mockData.pendingTasks;
-
-const recentMessages = mockData.recentMessages;
 
 /* ------------------------------------------------------------------
  * SVG Revenue Chart
@@ -65,7 +52,8 @@ const PAD_X = 40;
 const PAD_Y = 20;
 const PAD_BOTTOM = 30;
 
-function RevenueChart() {
+function RevenueChart({ chartMonths = [], chartValues = [] }) {
+  if (!chartValues.length) return null;
   const maxVal = Math.max(...chartValues);
   const minVal = Math.min(...chartValues);
   const range = maxVal - minVal || 1;
@@ -218,7 +206,7 @@ function QuickActions() {
  * Pending Tasks
  * ----------------------------------------------------------------*/
 
-function PendingTasks() {
+function PendingTasks({ tasks = [] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -226,7 +214,7 @@ function PendingTasks() {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="space-y-1">
-          {pendingTasks.map((task, i) => {
+          {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
             return (
               <React.Fragment key={i}>
@@ -263,8 +251,26 @@ function PendingTasks() {
  * Dashboard Page
  * ----------------------------------------------------------------*/
 
-export default function DashboardPage() {
+export default function DashboardPage({ apiBaseUrl }) {
   const [showUserContext, setShowUserContext] = useState(false);
+  const { token } = useAuth();
+
+  const kpiWidget = useWidget('widget-kpis', { token, apiBaseUrl });
+  const trendWidget = useWidget('widget-revenue-trend', { token, apiBaseUrl });
+  const tasksWidget = useWidget('widget-pending-tasks', { token, apiBaseUrl });
+  const activityWidget = useWidget('widget-activity', { token, apiBaseUrl });
+
+  const kpis = (kpiWidget.data || []).map((k) => ({
+    ...k,
+    icon: ICON_MAP[k.icon] || DollarSign,
+  }));
+
+  const trendData = trendWidget.data?.[0];
+  const chartMonths = trendData?.labels || [];
+  const chartValues = trendData?.values || [];
+
+  const pendingTasks = tasksWidget.data || [];
+  const recentMessages = activityWidget.data || [];
 
   return (
     <div className="h-full flex flex-col">
@@ -311,13 +317,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - 2/3 */}
         <div className="lg:col-span-2 space-y-6">
-          <RevenueChart />
+          <RevenueChart chartMonths={chartMonths} chartValues={chartValues} />
           <QuickActions />
         </div>
 
         {/* Right column - 1/3 */}
         <div className="space-y-6">
-          <PendingTasks />
+          <PendingTasks tasks={pendingTasks} />
           <Chatter
             entityType="dashboard"
             entityId="home"
