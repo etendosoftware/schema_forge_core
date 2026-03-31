@@ -70,16 +70,16 @@ const filters = ['documentNo', 'invoiceDate', 'businessPartner'];
 // ─── Filter options ─────────────────────────────────────────────
 
 const TYPE_OPTIONS = [
-  { key: 'all', label: 'All' },
-  { key: 'invoices', label: 'Invoices' },
-  { key: 'credit-notes', label: 'Credit notes' },
+  { value: 'all', label: 'All' },
+  { value: 'invoices', label: 'Invoices' },
+  { value: 'credit-notes', label: 'Credit notes' },
 ];
 
 const PAYMENT_STATUS_OPTIONS = [
-  { key: 'all', label: 'All payments' },
-  { key: 'paid', label: 'Paid', dot: 'bg-emerald-500' },
-  { key: 'pending', label: 'Pending', dot: 'bg-amber-500' },
-  { key: 'partial', label: 'Partial', dot: 'bg-blue-500' },
+  { value: 'all', label: 'All payments' },
+  { value: 'paid', label: 'Paid', dot: 'bg-emerald-500' },
+  { value: 'pending', label: 'Pending', dot: 'bg-amber-500' },
+  { value: 'partial', label: 'Partial', dot: 'bg-blue-500' },
 ];
 
 // ─── Component ──────────────────────────────────────────────────
@@ -106,7 +106,7 @@ export default function InvoiceHeaderTable(props) {
     return rows;
   }, [props.data, typeFilter, paymentFilter]);
 
-  const activePaymentLabel = PAYMENT_STATUS_OPTIONS.find(o => o.key === paymentFilter)?.label || 'All payments';
+  const activePaymentLabel = PAYMENT_STATUS_OPTIONS.find(o => o.value === paymentFilter)?.label || 'All payments';
 
   return (
     <div>
@@ -115,17 +115,17 @@ export default function InvoiceHeaderTable(props) {
         <div className="flex items-center gap-0.5">
           {TYPE_OPTIONS.map(opt => (
             <button
-              key={opt.key}
+              key={opt.value}
               type="button"
-              onClick={() => setTypeFilter(opt.key)}
+              onClick={() => setTypeFilter(opt.value)}
               className={`text-xs px-2.5 py-1.5 transition-colors relative ${
-                typeFilter === opt.key
+                typeFilter === opt.value
                   ? 'text-foreground font-medium'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {opt.label}
-              {typeFilter === opt.key && (
+              {typeFilter === opt.value && (
                 <span className="absolute bottom-0 left-1 right-1 h-0.5 bg-foreground rounded-full" />
               )}
             </button>
@@ -145,7 +145,7 @@ export default function InvoiceHeaderTable(props) {
             style={{ borderWidth: '0.5px' }}
           >
             {paymentFilter !== 'all' && (
-              <span className={`w-1.5 h-1.5 rounded-full ${PAYMENT_STATUS_OPTIONS.find(o => o.key === paymentFilter)?.dot}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${PAYMENT_STATUS_OPTIONS.find(o => o.value === paymentFilter)?.dot}`} />
             )}
             {activePaymentLabel}
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
@@ -154,16 +154,16 @@ export default function InvoiceHeaderTable(props) {
             <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-border/60 rounded-lg shadow-lg py-1 min-w-[140px]" style={{ borderWidth: '0.5px' }}>
               {PAYMENT_STATUS_OPTIONS.map(opt => (
                 <button
-                  key={opt.key}
+                  key={opt.value}
                   type="button"
-                  onClick={() => { setPaymentFilter(opt.key); setShowPaymentDropdown(false); }}
+                  onClick={() => { setPaymentFilter(opt.value); setShowPaymentDropdown(false); }}
                   className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
-                    paymentFilter === opt.key ? 'bg-muted/50 font-medium text-foreground' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                    paymentFilter === opt.value ? 'bg-muted/50 font-medium text-foreground' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
                   }`}
                 >
                   {opt.dot && <span className={`w-1.5 h-1.5 rounded-full ${opt.dot}`} />}
                   {opt.label}
-                  {paymentFilter === opt.key && (
+                  {paymentFilter === opt.value && (
                     <svg className="w-3 h-3 ml-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                   )}
                 </button>
