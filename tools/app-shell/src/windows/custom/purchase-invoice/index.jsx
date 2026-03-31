@@ -134,6 +134,7 @@ export default function PurchaseInvoiceWindow(props) {
           secondaryTabs={SECONDARY_TABS}
           summary={SUMMARY}
           extraBadges={EXTRA_BADGES}
+          statusFieldLabel="Document Status"
           onAfterSave={handleAfterSave}
         />
         {savedRecord && (

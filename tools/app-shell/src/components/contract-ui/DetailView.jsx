@@ -28,6 +28,7 @@ export function DetailView({
   DetailForm,
   summary = [],
   statusField,
+  statusFieldLabel,
   extraBadges = [],
   processes = [],
   addLineFields = { entry: [], derived: [] },
@@ -342,7 +343,7 @@ export function DetailView({
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Action bar: Cancel + status | actions + save */}
         <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -354,12 +355,20 @@ export function DetailView({
               Cancel
             </Button>
             {statusField && data[statusField] && (
-              <Badge
-                {...getStatusBadgeProps(data[statusField])}
-                className={cn('ml-1', getStatusBadgeProps(data[statusField]).className)}
-              >
-                {statusLabel(data[statusField])}
-              </Badge>
+              <>
+                <span className="text-muted-foreground/40 select-none">|</span>
+                <span className="flex items-center gap-1">
+                  {statusFieldLabel && (
+                    <span className="text-sm text-muted-foreground">{statusFieldLabel}:</span>
+                  )}
+                  <Badge
+                    {...getStatusBadgeProps(data[statusField])}
+                    className={cn(getStatusBadgeProps(data[statusField]).className)}
+                  >
+                    {statusLabel(data[statusField])}
+                  </Badge>
+                </span>
+              </>
             )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
@@ -367,13 +376,14 @@ export function DetailView({
               if (!show) return null;
               if (b.hideWhenStatus?.includes(data[statusField])) return null;
               const cls = b.style === 'warning'
-                ? 'ml-1 border-amber-300 bg-amber-50 text-amber-700'
+                ? 'border-amber-300 bg-amber-50 text-amber-700'
                 : b.style === 'success'
-                  ? 'ml-1 border-green-300 bg-green-50 text-green-700'
-                  : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
+                  ? 'border-green-300 bg-green-50 text-green-700'
+                  : 'bg-blue-600 hover:bg-blue-700 border-transparent text-white';
               const variant = (b.style === 'warning' || b.style === 'success') ? 'outline' : 'default';
               return (
                 <span key={`${b.key}-${when}`} className="flex items-center gap-1">
+                  <span className="text-muted-foreground/40 select-none">|</span>
                   {b.prefix && <span className="text-sm text-muted-foreground">{b.prefix}:</span>}
                   <Badge variant={variant} className={cls}>
                     {b.label}
