@@ -14,26 +14,13 @@ function buildHeaders(token) {
 async function extractErrorMessage(res) {
   try {
     const data = await res.json();
-    // NEO Headless top-level error: { error: { message, status } }
-    const neoMsg = data?.error?.message;
-    if (neoMsg) return humanizeEtendoError(neoMsg);
     // Etendo JsonDataService wraps errors in response.error
     const err = data?.response?.error;
-    if (err?.message) return humanizeEtendoError(err.message);
-    if (typeof err === 'string') return humanizeEtendoError(err);
-    if (data?.message) return humanizeEtendoError(data.message);
+    if (err?.message) return err.message;
+    if (typeof err === 'string') return err;
+    if (data?.message) return data.message;
   } catch { /* body not JSON */ }
   return `Error ${res.status}`;
-}
-
-/**
- * Map known Etendo i18n error keys to human-readable messages.
- */
-function humanizeEtendoError(msg) {
-  if (msg === 'OBUIAPP_ActionNotAllowed') {
-    return 'Action not allowed. To create records, select a specific organization (not "*").';
-  }
-  return msg;
 }
 
 const BATCH_SIZE = 75;
