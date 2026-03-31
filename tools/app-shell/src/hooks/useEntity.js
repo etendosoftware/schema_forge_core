@@ -14,6 +14,8 @@ function buildHeaders(token) {
 async function extractErrorMessage(res) {
   try {
     const data = await res.json();
+    // NEO Headless top-level error: { error: { message, status } }
+    if (data?.error?.message) return data.error.message;
     // Etendo JsonDataService wraps errors in response.error
     const err = data?.response?.error;
     if (err?.message) return err.message;
