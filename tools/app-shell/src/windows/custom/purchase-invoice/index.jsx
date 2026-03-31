@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useEntity } from '@/hooks/useEntity';
-import InvoiceTable from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTable';
-import InvoicePage from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoicePage';
-import InvoiceTaxTable from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTaxTable';
+import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
+import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
+import TaxTable from '@generated/purchase-invoice/generated/web/purchase-invoice/TaxTable';
 import BasicDiscountsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsTable';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import PaymentDetailsPanelCustom from './PaymentDetailsPanelCustom.jsx';
@@ -13,7 +13,7 @@ import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 
 // Secondary tabs: Tax, Basic Discounts, Payment Details (no Payment Plan / Reversed Invoices / Accounting)
 const SECONDARY_TABS = [
-  { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable },
+  { key: 'tax', label: 'Tax', Table: TaxTable },
   { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable },
   { key: 'paymentDetails', label: 'Payment Details', Panel: PaymentDetailsPanelCustom },
 ];
@@ -40,7 +40,7 @@ const SUMMARY = [
  */
 function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }) {
   const navigate = useNavigate();
-  const hook = useEntity('invoice', null, { token, apiBaseUrl });
+  const hook = useEntity('header', null, { token, apiBaseUrl });
   const [previewRow, setPreviewRow] = useState(null);
 
   const count = hook.items?.length ?? 0;
@@ -78,7 +78,7 @@ function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <InvoiceTable
+        <HeaderTable
           data={hook.items}
           loading={hook.loading}
           loadingMore={hook.loadingMore}
@@ -128,7 +128,7 @@ export default function PurchaseInvoiceWindow(props) {
   if (recordId) {
     return (
       <>
-        <InvoicePage
+        <HeaderPage
           {...props}
           DetailTable={InvoiceLineTableCustom}
           secondaryTabs={SECONDARY_TABS}

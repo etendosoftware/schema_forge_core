@@ -502,6 +502,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.layoutType) {
     schema.window.layoutType = windowDecisions.layoutType;
   }
+  if (windowDecisions.sidebarLayout) {
+    schema.window.sidebarLayout = windowDecisions.sidebarLayout;
+  }
   if (windowDecisions.templateConfig) {
     schema.window.templateConfig = windowDecisions.templateConfig;
   }

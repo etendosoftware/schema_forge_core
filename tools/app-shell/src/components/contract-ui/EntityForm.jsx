@@ -443,7 +443,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   const gridClass = cols
     ? 'grid'
     : (layout === 'horizontal'
-      ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4'
+      ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3'
       : 'grid grid-cols-2 gap-3 md:grid-cols-3');
   const gridStyle = cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 } : undefined;
 
@@ -670,6 +670,32 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </FieldHighlight>
+      );
+    }
+    if (f.type === 'textarea') {
+      return (
+        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+          <div className="space-y-1.5 h-full flex flex-col">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+            <textarea
+              id={f.key}
+              name={f.key}
+              data-testid={`field-${f.key}`}
+              rows={4}
+              value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
+              onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+              disabled={isReadOnly}
+              className={[
+                'flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm',
+                'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
+                'focus:outline-none focus:ring-2 focus:ring-primary',
+                isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',
+              ].join(' ')}
+            />
           </div>
         </FieldHighlight>
       );

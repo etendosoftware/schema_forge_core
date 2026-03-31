@@ -1,11 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
     "name": "Goods Receipt"
   },
   "entities": {
-    "mInOut": {
+    "header": {
       "name": "goodsReceipt",
       "fields": {
         "documentNo": {
@@ -87,7 +87,7 @@
         }
       }
     },
-    "mInOutLine": {
+    "lines": {
       "name": "goodsReceiptLine",
       "fields": {
         "lineNo": {
@@ -165,7 +165,7 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "name": "accounting",
       "fields": {
         "account": {
@@ -197,7 +197,7 @@
       },
       "javaQualifier": "factAcctHandler"
     },
-    "mLcCost": {
+    "landedCost": {
       "name": "landedCost",
       "fields": {
         "lineNo": {
@@ -509,5 +509,6 @@
   },
   "discardPatterns": [
     "EM_*"
-  ]
+  ],
+  "version": 2
 }

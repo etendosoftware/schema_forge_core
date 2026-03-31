@@ -2,8 +2,8 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:paymentDetails
 const columns = [
-  { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'invoicePaid', column: 'Isinvoicepaid', type: 'boolean' },
+  { key: 'amount', column: 'Amount', type: 'amount', label: 'Received Amount' },
+  { key: 'invoicePaid', column: 'Isinvoicepaid', type: 'boolean', label: 'Invoice Paid' },
 ];
 // @sf-generated-end columns:paymentDetails
 
