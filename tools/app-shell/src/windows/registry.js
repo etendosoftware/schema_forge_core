@@ -23,8 +23,7 @@ const windowLoaders = {
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
   'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
   'goods-receipt': () => import('@generated/goods-receipt/generated/web/goods-receipt/index.jsx'),
-  'purchase-invoice': () => import('@generated/purchase-invoice/generated/web/purchase-invoice/index.jsx'),
-'return-to-vendor': () => import('@generated/return-to-vendor/generated/web/return-to-vendor/index.jsx'),
+  'return-to-vendor': () => import('@generated/return-to-vendor/generated/web/return-to-vendor/index.jsx'),
   'return-to-vendor-shipment': () => import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/index.jsx'),
   'physical-inventory': () => import('@generated/physical-inventory/generated/web/physical-inventory/index.jsx'),
   'goods-movements': () => import('@generated/goods-movements/generated/web/goods-movements/index.jsx'),
@@ -34,7 +33,6 @@ const windowLoaders = {
   'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
   'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
   'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
-  'purchase-invoice': () => import('@generated/purchase-invoice/generated/web/purchase-invoice/index.jsx'),
   'deal': () => import('@generated/deal/generated/web/deal/index.jsx'),
   'activity': () => import('@generated/activity/generated/web/activity/index.jsx'),
   'lead': () => import('@generated/lead/generated/web/lead/index.jsx'),
@@ -79,6 +77,7 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
 };
 
 /**

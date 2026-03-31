@@ -82,6 +82,7 @@ export function DetailView({
   DetailForm,
   summary = [],
   statusField,
+  statusFieldLabel,
   extraBadges = [],
   processes = [],
   addLineFields = { entry: [], derived: [] },
@@ -115,6 +116,7 @@ export function DetailView({
   topbarExtra = null,
   topbarRight = null,
   salesTheme = false,
+  onAfterSave,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -514,7 +516,7 @@ export function DetailView({
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Action bar: Cancel + status | actions + save */}
         <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -525,11 +527,21 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               Cancel
             </Button>
-            {!topbarRight && statusField && data[statusField] && (
-              <span className="inline-flex items-center gap-1.5 ml-1 text-xs font-medium">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                <span className="text-foreground/70">{statusLabel(data[statusField])}</span>
-              </span>
+            {statusField && data[statusField] && (
+              <>
+                <span className="text-muted-foreground/40 select-none">|</span>
+                <span className="flex items-center gap-1">
+                  {statusFieldLabel && (
+                    <span className="text-sm text-muted-foreground">{statusFieldLabel}:</span>
+                  )}
+                  <Badge
+                    {...getStatusBadgeProps(data[statusField])}
+                    className={cn(getStatusBadgeProps(data[statusField]).className)}
+                  >
+                    {statusLabel(data[statusField])}
+                  </Badge>
+                </span>
+              </>
             )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
@@ -537,13 +549,19 @@ export function DetailView({
               if (!show) return null;
               if (b.hideWhenStatus?.includes(data[statusField])) return null;
               const cls = b.style === 'warning'
-                ? 'ml-1 border-amber-300 bg-amber-50 text-amber-700'
-                : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
-              const variant = b.style === 'warning' ? 'outline' : 'default';
+                ? 'border-amber-300 bg-amber-50 text-amber-700'
+                : b.style === 'success'
+                  ? 'border-green-300 bg-green-50 text-green-700'
+                  : 'bg-blue-600 hover:bg-blue-700 border-transparent text-white';
+              const variant = (b.style === 'warning' || b.style === 'success') ? 'outline' : 'default';
               return (
-                <Badge key={`${b.key}-${when}`} variant={variant} className={cls}>
-                  {b.label}
-                </Badge>
+                <span key={`${b.key}-${when}`} className="flex items-center gap-1">
+                  <span className="text-muted-foreground/40 select-none">|</span>
+                  {b.prefix && <span className="text-sm text-muted-foreground">{b.prefix}:</span>}
+                  <Badge variant={variant} className={cls}>
+                    {b.label}
+                  </Badge>
+                </span>
               );
             })}
             {topbarExtra && (() => {
@@ -684,6 +702,7 @@ export function DetailView({
                 <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                   const saved = await hook.handleSave(data);
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  onAfterSave?.(saved ?? data);
                 }}>
                   <Save className="h-3.5 w-3.5" />
                   Save draft
@@ -691,19 +710,31 @@ export function DetailView({
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  onAfterSave?.(saved ?? data);
                 }}>
                   <Check className="h-3.5 w-3.5" />
                   Save &amp; {draftMode.label || 'Process'}
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
-                const saved = await hook.handleSave(data);
-                if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-              }}>
-                <Check className="h-3.5 w-3.5" />
-                Save
-              </Button>
+              <>
+                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
+                  const saved = await hook.handleSave(data);
+                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  onAfterSave?.(saved ?? data);
+                }}>
+                  <Save className="h-3.5 w-3.5" />
+                  Save draft
+                </Button>
+                <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                  const saved = await hook.handleSave(data);
+                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  onAfterSave?.(saved ?? data);
+                }}>
+                  <Check className="h-3.5 w-3.5" />
+                  Save
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -1057,40 +1088,50 @@ export function DetailView({
                       </div>
                     ) : (
                     <div className="flex-1 min-w-0">
-                      <st.Table
-                        data={secondaryHooks[stIdx]?.children ?? []}
-                        entity={st.key}
-                        selectorContext={selectorContextByEntity[st.key]}
-                        onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
-                        selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
-                        addRow={st.addLineFields?.entry?.length > 0 ? {
-                          active: addingSecondaryLine[st.key] ?? false,
-                          fields: st.addLineFields.entry,
-                          onAdd: async (lineData) => {
-                            const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
-                            const filtered = {};
-                            for (const [k, v] of Object.entries(lineData)) {
-                              if (entryKeys.has(k)) filtered[k] = v;
-                            }
-                            const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
-                            if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
-                            return result;
-                          },
-                          onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
-                          catalogs,
-                        } : undefined}
-                      />
-                      {st.addLineFields?.entry?.length > 0 && hook.editing && (
-                        <button
-                          onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                        >
-                          + Add {st.label}
-                        </button>
+                      {st.Panel ? (
+                        <st.Panel
+                          parentId={hook.selected?.id}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                        />
+                      ) : (
+                        <>
+                          <st.Table
+                            data={secondaryHooks[stIdx]?.children ?? []}
+                            entity={st.key}
+                            selectorContext={selectorContextByEntity[st.key]}
+                            onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
+                            selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                            selectable={!!st.Form}
+                            addRow={st.addLineFields?.entry?.length > 0 ? {
+                              active: addingSecondaryLine[st.key] ?? false,
+                              fields: st.addLineFields.entry,
+                              onAdd: async (lineData) => {
+                                const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+                                const filtered = {};
+                                for (const [k, v] of Object.entries(lineData)) {
+                                  if (entryKeys.has(k)) filtered[k] = v;
+                                }
+                                const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+                                if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
+                                return result;
+                              },
+                              onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
+                              catalogs,
+                            } : undefined}
+                          />
+                          {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                            <button
+                              onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                            >
+                              + Add {st.label}
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
-                    )}
-                    {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
+                    {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-medium text-foreground">{st.label} Detail</span>

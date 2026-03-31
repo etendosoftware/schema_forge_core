@@ -1,6 +1,63 @@
-import FinPaymentPage from './FinPaymentPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import FinPaymentTable from './FinPaymentTable';
+import FinPaymentForm from './FinPaymentForm';
+import LinesTable from './LinesTable';
+import LinesForm from './LinesForm';
+import ExecutionHistoryTable from './ExecutionHistoryTable';
+import ExecutionHistoryForm from './ExecutionHistoryForm';
+import ExchangeRatesTable from './ExchangeRatesTable';
+import ExchangeRatesForm from './ExchangeRatesForm';
+import UsedCreditSourceTable from './UsedCreditSourceTable';
+import UsedCreditSourceForm from './UsedCreditSourceForm';
+import AccountingTable from './AccountingTable';
+import AccountingForm from './AccountingForm';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'purchases', name: 'Payment Out' };
+const breadcrumb = 'Purchases / Payment Out';
+
+// @sf-generated-start summary:finPayment
+const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'amount', column: 'Amount', type: 'amount' },
+  { key: 'usedCredit', column: 'Used_Credit', type: 'amount' },
+  { key: 'writeoffAmount', column: 'Writeoffamt', type: 'amount' },
+  { key: 'reversedPayment', column: 'FIN_Rev_Payment_ID', type: 'string' },
+];
+
+const statusField = 'status';
+// @sf-generated-end summary:finPayment
+
+// @sf-custom-slot extraBadges:finPayment
+// @sf-generated-start extraBadges:finPayment
+const extraBadges = [];
+// @sf-generated-end extraBadges:finPayment
+
+// @sf-generated-start processes:finPayment
+const processes = [
+
+];
+// @sf-generated-end processes:finPayment
+
+// @sf-generated-start addLineFields:lines
+const addLineFields = {
+  entry: [
+    { key: 'orderPaymentSchedule', column: 'FIN_Payment_Schedule_Order', type: 'search', lookup: true, reference: 'Payment_Schedule', inputMode: 'search' },
+    { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', reference: 'Payment_Schedule', inputMode: 'search' },
+    { key: 'gLItem', column: 'C_Glitem_ID', type: 'selector', reference: 'Glitem', inputMode: 'selector' },
+    { key: 'activity', column: 'C_Activity_ID', type: 'selector', reference: 'Activity', inputMode: 'selector' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
+    { key: 'salesCampaign', column: 'C_Campaign_ID', type: 'selector', reference: 'Campaign', inputMode: 'selector' },
+    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
+    { key: 'salesRegion', column: 'C_Salesregion_ID', type: 'selector', reference: 'SalesRegion', inputMode: 'selector' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'UserDimension1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'UserDimension2', inputMode: 'selector' },
+  ],
+  derived: [
+    { key: 'amount', column: 'Amount', type: 'number' },
+    { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'CostCenter', inputMode: 'selector' },
+  ],
+};
+// @sf-generated-end addLineFields:lines
 
 const api = {
   "specName": "payment-out",
@@ -438,11 +495,52 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <FinPaymentPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:FinPaymentPage
+export default function FinPaymentPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:FinPaymentPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="finPayment"
+        detailEntity="lines"
+        Form={FinPaymentForm}
+        DetailTable={LinesTable}
+        DetailForm={LinesForm}
+        summary={summary}
+        statusField={statusField}
+        extraBadges={extraBadges}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Fin Payment"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        secondaryTabs={[
+          { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
+          { key: 'exchangeRates', label: 'Exchange rates', Table: ExchangeRatesTable, Form: ExchangeRatesForm },
+          { key: 'usedCreditSource', label: 'Used Credit Source', Table: UsedCreditSourceTable, Form: UsedCreditSourceForm },
+          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
+        ]}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="finPayment"
+      Table={FinPaymentTable}
+      entityLabel="Fin Payments"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:FinPaymentPage
+
+// @sf-custom-slot section:FinPaymentPage-custom

@@ -9,10 +9,12 @@ import BasicDiscountsTable from './BasicDiscountsTable';
 import BasicDiscountsForm from './BasicDiscountsForm';
 import PaymentPlanTable from './PaymentPlanTable';
 import PaymentPlanForm from './PaymentPlanForm';
-import AccountingTable from './AccountingTable';
-import AccountingForm from './AccountingForm';
+import PaymentDetailsTable from './PaymentDetailsTable';
+import PaymentDetailsForm from './PaymentDetailsForm';
 import ReversedInvoicesTable from './ReversedInvoicesTable';
 import ReversedInvoicesForm from './ReversedInvoicesForm';
+import AccountingTable from './AccountingTable';
+import AccountingForm from './AccountingForm';
 import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
@@ -21,19 +23,16 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
-  { key: 'totalPaid', column: 'Totalpaid', type: 'amount' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  { key: 'orderDate', column: 'DateOrdered', type: 'date' },
-  { key: 'dueAmount', column: 'DueAmt', type: 'amount' },
-  { key: 'withholdingAmount', column: 'Withholdingamount', type: 'amount' },
   { key: 'prepaymentAmount', column: 'Prepaymentamt', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:invoice
+
+// @sf-custom-slot extraBadges:invoice
+// @sf-generated-start extraBadges:invoice
+const extraBadges = [];
+// @sf-generated-end extraBadges:invoice
 
 // @sf-generated-start processes:invoice
 const processes = [
@@ -128,6 +127,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/paymentPlan",
       "detailUrl": "/sws/neo/purchase-invoice/paymentPlan/{id}",
+      "supportedFilters": []
+    },
+    "paymentDetails": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
+      "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
       "supportedFilters": []
     },
     "reversedInvoices": {
@@ -249,38 +259,6 @@ const api = {
       "reference": "Project",
       "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/project"
-    },
-    {
-      "entity": "invoice",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/costcenter"
-    },
-    {
-      "entity": "invoice",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/asset"
-    },
-    {
-      "entity": "invoice",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "UserDimension1",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/stDimension"
-    },
-    {
-      "entity": "invoice",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "UserDimension2",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/ndDimension"
     },
     {
       "entity": "invoiceLine",
@@ -409,6 +387,14 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
+    },
+    {
+      "entity": "paymentDetails",
+      "field": "finPaymentID",
+      "column": "Fin_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
     },
     {
       "entity": "reversedInvoices",
@@ -562,6 +548,12 @@ const api = {
     },
     {
       "entity": "invoice",
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/eTBLKCBulkcompletion"
+    },
+    {
+      "entity": "invoice",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/purchase-invoice/invoice/{id}/action/processNow"
@@ -631,6 +623,7 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
         DetailForm={InvoiceLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
@@ -644,8 +637,9 @@ export default function InvoicePage({ windowName, recordId, ...props }) {
           { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable, Form: InvoiceTaxForm },
           { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
           { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
-          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
+          { key: 'paymentDetails', label: 'Payment Details', Table: PaymentDetailsTable, Form: PaymentDetailsForm },
           { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
+          { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
         ]}
         {...props}
       />

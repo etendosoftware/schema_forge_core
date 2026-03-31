@@ -67,6 +67,17 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/paymentPlan/{id}",
       "supportedFilters": []
     },
+    "paymentDetails": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
+      "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
+      "supportedFilters": []
+    },
     "reversedInvoices": {
       "get": true,
       "getById": true,
@@ -186,38 +197,6 @@ const api = {
       "reference": "Project",
       "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/project"
-    },
-    {
-      "entity": "invoice",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/costcenter"
-    },
-    {
-      "entity": "invoice",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/asset"
-    },
-    {
-      "entity": "invoice",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "UserDimension1",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/stDimension"
-    },
-    {
-      "entity": "invoice",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "UserDimension2",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/ndDimension"
     },
     {
       "entity": "invoiceLine",
@@ -346,6 +325,14 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
+    },
+    {
+      "entity": "paymentDetails",
+      "field": "finPaymentID",
+      "column": "Fin_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
     },
     {
       "entity": "reversedInvoices",
@@ -496,6 +483,12 @@ const api = {
       "field": "calculatePromotions",
       "column": "Calculate_Promotions",
       "url": "/sws/neo/purchase-invoice/invoice/{id}/action/calculatePromotions"
+    },
+    {
+      "entity": "invoice",
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/purchase-invoice/invoice/{id}/action/eTBLKCBulkcompletion"
     },
     {
       "entity": "invoice",
