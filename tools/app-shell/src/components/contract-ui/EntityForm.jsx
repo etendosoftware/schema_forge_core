@@ -398,6 +398,42 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 }
 
 /**
+ * Form field that opens a ProductSearchDrawer for lookup-enabled search fields.
+ */
+function LookupFormField({ field, value, displayValue, selectorUrl, token, resolvedLabel, onChange }) {
+  const [open, setOpen] = useState(false);
+  const display = displayValue || value || '';
+  return (
+    <>
+      <button
+        type="button"
+        data-testid={`field-${field.key}`}
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center gap-2 h-9 rounded-md border border-input bg-background px-3 text-sm text-left hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+      >
+        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        {display ? (
+          <span className="flex-1 truncate text-foreground">{display}</span>
+        ) : (
+          <span className="flex-1 truncate text-muted-foreground">Search {resolvedLabel}...</span>
+        )}
+      </button>
+      <ProductSearchDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(item) => {
+          onChange(item.id, item.label || item.name || item._identifier || '', item);
+          setOpen(false);
+        }}
+        selectorUrl={selectorUrl}
+        token={token}
+        title={resolvedLabel}
+      />
+    </>
+  );
+}
+
+/**
  * Generic Entity Form component.
  * Layouts: 'horizontal' (grid-based edit form) | 'vertical' (stack-based sidebar)
  * 
@@ -600,6 +636,23 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           </FieldHighlight>
         );
       }
+      const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null;
+      const searchOnChange = (val, lbl, auxData) => {
+        onChange?.(f.key, val, f.column);
+        if (lbl) onChange?.(f.key + '$_identifier', lbl);
+        if (auxData) {
+          for (const [suffix, auxVal] of Object.entries(auxData)) {
+            if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+              for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
+                onChange?.(f.key + auxSuffix, auxSuffixVal);
+              }
+            } else {
+              onChange?.(f.key + suffix, auxVal);
+            }
+          }
+        }
+      };
+      // Popup fields open a full ProductSearchDrawer instead of inline dropdown
       if (f.popup) {
         return (
           <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
@@ -616,8 +669,29 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                   if (lbl) onChange?.(f.key + '$_identifier', lbl);
                 }}
                 label={label}
-                selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+                selectorUrl={selectorUrl}
                 token={token}
+              />
+            </div>
+          </FieldHighlight>
+        );
+      }
+      // Lookup fields open a full ProductSearchDrawer instead of inline dropdown
+      if (f.lookup) {
+        return (
+          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
+            <div className="space-y-1.5">
+              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+              </Label>
+              <LookupFormField
+                field={f}
+                value={data?.[f.key] ?? ''}
+                displayValue={data?.[f.key + '$_identifier']}
+                selectorUrl={selectorUrl}
+                token={token}
+                resolvedLabel={label}
+                onChange={searchOnChange}
               />
             </div>
           </FieldHighlight>
@@ -634,24 +708,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               field={f}
               value={data?.[f.key] ?? ''}
               displayValue={data?.[f.key + '$_identifier']}
-              onChange={(val, label, auxData) => {
-                onChange?.(f.key, val, f.column);
-                if (label) onChange?.(f.key + '$_identifier', label);
-                if (auxData) {
-                  for (const [suffix, auxVal] of Object.entries(auxData)) {
-                    if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
-                      for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
-                        onChange?.(f.key + auxSuffix, auxSuffixVal);
-                      }
-                    } else {
-                      onChange?.(f.key + suffix, auxVal);
-                    }
-                  }
-                }
-              }}
+              onChange={searchOnChange}
               catalogs={catalogs}
               resolvedLabel={label}
-              selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+              selectorUrl={selectorUrl}
               selectorContext={selectorContext}
               token={token}
             />

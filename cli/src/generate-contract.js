@@ -131,6 +131,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.enumValues) mapped.enumValues = f.enumValues;
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
+      if (f.lookup) mapped.lookup = true;
 
       // UI hints
       if (f.defaultValue) mapped.defaultValue = f.defaultValue;

@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-30T17:51:21.968Z",
-  "checksum": "5abf790fffb64666",
+  "version": "0.3.0",
+  "generatedAt": "2026-03-31T12:57:09.601Z",
+  "checksum": "2bd2534eda35af9a",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -233,6 +233,7 @@
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Inventory_Product"
             }
@@ -247,16 +248,12 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Locator",
             "inputMode": "search",
             "defaultValue": "@SQL=SELECT M_LOCATOR_ID AS DEFAULTVALUE FROM M_LOCATOR WHERE AD_ISORGINCLUDED(@AD_Org_ID@, M_LOCATOR.AD_Org_ID, @#AD_Client_ID@) <> -1 AND ISACTIVE='Y' AND M_WAREHOUSE_ID=@M_WAREHOUSE_ID@  ORDER BY M_LOCATOR.ISDEFAULT DESC",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Inventory_Locator"
-            },
-            "readOnlyLogic": {
-              "raw": "@Processed@='Y'",
-              "evaluable": true
             }
           },
           {
@@ -1396,20 +1393,12 @@
         "id": "t-54",
         "category": "readonlylogic-valid",
         "entity": "inventoryLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'storageBin' in inventoryLine should be valid JS"
-      },
-      {
-        "id": "t-55",
-        "category": "readonlylogic-valid",
-        "entity": "inventoryLine",
         "field": "description",
         "runner": "node",
         "description": "Read-only logic for 'description' in inventoryLine should be valid JS"
       },
       {
-        "id": "t-56",
+        "id": "t-55",
         "category": "readonlylogic-valid",
         "entity": "inventoryLine",
         "field": "cost",
@@ -1417,7 +1406,7 @@
         "description": "Read-only logic for 'cost' in inventoryLine should be valid JS"
       },
       {
-        "id": "t-57",
+        "id": "t-56",
         "category": "displaylogic-evaluable",
         "entity": "inventoryLine",
         "field": "quantityOrderBook",
@@ -1425,15 +1414,7 @@
         "description": "Display logic for 'quantityOrderBook' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-58",
-        "category": "readonlylogic-evaluable",
-        "entity": "inventoryLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'storageBin' in inventoryLine should have evaluable flag"
-      },
-      {
-        "id": "t-59",
+        "id": "t-57",
         "category": "readonlylogic-evaluable",
         "entity": "inventoryLine",
         "field": "description",
@@ -1441,7 +1422,7 @@
         "description": "Read-only logic for 'description' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-60",
+        "id": "t-58",
         "category": "readonlylogic-evaluable",
         "entity": "inventoryLine",
         "field": "cost",
@@ -1449,7 +1430,7 @@
         "description": "Read-only logic for 'cost' in inventoryLine should have evaluable flag"
       },
       {
-        "id": "t-61",
+        "id": "t-59",
         "category": "default-value-type",
         "entity": "inventoryLine",
         "field": "lineNo",
@@ -1457,7 +1438,7 @@
         "description": "Default value for 'lineNo' in inventoryLine should be a string"
       },
       {
-        "id": "t-62",
+        "id": "t-60",
         "category": "default-value-type",
         "entity": "inventoryLine",
         "field": "storageBin",
@@ -1465,7 +1446,7 @@
         "description": "Default value for 'storageBin' in inventoryLine should be a string"
       },
       {
-        "id": "t-63",
+        "id": "t-61",
         "category": "default-value-type",
         "entity": "inventoryLine",
         "field": "quantityOrderBook",
@@ -1473,7 +1454,7 @@
         "description": "Default value for 'quantityOrderBook' in inventoryLine should be a string"
       },
       {
-        "id": "t-64",
+        "id": "t-62",
         "category": "system-field",
         "entity": "inventory",
         "field": "organization",
@@ -1481,7 +1462,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-65",
+        "id": "t-63",
         "category": "system-field",
         "entity": "inventory",
         "field": "processNow",
@@ -1489,7 +1470,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-66",
+        "id": "t-64",
         "category": "system-field",
         "entity": "inventory",
         "field": "posted",
@@ -1497,7 +1478,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-67",
+        "id": "t-65",
         "category": "system-field",
         "entity": "inventory",
         "field": "costCenter",
@@ -1505,7 +1486,7 @@
         "description": "System field 'costCenter' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-68",
+        "id": "t-66",
         "category": "system-field",
         "entity": "inventory",
         "field": "asset",
@@ -1513,7 +1494,7 @@
         "description": "System field 'asset' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-69",
+        "id": "t-67",
         "category": "system-field",
         "entity": "inventory",
         "field": "activity",
@@ -1521,7 +1502,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-70",
+        "id": "t-68",
         "category": "system-field",
         "entity": "inventory",
         "field": "salesCampaign",
@@ -1529,7 +1510,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-71",
+        "id": "t-69",
         "category": "system-field",
         "entity": "inventory",
         "field": "stDimension",
@@ -1537,7 +1518,7 @@
         "description": "System field 'stDimension' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-72",
+        "id": "t-70",
         "category": "system-field",
         "entity": "inventory",
         "field": "ndDimension",
@@ -1545,7 +1526,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-73",
+        "id": "t-71",
         "category": "system-field",
         "entity": "inventory",
         "field": "trxOrganization",
@@ -1553,7 +1534,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-74",
+        "id": "t-72",
         "category": "system-field",
         "entity": "inventory",
         "field": "id",
@@ -1561,7 +1542,7 @@
         "description": "System field 'id' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-75",
+        "id": "t-73",
         "category": "system-field",
         "entity": "inventory",
         "field": "active",
@@ -1569,7 +1550,7 @@
         "description": "System field 'active' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-76",
+        "id": "t-74",
         "category": "system-field",
         "entity": "inventory",
         "field": "client",
@@ -1577,7 +1558,7 @@
         "description": "System field 'client' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-77",
+        "id": "t-75",
         "category": "system-field",
         "entity": "inventory",
         "field": "creationDate",
@@ -1585,7 +1566,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-78",
+        "id": "t-76",
         "category": "system-field",
         "entity": "inventory",
         "field": "createdBy",
@@ -1593,7 +1574,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-79",
+        "id": "t-77",
         "category": "system-field",
         "entity": "inventory",
         "field": "updated",
@@ -1601,7 +1582,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-80",
+        "id": "t-78",
         "category": "system-field",
         "entity": "inventory",
         "field": "updatedBy",
@@ -1609,7 +1590,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-81",
+        "id": "t-79",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "attributeSetValue",
@@ -1617,7 +1598,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-82",
+        "id": "t-80",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "orderQuantity",
@@ -1625,7 +1606,7 @@
         "description": "System field 'orderQuantity' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-83",
+        "id": "t-81",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "orderUOM",
@@ -1633,7 +1614,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-84",
+        "id": "t-82",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "relatedInventory",
@@ -1641,7 +1622,7 @@
         "description": "System field 'relatedInventory' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-85",
+        "id": "t-83",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "organization",
@@ -1649,7 +1630,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-86",
+        "id": "t-84",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "active",
@@ -1657,7 +1638,7 @@
         "description": "System field 'active' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-87",
+        "id": "t-85",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "physInventory",
@@ -1665,7 +1646,7 @@
         "description": "System field 'physInventory' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-88",
+        "id": "t-86",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "id",
@@ -1673,7 +1654,7 @@
         "description": "System field 'id' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-89",
+        "id": "t-87",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "client",
@@ -1681,7 +1662,7 @@
         "description": "System field 'client' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-90",
+        "id": "t-88",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "creationDate",
@@ -1689,7 +1670,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-91",
+        "id": "t-89",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "createdBy",
@@ -1697,7 +1678,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-92",
+        "id": "t-90",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "updated",
@@ -1705,7 +1686,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-93",
+        "id": "t-91",
         "category": "system-field",
         "entity": "inventoryLine",
         "field": "updatedBy",
@@ -1713,98 +1694,98 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for inventoryLine"
       },
       {
-        "id": "t-94",
+        "id": "t-92",
         "category": "rule-declared",
         "rule": "SL_Inventory_Conversion",
         "runner": "node",
         "description": "Rule 'SL_Inventory_Conversion' (undefined) should be declared"
       },
       {
-        "id": "t-95",
+        "id": "t-93",
         "category": "rule-declared",
         "rule": "SL_Inventory_Product",
         "runner": "node",
         "description": "Rule 'SL_Inventory_Product' (undefined) should be declared"
       },
       {
-        "id": "t-96",
+        "id": "t-94",
         "category": "rule-declared",
         "rule": "SL_Inventory_Locator",
         "runner": "node",
         "description": "Rule 'SL_Inventory_Locator' (undefined) should be declared"
       },
       {
-        "id": "t-97",
+        "id": "t-95",
         "category": "rule-declared",
         "rule": "AD_Org show child organizations",
         "runner": "node",
         "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
       },
       {
-        "id": "t-98",
+        "id": "t-96",
         "category": "rule-declared",
         "rule": "M_Locator of Warehouse",
         "runner": "node",
         "description": "Rule 'M_Locator of Warehouse' (validation) should be declared"
       },
       {
-        "id": "t-99",
+        "id": "t-97",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Header",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-100",
+        "id": "t-98",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Lines",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-101",
+        "id": "t-99",
         "category": "rule-declared",
         "rule": "PROCESS_ProcessInventoryCount",
         "runner": "node",
         "description": "Rule 'PROCESS_ProcessInventoryCount' (process) should be declared"
       },
       {
-        "id": "t-102",
+        "id": "t-100",
         "category": "rule-declared",
         "rule": "PROCESS_CreateInventoryCountList",
         "runner": "node",
         "description": "Rule 'PROCESS_CreateInventoryCountList' (process) should be declared"
       },
       {
-        "id": "t-103",
+        "id": "t-101",
         "category": "rule-declared",
         "rule": "PROCESS_UpdateQuantity",
         "runner": "node",
         "description": "Rule 'PROCESS_UpdateQuantity' (process) should be declared"
       },
       {
-        "id": "t-104",
+        "id": "t-102",
         "category": "rule-declared",
         "rule": "PROCESS_Posted",
         "runner": "node",
         "description": "Rule 'PROCESS_Posted' (process) should be declared"
       },
       {
-        "id": "t-105",
+        "id": "t-103",
         "category": "crud-flags",
         "entity": "inventory",
         "runner": "node",
         "description": "CRUD flags for 'inventory' should all be booleans"
       },
       {
-        "id": "t-106",
+        "id": "t-104",
         "category": "crud-flags",
         "entity": "inventoryLine",
         "runner": "node",
         "description": "CRUD flags for 'inventoryLine' should all be booleans"
       },
       {
-        "id": "t-107",
+        "id": "t-105",
         "category": "selector-endpoint",
         "entity": "inventory",
         "field": "warehouse",
@@ -1812,7 +1793,7 @@
         "description": "Selector endpoint for 'warehouse' in inventory should exist"
       },
       {
-        "id": "t-108",
+        "id": "t-106",
         "category": "selector-endpoint",
         "entity": "inventory",
         "field": "project",
@@ -1820,7 +1801,7 @@
         "description": "Selector endpoint for 'project' in inventory should exist"
       },
       {
-        "id": "t-109",
+        "id": "t-107",
         "category": "selector-endpoint",
         "entity": "inventoryLine",
         "field": "product",
@@ -1828,7 +1809,7 @@
         "description": "Selector endpoint for 'product' in inventoryLine should exist"
       },
       {
-        "id": "t-110",
+        "id": "t-108",
         "category": "selector-endpoint",
         "entity": "inventoryLine",
         "field": "storageBin",
@@ -1836,7 +1817,7 @@
         "description": "Selector endpoint for 'storageBin' in inventoryLine should exist"
       },
       {
-        "id": "t-111",
+        "id": "t-109",
         "category": "selector-endpoint",
         "entity": "inventoryLine",
         "field": "uOM",
@@ -1844,7 +1825,7 @@
         "description": "Selector endpoint for 'uOM' in inventoryLine should exist"
       },
       {
-        "id": "t-112",
+        "id": "t-110",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "generateList",
@@ -1852,7 +1833,7 @@
         "description": "Action endpoint for 'generateList' in inventory should exist"
       },
       {
-        "id": "t-113",
+        "id": "t-111",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "updateQuantities",
@@ -1860,7 +1841,7 @@
         "description": "Action endpoint for 'updateQuantities' in inventory should exist"
       },
       {
-        "id": "t-114",
+        "id": "t-112",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "processNow",
@@ -1868,7 +1849,7 @@
         "description": "Action endpoint for 'processNow' in inventory should exist"
       },
       {
-        "id": "t-115",
+        "id": "t-113",
         "category": "action-endpoint",
         "entity": "inventory",
         "field": "posted",
@@ -1877,16 +1858,16 @@
       }
     ],
     "summary": {
-      "total": 115,
+      "total": 113,
       "byCategory": {
         "field-presence": 18,
         "field-type": 18,
         "searchable-filters": 3,
         "visibility": 2,
         "displaylogic-valid": 4,
-        "readonlylogic-valid": 4,
+        "readonlylogic-valid": 3,
         "displaylogic-evaluable": 4,
-        "readonlylogic-evaluable": 4,
+        "readonlylogic-evaluable": 3,
         "default-value-type": 6,
         "system-field": 30,
         "rule-declared": 11,
@@ -1895,7 +1876,7 @@
         "action-endpoint": 4
       },
       "byRunner": {
-        "node": 115,
+        "node": 113,
         "junit": 0
       }
     }

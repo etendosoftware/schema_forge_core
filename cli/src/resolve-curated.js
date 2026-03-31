@@ -238,6 +238,8 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
     const dependsOn = fieldDecision.dependsOn || null;
     if (dependsOn) field.dependsOn = dependsOn;
+
+    if (fieldDecision.lookup) field.lookup = true;
   }
 
   // derivation — carry from raw field

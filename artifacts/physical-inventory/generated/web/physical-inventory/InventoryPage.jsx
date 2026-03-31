@@ -37,7 +37,6 @@ const addLineFields = {
   entry: [
     { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'search', required: true, label: 'Storage Bin', reference: 'Locator', inputMode: 'search' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'quantityCount', column: 'QtyCount', type: 'number', required: true, label: 'User Count' },
   ],
@@ -45,7 +44,7 @@ const addLineFields = {
     { key: 'cost', column: 'Cost', type: 'number', label: 'Cost' },
   ],
   hidden: [
-
+    { key: 'storageBin', value: '@SQL=SELECT M_LOCATOR_ID AS DEFAULTVALUE FROM M_LOCATOR WHERE AD_ISORGINCLUDED(@AD_Org_ID@, M_LOCATOR.AD_Org_ID, @#AD_Client_ID@) <> -1 AND ISACTIVE=\'Y\' AND M_WAREHOUSE_ID=@M_WAREHOUSE_ID@  ORDER BY M_LOCATOR.ISDEFAULT DESC' },
   ],
 };
 // @sf-generated-end addLineFields:inventoryLine

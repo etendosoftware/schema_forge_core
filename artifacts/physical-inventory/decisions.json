@@ -56,12 +56,13 @@
     "lines": {
       "name": "inventoryLine",
       "fields": {
-        "locator": {
-          "visibility": "discarded",
+        "storageBin": {
+          "form": false,
           "readOnlyLogic": null
         },
         "product": {
           "grid": true,
+          "lookup": true,
           "readOnlyLogic": null
         },
         "lineNo": {
