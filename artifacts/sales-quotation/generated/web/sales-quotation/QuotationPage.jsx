@@ -1,4 +1,5 @@
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import QuotationTable from './QuotationTable';
 import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
@@ -26,9 +27,18 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Convert to Order', label: 'Convert to  Order', style: 'positive' },
-  { name: 'Void', label: 'Void', style: 'destructive' },
-  { name: 'Reactivate', label: 'Reactivate', style: 'positive' },
+  // Complete the quotation (confirm it)
+  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
+  // Void a confirmed quotation
+  { name: 'Void', label: 'Void', style: 'destructive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='CO'" },
+  // Reactivate a voided quotation
+  { name: 'Reactivate', label: 'Reactivate', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='VO'" },
+  // TODO: "Convert to Order" — wire to createOrder action (process A3FE1F9892394386A49FB707AA50A0FA)
+  // Needs OBUIAPP process parameter UI. Visible when status is Complete.
+  // On success: navigate to the newly created Sales Order.
 ];
 // @sf-generated-end processes:quotation
 
@@ -348,6 +358,11 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        hideDeleteWhenComplete
+        menuActions={({ status }) => [
+          { key: 'duplicate', label: 'Duplicate', onClick: () => toast('Coming soon') },
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => toast('Coming soon') },
+        ]}
         {...props}
       />
     );

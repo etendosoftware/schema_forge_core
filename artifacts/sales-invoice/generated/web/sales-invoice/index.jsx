@@ -34,6 +34,17 @@ const api = {
       "supportedFilters": [
         "product"
       ]
+    },
+    "paymentPlan": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/paymentPlan",
+      "detailUrl": "/sws/neo/sales-invoice/paymentPlan/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -84,6 +95,22 @@ const api = {
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "finPaymentmethodID",
+      "column": "Fin_Paymentmethod_ID",
+      "reference": "Paymentmethod",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/paymentPlan/selectors/finPaymentmethodID"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/paymentPlan/selectors/currency"
     }
   ],
   "actions": [
@@ -185,6 +212,30 @@ const api = {
       "column": "Match_Lccosts",
       "url": "/sws/neo/sales-invoice/lines/{id}/action/matchLCCosts",
       "processId": "281FFDFAB31C4394A2EAA73A6F9F3A3F",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "updatePaymentPlan",
+      "column": "Update_Payment_Plan",
+      "url": "/sws/neo/sales-invoice/paymentPlan/{id}/action/updatePaymentPlan",
+      "processId": "FB740AB61B0E42B198D2C88D3A0D0CE6",
+      "processType": "classic"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "aprmModifPaymentINPlan",
+      "column": "EM_Aprm_Modif_Paym_Sched",
+      "url": "/sws/neo/sales-invoice/paymentPlan/{id}/action/aprmModifPaymentINPlan",
+      "processId": "4EEB3497082C4F2182E16A4371CD5D96",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "aprmModifPaymentOUTPlan",
+      "column": "EM_Aprm_Modif_Paym_Out_Sched",
+      "url": "/sws/neo/sales-invoice/paymentPlan/{id}/action/aprmModifPaymentOUTPlan",
+      "processId": "6F87442DF7BC43AB8A666BDED2F7D64E",
       "processType": "obuiapp"
     }
   ],

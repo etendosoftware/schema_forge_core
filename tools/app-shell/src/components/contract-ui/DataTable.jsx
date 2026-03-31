@@ -563,10 +563,23 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   }, [filteredData, amountColumns]);
 
   const renderCellValue = (row, col) => {
+    // Custom render function takes priority
+    if (typeof col.render === 'function') return col.render(row);
     const display = resolveIdentifier(row, col.key);
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
-      return <span className="font-medium text-blue-600">{display}</span>;
+      const pill = col.pill;
+      const pillLabel = pill && pill.when(row) ? pill.label : null;
+      return (
+        <span className="inline-flex items-center gap-2">
+          <span className="font-medium text-blue-600">{display}</span>
+          {pillLabel && (
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pill.className || 'bg-gray-50 text-gray-600 border-gray-200'}`} style={{ borderWidth: '0.5px' }}>
+              {pillLabel}
+            </span>
+          )}
+        </span>
+      );
     }
     if (col.type === 'enum') {
       const raw = row[col.key];

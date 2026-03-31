@@ -25,6 +25,14 @@ const CHIP_ICONS = {
       <path d="M1 8l2 13h18l2-13" />
     </svg>
   ),
+  invoice: (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="13" y2="17" />
+    </svg>
+  ),
 };
 
 function neoBase(apiBaseUrl) {
@@ -64,6 +72,7 @@ function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [order, setOrder] = useState(null);
   const [shipments, setShipments] = useState([]);
+  const [originalInvoices, setOriginalInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -90,6 +99,22 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
           .then(j => setShipments(j.response?.data || []))
           .catch(() => setShipments([]))
       );
+
+      // If this is a credit note, fetch original invoices from the same order
+      const isCreditNote = data['transactionDocument$_identifier']?.toLowerCase().includes('credit');
+      if (isCreditNote) {
+        const invCriteria = JSON.stringify([{ fieldName: 'salesOrder', operator: 'equals', value: orderId }]);
+        const invParams = new URLSearchParams({ criteria: invCriteria, _limit: '50' });
+        promises.push(
+          fetch(`${base}/sales-invoice/header?${invParams}`, { headers })
+            .then(r => r.ok ? r.json() : { response: { data: [] } })
+            .then(j => {
+              const invoices = (j.response?.data || []).filter(inv => inv.id !== recordId);
+              setOriginalInvoices(invoices);
+            })
+            .catch(() => setOriginalInvoices([]))
+        );
+      }
     }
 
     if (promises.length === 0) { setLoading(false); return; }
@@ -124,6 +149,21 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         title={`Shipment #${s.documentNo}`}
         status={s.documentStatus}
         onClick={() => navigate(`/goods-shipment/${s.id}`)}
+      />
+    );
+  }
+
+  for (const inv of originalInvoices) {
+    chips.push(
+      <DocChip
+        key={`inv-${inv.id}`}
+        icon={CHIP_ICONS.invoice}
+        iconColor="text-violet-600"
+        title={`Invoice #${inv.documentNo}`}
+        amount={inv.grandTotalAmount}
+        currency={inv['currency$_identifier']}
+        status={inv.documentStatus}
+        onClick={() => navigate(`/sales-invoice/${inv.id}`)}
       />
     );
   }

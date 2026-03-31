@@ -500,6 +500,15 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.relatedDocuments) {
     schema.window.relatedDocuments = windowDecisions.relatedDocuments;
   }
+  if (windowDecisions.hideDeleteWhenComplete) {
+    schema.window.hideDeleteWhenComplete = true;
+  }
+  if (windowDecisions.customComponents) {
+    schema.window.customComponents = windowDecisions.customComponents;
+  }
+  if (windowDecisions.menuActions) {
+    schema.window.menuActions = windowDecisions.menuActions;
+  }
   // Forward secondary tab config and label overrides from decisions
   if (windowDecisions.entityLabel) {
     schema.window.entityLabel = windowDecisions.entityLabel;

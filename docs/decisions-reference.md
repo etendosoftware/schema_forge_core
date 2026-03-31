@@ -40,6 +40,9 @@ Complete reference for all configurable options in `decisions.json` files. These
 | `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
 | `notesField` | string | `null` | Any entity field name | Field to display as a notes/description panel in the detail view footer (e.g., `"description"`). Rendered as an expandable text input. |
 | `documentPreview` | object | `null` | `{ titlePrefix: string }` | Enables the document preview button in the detail header. `titlePrefix` is shown in the preview drawer title (e.g., `"Order"`, `"Invoice"`). |
+| `hideDeleteWhenComplete` | boolean | `false` | — | Hides the delete button in the detail view when the document status is not Draft. Prevents accidental deletion of completed/processed records. |
+| `customComponents` | object | `null` | See below | Override generated components with custom ones from `artifacts/{window}/custom/`. The generator emits the correct imports and props automatically. |
+| `menuActions` | array | `[]` | See below | Additional actions in the detail view's "more" menu (triple dot). Each action can have visibility conditions based on document status. |
 | `detailSortBy` | string | `null` | Any valid sort expression | Default sort order for the detail entity tab (e.g., `"sEQNoAsset asc"`). Passed directly to DetailView as the `detailSortBy` prop. |
 | `statusBar` | object | `null` | See below | Generates a summary status bar above the detail form showing key numeric fields and an optional progress indicator. |
 
@@ -89,6 +92,48 @@ Generates a `{WindowName}StatusBar` component inside `@sf-generated` markers. Th
 | `completedIcon` | string | Lucide icon shown at 100% (e.g., `CheckCircle2`). |
 
 The generator emits `headerContent={(data) => <{WindowName}StatusBar data={data} />}` on the DetailView prop automatically.
+
+### Custom Components (`window.customComponents`)
+
+Override generated components with custom implementations from `artifacts/{window}/custom/`. The generator emits the correct imports and DetailView props automatically.
+
+```json
+{
+  "customComponents": {
+    "headerTable": "InvoiceHeaderTable",
+    "bottomSection": "InvoiceBottomPanel",
+    "topbarRight": "InvoiceTopbarExtra"
+  }
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `headerTable` | string | Custom table component name. Replaces the generated `{Entity}Table` import. File must exist at `artifacts/{window}/custom/{value}.jsx`. |
+| `bottomSection` | string | Custom bottom panel component. Replaces the default totals + footer layout. Receives `recordId`, `data`, `token`, `apiBaseUrl`, `api`, `summary`, `notesField`, `onFieldChange`, `notesFocused`, `setNotesFocused`. |
+| `topbarRight` | string | Custom component rendered on the right side of the detail topbar (before icon buttons). Receives `data`, `recordId`, `token`, `apiBaseUrl`, `api`, `onProcess`. When present, the default status badge is hidden. |
+
+### Menu Actions (`window.menuActions`)
+
+Additional actions shown in the detail view's "more" menu (triple dot icon). Each action can have visibility conditions based on document status.
+
+```json
+{
+  "menuActions": [
+    { "key": "duplicate", "label": "Duplicate" },
+    { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" },
+    { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
+  ]
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `key` | string | Unique identifier for the action. |
+| `label` | string | Display label in the menu. |
+| `destructive` | boolean | If `true`, renders in red as a destructive action. |
+| `visibleWhenStatus` | string or string[] | Only show the action when document status matches. Omit to always show. |
+| `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted, generates an empty `onClick` placeholder. |
 
 ## Entity Properties (`entities.{entityName}.*`)
 

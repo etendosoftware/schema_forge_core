@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import GoodsShipmentTable from './GoodsShipmentTable';
 import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
@@ -26,7 +27,12 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'Process Shipment', label: 'Process  Shipment', style: 'positive', columnName: 'documentAction' },
+  // Complete the shipment
+  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
+  // TODO: "Create Invoice" — wire to invoicefromshipment (process 62250E8866EA4D96A66C309878DC039E, obuiapp)
+  // Needs OBUIAPP process with parameter UI. Visible when CO and no invoice exists.
+  // On success: navigate to newly created Invoice. Replace with "View Invoice" once exists.
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -269,6 +275,10 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
           notesField="description"
           customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
           extraActions={extraActions}
+          hideDeleteWhenComplete
+        menuActions={({ status }) => [
+            { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => toast('Coming soon') },
+          ]}
           {...props}
         />
         <ReturnWizard

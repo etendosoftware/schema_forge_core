@@ -7,7 +7,11 @@
       "titlePrefix": "Shipment"
     },
     "notesField": "description",
-    "relatedDocuments": true
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "menuActions": [
+      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+    ]
   },
   "entities": {
     "header": {

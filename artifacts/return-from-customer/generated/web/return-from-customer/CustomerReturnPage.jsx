@@ -1,15 +1,18 @@
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import CustomerReturnTable from './CustomerReturnTable';
 import CustomerReturnForm from './CustomerReturnForm';
 import CustomerReturnLineTable from './CustomerReturnLineTable';
 import CustomerReturnLineForm from './CustomerReturnLineForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
-const breadcrumb = 'Sales / Return from Customer';
+const breadcrumb = 'Sales / Returns';
 
 // @sf-generated-start summary:customerReturn
 const summary = [
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
@@ -18,24 +21,12 @@ const statusField = 'documentStatus';
 
 // @sf-generated-start processes:customerReturn
 const processes = [
-  { name: 'Process Return', label: 'Process  Return', style: 'positive' },
+  { name: 'Process Return', label: 'Complete Return', style: 'positive', columnName: 'documentAction' },
 ];
 // @sf-generated-end processes:customerReturn
 
 // @sf-generated-start addLineFields:customerReturnLine
-const addLineFields = {
-  entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, lookup: true },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text' },
-    { key: 'cReturnReasonID', column: 'C_Return_Reason_ID', type: 'search', reference: 'Return_Reason', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'text', required: true },
-    { key: 'goodsShipmentLine', column: 'M_Inoutline_ID', type: 'search', reference: 'InOutLine', inputMode: 'search' },
-    { key: 'description', column: 'Description', type: 'textarea' },
-  ],
-  derived: [
-
-  ],
-};
+const addLineFields = { entry: [], derived: [], hidden: [] };
 // @sf-generated-end addLineFields:customerReturnLine
 
 const api = {
@@ -318,7 +309,12 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-      api={api}
+        notesField="description"
+        documentPreview={{ titlePrefix: 'Return', pdfUrl: null }}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        api={api}
+        hideDeleteWhenComplete
+        menuActions={() => []}
         {...props}
       />
     );
@@ -331,6 +327,7 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
       entityLabel="Customer Returns"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      hideCreate
       api={api}
       {...props}
     />

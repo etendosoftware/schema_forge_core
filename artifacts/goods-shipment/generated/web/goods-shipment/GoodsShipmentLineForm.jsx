@@ -6,8 +6,6 @@ const fields = [
   { key: 'product', column: 'M_Product_ID', type: 'search', section: 'principal', reference: 'Product', inputMode: 'search' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, section: 'principal', defaultValue: '0' },
   { key: 'description', column: 'Description', type: 'textarea', section: 'other' },
-  // @sf-custom-slot callout:SL_InOut_Conversion
-  { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', readOnly: true, section: 'principal' },
 ];
 // @sf-generated-end fields:goodsShipmentLine
 
