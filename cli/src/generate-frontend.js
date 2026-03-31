@@ -664,12 +664,32 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // detailSortBy prop
   const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
 
+  // listKpiCards → headerContent prop in ListView
+  const listKpiCardsConfig = windowConfig.listKpiCards ?? null;
+  let listKpiCardsImport = '';
+  let listKpiCardsProp = '';
+  if (listKpiCardsConfig?.customComponent && specName) {
+    const kpiComp = listKpiCardsConfig.customComponent;
+    listKpiCardsImport = `import ${kpiComp} from '@/windows/custom/${specName}/${kpiComp}';\n`;
+    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}\n      api={api}`;
+  }
+
+  // headerExtra → formFooter prop
+  const headerExtraConfig = windowConfig.headerExtra ?? null;
+  let formFooterImport = '';
+  let formFooterProp = '';
+  if (headerExtraConfig?.customForm && specName) {
+    const compName = headerExtraConfig.customForm;
+    formFooterImport = `import ${compName} from '@/windows/custom/${specName}/${compName}';\n`;
+    formFooterProp = `\n        formFooter={${compName}}`;
+  }
+
   return `import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}${statusBarImport}
 
@@ -734,7 +754,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
         {...props}
       />
     );
@@ -744,10 +764,10 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${entityLabel}s"
+      entityLabel="${windowConfig.name || pluralize(entityLabel)}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
       {...props}
     />
   );

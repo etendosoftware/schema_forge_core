@@ -23,6 +23,8 @@ export function ListView({
   breadcrumb,
   galleryRenderer,
   hideCreate = false,
+  headerContent = null,
+  api = null,
 }) {
   const hook = useEntity(entity, null, { token, apiBaseUrl });
   const navigate = useNavigate();
@@ -304,6 +306,15 @@ export function ListView({
               </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* KPI / header content */}
+        {headerContent && (
+          <div className="px-6 pt-4">
+            {typeof headerContent === 'function'
+              ? headerContent({ api, token, apiBaseUrl, items: hook.items, loading: hook.loading })
+              : headerContent}
           </div>
         )}
 

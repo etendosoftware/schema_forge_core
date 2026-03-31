@@ -2,11 +2,10 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:user
 const columns = [
-  { key: 'firstName', column: 'Firstname', type: 'string' },
-  { key: 'lastName', column: 'Lastname', type: 'string' },
-  { key: 'name', column: 'Name', type: 'string' },
-  { key: 'email', column: 'Email', type: 'string' },
-  { key: 'phone', column: 'Phone', type: 'string' },
+  { key: 'firstName', column: 'Firstname', type: 'string', label: 'First Name' },
+  { key: 'lastName', column: 'Lastname', type: 'string', label: 'Last Name' },
+  { key: 'email', column: 'Email', type: 'string', label: 'Email' },
+  { key: 'phone', column: 'Phone', type: 'string', label: 'Phone' },
 ];
 // @sf-generated-end columns:user
 
