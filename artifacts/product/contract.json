@@ -1,7 +1,7 @@
 {
-  "version": "0.6.0",
-  "generatedAt": "2026-03-31T17:50:02.466Z",
-  "checksum": "5512cf67b71f27cf",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-31T20:22:47.841Z",
+  "checksum": "4d03b465b631ffb2",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -1508,7 +1508,8 @@
         },
         "stock": {
           "tabOrder": 3,
-          "label": "Stock"
+          "label": "Stock",
+          "customTable": "StockTableGrouped"
         }
       }
     },

@@ -507,7 +507,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
     <ListView
       entity="product"
       Table={ProductTable}
-      entityLabel="Products"
+      entityLabel="Product"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
