@@ -262,6 +262,10 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
       if (displayLogic) field.displayLogic = displayLogic;
     }
 
+    if (fieldDecision.displayLogicJs != null) {
+      field.displayLogicJs = fieldDecision.displayLogicJs;
+    }
+
     // callout — carry from raw
     if (rawField.callout) field.callout = rawField.callout;
   }
@@ -511,6 +515,12 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.detailEntity) {
     schema.window.detailEntity = windowDecisions.detailEntity;
+  }
+  if (windowDecisions.statusBar) {
+    schema.window.statusBar = windowDecisions.statusBar;
+  }
+  if (windowDecisions.detailSortBy) {
+    schema.window.detailSortBy = windowDecisions.detailSortBy;
   }
 
   const rules = resolveRules(rulesRaw, decisions);

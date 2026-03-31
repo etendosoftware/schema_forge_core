@@ -2,7 +2,29 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "accounting",
-    "name": "Assets"
+    "name": "Assets",
+    "detailSortBy": "sEQNoAsset asc",
+    "statusBar": {
+      "cards": [
+        { "field": "depreciatedValue", "label": "Depreciated Value", "color": "blue", "icon": "TrendingDown" },
+        { "field": "depreciatedPlan", "label": "Depreciated Plan", "color": "teal", "icon": "TrendingDown" }
+      ],
+      "progress": {
+        "numerator": "depreciatedValue",
+        "denominator": "assetValue",
+        "condition": "depreciate",
+        "label": "Depreciation",
+        "color": "orange",
+        "completedColor": "green",
+        "completedIcon": "CheckCircle2"
+      }
+    },
+    "secondaryTabs": {
+      "assetAcct": {
+        "label": "Accounting",
+        "tabOrder": 1
+      }
+    }
   },
   "entities": {
     "assets": {
@@ -21,7 +43,8 @@
           "reference": "AssetGroup"
         },
         "documentNo": {
-          "visibility": "readOnly"
+          "visibility": "readOnly",
+          "grid": true
         },
         "product": {
           "inputMode": "search",
@@ -38,39 +61,83 @@
         "depreciate": {
           "searchable": true
         },
+        "depreciationType": {
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
         "calculateType": {
-          "grid": true
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
+        "annualDepreciation": {
+          "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType !== 'TI'"
+        },
+        "amortize": {
+          "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI'"
+        },
+        "usableLifeYears": {
+          "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI' && record.amortize === 'YE'"
+        },
+        "usableLifeMonths": {
+          "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI' && record.amortize !== 'YE'"
         },
         "everyMonthIs30Days": {
-          "visibility": "discarded",
-          "reason": "Technical calculation detail — default (30-day months) is appropriate for most users"
+          "visibility": "editable",
+          "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI'",
+          "reason": "Technical calculation detail — shown only when using Time-based depreciation"
         },
         "purchaseDate": {
-          "grid": true
+          "grid": true,
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
+        "cancellationDate": {
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationStartDate": {
-          "grid": true
+          "grid": true,
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
+        "depreciationEndDate": {
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "assetValue": {
           "grid": true,
-          "summable": true
+          "summable": true,
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
+        "residualAssetValue": {
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
+        "depreciationAmt": {
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+        },
+        "previouslyDepreciatedAmt": {
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciatedValue": {
           "grid": true,
-          "summable": true
+          "summable": true,
+          "form": false
+        },
+        "depreciatedPlan": {
+          "form": false
         },
         "processed": {
           "visibility": "editable",
-          "reason": "Create Amortization process button — primary action for this window, was discarded in raw"
+          "form": false,
+          "reason": "Create Amortization process button — rendered as process action, not a form field"
+        },
+        "processAsset": {
+          "form": false
         },
         "fullyDepreciated": {
           "grid": true,
           "searchable": true,
-          "badge": true
+          "badge": true,
+          "form": false
         },
         "project": {
           "inputMode": "search",
-          "reference": "Project"
+          "reference": "Project",
+          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         }
       }
     },

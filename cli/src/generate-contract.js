@@ -157,6 +157,10 @@ export function generateFrontendContract(schema, rules = []) {
           // Raw expression has no Etendo @Variable@ markers — treat as direct JS
           mapped.displayLogic.js = f.displayLogic;
         }
+        // Prefer explicit displayLogicJs from decisions over rule-based lookup
+        if (f.displayLogicJs != null) {
+          mapped.displayLogic.js = f.displayLogicJs;
+        }
       }
 
       // Behavioral metadata: readOnlyLogic
