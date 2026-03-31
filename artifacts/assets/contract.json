@@ -1,13 +1,19 @@
 {
-  "version": "0.2.1",
-  "generatedAt": "2026-03-30T23:53:58.376Z",
-  "checksum": "1be363141706aaa0",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-30T23:59:46.304Z",
+  "checksum": "7bc7d89672389da9",
   "frontendContract": {
     "window": {
       "id": "800027",
       "name": "Assets",
       "primaryEntity": "assets",
       "category": "accounting",
+      "secondaryTabs": {
+        "assetAcct": {
+          "label": "Accounting",
+          "tabOrder": 1
+        }
+      },
       "statusBar": {
         "cards": [
           {
@@ -785,6 +791,12 @@
       "name": "Assets",
       "primaryEntity": "assets",
       "category": "accounting",
+      "secondaryTabs": {
+        "assetAcct": {
+          "label": "Accounting",
+          "tabOrder": 1
+        }
+      },
       "statusBar": {
         "cards": [
           {

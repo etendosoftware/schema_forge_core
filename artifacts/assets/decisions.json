@@ -18,6 +18,12 @@
         "completedColor": "green",
         "completedIcon": "CheckCircle2"
       }
+    },
+    "secondaryTabs": {
+      "assetAcct": {
+        "label": "Accounting",
+        "tabOrder": 1
+      }
     }
   },
   "entities": {

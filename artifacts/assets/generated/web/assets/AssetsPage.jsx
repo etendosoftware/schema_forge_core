@@ -3,6 +3,8 @@ import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
 import AmortizationLineTable from './AmortizationLineTable';
 import AmortizationLineForm from './AmortizationLineForm';
+import AssetAcctTable from './AssetAcctTable';
+import AssetAcctForm from './AssetAcctForm';
 import catalogs from './mockCatalogs';
 
 import { TrendingDown, CheckCircle2 } from 'lucide-react';
@@ -274,6 +276,9 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'assetAcct', label: 'Accounting', Table: AssetAcctTable, Form: AssetAcctForm },
+        ]}
         headerContent={(data) => <AssetsStatusBar data={data} />}
         detailSortBy="sEQNoAsset asc"
         {...props}
