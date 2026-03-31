@@ -7,7 +7,12 @@
       "titlePrefix": "Quotation"
     },
     "notesField": "description",
-    "relatedDocuments": true
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "menuActions": [
+      { "key": "duplicate", "label": "Duplicate" },
+      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+    ]
   },
   "entities": {
     "header": {
