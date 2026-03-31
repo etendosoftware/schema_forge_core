@@ -259,8 +259,168 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
 }
 
 /* ------------------------------------------------------------------
+ * Aggregation: Recent Invoices (last 5)
+ * ----------------------------------------------------------------*/
+
+function buildRecentInvoices(allSalesInvoices) {
+  return [...allSalesInvoices]
+    .sort((a, b) => {
+      const da = parseDate(a.invoiceDate);
+      const db = parseDate(b.invoiceDate);
+      if (!da) return 1;
+      if (!db) return -1;
+      return db - da;
+    })
+    .slice(0, 5)
+    .map((r) => ({
+      id: r.id,
+      client: r['businessPartner$_identifier'] || 'Unknown',
+      date: r.invoiceDate,
+      amount: Number(r.grandTotalAmount) || 0,
+      status: r.documentStatus,
+    }));
+}
+
+/* ------------------------------------------------------------------
+ * Aggregation: Best Products (top 5 by revenue in order lines)
+ * ----------------------------------------------------------------*/
+
+/**
+ * Build a Map<orderId, dateOrdered> from sales order headers.
+ * Used to join order lines (which have no date) with their parent order.
+ */
+function buildOrderDateMap(allSalesOrders) {
+  const map = new Map();
+  if (!allSalesOrders) return map;
+  if (allSalesOrders.length > 0) {
+    console.debug('[dashboard] Sample sales order header fields:', Object.keys(allSalesOrders[0]));
+    console.debug('[dashboard] Sample sales order header:', allSalesOrders[0]);
+  }
+  for (const o of allSalesOrders) {
+    const date = o.dateOrdered || o.orderDate;
+    if (o.id && date) map.set(o.id, date);
+  }
+  console.debug(`[dashboard] orderDateMap built: ${map.size} entries`);
+  return map;
+}
+
+/**
+ * Returns the cutoff date for a 12-month window (first day of month 11 months ago).
+ * If orderDateMap is empty we cannot filter — return null so callers include everything.
+ */
+function get12MonthCutoff(orderDateMap) {
+  if (!orderDateMap || orderDateMap.size === 0) return null;
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() - 11, 1);
+}
+
+function buildBestProducts(allOrderLines, orderDateMap) {
+  if (!allOrderLines || allOrderLines.length === 0) return [];
+  const cutoff = get12MonthCutoff(orderDateMap);
+
+  // Debug: log field names of the first order line to verify FK field name
+  if (allOrderLines.length > 0) {
+    console.debug('[dashboard] Sample order line fields:', Object.keys(allOrderLines[0]));
+    console.debug('[dashboard] Sample order line:', allOrderLines[0]);
+  }
+
+  const totals = {};
+  for (const line of allOrderLines) {
+    if (cutoff) {
+      // C_OrderLine.C_Order_ID is exposed as 'salesOrder' in NEO (Etendo OB property name)
+      const orderId = line.salesOrder || line.order || line.salesOrderId || line.cOrderId;
+      const rawDate = orderId ? orderDateMap.get(orderId) : undefined;
+      const d = rawDate ? parseDate(rawDate) : null;
+      // If no date found, exclude the line (conservative) — avoids pulling all-time history
+      if (!d || d < cutoff) continue;
+    }
+    const name = line['product$_identifier'] || line.product || 'Unknown';
+    if (!name || name === 'Unknown') continue;
+    if (!totals[name]) totals[name] = { name, qty: 0, amount: 0 };
+    totals[name].qty += Number(line.orderedQuantity) || 0;
+    totals[name].amount += Number(line.lineNetAmount) || 0;
+  }
+  return Object.values(totals)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
+}
+
+/* ------------------------------------------------------------------
+ * Aggregation: Best Sellers (top 10 by quantity, with UOM)
+ * ----------------------------------------------------------------*/
+
+function buildBestSellers(allOrderLines, orderDateMap) {
+  if (!allOrderLines || allOrderLines.length === 0) return [];
+  const cutoff = get12MonthCutoff(orderDateMap);
+  const totals = {};
+  for (const line of allOrderLines) {
+    if (cutoff) {
+      const orderId = line.salesOrder || line.order || line.salesOrderId || line.cOrderId;
+      const rawDate = orderId ? orderDateMap.get(orderId) : undefined;
+      const d = rawDate ? parseDate(rawDate) : null;
+      if (!d || d < cutoff) continue;
+    }
+    const name = line['product$_identifier'] || line.product || 'Unknown';
+    if (!name || name === 'Unknown') continue;
+    const uom = line['uOM$_identifier'] || line['uom$_identifier'] || '';
+    if (!totals[name]) totals[name] = { name, qty: 0, uom };
+    totals[name].qty += Number(line.orderedQuantity) || 0;
+  }
+  return Object.values(totals)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 10);
+}
+
+/* ------------------------------------------------------------------
+ * Aggregation: Pending Amounts (to collect / to pay)
+ * ----------------------------------------------------------------*/
+
+function buildPendingAmounts(allSalesInvoices, allPurchaseInvoices) {
+  const draftSales = allSalesInvoices.filter((r) => r.documentStatus === 'DR');
+  const draftPurchases = (allPurchaseInvoices || []).filter((r) => r.documentStatus === 'DR');
+  return {
+    toCollect: { count: draftSales.length, amount: sumField(draftSales, 'grandTotalAmount') },
+    toPay: { count: draftPurchases.length, amount: sumField(draftPurchases, 'grandTotalAmount') },
+  };
+}
+
+/* ------------------------------------------------------------------
  * Mock fallback
  * ----------------------------------------------------------------*/
+
+const MOCK_RECENT_INVOICES = [
+  { id: '1', client: 'Empresa ABC', date: '09-03-2026', amount: 8500, status: 'CO' },
+  { id: '2', client: 'Restaurantes Luna', date: '08-03-2026', amount: 3200, status: 'DR' },
+  { id: '3', client: 'Grupo XYZ', date: '07-03-2026', amount: 15600, status: 'CO' },
+  { id: '4', client: 'Comercial Norte', date: '06-03-2026', amount: 4750, status: 'CO' },
+  { id: '5', client: 'Distribuciones Sur', date: '05-03-2026', amount: 9200, status: 'DR' },
+];
+
+const MOCK_BEST_PRODUCTS = [
+  { name: 'Cola 0,5L', qty: 10161, amount: 18290 },
+  { name: 'Bebida Energética 0,5L', qty: 8009, amount: 14416 },
+  { name: 'Zumo de Piña 0,5L', qty: 7970, amount: 11955 },
+  { name: 'Agua Mineral 1L', qty: 6500, amount: 7800 },
+  { name: 'Refresco Limón 0,33L', qty: 5200, amount: 6240 },
+];
+
+const MOCK_BEST_SELLERS = [
+  { name: 'Cola 0,5L', qty: 10161, uom: 'Unit' },
+  { name: 'Bebida Energética 0,5L', qty: 8009, uom: 'Unit' },
+  { name: 'Zumo de Piña 0,5L', qty: 7970, uom: 'Unit' },
+  { name: 'Agua sin Gas 1L', qty: 7331, uom: 'Unit' },
+  { name: 'Limonada 0,5L', qty: 7329, uom: 'Unit' },
+  { name: 'Vino Tinto 0,75L', qty: 7310, uom: 'Unit' },
+  { name: 'Zumo de Pera 0,5L', qty: 7207, uom: 'Unit' },
+  { name: 'Vino Blanco 0,75L', qty: 7155, uom: 'Unit' },
+  { name: 'Vino Rosado 0,75L', qty: 7117, uom: 'Unit' },
+  { name: 'Cola de Cereza 0,5L', qty: 6831, uom: 'Unit' },
+];
+
+const MOCK_PENDING_AMOUNTS = {
+  toCollect: { count: 5, amount: 24900 },
+  toPay: { count: 3, amount: 14650 },
+};
 
 function buildMockFallback() {
   const kpis = kpisConfig.map((cfg) => ({
@@ -275,6 +435,10 @@ function buildMockFallback() {
     revenueTrend: mockRevenueTrend,
     pendingTasks: mockPendingTasks,
     recentMessages: mockRecentMessages,
+    recentInvoices: MOCK_RECENT_INVOICES,
+    bestProducts: MOCK_BEST_PRODUCTS,
+    bestSellers: MOCK_BEST_SELLERS,
+    pendingAmounts: MOCK_PENDING_AMOUNTS,
   };
 }
 
@@ -305,19 +469,26 @@ export function useDashboardData() {
     try {
       // Fetch all records — filtering is done client-side because NEO
       // does not reliably apply field-level query parameters as filters.
-      const [salesRes, purchasesRes, posRes, shipmentsRes] = await Promise.allSettled([
+      const [salesRes, purchasesRes, posRes, shipmentsRes, orderLinesRes, salesOrdersRes] = await Promise.allSettled([
         fetchAllRecords(apiBase, token, 'sales-invoice', 'header'),
         fetchAllRecords(apiBase, token, 'purchase-invoice', 'invoice'),
         fetchAllRecords(apiBase, token, 'purchase-order', 'order'),
         fetchAllRecords(apiBase, token, 'goods-shipment', 'goodsShipment'),
+        fetchAllRecords(apiBase, token, 'sales-order', 'lines'),
+        fetchAllRecords(apiBase, token, 'sales-order', 'header'),
       ]);
 
-      const salesInvoices = salesRes.status === 'fulfilled' ? salesRes.value : null;
-      const purchaseInvoices = purchasesRes.status === 'fulfilled' ? purchasesRes.value : null;
-      const purchaseOrders = posRes.status === 'fulfilled' ? posRes.value : null;
-      const shipments = shipmentsRes.status === 'fulfilled' ? shipmentsRes.value : null;
+      const salesInvoices   = salesRes.status        === 'fulfilled' ? salesRes.value        : null;
+      const purchaseInvoices= purchasesRes.status    === 'fulfilled' ? purchasesRes.value    : null;
+      const purchaseOrders  = posRes.status          === 'fulfilled' ? posRes.value          : null;
+      const shipments       = shipmentsRes.status    === 'fulfilled' ? shipmentsRes.value    : null;
+      const orderLines      = orderLinesRes.status   === 'fulfilled' ? orderLinesRes.value   : null;
+      const salesOrders     = salesOrdersRes.status  === 'fulfilled' ? salesOrdersRes.value  : null;
 
-      if (!salesInvoices && !purchaseInvoices && !purchaseOrders && !shipments) {
+      // Map orderId → dateOrdered for joining with order lines (C_OrderLine has no date)
+      const orderDateMap = buildOrderDateMap(salesOrders);
+
+      if (!salesInvoices && !purchaseInvoices && !purchaseOrders && !shipments && !orderLines && !salesOrders) {
         console.warn('[dashboard] All API queries failed — using mock data');
         setData(buildMockFallback());
         setLoading(false);
@@ -343,6 +514,18 @@ export function useDashboardData() {
           ? buildPendingTasks(salesInvoices, purchaseInvoices, purchaseOrders, shipments)
           : mock.pendingTasks,
         recentMessages: mockRecentMessages,
+        recentInvoices: salesInvoices
+          ? buildRecentInvoices(salesInvoices)
+          : mock.recentInvoices,
+        bestProducts: orderLines
+          ? buildBestProducts(orderLines, orderDateMap)
+          : mock.bestProducts,
+        bestSellers: orderLines
+          ? buildBestSellers(orderLines, orderDateMap)
+          : mock.bestSellers,
+        pendingAmounts: salesInvoices
+          ? buildPendingAmounts(salesInvoices, purchaseInvoices)
+          : mock.pendingAmounts,
       });
     } catch (err) {
       console.warn('[dashboard] Unexpected error, using mock data:', err.message);
@@ -365,6 +548,10 @@ export function useDashboardData() {
     topClients: resolved.topClients ?? [],
     pendingTasks: resolved.pendingTasks,
     recentMessages: resolved.recentMessages,
+    recentInvoices: resolved.recentInvoices ?? [],
+    bestProducts: resolved.bestProducts ?? [],
+    bestSellers: resolved.bestSellers ?? [],
+    pendingAmounts: resolved.pendingAmounts ?? MOCK_PENDING_AMOUNTS,
     actions,
     loading,
     refresh: fetchData,
