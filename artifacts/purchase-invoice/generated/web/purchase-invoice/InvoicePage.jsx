@@ -23,14 +23,6 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
-  { key: 'totalPaid', column: 'Totalpaid', type: 'amount' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  { key: 'dueAmount', column: 'DueAmt', type: 'amount' },
-  { key: 'orderDate', column: 'DateOrdered', type: 'date' },
-  { key: 'withholdingAmount', column: 'Withholdingamount', type: 'amount' },
   { key: 'prepaymentAmount', column: 'Prepaymentamt', type: 'amount' },
 ];
 
@@ -267,38 +259,6 @@ const api = {
       "reference": "Project",
       "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/invoice/selectors/project"
-    },
-    {
-      "entity": "invoice",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/costcenter"
-    },
-    {
-      "entity": "invoice",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/asset"
-    },
-    {
-      "entity": "invoice",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "UserDimension1",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/stDimension"
-    },
-    {
-      "entity": "invoice",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "UserDimension2",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/ndDimension"
     },
     {
       "entity": "invoiceLine",

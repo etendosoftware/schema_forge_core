@@ -8,7 +8,12 @@ const columns = [
   { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'string' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
   { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
+  { key: 'totalPaid', column: 'Totalpaid', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'dueAmount', column: 'DueAmt', type: 'amount' },
 ];
 // @sf-generated-end columns:invoice
 

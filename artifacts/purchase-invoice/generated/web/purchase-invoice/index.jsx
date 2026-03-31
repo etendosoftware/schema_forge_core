@@ -199,38 +199,6 @@ const api = {
       "url": "/sws/neo/purchase-invoice/invoice/selectors/project"
     },
     {
-      "entity": "invoice",
-      "field": "costcenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/costcenter"
-    },
-    {
-      "entity": "invoice",
-      "field": "asset",
-      "column": "A_Asset_ID",
-      "reference": "Asset",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/asset"
-    },
-    {
-      "entity": "invoice",
-      "field": "stDimension",
-      "column": "User1_ID",
-      "reference": "UserDimension1",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/stDimension"
-    },
-    {
-      "entity": "invoice",
-      "field": "ndDimension",
-      "column": "User2_ID",
-      "reference": "UserDimension2",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/ndDimension"
-    },
-    {
       "entity": "invoiceLine",
       "field": "product",
       "column": "M_Product_ID",

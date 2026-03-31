@@ -9,12 +9,14 @@
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
+          "section": "principal",
           "grid": true,
           "searchable": true,
           "readOnlyLogic": null
         },
         "transactionDocument": {
           "visibility": "editable",
+          "section": "other",
           "reference": "DocumentType",
           "inputMode": "selector",
           "readOnlyLogic": null
@@ -42,107 +44,146 @@
         },
         "currency": {
           "visibility": "editable",
+          "section": "other",
           "grid": true
         },
         "accountingDate": {
+          "section": "other",
           "readOnlyLogic": null
         },
         "paymentTerms": {
+          "section": "other",
           "grid": true,
           "readOnlyLogic": null
         },
         "paymentMethod": {
+          "section": "other",
           "reference": "PaymentMethod",
           "readOnlyLogic": null
         },
         "priceList": {
+          "section": "other",
           "readOnlyLogic": null
         },
         "orderReference": {
+          "section": "other",
           "searchable": true
         },
         "taxDate": {
-          "visibility": "editable"
+          "visibility": "discarded"
         },
         "userContact": {
           "visibility": "editable",
+          "section": "other",
           "reference": "User",
           "inputMode": "search",
           "readOnlyLogic": null
         },
         "salesRepresentative": {
           "visibility": "editable",
+          "section": "other",
           "reference": "User",
           "inputMode": "search"
         },
         "charge": {
           "visibility": "editable",
+          "section": "other",
           "reference": "Charge",
           "inputMode": "selector",
           "readOnlyLogic": null
         },
         "chargeAmount": {
           "visibility": "editable",
+          "section": "other",
           "readOnlyLogic": null
         },
         "project": {
+          "section": "other",
           "readOnlyLogic": null,
           "displayLogic": null
         },
         "costcenter": {
+          "visibility": "discarded",
           "reference": "CostCenter",
           "readOnlyLogic": null,
           "displayLogic": null
         },
         "asset": {
-          "visibility": "editable",
+          "visibility": "discarded",
           "reference": "Asset",
           "inputMode": "selector",
           "readOnlyLogic": null,
           "displayLogic": null
         },
         "stDimension": {
+          "visibility": "discarded",
           "reference": "UserDimension1",
           "readOnlyLogic": null,
           "displayLogic": null
         },
         "ndDimension": {
+          "visibility": "discarded",
           "reference": "UserDimension2",
           "readOnlyLogic": null,
           "displayLogic": null
         },
         "documentStatus": {
+          "visibility": "readOnly",
+          "form": false,
           "grid": true,
           "searchable": true
         },
         "grandTotalAmount": {
+          "visibility": "readOnly",
+          "form": false,
           "grid": true
         },
+        "summedLineAmount": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": true
+        },
+        "description": {
+          "section": "other"
+        },
         "salesOrder": {
+          "section": "other",
           "inputMode": "selector"
         },
         "paymentComplete": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": true,
           "displayLogic": null
         },
         "totalPaid": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": true,
           "displayLogic": null
         },
         "outstandingAmount": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": true,
           "displayLogic": null
         },
         "dueAmount": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": true,
           "displayLogic": null
         },
         "prepaymentamt": {
           "name": "prepaymentAmount"
         },
         "withholdingamount": {
-          "visibility": "readOnly",
+          "visibility": "discarded",
           "name": "withholdingAmount",
           "displayLogic": null
         },
         "orderDate": {
-          "visibility": "readOnly"
+          "visibility": "discarded"
         },
         "generateTo": {
           "visibility": "discarded"
@@ -474,6 +515,7 @@
     },
     "finPaymentScheduleDetail": {
       "name": "paymentDetails",
+      "javaQualifier": "paymentDetailsHandler",
       "fields": {
         "amount": { "visibility": "readOnly", "grid": true },
         "writeoffAmount": { "visibility": "readOnly", "grid": false },

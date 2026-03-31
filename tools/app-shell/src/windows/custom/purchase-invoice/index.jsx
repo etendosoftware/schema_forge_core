@@ -6,18 +6,22 @@ import { useEntity } from '@/hooks/useEntity';
 import InvoiceTable from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTable';
 import InvoicePage from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoicePage';
 import InvoiceTaxTable from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTaxTable';
-import InvoiceTaxForm from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTaxForm';
 import BasicDiscountsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsTable';
-import BasicDiscountsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsForm';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import PaymentDetailsPanelCustom from './PaymentDetailsPanelCustom.jsx';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 
 // Secondary tabs: Tax, Basic Discounts, Payment Details (no Payment Plan / Reversed Invoices / Accounting)
 const SECONDARY_TABS = [
-  { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable, Form: InvoiceTaxForm },
-  { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
+  { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable },
+  { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable },
   { key: 'paymentDetails', label: 'Payment Details', Panel: PaymentDetailsPanelCustom },
+];
+
+// Payment status badges: shows Pending (orange) or Paid (green) based on paymentComplete field
+const EXTRA_BADGES = [
+  { key: 'paymentComplete', when: false, prefix: 'Payment Status', label: 'Pending', style: 'warning' },
+  { key: 'paymentComplete', when: true,  prefix: 'Payment Status', label: 'Paid',    style: 'success' },
 ];
 
 // Summary bar: only the four relevant totals
@@ -129,6 +133,7 @@ export default function PurchaseInvoiceWindow(props) {
           DetailTable={InvoiceLineTableCustom}
           secondaryTabs={SECONDARY_TABS}
           summary={SUMMARY}
+          extraBadges={EXTRA_BADGES}
           onAfterSave={handleAfterSave}
         />
         {savedRecord && (

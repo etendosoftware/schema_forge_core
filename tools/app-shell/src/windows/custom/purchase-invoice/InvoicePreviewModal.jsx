@@ -459,22 +459,20 @@ function EstadisticasPanel({ invoice, partnerName, badgeProps, statusLabel: sl, 
         ) : (
           <div className="space-y-2 mb-3">
             {allPayments.map((row, i) => {
-              // paymentDetails records: _identifier = "{docNo} - {dd-mm-yyyy} - {partner} - ..."
-              // Extract date from _identifier if available; local payments use dueDate
+              // paymentDetails records enriched by PaymentDetailsHandler: documentNo, paymentDate
+              // Local payments added via AddPaymentModal: dueDate, paymentMethod$_identifier
               let date = '—';
               if (row._local && row.dueDate) {
                 date = new Date(row.dueDate).toLocaleDateString('es-ES');
-              } else if (row._identifier) {
-                const parts = row._identifier.split(' - ');
-                if (parts.length >= 2) date = parts[1];
+              } else if (row.paymentDate) {
+                date = row.paymentDate;
               }
 
-              // Reference: local payments use account name; fetched use doc number from _identifier
               let ref = '—';
               if (row._local) {
                 ref = row.paymentMethod$_identifier || 'PAGOS';
-              } else if (row._identifier) {
-                ref = row._identifier.split(' - ')[0] || '—';
+              } else {
+                ref = row.documentNo || '—';
               }
 
               const amount = row._local ? (row.paidAmount ?? row.amount) : row.amount;

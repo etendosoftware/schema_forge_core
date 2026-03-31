@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { Check } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const PAYMENT_STATUS = {
   E:      'Executed',
@@ -67,35 +67,33 @@ export default function PaymentDetailsPanelCustom({ parentId, token, apiBaseUrl 
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="border-b border-border text-left text-muted-foreground text-xs">
-            <th className="py-2 px-3 font-medium">Document No.</th>
-            <th className="py-2 px-3 font-medium">Payment Date</th>
-            <th className="py-2 px-3 font-medium">Payment Method</th>
-            <th className="py-2 px-3 font-medium">Financial Account</th>
-            <th className="py-2 px-3 font-medium text-right">Received Amount</th>
-            <th className="py-2 px-3 font-medium">Status</th>
-            <th className="py-2 px-3 font-medium">Payment</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={row.id ?? i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-              <td className="py-2 px-3 font-medium text-foreground">{row.documentNo || '—'}</td>
-              <td className="py-2 px-3 text-muted-foreground">{row.paymentDate || '—'}</td>
-              <td className="py-2 px-3 text-muted-foreground">{row['paymentMethod$_identifier'] || '—'}</td>
-              <td className="py-2 px-3 text-muted-foreground">{row['account$_identifier'] || '—'}</td>
-              <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.amount)}</td>
-              <td className="py-2 px-3 text-muted-foreground">
-                {PAYMENT_STATUS[row.status] ?? row.status ?? '—'}
-              </td>
-              <td className="py-2 px-3 text-muted-foreground">{row['finPaymentID$_identifier'] || '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow className="border-b border-border/40">
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide">Document No.</TableHead>
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide">Payment Date</TableHead>
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide">Payment Method</TableHead>
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide">Financial Account</TableHead>
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide text-right">Received Amount</TableHead>
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide">Status</TableHead>
+          <TableHead className="text-xs font-medium text-muted-foreground/70 tracking-wide">Payment</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((row, i) => (
+          <TableRow key={row.id ?? i} className="cursor-default">
+            <TableCell className="font-medium text-foreground">{row.documentNo || '—'}</TableCell>
+            <TableCell className="text-muted-foreground">{row.paymentDate || '—'}</TableCell>
+            <TableCell className="text-muted-foreground">{row['paymentMethod$_identifier'] || '—'}</TableCell>
+            <TableCell className="text-muted-foreground">{row['account$_identifier'] || '—'}</TableCell>
+            <TableCell className="text-right tabular-nums">{formatAmount(row.amount)}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {PAYMENT_STATUS[row.status] ?? row.status ?? '—'}
+            </TableCell>
+            <TableCell className="text-muted-foreground">{row['finPaymentID$_identifier'] || '—'}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

@@ -368,12 +368,17 @@ export function DetailView({
               if (b.hideWhenStatus?.includes(data[statusField])) return null;
               const cls = b.style === 'warning'
                 ? 'ml-1 border-amber-300 bg-amber-50 text-amber-700'
-                : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
-              const variant = b.style === 'warning' ? 'outline' : 'default';
+                : b.style === 'success'
+                  ? 'ml-1 border-green-300 bg-green-50 text-green-700'
+                  : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
+              const variant = (b.style === 'warning' || b.style === 'success') ? 'outline' : 'default';
               return (
-                <Badge key={`${b.key}-${when}`} variant={variant} className={cls}>
-                  {b.label}
-                </Badge>
+                <span key={`${b.key}-${when}`} className="flex items-center gap-1">
+                  {b.prefix && <span className="text-sm text-muted-foreground">{b.prefix}:</span>}
+                  <Badge variant={variant} className={cls}>
+                    {b.label}
+                  </Badge>
+                </span>
               );
             })}
           </div>
@@ -556,6 +561,7 @@ export function DetailView({
                           entity={st.key}
                           onRowClick={st.Form ? (row) => setSelectedSecondaryLine({ ...row, _tabKey: st.key }) : undefined}
                           selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                          selectable={!!st.Form}
                         />
                       )}
                     </div>
