@@ -1,6 +1,76 @@
-import HeaderPage from './HeaderPage';
+import { ListView, DetailView } from '@/components/contract-ui';
+import HeaderTable from './HeaderTable';
+import HeaderForm from './HeaderForm';
+import LinesTable from './LinesTable';
+import LinesForm from './LinesForm';
+import BasicDiscountsTable from './BasicDiscountsTable';
+import BasicDiscountsForm from './BasicDiscountsForm';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
+import LineTaxTable from './LineTaxTable';
+import LineTaxForm from './LineTaxForm';
+import ReservedStockTable from './ReservedStockTable';
+import ReservedStockForm from './ReservedStockForm';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'purchases', name: 'Purchase Order' };
+
+const breadcrumb = 'Purchases / Purchase Order';
+
+
+// @sf-generated-start summary:header
+const summary = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean' },
+];
+
+const statusField = 'documentStatus';
+// @sf-generated-end summary:header
+
+// @sf-custom-slot extraBadges:header
+// @sf-generated-start extraBadges:header
+const extraBadges = [];
+// @sf-generated-end extraBadges:header
+
+// @sf-generated-start processes:header
+const processes = [
+
+];
+// @sf-generated-end processes:header
+
+// @sf-generated-start draftMode:header
+const draftMode = null;
+// @sf-generated-end draftMode:header
+
+// @sf-generated-start addLineFields:lines
+const addLineFields = {
+  entry: [
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'operativeQuantity', column: 'Aumqty', type: 'number', label: 'Operative Quantity' },
+    { key: 'operativeUOM', column: 'C_Aum', type: 'selector', label: 'Alternative UOM', reference: 'UOM', inputMode: 'selector' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date', label: 'Scheduled Delivery Date' },
+    { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', reference: 'Project', inputMode: 'search' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'CostCenter', inputMode: 'selector' },
+    { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'UserDimension1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'UserDimension2', inputMode: 'selector' },
+  ],
+  derived: [
+    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'number', label: 'Gross Unit Price' },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number', label: 'Alternate Taxable Amount' },
+  ],
+  hidden: [
+
+  ],
+};
+// @sf-generated-end addLineFields:lines
 
 const api = {
   "specName": "purchase-order",
@@ -604,11 +674,52 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
-}
-// @sf-generated-end component:App
+// @sf-generated-start component:HeaderPage
+export default function HeaderPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:HeaderPage
+  if (recordId) {
+    return (
+      <DetailView
+        entity="header"
+        detailEntity="lines"
+        Form={HeaderForm}
+        DetailTable={LinesTable}
+        DetailForm={LinesForm}
+        summary={summary}
+        statusField={statusField}
+        extraBadges={extraBadges}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Header"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        secondaryTabs={[
+          { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+          { key: 'lineTax', label: 'Line Tax', Table: LineTaxTable, Form: LineTaxForm },
+          { key: 'reservedStock', label: 'Prereserved Qty', Table: ReservedStockTable, Form: ReservedStockForm },
+        ]}
+        {...props}
+      />
+    );
+  }
 
-// @sf-custom-slot section:App-custom
+  return (
+    <ListView
+      entity="header"
+      Table={HeaderTable}
+      entityLabel="Purchase Order"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
+}
+// @sf-generated-end component:HeaderPage
+
+// @sf-custom-slot section:HeaderPage-custom

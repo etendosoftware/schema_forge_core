@@ -1,10 +1,10 @@
 // Auto-generated mock data - do not edit manually
 
-export const invoice = [
+export const header = [
   {
-    "id": "mock-invoice-001",
+    "id": "mock-header-001",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00001",
+    "documentNo": "HE-00001",
     "invoiceDate": "2026-01-15",
     "businessPartner": "Acme Corp",
     "partnerAddress": "Acme Corp",
@@ -31,9 +31,9 @@ export const invoice = [
     "prepaymentAmount": 38907
   },
   {
-    "id": "mock-invoice-002",
+    "id": "mock-header-002",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00002",
+    "documentNo": "HE-00002",
     "invoiceDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
     "partnerAddress": "TechFlow Inc",
@@ -60,9 +60,9 @@ export const invoice = [
     "prepaymentAmount": 9306
   },
   {
-    "id": "mock-invoice-003",
+    "id": "mock-header-003",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00003",
+    "documentNo": "HE-00003",
     "invoiceDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
     "partnerAddress": "Global Trade Ltd",
@@ -89,9 +89,9 @@ export const invoice = [
     "prepaymentAmount": 11544
   },
   {
-    "id": "mock-invoice-004",
+    "id": "mock-header-004",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00004",
+    "documentNo": "HE-00004",
     "invoiceDate": "2026-01-18",
     "businessPartner": "Summit Industries",
     "partnerAddress": "Summit Industries",
@@ -118,9 +118,9 @@ export const invoice = [
     "prepaymentAmount": 11872
   },
   {
-    "id": "mock-invoice-005",
+    "id": "mock-header-005",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00005",
+    "documentNo": "HE-00005",
     "invoiceDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
     "partnerAddress": "Pacific Partners",
@@ -147,9 +147,9 @@ export const invoice = [
     "prepaymentAmount": 48460
   },
   {
-    "id": "mock-invoice-006",
+    "id": "mock-header-006",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00006",
+    "documentNo": "HE-00006",
     "invoiceDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
     "partnerAddress": "Alpine Solutions",
@@ -176,9 +176,9 @@ export const invoice = [
     "prepaymentAmount": 45418
   },
   {
-    "id": "mock-invoice-007",
+    "id": "mock-header-007",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00007",
+    "documentNo": "HE-00007",
     "invoiceDate": "2026-01-21",
     "businessPartner": "Meridian Group",
     "partnerAddress": "Meridian Group",
@@ -205,9 +205,9 @@ export const invoice = [
     "prepaymentAmount": 33840
   },
   {
-    "id": "mock-invoice-008",
+    "id": "mock-header-008",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00008",
+    "documentNo": "HE-00008",
     "invoiceDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
     "partnerAddress": "Vertex Systems",
@@ -234,9 +234,9 @@ export const invoice = [
     "prepaymentAmount": 25716
   },
   {
-    "id": "mock-invoice-009",
+    "id": "mock-header-009",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00009",
+    "documentNo": "HE-00009",
     "invoiceDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
     "partnerAddress": "Atlas Manufacturing",
@@ -263,9 +263,9 @@ export const invoice = [
     "prepaymentAmount": 44780
   },
   {
-    "id": "mock-invoice-010",
+    "id": "mock-header-010",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00010",
+    "documentNo": "HE-00010",
     "invoiceDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
     "partnerAddress": "Nova Enterprises",
@@ -292,9 +292,9 @@ export const invoice = [
     "prepaymentAmount": 12483
   },
   {
-    "id": "mock-invoice-011",
+    "id": "mock-header-011",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00011",
+    "documentNo": "HE-00011",
     "invoiceDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
     "partnerAddress": "Pinnacle Services",
@@ -321,9 +321,9 @@ export const invoice = [
     "prepaymentAmount": 46022
   },
   {
-    "id": "mock-invoice-012",
+    "id": "mock-header-012",
     "transactionDocument": "Sample transactionDocument",
-    "documentNo": "IN-00012",
+    "documentNo": "HE-00012",
     "invoiceDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
     "partnerAddress": "Horizon Labs",
@@ -351,15 +351,15 @@ export const invoice = [
   }
 ];
 
-export const invoiceLine = [
+export const lines = [
   {
-    "id": "mock-invoiceLine-001",
+    "id": "mock-lines-001",
     "lineNo": 10,
     "product": "Laptop Pro 15",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 402,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 402,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38907,
@@ -375,16 +375,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
-    "id": "mock-invoiceLine-002",
+    "id": "mock-lines-002",
     "lineNo": 20,
     "product": "USB-C Cable",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 54,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 54,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 9306,
@@ -400,16 +400,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
-    "id": "mock-invoiceLine-003",
+    "id": "mock-lines-003",
     "lineNo": 30,
     "product": "Wireless Mouse",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 150,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 150,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11544,
@@ -425,16 +425,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
-    "id": "mock-invoiceLine-004",
+    "id": "mock-lines-004",
     "lineNo": 40,
     "product": "Mechanical Keyboard",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 97,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 97,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11872,
@@ -450,16 +450,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
-    "id": "mock-invoiceLine-005",
+    "id": "mock-lines-005",
     "lineNo": 50,
     "product": "Monitor 27\"",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 311,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 311,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 48460,
@@ -475,16 +475,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
-    "id": "mock-invoiceLine-006",
+    "id": "mock-lines-006",
     "lineNo": 60,
     "product": "Webcam HD",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 451,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 451,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 45418,
@@ -500,16 +500,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
-    "id": "mock-invoiceLine-007",
+    "id": "mock-lines-007",
     "lineNo": 70,
     "product": "Headset Pro",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 496,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 496,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 33840,
@@ -525,16 +525,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
-    "id": "mock-invoiceLine-008",
+    "id": "mock-lines-008",
     "lineNo": 80,
     "product": "Docking Station",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 284,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 284,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 25716,
@@ -550,16 +550,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
-    "id": "mock-invoiceLine-009",
+    "id": "mock-lines-009",
     "lineNo": 90,
     "product": "SSD 1TB",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 225,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 225,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 44780,
@@ -575,16 +575,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
-    "id": "mock-invoiceLine-010",
+    "id": "mock-lines-010",
     "lineNo": 100,
     "product": "RAM 16GB",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 479,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 479,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 12483,
@@ -600,16 +600,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
-    "id": "mock-invoiceLine-011",
+    "id": "mock-lines-011",
     "lineNo": 110,
     "product": "Power Supply 750W",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 123,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 123,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 46022,
@@ -625,16 +625,16 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
-    "id": "mock-invoiceLine-012",
+    "id": "mock-lines-012",
     "lineNo": 120,
     "product": "Network Switch",
     "account": "Sample account",
-    "operativeQuantity": "Sample operativeQuantity",
+    "operativeQuantity": 337,
     "operativeUOM": "Sample operativeUOM",
-    "invoicedQuantity": "Sample invoicedQuantity",
+    "invoicedQuantity": 337,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38634,
@@ -650,106 +650,106 @@ export const invoiceLine = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
 
-export const invoiceTax = [
+export const tax = [
   {
-    "id": "mock-invoiceTax-001",
+    "id": "mock-tax-001",
     "lineNo": 10,
     "tax": "VAT 21%",
     "taxAmount": "VAT 21%",
     "taxableAmount": "VAT 21%",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
-    "id": "mock-invoiceTax-002",
+    "id": "mock-tax-002",
     "lineNo": 20,
     "tax": "VAT 10%",
     "taxAmount": "VAT 10%",
     "taxableAmount": "VAT 10%",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
-    "id": "mock-invoiceTax-003",
+    "id": "mock-tax-003",
     "lineNo": 30,
     "tax": "VAT 0%",
     "taxAmount": "VAT 0%",
     "taxableAmount": "VAT 0%",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
-    "id": "mock-invoiceTax-004",
+    "id": "mock-tax-004",
     "lineNo": 40,
     "tax": "Sales Tax 8.5%",
     "taxAmount": "Sales Tax 8.5%",
     "taxableAmount": "Sales Tax 8.5%",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
-    "id": "mock-invoiceTax-005",
+    "id": "mock-tax-005",
     "lineNo": 50,
     "tax": "Exempt",
     "taxAmount": "Exempt",
     "taxableAmount": "Exempt",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
-    "id": "mock-invoiceTax-006",
+    "id": "mock-tax-006",
     "lineNo": 60,
     "tax": "Reduced Rate 5%",
     "taxAmount": "Reduced Rate 5%",
     "taxableAmount": "Reduced Rate 5%",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
-    "id": "mock-invoiceTax-007",
+    "id": "mock-tax-007",
     "lineNo": 70,
     "tax": "Standard Rate 20%",
     "taxAmount": "Standard Rate 20%",
     "taxableAmount": "Standard Rate 20%",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
-    "id": "mock-invoiceTax-008",
+    "id": "mock-tax-008",
     "lineNo": 80,
     "tax": "VAT 21%",
     "taxAmount": "VAT 21%",
     "taxableAmount": "VAT 21%",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
-    "id": "mock-invoiceTax-009",
+    "id": "mock-tax-009",
     "lineNo": 90,
     "tax": "VAT 10%",
     "taxAmount": "VAT 10%",
     "taxableAmount": "VAT 10%",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
-    "id": "mock-invoiceTax-010",
+    "id": "mock-tax-010",
     "lineNo": 100,
     "tax": "VAT 0%",
     "taxAmount": "VAT 0%",
     "taxableAmount": "VAT 0%",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
-    "id": "mock-invoiceTax-011",
+    "id": "mock-tax-011",
     "lineNo": 110,
     "tax": "Sales Tax 8.5%",
     "taxAmount": "Sales Tax 8.5%",
     "taxableAmount": "Sales Tax 8.5%",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
-    "id": "mock-invoiceTax-012",
+    "id": "mock-tax-012",
     "lineNo": 120,
     "tax": "Exempt",
     "taxAmount": "Exempt",
     "taxableAmount": "Exempt",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -759,84 +759,84 @@ export const basicDiscounts = [
     "lineNo": 10,
     "discount": 6,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-basicDiscounts-002",
     "lineNo": 20,
     "discount": 21,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-basicDiscounts-003",
     "lineNo": 30,
     "discount": 0,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-basicDiscounts-004",
     "lineNo": 40,
     "discount": 6,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-basicDiscounts-005",
     "lineNo": 50,
     "discount": 14,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-basicDiscounts-006",
     "lineNo": 60,
     "discount": 4,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-basicDiscounts-007",
     "lineNo": 70,
     "discount": 6,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-basicDiscounts-008",
     "lineNo": 80,
     "discount": 10,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-basicDiscounts-009",
     "lineNo": 90,
     "discount": 17,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-basicDiscounts-010",
     "lineNo": 100,
     "discount": 14,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-basicDiscounts-011",
     "lineNo": 110,
     "discount": 19,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-basicDiscounts-012",
     "lineNo": 120,
     "discount": 12,
     "cascade": "Sample cascade",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -854,7 +854,7 @@ export const paymentPlan = [
     "daysOverdue": 90,
     "numberOfPayments": 90,
     "description": "Standard order for Q1 delivery",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-paymentPlan-002",
@@ -869,7 +869,7 @@ export const paymentPlan = [
     "daysOverdue": 93,
     "numberOfPayments": 93,
     "description": "Rush order - priority shipping required",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-paymentPlan-003",
@@ -884,7 +884,7 @@ export const paymentPlan = [
     "daysOverdue": 8,
     "numberOfPayments": 8,
     "description": "Bulk purchase for warehouse restocking",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-paymentPlan-004",
@@ -899,7 +899,7 @@ export const paymentPlan = [
     "daysOverdue": 91,
     "numberOfPayments": 91,
     "description": "Sample order for client evaluation",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-paymentPlan-005",
@@ -914,7 +914,7 @@ export const paymentPlan = [
     "daysOverdue": 72,
     "numberOfPayments": 72,
     "description": "Recurring monthly supply order",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-paymentPlan-006",
@@ -929,7 +929,7 @@ export const paymentPlan = [
     "daysOverdue": 78,
     "numberOfPayments": 78,
     "description": "Special pricing agreement applies",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-paymentPlan-007",
@@ -944,7 +944,7 @@ export const paymentPlan = [
     "daysOverdue": 31,
     "numberOfPayments": 31,
     "description": "Consolidated order from multiple requests",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-paymentPlan-008",
@@ -959,7 +959,7 @@ export const paymentPlan = [
     "daysOverdue": 97,
     "numberOfPayments": 97,
     "description": "Trial order for new product line",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-paymentPlan-009",
@@ -974,7 +974,7 @@ export const paymentPlan = [
     "daysOverdue": 70,
     "numberOfPayments": 70,
     "description": "Replacement for damaged goods",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-paymentPlan-010",
@@ -989,7 +989,7 @@ export const paymentPlan = [
     "daysOverdue": 77,
     "numberOfPayments": 77,
     "description": "Pre-season inventory build-up",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-paymentPlan-011",
@@ -1004,7 +1004,7 @@ export const paymentPlan = [
     "daysOverdue": 32,
     "numberOfPayments": 32,
     "description": "Customer-specific configuration",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-paymentPlan-012",
@@ -1019,7 +1019,7 @@ export const paymentPlan = [
     "daysOverdue": 26,
     "numberOfPayments": 26,
     "description": "Government contract fulfillment",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -1032,7 +1032,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-paymentDetails-002",
@@ -1042,7 +1042,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-paymentDetails-003",
@@ -1052,7 +1052,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-paymentDetails-004",
@@ -1062,7 +1062,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-paymentDetails-005",
@@ -1072,7 +1072,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-paymentDetails-006",
@@ -1082,7 +1082,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-paymentDetails-007",
@@ -1092,7 +1092,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-paymentDetails-008",
@@ -1102,7 +1102,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-paymentDetails-009",
@@ -1112,7 +1112,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-paymentDetails-010",
@@ -1122,7 +1122,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-paymentDetails-011",
@@ -1132,7 +1132,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-paymentDetails-012",
@@ -1142,7 +1142,7 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -1150,62 +1150,62 @@ export const reversedInvoices = [
   {
     "id": "mock-reversedInvoices-001",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-reversedInvoices-002",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-reversedInvoices-003",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-reversedInvoices-004",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-reversedInvoices-005",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-reversedInvoices-006",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-reversedInvoices-007",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-reversedInvoices-008",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-reversedInvoices-009",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-reversedInvoices-010",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-reversedInvoices-011",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-reversedInvoices-012",
     "reversedInvoice": "Sample reversedInvoice",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -1228,7 +1228,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-accounting-002",
@@ -1248,7 +1248,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-accounting-003",
@@ -1268,7 +1268,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-accounting-004",
@@ -1288,7 +1288,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-accounting-005",
@@ -1308,7 +1308,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-accounting-006",
@@ -1328,7 +1328,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-accounting-007",
@@ -1348,7 +1348,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-accounting-008",
@@ -1368,7 +1368,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-accounting-009",
@@ -1388,7 +1388,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-accounting-010",
@@ -1408,7 +1408,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-accounting-011",
@@ -1428,7 +1428,7 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-accounting-012",
@@ -1448,6 +1448,6 @@ export const accounting = [
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
     "postingType": "Sample postingType",
-    "invoiceId": "mock-invoice-012"
+    "headerId": "mock-header-012"
   }
 ];

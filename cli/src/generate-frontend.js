@@ -187,7 +187,7 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'")}'` : '';
+    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
@@ -460,7 +460,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
-    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'");
+    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
     return `    { key: '${f.name}', value: '${defaultValue}' },`;
   }).join('\n');
 
@@ -1063,7 +1063,7 @@ export function generateProcessFormComponent(contract) {
 
   const paramsArray = contract.parameters.map(p => {
     const requiredPart = p.required ? ', required: true' : '';
-    const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'")}'` : '';
+    const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
     const referencePart = p.referenceValueId ? `, reference: '${p.referenceValueId}'` : '';
     return `  { key: '${p.name}', column: '${p.column}', type: '${p.inputMode}'${requiredPart}${defaultPart}${referencePart} },`;
   }).join('\n');
@@ -1132,7 +1132,7 @@ export function generateReportFormComponent(contract) {
 
   const paramsArray = contract.parameters.map(p => {
     const requiredPart = p.required ? ', required: true' : '';
-    const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'")}'` : '';
+    const defaultPart = p.defaultValue ? `, defaultValue: '${p.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
     const referencePart = p.referenceValueId ? `, reference: '${p.referenceValueId}'` : '';
     return `  { key: '${p.name}', column: '${p.column}', type: '${p.inputMode}'${requiredPart}${defaultPart}${referencePart} },`;
   }).join('\n');

@@ -1,6 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
-// @sf-generated-start fields:invoice
+// @sf-generated-start fields:header
 const fields = [
   // @sf-custom-slot callout:SL_Invoice_DocType
   { key: 'transactionDocument', column: 'C_DocTypeTarget_ID', type: 'selector', label: 'Transaction Document', required: true, section: 'other', reference: 'DocumentType', inputMode: 'selector' },
@@ -30,13 +30,13 @@ const fields = [
   { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'other', reference: 'Project', inputMode: 'search' },
   { key: 'prepaymentAmount', column: 'Prepaymentamt', type: 'number', label: 'Prepayment Amount', required: true, readOnly: true, section: 'other', defaultValue: '0' },
 ];
-// @sf-generated-end fields:invoice
+// @sf-generated-end fields:header
 
-// @sf-generated-start component:InvoiceForm
-export default function InvoiceForm(props) {
-  // @sf-custom-slot hooks:InvoiceForm
+// @sf-generated-start component:HeaderForm
+export default function HeaderForm(props) {
+  // @sf-custom-slot hooks:HeaderForm
   return <EntityForm fields={fields} {...props} />;
 }
-// @sf-generated-end component:InvoiceForm
+// @sf-generated-end component:HeaderForm
 
-// @sf-custom-slot section:InvoiceForm-custom
+// @sf-custom-slot section:HeaderForm-custom
