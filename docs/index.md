@@ -7,6 +7,7 @@
 | [architecture-overview.md](architecture-overview.md) | System architecture: Schema Forge (tooling) + Etendo Go (runtime), data flow, component inventory |
 | [NEO Headless API Reference](../modules/com.etendoerp.go/docs/neo-headless.md) | Full API reference for the runtime module (NeoServlet, selectors, processes, webhooks) |
 | [NEO Headless Extensibility Guide](neo-headless-extensibility.md) | How to extend/customize NEO Headless: NeoHandler hooks, configuration, patterns |
+| [Widget Endpoints Guide](widget-endpoints.md) | How to create widget endpoints: handler pattern, XML registration, frontend `useWidget` hook, response contracts |
 | [Architecture Radar (sf-radar)](architecture-radar.md) | Guide for the sf-radar CLI tool — query and update architecture decisions (optional repo) |
 
 ## Testing
@@ -48,7 +49,9 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 
 | File | Description |
 |------|-------------|
+| [developer-tools.md](developer-tools.md) | CLI tools used by the team: RTK (token optimization) and GWS (Google Workspace CLI) |
 | [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
+| [self-documentation-policy.md](self-documentation-policy.md) | Self-documentation policy: triggers, checklists, and phase responsibilities for keeping docs in sync with code |
 
 ## Plans & Evaluations
 

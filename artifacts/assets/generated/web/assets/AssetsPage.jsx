@@ -26,7 +26,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:assets
 const processes = [
-
+  { name: 'processed', label: 'Create Amortization', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
+  { name: 'processAsset', label: 'Generate Amortization Plan', style: 'positive', displayLogicRaw: '@IsDepreciated@=\'Y\'' },
 ];
 // @sf-generated-end processes:assets
 
@@ -37,7 +38,7 @@ const draftMode = null;
 // @sf-generated-start addLineFields:amortizationLine
 const addLineFields = {
   entry: [
-    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', lookup: true, label: 'Amortization Percentage' },
+    { key: 'amortizationPercentage', column: 'Amortization_Percentage', type: 'number', label: 'Amortization Percentage' },
     { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', reference: 'Currency', inputMode: 'selector' },
   ],
   derived: [
@@ -232,7 +233,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
     <ListView
       entity="assets"
       Table={AssetsTable}
-      entityLabel="Assetss"
+      entityLabel="Assetses"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
