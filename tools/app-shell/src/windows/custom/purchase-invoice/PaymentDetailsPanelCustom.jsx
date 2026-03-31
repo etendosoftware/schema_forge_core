@@ -2,24 +2,32 @@ import { useState, useEffect } from 'react';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { Check } from 'lucide-react';
 
+const PAYMENT_STATUS = {
+  E:      'Executed',
+  P:      'Pending',
+  PE:     'Partially Executed',
+  PPM:    'Payment Made',
+  PWNC:   'Withdrawn not Cleared',
+  RDNC:   'Deposited not Cleared',
+  RPAE:   'Awaiting Execution',
+  RPAP:   'Awaiting Payment',
+  RPPC:   'Payment Cleared',
+  RPR:    'Payment Received',
+  RPVOID: 'Void',
+};
+
 /**
- * PaymentDetailsPanelCustom — two-step fetch for payment details in the classic view.
+ * PaymentDetailsPanelCustom — two-step fetch for payment details.
  *
- * FIN_Payment_ScheduleDetail records are children of FIN_Payment_Schedule (paymentPlan),
- * not direct children of the invoice. The standard secondary-tab hook sends
- * paymentDetails?parentId={invoiceId} which returns nothing.
+ * The default secondary-tab hook queries paymentDetails?parentId={invoiceId},
+ * which returns nothing because FIN_Payment_ScheduleDetail's parent FK is
+ * FIN_Payment_Schedule, not C_Invoice.
  *
- * This panel replicates the preview modal logic:
- *   1. Fetch paymentPlan schedules for the invoice.
- *   2. Fetch paymentDetails for each schedule in parallel.
- *   3. Flatten and render.
+ * Step 1: fetch paymentPlan schedules for the invoice.
+ * Step 2: fetch paymentDetails for each schedule.
  *
- * Fields available directly from the NEO API:
- *   - _identifier: "{docNo} - {date} - {partner} - ..." (parsed for docNo + date)
- *   - amount, writeoffAmount, invoicePaid (direct fields of FIN_Payment_ScheduleDetail)
- *
- * Fields from FIN_Payment (paymentMethod, financialAccount, status) require NEO spec
- * configuration changes to be exposed — not available in the current response.
+ * The backend PaymentDetailsHandler enriches each row with FIN_Payment fields
+ * (documentNo, paymentDate, paymentMethod, account, status) via OBDal traversal.
  */
 export default function PaymentDetailsPanelCustom({ parentId, token, apiBaseUrl }) {
   const [rows, setRows] = useState([]);
@@ -65,35 +73,27 @@ export default function PaymentDetailsPanelCustom({ parentId, token, apiBaseUrl 
           <tr className="border-b border-border text-left text-muted-foreground text-xs">
             <th className="py-2 px-3 font-medium">Document No.</th>
             <th className="py-2 px-3 font-medium">Payment Date</th>
+            <th className="py-2 px-3 font-medium">Payment Method</th>
+            <th className="py-2 px-3 font-medium">Financial Account</th>
             <th className="py-2 px-3 font-medium text-right">Received Amount</th>
-            <th className="py-2 px-3 font-medium text-right">Write-off Amount</th>
-            <th className="py-2 px-3 font-medium text-center">Invoice Paid</th>
+            <th className="py-2 px-3 font-medium">Status</th>
+            <th className="py-2 px-3 font-medium">Payment</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => {
-            // _identifier format: "{docNo} - {dd-mm-yyyy} - {partner} - {amount} - ..."
-            const parts = (row._identifier ?? '').split(' - ');
-            const docNo = parts[0] || '—';
-            const date  = parts[1] || '—';
-
-            return (
-              <tr key={row.id ?? i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                <td className="py-2 px-3 font-medium text-foreground">{docNo}</td>
-                <td className="py-2 px-3 text-muted-foreground">{date}</td>
-                <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.amount)}</td>
-                <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
-                  {row.writeoffAmount ? formatAmount(row.writeoffAmount) : '—'}
-                </td>
-                <td className="py-2 px-3 text-center">
-                  {row.invoicePaid
-                    ? <Check size={14} className="text-green-500 inline-block" />
-                    : <span className="text-muted-foreground">—</span>
-                  }
-                </td>
-              </tr>
-            );
-          })}
+          {rows.map((row, i) => (
+            <tr key={row.id ?? i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+              <td className="py-2 px-3 font-medium text-foreground">{row.documentNo || '—'}</td>
+              <td className="py-2 px-3 text-muted-foreground">{row.paymentDate || '—'}</td>
+              <td className="py-2 px-3 text-muted-foreground">{row['paymentMethod$_identifier'] || '—'}</td>
+              <td className="py-2 px-3 text-muted-foreground">{row['account$_identifier'] || '—'}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.amount)}</td>
+              <td className="py-2 px-3 text-muted-foreground">
+                {PAYMENT_STATUS[row.status] ?? row.status ?? '—'}
+              </td>
+              <td className="py-2 px-3 text-muted-foreground">{row['finPaymentID$_identifier'] || '—'}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
