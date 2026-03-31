@@ -45,6 +45,12 @@
           "grid": false,
           "form": false
         },
+        "processNow": {
+          "visibility": "editable"
+        },
+        "updateQuantities": {
+          "visibility": "discarded"
+        },
         "asset": {
           "visibility": "discarded"
         },
@@ -158,9 +164,9 @@
     "PROCESS_ProcessInventoryCount": {
       "type": "process",
       "entity": "inventory",
-      "decision": "Omit",
-      "description": "Process Inventory Count classic button (Processing). Classic process — not applicable to simplified UI.",
-      "impactIfOmitted": "Inventory count processed through backend/workflow."
+      "decision": "Keep",
+      "description": "Process Inventory Count classic button (Processing). Confirms and posts the inventory count.",
+      "impactIfOmitted": "Users cannot confirm inventory counts from the UI."
     },
     "PROCESS_CreateInventoryCountList": {
       "type": "process",
@@ -172,9 +178,9 @@
     "PROCESS_UpdateQuantity": {
       "type": "process",
       "entity": "inventory",
-      "decision": "Keep",
-      "description": "Update Quantity process button. Updates book quantity with current inventory count.",
-      "impactIfOmitted": "Users cannot trigger quantity updates from the UI."
+      "decision": "Omit",
+      "description": "Update Quantity classic button. Not applicable to simplified UI.",
+      "impactIfOmitted": "Quantity update handled through backend."
     },
     "PROCESS_Posted": {
       "type": "process",

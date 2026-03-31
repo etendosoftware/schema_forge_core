@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-03-31T12:57:09.601Z",
-  "checksum": "2bd2534eda35af9a",
+  "version": "0.9.0",
+  "generatedAt": "2026-03-31T15:22:26.472Z",
+  "checksum": "472f5f39cf0d2e03",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -86,10 +86,10 @@
             }
           },
           {
-            "name": "updateQuantities",
-            "apiKey": "updateQuantities",
-            "column": "UpdateQty",
-            "label": "Update Quantity",
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
+            "label": "Process Inventory Count",
             "type": "button",
             "tsType": "string",
             "visibility": "editable",
@@ -183,6 +183,13 @@
             "derivation": {
               "type": "computed",
               "source": "@#Date@"
+            }
+          },
+          {
+            "name": "processNow",
+            "derivation": {
+              "type": "computed",
+              "source": "false"
             }
           },
           {
@@ -437,7 +444,7 @@
             "apiKey": "updateQuantities",
             "column": "UpdateQty",
             "type": "button",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -445,7 +452,7 @@
             "apiKey": "processNow",
             "column": "Processing",
             "type": "button",
-            "visibility": "system",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -1011,9 +1018,9 @@
         "id": "t-6",
         "category": "field-presence",
         "entity": "inventory",
-        "field": "updateQuantities",
+        "field": "processNow",
         "runner": "node",
-        "description": "Field 'updateQuantities' should be present in inventory"
+        "description": "Field 'processNow' should be present in inventory"
       },
       {
         "id": "t-7",
@@ -1083,9 +1090,9 @@
         "id": "t-15",
         "category": "field-type",
         "entity": "inventory",
-        "field": "updateQuantities",
+        "field": "processNow",
         "runner": "node",
-        "description": "Field 'updateQuantities' should have type 'string' in inventory"
+        "description": "Field 'processNow' should have type 'string' in inventory"
       },
       {
         "id": "t-16",
@@ -1154,9 +1161,9 @@
         "id": "t-24",
         "category": "displaylogic-valid",
         "entity": "inventory",
-        "field": "updateQuantities",
+        "field": "processNow",
         "runner": "node",
-        "description": "Display logic for 'updateQuantities' in inventory should be valid JS"
+        "description": "Display logic for 'processNow' in inventory should be valid JS"
       },
       {
         "id": "t-25",
@@ -1186,9 +1193,9 @@
         "id": "t-28",
         "category": "displaylogic-evaluable",
         "entity": "inventory",
-        "field": "updateQuantities",
+        "field": "processNow",
         "runner": "node",
-        "description": "Display logic for 'updateQuantities' in inventory should have evaluable flag"
+        "description": "Display logic for 'processNow' in inventory should have evaluable flag"
       },
       {
         "id": "t-29",
@@ -1465,9 +1472,9 @@
         "id": "t-63",
         "category": "system-field",
         "entity": "inventory",
-        "field": "processNow",
+        "field": "updateQuantities",
         "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for inventory"
+        "description": "System field 'updateQuantities' should exist in backend but not frontend for inventory"
       },
       {
         "id": "t-64",

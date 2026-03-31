@@ -16,18 +16,7 @@ const fields = [
 
 // @sf-generated-start component:InventoryLineForm
 export default function InventoryLineForm(props) {
-  // @sf-custom-start hooks:InventoryLineForm
-  // SL_Inventory_Product: map product selector aux fields to form fields
-  // _QTY → bookQuantity (System Count), _UOM → uOM
-  const _rawOnChange = props.onChange;
-  // eslint-disable-next-line no-param-reassign
-  props = { ...props, onChange: (key, val, col) => {
-    _rawOnChange?.(key, val, col);
-    if (key === 'product_QTY') _rawOnChange?.('bookQuantity', val);
-    else if (key === 'product_UOM') _rawOnChange?.('uOM', val);
-    else if (key === 'product_uOM' || key === 'productuOM') _rawOnChange?.('uOM$_identifier', val);
-  } };
-  // @sf-custom-end hooks:InventoryLineForm
+  // @sf-custom-slot hooks:InventoryLineForm
   return <EntityForm fields={fields} {...props} />;
 }
 // @sf-generated-end component:InventoryLineForm
