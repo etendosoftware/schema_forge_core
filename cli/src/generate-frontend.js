@@ -410,22 +410,45 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
 
   // Process config: backendContract process endpoints + button-type fields from frontendContract
+  // processOverrides from decisions.json allow label, style, displayLogicRaw, and exclude overrides
+  const processOverrides = contract?.frontendContract?.window?.processOverrides ?? {};
   const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
   const processesArray = [
     ...processes.map(p => {
+      const ovr = processOverrides[p.name] || processOverrides[p.columnName] || {};
+      if (ovr.exclude) return null;
       const isDestructive = /void|cancel|reject/i.test(p.name);
-      const style = isDestructive ? 'destructive' : 'positive';
+      const style = ovr.style || (isDestructive ? 'destructive' : 'positive');
+      const label = ovr.label || toLabel(p.name);
       const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
       const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
-      return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}'${colPart}${paramsPart} },`;
-    }),
+      const dlRaw = ovr.displayLogicRaw
+        ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+        : '';
+      return `  { name: '${p.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${paramsPart}${dlRaw} },`;
+    }).filter(Boolean),
     ...buttonFields.map(f => {
+      const ovr = processOverrides[f.name] || {};
+      if (ovr.exclude) return null;
       const isDestructive = /void|cancel|reject/i.test(f.name);
-      const style = isDestructive ? 'destructive' : 'positive';
-      const label = f.label || toLabel(f.name);
-      const dlRaw = f.displayLogic?.raw ? `, displayLogicRaw: '${f.displayLogic.raw.replace(/'/g, "\\'")}'` : '';
-      return `  { name: '${f.name}', label: '${label}', style: '${style}'${dlRaw} },`;
-    }),
+      const style = ovr.style || (isDestructive ? 'destructive' : 'positive');
+      const label = ovr.label || f.label || toLabel(f.name);
+      const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
+      const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw} },`;
+    }).filter(Boolean),
+    // Extra processes defined purely in decisions.json (not in backend contract)
+    ...Object.entries(processOverrides)
+      .filter(([, ovr]) => ovr.add && !ovr.exclude)
+      .map(([name, ovr]) => {
+        const style = ovr.style || 'positive';
+        const label = ovr.label || toLabel(name);
+        const colPart = ovr.columnName ? `, columnName: '${ovr.columnName}'` : '';
+        const dlRaw = ovr.displayLogicRaw
+          ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
+          : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw} },`;
+      }),
   ].join('\n');
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)

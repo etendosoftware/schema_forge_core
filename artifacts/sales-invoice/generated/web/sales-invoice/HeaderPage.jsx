@@ -31,7 +31,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-
+  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
 

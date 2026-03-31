@@ -26,7 +26,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'Process Shipment', label: 'Process  Shipment', style: 'positive', columnName: 'documentAction' },
+  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:goodsShipment
 

@@ -15,7 +15,14 @@
     "hideDeleteWhenComplete": true,
     "menuActions": [
       { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
-    ]
+    ],
+    "processOverrides": {
+      "aPRMProcessPayment": { "label": "Process Payment", "displayLogicRaw": "@status@='RPAP'" },
+      "aPRMAddScheduledpayments": { "exclude": true },
+      "aprmExecutepayment": { "exclude": true },
+      "aPRMReversePayment": { "exclude": true },
+      "aPRMReconcilePayment": { "exclude": true }
+    }
   },
   "entities": {
     "header": {

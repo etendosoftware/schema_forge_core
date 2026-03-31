@@ -28,7 +28,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-
+  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
 

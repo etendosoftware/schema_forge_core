@@ -13,7 +13,13 @@
     "menuActions": [
       { "key": "duplicate", "label": "Duplicate" },
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
-    ]
+    ],
+    "processOverrides": {
+      "Complete": { "add": true, "label": "Confirm", "columnName": "documentAction", "displayLogicRaw": "@documentStatus@='DR'" },
+      "Convert to Order": { "exclude": true },
+      "Void": { "label": "Void", "style": "destructive", "displayLogicRaw": "@documentStatus@='CO'" },
+      "Reactivate": { "label": "Reactivate", "displayLogicRaw": "@documentStatus@='VO'" }
+    }
   },
   "entities": {
     "header": {

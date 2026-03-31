@@ -12,7 +12,10 @@
     "hideDeleteWhenComplete": true,
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
-    ]
+    ],
+    "processOverrides": {
+      "documentAction": { "label": "Complete", "displayLogicRaw": "@documentStatus@='DR'" }
+    }
   },
   "entities": {
     "header": {

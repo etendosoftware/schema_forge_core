@@ -18,7 +18,7 @@ const summary = [
 
 ];
 
-const statusField = null;
+const statusField = 'status';
 // @sf-generated-end summary:finPayment
 
 // @sf-custom-slot extraBadges:finPayment
@@ -28,11 +28,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:finPayment
 const processes = [
-  { name: 'Add Payment', label: 'Add  Payment', style: 'positive', columnName: 'aPRMAddScheduledpayments' },
-  { name: 'Payment Process', label: 'Payment  Process', style: 'positive', columnName: 'aPRMProcessPayment' },
-  { name: 'Execute Payment', label: 'Execute  Payment', style: 'positive', columnName: 'aprmExecutepayment' },
-  { name: 'Reverse Payment', label: 'Reverse  Payment', style: 'positive', columnName: 'aPRMReversePayment' },
-  { name: 'Reconcile Payment', label: 'Reconcile  Payment', style: 'positive', columnName: 'aPRMReconcilePayment' },
+  { name: 'Process Payment', label: 'Process Payment', style: 'positive', columnName: 'aPRMProcessPayment',
+    displayLogicRaw: "@status@='RPAP'" },
 ];
 // @sf-generated-end processes:finPayment
 

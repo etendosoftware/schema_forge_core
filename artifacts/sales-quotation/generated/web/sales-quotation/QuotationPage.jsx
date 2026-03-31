@@ -28,9 +28,12 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Convert to Order', label: 'Convert to  Order', style: 'positive' },
-  { name: 'Void', label: 'Void', style: 'destructive' },
-  { name: 'Reactivate', label: 'Reactivate', style: 'positive' },
+  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
+  { name: 'Void', label: 'Void', style: 'destructive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='CO'" },
+  { name: 'Reactivate', label: 'Reactivate', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='VO'" },
 ];
 // @sf-generated-end processes:quotation
 
