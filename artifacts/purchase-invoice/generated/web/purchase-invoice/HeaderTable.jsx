@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/contract-ui';
 
-// @sf-generated-start columns:invoice
+// @sf-generated-start columns:header
 const columns = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
@@ -15,15 +15,15 @@ const columns = [
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: 'Total Outstanding' },
   { key: 'dueAmount', column: 'DueAmt', type: 'amount', label: 'Amount Currently Due' },
 ];
-// @sf-generated-end columns:invoice
+// @sf-generated-end columns:header
 
 const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference', 'documentStatus'];
 
-// @sf-generated-start component:InvoiceTable
-export default function InvoiceTable(props) {
-  // @sf-custom-slot hooks:InvoiceTable
+// @sf-generated-start component:HeaderTable
+export default function HeaderTable(props) {
+  // @sf-custom-slot hooks:HeaderTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
-// @sf-generated-end component:InvoiceTable
+// @sf-generated-end component:HeaderTable
 
-// @sf-custom-slot section:InvoiceTable-custom
+// @sf-custom-slot section:HeaderTable-custom

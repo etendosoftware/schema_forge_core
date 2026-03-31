@@ -464,7 +464,6 @@ export default function BpartnerPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       headerContent={(p) => <ContactsKpiCards {...p} />}
-      api={api}
       {...props}
     />
   );

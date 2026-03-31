@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-03-26T20:09:34.189Z",
-  "checksum": "0aac07f6b6d35d36",
+  "version": "0.4.0",
+  "generatedAt": "2026-03-26T20:10:41.094Z",
+  "checksum": "25ad6fc910cd75f9",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -32,7 +32,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y' || record['docStatus'] === 'TMP'"
+              "js": "record['processed'] === 'Y' || record['documentStatus'] === 'TMP'"
             }
           },
           {
@@ -55,7 +55,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y' || record['docStatus'] === 'TMP'"
+              "js": "record['processed'] === 'Y' || record['documentStatus'] === 'TMP'"
             }
           },
           {
@@ -119,7 +119,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y' || record['docStatus'] === 'TMP'"
+              "js": "record['processed'] === 'Y' || record['documentStatus'] === 'TMP'"
             }
           },
           {
@@ -146,7 +146,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y' || record['docStatus'] === 'TMP'"
+              "js": "record['processed'] === 'Y' || record['documentStatus'] === 'TMP'"
             }
           },
           {
@@ -229,7 +229,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y' || record['docStatus'] === 'TMP'"
+              "js": "record['processed'] === 'Y' || record['documentStatus'] === 'TMP'"
             }
           },
           {
@@ -422,7 +422,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y' || record['docStatus'] === 'TMP'"
+              "js": "record['processed'] === 'Y' || record['documentStatus'] === 'TMP'"
             }
           },
           {

@@ -1,6 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
-// @sf-generated-start fields:invoiceLine
+// @sf-generated-start fields:lines
 const fields = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', required: true, section: 'principal', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_InvoiceLine WHERE C_Invoice_ID=@C_Invoice_ID@' },
   // @sf-custom-slot callout:SL_Invoice_Product
@@ -32,13 +32,13 @@ const fields = [
   { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', section: 'other', reference: 'UserDimension1', inputMode: 'selector' },
   { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', section: 'other', reference: 'UserDimension2', inputMode: 'selector' },
 ];
-// @sf-generated-end fields:invoiceLine
+// @sf-generated-end fields:lines
 
-// @sf-generated-start component:InvoiceLineForm
-export default function InvoiceLineForm(props) {
-  // @sf-custom-slot hooks:InvoiceLineForm
+// @sf-generated-start component:LinesForm
+export default function LinesForm(props) {
+  // @sf-custom-slot hooks:LinesForm
   return <EntityForm fields={fields} {...props} />;
 }
-// @sf-generated-end component:InvoiceLineForm
+// @sf-generated-end component:LinesForm
 
-// @sf-custom-slot section:InvoiceLineForm-custom
+// @sf-custom-slot section:LinesForm-custom

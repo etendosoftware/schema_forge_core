@@ -1,21 +1,21 @@
 import { DataTable } from '@/components/contract-ui';
 
-// @sf-generated-start columns:invoiceTax
+// @sf-generated-start columns:tax
 const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
   { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
   { key: 'taxAmount', column: 'TaxAmt', type: 'amount', label: 'Tax Amount' },
   { key: 'taxableAmount', column: 'TaxBaseAmt', type: 'amount', label: 'Taxable Amount' },
 ];
-// @sf-generated-end columns:invoiceTax
+// @sf-generated-end columns:tax
 
 const filters = [];
 
-// @sf-generated-start component:InvoiceTaxTable
-export default function InvoiceTaxTable(props) {
-  // @sf-custom-slot hooks:InvoiceTaxTable
+// @sf-generated-start component:TaxTable
+export default function TaxTable(props) {
+  // @sf-custom-slot hooks:TaxTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
-// @sf-generated-end component:InvoiceTaxTable
+// @sf-generated-end component:TaxTable
 
-// @sf-custom-slot section:InvoiceTaxTable-custom
+// @sf-custom-slot section:TaxTable-custom
