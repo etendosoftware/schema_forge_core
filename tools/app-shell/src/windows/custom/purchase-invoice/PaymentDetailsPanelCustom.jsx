@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react';
 import { formatAmount } from '@/lib/formatAmount.js';
 
+const PAYMENT_STATUS = {
+  E:      'Executed',
+  P:      'Pending',
+  PE:     'Partially Executed',
+  PPM:    'Payment Made',
+  PWNC:   'Withdrawn not Cleared',
+  RDNC:   'Deposited not Cleared',
+  RPAE:   'Awaiting Execution',
+  RPAP:   'Awaiting Payment',
+  RPPC:   'Payment Cleared',
+  RPR:    'Payment Received',
+  RPVOID: 'Void',
+};
+
 /**
  * PaymentDetailsPanelCustom — two-step fetch for payment details in the classic view.
  *
@@ -51,30 +65,39 @@ export default function PaymentDetailsPanelCustom({ parentId, token, apiBaseUrl 
   }
 
   return (
-    <table className="w-full text-sm border-collapse">
-      <thead>
-        <tr className="border-b border-border text-left text-muted-foreground text-xs">
-          <th className="py-2 px-3 font-medium">Reference</th>
-          <th className="py-2 px-3 font-medium">Date</th>
-          <th className="py-2 px-3 font-medium text-right">Amount</th>
-          <th className="py-2 px-3 font-medium text-right">Outstanding</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => {
-          const parts = (row._identifier ?? '').split(' - ');
-          const ref = parts[0] || '—';
-          const date = parts[1] || '—';
-          return (
-            <tr key={row.id ?? i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-              <td className="py-2 px-3 text-foreground">{ref}</td>
-              <td className="py-2 px-3 text-muted-foreground">{date}</td>
-              <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.amount)}</td>
-              <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.outstandingAmt ?? row.outstandingAmount)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="border-b border-border text-left text-muted-foreground text-xs">
+            <th className="py-2 px-3 font-medium">Document No.</th>
+            <th className="py-2 px-3 font-medium">Payment Date</th>
+            <th className="py-2 px-3 font-medium">Payment Method</th>
+            <th className="py-2 px-3 font-medium">Financial Account</th>
+            <th className="py-2 px-3 font-medium text-right">Received Amount</th>
+            <th className="py-2 px-3 font-medium">Status</th>
+            <th className="py-2 px-3 font-medium">Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => {
+            const paymentDate = row.paymentDate
+              ? new Date(row.paymentDate).toLocaleDateString()
+              : '—';
+            const status = PAYMENT_STATUS[row.status] ?? row.status ?? '—';
+            return (
+              <tr key={row.id ?? i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                <td className="py-2 px-3 text-foreground font-medium">{row.documentNo ?? '—'}</td>
+                <td className="py-2 px-3 text-muted-foreground">{paymentDate}</td>
+                <td className="py-2 px-3 text-muted-foreground">{row['paymentMethod$_identifier'] ?? row.paymentMethod ?? '—'}</td>
+                <td className="py-2 px-3 text-muted-foreground">{row['account$_identifier'] ?? row.account ?? '—'}</td>
+                <td className="py-2 px-3 text-right tabular-nums">{formatAmount(row.amount)}</td>
+                <td className="py-2 px-3 text-muted-foreground">{status}</td>
+                <td className="py-2 px-3 text-muted-foreground">{row['finPaymentID$_identifier'] ?? '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
