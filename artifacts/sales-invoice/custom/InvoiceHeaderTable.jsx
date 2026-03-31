@@ -27,8 +27,8 @@ function getInvoiceStatus(row) {
   const paid = grand - outstanding;
   if (outstanding <= 0 || row.paymentComplete === true || row.paymentComplete === 'Y')
     return STATUS_STYLES.paid;
-  if (row.dueDate || row.invoiceDate) {
-    const due = new Date(row.dueDate || row.invoiceDate);
+  if (row.dueDate) {
+    const due = new Date(row.dueDate);
     if (due < new Date() && outstanding > 0) return STATUS_STYLES.overdue;
   }
   if (paid > 0) return STATUS_STYLES.partial;
