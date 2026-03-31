@@ -544,14 +544,22 @@ export function DetailView({
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
                   <div key={st.key} className="pt-3 flex items-start gap-4">
                     <div className="flex-1 min-w-0">
-                      <st.Table
-                        data={secondaryHooks[stIdx]?.children ?? []}
-                        entity={st.key}
-                        onRowClick={st.Form ? (row) => setSelectedSecondaryLine({ ...row, _tabKey: st.key }) : undefined}
-                        selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
-                      />
+                      {st.Panel ? (
+                        <st.Panel
+                          parentId={hook.selected?.id}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                        />
+                      ) : (
+                        <st.Table
+                          data={secondaryHooks[stIdx]?.children ?? []}
+                          entity={st.key}
+                          onRowClick={st.Form ? (row) => setSelectedSecondaryLine({ ...row, _tabKey: st.key }) : undefined}
+                          selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        />
+                      )}
                     </div>
-                    {st.Form && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
+                    {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-medium text-foreground">{st.label} Detail</span>

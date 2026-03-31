@@ -9,16 +9,15 @@ import InvoiceTaxTable from '@generated/purchase-invoice/generated/web/purchase-
 import InvoiceTaxForm from '@generated/purchase-invoice/generated/web/purchase-invoice/InvoiceTaxForm';
 import BasicDiscountsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsTable';
 import BasicDiscountsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsForm';
-import PaymentDetailsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/PaymentDetailsTable';
-import PaymentDetailsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/PaymentDetailsForm';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
+import PaymentDetailsPanelCustom from './PaymentDetailsPanelCustom.jsx';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 
 // Secondary tabs: Tax, Basic Discounts, Payment Details (no Payment Plan / Reversed Invoices / Accounting)
 const SECONDARY_TABS = [
   { key: 'invoiceTax', label: 'Tax', Table: InvoiceTaxTable, Form: InvoiceTaxForm },
   { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
-  { key: 'paymentDetails', label: 'Payment Details', Table: PaymentDetailsTable, Form: PaymentDetailsForm },
+  { key: 'paymentDetails', label: 'Payment Details', Panel: PaymentDetailsPanelCustom },
 ];
 
 // Summary bar: only the four relevant totals
