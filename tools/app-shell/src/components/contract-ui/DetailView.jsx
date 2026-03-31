@@ -1081,6 +1081,7 @@ export function DetailView({
                         />
                       </div>
                     ) : (
+                    <>
                     <div className="flex-1 min-w-0">
                       {st.Panel ? (
                         <st.Panel
@@ -1233,6 +1234,8 @@ export function DetailView({
                           </div>
                         )}
                       </div>
+                    )}
+                    </>
                     )}
                     </div>
                 ))}
