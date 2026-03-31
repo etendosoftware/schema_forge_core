@@ -1,11 +1,21 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
-    "name": "Sales Quotation"
+    "name": "Sales Quotation",
+    "documentPreview": {
+      "titlePrefix": "Quotation"
+    },
+    "notesField": "description",
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "menuActions": [
+      { "key": "duplicate", "label": "Duplicate" },
+      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+    ]
   },
   "entities": {
-    "cOrder": {
+    "header": {
       "name": "quotation",
       "fields": {
         "documentNo": {
@@ -32,7 +42,7 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "collapsed"
         },
         "orderDate": {
           "grid": true,
@@ -52,9 +62,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "system"
         },
         "currency": {
           "visibility": "readOnly",
@@ -63,22 +71,16 @@
           "section": "summary"
         },
         "paymentTerms": {
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
+          "visibility": "system"
         },
         "paymentMethod": {
-          "section": "other"
+          "section": "collapsed"
         },
         "salesRepresentative": {
-          "section": "other",
-          "reference": "SalesRepresentative",
-          "inputMode": "selector"
+          "visibility": "system"
         },
         "orderReference": {
-          "visibility": "editable",
-          "grid": false,
-          "section": "other"
+          "visibility": "discarded"
         },
         "summedLineAmount": {
           "visibility": "readOnly",
@@ -87,8 +89,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "number",
-          "section": "principal"
+          "section": "summary"
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -101,7 +102,7 @@
         },
         "description": {
           "inputMode": "textarea",
-          "section": "other"
+          "section": "collapsed"
         },
         "client": {
           "visibility": "system"
@@ -195,12 +196,11 @@
         }
       }
     },
-    "cOrderLine": {
+    "lines": {
       "name": "quotationLine",
       "fields": {
         "lineNo": {
-          "grid": true,
-          "inputMode": "number"
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -214,10 +214,7 @@
           "readOnlyLogic": null
         },
         "uOM": {
-          "visibility": "readOnly",
-          "grid": true,
-          "inputMode": "search",
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
@@ -331,16 +328,16 @@
         }
       }
     },
-    "cOrderLineTax": {
+    "lineTax": {
       "exclude": true
     },
     "mReservationStock": {
       "exclude": true
     },
-    "cOrderDiscount": {
+    "basicDiscounts": {
       "exclude": true
     },
-    "cOrderTax": {
+    "tax": {
       "exclude": true
     },
     "finPaymentSchedOrdV": {
@@ -400,5 +397,6 @@
       "description": "Delivery-related fields (isDelivered, deliveryLocation, warehouse on header) are not relevant for quotations and are omitted from the schema"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

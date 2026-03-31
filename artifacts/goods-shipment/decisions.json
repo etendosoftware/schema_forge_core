@@ -1,11 +1,20 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
-    "name": "Goods Shipment"
+    "name": "Goods Shipment",
+    "documentPreview": {
+      "titlePrefix": "Shipment"
+    },
+    "notesField": "description",
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "menuActions": [
+      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+    ]
   },
   "entities": {
-    "mInOut": {
+    "header": {
       "name": "goodsShipment",
       "fields": {
         "documentNo": {
@@ -54,32 +63,23 @@
           "section": "principal"
         },
         "accountingDate": {
-          "inputMode": "date",
-          "readOnlyLogic": null,
-          "section": "other"
+          "visibility": "system"
         },
         "orderReference": {
-          "inputMode": "text",
-          "section": "other"
+          "visibility": "discarded"
         },
         "description": {
           "inputMode": "textarea",
-          "section": "other"
+          "section": "collapsed"
         },
         "shippingCompany": {
-          "visibility": "editable",
-          "inputMode": "search",
-          "section": "other"
+          "visibility": "discarded"
         },
         "trackingNo": {
-          "visibility": "editable",
-          "inputMode": "text",
-          "section": "other"
+          "visibility": "discarded"
         },
         "shipDate": {
-          "visibility": "editable",
-          "inputMode": "date",
-          "section": "other"
+          "visibility": "discarded"
         },
         "deliveryTerms": {
           "visibility": "discarded"
@@ -154,10 +154,7 @@
           "visibility": "discarded"
         },
         "salesOrder": {
-          "visibility": "readOnly",
-          "grid": false,
-          "inputMode": "search",
-          "section": "principal"
+          "visibility": "system"
         },
         "isnettingshipment": {
           "visibility": "discarded"
@@ -182,13 +179,11 @@
         }
       }
     },
-    "mInOutLine": {
+    "lines": {
       "name": "goodsShipmentLine",
       "fields": {
         "lineNo": {
-          "grid": true,
-          "inputMode": "number",
-          "section": "principal"
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -204,10 +199,7 @@
           "section": "principal"
         },
         "uOM": {
-          "visibility": "readOnly",
-          "grid": true,
-          "inputMode": "search",
-          "section": "principal"
+          "visibility": "system"
         },
         "orderQuantity": {
           "visibility": "readOnly",
@@ -288,7 +280,7 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     },
     "mInOutLineTax": {
@@ -315,5 +307,6 @@
       "description": "When selecting a product on a line, auto-fill UOM from product default"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

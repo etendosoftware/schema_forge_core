@@ -54,6 +54,7 @@ export function mapVisibility(visibility) {
     case 'readOnly':
       return { isIncluded: 'Y', isReadOnly: 'Y' };
     case 'system':
+      return { isIncluded: 'Y', isReadOnly: 'Y' };
     case 'discarded':
       return { isIncluded: 'N', isReadOnly: 'N' };
     default:

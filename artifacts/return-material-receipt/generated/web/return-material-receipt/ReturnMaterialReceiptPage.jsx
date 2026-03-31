@@ -16,9 +16,14 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:returnMaterialReceipt
 
+// @sf-custom-slot extraBadges:returnMaterialReceipt
+// @sf-generated-start extraBadges:returnMaterialReceipt
+const extraBadges = [];
+// @sf-generated-end extraBadges:returnMaterialReceipt
+
 // @sf-generated-start processes:returnMaterialReceipt
 const processes = [
-
+  { name: 'Process Receipt', label: 'Process  Receipt', style: 'positive' },
 ];
 // @sf-generated-end processes:returnMaterialReceipt
 
@@ -227,6 +232,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         DetailForm={ReturnMaterialReceiptLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}

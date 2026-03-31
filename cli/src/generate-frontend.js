@@ -21,6 +21,28 @@ export function toLabel(name) {
 }
 
 /**
+ * Pluralize a label string.
+ * Handles common English rules: -y → -ies, -s/-x/-z/-sh/-ch → -es, else → -s.
+ */
+export function pluralize(label) {
+  if (!label) return '';
+  // Split on space to pluralize only the last word
+  const parts = label.split(' ');
+  const last = parts[parts.length - 1];
+  let plural;
+  if (/[^s]s$/i.test(last)) {
+    plural = last; // already plural (e.g. "Assets", "Items")
+  } else if (/[^aeiou]y$/i.test(last)) {
+    plural = last.replace(/y$/i, 'ies');
+  } else if (/(ss|x|z|sh|ch)$/i.test(last)) {
+    plural = last + 'es';
+  } else {
+    plural = last + 's';
+  }
+  return [...parts.slice(0, -1), plural].join(' ');
+}
+
+/**
  * Get process endpoints that match a given entity.
  */
 export function getProcessesForEntity(contract, entityName) {
@@ -40,11 +62,20 @@ export function getReadOnlyFields(contract, entityName) {
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
-  if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) return 'status';
+  // Explicit columnType override from decisions (e.g. "percent" for progress bars)
+  if (field.columnType) return field.columnType;
+  if (field.type !== 'foreignKey' && field.name.toLowerCase().includes('status')) {
+    // Integer/number status fields without explicit columnType → show as number, not badge
+    if ((field.type === 'integer' || field.type === 'number') && field.name.toLowerCase() !== 'documentstatus') {
+      return 'number';
+    }
+    return 'status';
+  }
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
-  if (field.type === 'number' || field.type === 'integer') return 'number';
+  if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
+  if (field.type === 'enum') return 'enum';
   return 'string';
 }
 
@@ -59,6 +90,8 @@ function mapFormFieldType(field) {
     return 'search';
   }
   if (field.type === 'boolean') return 'checkbox';
+  if (field.type === 'enum') return 'select';
+  if (field.type === 'image') return 'image';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
   if (/notes|description|comments|remarks/i.test(field.name)) return 'textarea';
@@ -78,7 +111,13 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${selectionPart} },`;
+    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+      ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
+      : '';
+    const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const badgePart = f.badge ? ', badge: true' : '';
+    const summablePart = f.summable ? ', summable: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${summablePart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -111,7 +150,15 @@ ${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
  */
 export function generateFormComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const formFields = entity.fields.filter(f => f.form);
+  // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
+  const formFields = entity.fields
+    .filter(f => f.form && f.type !== 'button')
+    .sort((a, b) => {
+      if (a.seq != null && b.seq != null) return a.seq - b.seq;
+      if (a.seq != null) return -1;
+      if (b.seq != null) return 1;
+      return 0;
+    });
   const compName = `${capitalize(entityName)}Form`;
 
   // Classify fields into sections: first N editable non-readOnly fields are 'principal', rest are 'other'.
@@ -147,10 +194,10 @@ export function generateFormComponent(entityName, contract) {
     // Behavioral metadata: displayLogic and readOnlyLogic
     let displayLogicPart = '';
     if (f.displayLogic) {
-      if (f.displayLogic.evaluable === false) {
-        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
-      } else if (f.displayLogic.js) {
+      if (f.displayLogic.js) {
         displayLogicPart = `, displayLogic: (record) => ${f.displayLogic.js}`;
+      } else if (f.displayLogic.evaluable === false) {
+        displayLogicPart = `, visible: null, visibilitySource: 'server', displayLogicReason: '${f.displayLogic.reason || 'unknown'}'`;
       }
     }
     let readOnlyLogicPart = '';
@@ -170,7 +217,11 @@ export function generateFormComponent(entityName, contract) {
     if (f.onChangeFunction) {
       slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
     }
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const optionsPart = (type === 'select' && f.enumValues?.length)
+      ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
+      : '';
+    const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -200,6 +251,129 @@ ${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 }
 
 /**
+ * Generate a StatusBar component for windows with a statusBar config.
+ * Returns an object with { componentCode, lucideImports } strings.
+ */
+function generateStatusBarComponent(headerEntity, statusBarConfig) {
+  const headerName = capitalize(headerEntity);
+  const { cards = [], progress } = statusBarConfig;
+
+  // Collect unique lucide icon names
+  const iconNames = new Set();
+  for (const card of cards) {
+    if (card.icon) iconNames.add(card.icon);
+  }
+  if (progress?.completedIcon) iconNames.add(progress.completedIcon);
+  // The progress bar also uses a card icon as its "in-progress" icon
+  // (matching the first card's icon or TrendingDown by convention)
+  if (progress && cards.length > 0 && cards[0].icon) iconNames.add(cards[0].icon);
+  const lucideImports = `import { ${[...iconNames].join(', ')} } from 'lucide-react';`;
+
+  // Build cards array literal
+  const cardsLiteral = cards.map(card => {
+    return `    { label: '${card.label}', value: fmt(data.${card.field}), color: '${card.color}',  Icon: ${card.icon} },`;
+  }).join('\n');
+
+  // Build progress section
+  let progressSection = '';
+  if (progress) {
+    const { numerator, denominator, condition, label, color, completedColor, completedIcon } = progress;
+    // Determine the in-progress icon (first card icon, or first icon in the set)
+    const inProgressIcon = (cards.length > 0 && cards[0].icon) ? cards[0].icon : [...iconNames][0];
+    progressSection = `  const progressColor = pct === 100 ? '${completedColor}' : '${color}';
+  const pc = colorMap[progressColor];`;
+
+    const progressJsx = `      {pct !== null && (
+        <div className={\`flex items-center gap-3 \${pc.bg} border-l-4 \${pc.border} rounded-lg px-4 py-2.5 min-w-[170px]\`}>
+          {pct === 100 ? <${completedIcon} size={18} className={pc.icon} /> : <${inProgressIcon} size={18} className={pc.icon} />}
+          <div>
+            <div className={\`text-lg font-semibold leading-tight \${pc.text}\`}>{pct}%</div>
+            <div className={\`text-xs \${pc.sub} mt-0.5\`}>${label}</div>
+            <div className={\`mt-1.5 h-1.5 w-24 \${pc.barTrack} rounded-full overflow-hidden\`}>
+              <div className={\`h-full \${pc.bar} rounded-full transition-all\`} style={{ width: \`\${pct}%\` }} />
+            </div>
+          </div>
+        </div>
+      )}`;
+
+    const componentCode = `${MARKERS.GENERATED_START(`statusBar:${headerEntity}`)}
+function ${headerName}StatusBar({ data }) {
+  if (!data) return null;
+  const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+  const ${condition} = data.${condition} === true || data.${condition} === 'Y';
+  const ${numerator} = Number(data.${numerator} ?? 0);
+  const ${denominator} = Number(data.${denominator} ?? 0);
+  const pct = (${condition} && ${denominator} > 0) ? Math.min(100, Math.round((${numerator} / ${denominator}) * 100)) : null;
+  const colorMap = {
+    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',    text: 'text-blue-800',    sub: 'text-blue-500',    icon: 'text-blue-500',    bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
+    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',    text: 'text-teal-800',    sub: 'text-teal-500',    icon: 'text-teal-500',    bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
+    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500',  text: 'text-orange-700',  sub: 'text-orange-500',  icon: 'text-orange-500',  bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
+    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500', text: 'text-emerald-800', sub: 'text-emerald-500', icon: 'text-emerald-500', bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
+  };
+  const cards = [
+${cardsLiteral}
+  ];
+  ${progressSection}
+  return (
+    <div className="flex flex-wrap gap-3 pt-2 pb-3 mb-2 border-b border-gray-100">
+      {cards.map(({ label, value, color, Icon }) => {
+        const c = colorMap[color];
+        return (
+          <div key={label} className={\`flex items-center gap-3 \${c.bg} border-l-4 \${c.border} rounded-lg px-4 py-2.5 min-w-[160px]\`}>
+            <Icon size={18} className={c.icon} />
+            <div>
+              <div className={\`text-lg font-semibold leading-tight \${c.text}\`}>{value}</div>
+              <div className={\`text-xs \${c.sub} mt-0.5\`}>{label}</div>
+            </div>
+          </div>
+        );
+      })}
+${progressJsx}
+    </div>
+  );
+}
+${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
+
+    return { componentCode, lucideImports };
+  }
+
+  // No progress section
+  const componentCode = `${MARKERS.GENERATED_START(`statusBar:${headerEntity}`)}
+function ${headerName}StatusBar({ data }) {
+  if (!data) return null;
+  const fmt = (v) => v != null ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+  const colorMap = {
+    blue:   { bg: 'bg-blue-100',   border: 'border-l-blue-500',    text: 'text-blue-800',    sub: 'text-blue-500',    icon: 'text-blue-500',    bar: 'bg-blue-500',    barTrack: 'bg-blue-200'    },
+    teal:   { bg: 'bg-teal-50',    border: 'border-l-teal-500',    text: 'text-teal-800',    sub: 'text-teal-500',    icon: 'text-teal-500',    bar: 'bg-teal-500',    barTrack: 'bg-teal-200'    },
+    orange: { bg: 'bg-orange-50',  border: 'border-l-orange-500',  text: 'text-orange-700',  sub: 'text-orange-500',  icon: 'text-orange-500',  bar: 'bg-orange-500',  barTrack: 'bg-orange-200'  },
+    green:  { bg: 'bg-emerald-50', border: 'border-l-emerald-500', text: 'text-emerald-800', sub: 'text-emerald-500', icon: 'text-emerald-500', bar: 'bg-emerald-500', barTrack: 'bg-emerald-200' },
+  };
+  const cards = [
+${cardsLiteral}
+  ];
+  return (
+    <div className="flex flex-wrap gap-3 pt-2 pb-3 mb-2 border-b border-gray-100">
+      {cards.map(({ label, value, color, Icon }) => {
+        const c = colorMap[color];
+        return (
+          <div key={label} className={\`flex items-center gap-3 \${c.bg} border-l-4 \${c.border} rounded-lg px-4 py-2.5 min-w-[160px]\`}>
+            <Icon size={18} className={c.icon} />
+            <div>
+              <div className={\`text-lg font-semibold leading-tight \${c.text}\`}>{value}</div>
+              <div className={\`text-xs \${c.sub} mt-0.5\`}>{label}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
+
+  return { componentCode, lucideImports };
+}
+
+/**
  * Generate a header-detail page component with ListView/DetailView pattern.
  * Produces a thin declarative component that routes by recordId.
  */
@@ -207,6 +381,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
   const detailName = capitalize(detailEntity);
   const compName = `${headerName}Page`;
+  const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
+  const isGallery = layoutType === 'gallery';
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
@@ -230,36 +406,61 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Status field config
   const statusFieldLine = statusField ? `'${statusField.name}'` : 'null';
 
-  // Process config
-  const processesArray = processes.map(p => {
-    const isDestructive = /void|cancel|reject/i.test(p.name);
-    const style = isDestructive ? 'destructive' : 'positive';
-    return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}' },`;
-  }).join('\n');
+  // Process config: backendContract process endpoints + button-type fields from frontendContract
+  const buttonFields = allEntityFields.filter(f => f.type === 'button' && f.form);
+  const processesArray = [
+    ...processes.map(p => {
+      const isDestructive = /void|cancel|reject/i.test(p.name);
+      const style = isDestructive ? 'destructive' : 'positive';
+      const colPart = p.columnName ? `, columnName: '${p.columnName}'` : '';
+      const paramsPart = p.params?.length ? `, params: ${JSON.stringify(p.params)}` : '';
+      return `  { name: '${p.name}', label: '${toLabel(p.name)}', style: '${style}'${colPart}${paramsPart} },`;
+    }),
+    ...buttonFields.map(f => {
+      const isDestructive = /void|cancel|reject/i.test(f.name);
+      const style = isDestructive ? 'destructive' : 'positive';
+      const label = f.label || toLabel(f.name);
+      const dlRaw = f.displayLogic?.raw ? `, displayLogicRaw: '${f.displayLogic.raw.replace(/'/g, "\\'")}'` : '';
+      return `  { name: '${f.name}', label: '${label}', style: '${style}'${dlRaw} },`;
+    }),
+  ].join('\n');
 
   // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
   const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
-  const entryFields = detailEditableFields.filter(f => !autoPatterns.test(f.name));
-  const derivedFields = detailEditableFields.filter(f => autoPatterns.test(f.name));
+  const derivedFields = detailEditableFields.filter(f =>
+    autoPatterns.test(f.name) && !f.required && !f.reference
+  );
+  const entryFields = detailEditableFields.filter(f => !derivedFields.includes(f));
+  const hiddenDefaultFields = detailFields.filter(f =>
+    f.visibility !== 'readOnly' && !f.form && f.defaultValue !== undefined
+  );
 
-  // The first entry field (usually product) triggers a lookup
+  // The first search-type entry field (usually product) triggers a lookup modal
+  const firstSearchIdx = entryFields.findIndex(f => mapFormFieldType(f) === 'search');
   const entryArray = entryFields.map((f, i) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
-    const lookupPart = i === 0 ? ', lookup: true' : '';
+    const lookupPart = (i === firstSearchIdx && firstSearchIdx !== -1) ? ', lookup: true' : '';
+    const labelPart = f.label ? `, label: '${f.label}'` : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
     const type = mapFormFieldType(f);
+    const labelPart = f.label ? `, label: '${f.label}'` : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${referencePart}${inputModePart} },`;
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
+  }).join('\n');
+
+  const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
+    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'");
+    return `    { key: '${f.name}', value: '${defaultValue}' },`;
   }).join('\n');
 
   // API prediction config
@@ -272,34 +473,228 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
-  // Detect secondary child entities for additional tabs (all entities except primary and detail)
-  const allEntityNames = Object.keys(contract.frontendContract.entities);
-  const secondaryTabDefs = allEntityNames
-    .filter(key => key !== headerEntity && key !== detailEntity)
-    .map(key => {
-      const tabName = contract.frontendContract.entities[key]?.tabName ?? toLabel(key);
-      const Name = capitalize(key);
-      return { key, label: tabName, TableName: `${Name}Table`, FormName: `${Name}Form` };
-    });
+  // Window-level UI config from decisions.json
+  const windowConfig = contract?.frontendContract?.window ?? {};
+  const documentPreview = windowConfig.documentPreview ?? null;
+  const notesField = windowConfig.notesField ?? null;
+  const relatedDocuments = windowConfig.relatedDocuments ?? false;
+  const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const customComponents = windowConfig.customComponents ?? {};
+  const menuActionsConfig = windowConfig.menuActions ?? [];
+  const statusBar = windowConfig.statusBar ?? null;
+  const detailSortBy = windowConfig.detailSortBy ?? null;
 
+  // Detect secondary child entities for additional tabs
+  const secondaryTabsDecl = windowConfig.secondaryTabs;
+  let secondaryTabDefs;
+
+  if (secondaryTabsDecl) {
+    // Declarative config from decisions.json — sorted by tabOrder
+    secondaryTabDefs = Object.entries(secondaryTabsDecl)
+      .sort((a, b) => (a[1].tabOrder ?? 99) - (b[1].tabOrder ?? 99))
+      .map(([key, cfg]) => {
+        const isFormTab = cfg.tabMode === 'form-only';
+        const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
+        const TableName = `${capitalize(key)}Table`;
+        const addLineFieldKeys = cfg.addLineFields ?? [];
+        const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
+        const addLineEntries = addLineFieldKeys.map(fk => {
+          const f = entityFields.find(ef => ef.name === fk);
+          if (!f) return null;
+          const type = mapFormFieldType(f);
+          const requiredPart = f.required ? ', required: true' : '';
+          const labelPart = f.label ? `, label: '${f.label}'` : '';
+          const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
+          const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+          const optionsPart = (type === 'select' && f.enumValues?.length)
+            ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
+            : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
+        }).filter(Boolean);
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isCustomForm: !!cfg.customForm, FormName, TableName, addLineEntries };
+      });
+  } else {
+    // Fallback: hardcoded known list + entity inference (backward compat)
+    const allEntityEntries = Object.entries(contract.frontendContract.entities);
+    const knownSecondaryTabDefs = [
+      { key: 'orderTax',         label: 'Tax',               TableName: 'OrderTaxTable',         FormName: 'OrderTaxForm' },
+      { key: 'invoiceTax',       label: 'Tax',               TableName: 'InvoiceTaxTable',       FormName: 'InvoiceTaxForm' },
+      { key: 'basicDiscounts',   label: 'Basic Discounts',   TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
+      { key: 'paymentPlan',      label: 'Payment Plan',      TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
+      { key: 'accounting',       label: 'Accounting',        TableName: 'AccountingTable',       FormName: 'AccountingForm' },
+      { key: 'landedCost',       label: 'Landed Cost',       TableName: 'LandedCostTable',       FormName: 'LandedCostForm' },
+      { key: 'reversedInvoices', label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable', FormName: 'ReversedInvoicesForm' },
+    ].filter(t => allEntityEntries.some(([name]) => name === t.key));
+
+    const knownSecondaryKeys = new Set(knownSecondaryTabDefs.map(t => t.key));
+    const inferredSecondaryTabDefs = allEntityEntries
+      .filter(([name, entity]) => {
+        if (name === headerEntity || name === detailEntity) return false;
+        if (knownSecondaryKeys.has(name)) return false;
+        const editableFieldCount = (entity.fields || []).filter(f => f.visibility === 'editable').length;
+        return editableFieldCount === 0;
+      })
+      .map(([name, entity]) => ({
+        key: name,
+        label: entity.tabName || toLabel(name),
+        isFormTab: false,
+        TableName: `${capitalize(name)}Table`,
+        FormName: `${capitalize(name)}Form`,
+        addLineEntries: [],
+      }));
+
+    secondaryTabDefs = [
+      ...knownSecondaryTabDefs.map(t => ({ ...t, isFormTab: false, addLineEntries: [] })),
+      ...inferredSecondaryTabDefs,
+    ].slice(0, 4);
+  }
+
+  const specName = contract.apiPrediction?.specName;
   const secondaryTabsImports = secondaryTabDefs
-    .map(t => `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from './${t.FormName}';`)
+    .map(t => {
+      const formImportPath = (t.isCustomForm && specName)
+        ? `@/windows/custom/${specName}/${t.FormName}`
+        : `./${t.FormName}`;
+      if (t.isFormTab) {
+        return `import ${t.FormName} from '${formImportPath}';`;
+      }
+      return `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from '${formImportPath}';`;
+    })
     .join('\n');
-  const secondaryTabsPropEntries = secondaryTabDefs
-    .map(t => `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName} },`)
-    .join('\n');
+
+  const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
+    if (t.isFormTab) {
+      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName} },`;
+    }
+    const addLinePart = t.addLineEntries.length > 0
+      ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
+      : '';
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
+  }).join('\n');
+
   const secondaryTabsProp = secondaryTabDefs.length > 0
     ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
-  return `import { ListView, DetailView } from '@/components/contract-ui';
-import ${headerName}Table from './${headerName}Table';
+  // Build optional DetailView props from window-level decisions config
+  const documentPreviewProp = documentPreview
+    ? `\n        documentPreview={{ titlePrefix: '${documentPreview.titlePrefix || ''}', pdfUrl: null }}`
+    : '';
+  const notesFieldProp = notesField
+    ? `\n        notesField="${notesField}"`
+    : '';
+  const customTabsProp = relatedDocuments
+    ? `\n        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}`
+    : '';
+
+  // hideDeleteWhenComplete prop
+  const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+
+  // Custom component props (bottomSection, topbarRight)
+  const customComponentImports = [];
+  const customComponentProps = [];
+  if (customComponents.bottomSection) {
+    customComponentImports.push(`import ${customComponents.bottomSection} from '../../../custom/${customComponents.bottomSection}';`);
+    customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
+  }
+  if (customComponents.topbarRight) {
+    customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
+    customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
+  }
+  const customCompImportBlock = customComponentImports.length > 0
+    ? customComponentImports.join('\n') + '\n'
+    : '';
+  const customCompPropsBlock = customComponentProps.join('');
+
+  // Custom headerTable override
+  const customHeaderTable = customComponents.headerTable ?? null;
+  const headerTableImport = customHeaderTable
+    ? `import ${headerName}Table from '../../../custom/${customHeaderTable}';`
+    : `import ${headerName}Table from './${headerName}Table';`;
+
+  // menuActions prop
+  const menuActionsProp = menuActionsConfig.length > 0
+    ? `\n        menuActions={({ status }) => [\n${menuActionsConfig.map(a => {
+        const vis = a.visibleWhenStatus
+          ? Array.isArray(a.visibleWhenStatus)
+            ? `visible: ${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+            : `visible: status === '${a.visibleWhenStatus}'`
+          : '';
+        const destr = a.destructive ? 'destructive: true, ' : '';
+        const col = a.columnName ? `columnName: '${a.columnName}', ` : `onClick: () => {},`;
+        const visPart = vis ? `${vis}, ` : '';
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${col} }`;
+      }).join(',\n')}\n        ]}`
+    : '';
+
+  // Build optional import for RelatedDocuments
+  const relatedDocsImport = relatedDocuments
+    ? `import RelatedDocuments from '../../../custom/RelatedDocuments';\n`
+    : '';
+
+  // Draft mode config from frontend contract
+  const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
+  const draftModeValue = draftModeConfig?.enabled
+    ? JSON.stringify(draftModeConfig, null, 2)
+    : 'null';
+  const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
+
+  // entityLabel / detailLabel / detailTabIndex from window decisions config
+  const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
+  const entityDetailLabel = windowConfig.detailLabel
+    || (contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity));
+  const detailTabIndexProp = windowConfig.detailTabIndex != null
+    ? `\n        detailTabIndex={${windowConfig.detailTabIndex}}`
+    : '';
+
+  // StatusBar component generation
+  const statusBarResult = statusBar ? generateStatusBarComponent(headerEntity, statusBar) : null;
+  const statusBarImport = statusBarResult ? `\n${statusBarResult.lucideImports}` : '';
+  const statusBarCode = statusBarResult ? `\n${statusBarResult.componentCode}\n` : '';
+  const headerContentProp = statusBar
+    ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
+    : (isGallery ? `\n        headerContent={
+          <${headerName}DetailHeader
+            recordId={recordId}
+            token={props.token}
+            apiBaseUrl={api.baseUrl}
+          />
+        }` : '');
+
+  // detailSortBy prop
+  const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
+
+  // listKpiCards → headerContent prop in ListView
+  const listKpiCardsConfig = windowConfig.listKpiCards ?? null;
+  let listKpiCardsImport = '';
+  let listKpiCardsProp = '';
+  if (listKpiCardsConfig?.customComponent && specName) {
+    const kpiComp = listKpiCardsConfig.customComponent;
+    listKpiCardsImport = `import ${kpiComp} from '@/windows/custom/${specName}/${kpiComp}';\n`;
+    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}\n      api={api}`;
+  }
+
+  // headerExtra → formFooter prop
+  const headerExtraConfig = windowConfig.headerExtra ?? null;
+  let formFooterImport = '';
+  let formFooterProp = '';
+  if (headerExtraConfig?.customForm && specName) {
+    const compName = headerExtraConfig.customForm;
+    formFooterImport = `import ${compName} from '@/windows/custom/${specName}/${compName}';\n`;
+    formFooterProp = `\n        formFooter={${compName}}`;
+  }
+
+  return `import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+${headerTableImport}
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';
+import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}${statusBarImport}
 
 const breadcrumb = '${windowCategory} / ${windowLabel}';
+${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -320,6 +715,10 @@ ${processesArray}
 ];
 ${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
 
+${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
+const draftMode = ${draftModeValue};
+${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
+
 ${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
   entry: [
@@ -327,6 +726,9 @@ ${entryArray}
   ],
   derived: [
 ${derivedArray}
+  ],
+  hidden: [
+${hiddenDefaultsArray}
   ],
 };
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}
@@ -348,11 +750,11 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
-        entityLabel="${toLabel(headerEntity)}"
-        detailLabel="${contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity)}"
+        entityLabel="${entityLabel}"
+        detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${secondaryTabsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
         {...props}
       />
     );
@@ -362,9 +764,10 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${toLabel(headerEntity)}s"
+      entityLabel="${windowConfig.name || pluralize(entityLabel)}"
       windowName={windowName}
-      breadcrumb={breadcrumb}${apiProp}
+      breadcrumb={breadcrumb}${apiProp}${isGallery ? `
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
       {...props}
     />
   );
@@ -580,7 +983,7 @@ export function generateAll(contract) {
   const { window: win, entities } = frontendContract;
   const primaryEntity = win.primaryEntity;
   const entityNames = Object.keys(entities);
-  const detailEntity = entityNames.find(name => name !== primaryEntity);
+  const detailEntity = win.detailEntity || entityNames.find(name => name !== primaryEntity);
 
   const files = {};
 

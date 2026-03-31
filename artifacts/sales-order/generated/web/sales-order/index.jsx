@@ -1,4 +1,4 @@
-import OrderPage from './OrderPage';
+import HeaderPage from './HeaderPage';
 
 const windowMeta = { category: 'sales', name: 'Sales Order' };
 
@@ -6,492 +6,261 @@ const api = {
   "specName": "sales-order",
   "baseUrl": "/sws/neo/sales-order",
   "crud": {
-    "order": {
+    "header": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/sales-order/order",
-      "detailUrl": "/sws/neo/sales-order/order/{id}",
+      "listUrl": "/sws/neo/sales-order/header",
+      "detailUrl": "/sws/neo/sales-order/header/{id}",
       "supportedFilters": [
         "documentNo",
         "orderDate",
         "businessPartner",
         "documentStatus",
-        "grandTotalAmount",
         "orderReference"
       ]
     },
-    "orderLine": {
+    "lines": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/sales-order/orderLine",
-      "detailUrl": "/sws/neo/sales-order/orderLine/{id}",
+      "listUrl": "/sws/neo/sales-order/lines",
+      "detailUrl": "/sws/neo/sales-order/lines/{id}",
       "supportedFilters": [
         "product"
       ]
-    },
-    "orderLineTax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/orderLineTax",
-      "detailUrl": "/sws/neo/sales-order/orderLineTax/{id}",
-      "supportedFilters": []
-    },
-    "reservedStock": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/reservedStock",
-      "detailUrl": "/sws/neo/sales-order/reservedStock/{id}",
-      "supportedFilters": []
-    },
-    "relatedServices": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/relatedServices",
-      "detailUrl": "/sws/neo/sales-order/relatedServices/{id}",
-      "supportedFilters": []
-    },
-    "relatedProducts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/relatedProducts",
-      "detailUrl": "/sws/neo/sales-order/relatedProducts/{id}",
-      "supportedFilters": []
-    },
-    "orderTax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/orderTax",
-      "detailUrl": "/sws/neo/sales-order/orderTax/{id}",
-      "supportedFilters": []
-    },
-    "paymentPlan": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/paymentPlan",
-      "detailUrl": "/sws/neo/sales-order/paymentPlan/{id}",
-      "supportedFilters": []
-    },
-    "paymentDetails": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/paymentDetails",
-      "detailUrl": "/sws/neo/sales-order/paymentDetails/{id}",
-      "supportedFilters": []
-    },
-    "replacementOrders": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-order/replacementOrders",
-      "detailUrl": "/sws/neo/sales-order/replacementOrders/{id}",
-      "supportedFilters": []
     }
   },
   "selectors": [
     {
-      "entity": "order",
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/businessPartner"
+      "url": "/sws/neo/sales-order/header/selectors/businessPartner"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-order/order/selectors/partnerAddress"
+      "url": "/sws/neo/sales-order/header/selectors/partnerAddress"
     },
     {
-      "entity": "order",
-      "field": "priceList",
-      "column": "M_PriceList_ID",
-      "reference": "PriceList",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/priceList"
-    },
-    {
-      "entity": "order",
+      "entity": "header",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/paymentMethod"
+      "url": "/sws/neo/sales-order/header/selectors/paymentMethod"
     },
     {
-      "entity": "order",
-      "field": "paymentTerms",
-      "column": "C_PaymentTerm_ID",
-      "reference": "PaymentTerm",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/order/selectors/paymentTerms"
-    },
-    {
-      "entity": "order",
+      "entity": "header",
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
       "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/warehouse"
+      "url": "/sws/neo/sales-order/header/selectors/warehouse"
     },
     {
-      "entity": "order",
-      "field": "salesRepresentative",
-      "column": "SalesRep_ID",
-      "reference": "SalesRepresentative",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/salesRepresentative"
-    },
-    {
-      "entity": "order",
-      "field": "invoiceAddress",
-      "column": "BillTo_ID",
-      "reference": "BusinessPartnerLocation",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-order/order/selectors/invoiceAddress"
-    },
-    {
-      "entity": "order",
-      "field": "quotation",
-      "column": "Quotation_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/quotation"
-    },
-    {
-      "entity": "order",
-      "field": "cancelledorder",
-      "column": "Cancelledorder_id",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/cancelledorder"
-    },
-    {
-      "entity": "order",
-      "field": "replacedorder",
-      "column": "Replacedorder_id",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/order/selectors/replacedorder"
-    },
-    {
-      "entity": "orderLine",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/orderLine/selectors/product"
-    },
-    {
-      "entity": "orderLine",
-      "field": "operativeUOM",
-      "column": "C_Aum",
-      "reference": "UOM",
-      "inputMode": "dependent",
-      "url": "/sws/neo/sales-order/orderLine/selectors/operativeUOM"
-    },
-    {
-      "entity": "orderLine",
-      "field": "uOM",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderLine/selectors/uOM"
-    },
-    {
-      "entity": "orderLine",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/orderLine/selectors/tax"
-    },
-    {
-      "entity": "orderLine",
-      "field": "replacedorderline",
-      "column": "Replacedorderline_id",
-      "reference": "OrderLine",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/orderLine/selectors/replacedorderline"
-    },
-    {
-      "entity": "orderLine",
-      "field": "quotationLine",
-      "column": "Quotationline_ID",
-      "reference": "OrderLine",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/orderLine/selectors/quotationLine"
-    },
-    {
-      "entity": "orderLineTax",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderLineTax/selectors/tax"
-    },
-    {
-      "entity": "reservedStock",
-      "field": "stockReservation",
-      "column": "M_Reservation_ID",
-      "reference": "Reservation",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/reservedStock/selectors/stockReservation"
-    },
-    {
-      "entity": "reservedStock",
-      "field": "storageBin",
-      "column": "M_Locator_ID",
-      "reference": "Locator",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/reservedStock/selectors/storageBin"
-    },
-    {
-      "entity": "reservedStock",
-      "field": "salesOrderLine",
-      "column": "C_Orderline_ID",
-      "reference": "Orderline",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/reservedStock/selectors/salesOrderLine"
-    },
-    {
-      "entity": "reservedStock",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BPartner",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/reservedStock/selectors/businessPartner"
-    },
-    {
-      "entity": "relatedServices",
-      "field": "product",
-      "column": "product",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/relatedServices/selectors/product"
-    },
-    {
-      "entity": "relatedProducts",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/relatedProducts/selectors/product"
-    },
-    {
-      "entity": "orderTax",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-order/orderTax/selectors/tax"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/paymentPlan/selectors/paymentMethod"
-    },
-    {
-      "entity": "paymentPlan",
+      "entity": "header",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-order/paymentPlan/selectors/currency"
-    },
-    {
-      "entity": "paymentDetails",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-order/paymentDetails/selectors/payment"
+      "url": "/sws/neo/sales-order/header/selectors/currency"
     },
     {
-      "entity": "replacementOrders",
-      "field": "cReplacementID",
-      "column": "C_Replacement_ID",
-      "reference": "Order",
+      "entity": "lines",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
       "inputMode": "search",
-      "url": "/sws/neo/sales-order/replacementOrders/selectors/cReplacementID"
+      "url": "/sws/neo/sales-order/lines/selectors/product"
+    },
+    {
+      "entity": "lines",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-order/lines/selectors/tax"
     }
   ],
   "actions": [
     {
-      "entity": "order",
+      "entity": "header",
       "field": "rMPickFromShipment",
       "column": "RM_PickFromShipment",
-      "url": "/sws/neo/sales-order/order/{id}/action/rMPickFromShipment"
+      "url": "/sws/neo/sales-order/header/{id}/action/rMPickFromShipment",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "rMReceiveMaterials",
       "column": "RM_ReceiveMaterials",
-      "url": "/sws/neo/sales-order/order/{id}/action/rMReceiveMaterials"
+      "url": "/sws/neo/sales-order/header/{id}/action/rMReceiveMaterials"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "rMCreateInvoice",
       "column": "RM_CreateInvoice",
-      "url": "/sws/neo/sales-order/order/{id}/action/rMCreateInvoice"
+      "url": "/sws/neo/sales-order/header/{id}/action/rMCreateInvoice",
+      "processId": "FF80808133362F6A013336781FCE0066",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "aPRMAddPayment",
       "column": "EM_APRM_AddPayment",
-      "url": "/sws/neo/sales-order/order/{id}/action/aPRMAddPayment"
+      "url": "/sws/neo/sales-order/header/{id}/action/aPRMAddPayment",
+      "processId": "9BED7889E1034FE68BD85D5D16857320",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "documentAction",
       "column": "DocAction",
-      "url": "/sws/neo/sales-order/order/{id}/action/documentAction"
+      "url": "/sws/neo/sales-order/header/{id}/action/documentAction",
+      "processId": "104",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "copyFrom",
       "column": "CopyFrom",
-      "url": "/sws/neo/sales-order/order/{id}/action/copyFrom"
+      "url": "/sws/neo/sales-order/header/{id}/action/copyFrom",
+      "processId": "211",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "copyFromPO",
       "column": "CopyFromPO",
-      "url": "/sws/neo/sales-order/order/{id}/action/copyFromPO"
+      "url": "/sws/neo/sales-order/header/{id}/action/copyFromPO",
+      "processId": "8B81D80B06364566B87853FEECAB5DE0",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "calculatePromotions",
       "column": "Calculate_Promotions",
-      "url": "/sws/neo/sales-order/order/{id}/action/calculatePromotions"
+      "url": "/sws/neo/sales-order/header/{id}/action/calculatePromotions",
+      "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "rMAddOrphanLine",
       "column": "RM_AddOrphanLine",
-      "url": "/sws/neo/sales-order/order/{id}/action/rMAddOrphanLine"
+      "url": "/sws/neo/sales-order/header/{id}/action/rMAddOrphanLine",
+      "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "createOrder",
       "column": "Convertquotation",
-      "url": "/sws/neo/sales-order/order/{id}/action/createOrder"
+      "url": "/sws/neo/sales-order/header/{id}/action/createOrder",
+      "processId": "A3FE1F9892394386A49FB707AA50A0FA",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "cancelAndReplace",
       "column": "Cancelandreplace",
-      "url": "/sws/neo/sales-order/order/{id}/action/cancelAndReplace"
+      "url": "/sws/neo/sales-order/header/{id}/action/cancelAndReplace",
+      "processId": "A2FAF49712D1445ABE750315CE1B473A",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "confirmCancelAndReplace",
       "column": "Confirmcancelandreplace",
-      "url": "/sws/neo/sales-order/order/{id}/action/confirmCancelAndReplace"
+      "url": "/sws/neo/sales-order/header/{id}/action/confirmCancelAndReplace",
+      "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "generateTemplate",
       "column": "Generatetemplate",
-      "url": "/sws/neo/sales-order/order/{id}/action/generateTemplate"
+      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/sales-order/order/{id}/action/posted"
+      "url": "/sws/neo/sales-order/header/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "processNow",
       "column": "Processing",
-      "url": "/sws/neo/sales-order/order/{id}/action/processNow"
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
+      "processType": "classic"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "createPOLines",
       "column": "Create_POLines",
-      "url": "/sws/neo/sales-order/order/{id}/action/createPOLines"
+      "url": "/sws/neo/sales-order/header/{id}/action/createPOLines",
+      "processId": "6995A4C2592D434A9E16B71E1694CBCA",
+      "processType": "obuiapp"
     },
     {
-      "entity": "order",
+      "entity": "header",
       "field": "rMPickfromreceipt",
       "column": "RM_Pickfromreceipt",
-      "url": "/sws/neo/sales-order/order/{id}/action/rMPickfromreceipt"
+      "url": "/sws/neo/sales-order/header/{id}/action/rMPickfromreceipt",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
     },
     {
-      "entity": "orderLine",
+      "entity": "lines",
       "field": "manageReservation",
       "column": "Manage_Reservation",
-      "url": "/sws/neo/sales-order/orderLine/{id}/action/manageReservation"
+      "url": "/sws/neo/sales-order/lines/{id}/action/manageReservation",
+      "processId": "5F547560D3DE401AA0B570F22E2C6C06",
+      "processType": "obuiapp"
     },
     {
-      "entity": "orderLine",
+      "entity": "lines",
       "field": "explode",
       "column": "Explode",
-      "url": "/sws/neo/sales-order/orderLine/{id}/action/explode"
+      "url": "/sws/neo/sales-order/lines/{id}/action/explode",
+      "processId": "DFC78024B1F54CBB95DC73425BA6687F",
+      "processType": "classic"
     },
     {
-      "entity": "orderLine",
+      "entity": "lines",
       "field": "selectOrderLine",
       "column": "Relate_Orderline",
-      "url": "/sws/neo/sales-order/orderLine/{id}/action/selectOrderLine"
+      "url": "/sws/neo/sales-order/lines/{id}/action/selectOrderLine",
+      "processId": "C4265E27C8134096B49DFBF69369DFC6",
+      "processType": "obuiapp"
     },
     {
-      "entity": "orderLine",
+      "entity": "lines",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",
-      "url": "/sws/neo/sales-order/orderLine/{id}/action/managePrereservation"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "updatePaymentPlan",
-      "column": "Update_Payment_Plan",
-      "url": "/sws/neo/sales-order/paymentPlan/{id}/action/updatePaymentPlan"
+      "url": "/sws/neo/sales-order/lines/{id}/action/managePrereservation",
+      "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -512,7 +281,7 @@ const api = {
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   // @sf-custom-slot hooks:App
-  return <OrderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
+  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
 

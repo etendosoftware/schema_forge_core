@@ -2,7 +2,13 @@
   "$schema": "decisions-v1",
   "window": {
     "category": "sales",
-    "name": "Return from Customer"
+    "name": "Return from Customer",
+    "documentPreview": {
+      "titlePrefix": "Return"
+    },
+    "notesField": "description",
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true
   },
   "entities": {
     "cOrder": {
