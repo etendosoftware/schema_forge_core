@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-20T17:21:44.883Z",
-  "checksum": "fb382e25bc17afb3",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-20T17:40:15.369Z",
+  "checksum": "5fbe7ef082e86fde",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -1495,7 +1495,8 @@
           }
         ],
         "searchableFields": [],
-        "computedFields": []
+        "computedFields": [],
+        "javaQualifier": "factAcctHandler"
       }
     }
   },
@@ -3522,7 +3523,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "factAcctHandler"
       }
     },
     "endpoints": [
