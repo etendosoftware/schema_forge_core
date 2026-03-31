@@ -638,7 +638,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 /**
  * Main orchestrator: generates the full contract object.
  */
-export function generateContract(schema, rules = [], processes = []) {
+export function generateContract(schema, rules = [], processes = [], previousVersion = null) {
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
@@ -697,7 +697,7 @@ export function generateContract(schema, rules = [], processes = []) {
     .slice(0, 16);
 
   return {
-    version: schema.version ?? '0.1.0',
+    version: previousVersion ?? schema.version ?? '0.1.0',
     generatedAt: new Date().toISOString(),
     checksum,
     ...contractData,
