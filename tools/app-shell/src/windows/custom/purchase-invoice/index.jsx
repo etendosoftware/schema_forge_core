@@ -11,6 +11,7 @@ import BasicDiscountsTable from '@generated/purchase-invoice/generated/web/purch
 import BasicDiscountsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsForm';
 import PaymentDetailsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/PaymentDetailsTable';
 import PaymentDetailsForm from '@generated/purchase-invoice/generated/web/purchase-invoice/PaymentDetailsForm';
+import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 
 // Secondary tabs: Tax, Basic Discounts, Payment Details (no Payment Plan / Reversed Invoices / Accounting)
@@ -126,6 +127,7 @@ export default function PurchaseInvoiceWindow(props) {
       <>
         <InvoicePage
           {...props}
+          DetailTable={InvoiceLineTableCustom}
           secondaryTabs={SECONDARY_TABS}
           summary={SUMMARY}
           onAfterSave={handleAfterSave}
