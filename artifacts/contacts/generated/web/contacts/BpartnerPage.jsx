@@ -3,17 +3,19 @@ import BpartnerTable from './BpartnerTable';
 import BpartnerForm from './BpartnerForm';
 import BpartnerLocationTable from './BpartnerLocationTable';
 import BpartnerLocationForm from './BpartnerLocationForm';
-import BillingPreferencesForm from '@/windows/custom/contacts/BillingPreferencesForm';
 import UserTable from './UserTable';
 import UserForm from './UserForm';
 import BpBankAccountTable from './BpBankAccountTable';
 import BpBankAccountForm from './BpBankAccountForm';
 import BpartnerDiscountTable from './BpartnerDiscountTable';
 import BpartnerDiscountForm from './BpartnerDiscountForm';
+import BillingPreferencesForm from '@/windows/custom/contacts/BillingPreferencesForm';
+import ContactsKpiCards from '@/windows/custom/contacts/ContactsKpiCards';
 import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'People / Contacts';
+
 
 // @sf-generated-start summary:bpartner
 const summary = [
@@ -34,6 +36,10 @@ const processes = [
 
 ];
 // @sf-generated-end processes:bpartner
+
+// @sf-generated-start draftMode:bpartner
+const draftMode = null;
+// @sf-generated-end draftMode:bpartner
 
 // @sf-generated-start addLineFields:bpartnerLocation
 const addLineFields = {
@@ -425,10 +431,10 @@ export default function BpartnerPage({ windowName, recordId, ...props }) {
       api={api}
         detailTabIndex={3}
         secondaryTabs={[
-          { key: 'billing', label: 'Billing Preferences', isFormTab: true, Form: BillingPreferencesForm },
           { key: 'user', label: 'Contact', Table: UserTable, Form: UserForm, addLineFields: { entry: [
           { key: 'firstName', column: 'Firstname', type: 'text', label: 'First Name' },
           { key: 'lastName', column: 'Lastname', type: 'text', label: 'Last Name' },
+          { key: 'email', column: 'Email', type: 'text', label: 'Email' },
           { key: 'phone', column: 'Phone', type: 'text', label: 'Phone' },
           { key: 'position', column: 'Title', type: 'text', label: 'Position' },
           ], derived: [], hidden: [] } },
@@ -441,10 +447,9 @@ export default function BpartnerPage({ windowName, recordId, ...props }) {
           { key: 'bpartnerDiscount', label: 'Basic Discount', Table: BpartnerDiscountTable, Form: BpartnerDiscountForm, addLineFields: { entry: [
           { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.' },
           { key: 'discount', column: 'C_Discount_ID', type: 'selector', required: true, label: 'Basic Discount', reference: 'Discount', inputMode: 'selector' },
-          { key: 'customer', column: 'IsCustomer', type: 'checkbox', required: true, label: 'Customer' },
-          { key: 'vendor', column: 'IsVendor', type: 'checkbox', required: true, label: 'Vendor' },
           ], derived: [], hidden: [] } },
         ]}
+        formFooter={BillingPreferencesForm}
         {...props}
       />
     );
@@ -457,6 +462,8 @@ export default function BpartnerPage({ windowName, recordId, ...props }) {
       entityLabel="Contacts"
       windowName={windowName}
       breadcrumb={breadcrumb}
+      api={api}
+      headerContent={(p) => <ContactsKpiCards {...p} />}
       api={api}
       {...props}
     />

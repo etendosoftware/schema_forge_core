@@ -2,7 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:bpartnerLocation
 const columns = [
-  { key: 'name', column: 'Name', type: 'string' },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
 ];
 // @sf-generated-end columns:bpartnerLocation
 

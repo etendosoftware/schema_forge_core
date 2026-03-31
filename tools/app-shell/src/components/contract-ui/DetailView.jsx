@@ -97,6 +97,7 @@ export function DetailView({
   apiBaseUrl,
   breadcrumb,
   secondaryTabs = [],
+  formFooter = null,
   draftMode = null,
   headerContent = null,
   customTabs = [],
@@ -664,6 +665,13 @@ export function DetailView({
                 apiBaseUrl={apiBaseUrl}
               />
             </CollapsibleSection>
+
+            {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
+            {formFooter && (
+              <div className="pt-2">
+                {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
+              </div>
+            )}
 
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (

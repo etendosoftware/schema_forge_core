@@ -7,18 +7,18 @@
     "detailLabel": "Location/Address",
     "detailTabIndex": 3,
     "detailEntity": "bpartnerLocation",
+    "listKpiCards": {
+      "customComponent": "ContactsKpiCards"
+    },
+    "headerExtra": {
+      "customForm": "BillingPreferencesForm"
+    },
     "secondaryTabs": {
-      "billing": {
-        "tabMode": "form-only",
-        "tabOrder": 0,
-        "label": "Billing Preferences",
-        "customForm": "BillingPreferencesForm"
-      },
       "user": {
         "tabMode": "table-form",
         "tabOrder": 1,
         "label": "Contact",
-        "addLineFields": ["firstName", "lastName", "phone", "position"]
+        "addLineFields": ["firstName", "lastName", "email", "phone", "position"]
       },
       "bpBankAccount": {
         "tabMode": "table-form",
@@ -30,7 +30,7 @@
         "tabMode": "table-form",
         "tabOrder": 3,
         "label": "Basic Discount",
-        "addLineFields": ["lineNo", "discount", "customer", "vendor"]
+        "addLineFields": ["lineNo", "discount"]
       }
     }
   },
@@ -61,7 +61,7 @@
         },
         "searchKey": {
           "visibility": "editable",
-          "grid": true,
+          "grid": false,
           "searchable": true,
           "section": "principal"
         },
@@ -69,6 +69,7 @@
           "visibility": "editable",
           "grid": false,
           "section": "principal",
+          "label": "Business Partner Category",
           "reference": "BusinessPartnerCategory",
           "inputMode": "selector"
         },
@@ -83,11 +84,13 @@
         },
         "creditLimit": {
           "visibility": "editable",
+          "label": "Credit Limit",
           "grid": false,
           "section": "other"
         },
         "creditUsed": {
           "visibility": "readOnly",
+          "label": "Credit Used",
           "grid": false,
           "section": "other"
         },
@@ -98,6 +101,8 @@
         },
         "vendor": {
           "visibility": "editable",
+          "label": "Vendor",
+          "form": false,
           "section": "principal"
         },
         "purchasePricelist": {
@@ -140,6 +145,8 @@
         },
         "customer": {
           "visibility": "editable",
+          "label": "Customer",
+          "form": false,
           "section": "principal"
         },
         "priceList": {
