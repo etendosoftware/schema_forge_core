@@ -184,7 +184,8 @@ export function generateFrontendContract(schema, rules = []) {
           mapped.displayLogic.js = f.displayLogic;
         }
         // Prefer explicit displayLogicJs from decisions over rule-based lookup
-        if (f.displayLogicJs != null) {
+        // but only when evaluable — if not evaluable, js must remain null
+        if (f.displayLogicJs != null && mapped.displayLogic.evaluable !== false) {
           mapped.displayLogic.js = f.displayLogicJs;
         }
       }
