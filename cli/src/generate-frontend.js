@@ -721,7 +721,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${windowConfig.name || pluralize(toLabel(headerEntity))}"
+      entityLabel="${windowConfig.name || pluralize(entityLabel)}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
