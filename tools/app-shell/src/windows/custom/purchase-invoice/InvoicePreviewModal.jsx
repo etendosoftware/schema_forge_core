@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Upload, Paperclip, Edit2, FileText, Plus, ChevronRight, Check, Trash2 } from 'lucide-react';
+import { X, Upload, Paperclip, Edit2, FileText, Image, Plus, ChevronRight, Check, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { formatAmount } from '@/lib/formatAmount.js';
@@ -7,6 +7,17 @@ import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import AddPaymentModal from './AddPaymentModal.jsx';
 
 const TOP_TABS = ['Estadísticas', 'Mensajes', 'Historial'];
+
+const ACCEPTED_TYPES = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'image',
+  'image/jpg': 'image',
+  'image/png': 'image',
+  'image/gif': 'image',
+  'image/webp': 'image',
+  'image/svg+xml': 'image',
+};
+const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
 
 /**
  * InvoicePreviewModal — Holded-style preview popup for a purchase invoice.
@@ -33,27 +44,27 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   // Animation state: 'opening' → 'open' → 'closing' → 'closingUp'
   const [animState, setAnimState] = useState('opening');
 
-  // PDF drop zone state
-  const [pdfFile, setPdfFile] = useState(null);   // { name, url } — blob URL of the loaded PDF
+  // Document drop zone state — { name, url, kind: 'pdf'|'image' }
+  const [docFile, setDocFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
   // Release blob URL on unmount or when replaced
   useEffect(() => {
-    return () => { if (pdfFile?.url) URL.revokeObjectURL(pdfFile.url); };
-  }, [pdfFile]);
+    return () => { if (docFile?.url) URL.revokeObjectURL(docFile.url); };
+  }, [docFile]);
 
-  const loadPdf = useCallback((file) => {
-    if (!file || file.type !== 'application/pdf') return;
-    if (pdfFile?.url) URL.revokeObjectURL(pdfFile.url);
-    setPdfFile({ name: file.name, url: URL.createObjectURL(file) });
-  }, [pdfFile]);
+  const loadFile = useCallback((file) => {
+    const kind = file ? ACCEPTED_TYPES[file.type] : null;
+    if (!kind) return;
+    if (docFile?.url) URL.revokeObjectURL(docFile.url);
+    setDocFile({ name: file.name, url: URL.createObjectURL(file), kind });
+  }, [docFile]);
 
   function handleDrop(e) {
     e.preventDefault();
     setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    loadPdf(file);
+    loadFile(e.dataTransfer.files[0]);
   }
 
   function handleDragOver(e) {
@@ -66,13 +77,13 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   }
 
   function handleFileChange(e) {
-    loadPdf(e.target.files[0]);
+    loadFile(e.target.files[0]);
     e.target.value = '';
   }
 
-  function removePdf() {
-    if (pdfFile?.url) URL.revokeObjectURL(pdfFile.url);
-    setPdfFile(null);
+  function removeFile() {
+    if (docFile?.url) URL.revokeObjectURL(docFile.url);
+    setDocFile(null);
   }
 
   // Trigger open animation on mount
@@ -254,32 +265,46 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
           {/* ── Body — two panels ── */}
           <div className="flex flex-1 min-h-0">
-            {/* Left panel: 50% — PDF drop zone / preview */}
+            {/* Left panel: 50% — document drop zone / preview */}
             <div className="w-1/2 bg-gray-50 flex flex-col min-h-0 border-r border-gray-200">
-              {pdfFile ? (
-                /* ── PDF preview ── */
+              {docFile ? (
+                /* ── Document preview ── */
                 <div className="flex flex-col h-full min-h-0">
                   {/* Toolbar */}
                   <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-gray-200 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FileText size={14} className="text-red-500 shrink-0" />
-                      <span className="text-xs text-gray-600 truncate">{pdfFile.name}</span>
+                      {docFile.kind === 'image'
+                        ? <Image size={14} className="text-blue-500 shrink-0" />
+                        : <FileText size={14} className="text-red-500 shrink-0" />
+                      }
+                      <span className="text-xs text-gray-600 truncate">{docFile.name}</span>
                     </div>
                     <button
-                      onClick={removePdf}
+                      onClick={removeFile}
                       className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors shrink-0"
                       title="Eliminar documento"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
-                  {/* iframe with #toolbar=0 hides Chrome's PDF viewer toolbar */}
+                  {/* Preview area */}
                   <div className="flex-1 min-h-0 overflow-hidden">
-                    <iframe
-                      src={`${pdfFile.url}#toolbar=0&navpanes=0&scrollbar=1`}
-                      className="w-full h-full border-0"
-                      title="PDF preview"
-                    />
+                    {docFile.kind === 'image' ? (
+                      <div className="w-full h-full overflow-auto flex items-center justify-center bg-gray-50 p-4">
+                        <img
+                          src={docFile.url}
+                          alt={docFile.name}
+                          className="max-w-full max-h-full object-contain rounded shadow"
+                        />
+                      </div>
+                    ) : (
+                      /* iframe with #toolbar=0 hides Chrome's PDF viewer toolbar */
+                      <iframe
+                        src={`${docFile.url}#toolbar=0&navpanes=0&scrollbar=1`}
+                        className="w-full h-full border-0"
+                        title="PDF preview"
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -306,7 +331,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                       </div>
                     </div>
                     {isDragOver ? (
-                      <p className="text-sm font-medium text-blue-600">Suelta el PDF aquí</p>
+                      <p className="text-sm font-medium text-blue-600">Suelta el archivo aquí</p>
                     ) : (
                       <>
                         <p className="text-sm font-medium text-gray-600 mt-1">Sube tu documento</p>
@@ -316,13 +341,13 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                         >
                           Click aquí para importar tu archivo
                         </button>
-                        <p className="text-xs text-gray-400">Solo archivos PDF</p>
+                        <p className="text-xs text-gray-400">PDF, JPG, PNG, WebP, GIF</p>
                       </>
                     )}
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="application/pdf"
+                      accept={ACCEPT_ATTR}
                       className="hidden"
                       onChange={handleFileChange}
                     />
