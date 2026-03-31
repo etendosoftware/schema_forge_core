@@ -104,6 +104,7 @@ export function DetailView({
   notesField,
   detailSortBy = null,
   extraActions = [],
+  sidebarContent = null,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, childSortBy: detailSortBy });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
@@ -626,8 +627,9 @@ export function DetailView({
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-auto px-6 pb-6">
+        {/* Scrollable content + optional sidebar */}
+        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className="max-w-full space-y-6">
             {/* Principal header fields (horizontal row) */}
@@ -1235,6 +1237,12 @@ export function DetailView({
               </div>
             )}
           </div>
+        </div>
+        {sidebarContent && (
+          <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto p-5 bg-gray-50/40">
+            {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
+          </div>
+        )}
         </div>
       </div>
       <DocumentPrintDrawer

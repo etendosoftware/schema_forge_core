@@ -7,11 +7,11 @@ import CostingTable from './CostingTable';
 import CostingForm from './CostingForm';
 import TransactionsTable from './TransactionsTable';
 import TransactionsForm from './TransactionsForm';
-import StockTable from './StockTable';
+import StockTableGrouped from '@/windows/custom/product/StockTableGrouped';
 import StockForm from './StockForm';
 import catalogs from './mockCatalogs';
 import ProductGallery from '@/windows/custom/product/ProductGallery';
-import ProductDetailHeader from '@/windows/custom/product/ProductDetailHeader';
+import ProductSidebar from '@/windows/custom/product/ProductSidebar';
 
 const breadcrumb = 'Reference / Product';
 
@@ -488,16 +488,17 @@ export default function ProductPage({ windowName, recordId, ...props }) {
         secondaryTabs={[
           { key: 'costing', label: 'Costing', Table: CostingTable, Form: CostingForm },
           { key: 'transactions', label: 'Transactions', Table: TransactionsTable, Form: TransactionsForm },
-          { key: 'stock', label: 'Stock', Table: StockTable, Form: StockForm },
+          { key: 'stock', label: 'Stock', Table: StockTableGrouped, Form: StockForm },
         ]}
-        headerContent={
-          <ProductDetailHeader
+        {...props}
+        sidebarContent={(data) => (
+          <ProductSidebar
             recordId={recordId}
+            data={data}
             token={props.token}
             apiBaseUrl={api.baseUrl}
           />
-        }
-        {...props}
+        )}
       />
     );
   }

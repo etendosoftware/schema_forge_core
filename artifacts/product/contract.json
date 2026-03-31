@@ -1,7 +1,7 @@
 {
-  "version": "0.1.1",
-  "generatedAt": "2026-03-31T14:28:14.758Z",
-  "checksum": "2fe0b4341d55bb0d",
+  "version": "0.6.0",
+  "generatedAt": "2026-03-31T17:50:02.466Z",
+  "checksum": "5512cf67b71f27cf",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -9,6 +9,7 @@
       "primaryEntity": "product",
       "category": "reference",
       "layoutType": "gallery",
+      "sidebarLayout": true,
       "secondaryTabs": {
         "costing": {
           "tabOrder": 1,
@@ -20,7 +21,8 @@
         },
         "stock": {
           "tabOrder": 3,
-          "label": "Stock"
+          "label": "Stock",
+          "customTable": "StockTableGrouped"
         }
       }
     },
@@ -154,7 +156,7 @@
             "apiKey": "description",
             "column": "Description",
             "label": "Description",
-            "type": "string",
+            "type": "textarea",
             "tsType": "string",
             "visibility": "editable",
             "required": false,
@@ -1494,6 +1496,7 @@
       "primaryEntity": "product",
       "category": "reference",
       "layoutType": "gallery",
+      "sidebarLayout": true,
       "secondaryTabs": {
         "costing": {
           "tabOrder": 1,
@@ -1615,7 +1618,7 @@
             "name": "description",
             "apiKey": "description",
             "column": "Description",
-            "type": "string",
+            "type": "textarea",
             "visibility": "editable",
             "required": false
           },

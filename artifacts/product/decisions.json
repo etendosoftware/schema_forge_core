@@ -4,6 +4,7 @@
     "category": "reference",
     "name": "Product",
     "layoutType": "gallery",
+    "sidebarLayout": true,
     "secondaryTabs": {
       "costing": {
         "tabOrder": 1,
@@ -15,7 +16,8 @@
       },
       "stock": {
         "tabOrder": 3,
-        "label": "Stock"
+        "label": "Stock",
+        "customTable": "StockTableGrouped"
       }
     }
   },
@@ -35,6 +37,7 @@
           "seq": 2
         },
         "description": {
+          "type": "textarea",
           "section": "principal",
           "seq": 3
         },

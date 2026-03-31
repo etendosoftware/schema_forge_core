@@ -383,6 +383,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
+  const isSidebar = isGallery && !!contract?.frontendContract?.window?.sidebarLayout;
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
@@ -492,7 +493,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       .map(([key, cfg]) => {
         const isFormTab = cfg.tabMode === 'form-only';
         const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
-        const TableName = `${capitalize(key)}Table`;
+        const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
         const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
         const addLineEntries = addLineFieldKeys.map(fk => {
@@ -508,18 +509,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isCustomForm: !!cfg.customForm, FormName, TableName, addLineEntries };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, FormName, TableName, addLineEntries };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
     const allEntityEntries = Object.entries(contract.frontendContract.entities);
     const knownSecondaryTabDefs = [
-      { key: 'orderTax',         label: 'Tax',               TableName: 'OrderTaxTable',         FormName: 'OrderTaxForm' },
-      { key: 'invoiceTax',       label: 'Tax',               TableName: 'InvoiceTaxTable',       FormName: 'InvoiceTaxForm' },
-      { key: 'basicDiscounts',   label: 'Basic Discounts',   TableName: 'BasicDiscountsTable',   FormName: 'BasicDiscountsForm' },
-      { key: 'paymentPlan',      label: 'Payment Plan',      TableName: 'PaymentPlanTable',      FormName: 'PaymentPlanForm' },
-      { key: 'accounting',       label: 'Accounting',        TableName: 'AccountingTable',       FormName: 'AccountingForm' },
-      { key: 'landedCost',       label: 'Landed Cost',       TableName: 'LandedCostTable',       FormName: 'LandedCostForm' },
+      { key: 'orderTax', label: 'Tax', TableName: 'OrderTaxTable', FormName: 'OrderTaxForm' },
+      { key: 'invoiceTax', label: 'Tax', TableName: 'InvoiceTaxTable', FormName: 'InvoiceTaxForm' },
+      { key: 'basicDiscounts', label: 'Basic Discounts', TableName: 'BasicDiscountsTable', FormName: 'BasicDiscountsForm' },
+      { key: 'paymentPlan', label: 'Payment Plan', TableName: 'PaymentPlanTable', FormName: 'PaymentPlanForm' },
+      { key: 'accounting', label: 'Accounting', TableName: 'AccountingTable', FormName: 'AccountingForm' },
+      { key: 'landedCost', label: 'Landed Cost', TableName: 'LandedCostTable', FormName: 'LandedCostForm' },
       { key: 'reversedInvoices', label: 'Reversed Invoices', TableName: 'ReversedInvoicesTable', FormName: 'ReversedInvoicesForm' },
     ].filter(t => allEntityEntries.some(([name]) => name === t.key));
 
@@ -552,10 +553,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const formImportPath = (t.isCustomForm && specName)
         ? `@/windows/custom/${specName}/${t.FormName}`
         : `./${t.FormName}`;
+      const tableImportPath = (t.isCustomTable && specName)
+        ? `@/windows/custom/${specName}/${t.TableName}`
+        : `./${t.TableName}`;
       if (t.isFormTab) {
         return `import ${t.FormName} from '${formImportPath}';`;
       }
-      return `import ${t.TableName} from './${t.TableName}';\nimport ${t.FormName} from '${formImportPath}';`;
+      return `import ${t.TableName} from '${tableImportPath}';\nimport ${t.FormName} from '${formImportPath}';`;
     })
     .join('\n');
 
@@ -610,13 +614,23 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusBarCode = statusBarResult ? `\n${statusBarResult.componentCode}\n` : '';
   const headerContentProp = statusBar
     ? `\n        headerContent={(data) => <${headerName}StatusBar data={data} />}`
-    : (isGallery ? `\n        headerContent={
+    : (isGallery && !isSidebar ? `\n        headerContent={
           <${headerName}DetailHeader
             recordId={recordId}
             token={props.token}
             apiBaseUrl={api.baseUrl}
           />
         }` : '');
+  const sidebarContentProp = isSidebar
+    ? `\n        sidebarContent={(data) => (
+          <${headerName}Sidebar
+            recordId={recordId}
+            data={data}
+            token={props.token}
+            apiBaseUrl={api.baseUrl}
+          />
+        )}`
+    : '';
 
   // detailSortBy prop
   const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
@@ -627,8 +641,9 @@ import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${relatedDocsImport}import catalogs from './mockCatalogs';
-${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';
-import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : ''}${statusBarImport}
+${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';` : ''}${isSidebar ? `
+import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
+import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
 const breadcrumb = '${windowCategory} / ${windowLabel}';
 ${statusBarCode}
@@ -692,7 +707,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${documentPreviewProp}${notesFieldProp}${customTabsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
-        {...props}
+        {...props}${sidebarContentProp}
       />
     );
   }
