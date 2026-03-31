@@ -25,7 +25,7 @@ export default function ProductDetailHeader({ recordId, token, apiBaseUrl }) {
   const [stockRows, setStockRows] = useState(null);
   useEffect(() => {
     if (!recordId || !token) return;
-    fetch(`${apiBaseUrl}/storageDetail?parentId=${recordId}&_startRow=0&_endRow=200`, {
+    fetch(`${apiBaseUrl}/stock?parentId=${recordId}&_startRow=0&_endRow=200`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : null))
