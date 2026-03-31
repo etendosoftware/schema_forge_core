@@ -15,7 +15,7 @@ import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -97,16 +97,25 @@ export function DetailView({
   apiBaseUrl,
   breadcrumb,
   secondaryTabs = [],
+  formFooter = null,
   draftMode = null,
   headerContent = null,
   customTabs = [],
   documentPreview,
   notesField,
-  detailSortBy = null,
   extraActions = [],
+  menuActions = [],
+  hideDeleteWhenComplete = false,
+  CustomLines = null,
+  customLinesLabel = 'Invoices',
+  sidePanel = null,
+  afterTotals = null,
+  bottomSection = null,
+  topbarExtra = null,
+  topbarRight = null,
   sidebarContent = null,
 }) {
-  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, childSortBy: detailSortBy });
+  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
   const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
   const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
@@ -139,6 +148,19 @@ export function DetailView({
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleClick = (e) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showMoreMenu]);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [lineEdits, setLineEdits] = useState(null);
@@ -411,6 +433,8 @@ export function DetailView({
     } else {
       tabs.unshift(linesTab);
     }
+  } else if (CustomLines) {
+    tabs.unshift({ key: 'customLines', label: customLinesLabel });
   }
   // "Others" tab is added dynamically via othersRef after first render
   const [showOthers, setShowOthers] = useState(null); // null = unknown, true/false after mount
@@ -500,13 +524,11 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               Cancel
             </Button>
-            {statusField && data[statusField] && (
-              <Badge
-                {...getStatusBadgeProps(data[statusField])}
-                className={cn('ml-1', getStatusBadgeProps(data[statusField]).className)}
-              >
-                {statusLabel(data[statusField])}
-              </Badge>
+            {!topbarRight && statusField && data[statusField] && (
+              <span className="inline-flex items-center gap-1.5 ml-1 text-xs font-medium">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
+                <span className="text-foreground/70">{statusLabel(data[statusField])}</span>
+              </span>
             )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
@@ -523,9 +545,18 @@ export function DetailView({
                 </Badge>
               );
             })}
+            {topbarExtra && (() => {
+              const TopbarExtraComponent = topbarExtra;
+              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+            })()}
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Topbar right slot (e.g. payment status badge) */}
+            {topbarRight && (() => {
+              const TopbarRightComponent = topbarRight;
+              return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+            })()}
             {/* Send / Print document — uses DocumentPrintDrawer */}
             {documentPreview && !isNew && recordId && (
               <button
@@ -547,8 +578,8 @@ export function DetailView({
                 <Printer className="h-4 w-4" />
               </button>
             )}
-            {/* Delete record */}
-            {!isNew && recordId && (
+            {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
+            {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
@@ -559,9 +590,49 @@ export function DetailView({
               </button>
             )}
             {/* More actions */}
-            <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-              <MoreVertical className="h-4 w-4" />
-            </button>
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                onClick={() => setShowMoreMenu(v => !v)}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              {showMoreMenu && (() => {
+                const resolvedActions = typeof menuActions === 'function'
+                  ? menuActions({ data, status: data?.[statusField] })
+                  : menuActions;
+                const visibleActions = resolvedActions.filter(a => a.visible !== false);
+                if (visibleActions.length === 0) return null;
+                return (
+                  <div
+                    className="absolute right-0 top-full mt-1 z-50 bg-white py-1 min-w-[160px]"
+                    style={{ border: '0.5px solid hsl(var(--border))', borderRadius: '8px' }}
+                  >
+                    {visibleActions.map((action, i) => (
+                      <button
+                        key={action.key || i}
+                        type="button"
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          if (action.columnName) {
+                            hook.handleProcess?.({ columnName: action.columnName, name: action.key });
+                          } else if (action.onClick) {
+                            action.onClick();
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
+                          action.destructive
+                            ? 'text-red-600 hover:bg-red-50'
+                            : 'text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
             {/* Extra action buttons from page */}
             {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
               action.visible !== false && (
@@ -582,13 +653,16 @@ export function DetailView({
                 ? evalDisplayLogicRaw(p.displayLogicRaw, data)
                 : displayLogic?.visibility?.[p.name] !== false)
               .map(p => {
+                const isPrimary = p.style === 'positive';
                 const btnClass = p.style === 'destructive'
                   ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                  : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                  : isPrimary
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
+                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
                 return (
                   <Button
                     key={p.name}
-                    variant="outline"
+                    variant={isPrimary ? 'default' : 'outline'}
                     size="sm"
                     className={btnClass}
                     onClick={() => hook.handleProcess?.(p)}
@@ -627,11 +701,12 @@ export function DetailView({
           </div>
         </div>
 
-        {/* Scrollable content + optional sidebar */}
+        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
-          <div className="max-w-full space-y-6">
+          <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
@@ -651,6 +726,7 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
+            <div className="mt-6">
             <CollapsibleSection title="More details">
               <Form
                 entity={entity}
@@ -666,10 +742,18 @@ export function DetailView({
                 apiBaseUrl={apiBaseUrl}
               />
             </CollapsibleSection>
+            </div>
+
+            {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
+            {formFooter && (
+              <div className="pt-2">
+                {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
+              </div>
+            )}
 
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
-              <div>
+              <div className="mt-6">
                 <div className="flex items-center justify-between border-b border-border/50">
                   <div className="flex items-center gap-0">
                     {tabs.map((tab, idx) => (
@@ -804,12 +888,14 @@ export function DetailView({
                         </div>
                       )}
 
-                      <button
-                        onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                      >
-                        + Add {detailLabel || 'line'}
-                      </button>
+                      {allEntryFields.length > 0 && hook.editing && (
+                        <button
+                          onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                        >
+                          + Add {detailLabel || 'line'}
+                        </button>
+                      )}
                     </div>
 
                     {/* Right sidebar: line detail form */}
@@ -925,6 +1011,22 @@ export function DetailView({
                         )}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Tab content: CustomLines (replaces standard lines table) */}
+                {tabs[activeTab]?.key === 'customLines' && CustomLines && (
+                  <div className="pt-3">
+                    <CustomLines
+                      recordId={data?.id || recordId}
+                      data={data}
+                      status={data?.[statusField]}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                      api={api}
+                      editing={hook.editing}
+                      onRefresh={() => hook.refetch?.()}
+                    />
                   </div>
                 )}
 
@@ -1138,104 +1240,128 @@ export function DetailView({
               </>
             )}
 
-            {/* Totals block: Subtotal / Tax / Total */}
-            {(() => {
-              const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
-              const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
-              if (!subtotalField && !totalField) return null;
-              const subtotal = subtotalField ? data[subtotalField.key] : null;
-              const total = totalField ? data[totalField.key] : null;
-              const taxes = (subtotal != null && total != null) ? total - subtotal : null;
-              const currency = data['currency$_identifier'];
+            {/* Bottom section: custom (two-column) or default (totals + footer) */}
+            {bottomSection ? (() => {
+              const BottomComponent = bottomSection;
               return (
-                <div className="mt-3 flex justify-end">
-                  <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
-                    {subtotal != null && (
-                      <div className="flex justify-between py-1.5 px-2">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
-                      </div>
-                    )}
-                    {taxes != null && taxes !== 0 && (
-                      <div className="flex justify-between py-1.5 px-2">
-                        <span className="text-muted-foreground">Tax</span>
-                        <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
-                      </div>
-                    )}
-                    {total != null && (
-                      <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
-                        <span>Total</span>
-                        <span className="tabular-nums">{formatAmount(total, currency)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <BottomComponent
+                  recordId={data?.id || recordId}
+                  data={data}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                  api={api}
+                  summary={summary}
+                  notesField={notesField}
+                  onFieldChange={handleChangeWithCallout}
+                  notesFocused={notesFocused}
+                  setNotesFocused={setNotesFocused}
+                />
               );
-            })()}
+            })() : (
+              <>
+                {/* Totals block: Subtotal / Tax / Total */}
+                {(() => {
+                  const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
+                  const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
+                  if (!subtotalField && !totalField) return null;
+                  const subtotal = subtotalField ? data[subtotalField.key] : null;
+                  const total = totalField ? data[totalField.key] : null;
+                  const taxes = (subtotal != null && total != null) ? total - subtotal : null;
+                  const currency = data['currency$_identifier'];
+                  return (
+                    <div className="mt-1 flex justify-end">
+                      <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
+                        {subtotal != null && (
+                          <div className="flex justify-between py-1.5 px-2">
+                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
+                          </div>
+                        )}
+                        {taxes != null && taxes !== 0 && (
+                          <div className="flex justify-between py-1.5 px-2">
+                            <span className="text-muted-foreground">Tax</span>
+                            <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
+                          </div>
+                        )}
+                        {total != null && (
+                          <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
+                            <span>Total</span>
+                            <span className="tabular-nums">{formatAmount(total, currency)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
-            {/* Footer: Related Docs + Notes */}
-            {(customTabs.length > 0 || !!notesField) && (
-              <div className="mt-3 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
-                {/* Row 1: Related Documents as chips */}
-                {customTabs.length > 0 && (
-                  <div className="flex items-start gap-3 px-4 py-2.5 border-b border-border/30" style={{ borderBottomWidth: '0.5px' }}>
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">Docs</span>
-                    <div className="flex-1">
-                      {customTabs.map(ct => {
-                        const TabComponent = ct.Component;
-                        return (
-                          <TabComponent
-                            key={ct.key}
-                            recordId={data?.id || recordId}
-                            data={data}
-                            token={token}
-                            apiBaseUrl={apiBaseUrl}
-                            api={api}
-                            layout="chips"
-                          />
-                        );
-                      })}
-                    </div>
+                {/* After-totals slot (e.g. payment footer) */}
+                {afterTotals && (() => {
+                  const AfterTotalsComponent = afterTotals;
+                  return <AfterTotalsComponent recordId={data?.id || recordId} data={data} token={token} apiBaseUrl={apiBaseUrl} api={api} />;
+                })()}
+
+                {/* Footer: Related Docs + Notes */}
+                {(customTabs.length > 0 || !!notesField) && (
+                  <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
+                    {customTabs.length > 0 && (
+                      <div className="flex items-start gap-3 px-4 py-2.5 border-b border-border/30" style={{ borderBottomWidth: '0.5px' }}>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">Docs</span>
+                        <div className="flex-1">
+                          {customTabs.map(ct => {
+                            const TabComponent = ct.Component;
+                            return (
+                              <TabComponent
+                                key={ct.key}
+                                recordId={data?.id || recordId}
+                                data={data}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                api={api}
+                                layout="chips"
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {notesField && (
+                      <div className="flex items-start gap-3 px-4 py-2.5">
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">Notes</span>
+                        <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
+                          {notesFocused ? (
+                            <textarea
+                              value={data[notesField] || ''}
+                              onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
+                              onBlur={() => setNotesFocused(false)}
+                              placeholder="Description"
+                              rows={3}
+                              autoFocus
+                              className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+                            />
+                          ) : (
+                            <div
+                              tabIndex={0}
+                              role="textbox"
+                              onClick={() => setNotesFocused(true)}
+                              onFocus={() => setNotesFocused(true)}
+                              className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+                            >
+                              {data[notesField] || <span className="text-muted-foreground/40">Description</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-                {/* Row 2: Notes input */}
-                {notesField && (
-                  <div className="flex items-start gap-3 px-4 py-2.5">
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">Notes</span>
-                    <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all ${notesFocused ? 'py-1.5' : 'py-1.5'}`} style={{ borderWidth: '0.5px' }}>
-                      {notesFocused && (
-                        <div className="flex items-center gap-0.5 px-2 pb-1.5 border-b border-border/30" style={{ borderBottomWidth: '0.5px' }}>
-                          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { const v = data[notesField] || ''; handleChangeWithCallout(notesField, v + '<b></b>'); }} className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40" title="Bold"><span className="text-xs font-bold">B</span></button>
-                          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { const v = data[notesField] || ''; handleChangeWithCallout(notesField, v + '<i></i>'); }} className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40" title="Italic"><span className="text-xs italic">I</span></button>
-                          <button type="button" onMouseDown={(e) => e.preventDefault()} className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40" title="Mention"><span className="text-xs">@</span></button>
-                        </div>
-                      )}
-                      {notesFocused ? (
-                        <textarea
-                          value={data[notesField] || ''}
-                          onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
-                          onBlur={() => setNotesFocused(false)}
-                          placeholder="Description"
-                          rows={3}
-                          autoFocus
-                          className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
-                        />
-                      ) : (
-                        <div
-                          tabIndex={0}
-                          role="textbox"
-                          onClick={() => setNotesFocused(true)}
-                          onFocus={() => setNotesFocused(true)}
-                          className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
-                        >
-                          {data[notesField] || <span className="text-muted-foreground/40">Description</span>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              </>
             )}
+          </div>
+          {sidePanel && (
+            <div className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4" style={{ borderLeftWidth: '1px' }}>
+              {typeof sidePanel === 'function' ? sidePanel({ recordId: data?.id || recordId, data, token, apiBaseUrl, api }) : sidePanel}
+            </div>
+          )}
           </div>
         </div>
         {sidebarContent && (

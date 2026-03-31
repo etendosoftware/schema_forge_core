@@ -4,7 +4,12 @@
     "category": "sales",
     "name": "Payment In",
     "documentPreview": { "titlePrefix": "Payment" },
-    "notesField": "description"
+    "notesField": "description",
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "menuActions": [
+      { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
+    ]
   },
   "entities": {
     "header": {

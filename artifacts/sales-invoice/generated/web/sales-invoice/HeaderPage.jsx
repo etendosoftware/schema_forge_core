@@ -1,13 +1,19 @@
 import { ListView, DetailView } from '@/components/contract-ui';
-import HeaderTable from './HeaderTable';
+import { toast } from 'sonner';
+import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import catalogs from './mockCatalogs';
+import PaymentPlanTable from './PaymentPlanTable';
+import PaymentPlanForm from './PaymentPlanForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
+import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
+import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Sales Invoice';
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -27,7 +33,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-
+  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
 
@@ -85,6 +92,17 @@ const api = {
       "supportedFilters": [
         "product"
       ]
+    },
+    "paymentPlan": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/paymentPlan",
+      "detailUrl": "/sws/neo/sales-invoice/paymentPlan/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -135,6 +153,22 @@ const api = {
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "finPaymentmethodID",
+      "column": "Fin_Paymentmethod_ID",
+      "reference": "Paymentmethod",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/paymentPlan/selectors/finPaymentmethodID"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/paymentPlan/selectors/currency"
     }
   ],
   "actions": [
@@ -237,6 +271,30 @@ const api = {
       "url": "/sws/neo/sales-invoice/lines/{id}/action/matchLCCosts",
       "processId": "281FFDFAB31C4394A2EAA73A6F9F3A3F",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "updatePaymentPlan",
+      "column": "Update_Payment_Plan",
+      "url": "/sws/neo/sales-invoice/paymentPlan/{id}/action/updatePaymentPlan",
+      "processId": "FB740AB61B0E42B198D2C88D3A0D0CE6",
+      "processType": "classic"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "aprmModifPaymentINPlan",
+      "column": "EM_Aprm_Modif_Paym_Sched",
+      "url": "/sws/neo/sales-invoice/paymentPlan/{id}/action/aprmModifPaymentINPlan",
+      "processId": "4EEB3497082C4F2182E16A4371CD5D96",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "aprmModifPaymentOUTPlan",
+      "column": "EM_Aprm_Modif_Paym_Out_Sched",
+      "url": "/sws/neo/sales-invoice/paymentPlan/{id}/action/aprmModifPaymentOUTPlan",
+      "processId": "6F87442DF7BC43AB8A666BDED2F7D64E",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -277,9 +335,19 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        secondaryTabs={[
+          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
+        ]}
         documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
+        hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        bottomSection={InvoiceBottomPanel}
+        topbarRight={InvoiceTopbarExtra}
+        menuActions={({ status }) => [
+          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+        ]}
         {...props}
       />
     );

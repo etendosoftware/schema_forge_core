@@ -479,6 +479,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const documentPreview = windowConfig.documentPreview ?? null;
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
+  const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const customComponents = windowConfig.customComponents ?? {};
+  const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
   const detailSortBy = windowConfig.detailSortBy ?? null;
 
@@ -588,6 +591,46 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}`
     : '';
 
+  // hideDeleteWhenComplete prop
+  const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+
+  // Custom component props (bottomSection, topbarRight)
+  const customComponentImports = [];
+  const customComponentProps = [];
+  if (customComponents.bottomSection) {
+    customComponentImports.push(`import ${customComponents.bottomSection} from '../../../custom/${customComponents.bottomSection}';`);
+    customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
+  }
+  if (customComponents.topbarRight) {
+    customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
+    customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
+  }
+  const customCompImportBlock = customComponentImports.length > 0
+    ? customComponentImports.join('\n') + '\n'
+    : '';
+  const customCompPropsBlock = customComponentProps.join('');
+
+  // Custom headerTable override
+  const customHeaderTable = customComponents.headerTable ?? null;
+  const headerTableImport = customHeaderTable
+    ? `import ${headerName}Table from '../../../custom/${customHeaderTable}';`
+    : `import ${headerName}Table from './${headerName}Table';`;
+
+  // menuActions prop
+  const menuActionsProp = menuActionsConfig.length > 0
+    ? `\n        menuActions={({ status }) => [\n${menuActionsConfig.map(a => {
+        const vis = a.visibleWhenStatus
+          ? Array.isArray(a.visibleWhenStatus)
+            ? `visible: ${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+            : `visible: status === '${a.visibleWhenStatus}'`
+          : '';
+        const destr = a.destructive ? 'destructive: true, ' : '';
+        const col = a.columnName ? `columnName: '${a.columnName}', ` : `onClick: () => {},`;
+        const visPart = vis ? `${vis}, ` : '';
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${col} }`;
+      }).join(',\n')}\n        ]}`
+    : '';
+
   // Build optional import for RelatedDocuments
   const relatedDocsImport = relatedDocuments
     ? `import RelatedDocuments from '../../../custom/RelatedDocuments';\n`
@@ -635,12 +678,32 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // detailSortBy prop
   const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
 
-  return `import { ListView, DetailView } from '@/components/contract-ui';
-import ${headerName}Table from './${headerName}Table';
+  // listKpiCards → headerContent prop in ListView
+  const listKpiCardsConfig = windowConfig.listKpiCards ?? null;
+  let listKpiCardsImport = '';
+  let listKpiCardsProp = '';
+  if (listKpiCardsConfig?.customComponent && specName) {
+    const kpiComp = listKpiCardsConfig.customComponent;
+    listKpiCardsImport = `import ${kpiComp} from '@/windows/custom/${specName}/${kpiComp}';\n`;
+    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}\n      api={api}`;
+  }
+
+  // headerExtra → formFooter prop
+  const headerExtraConfig = windowConfig.headerExtra ?? null;
+  let formFooterImport = '';
+  let formFooterProp = '';
+  if (headerExtraConfig?.customForm && specName) {
+    const compName = headerExtraConfig.customForm;
+    formFooterImport = `import ${compName} from '@/windows/custom/${specName}/${compName}';\n`;
+    formFooterProp = `\n        formFooter={${compName}}`;
+  }
+
+  return `import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+${headerTableImport}
 import ${headerName}Form from './${headerName}Form';
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${relatedDocsImport}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';` : ''}${isSidebar ? `
 import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
@@ -706,7 +769,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${documentPreviewProp}${notesFieldProp}${customTabsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -716,10 +779,10 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${pluralize(toLabel(headerEntity))}"
+      entityLabel="${windowConfig.name || pluralize(entityLabel)}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
       {...props}
     />
   );

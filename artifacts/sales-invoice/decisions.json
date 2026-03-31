@@ -6,8 +6,18 @@
     "documentPreview": {
       "titlePrefix": "Invoice"
     },
+    "relatedDocuments": true,
     "notesField": "description",
-    "relatedDocuments": true
+    "hideDeleteWhenComplete": true,
+    "customComponents": {
+      "headerTable": "InvoiceHeaderTable",
+      "bottomSection": "InvoiceBottomPanel",
+      "topbarRight": "InvoiceTopbarExtra"
+    },
+    "menuActions": [
+      { "key": "duplicate", "label": "Duplicate" },
+      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+    ]
   },
   "entities": {
     "header": {
@@ -28,7 +38,7 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "section": "collapsed"
+          "section": "principal"
         },
         "invoiceDate": {
           "grid": true,
@@ -59,7 +69,7 @@
           "inputMode": "selector"
         },
         "description": {
-          "section": "collapsed"
+          "form": false
         },
         "aPRMAddpayment": {
           "visibility": "discarded"
@@ -369,7 +379,15 @@
       "exclude": true
     },
     "paymentPlan": {
-      "exclude": true
+      "httpMethods": { "get": true, "post": false, "put": false, "delete": false },
+      "fields": {
+        "finPaymentScheduleID": { "visibility": "readOnly" },
+        "amount": { "visibility": "readOnly" },
+        "paidAmount": { "visibility": "readOnly" },
+        "outstandingAmount": { "visibility": "readOnly" },
+        "dueDate": { "visibility": "readOnly" },
+        "lastPaymentDate": { "visibility": "readOnly" }
+      }
     },
     "paymentDetails": {
       "exclude": true

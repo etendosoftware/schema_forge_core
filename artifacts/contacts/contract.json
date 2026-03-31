@@ -11,13 +11,10 @@
       "entityLabel": "Contact",
       "detailLabel": "Location/Address",
       "detailTabIndex": 3,
+      "headerExtra": {
+        "customForm": "BillingPreferencesForm"
+      },
       "secondaryTabs": {
-        "billing": {
-          "tabMode": "form-only",
-          "tabOrder": 0,
-          "label": "Billing Preferences",
-          "customForm": "BillingPreferencesForm"
-        },
         "user": {
           "tabMode": "table-form",
           "tabOrder": 1,
@@ -25,6 +22,7 @@
           "addLineFields": [
             "firstName",
             "lastName",
+            "email",
             "phone",
             "position"
           ]
@@ -46,14 +44,15 @@
           "label": "Basic Discount",
           "addLineFields": [
             "lineNo",
-            "discount",
-            "customer",
-            "vendor"
+            "discount"
           ]
         }
       },
       "detailEntity": "bpartnerLocation",
-      "layoutType": "default"
+      "layoutType": "default",
+      "listKpiCards": {
+        "customComponent": "ContactsKpiCards"
+      }
     },
     "entities": {
       "bpartner": {
@@ -143,7 +142,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "section": "principal"
           },
@@ -165,7 +164,7 @@
             "name": "businessPartnerCategory",
             "apiKey": "businessPartnerCategory",
             "column": "C_BP_Group_ID",
-            "label": "C_BP_Group_ID",
+            "label": "Business Partner Category",
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
@@ -276,13 +275,13 @@
             "name": "customer",
             "apiKey": "customer",
             "column": "IsCustomer",
-            "label": "IsCustomer",
+            "label": "Customer",
             "type": "boolean",
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "Y",
             "section": "principal"
           },
@@ -290,13 +289,13 @@
             "name": "vendor",
             "apiKey": "vendor",
             "column": "IsVendor",
-            "label": "IsVendor",
+            "label": "Vendor",
             "type": "boolean",
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "principal"
           },
           {
@@ -406,7 +405,7 @@
             "name": "creditLimit",
             "apiKey": "creditLimit",
             "column": "SO_CreditLimit",
-            "label": "SO_CreditLimit",
+            "label": "Credit Limit",
             "type": "amount",
             "tsType": "number",
             "visibility": "editable",
@@ -419,7 +418,7 @@
             "name": "creditUsed",
             "apiKey": "creditUsed",
             "column": "SO_CreditUsed",
-            "label": "SO_CreditUsed",
+            "label": "Credit Used",
             "type": "amount",
             "tsType": "number",
             "visibility": "readOnly",
@@ -1139,8 +1138,8 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
-            "form": true,
+            "grid": false,
+            "form": false,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
@@ -1220,7 +1219,8 @@
             "required": true,
             "grid": false,
             "form": true,
-            "section": "other"
+            "section": "principal",
+            "defaultValue": "Y"
           },
           {
             "name": "grantPortalAccess",
@@ -1249,7 +1249,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N"
           },
           {
@@ -1262,7 +1262,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@Commercialauth@='Y'",
@@ -1279,7 +1279,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@Commercialauth@='Y'",
@@ -1469,13 +1469,10 @@
       "entityLabel": "Contact",
       "detailLabel": "Location/Address",
       "detailTabIndex": 3,
+      "headerExtra": {
+        "customForm": "BillingPreferencesForm"
+      },
       "secondaryTabs": {
-        "billing": {
-          "tabMode": "form-only",
-          "tabOrder": 0,
-          "label": "Billing Preferences",
-          "customForm": "BillingPreferencesForm"
-        },
         "user": {
           "tabMode": "table-form",
           "tabOrder": 1,
@@ -1483,6 +1480,7 @@
           "addLineFields": [
             "firstName",
             "lastName",
+            "email",
             "phone",
             "position"
           ]
@@ -1504,13 +1502,14 @@
           "label": "Basic Discount",
           "addLineFields": [
             "lineNo",
-            "discount",
-            "customer",
-            "vendor"
+            "discount"
           ]
         }
       },
-      "detailEntity": "bpartnerLocation"
+      "detailEntity": "bpartnerLocation",
+      "listKpiCards": {
+        "customComponent": "ContactsKpiCards"
+      }
     },
     "entities": {
       "bpartner": {
@@ -1572,7 +1571,8 @@
             "column": "Value",
             "type": "string",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "grid": false
           },
           {
             "name": "id",
@@ -1668,7 +1668,8 @@
             "column": "C_BP_Group_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "label": "Business Partner Category"
           },
           {
             "name": "greeting",
@@ -1860,7 +1861,9 @@
             "column": "IsCustomer",
             "type": "boolean",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "label": "Customer",
+            "form": false
           },
           {
             "name": "printDiscount",
@@ -1916,7 +1919,9 @@
             "column": "IsVendor",
             "type": "boolean",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "label": "Vendor",
+            "form": false
           },
           {
             "name": "consumptionDays",
@@ -2180,7 +2185,8 @@
             "column": "SO_CreditLimit",
             "type": "amount",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "label": "Credit Limit"
           },
           {
             "name": "creditUsed",
@@ -2188,7 +2194,8 @@
             "column": "SO_CreditUsed",
             "type": "amount",
             "visibility": "readOnly",
-            "required": true
+            "required": true,
+            "label": "Credit Used"
           },
           {
             "name": "orderDescription",
@@ -3308,7 +3315,9 @@
             "column": "Name",
             "type": "string",
             "visibility": "readOnly",
-            "required": true
+            "required": true,
+            "grid": false,
+            "form": false
           },
           {
             "name": "email",
@@ -3356,7 +3365,9 @@
             "column": "IsActive",
             "type": "boolean",
             "visibility": "readOnly",
-            "required": true
+            "required": true,
+            "section": "principal",
+            "defaultValue": "Y"
           },
           {
             "name": "description",
@@ -3428,7 +3439,8 @@
             "column": "Commercialauth",
             "type": "boolean",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "form": false
           },
           {
             "name": "viasms",
@@ -3436,7 +3448,8 @@
             "column": "Viasms",
             "type": "boolean",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "form": false
           },
           {
             "name": "viaemail",
@@ -3444,7 +3457,8 @@
             "column": "Viaemail",
             "type": "boolean",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "form": false
           },
           {
             "name": "supervisor",

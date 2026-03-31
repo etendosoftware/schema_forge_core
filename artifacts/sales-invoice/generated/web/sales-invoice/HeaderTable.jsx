@@ -7,7 +7,6 @@ const columns = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', display: 'dot' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  { key: 'paymentComplete', column: 'Ispaid', type: 'boolean' },
 ];
 // @sf-generated-end columns:header
 
