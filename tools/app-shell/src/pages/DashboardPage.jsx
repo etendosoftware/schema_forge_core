@@ -359,14 +359,15 @@ const SIZE_COLS = { large: 4, wide: 3, medium: 2, small: 1 };
 const COL_SPAN_CLASS = { 1: 'col-span-1', 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4' };
 const SIZE_CYCLE = { small: 'medium', medium: 'wide', wide: 'large', large: 'small' };
 
-const HEIGHT_RESIZABLE = new Set(['pending-tasks', 'recent-invoices', 'best-sellers', 'best-products', 'top-clients']);
-
 // Discrete height rows — widget height snaps to multiples of ROW_STEP
 const ROW_STEP = 80;  // px per row unit
 const MIN_ROWS = 2;   // 160px minimum
 const MAX_ROWS = 8;   // 640px maximum
 const snapToRows = (px) =>
   Math.max(MIN_ROWS, Math.min(MAX_ROWS, Math.round(px / ROW_STEP))) * ROW_STEP;
+
+// Widgets that default to 4 rows instead of 2
+const TALL_DEFAULT = new Set(['pending-tasks', 'top-clients']);
 
 function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset }) {
   const [draggingId, setDraggingId] = useState(null);
@@ -1132,7 +1133,7 @@ function DashboardSkeleton() {
  * Dashboard Page
  * ----------------------------------------------------------------*/
 
-export default function DashboardPage({ apiBaseUrl }) {
+export default function DashboardPage() {
   const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
@@ -1233,7 +1234,6 @@ export default function DashboardPage({ apiBaseUrl }) {
               (resizingId === item.id && resizePreviewSize) ? resizePreviewSize
               : item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
             const getColSpan = (item) => SIZE_COLS[getSize(item)] ?? 1;
-            const TALL_DEFAULT = new Set(['pending-tasks', 'top-clients']);
             const getHeight = (item) => {
               if (resizingHeightId === item.id && resizeHeightPreview != null) return resizeHeightPreview;
               if (item.height != null) return item.height;
