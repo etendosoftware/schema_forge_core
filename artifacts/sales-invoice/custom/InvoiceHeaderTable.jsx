@@ -56,7 +56,7 @@ const columns = [
   },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: '_status', column: null, type: 'custom', label: 'Status',
+  { key: '_status', column: '_status', type: 'custom', label: 'Status',
     render: (row) => {
       const s = getInvoiceStatus(row);
       return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${s.className}`} style={{ borderWidth: '0.5px' }}>{s.label}</span>;
