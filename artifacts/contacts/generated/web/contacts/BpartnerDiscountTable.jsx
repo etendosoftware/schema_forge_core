@@ -2,10 +2,10 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:bpartnerDiscount
 const columns = [
-  { key: 'lineNo', column: 'Line', type: 'number' },
-  { key: 'discount', column: 'C_Discount_ID', type: 'string' },
-  { key: 'customer', column: 'IsCustomer', type: 'boolean' },
-  { key: 'vendor', column: 'IsVendor', type: 'boolean' },
+  { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
+  { key: 'discount', column: 'C_Discount_ID', type: 'string', label: 'Basic Discount' },
+  { key: 'customer', column: 'IsCustomer', type: 'boolean', label: 'Customer' },
+  { key: 'vendor', column: 'IsVendor', type: 'boolean', label: 'Vendor' },
 ];
 // @sf-generated-end columns:bpartnerDiscount
 

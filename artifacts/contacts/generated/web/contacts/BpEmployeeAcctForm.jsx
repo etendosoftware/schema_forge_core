@@ -2,7 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:bpEmployeeAcct
 const fields = [
-  { key: 'accountingSchema', column: 'C_AcctSchema_ID', type: 'selector', required: true, readOnly: true, section: 'other', reference: 'AcctSchema', inputMode: 'selector' },
+  { key: 'accountingSchema', column: 'C_AcctSchema_ID', type: 'selector', label: 'General Ledger', required: true, readOnly: true, section: 'other', reference: 'AcctSchema', inputMode: 'selector' },
 ];
 // @sf-generated-end fields:bpEmployeeAcct
 
