@@ -434,39 +434,6 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
 }
 
 /**
- * Button that opens the ProductSearchDrawer popup for fields with popup: true.
- */
-function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, token }) {
-  const [open, setOpen] = useState(false);
-  const displayText = displayValue || (value ? value : '');
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        data-testid={`field-${field.key}`}
-        className="w-full h-10 text-sm rounded-md border border-input bg-background px-3 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
-      >
-        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-        {displayText ? (
-          <span className="truncate text-foreground">{displayText}</span>
-        ) : (
-          <span className="truncate text-muted-foreground">Search {label}...</span>
-        )}
-      </button>
-      <ProductSearchDrawer
-        open={open}
-        onClose={() => setOpen(false)}
-        onSelect={(item) => { onChange(item.id, item.label || item.name); setOpen(false); }}
-        selectorUrl={selectorUrl}
-        token={token}
-        title={label}
-      />
-    </>
-  );
-}
-
-/**
  * Generic Entity Form component.
  * Layouts: 'horizontal' (grid-based edit form) | 'vertical' (stack-based sidebar)
  * 
