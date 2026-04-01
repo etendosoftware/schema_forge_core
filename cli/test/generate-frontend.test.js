@@ -637,24 +637,19 @@ describe('generateIndexComponent', () => {
     assert.ok(code.includes("name: 'Sales Order'"));
   });
 
-  it('generates ListView/DetailView pattern for single-entity (no detail)', () => {
+  it('generates Page-based pattern for single-entity (no detail)', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
-    assert.ok(code.includes("import { ListView, DetailView } from '@/components/contract-ui'"));
-    assert.ok(code.includes("import ItemTable from './ItemTable'"));
-    assert.ok(code.includes("import ItemForm from './ItemForm'"));
-    assert.ok(code.includes("import catalogs from './mockCatalogs'"));
-    assert.ok(code.includes('<ListView'));
-    assert.ok(code.includes('<DetailView'));
+    assert.ok(code.includes("import ItemPage from './ItemPage'"));
+    assert.ok(code.includes('<ItemPage'));
+    assert.ok(code.includes('windowName={windowName}'));
+    assert.ok(code.includes('recordId={recordId}'));
   });
 
-  it('passes correct props to ListView and DetailView', () => {
+  it('passes correct props to Page for single-entity', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
-    assert.ok(code.includes('entity="item"'));
-    assert.ok(code.includes('Table={ItemTable}'));
-    assert.ok(code.includes('Form={ItemForm}'));
-    assert.ok(code.includes('catalogs={catalogs}'));
-    assert.ok(code.includes('entityLabel="Item"'));
-    assert.ok(code.includes('{...props}'));
+    assert.ok(code.includes('token={token}'));
+    assert.ok(code.includes('apiBaseUrl={apiBaseUrl}'));
+    assert.ok(code.includes('{...rest}'));
   });
 
   it('includes windowMeta with category and name for single-entity', () => {
@@ -789,8 +784,8 @@ describe('generateAll', () => {
     assert.ok(names.includes('ItemForm.jsx'));
     assert.ok(names.includes('index.jsx'));
     assert.ok(names.includes('mockCatalogs.js'));
-    assert.ok(!names.includes('ItemPage.jsx'), 'should NOT produce Page for single entity');
-    assert.equal(names.length, 4);
+    assert.ok(names.includes('ItemPage.jsx'), 'should produce Page for single entity');
+    assert.equal(names.length, 5);
   });
 
   it('file names follow PascalCase entity + suffix convention', () => {
