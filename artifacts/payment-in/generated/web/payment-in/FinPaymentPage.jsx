@@ -13,13 +13,7 @@ const breadcrumb = 'Sales / Payment In';
 
 // @sf-generated-start summary:finPayment
 const summary = [
-  { key: 'referenceNo', column: 'Referenceno', type: 'string' },
-  { key: 'paymentDate', column: 'Paymentdate', type: 'date' },
-  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string' },
-  { key: 'paymentMethod', column: 'Fin_Paymentmethod_ID', type: 'string' },
-  { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'account', column: 'Fin_Financial_Account_ID', type: 'string' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+
 ];
 
 const statusField = 'status';

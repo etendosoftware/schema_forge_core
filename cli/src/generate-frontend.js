@@ -400,7 +400,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
-  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+  const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
+  const summaryFields = Array.isArray(summaryFieldsOverride)
+    ? summaryFieldsOverride.length === 0
+      ? []
+      : readOnlyFields.filter(f => f !== statusField && summaryFieldsOverride.includes(f.name))
+    : readOnlyFields.filter(f => f !== statusField);
 
   // Summary config
   const summaryArray = summaryFields.map(f => {
