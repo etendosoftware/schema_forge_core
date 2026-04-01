@@ -307,17 +307,21 @@ export default function reportApiPlugin() {
             const pg = await import('pg');
             const pool = new pg.default.Pool({ host: gradle['bbdd.host'] || 'localhost', port: parseInt(gradle['bbdd.port']) || 5432, user: gradle['bbdd.user'], password: gradle['bbdd.password'], database: gradle['bbdd.sid'], max: 2 });
             try {
+              const clientRes = await pool.query(
+                `SELECT ad_client_id FROM ad_client WHERE isactive='Y' AND ad_client_id != '0' ORDER BY name LIMIT 1`
+              );
+              const clientId = clientRes.rows[0]?.ad_client_id || '0';
               const queries = {
-                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
-                'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
               };
               const sql = queries[type];
               if (!sql) throw new Error(`Unknown selector type: ${type}`);
-              const { rows } = await pool.query(sql, [`%${q}%`]);
+              const { rows } = await pool.query(sql, [`%${q}%`, clientId]);
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(rows));
             } finally { await pool.end(); }
