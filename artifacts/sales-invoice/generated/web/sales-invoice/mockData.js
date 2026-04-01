@@ -15,7 +15,9 @@ export const header = [
     "summedLineAmount": 38907,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 38907
+    "posted": "Sample posted",
+    "outstandingAmount": 38907,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-002",
@@ -31,7 +33,9 @@ export const header = [
     "summedLineAmount": 9306,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 9306
+    "posted": "Sample posted",
+    "outstandingAmount": 9306,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-003",
@@ -47,7 +51,9 @@ export const header = [
     "summedLineAmount": 11544,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 11544
+    "posted": "Sample posted",
+    "outstandingAmount": 11544,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-004",
@@ -63,7 +69,9 @@ export const header = [
     "summedLineAmount": 11872,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 11872
+    "posted": "Sample posted",
+    "outstandingAmount": 11872,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-005",
@@ -79,7 +87,9 @@ export const header = [
     "summedLineAmount": 48460,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 48460
+    "posted": "Sample posted",
+    "outstandingAmount": 48460,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-006",
@@ -95,7 +105,9 @@ export const header = [
     "summedLineAmount": 45418,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 45418
+    "posted": "Sample posted",
+    "outstandingAmount": 45418,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-007",
@@ -111,7 +123,9 @@ export const header = [
     "summedLineAmount": 33840,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 33840
+    "posted": "Sample posted",
+    "outstandingAmount": 33840,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-008",
@@ -127,7 +141,9 @@ export const header = [
     "summedLineAmount": 25716,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 25716
+    "posted": "Sample posted",
+    "outstandingAmount": 25716,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-009",
@@ -143,7 +159,9 @@ export const header = [
     "summedLineAmount": 44780,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 44780
+    "posted": "Sample posted",
+    "outstandingAmount": 44780,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-010",
@@ -159,7 +177,9 @@ export const header = [
     "summedLineAmount": 12483,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 12483
+    "posted": "Sample posted",
+    "outstandingAmount": 12483,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-011",
@@ -175,7 +195,9 @@ export const header = [
     "summedLineAmount": 46022,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 46022
+    "posted": "Sample posted",
+    "outstandingAmount": 46022,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-012",
@@ -191,7 +213,9 @@ export const header = [
     "summedLineAmount": 38634,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 38634
+    "posted": "Sample posted",
+    "outstandingAmount": 38634,
+    "processed": "Sample processed"
   }
 ];
 

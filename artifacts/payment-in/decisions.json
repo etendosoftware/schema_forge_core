@@ -37,32 +37,32 @@
           "form": false
         },
         "paymentDate": {
+          "visibility": "readOnly",
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "businessPartner": {
+          "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "amount": {
+          "visibility": "readOnly",
           "grid": true,
           "inputMode": "number",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "paymentMethod": {
+          "visibility": "readOnly",
           "inputMode": "search",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "account": {
+          "visibility": "readOnly",
           "inputMode": "search",
-          "readOnlyLogic": null,
           "dependsOn": {
             "field": "paymentMethod",
             "filterKey": "Fin_Paymentmethod_ID"
@@ -70,12 +70,13 @@
           "section": "principal"
         },
         "referenceNo": {
+          "visibility": "readOnly",
           "inputMode": "text",
           "section": "details"
         },
         "currency": {
+          "visibility": "readOnly",
           "inputMode": "search",
-          "readOnlyLogic": null,
           "dependsOn": {
             "field": "account",
             "filterKey": "FIN_Financial_Account_ID"
