@@ -177,10 +177,10 @@ export default function ReturnWizard({
         style={{ border: '0.5px solid hsl(var(--border))', boxShadow: 'none' }}
       >
         {/* Header */}
-        <div className="px-6 pt-5 pb-4">
+        <div className="px-6 pt-5 pb-4 border-b border-border">
           <StepIndicator current={step} total={2} />
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold">Create return</DialogTitle>
+            <DialogTitle className="text-base font-semibold">Create Return from Shipment</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               Shipment #{documentNo} &middot; {bpName}
             </DialogDescription>
@@ -189,7 +189,7 @@ export default function ReturnWizard({
 
         {/* Step 1: Review items */}
         {step === 1 && (
-          <div className="px-6 pb-2">
+          <div className="px-6 pb-4 border-b border-border">
             {/* Select all / Deselect all */}
             <div className="flex items-center gap-3 mb-3 text-xs">
               <button
@@ -276,7 +276,7 @@ export default function ReturnWizard({
 
         {/* Step 2: Confirm */}
         {step === 2 && (
-          <div className="px-6 pb-2">
+          <div className="px-6 pb-4 border-b border-border">
             <p className="text-sm text-muted-foreground mb-4">
               The following documents will be created:
             </p>
@@ -304,6 +304,8 @@ export default function ReturnWizard({
                 </div>
               </div>
             </div>
+
+            <div className="border-b border-border mb-4" />
 
             {/* Summary table */}
             <div className="max-h-[180px] overflow-y-auto">
@@ -352,20 +354,20 @@ export default function ReturnWizard({
         <DialogFooter className="px-6 py-4" style={{ borderTop: '0.5px solid hsl(var(--border) / 0.5)' }}>
           {step === 1 && (
             <>
-              <Button variant="outline" size="sm" onClick={onClose}>
+              <Button variant="ghost" size="sm" onClick={onClose}>
                 Cancel
               </Button>
-              <Button size="sm" disabled={!canProceed} onClick={() => setStep(2)}>
+              <Button size="sm" className="bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium" disabled={!canProceed} onClick={() => setStep(2)}>
                 Next
               </Button>
             </>
           )}
           {step === 2 && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setStep(1)}>
+              <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
                 Back
               </Button>
-              <Button size="sm" onClick={handleConfirm} disabled={loading}>
+              <Button size="sm" className="bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium" onClick={handleConfirm} disabled={loading}>
                 {loading ? 'Creating...' : 'Confirm return'}
               </Button>
             </>

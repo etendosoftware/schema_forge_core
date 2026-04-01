@@ -3,15 +3,22 @@
   "window": {
     "category": "sales",
     "name": "Goods Shipment",
+    "salesTheme": true,
     "documentPreview": {
       "titlePrefix": "Shipment"
     },
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "customComponents": {
+      "topbarRight": "GoodsShipmentActions"
+    },
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
-    ]
+    ],
+    "processOverrides": {
+      "documentAction": { "label": "Complete", "displayLogicRaw": "@documentStatus@='DR'" }
+    }
   },
   "entities": {
     "header": {

@@ -3,6 +3,7 @@
   "window": {
     "category": "sales",
     "name": "Sales Order",
+    "salesTheme": true,
     "documentPreview": {
       "titlePrefix": "Order"
     },
@@ -12,7 +13,10 @@
     "menuActions": [
       { "key": "duplicate", "label": "Duplicate" },
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
-    ]
+    ],
+    "processOverrides": {
+      "Complete": { "add": true, "label": "Complete", "columnName": "documentAction", "displayLogicRaw": "@documentStatus@='DR'" }
+    }
   },
   "entities": {
     "header": {
@@ -27,7 +31,8 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false
+          "form": false,
+          "display": "dot"
         },
         "documentAction": {
           "visibility": "system",
@@ -198,7 +203,8 @@
           "visibility": "readOnly",
           "grid": true,
           "form": false,
-          "columnType": "percent"
+          "columnType": "percent",
+          "label": "Shipment Status"
         },
         "invoiceStatus": {
           "visibility": "readOnly",

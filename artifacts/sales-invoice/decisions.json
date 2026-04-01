@@ -3,6 +3,7 @@
   "window": {
     "category": "sales",
     "name": "Sales Invoice",
+    "salesTheme": true,
     "documentPreview": {
       "titlePrefix": "Invoice"
     },
@@ -17,7 +18,11 @@
     "menuActions": [
       { "key": "duplicate", "label": "Duplicate" },
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
-    ]
+    ],
+    "secondaryTabs": {},
+    "processOverrides": {
+      "Complete": { "add": true, "label": "Confirm & Send", "columnName": "documentAction", "displayLogicRaw": "@documentStatus@='DR'" }
+    }
   },
   "entities": {
     "header": {

@@ -215,6 +215,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
+  if (fieldDecision.display) field.display = fieldDecision.display;
 
   const isVisible = visibility !== 'system' && visibility !== 'discarded';
 
@@ -480,6 +481,10 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
       };
     }
 
+    if (entityDecision.formCols != null) {
+      entity.formCols = entityDecision.formCols;
+    }
+
     curatedEntities.push(entity);
   }
 
@@ -526,6 +531,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.menuActions) {
     schema.window.menuActions = windowDecisions.menuActions;
   }
+  if (windowDecisions.processOverrides) {
+    schema.window.processOverrides = windowDecisions.processOverrides;
+  }
   // Forward secondary tab config and label overrides from decisions
   if (windowDecisions.entityLabel) {
     schema.window.entityLabel = windowDecisions.entityLabel;
@@ -547,6 +555,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.detailSortBy) {
     schema.window.detailSortBy = windowDecisions.detailSortBy;
+  }
+  if (windowDecisions.salesTheme != null) {
+    schema.window.salesTheme = windowDecisions.salesTheme;
   }
   if (windowDecisions.listKpiCards) {
     schema.window.listKpiCards = windowDecisions.listKpiCards;

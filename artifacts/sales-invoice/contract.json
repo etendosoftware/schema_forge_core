@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-31T12:24:23.417Z",
-  "checksum": "210e3819a94674a6",
+  "version": "0.1.0",
+  "generatedAt": "2026-03-31T19:54:06.138Z",
+  "checksum": "6ee2c62787f5b42c",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -13,6 +13,26 @@
       },
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable",
+        "bottomSection": "InvoiceBottomPanel",
+        "topbarRight": "InvoiceTopbarExtra"
+      },
+      "menuActions": [
+        {
+          "key": "duplicate",
+          "label": "Duplicate"
+        },
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "secondaryTabs": {},
+      "salesTheme": true,
       "layoutType": "default"
     },
     "entities": {
@@ -639,7 +659,27 @@
         "titlePrefix": "Invoice"
       },
       "notesField": "description",
-      "relatedDocuments": true
+      "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable",
+        "bottomSection": "InvoiceBottomPanel",
+        "topbarRight": "InvoiceTopbarExtra"
+      },
+      "menuActions": [
+        {
+          "key": "duplicate",
+          "label": "Duplicate"
+        },
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "secondaryTabs": {},
+      "salesTheme": true
     },
     "entities": {
       "header": {

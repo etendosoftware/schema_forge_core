@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-03-27T18:47:04.744Z",
-  "checksum": "4f6180a0da7a8b00",
+  "version": "0.2.0",
+  "generatedAt": "2026-04-01T10:52:22.637Z",
+  "checksum": "e5b3e8fa83ff7946",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -13,6 +13,25 @@
       },
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "topbarRight": "GoodsShipmentActions"
+      },
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "processOverrides": {
+        "documentAction": {
+          "label": "Complete",
+          "displayLogicRaw": "@documentStatus@='DR'"
+        }
+      },
+      "salesTheme": true,
       "layoutType": "default"
     },
     "entities": {
@@ -36,7 +55,8 @@
             "section": "principal",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           },
           {
@@ -283,7 +303,8 @@
             },
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           }
         ],
@@ -312,7 +333,26 @@
         "titlePrefix": "Shipment"
       },
       "notesField": "description",
-      "relatedDocuments": true
+      "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "topbarRight": "GoodsShipmentActions"
+      },
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        }
+      ],
+      "processOverrides": {
+        "documentAction": {
+          "label": "Complete",
+          "displayLogicRaw": "@documentStatus@='DR'"
+        }
+      },
+      "salesTheme": true
     },
     "entities": {
       "goodsShipment": {

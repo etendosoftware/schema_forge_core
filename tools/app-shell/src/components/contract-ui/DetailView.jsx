@@ -82,7 +82,6 @@ export function DetailView({
   DetailForm,
   summary = [],
   statusField,
-  statusFieldLabel,
   extraBadges = [],
   processes = [],
   addLineFields = { entry: [], derived: [] },
@@ -110,10 +109,12 @@ export function DetailView({
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
+  sidePanelStyle = null,
   afterTotals = null,
   bottomSection = null,
   topbarExtra = null,
   topbarRight = null,
+  salesTheme = false,
   sidebarContent = null,
   onAfterSave,
 }) {
@@ -515,7 +516,7 @@ export function DetailView({
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Action bar: Cancel + status | actions + save */}
         <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -526,21 +527,11 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               Cancel
             </Button>
-            {statusField && data[statusField] && (
-              <>
-                <span className="text-muted-foreground/40 select-none">|</span>
-                <span className="flex items-center gap-1">
-                  {statusFieldLabel && (
-                    <span className="text-sm text-muted-foreground">{statusFieldLabel}:</span>
-                  )}
-                  <Badge
-                    {...getStatusBadgeProps(data[statusField])}
-                    className={cn(getStatusBadgeProps(data[statusField]).className)}
-                  >
-                    {statusLabel(data[statusField])}
-                  </Badge>
-                </span>
-              </>
+            {!topbarRight && statusField && data[statusField] && (
+              <span className="inline-flex items-center gap-1.5 ml-1 text-xs font-medium">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
+                <span className="text-foreground/70">{statusLabel(data[statusField])}</span>
+              </span>
             )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
@@ -548,19 +539,13 @@ export function DetailView({
               if (!show) return null;
               if (b.hideWhenStatus?.includes(data[statusField])) return null;
               const cls = b.style === 'warning'
-                ? 'border-amber-300 bg-amber-50 text-amber-700'
-                : b.style === 'success'
-                  ? 'border-green-300 bg-green-50 text-green-700'
-                  : 'bg-blue-600 hover:bg-blue-700 border-transparent text-white';
-              const variant = (b.style === 'warning' || b.style === 'success') ? 'outline' : 'default';
+                ? 'ml-1 border-amber-300 bg-amber-50 text-amber-700'
+                : 'ml-1 bg-blue-600 hover:bg-blue-700 border-transparent text-white';
+              const variant = b.style === 'warning' ? 'outline' : 'default';
               return (
-                <span key={`${b.key}-${when}`} className="flex items-center gap-1">
-                  <span className="text-muted-foreground/40 select-none">|</span>
-                  {b.prefix && <span className="text-sm text-muted-foreground">{b.prefix}:</span>}
-                  <Badge variant={variant} className={cls}>
-                    {b.label}
-                  </Badge>
-                </span>
+                <Badge key={`${b.key}-${when}`} variant={variant} className={cls}>
+                  {b.label}
+                </Badge>
               );
             })}
             {topbarExtra && (() => {
@@ -672,11 +657,17 @@ export function DetailView({
                 : displayLogic?.visibility?.[p.name] !== false)
               .map(p => {
                 const isPrimary = p.style === 'positive';
-                const btnClass = p.style === 'destructive'
-                  ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                  : isPrimary
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
-                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                const btnClass = salesTheme
+                  ? (p.style === 'destructive'
+                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    : isPrimary
+                      ? 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium'
+                      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')
+                  : (p.style === 'destructive'
+                    ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20'
+                    : isPrimary
+                      ? ''
+                      : '');
                 return (
                   <Button
                     key={p.name}
@@ -695,7 +686,6 @@ export function DetailView({
                 <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                   const saved = await hook.handleSave(data);
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-                  onAfterSave?.(saved ?? data);
                 }}>
                   <Save className="h-3.5 w-3.5" />
                   Save draft
@@ -703,31 +693,19 @@ export function DetailView({
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-                  onAfterSave?.(saved ?? data);
                 }}>
                   <Check className="h-3.5 w-3.5" />
                   Save &amp; {draftMode.label || 'Process'}
                 </Button>
               </>
             ) : (
-              <>
-                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
-                  const saved = await hook.handleSave(data);
-                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-                  onAfterSave?.(saved ?? data);
-                }}>
-                  <Save className="h-3.5 w-3.5" />
-                  Save draft
-                </Button>
-                <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
-                  const saved = await hook.handleSave(data);
-                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
-                  onAfterSave?.(saved ?? data);
-                }}>
-                  <Check className="h-3.5 w-3.5" />
-                  Save
-                </Button>
-              </>
+              <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                const saved = await hook.handleSave(data);
+                if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+              }}>
+                <Check className="h-3.5 w-3.5" />
+                Save
+              </Button>
             )}
           </div>
         </div>
@@ -741,7 +719,7 @@ export function DetailView({
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div>
+            <div style={{ padding: '24px 0 8px' }}>
               <Form
                 entity={entity}
                 data={data}
@@ -757,7 +735,7 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className="mt-6">
+            <div className={sidePanel ? 'mt-2' : 'mt-6'}>
             <CollapsibleSection title="More details">
               <Form
                 entity={entity}
@@ -1083,50 +1061,38 @@ export function DetailView({
                     ) : (
                     <>
                     <div className="flex-1 min-w-0">
-                      {st.Panel ? (
-                        <st.Panel
-                          parentId={hook.selected?.id}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                        />
-                      ) : (
-                        <>
-                          <st.Table
-                            data={secondaryHooks[stIdx]?.children ?? []}
-                            entity={st.key}
-                            selectorContext={selectorContextByEntity[st.key]}
-                            onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
-                            selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
-                            selectable={!!st.Form}
-                            addRow={st.addLineFields?.entry?.length > 0 ? {
-                              active: addingSecondaryLine[st.key] ?? false,
-                              fields: st.addLineFields.entry,
-                              onAdd: async (lineData) => {
-                                const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
-                                const filtered = {};
-                                for (const [k, v] of Object.entries(lineData)) {
-                                  if (entryKeys.has(k)) filtered[k] = v;
-                                }
-                                const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
-                                if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
-                                return result;
-                              },
-                              onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
-                              catalogs,
-                            } : undefined}
-                          />
-                          {st.addLineFields?.entry?.length > 0 && hook.editing && (
-                            <button
-                              onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
-                              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                            >
-                              + Add {st.label}
-                            </button>
-                          )}
-                        </>
+                      <st.Table
+                        data={secondaryHooks[stIdx]?.children ?? []}
+                        entity={st.key}
+                        selectorContext={selectorContextByEntity[st.key]}
+                        onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
+                        selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        addRow={st.addLineFields?.entry?.length > 0 ? {
+                          active: addingSecondaryLine[st.key] ?? false,
+                          fields: st.addLineFields.entry,
+                          onAdd: async (lineData) => {
+                            const entryKeys = new Set(st.addLineFields.entry.map(f => f.key));
+                            const filtered = {};
+                            for (const [k, v] of Object.entries(lineData)) {
+                              if (entryKeys.has(k)) filtered[k] = v;
+                            }
+                            const result = await secondaryHooks[stIdx]?.handleAddChild?.(filtered);
+                            if (result) setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false }));
+                            return result;
+                          },
+                          onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
+                          catalogs,
+                        } : undefined}
+                      />
+                      {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                        <button
+                          onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
+                        >
+                          + Add {st.label}
+                        </button>
                       )}
                     </div>
-                    )}
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
@@ -1403,8 +1369,13 @@ export function DetailView({
             )}
           </div>
           {sidePanel && (
-            <div className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4" style={{ borderLeftWidth: '1px' }}>
-              {typeof sidePanel === 'function' ? sidePanel({ recordId: data?.id || recordId, data, token, apiBaseUrl, api }) : sidePanel}
+            <div
+              className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4"
+              style={{ borderLeftWidth: '1px', ...sidePanelStyle }}
+            >
+              {typeof sidePanel === 'function'
+                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
+                : sidePanel}
             </div>
           )}
           </div>

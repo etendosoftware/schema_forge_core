@@ -3,35 +3,49 @@
   "window": {
     "category": "sales",
     "name": "Payment In",
+    "salesTheme": true,
     "documentPreview": { "titlePrefix": "Payment" },
     "notesField": "description",
     "relatedDocuments": true,
+    "customComponents": {
+      "bottomSection": "PaymentBottomPanel",
+      "sidePanel": "PaymentActivityPanel",
+      "sidePanelStyle": {"width": "40%", "minWidth": 260, "backgroundColor": "#f9fafb", "borderLeft": "1px solid #e5e7eb", "padding": 0}
+    },
     "hideDeleteWhenComplete": true,
     "menuActions": [
       { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
-    ]
+    ],
+    "processOverrides": {
+      "aPRMProcessPayment": { "label": "Process Payment", "displayLogicRaw": "@status@='RPAP'" },
+      "aPRMAddScheduledpayments": { "exclude": true },
+      "aprmExecutepayment": { "exclude": true },
+      "aPRMReversePayment": { "exclude": true },
+      "aPRMReconcilePayment": { "exclude": true }
+    }
   },
   "entities": {
     "header": {
       "name": "finPayment",
+      "formCols": 3,
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
           "inputMode": "text",
-          "section": "principal"
-        },
-        "businessPartner": {
-          "grid": true,
-          "searchable": true,
-          "readOnlyLogic": null,
-          "section": "principal"
+          "form": false
         },
         "paymentDate": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
           "readOnlyLogic": null,
           "section": "principal"
         },
@@ -44,7 +58,7 @@
         "paymentMethod": {
           "inputMode": "search",
           "readOnlyLogic": null,
-          "section": "collapsed"
+          "section": "principal"
         },
         "account": {
           "inputMode": "search",
@@ -53,7 +67,11 @@
             "field": "paymentMethod",
             "filterKey": "Fin_Paymentmethod_ID"
           },
-          "section": "collapsed"
+          "section": "principal"
+        },
+        "referenceNo": {
+          "inputMode": "text",
+          "section": "principal"
         },
         "currency": {
           "inputMode": "search",
@@ -62,10 +80,6 @@
             "field": "account",
             "filterKey": "FIN_Financial_Account_ID"
           },
-          "section": "collapsed"
-        },
-        "referenceNo": {
-          "inputMode": "text",
           "section": "collapsed"
         },
         "description": {
