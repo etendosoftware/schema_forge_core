@@ -307,15 +307,21 @@ export default function reportApiPlugin() {
             const pg = await import('pg');
             const pool = new pg.default.Pool({ host: gradle['bbdd.host'] || 'localhost', port: parseInt(gradle['bbdd.port']) || 5432, user: gradle['bbdd.user'], password: gradle['bbdd.password'], database: gradle['bbdd.sid'], max: 2 });
             try {
+              const clientRes = await pool.query(
+                `SELECT ad_client_id FROM ad_client WHERE isactive='Y' AND ad_client_id != '0' ORDER BY name LIMIT 1`
+              );
+              const clientId = clientRes.rows[0]?.ad_client_id || '0';
               const queries = {
-                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
               };
               const sql = queries[type];
               if (!sql) throw new Error(`Unknown selector type: ${type}`);
-              const { rows } = await pool.query(sql, [`%${q}%`]);
+              const { rows } = await pool.query(sql, [`%${q}%`, clientId]);
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(rows));
             } finally { await pool.end(); }
@@ -368,14 +374,24 @@ export default function reportApiPlugin() {
             const result = await fetchReportData(reportId, { limit, authToken, params });
             let { rows, contract, documentData } = result;
 
-            // Handle groupBy parameter: remap the group field in rows
-            // The groupBy select options define { value: "key", label: "...", field: "sourceColumn" }
+            // Handle groupBy parameter: find the dimension param whose groupByValue matches,
+            // re-sort rows by that field, then remap 'name' so the template group-break logic works.
+            let groupLabel = contract.groups?.[0]?.label?.en_US || 'Account';
+            let descriptionLabel = (contract.columns || []).find(c => c.field === 'groupbyname')?.label?.en_US || 'Description';
             if (params.groupBy && rows) {
-              const groupByParam = contract.parameters?.find(p => p.name === 'groupBy');
-              const selectedOption = groupByParam?.options?.find(o => o.value === params.groupBy);
-              const sourceField = selectedOption?.field;
-              if (sourceField) {
-                rows = rows.map(r => ({ ...r, name: r[sourceField] || '(none)', value: '' }));
+              const dimensionParam = (contract.parameters || []).find(
+                p => p.groupByValue === params.groupBy && p.groupByField
+              );
+              if (dimensionParam) {
+                const sourceField = dimensionParam.groupByField;
+                groupLabel = dimensionParam.label?.en_US || params.groupBy;
+                descriptionLabel = dimensionParam.label?.en_US || descriptionLabel;
+                rows = [...rows].sort((a, b) => {
+                  const va = (a[sourceField] || '').toLowerCase();
+                  const vb = (b[sourceField] || '').toLowerCase();
+                  return va < vb ? -1 : va > vb ? 1 : 0;
+                });
+                rows = rows.map(r => ({ ...r, name: r[sourceField] || '', value: '' }));
               }
             }
             const activeFilters = Object.entries(params)
@@ -384,6 +400,11 @@ export default function reportApiPlugin() {
                 const paramDef = contract.parameters?.find(p => p.name === k);
                 // Use display name if available (for search selectors that send UUIDs)
                 let displayValue = params['_display_' + k] || v;
+                // For groupBy: resolve the stored key ('bpartner', 'product') to its human label
+                if (k === 'groupBy') {
+                  const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
+                  displayValue = dimParam?.label?.en_US || v;
+                }
                 // Format date values from ISO (YYYY-MM-DD) to DD/MM/YYYY
                 if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
                   const [y, m, d] = displayValue.split('-');
@@ -404,9 +425,41 @@ export default function reportApiPlugin() {
 
             // Document type: structured data (header + lines + taxes)
             // Listing type: flat rows
+            const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
+            const totals = {};
+            if (!documentData && amountCols.length) {
+              for (const col of amountCols) {
+                totals[col.field] = rows.reduce((sum, r) => sum + (Number(r[col.field]) || 0), 0);
+              }
+            }
             const templateData = documentData
               ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
-              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params }, rows };
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel }, rows };
+
+            // Direct HTML render — no jsreport needed for preview
+            if (format === 'html') {
+              const Handlebars = (await import('handlebars')).default;
+
+              // Execute helpers.js in an isolated scope and extract all functions
+              if (helpersCode) {
+                // eslint-disable-next-line no-new-func
+                const helperFn = new Function(helpersCode + `
+                  return { isGroupBreak, resetGroupTracking, formatDate, formatCurrency,
+                           formatBoolean, formatNumber, ifCond, eq };
+                `);
+                const helpers = helperFn();
+                if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();
+                Object.entries(helpers).forEach(([name, fn]) => {
+                  if (typeof fn === 'function') Handlebars.registerHelper(name, fn);
+                });
+              }
+
+              const template = Handlebars.compile(templateContent);
+              const html = template(templateData);
+              res.setHeader('Content-Type', 'text/html; charset=utf-8');
+              res.end(html);
+              return;
+            }
 
             const payload = {
               template: { content: templateContent, engine: 'handlebars', recipe, helpers: helpersCode },
@@ -420,11 +473,20 @@ export default function reportApiPlugin() {
               };
             }
 
-            const jsRes = await fetch(`${JSREPORT_URL}/api/report`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-            });
+            let jsRes;
+            try {
+              jsRes = await fetch(`${JSREPORT_URL}/api/report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
+            } catch (connErr) {
+              const isConnRefused = connErr.message?.includes('ECONNREFUSED') || connErr.message === 'fetch failed';
+              if (isConnRefused) {
+                throw new Error(`jsreport is not running — start it with: make report-serve-detach`);
+              }
+              throw connErr;
+            }
 
             if (!jsRes.ok) {
               const text = await jsRes.text();
