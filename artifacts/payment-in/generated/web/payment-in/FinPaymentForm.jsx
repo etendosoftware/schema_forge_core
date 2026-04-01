@@ -2,7 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:finPayment
 const fields = [
-  { key: 'referenceNo', column: 'Referenceno', type: 'text', label: 'Reference No.', section: 'principal' },
+  { key: 'referenceNo', column: 'Referenceno', type: 'text', label: 'Reference No.', section: 'details' },
   // @sf-custom-slot callout:SE_Payment_MultiCurrency
   { key: 'paymentDate', column: 'Paymentdate', type: 'date', label: 'Payment Date', section: 'principal', defaultValue: '@#Date@' },
   // @sf-custom-slot callout:SE_Payment_BPartner
@@ -15,7 +15,7 @@ const fields = [
   // @sf-custom-slot callout:SE_Payment_FinAccount
   { key: 'account', column: 'Fin_Financial_Account_ID', type: 'dependent', label: 'Deposit To', required: true, section: 'principal', reference: 'Financial_Account', inputMode: 'dependent', dependsOn: { field: 'paymentMethod', filterKey: 'Fin_Paymentmethod_ID' } },
   // @sf-custom-slot callout:SE_Payment_MultiCurrency
-  { key: 'currency', column: 'C_Currency_ID', type: 'dependent', label: 'Currency', required: true, section: 'collapsed', reference: 'Currency', inputMode: 'dependent', dependsOn: { field: 'account', filterKey: 'FIN_Financial_Account_ID' } },
+  { key: 'currency', column: 'C_Currency_ID', type: 'dependent', label: 'Currency', required: true, section: 'principal', reference: 'Currency', inputMode: 'dependent', dependsOn: { field: 'account', filterKey: 'FIN_Financial_Account_ID' } },
 ];
 // @sf-generated-end fields:finPayment
 
