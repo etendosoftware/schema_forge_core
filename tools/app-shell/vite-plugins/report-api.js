@@ -312,6 +312,7 @@ export default function reportApiPlugin() {
                 'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
                 'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND name ILIKE $1 ORDER BY name LIMIT 20`,
                 'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+                'acctschema': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
               };
               const sql = queries[type];
               if (!sql) throw new Error(`Unknown selector type: ${type}`);

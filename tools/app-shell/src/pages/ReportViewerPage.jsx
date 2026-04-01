@@ -36,80 +36,73 @@ function ReportCard({ report, onRun }) {
   );
 }
 
-function SearchInput({ selector, value, displayValue, onChange, multi }) {
+function SelectorPopup({ open, onClose, onSelect, selector, title }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState([]); // [{id, name}]
-  const ref = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(-1);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (!query || query.length < 2) { setOptions([]); return; }
-    const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then(setOptions)
-        .catch(() => setOptions([]));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [query, selector]);
+    if (open) { setQuery(''); setOptions([]); setFocusIdx(-1); setTimeout(() => inputRef.current?.focus(), 50); }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    setLoading(true);
+    const t = setTimeout(() => {
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => { setOptions(data); setFocusIdx(-1); })
+        .catch(() => setOptions([]))
+        .finally(() => setLoading(false));
+    }, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [query, selector, open]);
 
-  const addItem = (item) => {
-    if (multi) {
-      const next = [...selected.filter(s => s.id !== item.id), item];
-      setSelected(next);
-      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
-      setQuery('');
-    } else {
-      onChange(item.id, item.name);
-      setQuery(item.name);
-      setOpen(false);
-    }
+  const handleKey = (e) => {
+    if (e.key === 'Escape') { onClose(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIdx(i => Math.min(i + 1, options.length - 1)); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIdx(i => Math.max(i - 1, 0)); }
+    if (e.key === 'Enter' && focusIdx >= 0 && options[focusIdx]) { onSelect(options[focusIdx]); onClose(); }
   };
 
-  const removeItem = (id) => {
-    const next = selected.filter(s => s.id !== id);
-    setSelected(next);
-    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
-  };
-
-  const selectedIds = new Set(selected.map(s => s.id));
+  if (!open) return null;
 
   return (
-    <div className="relative" ref={ref}>
-      {multi && selected.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-1">
-          {selected.map(s => (
-            <span key={s.id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">
-              {s.name}
-              <button onClick={() => removeItem(s.id)} className="ml-0.5 hover:text-destructive">&times;</button>
-            </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onMouseDown={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-96 max-h-[480px] flex flex-col" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+          <span className="text-sm font-semibold">{title}</span>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="px-4 py-2 border-b border-border/20">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Search..."
+            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex-1 overflow-auto py-1">
+          {loading && <div className="flex justify-center py-6 text-muted-foreground text-xs">Loading...</div>}
+          {!loading && options.length === 0 && (
+            <div className="text-center py-6 text-muted-foreground text-xs">No results</div>
+          )}
+          {options.map((o, idx) => (
+            <button
+              key={o.id}
+              onClick={() => { onSelect(o); onClose(); }}
+              className={['w-full text-left px-4 py-2 text-sm truncate', idx === focusIdx ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'].join(' ')}
+            >
+              {o.name}
+            </button>
           ))}
         </div>
-      )}
-      <input
-        type="text"
-        value={multi ? query : (query || displayValue || '')}
-        onChange={e => { setQuery(e.target.value); setOpen(true); if (!multi && !e.target.value) onChange('', ''); }}
-        onFocus={() => { if (options.length) setOpen(true); }}
-        placeholder="Search..."
-        className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-44"
-      />
-      {open && options.length > 0 && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
-          {options.filter(o => !selectedIds.has(o.id)).map(o => (
-            <button key={o.id} onClick={() => addItem(o)}
-              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -117,26 +110,64 @@ function SearchInput({ selector, value, displayValue, onChange, multi }) {
 function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
   if (!parameters || parameters.length === 0) return null;
   const [displayValues, setDisplayValues] = useState({});
+  const [popup, setPopup] = useState(null); // { name, selector, label }
+  const [errors, setErrors] = useState({});
+
+  const handleSubmit = () => {
+    const missing = {};
+    for (const p of parameters || []) {
+      if (p.required && !values[p.name]) missing[p.name] = true;
+    }
+    if (Object.keys(missing).length > 0) { setErrors(missing); return; }
+    setErrors({});
+    onSubmit(values);
+  };
 
   return (
     <div className="px-4 py-3 border-b border-border/30 bg-white shrink-0">
+      {popup && (
+        <SelectorPopup
+          open
+          onClose={() => setPopup(null)}
+          selector={popup.selector}
+          title={popup.label}
+          onSelect={(item) => {
+            onChange(popup.name, item.id);
+            onChange('_display_' + popup.name, item.name);
+            setDisplayValues(prev => ({ ...prev, [popup.name]: item.name }));
+            setPopup(null);
+          }}
+        />
+      )}
       <div className="flex items-end gap-3 flex-wrap">
         {parameters.map(p => {
           if (p.hidden) return null;
           const label = p.label?.en_US || p.name;
 
-          // Search selector (BP, Product, Account, Org)
+          const errCls = errors[p.name] ? 'border-destructive ring-1 ring-destructive/40' : 'border-border';
+
+          // Search selector — popup modal
           if (p.type === 'search') {
+            const display = displayValues[p.name] || '';
             return (
               <div key={p.name} className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-muted-foreground">{label}</label>
-                <SearchInput
-                  selector={p.selector}
-                  value={values[p.name] || ''}
-                  displayValue={displayValues[p.name] || ''}
-                  onChange={(id, name) => { onChange(p.name, id); onChange('_display_' + p.name, name); setDisplayValues(prev => ({ ...prev, [p.name]: name })); }}
-                  multi={p.multi}
-                />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => { setPopup({ name: p.name, selector: p.selector, label }); setErrors(e => ({...e, [p.name]: false})); }}
+                    className={`h-8 px-3 text-xs border rounded-md bg-white hover:bg-muted/50 text-left w-44 truncate text-muted-foreground ${errCls}`}
+                  >
+                    {display || <span className="opacity-50">Select...</span>}
+                  </button>
+                  {display && (
+                    <button
+                      type="button"
+                      onClick={() => { onChange(p.name, ''); onChange('_display_' + p.name, ''); setDisplayValues(prev => ({ ...prev, [p.name]: '' })); }}
+                      className="h-8 w-6 flex items-center justify-center text-muted-foreground hover:text-destructive"
+                    ><X className="h-3.5 w-3.5" /></button>
+                  )}
+                </div>
               </div>
             );
           }
@@ -148,8 +179,8 @@ function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
                 <label className="text-xs font-medium text-muted-foreground">{label}</label>
                 <select
                   value={values[p.name] || ''}
-                  onChange={e => onChange(p.name, e.target.value)}
-                  className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  onChange={e => { onChange(p.name, e.target.value); setErrors(er => ({...er, [p.name]: false})); }}
+                  className={`h-8 px-2 text-sm border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 ${errCls}`}
                 >
                   <option value="">All</option>
                   {(p.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -165,14 +196,14 @@ function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
               <input
                 type={p.type === 'date' ? 'date' : p.type === 'number' ? 'number' : 'text'}
                 value={values[p.name] || ''}
-                onChange={e => onChange(p.name, e.target.value)}
-                className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-36"
+                onChange={e => { onChange(p.name, e.target.value); setErrors(er => ({...er, [p.name]: false})); }}
+                className={`h-8 px-2 text-sm border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-36 ${errCls}`}
               />
             </div>
           );
         })}
         <button
-          onClick={() => onSubmit(values)}
+          onClick={handleSubmit}
           disabled={loading}
           className="h-8 px-4 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
@@ -259,14 +290,7 @@ function ReportViewer({ report, onBack, token }) {
     setLoading(false);
   }, [report.id, token, params]);
 
-  // Auto-render preview on mount (only once)
-  const initialRender = useRef(false);
-  useEffect(() => {
-    if (!initialRender.current) {
-      initialRender.current = true;
-      renderReport('html');
-    }
-  }, []);
+  // No auto-render on mount — wait for user to click Run Report
 
   const handleFormatClick = (fmt) => {
     if (fmt === 'preview') {
@@ -371,6 +395,35 @@ function ReportViewer({ report, onBack, token }) {
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">
               {error}
+            </div>
+          )}
+          {!loading && !error && !previewHtmlRef.current && (
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Skeleton table background */}
+              <div className="p-6 opacity-30 pointer-events-none select-none blur-[2px]">
+                <div className="h-4 w-48 bg-slate-200 rounded mb-6" />
+                <div className="space-y-0">
+                  <div className="grid grid-cols-6 gap-3 pb-2 border-b border-slate-200 mb-1">
+                    {[40,15,15,15,15,15].map((w,i) => (
+                      <div key={i} className="h-3 bg-slate-300 rounded" style={{width:`${w}%`}} />
+                    ))}
+                  </div>
+                  {Array.from({length: 8}).map((_, r) => (
+                    <div key={r} className="grid grid-cols-6 gap-3 py-2.5 border-b border-slate-100">
+                      {[40,15,15,15,15,15].map((w,i) => (
+                        <div key={i} className="h-3 rounded" style={{width:`${w}%`, background: r%2===0?'#e2e8f0':'#edf2f7'}} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Centered message */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-base font-semibold text-foreground mb-1">Your report is ready to go</p>
+                  <p className="text-sm text-muted-foreground">Choose your filters above and hit <span className="font-medium text-foreground">Run Report</span></p>
+                </div>
+              </div>
             </div>
           )}
           <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
