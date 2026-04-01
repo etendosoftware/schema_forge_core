@@ -722,7 +722,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   if (listKpiCardsConfig?.customComponent && specName) {
     const kpiComp = listKpiCardsConfig.customComponent;
     listKpiCardsImport = `import ${kpiComp} from '@/windows/custom/${specName}/${kpiComp}';\n`;
-    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}\n      api={api}`;
+    listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
   }
 
   // headerExtra → formFooter prop

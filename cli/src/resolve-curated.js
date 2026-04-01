@@ -30,12 +30,16 @@ const ROOT = join(__dirname, '..', '..');
  */
 export function autoSimplifyEntityName(rawName) {
   if (!rawName) return rawName;
-  const match = rawName.match(/^(c|m|ad)([A-Z].*)$/);
+  // Replace slashes with camelCase join: "vendor/creditor" → "vendorCreditor"
+  let name = rawName.includes('/')
+    ? rawName.split('/').map((seg, i) => i === 0 ? seg : seg.charAt(0).toUpperCase() + seg.slice(1)).join('')
+    : rawName;
+  const match = name.match(/^(c|m|ad)([A-Z].*)$/);
   if (match) {
     const rest = match[2];
     return rest.charAt(0).toLowerCase() + rest.slice(1);
   }
-  return rawName;
+  return name;
 }
 
 // ---------------------------------------------------------------------------
@@ -552,7 +556,15 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.detailSortBy) {
     schema.window.detailSortBy = windowDecisions.detailSortBy;
   }
-  schema.window.salesTheme = windowDecisions.salesTheme;
+  if (windowDecisions.salesTheme != null) {
+    schema.window.salesTheme = windowDecisions.salesTheme;
+  }
+  if (windowDecisions.listKpiCards) {
+    schema.window.listKpiCards = windowDecisions.listKpiCards;
+  }
+  if (windowDecisions.headerExtra) {
+    schema.window.headerExtra = windowDecisions.headerExtra;
+  }
 
   const rules = resolveRules(rulesRaw, decisions);
 
