@@ -28,10 +28,10 @@
   "groups": [],
   "filters": [],
   "parameters": [
-    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "required": true },
-    { "name": "glId", "label": { "en_US": "General Ledger", "es_ES": "Libro Mayor" }, "type": "search", "selector": "acctschema", "required": true },
+    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "popup-single", "required": true },
+    { "name": "glId", "label": { "en_US": "General Ledger", "es_ES": "Libro Mayor" }, "type": "search", "selector": "acctschema", "inputStyle": "popup-single", "required": true },
     { "name": "currentDate", "label": { "en_US": "As of Date", "es_ES": "Fecha corte" }, "type": "date", "default": "__TODAY__", "required": true },
-    { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner" },
+    { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner", "inputStyle": "popup" },
     { "name": "column1", "label": { "en_US": "Days Group 1", "es_ES": "Días Tramo 1" }, "type": "number", "default": "30", "required": true },
     { "name": "column2", "label": { "en_US": "Days Group 2", "es_ES": "Días Tramo 2" }, "type": "number", "default": "60", "required": true },
     { "name": "column3", "label": { "en_US": "Days Group 3", "es_ES": "Días Tramo 3" }, "type": "number", "default": "90", "required": true },
