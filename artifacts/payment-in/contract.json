@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-03-31T19:54:23.915Z",
-  "checksum": "254db5a868813f47",
+  "version": "0.6.0",
+  "generatedAt": "2026-04-01T11:34:51.110Z",
+  "checksum": "615de0f94dbe278f",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -16,14 +16,7 @@
       "hideDeleteWhenComplete": true,
       "customComponents": {
         "bottomSection": "PaymentBottomPanel",
-        "sidePanel": "PaymentActivityPanel",
-        "sidePanelStyle": {
-          "width": "40%",
-          "minWidth": 260,
-          "backgroundColor": "#f9fafb",
-          "borderLeft": "1px solid #e5e7eb",
-          "padding": 0
-        }
+        "topbarRight": "PaymentActivityToggle"
       },
       "menuActions": [
         {
@@ -38,6 +31,25 @@
           "columnName": "aPRMReversePayment"
         }
       ],
+      "processOverrides": {
+        "aPRMProcessPayment": {
+          "label": "Process Payment",
+          "displayLogicRaw": "@status@='RPAP'"
+        },
+        "aPRMAddScheduledpayments": {
+          "exclude": true
+        },
+        "aprmExecutepayment": {
+          "exclude": true
+        },
+        "aPRMReversePayment": {
+          "exclude": true
+        },
+        "aPRMReconcilePayment": {
+          "exclude": true
+        }
+      },
+      "detailEntity": null,
       "salesTheme": true,
       "layoutType": "default"
     },
@@ -61,7 +73,8 @@
             "form": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           },
           {
@@ -75,7 +88,7 @@
             "required": false,
             "grid": false,
             "form": true,
-            "section": "principal"
+            "section": "details"
           },
           {
             "name": "paymentDate",
@@ -205,7 +218,7 @@
               "field": "account",
               "filterKey": "FIN_Financial_Account_ID"
             },
-            "section": "collapsed",
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             }
@@ -372,14 +385,7 @@
       "hideDeleteWhenComplete": true,
       "customComponents": {
         "bottomSection": "PaymentBottomPanel",
-        "sidePanel": "PaymentActivityPanel",
-        "sidePanelStyle": {
-          "width": "40%",
-          "minWidth": 260,
-          "backgroundColor": "#f9fafb",
-          "borderLeft": "1px solid #e5e7eb",
-          "padding": 0
-        }
+        "topbarRight": "PaymentActivityToggle"
       },
       "menuActions": [
         {
@@ -394,6 +400,25 @@
           "columnName": "aPRMReversePayment"
         }
       ],
+      "processOverrides": {
+        "aPRMProcessPayment": {
+          "label": "Process Payment",
+          "displayLogicRaw": "@status@='RPAP'"
+        },
+        "aPRMAddScheduledpayments": {
+          "exclude": true
+        },
+        "aprmExecutepayment": {
+          "exclude": true
+        },
+        "aPRMReversePayment": {
+          "exclude": true
+        },
+        "aPRMReconcilePayment": {
+          "exclude": true
+        }
+      },
+      "detailEntity": null,
       "salesTheme": true
     },
     "entities": {
