@@ -29,6 +29,7 @@ export async function login(baseUrl, username, password, roleId, orgId) {
   const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}/sws/login`, {
     method: 'POST',
     headers,
+    credentials: 'include',
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -51,6 +52,7 @@ export function createApiFetch(baseUrl, getToken, onUnauthorized) {
     const token = getToken();
     const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}${path}`, {
       ...options,
+      credentials: 'include',
       headers: {
         ...buildHeaders(token),
         ...options.headers,

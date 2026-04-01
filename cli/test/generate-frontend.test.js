@@ -457,17 +457,19 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes('export default function OrderPage'));
   });
 
-  it('imports header Table, Form, detail Table, and mockCatalogs', () => {
+  it('imports header Table, Form, detail Table, detail Form, and mockCatalogs', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes("import OrderTable from './OrderTable'"));
     assert.ok(code.includes("import OrderForm from './OrderForm'"));
     assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"));
+    assert.ok(code.includes("import OrderLineForm from './OrderLineForm'"));
     assert.ok(code.includes("import catalogs from './mockCatalogs'"));
   });
 
-  it('does NOT import DetailForm (only DetailTable)', () => {
+  it('imports both DetailTable and DetailForm for inline line editing', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(!code.includes('OrderLineForm'));
+    assert.ok(code.includes("import OrderLineTable from './OrderLineTable'"));
+    assert.ok(code.includes("import OrderLineForm from './OrderLineForm'"));
   });
 
   it('declares summary from readOnly header fields excluding status', () => {
@@ -555,14 +557,14 @@ describe('generatePageComponent', () => {
 
   it('puts non-auto fields in entry and auto-pattern fields in derived', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
-    // product and quantity are entry; tax matches auto-pattern so goes to derived
+    // product and quantity are entry; tax has reference so stays in entry
     // lineNetAmount is readOnly so excluded from addLineFields entirely
     const entryMatch = code.match(/entry: \[([\s\S]*?)\]/);
     assert.ok(entryMatch);
     assert.ok(entryMatch[1].includes("key: 'product'"));
     assert.ok(entryMatch[1].includes("key: 'quantity'"));
-    // tax matches /tax/ auto-pattern, so it goes to derived not entry
-    assert.ok(!entryMatch[1].includes("key: 'tax'"), 'tax should be in derived, not entry');
+    // tax has reference ('Tax') so the auto-pattern is skipped — it stays in entry
+    assert.ok(entryMatch[1].includes("key: 'tax'"), 'tax with reference should be in entry');
   });
 
   it('marks first entry field with lookup: true', () => {
@@ -635,24 +637,19 @@ describe('generateIndexComponent', () => {
     assert.ok(code.includes("name: 'Sales Order'"));
   });
 
-  it('generates ListView/DetailView pattern for single-entity (no detail)', () => {
+  it('generates Page-based pattern for single-entity (no detail)', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
-    assert.ok(code.includes("import { ListView, DetailView } from '@/components/contract-ui'"));
-    assert.ok(code.includes("import ItemTable from './ItemTable'"));
-    assert.ok(code.includes("import ItemForm from './ItemForm'"));
-    assert.ok(code.includes("import catalogs from './mockCatalogs'"));
-    assert.ok(code.includes('<ListView'));
-    assert.ok(code.includes('<DetailView'));
+    assert.ok(code.includes("import ItemPage from './ItemPage'"));
+    assert.ok(code.includes('<ItemPage'));
+    assert.ok(code.includes('windowName={windowName}'));
+    assert.ok(code.includes('recordId={recordId}'));
   });
 
-  it('passes correct props to ListView and DetailView', () => {
+  it('passes correct props to Page for single-entity', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
-    assert.ok(code.includes('entity="item"'));
-    assert.ok(code.includes('Table={ItemTable}'));
-    assert.ok(code.includes('Form={ItemForm}'));
-    assert.ok(code.includes('catalogs={catalogs}'));
-    assert.ok(code.includes('entityLabel="Item"'));
-    assert.ok(code.includes('{...props}'));
+    assert.ok(code.includes('token={token}'));
+    assert.ok(code.includes('apiBaseUrl={apiBaseUrl}'));
+    assert.ok(code.includes('{...rest}'));
   });
 
   it('includes windowMeta with category and name for single-entity', () => {
@@ -787,8 +784,8 @@ describe('generateAll', () => {
     assert.ok(names.includes('ItemForm.jsx'));
     assert.ok(names.includes('index.jsx'));
     assert.ok(names.includes('mockCatalogs.js'));
-    assert.ok(!names.includes('ItemPage.jsx'), 'should NOT produce Page for single entity');
-    assert.equal(names.length, 4);
+    assert.ok(names.includes('ItemPage.jsx'), 'should produce Page for single entity');
+    assert.equal(names.length, 5);
   });
 
   it('file names follow PascalCase entity + suffix convention', () => {

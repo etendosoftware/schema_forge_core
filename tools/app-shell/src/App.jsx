@@ -7,7 +7,6 @@ import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import SalesPage from './pages/SalesPage.jsx';
-import ContactsPage from './pages/ContactsPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PurchasesPage from './pages/PurchasesPage.jsx';
 import AccountingPage from './pages/AccountingPage.jsx';
@@ -29,9 +28,18 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
 const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
 
 function detectBasePath() {
+  const envBase = import.meta.env.VITE_API_BASE;
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
-  if (webIdx === -1) return { apiBase: import.meta.env.VITE_API_BASE || '', routerBase: '/' };
+
+  if (envBase) {
+    const routerBase = webIdx !== -1
+      ? `${path.substring(0, webIdx)}/${path.substring(webIdx + 1).split('/').slice(0, 2).join('/')}`
+      : '/';
+    return { apiBase: envBase, routerBase };
+  }
+
+  if (webIdx === -1) return { apiBase: '', routerBase: '/' };
   const contextPath = path.substring(0, webIdx);
   const moduleSegment = path.substring(webIdx + 1).split('/').slice(0, 2).join('/');
   return {
@@ -47,7 +55,7 @@ const API_BASE_URL = import.meta.env.VITE_MOCK === 'true'
 
 async function loadAllMockData() {
   const modules = await Promise.all([
-    import('@generated/sales-order/generated/web/sales-order/mockData.js'),
+    import('@generated/sales-order/custom/mockData.js'),
     import('@generated/business-partner/generated/web/business-partner/mockData.js'),
     import('@generated/warehouse/generated/web/warehouse/mockData.js'),
     import('@generated/price-list/generated/web/price-list/mockData.js'),
@@ -65,15 +73,17 @@ async function loadAllMockData() {
     import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),
     import('@generated/goods-movements/generated/web/goods-movements/mockData.js'),
     import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/mockData.js'),
-    import('@generated/sales-quotation/generated/web/sales-quotation/mockData.js'),
-    import('@generated/goods-shipment/generated/web/goods-shipment/mockData.js'),
+    import('@generated/sales-quotation/custom/mockData.js'),
+    import('@generated/goods-shipment/custom/mockData.js'),
     import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
     import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
-    import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
-    import('@generated/payment-in/generated/web/payment-in/mockData.js'),
+    import('@generated/sales-invoice/custom/mockData.js'),
+    import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
+    import('@generated/payment-in/custom/mockData.js'),
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
+    import('@generated/assets/generated/web/assets/mockData.js'),
     import('@generated/deal/generated/web/deal/mockData.js'),
     import('@generated/activity/generated/web/activity/mockData.js'),
     import('@generated/lead/generated/web/lead/mockData.js'),
@@ -123,10 +133,9 @@ function AppRoutes({ menuGroups, windowMap }) {
         }
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage apiBaseUrl={API_BASE_URL} />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
-        <Route path="contacts" element={<ContactsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />

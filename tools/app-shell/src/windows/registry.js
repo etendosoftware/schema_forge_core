@@ -11,7 +11,7 @@ import menuConfig from '../menu.json' with { type: 'json' };
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
-  'contacts': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
+  'contacts': () => import('@generated/contacts/generated/web/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
@@ -23,7 +23,7 @@ const windowLoaders = {
   'user': () => import('@generated/user/generated/web/user/index.jsx'),
   'purchase-order': () => import('@generated/purchase-order/generated/web/purchase-order/index.jsx'),
   'goods-receipt': () => import('@generated/goods-receipt/generated/web/goods-receipt/index.jsx'),
-'return-to-vendor': () => import('@generated/return-to-vendor/generated/web/return-to-vendor/index.jsx'),
+  'return-to-vendor': () => import('@generated/return-to-vendor/generated/web/return-to-vendor/index.jsx'),
   'return-to-vendor-shipment': () => import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/index.jsx'),
   'physical-inventory': () => import('@generated/physical-inventory/generated/web/physical-inventory/index.jsx'),
   'goods-movements': () => import('@generated/goods-movements/generated/web/goods-movements/index.jsx'),
@@ -46,6 +46,7 @@ const windowLoaders = {
   'payment-out': () => import('@generated/payment-out/generated/web/payment-out/index.jsx'),
   'bank-reconciliation': () => import('@generated/bank-reconciliation/generated/web/bank-reconciliation/index.jsx'),
   'chart-of-accounts': () => import('@generated/chart-of-accounts/generated/web/chart-of-accounts/index.jsx'),
+  'assets': () => import('@generated/assets/generated/web/assets/index.jsx'),
 };
 
 /**
@@ -76,6 +77,7 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
 };
 
 /**

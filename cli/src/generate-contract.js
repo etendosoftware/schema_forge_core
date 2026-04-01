@@ -1,11 +1,15 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
+import { autoSimplifyEntityName } from './resolve-curated.js';
 
 const TS_TYPE_MAP = {
   string: 'string',
   integer: 'number',
   amount: 'number',
   number: 'number',
+  quantity: 'number',
+  price: 'number',
+  decimal: 'number',
   boolean: 'boolean',
   date: 'string',
   datetime: 'string',
@@ -34,6 +38,21 @@ function findMatchingRule(rules, identifier, type) {
     if (r.type !== type) return false;
     return r.className === identifier || r.name === identifier;
   }) ?? null;
+}
+
+/**
+ * Convert an Etendo readOnly/displayLogic expression into a JS expression string.
+ * Uses a column→propertyName map built from the schema to resolve @Column@ references.
+ * Falls back to camelCase of the column name when not found in the map.
+ */
+function convertLogicToJs(rawExpr, columnMap) {
+  return rawExpr
+    .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => {
+      const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
+      return `record['${prop}'] === '${val}'`;
+    })
+    .replace(/\s*\|\s*/g, ' || ')
+    .replace(/\s*&\s*/g, ' && ');
 }
 
 /**
@@ -81,6 +100,16 @@ function classifyEvaluability(rawExpr) {
 export function generateFrontendContract(schema, rules = []) {
   const entities = {};
 
+  // Build a column→propertyName map from all entities for readOnly/display logic JS conversion
+  // Curated fields use field.column (the DB column name) and field.name (the JS property name)
+  const columnMap = {};
+  for (const entity of schema.entities) {
+    for (const field of entity.fields ?? []) {
+      const col = field.column || field.columnName;
+      if (col && field.name) columnMap[col] = field.name;
+    }
+  }
+
   for (const entity of schema.entities) {
     const visibleFields = entity.fields.filter(isVisible);
 
@@ -97,10 +126,12 @@ export function generateFrontendContract(schema, rules = []) {
         grid: f.grid,
         form: f.form,
       };
+      if (f.columnType) mapped.columnType = f.columnType;
       if (f.reference) mapped.reference = f.reference;
       if (f.enumValues) mapped.enumValues = f.enumValues;
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
+      if (f.lookup) mapped.lookup = true;
 
       // UI hints
       if (f.defaultValue) mapped.defaultValue = f.defaultValue;
@@ -111,6 +142,12 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.isFilterable) mapped.isFilterable = true;
       if (f.precision) mapped.precision = f.precision;
       if (f.isTranslated) mapped.isTranslated = true;
+      if (f.section) mapped.section = f.section;
+      if (f.seq != null) mapped.seq = f.seq;
+      if (f.statusBar) mapped.statusBar = true;
+      if (f.badge) mapped.badge = true;
+      if (f.summable) mapped.summable = true;
+      if (f.display) mapped.display = f.display;
 
       // Behavioral metadata: callout
       if (f.callout) {
@@ -143,6 +180,14 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.displayLogic.reason = evalInfo.reason;
           mapped.displayLogic.js = null;
+        } else if (!mapped.displayLogic.js && !f.displayLogic.includes('@')) {
+          // Raw expression has no Etendo @Variable@ markers — treat as direct JS
+          mapped.displayLogic.js = f.displayLogic;
+        }
+        // Prefer explicit displayLogicJs from decisions over rule-based lookup
+        // but only when evaluable — if not evaluable, js must remain null
+        if (f.displayLogicJs != null && mapped.displayLogic.evaluable !== false) {
+          mapped.displayLogic.js = f.displayLogicJs;
         }
       }
 
@@ -158,6 +203,8 @@ export function generateFrontendContract(schema, rules = []) {
         if (!evalInfo.evaluable) {
           mapped.readOnlyLogic.reason = evalInfo.reason;
           mapped.readOnlyLogic.js = null;
+        } else if (!mapped.readOnlyLogic.js) {
+          mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap);
         }
       }
 
@@ -172,7 +219,11 @@ export function generateFrontendContract(schema, rules = []) {
       .filter(f => f.derivation)
       .map(f => ({ name: f.apiKey || f.name, derivation: f.derivation }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields, searchableFields, computedFields };
+    const feEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, uiPattern: entity.uiPattern ?? 'STD', fields, searchableFields, computedFields };
+    if (entity.javaQualifier) feEntity.javaQualifier = entity.javaQualifier;
+    if (entity.draftMode?.enabled) feEntity.draftMode = entity.draftMode;
+    if (entity.formCols != null) feEntity.formCols = entity.formCols;
+    entities[entity.name] = feEntity;
   }
 
   // Include layoutType from curated schema; default to "default" when absent
@@ -204,7 +255,9 @@ export function generateBackendContract(schema, rules = [], processes = []) {
       required: f.required,
     }));
 
-    entities[entity.name] = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
+    const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
+    if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
+    entities[entity.name] = beEntity;
 
     const searchableFields = entity.fields
       .filter(f => f.searchable)
@@ -221,14 +274,46 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     );
   }
 
-  const processEndpoints = processes.map(p => ({
-    name: p.name,
-    method: 'POST',
-    path: `/process/${p.name}`,
-    entity: p.entity,
-    preconditions: p.preconditions ?? [],
-    steps: p.steps?.length ?? 0,
-  }));
+  // Build lookup structures for matching process entities to curated entity names.
+  // Processes reference entities by raw OBDal tableName-based names (e.g., "cOrder"),
+  // but curated entities may use tabName-based names (e.g., "header").
+  const curatedEntityNames = new Set(schema.entities.map(e => e.name));
+  const tableNameToEntityName = new Map();
+  for (const e of schema.entities) {
+    if (e.tableName) tableNameToEntityName.set(e.tableName.toLowerCase(), e.name);
+  }
+
+  const processEndpoints = processes.map(p => {
+    const columnName = p.trigger?.column ?? p.trigger?.field ?? null;
+    const params = p.params ?? (p.trigger
+      ? [{ key: columnName, value: p.trigger.value, hidden: true }]
+      : []);
+    // Map process entity name to the curated entity name.
+    // Try: 1) direct match, 2) tableName lookup, 3) autoSimplify, 4) primary entity fallback for button triggers
+    let curatedEntity = p.entity;
+    if (!curatedEntityNames.has(curatedEntity)) {
+      // Process entity might be a tableName-based key — look up by tableName
+      // Strip known OBDal prefixes (c, m, ad) only when followed by uppercase
+      const stripped = (p.entity || '').replace(/^(c|m|ad)(?=[A-Z])/, '');
+      const fromTable = tableNameToEntityName.get(stripped.toLowerCase())
+        || tableNameToEntityName.get((p.entity || '').toLowerCase());
+      curatedEntity = fromTable || autoSimplifyEntityName(p.entity);
+    }
+    // If still unresolved and it's a button trigger, fall back to primary entity (header)
+    if (!curatedEntityNames.has(curatedEntity) && p.trigger?.type === 'button') {
+      curatedEntity = schema.entities[0]?.name || curatedEntity;
+    }
+    return {
+      name: p.name,
+      method: 'POST',
+      path: columnName ? `/${curatedEntity}/:id/action/${columnName}` : `/process/${p.name}`,
+      entity: curatedEntity,
+      columnName,
+      params,
+      preconditions: p.preconditions ?? [],
+      steps: p.steps?.length ?? 0,
+    };
+  });
 
   return { window: schema.window, entities, endpoints, processEndpoints };
 }
@@ -497,6 +582,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
             field: field.name,
             column: field.column,
             reference: field.reference,
+            inputMode: field.inputMode,
             url: `${baseUrl}/${entityName}/selectors/${field.name}`,
           });
         }
@@ -506,22 +592,43 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     // Actions — fields with type "button" (AD_Reference_ID = 28)
     for (const field of entity.fields) {
       if (field.type === 'button') {
-        actions.push({
+        const action = {
           entity: entityName,
           field: field.name,
           column: field.column,
           url: `${baseUrl}/${entityName}/{id}/action/${field.name}`,
-        });
+        };
+        if (field.processId) action.processId = field.processId;
+        if (field.processType) action.processType = field.processType;
+        actions.push(action);
       }
     }
   }
+
+  // Deduplicate selectors and actions by entity+field (contract generator may iterate
+  // the same entity multiple times if schema.entities contains duplicate entries)
+  const seenSelectors = new Set();
+  const dedupedSelectors = selectors.filter(s => {
+    const key = `${s.entity}:${s.field}`;
+    if (seenSelectors.has(key)) return false;
+    seenSelectors.add(key);
+    return true;
+  });
+
+  const seenActions = new Set();
+  const dedupedActions = actions.filter(a => {
+    const key = `${a.entity}:${a.field}`;
+    if (seenActions.has(key)) return false;
+    seenActions.add(key);
+    return true;
+  });
 
   return {
     specName,
     baseUrl,
     crud,
-    selectors,
-    actions,
+    selectors: dedupedSelectors,
+    actions: dedupedActions,
     queryParams: {
       pagination: { startRow: '_startRow', endRow: '_endRow', default: '0-100' },
       sorting: { param: '_sortBy', example: `_sortBy=${specName}Date` },
@@ -534,7 +641,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 /**
  * Main orchestrator: generates the full contract object.
  */
-export function generateContract(schema, rules = [], processes = []) {
+export function generateContract(schema, rules = [], processes = [], previousVersion = null) {
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
@@ -593,7 +700,7 @@ export function generateContract(schema, rules = [], processes = []) {
     .slice(0, 16);
 
   return {
-    version: schema.version ?? '0.1.0',
+    version: previousVersion ?? schema.version ?? '0.1.0',
     generatedAt: new Date().toISOString(),
     checksum,
     ...contractData,
