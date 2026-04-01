@@ -38,6 +38,11 @@
           "visibility": "system",
           "displayLogic": null
         },
+        "processed": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
+        },
         "userContact": {
           "dependsOn": {
             "field": "businessPartner",
@@ -69,7 +74,6 @@
           "grid": true,
           "searchable": true,
           "reference": "BusinessPartner",
-          "readOnlyLogic": null,
           "displayLogic": null,
           "section": "principal"
         },
@@ -79,17 +83,14 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "priceList": {
-          "readOnlyLogic": null,
           "section": "other",
           "visibility": "system"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
-          "readOnlyLogic": null,
           "section": "collapsed"
         },
         "paymentTerms": {
@@ -97,7 +98,6 @@
         },
         "warehouse": {
           "inputMode": "search",
-          "readOnlyLogic": null,
           "section": "collapsed"
         },
         "salesRepresentative": {
@@ -109,7 +109,6 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
           "section": "other",
           "visibility": "discarded"
         },
@@ -131,11 +130,9 @@
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "scheduledDeliveryDate": {
-          "readOnlyLogic": null,
           "displayLogic": null,
           "section": "principal",
           "visibility": "discarded"
@@ -251,12 +248,10 @@
         "product": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "orderedQuantity": {
           "grid": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "operativeQuantity": {
@@ -275,7 +270,6 @@
         },
         "unitPrice": {
           "grid": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "grossUnitPrice": {
@@ -283,12 +277,10 @@
         },
         "lineNetAmount": {
           "grid": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "tax": {
           "grid": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "listPrice": {
@@ -296,7 +288,6 @@
         },
         "discount": {
           "grid": true,
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "warehouseRule": {
@@ -435,7 +426,6 @@
           "visibility": "readOnly",
           "grid": true,
           "reference": "BusinessPartner",
-          "readOnlyLogic": null,
           "name": "vendor"
         },
         "quantity": {
@@ -456,15 +446,12 @@
           "name": "relatedSalesOrderLine"
         },
         "lineNo": {
-          "grid": true,
-          "readOnlyLogic": null
+          "grid": true
         },
         "product": {
-          "grid": true,
-          "readOnlyLogic": null
+          "grid": true
         },
         "attributeSetValue": {
-          "readOnlyLogic": null
         }
       },
       "exclude": true
@@ -499,24 +486,20 @@
       "fields": {
         "lineNo": {
           "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
+          "grid": true
         },
         "cDiscountId": {
           "visibility": "readOnly",
           "grid": true,
-          "readOnlyLogic": null,
           "name": "basicDiscount"
         },
         "cascade": {
           "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
+          "grid": true
         },
         "active": {
           "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
+          "grid": true
         }
       }
     },
