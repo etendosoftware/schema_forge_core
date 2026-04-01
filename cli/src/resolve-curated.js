@@ -547,7 +547,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.secondaryTabs) {
     schema.window.secondaryTabs = windowDecisions.secondaryTabs;
   }
-  if (windowDecisions.detailEntity) {
+  if ('detailEntity' in windowDecisions) {
     schema.window.detailEntity = windowDecisions.detailEntity;
   }
   if (windowDecisions.statusBar) {
