@@ -37,7 +37,6 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "inputMode": "search",
-          "readOnlyLogic": null,
           "displayLogic": null,
           "section": "principal"
         },
@@ -48,21 +47,18 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "orderDate": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "validUntil": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "scheduledDeliveryDate": {
@@ -157,7 +153,9 @@
           "visibility": "discarded"
         },
         "processed": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "posted": {
           "visibility": "discarded"
@@ -212,37 +210,31 @@
         "product": {
           "grid": true,
           "searchable": true,
-          "inputMode": "search",
-          "readOnlyLogic": null
+          "inputMode": "search"
         },
         "orderedQuantity": {
           "grid": true,
-          "inputMode": "number",
-          "readOnlyLogic": null
+          "inputMode": "number"
         },
         "uOM": {
           "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
-          "inputMode": "number",
-          "readOnlyLogic": null
+          "inputMode": "number"
         },
         "discount": {
           "grid": true,
-          "inputMode": "number",
-          "readOnlyLogic": null
+          "inputMode": "number"
         },
         "lineNetAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "number",
-          "readOnlyLogic": null
+          "inputMode": "number"
         },
         "tax": {
           "grid": true,
-          "inputMode": "selector",
-          "readOnlyLogic": null
+          "inputMode": "selector"
         },
         "description": {
           "grid": false,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const STATUS_LABELS = {
   RPPC: 'Payment Cleared',
@@ -36,6 +36,11 @@ export default function PaymentActivityPanel({ data, recordId, token, apiBaseUrl
   const [persistedNotes, setPersistedNotes] = useState([]);
   const [noteText, setNoteText] = useState('');
   const [saving, setSaving] = useState(false);
+  const descriptionRef = useRef(data?.description || '');
+
+  useEffect(() => {
+    descriptionRef.current = data?.description || '';
+  }, [data?.description]);
 
   // Load existing notes from data.description when panel opens or data changes
   useEffect(() => {
@@ -116,7 +121,7 @@ export default function PaymentActivityPanel({ data, recordId, token, apiBaseUrl
     // Build updated description: append new timestamped note
     const timestamp = new Date().toISOString();
     const newLine = `${timestamp}|${noteTextValue}`;
-    const currentDesc = data?.description || '';
+    const currentDesc = descriptionRef.current;
     const updatedDesc = currentDesc ? `${currentDesc}\n${newLine}` : newLine;
 
     try {
@@ -132,14 +137,13 @@ export default function PaymentActivityPanel({ data, recordId, token, apiBaseUrl
         console.error('Failed to save note:', res.status);
         return false;
       }
-      // Update data.description in place so the effect picks up the change
-      if (data) data.description = updatedDesc;
+      descriptionRef.current = updatedDesc;
       return true;
     } catch (err) {
       console.error('Failed to save note:', err);
       return false;
     }
-  }, [recordId, token, apiBaseUrl, data]);
+  }, [recordId, token, apiBaseUrl]);
 
   if (!data) return null;
 

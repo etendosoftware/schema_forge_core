@@ -9,7 +9,8 @@ export const goodsShipment = [
     "partnerAddress": "Acme Corp",
     "description": "Standard order for Q1 delivery",
     "movementDate": "2026-01-15",
-    "documentStatus": "DR"
+    "documentStatus": "DR",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-002",
@@ -19,7 +20,8 @@ export const goodsShipment = [
     "partnerAddress": "TechFlow Inc",
     "description": "Rush order - priority shipping required",
     "movementDate": "2026-01-16",
-    "documentStatus": "CO"
+    "documentStatus": "CO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-003",
@@ -29,7 +31,8 @@ export const goodsShipment = [
     "partnerAddress": "Global Trade Ltd",
     "description": "Bulk purchase for warehouse restocking",
     "movementDate": "2026-01-17",
-    "documentStatus": "VO"
+    "documentStatus": "VO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-004",
@@ -39,7 +42,8 @@ export const goodsShipment = [
     "partnerAddress": "Summit Industries",
     "description": "Sample order for client evaluation",
     "movementDate": "2026-01-18",
-    "documentStatus": "IP"
+    "documentStatus": "IP",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-005",
@@ -49,7 +53,8 @@ export const goodsShipment = [
     "partnerAddress": "Pacific Partners",
     "description": "Recurring monthly supply order",
     "movementDate": "2026-01-19",
-    "documentStatus": "DR"
+    "documentStatus": "DR",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-006",
@@ -59,7 +64,8 @@ export const goodsShipment = [
     "partnerAddress": "Alpine Solutions",
     "description": "Special pricing agreement applies",
     "movementDate": "2026-01-20",
-    "documentStatus": "CO"
+    "documentStatus": "CO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-007",
@@ -69,7 +75,8 @@ export const goodsShipment = [
     "partnerAddress": "Meridian Group",
     "description": "Consolidated order from multiple requests",
     "movementDate": "2026-01-21",
-    "documentStatus": "VO"
+    "documentStatus": "VO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-008",
@@ -79,7 +86,8 @@ export const goodsShipment = [
     "partnerAddress": "Vertex Systems",
     "description": "Trial order for new product line",
     "movementDate": "2026-01-22",
-    "documentStatus": "IP"
+    "documentStatus": "IP",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-009",
@@ -89,7 +97,8 @@ export const goodsShipment = [
     "partnerAddress": "Atlas Manufacturing",
     "description": "Replacement for damaged goods",
     "movementDate": "2026-01-23",
-    "documentStatus": "DR"
+    "documentStatus": "DR",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-010",
@@ -99,7 +108,8 @@ export const goodsShipment = [
     "partnerAddress": "Nova Enterprises",
     "description": "Pre-season inventory build-up",
     "movementDate": "2026-01-24",
-    "documentStatus": "CO"
+    "documentStatus": "CO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-011",
@@ -109,7 +119,8 @@ export const goodsShipment = [
     "partnerAddress": "Pinnacle Services",
     "description": "Customer-specific configuration",
     "movementDate": "2026-01-25",
-    "documentStatus": "VO"
+    "documentStatus": "VO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-goodsShipment-012",
@@ -119,7 +130,8 @@ export const goodsShipment = [
     "partnerAddress": "Horizon Labs",
     "description": "Government contract fulfillment",
     "movementDate": "2026-01-26",
-    "documentStatus": "IP"
+    "documentStatus": "IP",
+    "processed": "Sample processed"
   }
 ];
 

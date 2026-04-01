@@ -16,7 +16,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Standard order for Q1 delivery",
     "deliveryStatus": "DR",
-    "invoiceStatus": "DR"
+    "invoiceStatus": "DR",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-002",
@@ -33,7 +34,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Rush order - priority shipping required",
     "deliveryStatus": "CO",
-    "invoiceStatus": "CO"
+    "invoiceStatus": "CO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-003",
@@ -50,7 +52,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Bulk purchase for warehouse restocking",
     "deliveryStatus": "VO",
-    "invoiceStatus": "VO"
+    "invoiceStatus": "VO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-004",
@@ -67,7 +70,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Sample order for client evaluation",
     "deliveryStatus": "IP",
-    "invoiceStatus": "IP"
+    "invoiceStatus": "IP",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-005",
@@ -84,7 +88,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Recurring monthly supply order",
     "deliveryStatus": "DR",
-    "invoiceStatus": "DR"
+    "invoiceStatus": "DR",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-006",
@@ -101,7 +106,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Special pricing agreement applies",
     "deliveryStatus": "CO",
-    "invoiceStatus": "CO"
+    "invoiceStatus": "CO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-007",
@@ -118,7 +124,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Consolidated order from multiple requests",
     "deliveryStatus": "VO",
-    "invoiceStatus": "VO"
+    "invoiceStatus": "VO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-008",
@@ -135,7 +142,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Trial order for new product line",
     "deliveryStatus": "IP",
-    "invoiceStatus": "IP"
+    "invoiceStatus": "IP",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-009",
@@ -152,7 +160,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Replacement for damaged goods",
     "deliveryStatus": "DR",
-    "invoiceStatus": "DR"
+    "invoiceStatus": "DR",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-010",
@@ -169,7 +178,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Pre-season inventory build-up",
     "deliveryStatus": "CO",
-    "invoiceStatus": "CO"
+    "invoiceStatus": "CO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-011",
@@ -186,7 +196,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Customer-specific configuration",
     "deliveryStatus": "VO",
-    "invoiceStatus": "VO"
+    "invoiceStatus": "VO",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-012",
@@ -203,7 +214,8 @@ export const header = [
     "orderReference": "Sample orderReference",
     "description": "Government contract fulfillment",
     "deliveryStatus": "IP",
-    "invoiceStatus": "IP"
+    "invoiceStatus": "IP",
+    "processed": "Sample processed"
   }
 ];
 
