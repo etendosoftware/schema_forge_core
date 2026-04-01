@@ -9,9 +9,9 @@
     "relatedDocuments": true,
     "customComponents": {
       "bottomSection": "PaymentBottomPanel",
-      "sidePanel": "PaymentActivityPanel",
-      "sidePanelStyle": {"width": "40%", "minWidth": 260, "backgroundColor": "#f9fafb", "borderLeft": "1px solid #e5e7eb", "padding": 0}
+      "topbarRight": "PaymentActivityToggle"
     },
+    "detailEntity": null,
     "hideDeleteWhenComplete": true,
     "menuActions": [
       { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
@@ -71,7 +71,7 @@
         },
         "referenceNo": {
           "inputMode": "text",
-          "section": "principal"
+          "section": "details"
         },
         "currency": {
           "inputMode": "search",
@@ -80,7 +80,7 @@
             "field": "account",
             "filterKey": "FIN_Financial_Account_ID"
           },
-          "section": "collapsed"
+          "section": "principal"
         },
         "description": {
           "inputMode": "textarea",

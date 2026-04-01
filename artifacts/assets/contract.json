@@ -542,7 +542,7 @@
               "raw": "@$Element_PJ@='Y' & @IsDepreciated@='Y'",
               "evaluable": false,
               "reason": "accounting-dimension",
-              "js": "record.depreciate === true || record.depreciate === 'Y'"
+              "js": null
             }
           },
           {

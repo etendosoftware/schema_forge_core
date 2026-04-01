@@ -243,6 +243,8 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
     const dependsOn = fieldDecision.dependsOn || null;
     if (dependsOn) field.dependsOn = dependsOn;
+
+    if (fieldDecision.lookup) field.lookup = true;
   }
 
   // derivation — carry from raw field
@@ -547,7 +549,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.secondaryTabs) {
     schema.window.secondaryTabs = windowDecisions.secondaryTabs;
   }
-  if (windowDecisions.detailEntity) {
+  if ('detailEntity' in windowDecisions) {
     schema.window.detailEntity = windowDecisions.detailEntity;
   }
   if (windowDecisions.statusBar) {

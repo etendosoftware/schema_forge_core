@@ -181,6 +181,7 @@ export function generateFormComponent(entityName, contract) {
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
+    const lookupPart = f.lookup ? ', lookup: true' : '';
     const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
@@ -224,7 +225,7 @@ export function generateFormComponent(entityName, contract) {
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -382,7 +383,7 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
   const headerName = capitalize(headerEntity);
-  const detailName = capitalize(detailEntity);
+  const detailName = detailEntity ? capitalize(detailEntity) : null;
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
@@ -398,7 +399,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
-  const statusField = docStatusField ?? readOnlyFields.find(f => f.name.toLowerCase().includes('status'));
+  const statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
   const summaryFields = readOnlyFields.filter(f => f !== statusField);
 
   // Summary config
@@ -679,8 +680,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
-  const entityDetailLabel = windowConfig.detailLabel
-    || (contract.frontendContract.entities[detailEntity]?.tabName ?? toLabel(detailEntity));
+  const entityDetailLabel = detailEntity
+    ? (windowConfig.detailLabel || contract.frontendContract.entities[detailEntity]?.tabName || toLabel(detailEntity))
+    : '';
   const detailTabIndexProp = windowConfig.detailTabIndex != null
     ? `\n        detailTabIndex={${windowConfig.detailTabIndex}}`
     : '';
@@ -737,9 +739,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   return `import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
-import ${headerName}Form from './${headerName}Form';
+import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
-import ${detailName}Form from './${detailName}Form';
+import ${detailName}Form from './${detailName}Form';` : ''}
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';` : ''}${isSidebar ? `
 import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
@@ -771,7 +773,7 @@ ${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
 const draftMode = ${draftModeValue};
 ${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
 
-${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
+${detailEntity ? `${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
   entry: [
 ${entryArray}
@@ -783,7 +785,7 @@ ${derivedArray}
 ${hiddenDefaultsArray}
   ],
 };
-${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}
+${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
@@ -791,19 +793,19 @@ export default function ${compName}({ windowName, recordId, ...props }) {
   if (recordId) {
     return (
       <DetailView
-        entity="${headerEntity}"
-        detailEntity="${detailEntity}"
-        Form={${headerName}Form}
+        entity="${headerEntity}"${detailEntity ? `
+        detailEntity="${detailEntity}"` : ''}
+        Form={${headerName}Form}${detailEntity ? `
         DetailTable={${detailName}Table}
-        DetailForm={${detailName}Form}
+        DetailForm={${detailName}Form}` : ''}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
-        processes={processes}
-        addLineFields={addLineFields}
+        processes={processes}${detailEntity ? `
+        addLineFields={addLineFields}` : ''}
         catalogs={catalogs}
-        entityLabel="${entityLabel}"
-        detailLabel="${entityDetailLabel}"
+        entityLabel="${entityLabel}"${detailEntity ? `
+        detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}
@@ -840,12 +842,11 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
 
-  if (detailEntity) {
-    const apiBlock = apiPrediction
-      ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-      : '';
-    const apiProp = apiPrediction ? ' api={api}' : '';
-    return `import ${headerName}Page from './${headerName}Page';
+  const apiBlock = apiPrediction
+    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    : '';
+  const apiProp = apiPrediction ? ' api={api}' : '';
+  return `import ${headerName}Page from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
@@ -853,72 +854,6 @@ ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   ${MARKERS.CUSTOM_SLOT('hooks:App')}
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
-}
-${MARKERS.GENERATED_END('component:App')}
-
-${MARKERS.CUSTOM_SLOT('section:App-custom')}
-`;
-  }
-
-  const windowConfig = contract?.frontendContract?.window ?? {};
-  const customComponents = windowConfig.customComponents ?? {};
-  const salesTheme = windowConfig.salesTheme ?? false;
-
-  const indexCustomComponentImports = [];
-  const indexCustomComponentProps = [];
-  if (customComponents.sidePanel) {
-    indexCustomComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
-    indexCustomComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
-    if (customComponents.sidePanelStyle) {
-      indexCustomComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
-    }
-  }
-  const indexCustomCompImportBlock = indexCustomComponentImports.length > 0
-    ? indexCustomComponentImports.join('\n') + '\n'
-    : '';
-  const indexCustomCompPropsBlock = indexCustomComponentProps.join('');
-  const indexSalesThemeProp = salesTheme ? '\n        salesTheme' : '';
-
-  const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
-  const apiProp = apiPrediction ? '\n      api={api}' : '';
-
-  return `import { ListView, DetailView } from '@/components/contract-ui';
-import ${headerName}Table from './${headerName}Table';
-import ${headerName}Form from './${headerName}Form';
-import catalogs from './mockCatalogs';
-${indexCustomCompImportBlock}
-const windowMeta = { category: '${category}', name: '${windowName}' };
-${apiBlock}
-${MARKERS.GENERATED_START('component:App')}
-export default function App({ windowName, recordId, ...props }) {
-  ${MARKERS.CUSTOM_SLOT('hooks:App')}
-  if (recordId) {
-    return (
-      <DetailView
-        entity="${headerEntity}"
-        Form={${headerName}Form}
-        catalogs={catalogs}
-        entityLabel="${toLabel(headerEntity)}"
-        windowName={windowName}
-        recordId={recordId}
-        window={windowMeta}${apiProp}${indexCustomCompPropsBlock}${indexSalesThemeProp}
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="${headerEntity}"
-      Table={${headerName}Table}
-      entityLabel="${toLabel(headerEntity)}"
-      windowName={windowName}
-      window={windowMeta}${apiProp}
-      {...props}
-    />
-  );
 }
 ${MARKERS.GENERATED_END('component:App')}
 
@@ -1054,7 +989,9 @@ export function generateAll(contract) {
   const { window: win, entities } = frontendContract;
   const primaryEntity = win.primaryEntity;
   const entityNames = Object.keys(entities);
-  const detailEntity = win.detailEntity || entityNames.find(name => name !== primaryEntity);
+  const detailEntity = 'detailEntity' in win
+    ? win.detailEntity
+    : entityNames.find(name => name !== primaryEntity);
 
   const files = {};
 
@@ -1065,10 +1002,8 @@ export function generateAll(contract) {
     files[`${capName}Form.jsx`] = generateFormComponent(entityName, contract);
   }
 
-  // Generate Page if there is a detail entity
-  if (detailEntity) {
-    files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
-  }
+  // Generate Page component (handles both header-detail and header-only layouts)
+  files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
 
   // Generate mock catalogs
   files['mockCatalogs.js'] = generateMockCatalogs(contract);
