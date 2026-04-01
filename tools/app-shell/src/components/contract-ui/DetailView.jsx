@@ -114,6 +114,7 @@ export function DetailView({
   bottomSection = null,
   topbarExtra = null,
   topbarRight = null,
+  statusFieldLabel = null,
   salesTheme = false,
   sidebarContent = null,
   onAfterSave,
@@ -535,12 +536,18 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               Cancel
             </Button>
-            {!topbarRight && statusField && data[statusField] && (
-              <span className="inline-flex items-center gap-1.5 ml-1 text-xs font-medium">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                <span className="text-foreground/70">{statusLabel(data[statusField])}</span>
-              </span>
-            )}
+            {!topbarRight && statusField && data[statusField] && (() => {
+              const _s = data[statusField];
+              const _pill = { CO: { bg: '#d1fae5', color: '#065f46', dot: '#10b981' }, DR: { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' }, VO: { bg: '#fee2e2', color: '#991b1b', dot: '#ef4444' }, CL: { bg: '#dbeafe', color: '#1e40af', dot: '#3b82f6' }, IP: { bg: '#fef3c7', color: '#78350f', dot: '#f59e0b' } }[_s] || { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' };
+              return (
+                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: _pill.bg, color: _pill.color }}>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: _pill.dot }} />
+                  {statusFieldLabel || 'Document Status'}
+                  <span style={{ opacity: 0.4 }}>&middot;</span>
+                  <span className="font-semibold">{statusLabel(_s)}</span>
+                </span>
+              );
+            })()}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
@@ -700,7 +707,13 @@ export function DetailView({
                 </Button>
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
-                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  if (saved) {
+                    if (onAfterSave) {
+                      navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                    } else if (saved.id && isNew) {
+                      navigate(`/${windowName}/${saved.id}`, { replace: true });
+                    }
+                  }
                 }}>
                   <Check className="h-3.5 w-3.5" />
                   Save &amp; {draftMode.label || 'Process'}
@@ -709,7 +722,13 @@ export function DetailView({
             ) : (
               <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                 const saved = await hook.handleSave(data);
-                if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                if (saved) {
+                  if (onAfterSave) {
+                    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                  } else if (saved.id && isNew) {
+                    navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  }
+                }
               }}>
                 <Check className="h-3.5 w-3.5" />
                 Save
@@ -1066,6 +1085,14 @@ export function DetailView({
                           selectorContext={selectorContextByEntity[st.key]}
                         />
                       </div>
+                    ) : st.Panel ? (
+                      <div className="flex-1 min-w-0">
+                        <st.Panel
+                          parentId={data?.id}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                        />
+                      </div>
                     ) : (
                     <>
                     <div className="flex-1 min-w-0">
@@ -1101,7 +1128,6 @@ export function DetailView({
                         </button>
                       )}
                     </div>
-                    )}
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
