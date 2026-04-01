@@ -28,9 +28,18 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
 const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
 
 function detectBasePath() {
+  const envBase = import.meta.env.VITE_API_BASE;
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
-  if (webIdx === -1) return { apiBase: import.meta.env.VITE_API_BASE || '', routerBase: '/' };
+
+  if (envBase) {
+    const routerBase = webIdx !== -1
+      ? `${path.substring(0, webIdx)}/${path.substring(webIdx + 1).split('/').slice(0, 2).join('/')}`
+      : '/';
+    return { apiBase: envBase, routerBase };
+  }
+
+  if (webIdx === -1) return { apiBase: '', routerBase: '/' };
   const contextPath = path.substring(0, webIdx);
   const moduleSegment = path.substring(webIdx + 1).split('/').slice(0, 2).join('/');
   return {
