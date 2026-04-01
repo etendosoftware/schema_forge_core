@@ -250,6 +250,20 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         handleChange(key + suffix, auxVal);
       }
     }
+    // Also fire top-level display fields from selectedItem (mirrors EntityForm behavior).
+    // Skips structural/object fields; fires e.g. product_uOM = "Unit" for identifier resolution.
+    if (selectedItem && typeof selectedItem === 'object') {
+      for (const [topField, topVal] of Object.entries(selectedItem)) {
+        if (topField === 'id' || topField === '_aux' || topField === 'label'
+            || topField === 'name' || topField === 'searchKey'
+            || typeof topVal === 'object' || topVal === null) continue;
+        const ctxKey = `${key}_${topField}`;
+        if (!(ctxKey in snapshot)) {
+          snapshot[ctxKey] = topVal;
+          handleChange(ctxKey, topVal);
+        }
+      }
+    }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
     onFieldChange?.(key, val, snapshot, (updates) => {
       // Callback to apply callout results to the inline row

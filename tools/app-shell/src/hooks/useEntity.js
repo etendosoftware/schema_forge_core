@@ -14,6 +14,8 @@ function buildHeaders(token) {
 async function extractErrorMessage(res) {
   try {
     const data = await res.json();
+    // NEO Headless top-level error: { error: { message, status } }
+    if (data?.error?.message) return data.error.message;
     // Etendo JsonDataService wraps errors in response.error
     const err = data?.response?.error;
     if (err?.message) return err.message;
@@ -319,17 +321,25 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
       if (p.hidden) fieldValues[p.key] = p.value;
     }
     Object.assign(fieldValues, paramValues);
-    const columnName = process.columnName;
-    const url = columnName
-      ? `${apiBaseUrl}/${entity}/${selected.id}/action/${columnName}`
-      : `${apiBaseUrl}/process/${process.name}`;
-    await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ fieldValues }),
-    });
-    refresh();
-  }, [selected, entity, apiBaseUrl, token, refresh]);
+    const url = `${apiBaseUrl}/${entity}/${selected.id}/action/${process.columnName ?? process.name}`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fieldValues }),
+      });
+      if (res.ok) {
+        toast.success(process.label ? `${process.label} completed` : 'Process completed');
+        fetchById(selected.id);
+        refresh();
+      } else {
+        const msg = await extractErrorMessage(res);
+        toast.error(msg);
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Network error');
+    }
+  }, [selected, entity, apiBaseUrl, token, refresh, fetchById]);
 
   return {
     items, selected, editing, children, loading, loadingMore, hasMore, saveError,
