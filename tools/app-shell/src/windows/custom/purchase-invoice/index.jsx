@@ -1,28 +1,23 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import TaxTable from '@generated/purchase-invoice/generated/web/purchase-invoice/TaxTable';
-import BasicDiscountsTable from '@generated/purchase-invoice/generated/web/purchase-invoice/BasicDiscountsTable';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import PaymentDetailsPanelCustom from './PaymentDetailsPanelCustom.jsx';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
+import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
+import RelatedDocuments from './RelatedDocuments.jsx';
 
-// Secondary tabs: Tax, Basic Discounts, Payment Details (no Payment Plan / Reversed Invoices / Accounting)
+// Secondary tabs: Tax, Payment Details (removed Basic Discounts, Payment Plan, Reversed Invoices, Accounting)
 const SECONDARY_TABS = [
   { key: 'tax', label: 'Tax', Table: TaxTable },
-  { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable },
   { key: 'paymentDetails', label: 'Payment Details', Panel: PaymentDetailsPanelCustom },
 ];
 
-// Payment status badges: shows Pending (orange) or Paid (green) based on paymentComplete field
-const EXTRA_BADGES = [
-  { key: 'paymentComplete', when: false, prefix: 'Payment Status', label: 'Pending', style: 'warning' },
-  { key: 'paymentComplete', when: true,  prefix: 'Payment Status', label: 'Paid',    style: 'success' },
-];
 
 // Summary bar: only the four relevant totals
 const SUMMARY = [
@@ -30,6 +25,15 @@ const SUMMARY = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
   { key: 'totalPaid', column: 'Totalpaid', type: 'amount', label: 'Paid Amount' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: 'Outstanding Amount' },
+];
+
+// List view columns: simplified to essentials only
+const LIST_COLUMNS = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
 
 /**
@@ -79,6 +83,7 @@ function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }
       {/* Table */}
       <div className="flex-1 overflow-auto">
         <HeaderTable
+          columns={LIST_COLUMNS}
           data={hook.items}
           loading={hook.loading}
           loadingMore={hook.loadingMore}
@@ -119,40 +124,52 @@ function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }
 export default function PurchaseInvoiceWindow(props) {
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
+  const location = useLocation();
   const [savedRecord, setSavedRecord] = useState(null);
 
-  const handleAfterSave = useCallback((record) => {
-    if (record) setSavedRecord(record);
-  }, []);
+  // Pick up the saved record from navigation state when arriving at the list view
+  const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
+
+  const clearSavedRecord = useCallback(() => {
+    setSavedRecord(null);
+    // Clear navigation state so the modal doesn't reappear on browser back/forward
+    if (location.state?.savedRecord) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   if (recordId) {
     return (
-      <>
-        <HeaderPage
-          {...props}
-          DetailTable={InvoiceLineTableCustom}
-          secondaryTabs={SECONDARY_TABS}
-          summary={SUMMARY}
-          extraBadges={EXTRA_BADGES}
-          statusFieldLabel="Document Status"
-          onAfterSave={handleAfterSave}
-        />
-        {savedRecord && (
-          <InvoicePreviewModal
-            invoice={savedRecord}
-            token={token}
-            apiBaseUrl={apiBaseUrl}
-            windowName={windowName}
-            onClose={() => setSavedRecord(null)}
-            onEdit={(id) => {
-              setSavedRecord(null);
-              navigate(`/${windowName}/${id}`);
-            }}
-          />
-        )}
-      </>
+      <HeaderPage
+        {...props}
+        DetailTable={InvoiceLineTableCustom}
+        secondaryTabs={SECONDARY_TABS}
+        summary={SUMMARY}
+        extraBadges={[]}
+        topbarRight={PurchaseInvoiceTopbar}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        onAfterSave={true}
+      />
     );
   }
 
-  return <PurchaseInvoiceListView {...props} />;
+  return (
+    <>
+      <PurchaseInvoiceListView {...props} />
+      {effectiveRecord && (
+        <InvoicePreviewModal
+          invoice={effectiveRecord}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          windowName={windowName}
+          onClose={clearSavedRecord}
+          onEdit={(id) => {
+            clearSavedRecord();
+            navigate(`/${windowName}/${id}`);
+          }}
+        />
+      )}
+    </>
+  );
 }

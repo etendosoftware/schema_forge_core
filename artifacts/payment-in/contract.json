@@ -1,7 +1,7 @@
 {
   "version": "0.10.0",
-  "generatedAt": "2026-04-01T16:22:23.274Z",
-  "checksum": "2e650e91110fd5d4",
+  "generatedAt": "2026-04-01T19:19:13.789Z",
+  "checksum": "98fd02a2839a2d0a",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -50,6 +50,7 @@
         }
       },
       "detailEntity": null,
+      "summaryFields": [],
       "salesTheme": true,
       "layoutType": "default"
     },
@@ -451,6 +452,7 @@
         }
       },
       "detailEntity": null,
+      "summaryFields": [],
       "salesTheme": true
     },
     "entities": {

@@ -13,6 +13,7 @@
     },
     "detailEntity": null,
     "hideDeleteWhenComplete": true,
+    "summaryFields": [],
     "menuActions": [
       { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
     ],

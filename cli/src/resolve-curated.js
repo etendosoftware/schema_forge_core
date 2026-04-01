@@ -555,6 +555,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.statusBar) {
     schema.window.statusBar = windowDecisions.statusBar;
   }
+  if (Array.isArray(windowDecisions.summaryFields)) {
+    schema.window.summaryFields = windowDecisions.summaryFields;
+  }
   if (windowDecisions.detailSortBy) {
     schema.window.detailSortBy = windowDecisions.detailSortBy;
   }

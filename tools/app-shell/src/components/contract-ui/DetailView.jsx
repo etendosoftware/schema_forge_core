@@ -15,7 +15,7 @@ import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -114,6 +114,7 @@ export function DetailView({
   bottomSection = null,
   topbarExtra = null,
   topbarRight = null,
+  statusFieldLabel = null,
   salesTheme = false,
   sidebarContent = null,
   onAfterSave,
@@ -539,12 +540,17 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               Cancel
             </Button>
-            {!topbarRight && statusField && data[statusField] && (
-              <span className="inline-flex items-center gap-1.5 ml-1 text-xs font-medium">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                <span className="text-foreground/70">{statusLabel(data[statusField])}</span>
-              </span>
-            )}
+            {!topbarRight && statusField && data[statusField] && (() => {
+              const _s = data[statusField];
+              return (
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
+                  {statusFieldLabel || 'Document Status'}
+                  <span style={{ opacity: 0.4 }}>&middot;</span>
+                  <span className="font-semibold">{statusLabel(_s)}</span>
+                </span>
+              );
+            })()}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
@@ -704,7 +710,13 @@ export function DetailView({
                 </Button>
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
-                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  if (saved) {
+                    if (onAfterSave) {
+                      navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                    } else if (saved.id && isNew) {
+                      navigate(`/${windowName}/${saved.id}`, { replace: true });
+                    }
+                  }
                 }}>
                   <Check className="h-3.5 w-3.5" />
                   Save &amp; {draftMode.label || 'Process'}
@@ -713,7 +725,13 @@ export function DetailView({
             ) : (
               <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                 const saved = await hook.handleSave(data);
-                if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                if (saved) {
+                  if (onAfterSave) {
+                    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                  } else if (saved.id && isNew) {
+                    navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  }
+                }
               }}>
                 <Check className="h-3.5 w-3.5" />
                 Save
@@ -1068,6 +1086,14 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
+                        />
+                      </div>
+                    ) : st.Panel ? (
+                      <div className="flex-1 min-w-0">
+                        <st.Panel
+                          parentId={data?.id}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
                         />
                       </div>
                     ) : (
