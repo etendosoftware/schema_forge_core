@@ -408,6 +408,14 @@ export function DetailView({
           if (match) result[key + '$_identifier'] = match.label || match.name || match._identifier || '';
         }
       }
+      // Last resort: check snapshot for a display hint passed by the selector item.
+      // Pattern: field='product', result key='uOM' → look for rowValues['product_uOM'] = "Unit"
+      for (const key of Object.keys(result)) {
+        if (key.includes('$_identifier')) continue;
+        if (result[key + '$_identifier']) continue;
+        const hint = rowValues[field + '_' + key];
+        if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
     } catch {
       // Callout is best-effort
@@ -1093,6 +1101,7 @@ export function DetailView({
                         </button>
                       )}
                     </div>
+                    )}
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">

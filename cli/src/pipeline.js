@@ -403,14 +403,19 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           const rules = pipelineContext.rules || [];
           const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
-          const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || []);
-          // Snapshot current contract as prev for version diffing
+          // Read existing version before overwriting, so the new contract preserves it
+          // and check-version can bump from the correct baseline.
+          let prevVersion = null;
           try {
-            const existingContract = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
-            await writeFile(`artifacts/${windowName}/contract.prev.json`, existingContract, 'utf-8');
+            const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
+            const existingContract = JSON.parse(existingRaw);
+            prevVersion = existingContract.version ?? null;
+            // Snapshot for version diffing
+            await writeFile(`artifacts/${windowName}/contract.prev.json`, existingRaw, 'utf-8');
           } catch {
             // No existing contract — first generation, no prev needed
           }
+          const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion);
           await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2));
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
           // Version check

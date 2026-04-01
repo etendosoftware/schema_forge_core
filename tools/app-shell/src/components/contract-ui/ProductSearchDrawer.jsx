@@ -128,15 +128,22 @@ export default function ProductSearchDrawer({
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           const raw = data?.items || [];
-          const seenKeys = new Set();
-          const items = raw.filter(item => {
-            // Deduplicate by searchKey (product code) — selectors may return one row per
-            // attribute set instance, all sharing the same product code.
+          // Deduplicate by searchKey (product code) — prefer warehouse-specific rows (with
+          // actual stock data) over generic rows (warehouse: null, _QTY: "0").
+          const seenKeys = new Map(); // key → index in items array
+          const items = [];
+          for (const item of raw) {
             const key = item.searchKey || item.id;
-            if (seenKeys.has(key)) return false;
-            seenKeys.add(key);
-            return true;
-          });
+            if (seenKeys.has(key)) {
+              const idx = seenKeys.get(key);
+              if (!items[idx].warehouse && item.warehouse) {
+                items[idx] = item; // Replace generic row with warehouse-specific row
+              }
+            } else {
+              seenKeys.set(key, items.length);
+              items.push(item);
+            }
+          }
           // Advance the raw server offset so scroll-based pagination is correct even after dedup.
           rawOffsetRef.current = offset + raw.length;
           if (append) {
