@@ -5,6 +5,7 @@ import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
 import catalogs from './mockCatalogs';
 
 
@@ -26,7 +27,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
+  { name: 'Process Shipment', label: 'Complete', style: 'positive', columnName: 'documentAction',
     displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:goodsShipment
@@ -256,6 +257,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        topbarRight={GoodsShipmentActions}
         menuActions={({ status }) => [
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}

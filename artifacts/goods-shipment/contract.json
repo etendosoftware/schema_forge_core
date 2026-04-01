@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-31T19:54:18.134Z",
-  "checksum": "162be858b37d139c",
+  "version": "0.2.0",
+  "generatedAt": "2026-04-01T10:52:22.637Z",
+  "checksum": "e5b3e8fa83ff7946",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -14,6 +14,9 @@
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "topbarRight": "GoodsShipmentActions"
+      },
       "menuActions": [
         {
           "key": "cancel",
@@ -22,6 +25,12 @@
           "visibleWhenStatus": "CO"
         }
       ],
+      "processOverrides": {
+        "documentAction": {
+          "label": "Complete",
+          "displayLogicRaw": "@documentStatus@='DR'"
+        }
+      },
       "salesTheme": true,
       "layoutType": "default"
     },
@@ -46,7 +55,8 @@
             "section": "principal",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           },
           {
@@ -293,7 +303,8 @@
             },
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           }
         ],
@@ -324,6 +335,9 @@
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "topbarRight": "GoodsShipmentActions"
+      },
       "menuActions": [
         {
           "key": "cancel",
@@ -332,6 +346,12 @@
           "visibleWhenStatus": "CO"
         }
       ],
+      "processOverrides": {
+        "documentAction": {
+          "label": "Complete",
+          "displayLogicRaw": "@documentStatus@='DR'"
+        }
+      },
       "salesTheme": true
     },
     "entities": {

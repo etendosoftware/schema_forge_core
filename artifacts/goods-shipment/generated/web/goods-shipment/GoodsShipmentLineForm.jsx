@@ -7,7 +7,7 @@ const fields = [
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity', required: true, section: 'principal', defaultValue: '0' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'other' },
   // @sf-custom-slot callout:SL_InOut_Conversion
-  { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', label: 'Order Quantity', readOnly: true, section: 'principal' },
+  { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', label: 'Order Quantity', readOnly: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === 'Y' },
 ];
 // @sf-generated-end fields:goodsShipmentLine
 

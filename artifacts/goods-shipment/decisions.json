@@ -10,6 +10,9 @@
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "customComponents": {
+      "topbarRight": "GoodsShipmentActions"
+    },
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
     ],
