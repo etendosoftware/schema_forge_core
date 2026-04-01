@@ -12,14 +12,15 @@ function fmtAmount(amount, currencyId) {
 }
 
 /**
- * PaymentBottomPanel — Left-column bottom content for Payment In detail view.
+ * PaymentBottomPanel — Full-width bottom content for Payment In detail view.
  *
- * Layout (below the header form, in the left 70% column):
+ * Layout (below the header form):
  *   1. Unallocated credit banner (only if remaining > 0)
  *   2. DOCS — related document chips
  *   3. NOTES — inline editable description field
  *
- * Activity is rendered separately in the right-column sidePanel (PaymentActivityPanel).
+ * Activity is accessible via the topbar toggle (PaymentActivityToggle) which
+ * opens a slide-in drawer containing PaymentActivityPanel.
  */
 export default function PaymentBottomPanel({
   recordId, data, token, apiBaseUrl, api,
