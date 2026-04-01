@@ -16,8 +16,6 @@ const breadcrumb = 'Purchases / Goods Receipt';
 // @sf-generated-start summary:goodsReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'number' },
 ];
 
 const statusField = 'documentStatus';
@@ -41,26 +39,17 @@ const draftMode = null;
 // @sf-generated-start addLineFields:goodsReceiptLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.' },
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
-    { key: 'operativeQuantity', column: 'Aumqty', type: 'number', label: 'Operative Quantity' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'selector', label: 'Alternative UOM', reference: 'UOM', inputMode: 'selector' },
     { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
     { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'search', label: 'Business Partner', reference: 'BusinessPartner', inputMode: 'search' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', reference: 'Project', inputMode: 'search' },
-    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'CostCenter', inputMode: 'selector' },
-    { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'UserDimension1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'UserDimension2', inputMode: 'selector' },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@' },
   ],
 };
 // @sf-generated-end addLineFields:goodsReceiptLine
@@ -471,18 +460,18 @@ const api = {
     },
     {
       "entity": "goodsReceipt",
-      "field": "receiveMaterials",
-      "column": "RM_Receipt_PickEdit",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
-      "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsReceipt",
       "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "receiveMaterials",
+      "column": "RM_Receipt_PickEdit",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
+      "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {

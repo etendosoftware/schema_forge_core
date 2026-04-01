@@ -15,7 +15,7 @@ import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -542,10 +542,9 @@ export function DetailView({
             </Button>
             {!topbarRight && statusField && data[statusField] && (() => {
               const _s = data[statusField];
-              const _pill = { CO: { bg: '#d1fae5', color: '#065f46', dot: '#10b981' }, DR: { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' }, VO: { bg: '#fee2e2', color: '#991b1b', dot: '#ef4444' }, CL: { bg: '#dbeafe', color: '#1e40af', dot: '#3b82f6' }, IP: { bg: '#fef3c7', color: '#78350f', dot: '#f59e0b' } }[_s] || { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' };
               return (
-                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: _pill.bg, color: _pill.color }}>
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: _pill.dot }} />
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
                   {statusFieldLabel || 'Document Status'}
                   <span style={{ opacity: 0.4 }}>&middot;</span>
                   <span className="font-semibold">{statusLabel(_s)}</span>
