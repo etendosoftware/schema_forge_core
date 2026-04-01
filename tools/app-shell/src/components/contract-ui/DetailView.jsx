@@ -148,6 +148,10 @@ export function DetailView({
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [activeTab, setActiveTab] = useState(0);
+
+  // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
+  const _headerData = hook.selected ?? hook.editing;
+  const isDocumentReadOnly = _headerData?.processed === true || _headerData?.processed === 'Y';
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -905,7 +909,7 @@ export function DetailView({
                         </div>
                       )}
 
-                      {allEntryFields.length > 0 && hook.editing && (
+                      {allEntryFields.length > 0 && hook.editing && !isDocumentReadOnly && (
                         <button
                           onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
                           className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
@@ -929,7 +933,7 @@ export function DetailView({
                         </div>
                         <DetailForm
                           data={lineEdits ?? selectedLine}
-                          readOnly={!hook.editing}
+                          readOnly={!hook.editing || isDocumentReadOnly}
                           onChange={(key, val, column) => {
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
@@ -942,7 +946,7 @@ export function DetailView({
                         />
                         {hook.editing && (lineEdits || selectedLine?.id) && (
                           <div className="flex gap-2 mt-4">
-                            {lineEdits && (
+                            {lineEdits && !isDocumentReadOnly && (
                               <>
                                 <button
                                   disabled={savingLine}
@@ -994,7 +998,7 @@ export function DetailView({
                                 </button>
                               </>
                             )}
-                            {(api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && (
+                            {(api?.crud?.[detailEntity]?.delete ?? true) && selectedLine?.id && !isDocumentReadOnly && (
                               <button
                                 disabled={savingLine}
                                 onClick={async () => {
