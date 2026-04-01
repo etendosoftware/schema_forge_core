@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
+import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -39,20 +40,36 @@ function ReportCard({ report, onRun }) {
 // Dropdown / search-as-you-type selector.
 // minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
 // minLength=2 (default) → search-as-you-type (used for accounts, etc.).
-function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false }) {
+function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, token, label, selectedOrgId, roleOrgIds, selectedWarehouseId }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selected, setSelected] = useState([]); // [{id, name}]
   const ref = useRef(null);
   const touched = useRef(false); // prevent auto-fetch on mount
 
+  const useDrawerSearch = selector === 'product';
+  const showDropdownArrow = selector === 'warehouse' && !multi;
+  const inputWidthClass = fullWidth ? 'w-full min-w-[16rem] sm:min-w-[18rem] md:min-w-[20rem]' : 'w-44';
+
+  const normalizeOptions = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  };
+
   const fetchOptions = useCallback((q) => {
-    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`)
+    const params = new URLSearchParams({ q });
+    if (selector === 'warehouse') {
+      if (selectedOrgId) params.set('selectedOrgId', selectedOrgId);
+      if (roleOrgIds && roleOrgIds.length > 0) params.set('roleOrgIds', roleOrgIds.join(','));
+    }
+    fetch(`/api/report-selectors/${selector}?${params.toString()}`)
       .then(r => r.json())
-      .then(data => { setOptions(data); setOpen(true); })
+      .then(data => { setOptions(normalizeOptions(data)); setOpen(true); })
       .catch(() => setOptions([]));
-  }, [selector]);
+  }, [selector, selectedOrgId, roleOrgIds]);
 
   useEffect(() => {
     if (!touched.current) return;
@@ -81,15 +98,29 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
     if (!multi && !e.target.value) onChange('', '');
   };
 
+  useEffect(() => {
+    if (!multi) return;
+    if (!value) {
+      setSelected([]);
+      return;
+    }
+    const ids = String(value).split(',').map(s => s.trim()).filter(Boolean);
+    const currentById = new Map(selected.map(s => [s.id, s.name]));
+    const next = ids.map((id) => ({ id, name: currentById.get(id) || id }));
+    setSelected(next);
+  }, [multi, value]);
+
   const addItem = (item) => {
     if (multi) {
-      const next = [...selected.filter(s => s.id !== item.id), item];
+      const next = [...selected, item].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
       setSelected(next);
-      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
       setQuery('');
+      setOpen(false);
     } else {
-      onChange(item.id, item.name);
-      setQuery(item.name);
+      const nextLabel = item.label || item.name || '';
+      onChange(item.id, nextLabel);
+      setQuery(nextLabel);
       setOpen(false);
     }
   };
@@ -97,10 +128,87 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
   const removeItem = (id) => {
     const next = selected.filter(s => s.id !== id);
     setSelected(next);
-    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
   };
 
   const selectedIds = new Set(selected.map(s => s.id));
+
+  if (useDrawerSearch) {
+    const displayText = displayValue || '';
+    const productSelectorParams = new URLSearchParams();
+    if (selectedOrgId) productSelectorParams.set('selectedOrgId', selectedOrgId);
+    if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
+    if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
+    const productSelectorUrl = productSelectorParams.toString()
+      ? `/api/report-selectors/product?${productSelectorParams.toString()}`
+      : '/api/report-selectors/product';
+
+    const selectedItems = multi
+      ? selected
+      : ((value || displayValue) ? [{ id: value, name: displayValue }] : []);
+
+    const handleDrawerSelect = (item) => {
+      const normalized = {
+        id: item.id,
+        name: item.label || item.name || item.searchKey || item.id,
+      };
+      if (multi) {
+        const next = [...selected, normalized].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
+        setSelected(next);
+        onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
+      } else {
+        onChange(normalized.id, normalized.name);
+      }
+    };
+
+    return (
+      <div className={inputWidthClass}>
+        <div className="flex items-center h-8 border border-border rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-primary/30">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex-1 h-full px-2 text-sm text-left focus:outline-none min-w-0"
+            title={multi && selectedItems.length > 0 ? selectedItems.map(s => s.name).join(', ') : (displayText || '')}
+          >
+            <span className={`block truncate whitespace-nowrap ${selectedItems.length > 0 || displayText ? 'text-foreground' : 'text-muted-foreground'}`}>
+              {multi
+                ? (selectedItems.length > 0 ? `${selectedItems.length} selected` : `Search ${label || 'Product'}...`)
+                : (displayText || `Search ${label || 'Product'}...`)}
+            </span>
+          </button>
+          {((multi && selectedItems.length > 0) || (!multi && (value || displayValue))) && (
+            <button
+              type="button"
+              onClick={() => {
+                if (multi) setSelected([]);
+                onChange('', '');
+              }}
+              className="shrink-0 h-full px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+              aria-label={`Clear ${label || 'product'}`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <ProductSearchDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSelect={(item) => {
+            if (multi && selected.some(s => s.id === item.id)) {
+              removeItem(item.id);
+            } else {
+              handleDrawerSelect(item);
+            }
+          }}
+          selectorUrl={productSelectorUrl}
+          token={token}
+          title={label || 'Product'}
+          keepOpenOnSelect={multi}
+          selectedIds={selectedItems.map(s => s.id)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -114,16 +222,40 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
           ))}
         </div>
       )}
-      <input
-        type="text"
-        value={multi ? query : (query || displayValue || '')}
-        onChange={handleChange}
-        onFocus={handleFocus}
-        placeholder="Search..."
-        className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 ${fullWidth ? 'w-full' : 'w-44'} border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'}`}
-      />
+      <div className={`relative ${inputWidthClass}`}>
+        <input
+          type="text"
+          value={multi ? query : (query || displayValue || '')}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          placeholder="Search..."
+          className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 w-full border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'} ${showDropdownArrow ? 'pr-7' : ''}`}
+        />
+        {showDropdownArrow && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setOpen(prev => !prev)}
+            className="absolute right-1 top-1.5 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+            aria-label={`Toggle ${label || 'selector'} options`}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {multi && selected.length > 0 && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { setSelected([]); onChange('', ''); }}
+            className="absolute right-7 top-1.5 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+            aria-label={`Clear ${label || 'selector'}`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       {open && options.length > 0 && (
-        <div className={`absolute z-50 top-full left-0 mt-1 ${fullWidth ? 'w-full' : 'w-56'} max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1`}>
+        <div className="absolute z-50 top-full left-0 mt-1 w-full max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
           {options.filter(o => !selectedIds.has(o.id)).map(o => (
             <button key={o.id} onClick={() => addItem(o)}
               className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
@@ -468,7 +600,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   );
 }
 
-function ReportViewer({ report, onBack, token }) {
+function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -651,6 +783,11 @@ function ReportViewer({ report, onBack, token }) {
             {error && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>
             )}
+            {!loading && !error && !previewHtmlRef.current && (
+              <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground z-10">
+                Configure filters and click "Run Report" to generate the output.
+              </div>
+            )}
             <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
           </div>
         </div>
@@ -668,7 +805,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function ReportViewerPage() {
-  const { token } = useAuth();
+  const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -698,7 +835,15 @@ export default function ReportViewerPage() {
   };
 
   if (selectedReport) {
-    return <ReportViewer report={selectedReport} onBack={clearReport} token={token} />;
+    return (
+      <ReportViewer
+        report={selectedReport}
+        onBack={clearReport}
+        token={token}
+        selectedOrgId={selectedOrg?.id || null}
+        roleOrgIds={(selectedRole?.orgList || []).map(o => o.id).filter(Boolean)}
+      />
+    );
   }
 
   // Group reports by category, optionally filtering
