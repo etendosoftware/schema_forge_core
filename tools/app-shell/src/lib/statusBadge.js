@@ -36,6 +36,17 @@ export function getStatusDotColor(status) {
   return 'bg-gray-400';
 }
 
+export function getStatusPillClass(status) {
+  const s = String(status ?? '').toLowerCase();
+  if (s === 'draft' || s === 'dr') return 'bg-gray-100 text-gray-700';
+  if (s === 'completed' || s === 'complete' || s === 'booked' || s === 'co' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc') return 'bg-emerald-50 text-emerald-800';
+  if (s === 'closed' || s === 'cl' || s === 'paid' || s === 'pa') return 'bg-blue-50 text-blue-800';
+  if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo' || s === 'ca' || s === 'rpvoid') return 'bg-red-50 text-red-800';
+  if (s === 'in process' || s === 'ip' || s === 'rpae' || s === 'rpap' || s === 'rpr') return 'bg-amber-50 text-amber-800';
+  if (s === 'under evaluation' || s === 'ue') return 'bg-purple-50 text-purple-800';
+  return 'bg-gray-100 text-gray-700';
+}
+
 export function statusLabel(status) {
   const MAP = {
     // Document statuses

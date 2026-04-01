@@ -2,11 +2,11 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:accounting
 const columns = [
-  { key: 'period', column: 'C_Period_ID', type: 'string' },
-  { key: 'accountingDate', column: 'DateAcct', type: 'date' },
-  { key: 'account', column: 'Account_ID', type: 'string' },
-  { key: 'debit', column: 'AmtAcctDr', type: 'amount' },
-  { key: 'credit', column: 'AmtAcctCr', type: 'amount' },
+  { key: 'period', column: 'C_Period_ID', type: 'string', label: 'Period' },
+  { key: 'accountingDate', column: 'DateAcct', type: 'date', label: 'Accounting Date' },
+  { key: 'account', column: 'Account_ID', type: 'string', label: 'Account' },
+  { key: 'debit', column: 'AmtAcctDr', type: 'amount', label: 'Debit' },
+  { key: 'credit', column: 'AmtAcctCr', type: 'amount', label: 'Credit' },
 ];
 // @sf-generated-end columns:accounting
 
