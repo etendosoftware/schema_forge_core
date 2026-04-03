@@ -412,6 +412,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                   {isExpanded && (
                     <InlineRegisterForm
                       invoiceId={recordId}
+                      invoiceData={invoiceData}
                       installment={inst}
                       currency={currency}
                       base={base}
@@ -448,7 +449,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
 
 // ─── INLINE REGISTER FORM (expands inside installment row) ───────────────────
 
-function InlineRegisterForm({ invoiceId, installment, currency, base, headers, onCancel, onSuccess }) {
+function InlineRegisterForm({ invoiceId, invoiceData, installment, currency, base, headers, onCancel, onSuccess }) {
   const installmentOutstanding = parseFloat(installment.outstandingAmount) || 0;
   const [amount, setAmount] = useState(installmentOutstanding);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -456,22 +457,47 @@ function InlineRegisterForm({ invoiceId, installment, currency, base, headers, o
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resolvedOrgId, setResolvedOrgId] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
-        if (res.ok) {
-          const json = await res.json();
-          const items = json.items || json?.response?.data || [];
-          const mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
-          setAccounts(mapped);
-          if (mapped.length > 0) setAccountId(mapped[0].id);
+        // Find an existing payment for this invoice to get the correct account
+        const pmId = invoiceData?.paymentMethod;
+        const bpId = invoiceData?.businessPartner;
+        let mapped = [];
+
+        // Strategy 1: Find the account from existing payments for this BP + payment method
+        if (pmId && bpId) {
+          try {
+            const payRes = await fetch(`${base}/payment-in/finPayment?businessPartner=${bpId}&_startRow=0&_endRow=5`, { headers });
+            if (payRes.ok) {
+              const payments = (await payRes.json())?.response?.data || [];
+              const matching = payments.find(p => p.paymentMethod === pmId && p.account);
+              if (matching) {
+                mapped = [{ id: matching.account, name: matching['account$_identifier'] || 'Account' }];
+                if (matching.organization) setResolvedOrgId(matching.organization);
+              }
+            }
+          } catch { /* silent */ }
         }
+
+        // Strategy 2: Fallback to selector
+        if (mapped.length === 0) {
+          const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
+          if (res.ok) {
+            const json = await res.json();
+            const items = json.items || json?.response?.data || [];
+            mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
+          }
+        }
+
+        setAccounts(mapped);
+        if (mapped.length > 0) setAccountId(mapped[0].id);
       } catch { /* silent */ }
       finally { setLoadingAccounts(false); }
     })();
-  }, [base, headers]);
+  }, [base, headers, invoiceData?.paymentMethod, invoiceData?.businessPartner]);
 
   const amountExceeded = amount > installmentOutstanding;
 
@@ -481,17 +507,35 @@ function InlineRegisterForm({ invoiceId, installment, currency, base, headers, o
     if (!accountId) { toast.error('Select an account'); return; }
     setSaving(true);
     try {
-      const res = await fetch(`${base}/sales-invoice/header/${invoiceId}/action/aPRMAddpayment`, {
+      const res = await fetch(`${base}/sales-invoice/header/${invoiceId}/action/EM_APRM_Addpayment`, {
         method: 'POST', headers,
-        body: JSON.stringify({ fieldValues: {
-          amount: String(amount),
-          paymentDate: date,
+        body: JSON.stringify({
+          fin_payment_id: 'null',
+          trxtype: 'BPW',
+          ad_org_id: invoiceData.organization || resolvedOrgId || '',
+          payment_documentno: '<>',
+          c_currency_id: invoiceData.currency,
+          received_from: invoiceData.businessPartner,
+          fin_paymentmethod_id: invoiceData.paymentMethod,
+          actual_payment: String(amount),
+          converted_amount: String(amount),
+          expected_payment: String(installmentOutstanding),
+          payment_date: date,
           fin_financial_account_id: accountId,
-        } }),
+          conversion_rate: '1',
+          transaction_type: 'I',
+          document_action: '345',
+          issotrx: true,
+          reference_no: '',
+          difference: '',
+        }),
       });
+      const resJson = await res.json().catch(() => null);
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.response?.message || err?.message || `Failed (${res.status})`);
+        throw new Error(resJson?.response?.message || resJson?.message || `Failed (${res.status})`);
+      }
+      if (resJson?.response?.error || resJson?.response?.status === -1) {
+        throw new Error(resJson?.response?.error?.message || resJson?.response?.message?.text || 'Payment failed');
       }
       onSuccess();
     } catch (err) { toast.error(err.message); }
