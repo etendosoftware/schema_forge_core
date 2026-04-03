@@ -726,7 +726,7 @@ export function DetailView({
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+              <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
                 const saved = await hook.handleSave(data);
                 if (saved) {
                   if (onAfterSave) {

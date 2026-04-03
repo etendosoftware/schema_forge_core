@@ -89,7 +89,7 @@ export default function ProductSearchDrawer({
   const resolvedImageUrl = imageEntityUrl || (neoBaseUrl ? `${neoBaseUrl}/product/product` : null);
   const fetchAllImages = useCallback(() => {
     if (!resolvedImageUrl || !token) return;
-    fetch(`${resolvedImageUrl}?_limit=500`, {
+    fetch(`${resolvedImageUrl}?_startRow=0&_endRow=500`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     })
       .then(r => r.ok ? r.json() : null)
@@ -97,7 +97,10 @@ export default function ProductSearchDrawer({
         const rows = data?.response?.data || [];
         const map = {};
         for (const row of rows) {
-          if (row.searchKey && row.image) map[row.searchKey] = row.image;
+          if (row.image) {
+            if (row.searchKey) map[row.searchKey] = row.image;
+            if (row.id) map[row.id] = row.image;
+          }
         }
         setImageMap(map);
       })
@@ -291,7 +294,7 @@ export default function ProductSearchDrawer({
                           : 'hover:bg-muted/50'
                         }`}
                       >
-                        <Avatar name={name} id={item.id} imageUrl={image} imageId={getImageId(item) || imageMap[item.searchKey]} neoBaseUrl={neoBaseUrl} token={token} />
+                        <Avatar name={name} id={item.id} imageUrl={image} imageId={getImageId(item) || imageMap[item.searchKey] || imageMap[item.id]} neoBaseUrl={neoBaseUrl} token={token} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{name}</p>
                           {code && <p className="text-xs text-muted-foreground">{code}</p>}
@@ -315,7 +318,7 @@ export default function ProductSearchDrawer({
           {/* Footer */}
           {results.length > 0 && (
             <div className="px-4 py-1.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-              <span>{results.length}{totalCount > results.length ? ` of ${totalCount}` : ''} product{totalCount !== 1 ? 's' : ''}</span>
+              <span>{results.length} product{results.length !== 1 ? 's' : ''}</span>
               <span className="flex items-center gap-2">
                 <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">↑↓</kbd> navigate
                 <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">↵</kbd> select
