@@ -2274,11 +2274,11 @@
       },
       {
         "id": "t-95",
-        "category": "system-field",
+        "category": "field-presence",
         "entity": "goodsShipment",
         "field": "completelyInvoiced",
         "runner": "node",
-        "description": "System field 'completelyInvoiced' should exist in backend but not frontend for goodsShipment"
+        "description": "Field 'completelyInvoiced' should be present in goodsShipment"
       },
       {
         "id": "t-96",
