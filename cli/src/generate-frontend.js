@@ -116,9 +116,10 @@ export function generateTableComponent(entityName, contract) {
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const badgePart = f.badge ? ', badge: true' : '';
+    const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${summablePart}${displayPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -512,6 +513,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const hidePrint = windowConfig.hidePrint ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
@@ -626,6 +628,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+
+  // hidePrint prop
+  const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
 
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
@@ -813,7 +818,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}
         {...props}${sidebarContentProp}
       />
     );

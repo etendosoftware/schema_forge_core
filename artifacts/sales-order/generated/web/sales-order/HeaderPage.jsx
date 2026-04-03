@@ -5,6 +5,7 @@ import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import OrderCreateInvoice from '../../../custom/OrderCreateInvoice';
 import catalogs from './mockCatalogs';
 
 
@@ -28,7 +29,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'documentAction',
+  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'DocAction',
     displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
@@ -355,10 +356,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Order', pdfUrl: null }}
         hideDeleteWhenComplete
+        hidePrint
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        topbarRight={OrderCreateInvoice}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }

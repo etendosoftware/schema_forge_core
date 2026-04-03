@@ -4,18 +4,19 @@
     "category": "sales",
     "name": "Sales Order",
     "salesTheme": true,
-    "documentPreview": {
-      "titlePrefix": "Order"
-    },
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "hidePrint": true,
     "menuActions": [
       { "key": "duplicate", "label": "Duplicate" },
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
     ],
     "processOverrides": {
-      "Complete": { "add": true, "label": "Complete", "columnName": "documentAction", "displayLogicRaw": "@documentStatus@='DR'" }
+      "Complete": { "add": true, "label": "Complete", "columnName": "DocAction", "displayLogicRaw": "@documentStatus@='DR'" }
+    },
+    "customComponents": {
+      "topbarRight": "OrderCreateInvoice"
     }
   },
   "entities": {
@@ -346,7 +347,7 @@
           "visibility": "system"
         },
         "deliveredQuantity": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "replacedorderlineId": {
           "name": "replacedOrderLine",
@@ -364,7 +365,7 @@
           "section": "principal"
         },
         "invoicedQuantity": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "replacedorderline": {
           "visibility": "discarded"

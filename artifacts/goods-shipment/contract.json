@@ -8,9 +8,6 @@
       "name": "Goods Shipment",
       "primaryEntity": "goodsShipment",
       "category": "sales",
-      "documentPreview": {
-        "titlePrefix": "Shipment"
-      },
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
@@ -109,12 +106,12 @@
             "name": "partnerAddress",
             "apiKey": "partnerAddress",
             "column": "C_BPartner_Location_ID",
-            "label": "Partner Address",
+            "label": "Shipping Address",
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
@@ -217,7 +214,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "display": "dot"
           },
           {
             "name": "processed",
@@ -230,6 +228,23 @@
             "required": true,
             "grid": false,
             "form": false
+          },
+          {
+            "name": "completelyInvoiced",
+            "apiKey": "completelyInvoiced",
+            "column": "Iscompletelyinvoiced",
+            "label": "Invoiced",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "badge": true,
+            "badgeLabels": {
+              "true": "Invoiced",
+              "false": "Pending"
+            }
           }
         ],
         "searchableFields": [
@@ -794,11 +809,13 @@
             "required": false
           },
           {
-            "name": "completelyInvoiced",
+            "name": "invoiced",
             "apiKey": "completelyInvoiced",
             "column": "Iscompletelyinvoiced",
             "type": "boolean",
-            "visibility": "discarded",
+            "visibility": "readOnly",
+            "grid": true,
+            "form": false,
             "required": true
           },
           {

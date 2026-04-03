@@ -6,6 +6,7 @@ import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
+import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
 import catalogs from './mockCatalogs';
 
 
@@ -233,6 +234,9 @@ const api = {
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:GoodsShipmentPage
+  const bulkActions = (ctx) => <BulkInvoiceFromShipment {...ctx} />;
+  props = { ...props, bulkActions };
+  // @sf-custom-slot-end hooks:GoodsShipmentPage
   if (recordId) {
     return (
       <DetailView
@@ -253,8 +257,8 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
         hideDeleteWhenComplete
+        hidePrint
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={GoodsShipmentActions}
