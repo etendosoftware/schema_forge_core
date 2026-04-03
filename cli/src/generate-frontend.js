@@ -643,6 +643,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
+  if (customComponents.bulkActions) {
+    customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
+  }
   if (customComponents.sidePanel) {
     customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
@@ -747,7 +750,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     formFooterProp = `\n        formFooter={${compName}}`;
   }
 
-  return `import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+  return `import { useEffect } from 'react';
+import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';

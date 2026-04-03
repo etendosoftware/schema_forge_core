@@ -321,7 +321,7 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:HeaderPage
+  // @sf-custom-start hooks:HeaderPage
   useEffect(() => {
     const handler = (e) => {
       if (e.detail?.entity === 'header' && e.detail?.process?.columnName === 'DocAction' && e.detail?.recordId) {
@@ -331,7 +331,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
     window.addEventListener('neo:processSuccess', handler);
     return () => window.removeEventListener('neo:processSuccess', handler);
   }, []);
-  // @sf-custom-slot-end hooks:HeaderPage
+  // @sf-custom-end hooks:HeaderPage
   if (recordId) {
     return (
       <DetailView
@@ -353,7 +353,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         hideDeleteWhenComplete
-        hidePrint
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         bottomSection={InvoiceBottomPanel}

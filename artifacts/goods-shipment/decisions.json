@@ -9,7 +9,8 @@
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
     "customComponents": {
-      "topbarRight": "GoodsShipmentActions"
+      "topbarRight": "GoodsShipmentActions",
+      "bulkActions": "BulkInvoiceFromShipment"
     },
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }

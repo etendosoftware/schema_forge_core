@@ -12,7 +12,8 @@
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
       "customComponents": {
-        "topbarRight": "GoodsShipmentActions"
+        "topbarRight": "GoodsShipmentActions",
+        "bulkActions": "BulkInvoiceFromShipment"
       },
       "menuActions": [
         {
