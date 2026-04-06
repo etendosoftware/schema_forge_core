@@ -32,10 +32,11 @@
     { "name": "glId", "label": { "en_US": "General Ledger", "es_ES": "Libro Mayor" }, "type": "search", "selector": "acctschema", "inputStyle": "popup-single", "required": true },
     { "name": "currentDate", "label": { "en_US": "As of Date", "es_ES": "Fecha corte" }, "type": "date", "default": "__TODAY__", "required": true },
     { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner", "inputStyle": "popup" },
-    { "name": "column1", "label": { "en_US": "Days Group 1", "es_ES": "Días Tramo 1" }, "type": "number", "default": "30", "required": true },
-    { "name": "column2", "label": { "en_US": "Days Group 2", "es_ES": "Días Tramo 2" }, "type": "number", "default": "60", "required": true },
-    { "name": "column3", "label": { "en_US": "Days Group 3", "es_ES": "Días Tramo 3" }, "type": "number", "default": "90", "required": true },
-    { "name": "column4", "label": { "en_US": "Days Group 4", "es_ES": "Días Tramo 4" }, "type": "number", "default": "120", "required": true }
+    { "name": "showDetails", "label": { "en_US": "Show Details", "es_ES": "Mostrar Detalles" }, "type": "boolean" },
+    { "name": "column1", "label": { "en_US": "Days Group 1", "es_ES": "Días Tramo 1" }, "type": "number" },
+    { "name": "column2", "label": { "en_US": "Days Group 2", "es_ES": "Días Tramo 2" }, "type": "number" },
+    { "name": "column3", "label": { "en_US": "Days Group 3", "es_ES": "Días Tramo 3" }, "type": "number" },
+    { "name": "column4", "label": { "en_US": "Days Group 4", "es_ES": "Días Tramo 4" }, "type": "number" }
   ],
   "defaultSort": { "field": "bPartner", "direction": "asc" },
   "outputs": ["pdf", "xlsx", "csv", "html"],

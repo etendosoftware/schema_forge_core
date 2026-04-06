@@ -8,11 +8,24 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
 import { resolve, join } from 'node:path';
 
 const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
 const ROOT = resolve(ARTIFACTS_DIR, '..');
 const JSREPORT_URL = process.env.JSREPORT_URL || 'http://localhost:5488';
+
+// Decode JWT payload (no verification needed — dev proxy only) to extract Etendo claims.
+function getClientIdFromRequest(req) {
+  try {
+    const auth = req.headers['authorization'] || '';
+    const token = auth.replace(/^Bearer\s+/i, '');
+    if (!token) return null;
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return payload.client || null;
+  } catch { return null; }
+}
 
 // Find gradle.properties for DB connection
 function findGradleProps() {
@@ -124,7 +137,18 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     }
     if (!Array.isArray(rows)) throw new Error('NEO response did not contain rows array');
     if (limit) rows = rows.slice(0, parseInt(limit, 10));
-    return { rows, contract };
+
+    // Extract backend meta (sibling of the data array in the response path)
+    let neoMeta = {};
+    if (contract.neo.dataPath) {
+      const pathParts = contract.neo.dataPath.split('.');
+      const metaParts = [...pathParts.slice(0, -1), 'meta'];
+      let metaObj = data;
+      for (const key of metaParts) metaObj = metaObj?.[key];
+      if (metaObj && typeof metaObj === 'object') neoMeta = metaObj;
+    }
+
+    return { rows, contract, neoMeta };
   }
 
   // Document type: multiple queries (header + lines + taxes)
@@ -307,14 +331,16 @@ export default function reportApiPlugin() {
             const pg = await import('pg');
             const pool = new pg.default.Pool({ host: gradle['bbdd.host'] || 'localhost', port: parseInt(gradle['bbdd.port']) || 5432, user: gradle['bbdd.user'], password: gradle['bbdd.password'], database: gradle['bbdd.sid'], max: 2 });
             try {
+              const clientId = getClientIdFromRequest(req);
+              const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
               const queries = {
-                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
-                'acctschema': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'product':  `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org':      `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'account':  `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+                'acctschema': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'project':  `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
               };
               const sql = queries[type];
               if (!sql) throw new Error(`Unknown selector type: ${type}`);
@@ -369,7 +395,7 @@ export default function reportApiPlugin() {
           try {
             const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
             const result = await fetchReportData(reportId, { limit, authToken, params });
-            let { rows, contract, documentData } = result;
+            let { rows, contract, documentData, neoMeta = {} } = result;
 
             // Handle groupBy parameter: find the dimension param whose groupByValue matches,
             // re-sort rows by that field, then remap 'name' so the template group-break logic works.
@@ -431,18 +457,21 @@ export default function reportApiPlugin() {
             }
             const templateData = documentData
               ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
-              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel }, rows };
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 
             // Direct HTML render — no jsreport needed for preview
             if (format === 'html') {
-              const Handlebars = (await import('handlebars')).default;
+              const Handlebars = _require('handlebars');
 
               // Execute helpers.js in an isolated scope and extract all functions
               if (helpersCode) {
                 // eslint-disable-next-line no-new-func
                 const helperFn = new Function(helpersCode + `
-                  return { isGroupBreak, resetGroupTracking, formatDate, formatCurrency,
-                           formatBoolean, formatNumber, ifCond, eq };
+                  var _out = {};
+                  ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
+                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay']
+                  .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
+                  return _out;
                 `);
                 const helpers = helperFn();
                 if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();

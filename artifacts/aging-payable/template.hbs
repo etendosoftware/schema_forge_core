@@ -6,6 +6,9 @@
 .report-info-grid span { color: #555; }
 .report-info-grid strong { color: #111; }
 tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
+.bp-header-row td { font-weight: bold; font-size: 13px; padding-top: 12px; padding-bottom: 2px; border: none; background: transparent; }
+.bp-subtotal-row td { font-weight: bold; border-top: 1px solid #aaa; border-bottom: 2px solid #333; }
+.doc-row td { border: none; font-size: 11px; }
 </style></head>
 <body><div class="report-container">
 
@@ -26,15 +29,84 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
     {{/if}}
   </div>
 
+  {{#if meta.showDetails}}
+
+  {{!-- DETAIL VIEW: document rows grouped by business partner --}}
+  <table class="report-table">
+    <thead><tr>
+      <th style="width:18%">Contacts</th>
+      <th style="width:14%">Document No.</th>
+      <th style="width:10%">Document Date</th>
+      <th style="width:8%" class="cell-amount">Current</th>
+      <th style="width:8%" class="cell-amount">1-{{meta.column1}}</th>
+      {{#if meta.showBucket2}}<th style="width:8%" class="cell-amount">{{meta.column1}}-{{meta.column2}}</th>{{/if}}
+      {{#if meta.showBucket3}}<th style="width:8%" class="cell-amount">{{meta.column2}}-{{meta.column3}}</th>{{/if}}
+      {{#if meta.showBucket4}}<th style="width:8%" class="cell-amount">{{meta.column3}}-{{meta.column4}}</th>{{/if}}
+      <th style="width:8%" class="cell-amount">{{meta.lastBucketLabel}}</th>
+      <th style="width:7%" class="cell-amount">Credits</th>
+      <th style="width:7%" class="cell-amount">Net</th>
+    </tr></thead>
+    <tbody>
+      {{#each rows}}
+      {{!-- BP header row --}}
+      <tr class="bp-header-row">
+        <td colspan="{{#if @root.meta.showBucket4}}10{{else}}{{#if @root.meta.showBucket3}}9{{else}}{{#if @root.meta.showBucket2}}8{{else}}7{{/if}}{{/if}}{{/if}}">{{bPartner}}</td>
+      </tr>
+      {{!-- Individual document rows --}}
+      {{#each docs}}<tr class="doc-row">
+        <td></td>
+        <td>{{docNo}}</td>
+        <td>{{formatDateDisplay dateInvoiced}}</td>
+        <td class="cell-amount">{{formatCurrency current}}</td>
+        <td class="cell-amount">{{formatCurrency days30}}</td>
+        {{#if @root.meta.showBucket2}}<td class="cell-amount">{{formatCurrency days60}}</td>{{/if}}
+        {{#if @root.meta.showBucket3}}<td class="cell-amount">{{formatCurrency days90}}</td>{{/if}}
+        {{#if @root.meta.showBucket4}}<td class="cell-amount">{{formatCurrency days120}}</td>{{/if}}
+        <td class="cell-amount">{{formatCurrency days150plus}}</td>
+        <td class="cell-amount"></td>
+        <td class="cell-amount"></td>
+      </tr>{{/each}}
+      {{!-- BP subtotal row (amounts from summary) --}}
+      <tr class="bp-subtotal-row">
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="cell-amount">{{formatCurrency current}}</td>
+        <td class="cell-amount">{{formatCurrency days30}}</td>
+        {{#if @root.meta.showBucket2}}<td class="cell-amount">{{formatCurrency days60}}</td>{{/if}}
+        {{#if @root.meta.showBucket3}}<td class="cell-amount">{{formatCurrency days90}}</td>{{/if}}
+        {{#if @root.meta.showBucket4}}<td class="cell-amount">{{formatCurrency days120}}</td>{{/if}}
+        <td class="cell-amount">{{formatCurrency days150plus}}</td>
+        <td class="cell-amount">{{formatCurrency credits}}</td>
+        <td class="cell-amount">{{formatCurrency net}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+    <tfoot><tr>
+      <td colspan="3">TOTAL:</td>
+      <td class="cell-amount">{{formatCurrency (sumField rows 'current')}}</td>
+      <td class="cell-amount">{{formatCurrency (sumField rows 'days30')}}</td>
+      {{#if meta.showBucket2}}<td class="cell-amount">{{formatCurrency (sumField rows 'days60')}}</td>{{/if}}
+      {{#if meta.showBucket3}}<td class="cell-amount">{{formatCurrency (sumField rows 'days90')}}</td>{{/if}}
+      {{#if meta.showBucket4}}<td class="cell-amount">{{formatCurrency (sumField rows 'days120')}}</td>{{/if}}
+      <td class="cell-amount">{{formatCurrency (sumField rows 'days150plus')}}</td>
+      <td class="cell-amount">{{formatCurrency (sumField rows 'credits')}}</td>
+      <td class="cell-amount">{{formatCurrency (sumField rows 'net')}}</td>
+    </tr></tfoot>
+  </table>
+
+  {{else}}
+
+  {{!-- SUMMARY VIEW: one row per business partner --}}
   <table class="report-table">
     <thead><tr>
       <th style="width:20%">Contacts</th>
       <th style="width:10%" class="cell-amount">Current</th>
-      <th style="width:9%" class="cell-amount">1-{{meta.params.column1}}</th>
-      <th style="width:9%" class="cell-amount">{{meta.params.column1}}-{{meta.params.column2}}</th>
-      <th style="width:9%" class="cell-amount">{{meta.params.column2}}-{{meta.params.column3}}</th>
-      <th style="width:9%" class="cell-amount">{{meta.params.column3}}-{{meta.params.column4}}</th>
-      <th style="width:9%" class="cell-amount">&gt;{{meta.params.column4}}</th>
+      <th style="width:9%" class="cell-amount">1-{{meta.column1}}</th>
+      {{#if meta.showBucket2}}<th style="width:9%" class="cell-amount">{{meta.column1}}-{{meta.column2}}</th>{{/if}}
+      {{#if meta.showBucket3}}<th style="width:9%" class="cell-amount">{{meta.column2}}-{{meta.column3}}</th>{{/if}}
+      {{#if meta.showBucket4}}<th style="width:9%" class="cell-amount">{{meta.column3}}-{{meta.column4}}</th>{{/if}}
+      <th style="width:9%" class="cell-amount">{{meta.lastBucketLabel}}</th>
       <th style="width:10%" class="cell-amount">Total</th>
       <th style="width:8%" class="cell-amount">Credits</th>
       <th style="width:8%" class="cell-amount">Net</th>
@@ -44,9 +116,9 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
         <td>{{lookup this 'bPartner'}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'current')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'days30')}}</td>
-        <td class="cell-amount">{{formatCurrency (lookup this 'days60')}}</td>
-        <td class="cell-amount">{{formatCurrency (lookup this 'days90')}}</td>
-        <td class="cell-amount">{{formatCurrency (lookup this 'days120')}}</td>
+        {{#if @root.meta.showBucket2}}<td class="cell-amount">{{formatCurrency (lookup this 'days60')}}</td>{{/if}}
+        {{#if @root.meta.showBucket3}}<td class="cell-amount">{{formatCurrency (lookup this 'days90')}}</td>{{/if}}
+        {{#if @root.meta.showBucket4}}<td class="cell-amount">{{formatCurrency (lookup this 'days120')}}</td>{{/if}}
         <td class="cell-amount">{{formatCurrency (lookup this 'days150plus')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'total')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'credits')}}</td>
@@ -57,15 +129,17 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
       <td>TOTAL:</td>
       <td class="cell-amount">{{formatCurrency (sumField rows 'current')}}</td>
       <td class="cell-amount">{{formatCurrency (sumField rows 'days30')}}</td>
-      <td class="cell-amount">{{formatCurrency (sumField rows 'days60')}}</td>
-      <td class="cell-amount">{{formatCurrency (sumField rows 'days90')}}</td>
-      <td class="cell-amount">{{formatCurrency (sumField rows 'days120')}}</td>
+      {{#if meta.showBucket2}}<td class="cell-amount">{{formatCurrency (sumField rows 'days60')}}</td>{{/if}}
+      {{#if meta.showBucket3}}<td class="cell-amount">{{formatCurrency (sumField rows 'days90')}}</td>{{/if}}
+      {{#if meta.showBucket4}}<td class="cell-amount">{{formatCurrency (sumField rows 'days120')}}</td>{{/if}}
       <td class="cell-amount">{{formatCurrency (sumField rows 'days150plus')}}</td>
       <td class="cell-amount">{{formatCurrency (sumField rows 'total')}}</td>
       <td class="cell-amount">{{formatCurrency (sumField rows 'credits')}}</td>
       <td class="cell-amount">{{formatCurrency (sumField rows 'net')}}</td>
     </tr></tfoot>
   </table>
+
+  {{/if}}
 
   <div class="report-footer">
     <div>{{meta.recordCount}} records</div>

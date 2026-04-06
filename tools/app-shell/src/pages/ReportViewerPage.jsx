@@ -52,7 +52,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title }) {
     if (!open) return;
     setLoading(true);
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
         .then(data => { setOptions(data); setFocusIdx(-1); })
         .catch(() => setOptions([]))
@@ -120,7 +120,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
   const touched = useRef(false); // prevent auto-fetch on mount
 
   const fetchOptions = useCallback((q) => {
-    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`)
+    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
       .then(data => { setOptions(data); setOpen(true); })
       .catch(() => setOptions([]));
@@ -196,7 +196,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
   useEffect(() => {
     if (!open) return;
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
         .then(setOptions)
         .catch(() => setOptions([]));
@@ -267,7 +267,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
           className="h-8 px-3 text-xs font-medium rounded-md border border-border bg-white hover:bg-muted/50 flex items-center gap-1.5 text-muted-foreground"
         >
           <span className="text-sm font-bold leading-none">+</span>
-          {confirmed.length === 0 ? label : 'Edit selection'}
+          {label}
         </button>
       </div>
 
@@ -334,6 +334,11 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   const [displayValues, setDisplayValues] = useState({});
   const [errors, setErrors] = useState({});
   const [popup, setPopup] = useState(null); // { name, selector, label } for popup-single
+
+  useEffect(() => {
+    setDisplayValues({});
+    setErrors({});
+  }, [resetKey]);
 
   const handleChange = (name, value) => {
     if (errors[name] && value) setErrors(prev => { const n = { ...prev }; delete n[name]; return n; });
@@ -594,7 +599,7 @@ function ReportViewer({ report, onBack, token }) {
     if (!autoParams.length) return;
     Promise.all(
       autoParams.map(p =>
-        fetch(`/api/report-selectors/${p.selector}?q=`)
+        fetch(`/api/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
           .then(r => r.json())
           .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
           .catch(() => null)
@@ -676,6 +681,7 @@ function ReportViewer({ report, onBack, token }) {
 
   const title = report.title?.en_US || report.id;
   const DOWNLOAD_FORMATS = [
+    { id: 'html', label: 'Preview', icon: Eye },
     { id: 'pdf', label: 'PDF', icon: FileDown },
     { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet },
     { id: 'csv', label: 'CSV', icon: FileText },
