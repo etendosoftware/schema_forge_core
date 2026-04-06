@@ -440,7 +440,7 @@ export function DetailView({
 
   const data = hook.editing || currentItem || {};
   const title = isNew
-    ? `${ui('newRecord')} ${tMenu(entityLabel) || entityLabel || entity}`
+    ? ui('newRecord')
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
 
   const allEntryFields = addLineFields.entry ?? [];
@@ -502,7 +502,7 @@ export function DetailView({
             </div>
             {breadcrumb && (
               <p className="text-sm text-muted-foreground mt-0.5">
-                {breadcrumb}{title ? ` / ${title}` : ''}
+                {breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}{title ? ` / ${title}` : ''}
               </p>
             )}
           </div>

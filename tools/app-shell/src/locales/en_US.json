@@ -13884,6 +13884,9 @@
     "noResults": "No results",
     "noResultsFor": "No results for \"{query}\"",
     "noResultsFound": "No results found.",
+    "noRecordsYet": "No records yet",
+    "noMatchingRecords": "No matching records",
+    "adjustFilters": "Try adjusting your filters.",
     "createNewRecord": "Create a new record to get started.",
     "previewNotAvailable": "Preview not available",
     "pdfPreview": "PDF preview",
@@ -14067,7 +14070,19 @@
     "lowStockAlert": "{count} low stock alert",
     "lowStockAlerts": "{count} low stock alerts",
     "invoiceTrendLabel": "Revenue and expenses trend chart for the last 12 months",
-    "barChartAria": "Monthly sales bar chart"
+    "barChartAria": "Monthly sales bar chart",
+    "logout": "Logout",
+    "organization": "Organization",
+    "selectOrg": "Select org...",
+    "apply": "Apply",
+    "switching": "Switching...",
+    "contextUpdated": "Context updated",
+    "enterPasswordToSwitch": "Enter password to switch.",
+    "failedToSwitch": "Failed to switch context.",
+    "password": "Password",
+    "yourPassword": "Your password...",
+    "noRole": "No role",
+    "noOrg": "No org"
   },
   "menus": {
     "Home": {
