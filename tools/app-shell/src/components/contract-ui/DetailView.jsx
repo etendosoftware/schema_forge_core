@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
@@ -145,6 +145,8 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
@@ -479,7 +481,7 @@ export function DetailView({
   return (
     <div className="h-full flex flex-col" data-testid="detail-view">
       {/* Top bar area (gray background, inherited from parent) */}
-      <div className="px-6 pt-3 pb-3">
+      {!embedded && <div className="px-6 pt-3 pb-3">
         {/* Row: Title + Global search + action icons */}
         <div className="flex items-center gap-4">
           {/* Left: title + breadcrumb */}
@@ -523,7 +525,7 @@ export function DetailView({
             <LocaleSwitcher />
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
