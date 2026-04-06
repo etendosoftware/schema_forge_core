@@ -530,6 +530,18 @@ export function DetailView({
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Action bar: Cancel + status | actions + save */}
+        {embedded ? (
+          statusField && data[statusField] ? (
+            <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
+                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
+                {statusFieldLabel || 'Document Status'}
+                <span style={{ opacity: 0.4 }}>&middot;</span>
+                <span className="font-semibold">{statusLabel(data[statusField])}</span>
+              </span>
+            </div>
+          ) : null
+        ) : (
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Button
@@ -741,10 +753,11 @@ export function DetailView({
             )}
           </div>
         </div>
+        )}
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
+        <div className={`flex-1 overflow-auto px-6 pb-6 min-w-0${embedded ? ' pointer-events-none' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
