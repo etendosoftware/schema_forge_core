@@ -833,6 +833,7 @@ export function DetailView({
                       recordId={data?.id || recordId}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      onRefresh={() => hook.refetch?.()}
                     />
                   ) : (
                   <div className="pt-3 flex items-start gap-4">
@@ -950,7 +951,7 @@ export function DetailView({
                             </button>
                           )}
                           {DetailExtraActions && (
-                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} />
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.refetch?.()} />
                           )}
                         </div>
                       )}

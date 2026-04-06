@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ImportFromPurchaseOrderModal from './ImportFromPurchaseOrderModal.jsx';
 
-function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }) {
+function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
@@ -51,7 +51,7 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }
           onSuccess={() => {
             setShowImportModal(false);
             toast.success('Lines imported from purchase order');
-            window.location.reload();
+            onRefresh?.();
           }}
         />,
         document.body,
@@ -60,7 +60,7 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }
   );
 }
 
-function ReceiptLineActions({ data, recordId, token, apiBaseUrl }) {
+function ReceiptLineActions({ data, recordId, token, apiBaseUrl, onRefresh }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
@@ -94,7 +94,7 @@ function ReceiptLineActions({ data, recordId, token, apiBaseUrl }) {
           onSuccess={() => {
             setShowImportModal(false);
             toast.success('Lines imported from purchase order');
-            window.location.reload();
+            onRefresh?.();
           }}
         />,
         document.body,
