@@ -111,7 +111,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
         setChildren(rows);
       })
       .catch(() => setChildren([]));
-  }, [apiBaseUrl, childEntity, token]);
+  }, [apiBaseUrl, childEntity, token, childSortBy]);
 
   const fetchById = useCallback((id) => {
     if (!id) return;
@@ -346,7 +346,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
     items, selected, editing, children, loading, loadingMore, hasMore, saveError,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
-    refresh, fetchById, loadMore,
+    refresh, fetchById, fetchChildren, loadMore,
     sortColumn, sortDirection, setSortColumn, setSortDirection,
   };
 }
