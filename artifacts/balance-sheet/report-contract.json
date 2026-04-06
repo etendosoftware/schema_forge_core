@@ -17,9 +17,9 @@
     { "field": "category", "label": { "en_US": "Category", "es_ES": "Categoría" } }
   ],
   "parameters": [
-    { "name": "acctSchemaId",     "label": { "en_US": "General Ledger",                "es_ES": "Contabilidad" },            "type": "search",  "selector": "accounting", "inputStyle": "modal", "required": true, "autoDefault": true, "section": "primary" },
-    { "name": "orgId",            "label": { "en_US": "Organization",                  "es_ES": "Organización" },            "type": "search",  "selector": "org-bs",     "inputStyle": "modal", "required": true, "autoDefault": true, "section": "primary" },
-    { "name": "yearId",           "label": { "en_US": "Year",                          "es_ES": "Año" },                     "type": "search",  "selector": "year", "inputStyle": "modal", "required": true, "autoDefault": true, "dependsOn": "orgId", "section": "primary" },
+    { "name": "acctSchemaId",     "label": { "en_US": "General Ledger",                "es_ES": "Libro Mayor" },             "type": "search",  "selector": "acctschema", "inputStyle": "popup-single", "required": true, "section": "primary" },
+    { "name": "orgId",            "label": { "en_US": "Organization",                  "es_ES": "Organización" },            "type": "search",  "selector": "org",        "inputStyle": "popup-single", "required": true, "section": "primary" },
+    { "name": "yearId",           "label": { "en_US": "Year",                          "es_ES": "Año" },                     "type": "search",  "selector": "year", "inputStyle": "popup-single", "required": true, "dependsOn": "orgId", "section": "primary" },
     { "name": "accountLevel",     "label": { "en_US": "Account Level",                 "es_ES": "Nivel de Cuenta" },         "type": "select",  "options": [{ "value": "A", "label": "Account" }, { "value": "B", "label": "Breakdown" }, { "value": "H", "label": "Heading" }, { "value": "S", "label": "Subaccount" }], "default": "A", "section": "primary" },
     { "name": "showOnlyWithValue","label": { "en_US": "Show only accounts with value", "es_ES": "Solo cuentas con saldo" }, "type": "boolean", "default": "true",  "section": "options" },
     { "name": "showLandscape",    "label": { "en_US": "Show Landscape mode",           "es_ES": "Modo horizontal" },         "type": "boolean", "section": "options" }

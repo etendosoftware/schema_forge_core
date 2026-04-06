@@ -385,6 +385,11 @@ export default function reportApiPlugin() {
                   orderBy: 'ORDER BY name',
                   select: `SELECT c_acctschema_id AS id, name, name AS label`
                 },
+                'year': {
+                  fromWhere: `FROM c_year y JOIN c_calendar c ON c.c_calendar_id = y.c_calendar_id WHERE y.isactive='Y' ${byClient('y.ad_client_id')} AND (y.year || ' (' || c.name || ')') ILIKE $1`,
+                  orderBy: 'ORDER BY y.year DESC',
+                  select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`
+                },
               };
               const queryCfg = queries[type];
               if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
@@ -392,6 +397,13 @@ export default function reportApiPlugin() {
               const whereFragments = [queryCfg.fromWhere];
               // $1 = search; additional dynamic params start at $2
               const values = [search];
+
+              if (type === 'year' && selectedOrgId) {
+                values.push(selectedOrgId);
+                whereFragments.push(
+                  `AND EXISTS (SELECT 1 FROM ad_org o WHERE o.c_calendar_id = c.c_calendar_id AND o.ad_org_id = $${values.length})`
+                );
+              }
 
               if (type === 'warehouse') {
                 if (selectedOrgId) {

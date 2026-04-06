@@ -40,7 +40,7 @@ function ReportCard({ report, onRun }) {
 }
 
 // Single-select popup modal — used for fields with inputStyle: 'popup-single'.
-function SelectorPopup({ open, onClose, onSelect, selector, title }) {
+function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams = {} }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,15 +54,16 @@ function SelectorPopup({ open, onClose, onSelect, selector, title }) {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    const extra = Object.entries(extraParams).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
         .then(data => { setOptions(Array.isArray(data) ? data : (data?.items ?? [])); setFocusIdx(-1); })
         .catch(() => setOptions([]))
         .finally(() => setLoading(false));
     }, query ? 300 : 0);
     return () => clearTimeout(t);
-  }, [query, selector, open]);
+  }, [query, selector, open, extraParams]);
 
   const handleKey = (e) => {
     if (e.key === 'Escape') { onClose(); return; }
@@ -114,7 +115,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title }) {
 // Dropdown / search-as-you-type selector.
 // minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
 // minLength=2 (default) → search-as-you-type (used for accounts, etc.).
-function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, token, label, selectedOrgId, roleOrgIds, selectedWarehouseId }) {
+function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, token, label, selectedOrgId, roleOrgIds, selectedWarehouseId, extraParams = {} }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
@@ -656,7 +657,11 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setPopup({ name: p.name, selector: p.selector, label })}
+                onClick={() => {
+                const extra = {};
+                if (p.dependsOn) extra.selectedOrgId = params[p.dependsOn] || '';
+                setPopup({ name: p.name, selector: p.selector, label, extraParams: extra });
+              }}
                 className={`flex-1 h-9 px-3 text-sm border rounded-md bg-white hover:bg-muted/50 text-left truncate text-muted-foreground ${errorBorder}`}
               >
                 {display || <span className="opacity-50">Select...</span>}
@@ -782,6 +787,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
           onClose={() => setPopup(null)}
           selector={popup.selector}
           title={popup.label}
+          extraParams={popup.extraParams || {}}
           onSelect={(item) => {
             handleChange(popup.name, item.id);
             handleChange('_display_' + popup.name, item.name);
@@ -962,21 +968,6 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
         updates['_display_' + r.name] = r.display;
       }
       if (Object.keys(updates).length) setParams(prev => ({ ...prev, ...updates }));
-
-      if (!dependent.length) return;
-      // Second pass: fetch dependent params using resolved parent values
-      Promise.all(dependent.map(p => {
-        const parentId = updates[p.dependsOn] || '';
-        return fetchParam(p, `&${p.dependsOn}=${encodeURIComponent(parentId)}`);
-      })).then(depResults => {
-        const depUpdates = {};
-        for (const r of depResults) {
-          if (!r) continue;
-          depUpdates[r.name] = r.id;
-          depUpdates['_display_' + r.name] = r.display;
-        }
-        if (Object.keys(depUpdates).length) setParams(prev => ({ ...prev, ...depUpdates }));
-      });
     });
   }, [report]);
 
