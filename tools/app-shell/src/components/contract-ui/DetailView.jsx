@@ -438,7 +438,7 @@ export function DetailView({
 
   const data = hook.editing || currentItem || {};
   const title = isNew
-    ? `${ui('newRecord')} ${tMenu(entityLabel) || entityLabel || entity}`
+    ? ui('newRecord')
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
 
   const allEntryFields = addLineFields.entry ?? [];

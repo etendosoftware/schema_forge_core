@@ -299,7 +299,7 @@ export function ListView({
                   onClick={() => navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
-                  {ui('newRecord')} {label}
+                  {ui('newRecord')}
                 </Button>
                 <div className="w-px bg-primary-foreground/20" />
                 <Button
