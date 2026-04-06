@@ -213,6 +213,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
   // Visual hints — badge (boolean pill), summable (numeric footer total), columnType override
   if (fieldDecision.badge) field.badge = true;
+  if (fieldDecision.badgeLabels) field.badgeLabels = fieldDecision.badgeLabels;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
   if (fieldDecision.display) field.display = fieldDecision.display;
@@ -367,7 +368,13 @@ function findEntityDecision(rawEntity, entitiesDecisions) {
   // 1. Exact match by current name (tabName-based)
   if (entitiesDecisions[rawEntity.name]) return entitiesDecisions[rawEntity.name];
 
-  // 2. Fallback: match by tableName derivation (handles unmigrated decisions)
+  // 2. Match by auto-simplified name (handles slash-named entities like "location/address" → "locationAddress")
+  const autoSimplified = autoSimplifyEntityName(rawEntity.name);
+  if (autoSimplified !== rawEntity.name && entitiesDecisions[autoSimplified]) {
+    return entitiesDecisions[autoSimplified];
+  }
+
+  // 3. Fallback: match by tableName derivation (handles unmigrated decisions)
   if (rawEntity.tableName) {
     const tableBasedKey = toCamelCase(rawEntity.tableName);
     if (entitiesDecisions[tableBasedKey]) return entitiesDecisions[tableBasedKey];
@@ -379,7 +386,7 @@ function findEntityDecision(rawEntity, entitiesDecisions) {
     }
   }
 
-  // 3. Match by name override in decision value
+  // 4. Match by name override in decision value
   for (const [, decVal] of Object.entries(entitiesDecisions)) {
     if (decVal.name === rawEntity.name) return decVal;
   }
@@ -527,6 +534,12 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.hideDeleteWhenComplete) {
     schema.window.hideDeleteWhenComplete = true;
   }
+  if (windowDecisions.hidePrint) {
+    schema.window.hidePrint = true;
+  }
+  if (windowDecisions.breadcrumb !== undefined) {
+    schema.window.breadcrumb = windowDecisions.breadcrumb;
+  }
   if (windowDecisions.customComponents) {
     schema.window.customComponents = windowDecisions.customComponents;
   }
@@ -555,6 +568,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.statusBar) {
     schema.window.statusBar = windowDecisions.statusBar;
   }
+  if (windowDecisions.statusField) {
+    schema.window.statusField = windowDecisions.statusField;
+  }
   if (Array.isArray(windowDecisions.summaryFields)) {
     schema.window.summaryFields = windowDecisions.summaryFields;
   }
@@ -572,6 +588,12 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.labelOverrides) {
     schema.window.labelOverrides = windowDecisions.labelOverrides;
+  }
+  if (windowDecisions.primaryTabs) {
+    schema.window.primaryTabs = windowDecisions.primaryTabs;
+  }
+  if (windowDecisions.othersLabel) {
+    schema.window.othersLabel = windowDecisions.othersLabel;
   }
 
   const rules = resolveRules(rulesRaw, decisions);

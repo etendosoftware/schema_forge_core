@@ -13836,7 +13836,14 @@
     },
     "Your company": {
       "label": "Your company"
-    }
+    },
+    "sales-invoices-pending": { "label": "Sales Invoices pending" },
+    "purchase-invoices-pending": { "label": "Purchase Invoices pending" },
+    "purchase-orders-to-confirm": { "label": "Purchase Orders to confirm" },
+    "shipments-pending": { "label": "Shipments pending" },
+    "sales-orders-pending": { "label": "Sales Orders pending" },
+    "goods-receipts-pending": { "label": "Goods Receipts pending" },
+    "quotations-pending": { "label": "Quotations pending" }
   },
   "genericLabels": {
     "save": "Save",

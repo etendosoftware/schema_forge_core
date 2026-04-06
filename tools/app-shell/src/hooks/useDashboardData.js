@@ -207,19 +207,23 @@ function buildTopClients(allSalesInvoices) {
  * Aggregation: Pending Tasks
  * ----------------------------------------------------------------*/
 
-function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrders, allShipments) {
-  const draftSalesInvoices = allSalesInvoices.filter((r) => r.documentStatus === 'DR');
-  const draftPurchaseInvoices = (allPurchaseInvoices ?? []).filter((r) => r.documentStatus === 'DR');
+function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrders, allShipments, allSalesOrders, allGoodsReceipts, allQuotations) {
+  const draft = (arr) => (arr ?? []).filter((r) => r.documentStatus === 'DR');
 
-  // Draft shipments and purchase orders (client-side filter)
-  const draftShipments = allShipments.filter((r) => r.documentStatus === 'DR');
-  const draftPOs = allPurchaseOrders.filter((r) => r.documentStatus === 'DR');
+  const draftSalesInvoices    = draft(allSalesInvoices);
+  const draftPurchaseInvoices = draft(allPurchaseInvoices);
+  const draftPOs              = draft(allPurchaseOrders);
+  const draftShipments        = draft(allShipments);
+  const draftSalesOrders      = draft(allSalesOrders);
+  const draftGoodsReceipts    = draft(allGoodsReceipts);
+  const draftQuotations       = draft(allQuotations);
 
   const tasks = [];
 
   if (draftSalesInvoices.length > 0) {
     tasks.push({
       type: 'info',
+      labelKey: 'sales-invoices-pending',
       taskKey: draftSalesInvoices.length > 1 ? 'pendingSalesInvoices_plural' : 'pendingSalesInvoices',
       text: `${draftSalesInvoices.length} Sales Invoice${draftSalesInvoices.length > 1 ? 's' : ''} pending`,
       link: '/sales-invoice',
@@ -231,6 +235,7 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
   if (draftPurchaseInvoices.length > 0) {
     tasks.push({
       type: 'info',
+      labelKey: 'purchase-invoices-pending',
       taskKey: draftPurchaseInvoices.length > 1 ? 'pendingPurchaseInvoices_plural' : 'pendingPurchaseInvoices',
       text: `${draftPurchaseInvoices.length} Purchase Invoice${draftPurchaseInvoices.length > 1 ? 's' : ''} pending`,
       link: '/purchase-invoice',
@@ -239,9 +244,19 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     });
   }
 
+  if (draftPOs.length > 0) {
+    tasks.push({
+      type: 'info',
+      labelKey: 'purchase-orders-to-confirm',
+      link: '/purchase-order',
+      count: draftPOs.length,
+    });
+  }
+
   if (draftShipments.length > 0) {
     tasks.push({
       type: 'info',
+      labelKey: 'shipments-pending',
       taskKey: 'pendingShipments',
       text: `${draftShipments.length} orders pending shipment`,
       link: '/goods-shipment',
@@ -249,13 +264,38 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     });
   }
 
-  if (draftPOs.length > 0) {
+  if (draftSalesOrders.length > 0) {
     tasks.push({
       type: 'info',
-      taskKey: 'pendingPOs',
-      text: `${draftPOs.length} purchase orders to confirm`,
-      link: '/purchase-order',
-      count: draftPOs.length,
+      labelKey: 'sales-orders-pending',
+      taskKey: 'pendingSalesOrders',
+      text: `${draftSalesOrders.length} sales orders pending`,
+      link: '/sales-order',
+      count: draftSalesOrders.length,
+      amount: fmtAmount(sumField(draftSalesOrders, 'grandTotalAmount')),
+    });
+  }
+
+  if (draftGoodsReceipts.length > 0) {
+    tasks.push({
+      type: 'info',
+      labelKey: 'goods-receipts-pending',
+      taskKey: 'pendingGoodsReceipts',
+      text: `${draftGoodsReceipts.length} goods receipts pending`,
+      link: '/goods-receipt',
+      count: draftGoodsReceipts.length,
+    });
+  }
+
+  if (draftQuotations.length > 0) {
+    tasks.push({
+      type: 'info',
+      labelKey: 'quotations-pending',
+      taskKey: 'pendingQuotations',
+      text: `${draftQuotations.length} quotations pending`,
+      link: '/sales-quotation',
+      count: draftQuotations.length,
+      amount: fmtAmount(sumField(draftQuotations, 'grandTotalAmount')),
     });
   }
 
@@ -463,7 +503,7 @@ function buildMockFallback() {
   return {
     kpis,
     revenueTrend: mockRevenueTrend,
-    pendingTasks: localizePendingTasks(mockPendingTasks),
+    pendingTasks: [],
     recentMessages: mockRecentMessages,
     recentInvoices: MOCK_RECENT_INVOICES,
     bestProducts: MOCK_BEST_PRODUCTS,
@@ -499,26 +539,40 @@ export function useDashboardData() {
     try {
       // Fetch all records — filtering is done client-side because NEO
       // does not reliably apply field-level query parameters as filters.
-      const [salesRes, purchasesRes, posRes, shipmentsRes, orderLinesRes, salesOrdersRes] = await Promise.allSettled([
+      const [salesRes, purchasesRes, posRes, shipmentsRes, orderLinesRes, salesOrdersRes, goodsReceiptsRes, quotationsRes] = await Promise.allSettled([
         fetchAllRecords(apiBase, token, 'sales-invoice', 'header'),
         fetchAllRecords(apiBase, token, 'purchase-invoice', 'header'),
         fetchAllRecords(apiBase, token, 'purchase-order', 'header'),
-        fetchAllRecords(apiBase, token, 'goods-shipment', 'goodsShipment'),
+        fetchAllRecords(apiBase, token, 'goods-shipment', 'header'),
         fetchAllRecords(apiBase, token, 'sales-order', 'lines'),
         fetchAllRecords(apiBase, token, 'sales-order', 'header'),
+        fetchAllRecords(apiBase, token, 'goods-receipt', 'header'),
+        fetchAllRecords(apiBase, token, 'sales-quotation', 'header'),
       ]);
 
-      const salesInvoices   = salesRes.status        === 'fulfilled' ? salesRes.value        : null;
-      const purchaseInvoices= purchasesRes.status    === 'fulfilled' ? purchasesRes.value    : null;
-      const purchaseOrders  = posRes.status          === 'fulfilled' ? posRes.value          : null;
-      const shipments       = shipmentsRes.status    === 'fulfilled' ? shipmentsRes.value    : null;
-      const orderLines      = orderLinesRes.status   === 'fulfilled' ? orderLinesRes.value   : null;
-      const salesOrders     = salesOrdersRes.status  === 'fulfilled' ? salesOrdersRes.value  : null;
+      const salesInvoices   = salesRes.status           === 'fulfilled' ? salesRes.value           : null;
+      const purchaseInvoices= purchasesRes.status       === 'fulfilled' ? purchasesRes.value       : null;
+      const purchaseOrders  = posRes.status             === 'fulfilled' ? posRes.value             : null;
+      const shipments       = shipmentsRes.status       === 'fulfilled' ? shipmentsRes.value       : null;
+      const orderLines      = orderLinesRes.status      === 'fulfilled' ? orderLinesRes.value      : null;
+      const salesOrders     = salesOrdersRes.status     === 'fulfilled' ? salesOrdersRes.value     : null;
+      const goodsReceipts   = goodsReceiptsRes.status   === 'fulfilled' ? goodsReceiptsRes.value   : null;
+      const quotations      = quotationsRes.status      === 'fulfilled' ? quotationsRes.value      : null;
+
+      console.debug('[dashboard] fetch results:', {
+        salesInvoices: salesInvoices?.length ?? 'FAILED',
+        purchaseInvoices: purchaseInvoices?.length ?? 'FAILED',
+        purchaseOrders: purchaseOrders?.length ?? 'FAILED',
+        shipments: shipments?.length ?? 'FAILED',
+        salesOrders: salesOrders?.length ?? 'FAILED',
+        goodsReceipts: goodsReceipts?.length ?? 'FAILED',
+        quotations: quotations?.length ?? 'FAILED',
+      });
 
       // Map orderId → dateOrdered for joining with order lines (C_OrderLine has no date)
       const orderDateMap = buildOrderDateMap(salesOrders);
 
-      if (!salesInvoices && !purchaseInvoices && !purchaseOrders && !shipments && !orderLines && !salesOrders) {
+      if (!salesInvoices && !purchaseInvoices && !purchaseOrders && !shipments && !orderLines && !salesOrders && !goodsReceipts && !quotations) {
         console.warn('[dashboard] All API queries failed — using mock data');
         setData(buildMockFallback());
         setLoading(false);
@@ -540,9 +594,9 @@ export function useDashboardData() {
         topClients: salesInvoices
           ? buildTopClients(salesInvoices)
           : [],
-        pendingTasks: (salesInvoices && purchaseOrders && shipments)
-          ? buildPendingTasks(salesInvoices, purchaseInvoices, purchaseOrders, shipments)
-          : mock.pendingTasks,
+        pendingTasks: (salesInvoices || purchaseInvoices || purchaseOrders || shipments || salesOrders || goodsReceipts || quotations)
+          ? buildPendingTasks(salesInvoices, purchaseInvoices, purchaseOrders, shipments, salesOrders, goodsReceipts, quotations)
+          : [],
         recentMessages: mockRecentMessages,
         recentInvoices: salesInvoices
           ? buildRecentInvoices(salesInvoices)

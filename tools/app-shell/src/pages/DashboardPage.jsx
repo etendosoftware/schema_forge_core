@@ -36,6 +36,7 @@ import {
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
 import { useUI } from '@/i18n';
+import { useMenuLabel, useLocaleSwitch } from '@/i18n';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -528,8 +529,19 @@ function useCollapsed(key) {
 
 function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
+
+  // Generate locale-aware month abbreviations for the same window as the incoming labels
+  const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
+  const fmt = new Intl.DateTimeFormat(bcp47, { month: 'short' });
+  const localizedLabels = labels.map((_, i) => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - (labels.length - 1 - i), 1);
+    const s = fmt.format(d);
+    return s.charAt(0).toUpperCase() + s.slice(1).replace('.', '');
+  });
 
   const switchChartType = (type) => {
     setChartType(type);
@@ -588,10 +600,6 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
                     {ui('revenue')}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-                    {ui('expenses')}
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
@@ -668,10 +676,10 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                 <circle key={i} cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2" />
               ))}
 
-              {labels.map((m, i) => {
-                const x = PAD_X + (i / (labels.length - 1)) * plotW;
+              {localizedLabels.map((m, i) => {
+                const x = PAD_X + (i / (localizedLabels.length - 1)) * plotW;
                 return (
-                  <text key={m} x={x} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
+                  <text key={i} x={x} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
                     {m}
                   </text>
                 );
@@ -703,7 +711,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                       fill={i === lastIdx ? '#10b981' : 'rgba(16,185,129,0.35)'}
                     />
                     <text x={x + barW / 2} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
-                      {labels[i]}
+                      {localizedLabels[i]}
                     </text>
                   </g>
                 );
@@ -724,14 +732,14 @@ function TopClients({ clients = [] }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
           <CardTitle className="text-sm font-medium">{ui('topClients12m')}</CardTitle>
         </div>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0">
+      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
         {clients.length === 0 ? (
             <p className="text-sm text-muted-foreground">{ui('noDataAvailable')}</p>
         ) : (
@@ -776,7 +784,7 @@ function QuickActions({ actions = [] }) {
               <Button key={action.to} variant="outline" size="sm" asChild>
                 <Link to={action.to}>
                   <Icon className="h-4 w-4 mr-1.5" />
-                  {action.label}
+                  {tMenu(action.label)}
                 </Link>
               </Button>
             );
@@ -793,16 +801,20 @@ function QuickActions({ actions = [] }) {
 
 function PendingTasks({ tasks = [] }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
           <CardTitle className="text-sm font-medium">{ui('pendingTasks')}</CardTitle>
         </div>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0">
+      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+        {tasks.length === 0 && (
+          <p className="text-sm text-muted-foreground">{tMenu('No pending tasks')}</p>
+        )}
         <div className="space-y-1">
           {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
@@ -820,7 +832,11 @@ function PendingTasks({ tasks = [] }) {
                     <Info className="h-4 w-4 shrink-0 text-blue-500" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{taskKey ? ui(taskKey, { count: task.count }) : task.text}</p>
+                    <p className="text-sm truncate">
+                      {task.labelKey
+                        ? `${task.count} ${tMenu(task.labelKey)}`
+                        : taskKey ? ui(taskKey, { count: task.count }) : task.text}
+                    </p>
                     {(task.amount || task.detail) && (
                       <p className="text-xs text-muted-foreground truncate">
                         {task.amount || task.detail}
@@ -915,11 +931,11 @@ function CollectionsPayments({ pendingAmounts = {} }) {
   const ui = useUI();
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 flex-none">
         <CardTitle className="text-sm font-medium">{ui('collectionsPayments')}</CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-3">
+      <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
         <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
@@ -969,15 +985,15 @@ function RecentInvoices({ invoices = [] }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
           <CardTitle className="text-sm font-medium">{ui('recentInvoices')}</CardTitle>
         </div>
       </CardHeader>
       {!collapsed && (
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
           {invoices.length === 0 ? (
             <p className="text-sm text-muted-foreground">{ui('noInvoicesFound')}</p>
           ) : (
@@ -1028,8 +1044,8 @@ function BestProducts({ products = [] }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_products');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer select-none">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
@@ -1039,9 +1055,9 @@ function BestProducts({ products = [] }) {
         </div>
       </CardHeader>
       {!collapsed && (
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
           {products.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{ui('noDataAvailable')}</p>
+            <p className="text-sm text-muted-foreground">{ui('noDataAvailable')}</p>
           ) : (
             <div className="space-y-0">
               {products.map((p, i) => (
@@ -1075,8 +1091,8 @@ function BestSellers({ sellers = [] }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
@@ -1086,7 +1102,7 @@ function BestSellers({ sellers = [] }) {
         </div>
       </CardHeader>
       {!collapsed && (
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
           {sellers.length === 0 ? (
             <p className="text-sm text-muted-foreground p-4">{ui('noDataAvailable')}</p>
           ) : (
@@ -1196,6 +1212,7 @@ export default function DashboardPage() {
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
   const { config, toggle, resize, setHeight, reorder, reset } = useWidgetConfig();
+  const tMenu = useMenuLabel();
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = actions.map((a) => ({

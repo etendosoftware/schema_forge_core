@@ -524,7 +524,7 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext }) {
   const t = useLabel();
   const ui = useUI();
   const dictionary = useLocale();
@@ -700,20 +700,23 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   const allSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
   const someSelected = selectedRows.size > 0 && !allSelected;
 
+  const selectableData = isRowSelectable ? filteredData.filter(isRowSelectable) : filteredData;
+
   const toggleAll = (e) => {
     e.stopPropagation();
     if (allSelected) {
       setSelectedRows(new Set());
       onSelectionChange?.([]);
     } else {
-      const allIds = new Set(filteredData.map(r => r.id));
+      const allIds = new Set(selectableData.map(r => r.id));
       setSelectedRows(allIds);
-      onSelectionChange?.(filteredData);
+      onSelectionChange?.(selectableData);
     }
   };
 
   const toggleRow = (e, row) => {
     e.stopPropagation();
+    if (isRowSelectable && !isRowSelectable(row)) return;
     setSelectedRows(prev => {
       const next = new Set(prev);
       if (next.has(row.id)) next.delete(row.id);
@@ -829,17 +832,22 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       isSelectedLine ? 'hover:bg-zinc-600' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
                     ].filter(Boolean).join(' ')}
                   >
-                    {selectable && (
-                      <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => toggleRow(e, row)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                      </TableCell>
-                    )}
+                    {selectable && (() => {
+                      const rowDisabled = isRowSelectable && !isRowSelectable(row);
+                      return (
+                        <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={rowDisabled}
+                            onChange={(e) => toggleRow(e, row)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            style={rowDisabled ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
+                          />
+                        </TableCell>
+                      );
+                    })()}
                     {columns.map(col => (
                       <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
                         {renderCellValue(row, col)}

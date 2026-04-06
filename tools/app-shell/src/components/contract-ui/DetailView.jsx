@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
@@ -106,6 +106,7 @@ export function DetailView({
   extraActions = [],
   menuActions = [],
   hideDeleteWhenComplete = false,
+  hidePrint = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
@@ -117,9 +118,13 @@ export function DetailView({
   statusFieldLabel = null,
   salesTheme = false,
   sidebarContent = null,
+  othersLabel = null,
+  primaryTabs = null,
   onAfterSave,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
+  const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
   const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
   const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
@@ -145,6 +150,8 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
   const ui = useUI();
   const dictionary = useLocale();
@@ -455,7 +462,9 @@ export function DetailView({
     tabs.unshift({ key: 'customLines', label: customLinesLabel });
   }
   // "Others" tab is added dynamically via othersRef after first render
-  const [showOthers, setShowOthers] = useState(null); // null = unknown, true/false after mount
+  // When primaryTabs is in use, skip auto-adding Others (handled by a primary tab)
+  const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
+  const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
   const othersRef = useRef(null);
 
@@ -467,7 +476,7 @@ export function DetailView({
   });
 
   if (showOthers === true) {
-    tabs.push({ key: 'others', label: ui('others') });
+    tabs.push({ key: 'others', label: othersLabel || ui('others') });
   }
 
   if (hook.loading) {
@@ -481,7 +490,7 @@ export function DetailView({
   return (
     <div className="h-full flex flex-col" data-testid="detail-view">
       {/* Top bar area (gray background, inherited from parent) */}
-      <div className="px-6 pt-3 pb-3">
+      {!embedded && <div className="px-6 pt-3 pb-3">
         {/* Row: Title + Global search + action icons */}
         <div className="flex items-center gap-4">
           {/* Left: title + breadcrumb */}
@@ -525,11 +534,23 @@ export function DetailView({
             <LocaleSwitcher />
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Action bar: Cancel + status | actions + save */}
+        {embedded ? (
+          statusField && data[statusField] ? (
+            <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
+                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
+                {statusFieldLabel || 'Document Status'}
+                <span style={{ opacity: 0.4 }}>&middot;</span>
+                <span className="font-semibold">{statusLabel(data[statusField])}</span>
+              </span>
+            </div>
+          ) : null
+        ) : (
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Button
@@ -542,7 +563,7 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               {ui('cancel')}
             </Button>
-            {!topbarRight && statusField && data[statusField] && (() => {
+            {!topbarRight && statusField && data[statusField] != null && (() => {
               const _s = data[statusField];
               return (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
@@ -592,7 +613,7 @@ export function DetailView({
               </button>
             )}
             {/* Print document — shown when documentPreview is not provided */}
-            {!documentPreview && !isNew && recordId && (
+            {!documentPreview && !hidePrint && !isNew && recordId && (
               <button
                 onClick={() => setShowPrint(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -725,7 +746,7 @@ export function DetailView({
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+              <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
                 const saved = await hook.handleSave(data);
                 if (saved) {
                   if (onAfterSave) {
@@ -741,17 +762,48 @@ export function DetailView({
             )}
           </div>
         </div>
+        )}
+
+        {/* Primary tab bar (General / Additional Info / etc.) */}
+        {primaryTabs && (
+          <div className="flex border-b border-border/50 px-6 shrink-0">
+            {primaryTabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActivePrimaryTab(tab.key)}
+                className={[
+                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
+                  activePrimaryTab === tab.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                ].join(' ')}
+              >
+                {tab.label}
+                {activePrimaryTab === tab.key && (
+                  <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
+        {/* Non-general primary tab: show Panel fullscreen */}
+        {primaryTabs && activePrimaryTab !== 'general' ? (() => {
+          const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
+          return activeTab?.Panel ? (
+            <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
+              <activeTab.Panel data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
+            </div>
+          ) : null;
+        })() : null}
+        <div className={`flex-1 overflow-auto px-6 pb-6 min-w-0${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div style={{ padding: '24px 0 8px' }}>
+            <div style={{ padding: '24px 0 8px' }} className={embedded ? 'pointer-events-none' : ''}>
               <Form
                 entity={entity}
                 data={data}
@@ -767,7 +819,7 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className={sidePanel ? 'mt-2' : 'mt-6'}>
+            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}${embedded ? ' pointer-events-none' : ''}`}>
             <CollapsibleSection title={ui('moreDetails')}>
               <Form
                 entity={entity}
@@ -787,7 +839,7 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className="pt-2">
+              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
                 {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
@@ -825,7 +877,17 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  <div className="pt-3 flex items-start gap-4">
+                  hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                    <LinesEmptyState
+                      data={data}
+                      onAddLine={() => { setAddingLine(true); setEditingChild(null); }}
+                      recordId={data?.id || recordId}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                      onRefresh={() => hook.refetch?.()}
+                    />
+                  ) : (
+                  <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {/* Table + add button */}
                     <div className="flex-1 min-w-0">
                       <DetailTable
@@ -929,13 +991,23 @@ export function DetailView({
                         </div>
                       )}
 
-                      {allEntryFields.length > 0 && hook.editing && !isDocumentReadOnly && (
-                        <button
-                          onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                        >
-                          + Add {detailLabel || 'line'}
-                        </button>
+                      {hook.editing && !isDocumentReadOnly && ((!isNew && allEntryFields.length > 0) || DetailExtraActions) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
+                          {allEntryFields.length > 0 && !isNew && (
+                            <button
+                              onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
+                              style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
+                            >
+                              + Add {detailLabel || 'Lines'}
+                            </button>
+                          )}
+                          {DetailExtraActions && (
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.refetch?.()} />
+                          )}
+                        </div>
+                      )}
+                      {allEntryFields.length > 0 && isNew && (
+                        <p className="text-xs text-muted-foreground mt-3">Save the header first to add lines.</p>
                       )}
                     </div>
 
@@ -1053,11 +1125,12 @@ export function DetailView({
                       </div>
                     )}
                   </div>
+                  )
                 )}
 
                 {/* Tab content: CustomLines (replaces standard lines table) */}
                 {tabs[activeTab]?.key === 'customLines' && CustomLines && (
-                  <div className="pt-3">
+                  <div className={`pt-3${embedded ? ' pointer-events-none' : ''}`}>
                     <CustomLines
                       recordId={data?.id || recordId}
                       data={data}
@@ -1073,7 +1146,7 @@ export function DetailView({
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className="pt-3 flex items-start gap-4">
+                  <div key={st.key} className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -1249,7 +1322,7 @@ export function DetailView({
 
                 {/* Tab content: Others (secondary header fields) */}
                 {tabs[activeTab]?.key === 'others' && (
-                  <div className="pt-5">
+                  <div className={`pt-5${embedded ? ' pointer-events-none' : ''}`}>
                     <Form
                       entity={entity}
                       data={data}
@@ -1265,18 +1338,19 @@ export function DetailView({
                   </div>
                 )}
 
-                {/* Hidden probe: detect if Others form has content */}
-                {showOthers === null && (
-                  <div ref={othersRef} className="hidden">
-                    <Form
-                      entity={entity}
-                      data={data}
-                      onChange={() => {}}
-                      catalogs={catalogs}
-                      section="other"
-                    />
-                  </div>
-                )}
+              </div>
+            )}
+
+            {/* Hidden probe: detect if Others form has content (outside tabs block so it fires even when tabs is empty) */}
+            {showOthers === null && (
+              <div ref={othersRef} className="hidden">
+                <Form
+                  entity={entity}
+                  data={data}
+                  onChange={() => {}}
+                  catalogs={catalogs}
+                  section="other"
+                />
               </div>
             )}
 
