@@ -1,12 +1,14 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "people",
     "name": "Contacts",
     "entityLabel": "Contact",
+    "breadcrumb": "",
+    "sidebarLayout": true,
     "detailLabel": "Location/Address",
     "detailTabIndex": 3,
-    "detailEntity": "bpartnerLocation",
+    "detailEntity": "locationAddress",
     "listKpiCards": {
       "customComponent": "ContactsKpiCards"
     },
@@ -14,28 +16,42 @@
       "customForm": "BillingPreferencesForm"
     },
     "secondaryTabs": {
-      "user": {
+      "contact": {
         "tabMode": "table-form",
         "tabOrder": 1,
         "label": "Contact",
-        "addLineFields": ["firstName", "lastName", "email", "phone", "position"]
+        "addLineFields": [
+          "firstName",
+          "lastName",
+          "email",
+          "phone",
+          "position"
+        ]
       },
-      "bpBankAccount": {
+      "bankAccount": {
         "tabMode": "table-form",
         "tabOrder": 2,
         "label": "Bank Account",
-        "addLineFields": ["bankName", "bankFormat", "accountNo", "iBAN"]
+        "addLineFields": [
+          "bankName",
+          "bankFormat",
+          "accountNo",
+          "iBAN"
+        ]
       },
-      "bpartnerDiscount": {
+      "basicDiscount": {
         "tabMode": "table-form",
         "tabOrder": 3,
         "label": "Basic Discount",
-        "addLineFields": ["lineNo", "discount"]
+        "addLineFields": [
+          "lineNo",
+          "discount"
+        ]
       }
     }
   },
   "entities": {
-    "cBpartner": {
+    "businessPartner": {
       "fields": {
         "employee": {
           "visibility": "editable",
@@ -189,7 +205,7 @@
         }
       }
     },
-    "cBpartnerLocation": {
+    "locationAddress": {
       "fields": {
         "name": {
           "visibility": "editable",
@@ -209,7 +225,7 @@
         }
       }
     },
-    "adUser": {
+    "contact": {
       "fields": {
         "name": {
           "visibility": "readOnly",
@@ -248,7 +264,7 @@
         }
       }
     },
-    "cBpartnerDiscount": {
+    "basicDiscount": {
       "fields": {
         "lineNo": {
           "visibility": "editable",
@@ -274,7 +290,7 @@
         }
       }
     },
-    "cBpBankAccount": {
+    "bankAccount": {
       "fields": {
         "bankName": {
           "visibility": "editable",
@@ -303,5 +319,6 @@
         }
       }
     }
-  }
+  },
+  "version": 2
 }

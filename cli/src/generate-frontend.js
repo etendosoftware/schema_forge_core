@@ -388,7 +388,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
-  const isSidebar = isGallery && !!contract?.frontendContract?.window?.sidebarLayout;
+  const isSidebar = !!contract?.frontendContract?.window?.sidebarLayout;
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
@@ -504,6 +504,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
+  const windowBreadcrumbOverride = contract?.frontendContract?.window?.breadcrumb;
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
@@ -761,7 +762,7 @@ ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity
 import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
-const breadcrumb = '${windowCategory} / ${windowLabel}';
+const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
 ${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
