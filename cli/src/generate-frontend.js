@@ -653,6 +653,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
+  if (customComponents.newRecordComponent) {
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
+  }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
     : '';
@@ -804,6 +807,9 @@ ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
   ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
+  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
+    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
+  }` : ''}
   if (recordId) {
     return (
       <DetailView
