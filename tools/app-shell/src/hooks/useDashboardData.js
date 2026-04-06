@@ -224,6 +224,8 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     tasks.push({
       type: 'info',
       labelKey: 'sales-invoices-pending',
+      taskKey: draftSalesInvoices.length > 1 ? 'pendingSalesInvoices_plural' : 'pendingSalesInvoices',
+      text: `${draftSalesInvoices.length} Sales Invoice${draftSalesInvoices.length > 1 ? 's' : ''} pending`,
       link: '/sales-invoice',
       count: draftSalesInvoices.length,
       amount: fmtAmount(sumField(draftSalesInvoices, 'grandTotalAmount')),
@@ -234,6 +236,8 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     tasks.push({
       type: 'info',
       labelKey: 'purchase-invoices-pending',
+      taskKey: draftPurchaseInvoices.length > 1 ? 'pendingPurchaseInvoices_plural' : 'pendingPurchaseInvoices',
+      text: `${draftPurchaseInvoices.length} Purchase Invoice${draftPurchaseInvoices.length > 1 ? 's' : ''} pending`,
       link: '/purchase-invoice',
       count: draftPurchaseInvoices.length,
       amount: fmtAmount(sumField(draftPurchaseInvoices, 'grandTotalAmount')),
@@ -253,6 +257,8 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     tasks.push({
       type: 'info',
       labelKey: 'shipments-pending',
+      taskKey: 'pendingShipments',
+      text: `${draftShipments.length} orders pending shipment`,
       link: '/goods-shipment',
       count: draftShipments.length,
     });
@@ -262,6 +268,8 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     tasks.push({
       type: 'info',
       labelKey: 'sales-orders-pending',
+      taskKey: 'pendingSalesOrders',
+      text: `${draftSalesOrders.length} sales orders pending`,
       link: '/sales-order',
       count: draftSalesOrders.length,
       amount: fmtAmount(sumField(draftSalesOrders, 'grandTotalAmount')),
@@ -272,6 +280,8 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     tasks.push({
       type: 'info',
       labelKey: 'goods-receipts-pending',
+      taskKey: 'pendingGoodsReceipts',
+      text: `${draftGoodsReceipts.length} goods receipts pending`,
       link: '/goods-receipt',
       count: draftGoodsReceipts.length,
     });
@@ -281,6 +291,8 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
     tasks.push({
       type: 'info',
       labelKey: 'quotations-pending',
+      taskKey: 'pendingQuotations',
+      text: `${draftQuotations.length} quotations pending`,
       link: '/sales-quotation',
       count: draftQuotations.length,
       amount: fmtAmount(sumField(draftQuotations, 'grandTotalAmount')),
@@ -453,6 +465,32 @@ const MOCK_PENDING_AMOUNTS = {
   toCollect: { count: 5, amount: 24900 },
   toPay: { count: 3, amount: 14650 },
 };
+
+function inferPendingTaskKey(task) {
+  const text = String(task?.text ?? '').toLowerCase();
+
+  if (task?.taskKey) return task.taskKey;
+  if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
+    return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
+  }
+  if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
+    return 'pendingShipments';
+  }
+  if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
+    return 'purchaseOrdersToConfirm';
+  }
+  if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
+    return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
+  }
+  return null;
+}
+
+function localizePendingTasks(tasks = []) {
+  return tasks.map((task) => {
+    const taskKey = inferPendingTaskKey(task);
+    return taskKey ? { ...task, taskKey } : task;
+  });
+}
 
 function buildMockFallback() {
   const kpis = kpisConfig.map((cfg) => ({

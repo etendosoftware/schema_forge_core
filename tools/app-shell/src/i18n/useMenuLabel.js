@@ -12,7 +12,7 @@ import { useLocale } from './LocaleProvider.jsx';
 export function useMenuLabel() {
   const dictionary = useLocale();
   return (key) =>
-    dictionary?.menus?.[key]?.label ??
     dictionary?.ui?.[key]?.label ??
+    dictionary?.menus?.[key]?.label ??
     key;
 }
