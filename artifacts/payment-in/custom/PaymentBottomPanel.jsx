@@ -9,7 +9,10 @@ function fmtAmount(amount, currencyId) {
 function fmtDate(raw) {
   if (!raw) return '';
   try {
-    const d = new Date(raw);
+    // Parse as local date to avoid UTC timezone shift (e.g. "2026-04-06" → Apr 5 in UTC-n)
+    const str = String(raw);
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const d = match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(raw);
     return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch { return ''; }
 }
@@ -36,8 +39,12 @@ const STATUS_LABELS = {
 
 function fmtActivityDate(raw) {
   if (!raw) return '';
-  try { return new Date(raw).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
-  catch { return ''; }
+  try {
+    const str = String(raw);
+    const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(raw);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return ''; }
 }
 
 function isTechnicalDescription(value) {
@@ -168,15 +175,12 @@ export default function PaymentBottomPanel({
     return [...events, ...persistedNotes];
   }, [data, linkedInvoices, persistedNotes]);
 
-  if (data && !financialAccount) {
-    console.log('[PaymentBottomPanel] account keys:', Object.keys(data).filter(k => k.toLowerCase().includes('account') || k.toLowerCase().includes('financial')));
-  }
-
   const navigateToInvoice = (invoiceId) => {
     const bp = window.location.pathname.replace(/\/payment-in\/.*$/, '');
     window.location.href = `${bp}/sales-invoice/${invoiceId}`;
   };
 
+  const documentNo = data?.documentNo || '';
   const fields = [
     { label: 'Customer', value: bpName },
     { label: 'Payment Date', value: paymentDate },
@@ -185,17 +189,23 @@ export default function PaymentBottomPanel({
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: -12 }}>
 
       {/* Hero */}
       <div style={{ backgroundColor: '#F5F5F5', borderRadius: 10, padding: '14px 16px' }}>
-        {/* Amount + badge */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, borderBottom: '0.5px solid #E5E7EB', marginBottom: 0 }}>
-          <span style={{ fontSize: 28, fontWeight: 500, color: '#111827', lineHeight: 1.2 }}>{fmtAmount(data?.amount, currency)}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, backgroundColor: statusInfo.bg, color: statusInfo.color, fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: statusInfo.dot }} />
-            {statusInfo.label}
-          </span>
+        {/* Doc No pretitle + Amount + badge */}
+        <div style={{ paddingBottom: 14, borderBottom: '0.5px solid #E5E7EB', marginBottom: 0 }}>
+          {documentNo && <div style={{ fontSize: 13, fontWeight: 500, color: '#6B7280', marginBottom: 2 }}>#{documentNo}</div>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 32, fontWeight: 500, color: '#111827', lineHeight: 1 }}>{fmtAmount(data?.amount, currency)}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, backgroundColor: statusInfo.bg, color: statusInfo.color, fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: statusInfo.dot }} />
+              {statusInfo.label}
+            </span>
+          </div>
+          <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+            {[currency, paymentMethod].filter(Boolean).join(' \u00b7 ')}
+          </div>
         </div>
 
         {/* Detail grid — 4 columns */}
@@ -205,11 +215,11 @@ export default function PaymentBottomPanel({
               <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: 4 }}>{f.label}</div>
               <div style={{ fontSize: 15, fontWeight: 500, color: f.isAccount ? '#2563eb' : '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
                 {f.isAccount && f.value && (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
                 )}
-                {f.value || '—'}
+                {f.value || '\u2014'}
               </div>
             </div>
           ))}
@@ -267,61 +277,60 @@ export default function PaymentBottomPanel({
         </div>
       )}
 
-      {/* Activity */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+      {/* Activity card */}
+      <div style={{ border: '0.5px solid #d1d5db', borderRadius: 10, overflow: 'hidden' }}>
+        {/* Card header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: '#F8F9FA', borderBottom: '0.5px solid #d1d5db' }}>
           <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af' }}>Activity</span>
           {activityEvents.length > 0 && (
-            <span style={{ fontSize: 10, fontWeight: 500, backgroundColor: '#f3f4f6', color: '#6B7280', padding: '1px 6px', borderRadius: 9999 }}>{activityEvents.length}</span>
+            <span style={{ fontSize: 10, fontWeight: 500, backgroundColor: '#e5e7eb', color: '#6B7280', padding: '1px 6px', borderRadius: 9999 }}>{activityEvents.length}</span>
           )}
         </div>
 
-        <div style={{ border: '0.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
-          {/* Timeline */}
-          {activityEvents.length > 0 && (
-            <div style={{ position: 'relative', paddingLeft: 28, padding: '14px 14px 14px 28px' }}>
-              <div style={{ position: 'absolute', left: 12, top: 20, bottom: 14, width: 1.5, backgroundColor: '#e5e7eb' }} />
-              {activityEvents.map((ev, i) => (
-                <div key={ev.key} style={{ position: 'relative', paddingBottom: i < activityEvents.length - 1 ? 16 : 0 }}>
-                  <span style={{ position: 'absolute', left: -20 + 1, top: 3, width: 8, height: 8, borderRadius: '50%', backgroundColor: ev.isNote ? '#EF9F27' : '#9ca3af' }} />
-                  {ev.isNote ? (
-                    <div>
-                      <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 3 }}>{ev.userName || 'You'} · {ev.date}</div>
-                      <div style={{ backgroundColor: '#F5F5F5', borderRadius: 8, padding: '8px 12px', maxWidth: '85%' }}>
-                        <div style={{ fontSize: 13, color: '#111827' }}>{ev.text}</div>
-                      </div>
+        {/* Timeline */}
+        {activityEvents.length > 0 && (
+          <div style={{ position: 'relative', padding: '14px 14px 14px 28px' }}>
+            <div style={{ position: 'absolute', left: 12, top: 20, bottom: 14, width: 1.5, backgroundColor: '#e5e7eb' }} />
+            {activityEvents.map((ev, i) => (
+              <div key={ev.key} style={{ position: 'relative', paddingBottom: i < activityEvents.length - 1 ? 16 : 0 }}>
+                <span style={{ position: 'absolute', left: -20 + 1, top: 3, width: 8, height: 8, borderRadius: '50%', backgroundColor: ev.isNote ? '#EF9F27' : '#9ca3af' }} />
+                {ev.isNote ? (
+                  <div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 3 }}>{ev.userName || 'You'} &middot; {ev.date}</div>
+                    <div style={{ backgroundColor: '#F5F5F5', borderRadius: 8, padding: '8px 12px', maxWidth: '85%' }}>
+                      <div style={{ fontSize: 13, color: '#111827' }}>{ev.text}</div>
                     </div>
-                  ) : (
-                    <div>
-                      <div style={{ fontSize: 13, color: '#374151' }}>{ev.text}</div>
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{ev.date}</div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Add a note input */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 14px', borderTop: '0.5px solid #E5E7EB' }}>
-            <input
-              type="text"
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNote(); } }}
-              placeholder="Add a note..."
-              disabled={saving}
-              style={{ flex: 1, fontSize: 13, padding: '7px 10px', border: '0.5px solid #E5E7EB', borderRadius: 6, outline: 'none', color: '#374151', backgroundColor: '#fff', boxSizing: 'border-box' }}
-            />
-            <button
-              type="button"
-              onClick={handleAddNote}
-              disabled={!noteText.trim() || saving}
-              style={{ fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 6, border: 'none', backgroundColor: noteText.trim() ? '#18181b' : '#e5e7eb', color: noteText.trim() ? '#fff' : '#9ca3af', cursor: noteText.trim() && !saving ? 'pointer' : 'default', flexShrink: 0 }}
-            >
-              {saving ? '...' : 'Add'}
-            </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: 13, color: '#374151' }}>{ev.text}</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{ev.date}</div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
+        )}
+
+        {/* Card footer — Add note */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 14px', borderTop: '0.5px solid #d1d5db', background: '#fff' }}>
+          <input
+            type="text"
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNote(); } }}
+            placeholder="Add a note..."
+            disabled={saving}
+            style={{ flex: 1, fontSize: 13, padding: '7px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#374151', backgroundColor: '#fff', boxSizing: 'border-box' }}
+          />
+          <button
+            type="button"
+            onClick={handleAddNote}
+            disabled={!noteText.trim() || saving}
+            style={{ fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 6, border: 'none', backgroundColor: noteText.trim() ? '#18181b' : '#e5e7eb', color: noteText.trim() ? '#fff' : '#9ca3af', cursor: noteText.trim() && !saving ? 'pointer' : 'default', flexShrink: 0 }}
+          >
+            {saving ? '...' : 'Add'}
+          </button>
         </div>
       </div>
 

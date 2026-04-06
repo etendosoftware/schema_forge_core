@@ -18,9 +18,12 @@ function fmt(val, curr) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function fmtDate(d) {
-  if (!d) return '-';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+function fmtDate(raw) {
+  if (!raw) return '-';
+  const str = String(raw);
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(raw);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /** Classify an installment into a status category */
@@ -101,9 +104,7 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
     }
   }, [isCompleted, recordId]);
 
-  if (!data?.documentStatus) return null;
-
-  // Derive badge status from installments
+  // Derive badge status from installments (must be before any early return)
   const badgeInfo = useMemo(() => {
     if (installmentsLoading || installments.length === 0) return null;
 
@@ -149,6 +150,8 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
     installments.reduce((sum, i) => sum + (parseFloat(i.outstandingAmount) || 0), 0),
     [installments],
   );
+
+  if (!data?.documentStatus) return null;
 
   // Draft — only show Send button
   if (isDraft) {
@@ -280,350 +283,334 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
   );
 }
 
-// ─── VIEW PAYMENTS MODAL (redesigned installment breakdown) ────────────────────
+// ─── VIEW PAYMENTS MODAL (v2 — per-installment) ─────────────────────────────
 
 function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, totalPaid, outstanding, currency, base, headers, isCompleted, onClose, onPaymentAdded }) {
-  const [expandedInstallmentId, setExpandedInstallmentId] = useState(null);
+  const [localInstallments, setLocalInstallments] = useState(installments);
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+  const [activeFormScheduleId, setActiveFormScheduleId] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
+
+  const localPaid = useMemo(() => localInstallments.reduce((s, i) => s + (parseFloat(i.paidAmount) || 0), 0), [localInstallments]);
+  const localOutstanding = useMemo(() => localInstallments.reduce((s, i) => s + (parseFloat(i.outstandingAmount) || 0), 0), [localInstallments]);
+  const localTotal = useMemo(() => localInstallments.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [localInstallments]);
+
+  const fetchPayments = useCallback(async () => {
+    try {
+      const res = await fetch(`${base}/sales-invoice/header/${recordId}/action/invoicePayments`, { method: 'POST', headers, body: '{}' });
+      if (res.ok) setPayments((await res.json())?.response?.data || []);
+    } catch { /* silent */ }
+    finally { setLoadingPayments(false); }
+  }, [base, headers, recordId]);
+
+  const refetchInstallments = useCallback(async () => {
+    try {
+      const res = await fetch(`${base}/sales-invoice/paymentPlan?parentId=${recordId}&_startRow=0&_endRow=50`, { headers });
+      if (res.ok) setLocalInstallments((await res.json())?.response?.data || []);
+    } catch { /* silent */ }
+  }, [base, headers, recordId]);
+
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
+
+  const docNo = invoiceData?.documentNo || '';
+  const paymentMethodName = invoiceData?.['paymentMethod$_identifier'] || '';
+  const fullyPaid = localOutstanding <= 0;
+
+  const navToPayment = (id) => {
+    const bp = window.location.pathname.replace(/\/sales-invoice\/.*$/, '');
+    window.location.href = `${bp}/payment-in/${id}`;
+  };
+
+  const handlePaymentSuccess = (paymentData, accountName, scheduleId) => {
+    setActiveFormScheduleId(null);
+    setHighlightId(paymentData?.id);
+    setConfirmation({ id: paymentData?.id, documentNo: paymentData?.documentNo, amount: parseFloat(paymentData?.amount || 0), accountName: accountName || '' });
+    setLoadingPayments(true);
+    fetchPayments();
+    refetchInstallments();
+    if (onPaymentAdded) onPaymentAdded();
+  };
 
   // Sort installments by due date
   const sorted = useMemo(() =>
-    [...installments].sort((a, b) => {
+    [...localInstallments].sort((a, b) => {
       const da = a.dueDate ? new Date(a.dueDate) : new Date(0);
       const db = b.dueDate ? new Date(b.dueDate) : new Date(0);
       return da - db;
-    }),
-    [installments],
-  );
-
-  const getInstallmentKey = (inst, idx) => inst.finPaymentScheduleID || inst.id || idx;
+    }), [localInstallments]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-lg max-h-[80vh] flex flex-col overflow-hidden"
-        style={{ width: 400, border: '0.5px solid hsl(var(--border))' }} onClick={e => e.stopPropagation()}>
+        style={{ width: 440, border: '0.5px solid #E5E7EB' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: '1px solid #E5E7EB', background: '#fff' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Payments</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Summary */}
-        <div style={{ background: '#F8F9FA' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
-            <div style={{ padding: '12px 14px', borderRight: '0.5px solid #E5E7EB' }}>
-              <div style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invoice Total</div>
-              <div className="tabular-nums" style={{ fontSize: 16, fontWeight: 500, marginTop: 4 }}>{fmt(grandTotal, currency)}</div>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid #E5E7EB' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>Invoice #{docNo}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>Payments</div>
             </div>
-            <div style={{ padding: '12px 14px', borderRight: '0.5px solid #E5E7EB' }}>
-              <div style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Paid</div>
-              <div className="tabular-nums" style={{ fontSize: 16, fontWeight: 500, marginTop: 4, color: '#10b981' }}>{fmt(totalPaid, currency)}</div>
-            </div>
-            <div style={{ padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Outstanding</div>
-              <div className="tabular-nums" style={{ fontSize: 16, fontWeight: 500, marginTop: 4, color: outstanding > 0 ? '#f59e0b' : '#10b981' }}>{fmt(outstanding, currency)}</div>
-            </div>
+            <button type="button" onClick={onClose} style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: '0.5px solid #E5E7EB', background: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 14, lineHeight: 1 }}>&times;</button>
           </div>
         </div>
 
-        {/* Installment list */}
-        <div className="flex-1 overflow-y-auto" style={{ padding: 12 }}>
+        {/* Summary */}
+        <div style={{ padding: '12px 14px', borderBottom: '0.5px solid #d1d5db', background: '#F8F9FA' }}>
+          <div className="tabular-nums" style={{ fontSize: 20, fontWeight: 500, color: '#111827' }}>{fmt(localTotal || grandTotal, currency)}</div>
+          <div style={{ fontSize: 12, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ color: '#10b981' }}>Paid {fmt(localPaid, currency)}</span>
+            <span style={{ color: '#9ca3af' }}>&middot;</span>
+            <span style={{ color: localOutstanding > 0 ? '#f59e0b' : '#9ca3af' }}>Outstanding {fmt(localOutstanding, currency)}</span>
+          </div>
+        </div>
+
+        {/* Scrollable content — per installment */}
+        <div className="flex-1 overflow-y-auto" style={{ padding: '12px 12px 16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {sorted.length === 0 && (
-              <p style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0' }}>No installments found.</p>
-            )}
             {sorted.map((inst, idx) => {
-              const key = getInstallmentKey(inst, idx);
-              const status = classifyInstallment(inst);
-              const style = BADGE_STYLES[status];
+              const scheduleId = inst.finPaymentScheduleID || inst.id;
+              const instOutstanding = parseFloat(inst.outstandingAmount) || 0;
+              const instPaid = parseFloat(inst.paidAmount) || 0;
               const instAmount = parseFloat(inst.amount) || 0;
-              const isExpanded = expandedInstallmentId === key;
+              const status = instOutstanding <= 0 ? 'paid' : (instPaid > 0 ? 'partial' : 'pending');
+              const badgeStyle = BADGE_STYLES[status];
+              const isFormOpen = activeFormScheduleId === scheduleId;
+              const instPayments = idx === 0 ? payments : [];
 
               return (
-                <div
-                  key={key}
-                  style={{
-                    borderLeft: `3px solid ${style.accent}`,
-                    borderTop: '0.5px solid #E5E7EB',
-                    borderRight: '0.5px solid #E5E7EB',
-                    borderBottom: '0.5px solid #E5E7EB',
-                    borderRadius: '0 6px 6px 0',
-                    padding: '10px 12px',
-                    background: '#fff',
-                  }}
-                >
-                  {/* Line 1: amount + badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="tabular-nums" style={{ fontSize: 15, fontWeight: 600 }}>
-                      {fmt(instAmount, currency)}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 500,
-                        padding: '2px 10px',
-                        borderRadius: 9999,
-                        backgroundColor: style.bg,
-                        color: style.color,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}
-                    >
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: style.dot, flexShrink: 0 }} />
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </span>
+                <div key={scheduleId} style={{ border: '0.5px solid #d1d5db', borderRadius: 10, overflow: 'hidden' }}>
+                  {/* Card header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: '#F8F9FA', flexWrap: 'wrap', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>Vencimiento {idx + 1}</span>
+                      <span style={{ color: '#d1d5db' }}>&middot;</span>
+                      <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>
+                      <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: badgeStyle.bg, color: badgeStyle.color }}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Line 2: due date + paid date */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                    <span style={{ fontSize: 12, color: '#6B7280' }}>
-                      Due {fmtDate(inst.dueDate)}
-                    </span>
-                    {status === 'paid' && inst.lastPaymentDate && (
-                      <span style={{ fontSize: 12, color: '#6B7280' }}>
-                        {fmtDate(inst.lastPaymentDate)}
-                      </span>
+                  {/* Card body */}
+                  <div style={{ borderTop: '0.5px solid #d1d5db', background: '#fff' }}>
+                    {/* Payments for this installment */}
+                    {instPayments.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {instPayments.map(p => {
+                          const pStatus = p.status || '';
+                          const isPaid = ['RPR', 'RPPC', 'RDNC', 'PPM'].includes(pStatus);
+                          const pBadge = isPaid ? BADGE_STYLES.paid : BADGE_STYLES.pending;
+                          const isNew = p.id === highlightId;
+                          const rawAcctName = p.accountName || p['account$_identifier'] || '';
+                          const acctCurrency = p.accountCurrency || '';
+                          const acctLabel = rawAcctName ? (acctCurrency ? `${rawAcctName} \u00b7 ${acctCurrency}` : rawAcctName) : '';
+                          return (
+                            <div key={p.id} style={{ padding: '8px 14px', borderBottom: '0.5px solid #f3f4f6', background: isNew ? '#f0fdf4' : '#fff' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span className="tabular-nums" style={{ fontSize: 13, fontWeight: 500 }}>{fmt(p.amount, currency)}</span>
+                                  <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: pBadge.bg, color: pBadge.color }}>{isPaid ? 'Paid' : 'Pending'}</span>
+                                  <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(p.paymentDate)}</span>
+                                </div>
+                                <button type="button" onClick={() => navToPayment(p.id)} style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>View &rarr;</button>
+                              </div>
+                              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                #{p.documentNo || p.id}{acctLabel ? ` \u00b7 ${acctLabel}` : ''}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Register button */}
+                    {instOutstanding > 0 && isCompleted && !isFormOpen && !confirmation && (
+                      <div style={{ padding: '10px 14px' }}>
+                        <button type="button" onClick={() => setActiveFormScheduleId(scheduleId)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}>
+                          + Register payment &middot; {fmt(instOutstanding, currency)} outstanding
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Register form */}
+                    {isFormOpen && (
+                      <div style={{ padding: '10px 14px' }}>
+                        <PaymentRegisterForm
+                          invoiceId={recordId}
+                          invoiceData={invoiceData}
+                          scheduleId={scheduleId}
+                          outstanding={instOutstanding}
+                          currency={currency}
+                          base={base}
+                          headers={headers}
+                          onCancel={() => setActiveFormScheduleId(null)}
+                          onSuccess={(pd, an) => handlePaymentSuccess(pd, an, scheduleId)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Empty state for paid installments with no payment data */}
+                    {instPayments.length === 0 && instOutstanding <= 0 && (
+                      <div style={{ padding: '10px 14px', fontSize: 12, color: '#9ca3af' }}>Fully paid</div>
                     )}
                   </div>
-
-                  {/* Line 3 (Pending/Overdue only): Register or Cancel toggle */}
-                  {(status === 'pending' || status === 'overdue') && isCompleted && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-                      <button
-                        type="button"
-                        onClick={() => setExpandedInstallmentId(isExpanded ? null : key)}
-                        className="hover:underline"
-                        style={{ fontSize: 12, fontWeight: 500, color: isExpanded ? '#6B7280' : '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      >
-                        {isExpanded ? 'Cancel' : 'Register \u2192'}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Inline register form */}
-                  {isExpanded && (
-                    <InlineRegisterForm
-                      invoiceId={recordId}
-                      invoiceData={invoiceData}
-                      installment={inst}
-                      currency={currency}
-                      base={base}
-                      headers={headers}
-                      onCancel={() => setExpandedInstallmentId(null)}
-                      onSuccess={() => {
-                        setExpandedInstallmentId(null);
-                        toast.success('Payment registered');
-                        if (onPaymentAdded) onPaymentAdded();
-                      }}
-                    />
-                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* Confirmation block */}
+          {confirmation && (
+            <div style={{ marginTop: 12, textAlign: 'center', padding: '8px 0' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#d1fae5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{fullyPaid ? 'Invoice fully paid' : 'Payment registered'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
+                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{fmt(confirmation.amount, currency)}</span>
+                {paymentMethodName && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{paymentMethodName}</span>}
+                {confirmation.accountName && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{confirmation.accountName}</span>}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end" style={{ background: '#F8F9FA', borderTop: '1px solid #E5E7EB', padding: '10px 16px' }}>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            style={{ fontSize: 13, padding: '4px 14px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: 'transparent' }}
-          >
-            Close
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: confirmation ? 'space-between' : 'flex-end', background: '#fff', borderTop: '0.5px solid #d1d5db', padding: '10px 14px' }}>
+          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Close</button>
+          {confirmation && (
+            <button type="button" onClick={() => navToPayment(confirmation.id)} style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: 'pointer' }}>View payment &rarr;</button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── INLINE REGISTER FORM (expands inside installment row) ───────────────────
+// ─── PAYMENT REGISTER FORM (per-installment) ────────────────────────────────
 
-function InlineRegisterForm({ invoiceId, invoiceData, installment, currency, base, headers, onCancel, onSuccess }) {
-  const installmentOutstanding = parseFloat(installment.outstandingAmount) || 0;
-  const [amount, setAmount] = useState(installmentOutstanding);
+function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, currency, base, headers, onCancel, onSuccess }) {
+  const [amount, setAmount] = useState(outstanding);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [accountId, setAccountId] = useState('');
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [resolvedOrgId, setResolvedOrgId] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     (async () => {
       try {
-        // Find an existing payment for this invoice to get the correct account
         const pmId = invoiceData?.paymentMethod;
         const bpId = invoiceData?.businessPartner;
         let mapped = [];
+        let defaultAccountId = null;
 
-        // Strategy 1: Find the account from existing payments for this BP + payment method
+        const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
+        if (res.ok) {
+          const json = await res.json();
+          const items = json.items || json?.response?.data || [];
+          mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
+        }
+
         if (pmId && bpId) {
           try {
             const payRes = await fetch(`${base}/payment-in/finPayment?businessPartner=${bpId}&_startRow=0&_endRow=5`, { headers });
             if (payRes.ok) {
               const payments = (await payRes.json())?.response?.data || [];
               const matching = payments.find(p => p.paymentMethod === pmId && p.account);
-              if (matching) {
-                mapped = [{ id: matching.account, name: matching['account$_identifier'] || 'Account' }];
-                if (matching.organization) setResolvedOrgId(matching.organization);
-              }
+              if (matching) defaultAccountId = matching.account;
             }
           } catch { /* silent */ }
         }
 
-        // Strategy 2: Fallback to selector
-        if (mapped.length === 0) {
-          const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
-          if (res.ok) {
-            const json = await res.json();
-            const items = json.items || json?.response?.data || [];
-            mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
-          }
-        }
-
         setAccounts(mapped);
-        if (mapped.length > 0) setAccountId(mapped[0].id);
+        if (defaultAccountId && mapped.some(a => a.id === defaultAccountId)) {
+          setAccountId(defaultAccountId);
+        } else if (mapped.length > 0) {
+          setAccountId(mapped[0].id);
+        }
       } catch { /* silent */ }
       finally { setLoadingAccounts(false); }
     })();
   }, [base, headers, invoiceData?.paymentMethod, invoiceData?.businessPartner]);
 
-  const amountExceeded = amount > installmentOutstanding;
+  const amountExceeded = amount > outstanding;
 
   const handleSubmit = async () => {
-    if (!amount || amount <= 0) { toast.error('Enter a valid amount'); return; }
+    if (!amount || amount <= 0) { setError('Enter a valid amount'); return; }
     if (amountExceeded) return;
-    if (!accountId) { toast.error('Select an account'); return; }
+    if (!accountId) { setError('Select an account'); return; }
+    setError(null);
     setSaving(true);
     try {
-      const res = await fetch(`${base}/sales-invoice/header/${invoiceId}/action/EM_APRM_Addpayment`, {
+      const res = await fetch(`${base}/sales-invoice/header/${invoiceId}/action/registerPayment`, {
         method: 'POST', headers,
         body: JSON.stringify({
-          fin_payment_id: 'null',
-          trxtype: 'BPW',
-          ad_org_id: invoiceData.organization || resolvedOrgId || '',
-          payment_documentno: '<>',
-          c_currency_id: invoiceData.currency,
-          received_from: invoiceData.businessPartner,
-          fin_paymentmethod_id: invoiceData.paymentMethod,
+          scheduleId,
           actual_payment: String(amount),
-          converted_amount: String(amount),
-          expected_payment: String(installmentOutstanding),
           payment_date: date,
           fin_financial_account_id: accountId,
-          conversion_rate: '1',
-          transaction_type: 'I',
-          document_action: '345',
-          issotrx: true,
-          reference_no: '',
-          difference: '',
         }),
       });
       const resJson = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(resJson?.response?.message || resJson?.message || `Failed (${res.status})`);
-      }
-      if (resJson?.response?.error || resJson?.response?.status === -1) {
-        throw new Error(resJson?.response?.error?.message || resJson?.response?.message?.text || 'Payment failed');
-      }
-      onSuccess();
-    } catch (err) { toast.error(err.message); }
+      if (!res.ok) throw new Error(resJson?.response?.message || resJson?.message || `Failed (${res.status})`);
+      if (resJson?.response?.error || resJson?.response?.status === -1) throw new Error(resJson?.response?.error?.message || resJson?.response?.message?.text || 'Payment failed');
+      const paymentData = resJson?.response?.data || {};
+      const selectedAccount = accounts.find(a => a.id === accountId);
+      onSuccess(paymentData, selectedAccount?.name || '');
+    } catch (err) { setError(err.message); }
     finally { setSaving(false); }
   };
 
   return (
-    <div style={{ marginTop: 8, borderTop: '1px dashed #E5E7EB', paddingTop: 10, background: '#FAFBFC', borderRadius: '0 0 4px 0', padding: '10px 0 0 0' }}>
-      {/* 2-column: Date + Amount */}
+    <div style={{ marginTop: 4, marginBottom: 4, border: '0.5px solid #E5E7EB', borderRadius: 8, padding: 12, background: '#FAFBFC' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            className="text-sm tabular-nums"
-            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none' }}
-          />
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
+            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Amount ({currency})</label>
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={amount}
-            onChange={e => setAmount(Number(e.target.value))}
-            className="text-sm tabular-nums"
-            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none' }}
-          />
+          <input type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(Number(e.target.value))} className="text-sm tabular-nums"
+            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
       </div>
-
-      {/* Outstanding hint */}
-      <p className="flex items-center gap-1" style={{ fontSize: 11, color: '#92400e', marginTop: 6, marginBottom: 0 }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-        Outstanding: {fmt(installmentOutstanding, currency)}
-      </p>
-      {amountExceeded && (
-        <p className="flex items-center gap-1" style={{ fontSize: 11, color: '#dc2626', marginTop: 4, marginBottom: 0 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
-          Amount cannot exceed the installment ({fmt(installmentOutstanding, currency)})
-        </p>
-      )}
-
-      {/* Account selector — full width */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#92400e', marginTop: 6 }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+        Outstanding: {fmt(outstanding, currency)}
+      </div>
+      {amountExceeded && <div style={{ fontSize: 10, color: '#dc2626', marginTop: 3 }}>Amount exceeds outstanding</div>}
       <div style={{ marginTop: 8 }}>
         <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Account</label>
         {loadingAccounts ? (
-          <div className="text-sm text-muted-foreground" style={{ padding: '6px 10px' }}>Loading...</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', padding: '6px 10px' }}>Loading...</div>
         ) : (
-          <Select value={accountId} onValueChange={setAccountId} disabled={accounts.length <= 1} required>
+          <Select value={accountId} onValueChange={setAccountId} required>
             <SelectTrigger className="focus:ring-2 focus:ring-primary" style={{ height: 32, fontSize: 13 }}>
               <SelectValue placeholder="Select account..." />
             </SelectTrigger>
             <SelectContent>
-              {accounts.map(acc => (
-                <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
-              ))}
+              {accounts.map(acc => (<SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>))}
             </SelectContent>
           </Select>
         )}
       </div>
-
-      {/* Action buttons */}
+      {error && <div style={{ fontSize: 11, color: '#dc2626', marginTop: 6 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6,
-            border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer',
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={saving || amountExceeded}
-          style={{
-            fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6,
-            border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded) ? 'not-allowed' : 'pointer',
-            opacity: (saving || amountExceeded) ? 0.4 : 1,
-          }}
-        >
-          {saving ? 'Saving...' : 'Confirm'}
+        <button type="button" onClick={onCancel} style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={handleSubmit} disabled={saving || amountExceeded}
+          style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded) ? 'not-allowed' : 'pointer', opacity: (saving || amountExceeded) ? 0.4 : 1 }}>
+          {saving ? 'Processing...' : 'Confirm payment'}
         </button>
       </div>
     </div>

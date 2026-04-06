@@ -8,7 +8,8 @@
     "relatedDocuments": true,
     "customComponents": {
       "bottomSection": "PaymentBottomPanel",
-      "topbarRight": "PaymentActivityToggle"
+      "topbarRight": "PaymentActivityToggle",
+      "newRecordComponent": "NewPaymentModal"
     },
     "detailEntity": null,
     "hideDeleteWhenComplete": true,

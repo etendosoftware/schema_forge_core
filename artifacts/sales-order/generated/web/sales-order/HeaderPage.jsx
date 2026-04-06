@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';

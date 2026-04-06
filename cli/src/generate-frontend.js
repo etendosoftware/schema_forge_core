@@ -401,7 +401,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
-  const statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
+  const statusFieldOverride = contract.frontendContract.window.statusField;
+  const statusField = statusFieldOverride
+    ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
+    : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
   const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
   const summaryFields = Array.isArray(summaryFieldsOverride)
     ? summaryFieldsOverride.length === 0
@@ -505,6 +508,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
+  const windowBreadcrumbOverride = contract?.frontendContract?.window?.breadcrumb;
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
@@ -654,6 +658,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
+  if (customComponents.newRecordComponent) {
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
+  }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
     : '';
@@ -786,7 +793,7 @@ ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity
 import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
-const breadcrumb = '${windowCategory} / ${windowLabel}';
+const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
 ${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
@@ -829,6 +836,9 @@ ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
   ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
+  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
+    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
+  }` : ''}
   if (recordId) {
     return (
       <DetailView
