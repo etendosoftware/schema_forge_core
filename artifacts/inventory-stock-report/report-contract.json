@@ -107,7 +107,8 @@
       },
       "type": "search",
       "selector": "warehouse",
-      "multi": true
+      "multi": true,
+      "inputStyle": "dropdown"
     }
   ],
   "defaultSort": {

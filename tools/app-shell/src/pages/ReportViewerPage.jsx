@@ -51,7 +51,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
 
   const useDrawerSearch = selector === 'product';
   const showDropdownArrow = selector === 'warehouse' && !multi;
-  const inputWidthClass = fullWidth ? 'w-full min-w-[16rem] sm:min-w-[18rem] md:min-w-[20rem]' : 'w-44';
+  const inputWidthClass = fullWidth ? 'w-full' : 'w-44';
 
   const normalizeOptions = (data) => {
     if (Array.isArray(data)) return data;
@@ -413,7 +413,7 @@ const SIDEBAR_SECTIONS = [
   { key: 'options', label: 'Display Options' },
 ];
 
-function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey }) {
+function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey, token, selectedOrgId, roleOrgIds }) {
   const [displayValues, setDisplayValues] = useState({});
   const [errors, setErrors] = useState({});
 
@@ -479,6 +479,11 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             minLength={p.inputStyle === 'dropdown' ? 0 : 2}
             fullWidth
             hasError={hasError}
+            token={token}
+            label={label}
+            selectedOrgId={selectedOrgId}
+            roleOrgIds={roleOrgIds}
+            selectedWarehouseId={params.M_Warehouse_ID || ''}
           />
           {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
         </div>
@@ -735,6 +740,9 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
           onReset={handleReset}
           loading={loading}
           resetKey={resetKey}
+          token={token}
+          selectedOrgId={selectedOrgId}
+          roleOrgIds={roleOrgIds}
         />
       </div>
 
