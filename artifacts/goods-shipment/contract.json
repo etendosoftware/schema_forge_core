@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-01T10:52:22.637Z",
-  "checksum": "e5b3e8fa83ff7946",
+  "version": "0.6.0",
+  "generatedAt": "2026-04-01T16:44:37.422Z",
+  "checksum": "9cf93b51058405e8",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -56,7 +56,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y'"
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -75,6 +75,11 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -93,6 +98,11 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -112,7 +122,12 @@
               "field": "businessPartner",
               "filterKey": "C_BPartner_ID"
             },
-            "section": "principal"
+            "section": "principal",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "description",
@@ -142,6 +157,11 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -198,6 +218,18 @@
               }
             ],
             "defaultValue": "DR"
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "label": "Processed",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -228,6 +260,13 @@
               "type": "computed",
               "source": "DR"
             }
+          },
+          {
+            "name": "processed",
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
           }
         ]
       },
@@ -253,6 +292,11 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOutLine_Product"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -267,7 +311,12 @@
             "grid": true,
             "form": true,
             "defaultValue": "0",
-            "section": "principal"
+            "section": "principal",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y' | @UomManagement@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true || record['uomManagement'] === 'Y'"
+            }
           },
           {
             "name": "description",
@@ -304,7 +353,7 @@
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
-              "js": "record['processed'] === 'Y'"
+              "js": "record['processed'] === true"
             }
           }
         ],
@@ -845,7 +894,7 @@
             "apiKey": "processed",
             "column": "Processed",
             "type": "boolean",
-            "visibility": "discarded",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -1514,6 +1563,14 @@
       },
       {
         "id": "t-8",
+        "category": "field-presence",
+        "entity": "goodsShipment",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should be present in goodsShipment"
+      },
+      {
+        "id": "t-9",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "documentNo",
@@ -1521,7 +1578,7 @@
         "description": "Field 'documentNo' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-9",
+        "id": "t-10",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "warehouse",
@@ -1529,7 +1586,7 @@
         "description": "Field 'warehouse' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-10",
+        "id": "t-11",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "businessPartner",
@@ -1537,7 +1594,7 @@
         "description": "Field 'businessPartner' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-11",
+        "id": "t-12",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "partnerAddress",
@@ -1545,7 +1602,7 @@
         "description": "Field 'partnerAddress' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-12",
+        "id": "t-13",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "description",
@@ -1553,7 +1610,7 @@
         "description": "Field 'description' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-13",
+        "id": "t-14",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "movementDate",
@@ -1561,7 +1618,7 @@
         "description": "Field 'movementDate' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-14",
+        "id": "t-15",
         "category": "field-type",
         "entity": "goodsShipment",
         "field": "documentStatus",
@@ -1569,7 +1626,15 @@
         "description": "Field 'documentStatus' should have type 'string' in goodsShipment"
       },
       {
-        "id": "t-15",
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "goodsShipment",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should have type 'boolean' in goodsShipment"
+      },
+      {
+        "id": "t-17",
         "category": "searchable-filters",
         "entity": "goodsShipment",
         "field": "documentNo",
@@ -1577,7 +1642,7 @@
         "description": "Field 'documentNo' should be a supported filter for goodsShipment"
       },
       {
-        "id": "t-16",
+        "id": "t-18",
         "category": "searchable-filters",
         "entity": "goodsShipment",
         "field": "warehouse",
@@ -1585,7 +1650,7 @@
         "description": "Field 'warehouse' should be a supported filter for goodsShipment"
       },
       {
-        "id": "t-17",
+        "id": "t-19",
         "category": "searchable-filters",
         "entity": "goodsShipment",
         "field": "businessPartner",
@@ -1593,7 +1658,7 @@
         "description": "Field 'businessPartner' should be a supported filter for goodsShipment"
       },
       {
-        "id": "t-18",
+        "id": "t-20",
         "category": "searchable-filters",
         "entity": "goodsShipment",
         "field": "movementDate",
@@ -1601,7 +1666,7 @@
         "description": "Field 'movementDate' should be a supported filter for goodsShipment"
       },
       {
-        "id": "t-19",
+        "id": "t-21",
         "category": "searchable-filters",
         "entity": "goodsShipment",
         "field": "documentStatus",
@@ -1609,14 +1674,14 @@
         "description": "Field 'documentStatus' should be a supported filter for goodsShipment"
       },
       {
-        "id": "t-20",
+        "id": "t-22",
         "category": "visibility",
         "entity": "goodsShipment",
         "runner": "node",
         "description": "Entity 'goodsShipment' should only expose visible fields in frontend"
       },
       {
-        "id": "t-21",
+        "id": "t-23",
         "category": "readonlylogic-valid",
         "entity": "goodsShipment",
         "field": "documentNo",
@@ -1624,7 +1689,39 @@
         "description": "Read-only logic for 'documentNo' in goodsShipment should be valid JS"
       },
       {
-        "id": "t-22",
+        "id": "t-24",
+        "category": "readonlylogic-valid",
+        "entity": "goodsShipment",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Read-only logic for 'warehouse' in goodsShipment should be valid JS"
+      },
+      {
+        "id": "t-25",
+        "category": "readonlylogic-valid",
+        "entity": "goodsShipment",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in goodsShipment should be valid JS"
+      },
+      {
+        "id": "t-26",
+        "category": "readonlylogic-valid",
+        "entity": "goodsShipment",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Read-only logic for 'partnerAddress' in goodsShipment should be valid JS"
+      },
+      {
+        "id": "t-27",
+        "category": "readonlylogic-valid",
+        "entity": "goodsShipment",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in goodsShipment should be valid JS"
+      },
+      {
+        "id": "t-28",
         "category": "readonlylogic-evaluable",
         "entity": "goodsShipment",
         "field": "documentNo",
@@ -1632,7 +1729,39 @@
         "description": "Read-only logic for 'documentNo' in goodsShipment should have evaluable flag"
       },
       {
-        "id": "t-23",
+        "id": "t-29",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsShipment",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Read-only logic for 'warehouse' in goodsShipment should have evaluable flag"
+      },
+      {
+        "id": "t-30",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsShipment",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in goodsShipment should have evaluable flag"
+      },
+      {
+        "id": "t-31",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsShipment",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Read-only logic for 'partnerAddress' in goodsShipment should have evaluable flag"
+      },
+      {
+        "id": "t-32",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsShipment",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in goodsShipment should have evaluable flag"
+      },
+      {
+        "id": "t-33",
         "category": "default-value-type",
         "entity": "goodsShipment",
         "field": "movementDate",
@@ -1640,7 +1769,7 @@
         "description": "Default value for 'movementDate' in goodsShipment should be a string"
       },
       {
-        "id": "t-24",
+        "id": "t-34",
         "category": "default-value-type",
         "entity": "goodsShipment",
         "field": "documentStatus",
@@ -1648,7 +1777,7 @@
         "description": "Default value for 'documentStatus' in goodsShipment should be a string"
       },
       {
-        "id": "t-25",
+        "id": "t-35",
         "category": "field-presence",
         "entity": "goodsShipmentLine",
         "field": "product",
@@ -1656,7 +1785,7 @@
         "description": "Field 'product' should be present in goodsShipmentLine"
       },
       {
-        "id": "t-26",
+        "id": "t-36",
         "category": "field-presence",
         "entity": "goodsShipmentLine",
         "field": "movementQuantity",
@@ -1664,7 +1793,7 @@
         "description": "Field 'movementQuantity' should be present in goodsShipmentLine"
       },
       {
-        "id": "t-27",
+        "id": "t-37",
         "category": "field-presence",
         "entity": "goodsShipmentLine",
         "field": "description",
@@ -1672,7 +1801,7 @@
         "description": "Field 'description' should be present in goodsShipmentLine"
       },
       {
-        "id": "t-28",
+        "id": "t-38",
         "category": "field-presence",
         "entity": "goodsShipmentLine",
         "field": "orderQuantity",
@@ -1680,7 +1809,7 @@
         "description": "Field 'orderQuantity' should be present in goodsShipmentLine"
       },
       {
-        "id": "t-29",
+        "id": "t-39",
         "category": "field-type",
         "entity": "goodsShipmentLine",
         "field": "product",
@@ -1688,7 +1817,7 @@
         "description": "Field 'product' should have type 'string' in goodsShipmentLine"
       },
       {
-        "id": "t-30",
+        "id": "t-40",
         "category": "field-type",
         "entity": "goodsShipmentLine",
         "field": "movementQuantity",
@@ -1696,7 +1825,7 @@
         "description": "Field 'movementQuantity' should have type 'number' in goodsShipmentLine"
       },
       {
-        "id": "t-31",
+        "id": "t-41",
         "category": "field-type",
         "entity": "goodsShipmentLine",
         "field": "description",
@@ -1704,7 +1833,7 @@
         "description": "Field 'description' should have type 'string' in goodsShipmentLine"
       },
       {
-        "id": "t-32",
+        "id": "t-42",
         "category": "field-type",
         "entity": "goodsShipmentLine",
         "field": "orderQuantity",
@@ -1712,7 +1841,7 @@
         "description": "Field 'orderQuantity' should have type 'number' in goodsShipmentLine"
       },
       {
-        "id": "t-33",
+        "id": "t-43",
         "category": "searchable-filters",
         "entity": "goodsShipmentLine",
         "field": "product",
@@ -1720,14 +1849,14 @@
         "description": "Field 'product' should be a supported filter for goodsShipmentLine"
       },
       {
-        "id": "t-34",
+        "id": "t-44",
         "category": "visibility",
         "entity": "goodsShipmentLine",
         "runner": "node",
         "description": "Entity 'goodsShipmentLine' should only expose visible fields in frontend"
       },
       {
-        "id": "t-35",
+        "id": "t-45",
         "category": "displaylogic-valid",
         "entity": "goodsShipmentLine",
         "field": "orderQuantity",
@@ -1735,7 +1864,23 @@
         "description": "Display logic for 'orderQuantity' in goodsShipmentLine should be valid JS"
       },
       {
-        "id": "t-36",
+        "id": "t-46",
+        "category": "readonlylogic-valid",
+        "entity": "goodsShipmentLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in goodsShipmentLine should be valid JS"
+      },
+      {
+        "id": "t-47",
+        "category": "readonlylogic-valid",
+        "entity": "goodsShipmentLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in goodsShipmentLine should be valid JS"
+      },
+      {
+        "id": "t-48",
         "category": "readonlylogic-valid",
         "entity": "goodsShipmentLine",
         "field": "orderQuantity",
@@ -1743,7 +1888,7 @@
         "description": "Read-only logic for 'orderQuantity' in goodsShipmentLine should be valid JS"
       },
       {
-        "id": "t-37",
+        "id": "t-49",
         "category": "displaylogic-evaluable",
         "entity": "goodsShipmentLine",
         "field": "orderQuantity",
@@ -1751,7 +1896,23 @@
         "description": "Display logic for 'orderQuantity' in goodsShipmentLine should have evaluable flag"
       },
       {
-        "id": "t-38",
+        "id": "t-50",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsShipmentLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in goodsShipmentLine should have evaluable flag"
+      },
+      {
+        "id": "t-51",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsShipmentLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in goodsShipmentLine should have evaluable flag"
+      },
+      {
+        "id": "t-52",
         "category": "readonlylogic-evaluable",
         "entity": "goodsShipmentLine",
         "field": "orderQuantity",
@@ -1759,7 +1920,7 @@
         "description": "Read-only logic for 'orderQuantity' in goodsShipmentLine should have evaluable flag"
       },
       {
-        "id": "t-39",
+        "id": "t-53",
         "category": "default-value-type",
         "entity": "goodsShipmentLine",
         "field": "movementQuantity",
@@ -1767,7 +1928,7 @@
         "description": "Default value for 'movementQuantity' in goodsShipmentLine should be a string"
       },
       {
-        "id": "t-40",
+        "id": "t-54",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "organization",
@@ -1775,7 +1936,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-41",
+        "id": "t-55",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "documentType",
@@ -1783,7 +1944,7 @@
         "description": "System field 'documentType' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-42",
+        "id": "t-56",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "mConditionGoodsID",
@@ -1791,7 +1952,7 @@
         "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-43",
+        "id": "t-57",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "deliveryLocation",
@@ -1799,7 +1960,7 @@
         "description": "System field 'deliveryLocation' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-44",
+        "id": "t-58",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "userContact",
@@ -1807,7 +1968,7 @@
         "description": "System field 'userContact' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-45",
+        "id": "t-59",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "accountingDate",
@@ -1815,7 +1976,7 @@
         "description": "System field 'accountingDate' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-46",
+        "id": "t-60",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "salesOrder",
@@ -1823,7 +1984,7 @@
         "description": "System field 'salesOrder' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-47",
+        "id": "t-61",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "orderReference",
@@ -1831,7 +1992,7 @@
         "description": "System field 'orderReference' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-48",
+        "id": "t-62",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "isnettingshipment",
@@ -1839,7 +2000,7 @@
         "description": "System field 'isnettingshipment' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-49",
+        "id": "t-63",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "externalBusinessPartnerReference",
@@ -1847,7 +2008,7 @@
         "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-50",
+        "id": "t-64",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "orderDate",
@@ -1855,7 +2016,7 @@
         "description": "System field 'orderDate' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-51",
+        "id": "t-65",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "salesRepresentative",
@@ -1863,7 +2024,7 @@
         "description": "System field 'salesRepresentative' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-52",
+        "id": "t-66",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "createLinesFrom",
@@ -1871,7 +2032,7 @@
         "description": "System field 'createLinesFrom' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-53",
+        "id": "t-67",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "documentAction",
@@ -1879,7 +2040,7 @@
         "description": "System field 'documentAction' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-54",
+        "id": "t-68",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "processGoodsJava",
@@ -1887,7 +2048,7 @@
         "description": "System field 'processGoodsJava' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-55",
+        "id": "t-69",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "posted",
@@ -1895,7 +2056,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-56",
+        "id": "t-70",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "deliveryTerms",
@@ -1903,7 +2064,7 @@
         "description": "System field 'deliveryTerms' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-57",
+        "id": "t-71",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "deliveryMethod",
@@ -1911,7 +2072,7 @@
         "description": "System field 'deliveryMethod' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-58",
+        "id": "t-72",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "freightAmount",
@@ -1919,7 +2080,7 @@
         "description": "System field 'freightAmount' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-59",
+        "id": "t-73",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "freightCostRule",
@@ -1927,7 +2088,7 @@
         "description": "System field 'freightCostRule' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-60",
+        "id": "t-74",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "shippingCompany",
@@ -1935,7 +2096,7 @@
         "description": "System field 'shippingCompany' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-61",
+        "id": "t-75",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "priority",
@@ -1943,7 +2104,7 @@
         "description": "System field 'priority' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-62",
+        "id": "t-76",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "pickDate",
@@ -1951,7 +2112,7 @@
         "description": "System field 'pickDate' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-63",
+        "id": "t-77",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "trackingNo",
@@ -1959,7 +2120,7 @@
         "description": "System field 'trackingNo' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-64",
+        "id": "t-78",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "numberOfPackages",
@@ -1967,7 +2128,7 @@
         "description": "System field 'numberOfPackages' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-65",
+        "id": "t-79",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "movementType",
@@ -1975,7 +2136,7 @@
         "description": "System field 'movementType' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-66",
+        "id": "t-80",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "charge",
@@ -1983,7 +2144,7 @@
         "description": "System field 'charge' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-67",
+        "id": "t-81",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "chargeAmount",
@@ -1991,7 +2152,7 @@
         "description": "System field 'chargeAmount' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-68",
+        "id": "t-82",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "shipDate",
@@ -1999,7 +2160,7 @@
         "description": "System field 'shipDate' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-69",
+        "id": "t-83",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "activity",
@@ -2007,7 +2168,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-70",
+        "id": "t-84",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "salesCampaign",
@@ -2015,7 +2176,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-71",
+        "id": "t-85",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "trxOrganization",
@@ -2023,7 +2184,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-72",
+        "id": "t-86",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "freightCategory",
@@ -2031,7 +2192,7 @@
         "description": "System field 'freightCategory' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-73",
+        "id": "t-87",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "calculateFreight",
@@ -2039,7 +2200,7 @@
         "description": "System field 'calculateFreight' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-74",
+        "id": "t-88",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "freightCurrency",
@@ -2047,7 +2208,7 @@
         "description": "System field 'freightCurrency' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-75",
+        "id": "t-89",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "invoiceStatus",
@@ -2055,7 +2216,7 @@
         "description": "System field 'invoiceStatus' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-76",
+        "id": "t-90",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "project",
@@ -2063,7 +2224,7 @@
         "description": "System field 'project' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-77",
+        "id": "t-91",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "costcenter",
@@ -2071,7 +2232,7 @@
         "description": "System field 'costcenter' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-78",
+        "id": "t-92",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "asset",
@@ -2079,7 +2240,7 @@
         "description": "System field 'asset' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-79",
+        "id": "t-93",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "stDimension",
@@ -2087,7 +2248,7 @@
         "description": "System field 'stDimension' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-80",
+        "id": "t-94",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "ndDimension",
@@ -2095,7 +2256,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-81",
+        "id": "t-95",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "completelyInvoiced",
@@ -2103,7 +2264,7 @@
         "description": "System field 'completelyInvoiced' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-82",
+        "id": "t-96",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "invoicefromshipment",
@@ -2111,7 +2272,7 @@
         "description": "System field 'invoicefromshipment' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-83",
+        "id": "t-97",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "receiveMaterials",
@@ -2119,7 +2280,7 @@
         "description": "System field 'receiveMaterials' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-84",
+        "id": "t-98",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "updateLines",
@@ -2127,7 +2288,7 @@
         "description": "System field 'updateLines' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-85",
+        "id": "t-99",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "logistic",
@@ -2135,7 +2296,7 @@
         "description": "System field 'logistic' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-86",
+        "id": "t-100",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "invoice",
@@ -2143,7 +2304,7 @@
         "description": "System field 'invoice' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-87",
+        "id": "t-101",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "generateTo",
@@ -2151,7 +2312,7 @@
         "description": "System field 'generateTo' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-88",
+        "id": "t-102",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "print",
@@ -2159,7 +2320,7 @@
         "description": "System field 'print' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-89",
+        "id": "t-103",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "sendMaterials",
@@ -2167,7 +2328,7 @@
         "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-90",
+        "id": "t-104",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "salesTransaction",
@@ -2175,7 +2336,7 @@
         "description": "System field 'salesTransaction' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-91",
+        "id": "t-105",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "datePrinted",
@@ -2183,7 +2344,7 @@
         "description": "System field 'datePrinted' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-92",
+        "id": "t-106",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "processNow",
@@ -2191,15 +2352,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-93",
-        "category": "system-field",
-        "entity": "goodsShipment",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for goodsShipment"
-      },
-      {
-        "id": "t-94",
+        "id": "t-107",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "id",
@@ -2207,7 +2360,7 @@
         "description": "System field 'id' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-95",
+        "id": "t-108",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "active",
@@ -2215,7 +2368,7 @@
         "description": "System field 'active' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-96",
+        "id": "t-109",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "client",
@@ -2223,7 +2376,7 @@
         "description": "System field 'client' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-97",
+        "id": "t-110",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "creationDate",
@@ -2231,7 +2384,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-98",
+        "id": "t-111",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "createdBy",
@@ -2239,7 +2392,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-99",
+        "id": "t-112",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "updated",
@@ -2247,7 +2400,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-100",
+        "id": "t-113",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "updatedBy",
@@ -2255,7 +2408,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-101",
+        "id": "t-114",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "lineNo",
@@ -2263,7 +2416,7 @@
         "description": "System field 'lineNo' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-102",
+        "id": "t-115",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "mConditionGoodsID",
@@ -2271,7 +2424,7 @@
         "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-103",
+        "id": "t-116",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "attributeSetValue",
@@ -2279,7 +2432,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-104",
+        "id": "t-117",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "operativeQuantity",
@@ -2287,7 +2440,7 @@
         "description": "System field 'operativeQuantity' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-105",
+        "id": "t-118",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "operativeUOM",
@@ -2295,7 +2448,7 @@
         "description": "System field 'operativeUOM' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-106",
+        "id": "t-119",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "uOM",
@@ -2303,7 +2456,7 @@
         "description": "System field 'uOM' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-107",
+        "id": "t-120",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "storageBin",
@@ -2311,7 +2464,7 @@
         "description": "System field 'storageBin' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-108",
+        "id": "t-121",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "salesOrderLine",
@@ -2319,7 +2472,7 @@
         "description": "System field 'salesOrderLine' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-109",
+        "id": "t-122",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "orderUOM",
@@ -2327,7 +2480,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-110",
+        "id": "t-123",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "descriptionOnly",
@@ -2335,7 +2488,7 @@
         "description": "System field 'descriptionOnly' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-111",
+        "id": "t-124",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "canceledInoutLine",
@@ -2343,7 +2496,7 @@
         "description": "System field 'canceledInoutLine' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-112",
+        "id": "t-125",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "organization",
@@ -2351,7 +2504,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-113",
+        "id": "t-126",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "project",
@@ -2359,7 +2512,7 @@
         "description": "System field 'project' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-114",
+        "id": "t-127",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "costcenter",
@@ -2367,7 +2520,7 @@
         "description": "System field 'costcenter' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-115",
+        "id": "t-128",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "asset",
@@ -2375,7 +2528,7 @@
         "description": "System field 'asset' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-116",
+        "id": "t-129",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "stDimension",
@@ -2383,7 +2536,7 @@
         "description": "System field 'stDimension' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-117",
+        "id": "t-130",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "ndDimension",
@@ -2391,7 +2544,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-118",
+        "id": "t-131",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "explode",
@@ -2399,7 +2552,7 @@
         "description": "System field 'explode' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-119",
+        "id": "t-132",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "bOMParentID",
@@ -2407,7 +2560,7 @@
         "description": "System field 'bOMParentID' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-120",
+        "id": "t-133",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "invoiceQuantity",
@@ -2415,7 +2568,7 @@
         "description": "System field 'invoiceQuantity' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-121",
+        "id": "t-134",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "id",
@@ -2423,7 +2576,7 @@
         "description": "System field 'id' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-122",
+        "id": "t-135",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "reinvoice",
@@ -2431,7 +2584,7 @@
         "description": "System field 'reinvoice' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-123",
+        "id": "t-136",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "client",
@@ -2439,7 +2592,7 @@
         "description": "System field 'client' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-124",
+        "id": "t-137",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "managePrereservation",
@@ -2447,7 +2600,7 @@
         "description": "System field 'managePrereservation' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-125",
+        "id": "t-138",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "businessPartner",
@@ -2455,7 +2608,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-126",
+        "id": "t-139",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "active",
@@ -2463,7 +2616,7 @@
         "description": "System field 'active' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-127",
+        "id": "t-140",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "shipmentReceipt",
@@ -2471,7 +2624,7 @@
         "description": "System field 'shipmentReceipt' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-128",
+        "id": "t-141",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "creationDate",
@@ -2479,7 +2632,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-129",
+        "id": "t-142",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "createdBy",
@@ -2487,7 +2640,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-130",
+        "id": "t-143",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "updated",
@@ -2495,7 +2648,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-131",
+        "id": "t-144",
         "category": "system-field",
         "entity": "goodsShipmentLine",
         "field": "updatedBy",
@@ -2503,28 +2656,28 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for goodsShipmentLine"
       },
       {
-        "id": "t-132",
+        "id": "t-145",
         "category": "rule-declared",
         "rule": "ReadOnly_When_Processed",
         "runner": "node",
         "description": "Rule 'ReadOnly_When_Processed' (displayLogic) should be declared"
       },
       {
-        "id": "t-133",
+        "id": "t-146",
         "category": "rule-declared",
         "rule": "BP_AutoFill_Address",
         "runner": "node",
         "description": "Rule 'BP_AutoFill_Address' (callout) should be declared"
       },
       {
-        "id": "t-134",
+        "id": "t-147",
         "category": "rule-declared",
         "rule": "Product_AutoFill_UOM",
         "runner": "node",
         "description": "Rule 'Product_AutoFill_UOM' (callout) should be declared"
       },
       {
-        "id": "t-135",
+        "id": "t-148",
         "category": "process-happy",
         "process": "Process Shipment",
         "entity": "goodsShipment",
@@ -2532,7 +2685,7 @@
         "description": "Process 'Process Shipment' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-136",
+        "id": "t-149",
         "category": "process-failure",
         "process": "Process Shipment",
         "entity": "goodsShipment",
@@ -2540,21 +2693,21 @@
         "description": "Process 'Process Shipment' should fail when preconditions are not met"
       },
       {
-        "id": "t-137",
+        "id": "t-150",
         "category": "crud-flags",
         "entity": "goodsShipment",
         "runner": "node",
         "description": "CRUD flags for 'goodsShipment' should all be booleans"
       },
       {
-        "id": "t-138",
+        "id": "t-151",
         "category": "crud-flags",
         "entity": "goodsShipmentLine",
         "runner": "node",
         "description": "CRUD flags for 'goodsShipmentLine' should all be booleans"
       },
       {
-        "id": "t-139",
+        "id": "t-152",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "warehouse",
@@ -2562,7 +2715,7 @@
         "description": "Selector endpoint for 'warehouse' in goodsShipment should exist"
       },
       {
-        "id": "t-140",
+        "id": "t-153",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "businessPartner",
@@ -2570,7 +2723,7 @@
         "description": "Selector endpoint for 'businessPartner' in goodsShipment should exist"
       },
       {
-        "id": "t-141",
+        "id": "t-154",
         "category": "selector-endpoint",
         "entity": "goodsShipment",
         "field": "partnerAddress",
@@ -2578,7 +2731,7 @@
         "description": "Selector endpoint for 'partnerAddress' in goodsShipment should exist"
       },
       {
-        "id": "t-142",
+        "id": "t-155",
         "category": "selector-endpoint",
         "entity": "goodsShipmentLine",
         "field": "product",
@@ -2586,7 +2739,7 @@
         "description": "Selector endpoint for 'product' in goodsShipmentLine should exist"
       },
       {
-        "id": "t-143",
+        "id": "t-156",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "createLinesFrom",
@@ -2594,7 +2747,7 @@
         "description": "Action endpoint for 'createLinesFrom' in goodsShipment should exist"
       },
       {
-        "id": "t-144",
+        "id": "t-157",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "documentAction",
@@ -2602,7 +2755,7 @@
         "description": "Action endpoint for 'documentAction' in goodsShipment should exist"
       },
       {
-        "id": "t-145",
+        "id": "t-158",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "processGoodsJava",
@@ -2610,7 +2763,7 @@
         "description": "Action endpoint for 'processGoodsJava' in goodsShipment should exist"
       },
       {
-        "id": "t-146",
+        "id": "t-159",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "posted",
@@ -2618,7 +2771,7 @@
         "description": "Action endpoint for 'posted' in goodsShipment should exist"
       },
       {
-        "id": "t-147",
+        "id": "t-160",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "calculateFreight",
@@ -2626,7 +2779,7 @@
         "description": "Action endpoint for 'calculateFreight' in goodsShipment should exist"
       },
       {
-        "id": "t-148",
+        "id": "t-161",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "invoicefromshipment",
@@ -2634,7 +2787,7 @@
         "description": "Action endpoint for 'invoicefromshipment' in goodsShipment should exist"
       },
       {
-        "id": "t-149",
+        "id": "t-162",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "receiveMaterials",
@@ -2642,7 +2795,7 @@
         "description": "Action endpoint for 'receiveMaterials' in goodsShipment should exist"
       },
       {
-        "id": "t-150",
+        "id": "t-163",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "updateLines",
@@ -2650,7 +2803,7 @@
         "description": "Action endpoint for 'updateLines' in goodsShipment should exist"
       },
       {
-        "id": "t-151",
+        "id": "t-164",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "generateTo",
@@ -2658,7 +2811,7 @@
         "description": "Action endpoint for 'generateTo' in goodsShipment should exist"
       },
       {
-        "id": "t-152",
+        "id": "t-165",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "sendMaterials",
@@ -2666,7 +2819,7 @@
         "description": "Action endpoint for 'sendMaterials' in goodsShipment should exist"
       },
       {
-        "id": "t-153",
+        "id": "t-166",
         "category": "action-endpoint",
         "entity": "goodsShipmentLine",
         "field": "explode",
@@ -2674,7 +2827,7 @@
         "description": "Action endpoint for 'explode' in goodsShipmentLine should exist"
       },
       {
-        "id": "t-154",
+        "id": "t-167",
         "category": "action-endpoint",
         "entity": "goodsShipmentLine",
         "field": "managePrereservation",
@@ -2683,18 +2836,18 @@
       }
     ],
     "summary": {
-      "total": 154,
+      "total": 167,
       "byCategory": {
-        "field-presence": 11,
-        "field-type": 11,
+        "field-presence": 12,
+        "field-type": 12,
         "searchable-filters": 6,
         "visibility": 2,
-        "readonlylogic-valid": 2,
-        "readonlylogic-evaluable": 2,
+        "readonlylogic-valid": 8,
+        "readonlylogic-evaluable": 8,
         "default-value-type": 3,
         "displaylogic-valid": 1,
         "displaylogic-evaluable": 1,
-        "system-field": 92,
+        "system-field": 91,
         "rule-declared": 3,
         "process-happy": 1,
         "process-failure": 1,
@@ -2703,7 +2856,7 @@
         "action-endpoint": 12
       },
       "byRunner": {
-        "node": 152,
+        "node": 165,
         "junit": 2
       }
     }

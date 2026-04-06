@@ -45,12 +45,27 @@ function findMatchingRule(rules, identifier, type) {
  * Uses a column→propertyName map built from the schema to resolve @Column@ references.
  * Falls back to camelCase of the column name when not found in the map.
  */
-function convertLogicToJs(rawExpr, columnMap) {
+function convertLogicToJs(rawExpr, columnMap, booleanFields) {
+  const boolSet = new Set(booleanFields || []);
+  // Helper: for Y/N comparisons on boolean fields, use true/false instead of string
+  function eqExpr(col, val) {
+    const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
+    if ((val === 'Y' || val === 'N') && boolSet.has(prop)) {
+      return val === 'Y' ? `record['${prop}'] === true` : `record['${prop}'] !== true`;
+    }
+    return `record['${prop}'] === '${val}'`;
+  }
+  function neqExpr(col, val) {
+    const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
+    if ((val === 'Y' || val === 'N') && boolSet.has(prop)) {
+      return val === 'Y' ? `record['${prop}'] !== true` : `record['${prop}'] === true`;
+    }
+    return `record['${prop}'] !== '${val}'`;
+  }
   return rawExpr
-    .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => {
-      const prop = columnMap[col] ?? (col.charAt(0).toLowerCase() + col.slice(1));
-      return `record['${prop}'] === '${val}'`;
-    })
+    .replace(/@(\w+)@='([^']+)'/g, (_, col, val) => eqExpr(col, val))
+    .replace(/@(\w+)@!='([^']+)'/g, (_, col, val) => neqExpr(col, val))
+    .replace(/@(\w+)@!'([^']+)'/g, (_, col, val) => neqExpr(col, val))
     .replace(/\s*\|\s*/g, ' || ')
     .replace(/\s*&\s*/g, ' && ');
 }
@@ -78,6 +93,10 @@ function classifyEvaluability(rawExpr) {
   const sessionVarPatterns = [
     'FinancialManagement', 'StockReservations', 'IsSOTrx', 'ShowAcct', 'ShowTrl',
     'ACCS_Account_Ope', 'APRM_', 'showAddPayment', 'IsStocked',
+    // SQL-computed auxiliary fields (HAS_* are server-only boolean checks)
+    'HAS_C_INVOICELINES', 'HAS_M_INOUTLINES', 'HAS_C_ORDERLINES',
+    // Payment module session variables
+    'IsMultiCurrencyEnabled', 'NotAllowChangeExchange', 'isReceipt',
   ];
   for (const pattern of sessionVarPatterns) {
     if (rawExpr.includes(`@${pattern}`)) {
@@ -103,10 +122,12 @@ export function generateFrontendContract(schema, rules = []) {
   // Build a column→propertyName map from all entities for readOnly/display logic JS conversion
   // Curated fields use field.column (the DB column name) and field.name (the JS property name)
   const columnMap = {};
+  const booleanFields = [];
   for (const entity of schema.entities) {
     for (const field of entity.fields ?? []) {
       const col = field.column || field.columnName;
       if (col && field.name) columnMap[col] = field.name;
+      if (field.type === 'boolean') booleanFields.push(field.name);
     }
   }
 
@@ -204,7 +225,7 @@ export function generateFrontendContract(schema, rules = []) {
           mapped.readOnlyLogic.reason = evalInfo.reason;
           mapped.readOnlyLogic.js = null;
         } else if (!mapped.readOnlyLogic.js) {
-          mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap);
+          mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
         }
       }
 

@@ -2,9 +2,9 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:usedCreditSource
 const fields = [
-  { key: 'creditPaymentUsed', column: 'FIN_Payment_Id_Used', type: 'search', required: true, section: 'principal', reference: 'Payment', inputMode: 'search' },
-  { key: 'amount', column: 'Amount', type: 'text', required: true, section: 'principal' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'selector', required: true, section: 'principal', reference: 'Currency', inputMode: 'selector' },
+  { key: 'creditPaymentUsed', column: 'FIN_Payment_Id_Used', type: 'search', label: 'Credit Payment Used', required: true, section: 'principal', reference: 'Payment', inputMode: 'search' },
+  { key: 'amount', column: 'Amount', type: 'text', label: 'Amount', required: true, section: 'principal' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', required: true, section: 'principal', reference: 'Currency', inputMode: 'selector' },
 ];
 // @sf-generated-end fields:usedCreditSource
 

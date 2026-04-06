@@ -78,11 +78,14 @@ export function getAllWindowNames() {
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
+  'purchase-order': () => import('./custom/purchase-order/index.jsx'),
+  'goods-receipt': () => import('./custom/goods-receipt/index.jsx'),
+  'payment-out': () => import('./custom/payment-out/index.jsx'),
 };
 
 /**
  * Build window map with loaders for all windows in menu.json.
- * Resolution order: windowLoaders > customLoaders > PlaceholderWindow
+ * Resolution order: customLoaders > windowLoaders > PlaceholderWindow
  */
 export function buildWindowMap() {
   const map = {};
@@ -92,8 +95,8 @@ export function buildWindowMap() {
         name: item.name,
         label: item.label,
         contract: null,
-        loader: windowLoaders[item.name]
-          || customLoaders[item.name]
+        loader: customLoaders[item.name]
+          || windowLoaders[item.name]
           || (() => import('./PlaceholderWindow.jsx')),
       };
     }

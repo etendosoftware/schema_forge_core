@@ -36,23 +36,30 @@ function ReportCard({ report, onRun }) {
   );
 }
 
-function SearchInput({ selector, value, displayValue, onChange, multi }) {
+// Dropdown / search-as-you-type selector.
+// minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
+// minLength=2 (default) → search-as-you-type (used for accounts, etc.).
+function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState([]); // [{id, name}]
+  const [selected, setSelected] = useState([]);
   const ref = useRef(null);
+  const touched = useRef(false); // prevent auto-fetch on mount
+
+  const fetchOptions = useCallback((q) => {
+    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => { setOptions(data); setOpen(true); })
+      .catch(() => setOptions([]));
+  }, [selector]);
 
   useEffect(() => {
-    if (!query || query.length < 2) { setOptions([]); return; }
-    const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then(setOptions)
-        .catch(() => setOptions([]));
-    }, 300);
+    if (!touched.current) return;
+    if (query.length < minLength) { if (minLength > 0) setOptions([]); return; }
+    const t = setTimeout(() => fetchOptions(query), 300);
     return () => clearTimeout(t);
-  }, [query, selector]);
+  }, [query, minLength, fetchOptions]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +67,19 @@ function SearchInput({ selector, value, displayValue, onChange, multi }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  const handleFocus = () => {
+    touched.current = true;
+    if (minLength === 0) fetchOptions(query);
+    else if (options.length) setOpen(true);
+  };
+
+  const handleChange = (e) => {
+    touched.current = true;
+    setQuery(e.target.value);
+    setOpen(true);
+    if (!multi && !e.target.value) onChange('', '');
+  };
 
   const addItem = (item) => {
     if (multi) {
@@ -97,13 +117,13 @@ function SearchInput({ selector, value, displayValue, onChange, multi }) {
       <input
         type="text"
         value={multi ? query : (query || displayValue || '')}
-        onChange={e => { setQuery(e.target.value); setOpen(true); if (!multi && !e.target.value) onChange('', ''); }}
-        onFocus={() => { if (options.length) setOpen(true); }}
+        onChange={handleChange}
+        onFocus={handleFocus}
         placeholder="Search..."
-        className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-44"
+        className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 ${fullWidth ? 'w-full' : 'w-44'} border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'}`}
       />
       {open && options.length > 0 && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
+        <div className={`absolute z-50 top-full left-0 mt-1 ${fullWidth ? 'w-full' : 'w-56'} max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1`}>
           {options.filter(o => !selectedIds.has(o.id)).map(o => (
             <button key={o.id} onClick={() => addItem(o)}
               className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
@@ -114,69 +134,334 @@ function SearchInput({ selector, value, displayValue, onChange, multi }) {
   );
 }
 
-function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
-  if (!parameters || parameters.length === 0) return null;
-  const [displayValues, setDisplayValues] = useState({});
+// Multi-select popup: shows selected tags + a "+" button that opens a modal with
+// a searchable list and checkboxes. Used for Business Partner, Product, Project.
+function PopupMultiSelector({ selector, label, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [options, setOptions] = useState([]);
+  const [pending, setPending] = useState([]); // selection inside modal (not yet confirmed)
+  const [confirmed, setConfirmed] = useState([]); // [{id, name}] committed to the report
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => {
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(setOptions)
+        .catch(() => setOptions([]));
+    }, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [query, open, selector]);
+
+  const openModal = () => {
+    setPending([...confirmed]);
+    setQuery('');
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const toggleItem = (item) => {
+    const exists = pending.some(s => s.id === item.id);
+    setPending(exists ? pending.filter(s => s.id !== item.id) : [...pending, item]);
+  };
+
+  const confirm = () => {
+    setConfirmed(pending);
+    onChange(pending.map(s => s.id).join(','), pending.map(s => s.name).join(', '));
+    setOpen(false);
+  };
+
+  const removeConfirmed = (id) => {
+    const next = confirmed.filter(s => s.id !== id);
+    setConfirmed(next);
+    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+  };
+
+  const clearAll = () => {
+    setConfirmed([]);
+    onChange('', '');
+  };
+
+  const MAX_VISIBLE_TAGS = 3;
+  const visibleTags = confirmed.slice(0, MAX_VISIBLE_TAGS);
+  const hiddenCount = confirmed.length - MAX_VISIBLE_TAGS;
 
   return (
-    <div className="px-4 py-3 border-b border-border/30 bg-white shrink-0">
-      <div className="flex items-end gap-3 flex-wrap">
-        {parameters.map(p => {
-          if (p.hidden) return null;
-          const label = p.label?.en_US || p.name;
+    <>
+      <div className="flex flex-col gap-1">
+        {confirmed.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 mb-0.5">
+            {visibleTags.map(s => (
+              <span key={s.id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">
+                {s.name}
+                <button onClick={() => removeConfirmed(s.id)} className="ml-0.5 hover:text-destructive">&times;</button>
+              </span>
+            ))}
+            {hiddenCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-medium">
+                +{hiddenCount} more
+              </span>
+            )}
+            <button
+              onClick={clearAll}
+              className="text-[10px] text-muted-foreground hover:text-destructive underline underline-offset-2 ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={openModal}
+          className="h-8 px-3 text-xs font-medium rounded-md border border-border bg-white hover:bg-muted/50 flex items-center gap-1.5 text-muted-foreground"
+        >
+          <span className="text-sm font-bold leading-none">+</span>
+          {confirmed.length === 0 ? label : 'Edit selection'}
+        </button>
+      </div>
 
-          // Search selector (BP, Product, Account, Org)
-          if (p.type === 'search') {
-            return (
-              <div key={p.name} className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">{label}</label>
-                <SearchInput
-                  selector={p.selector}
-                  value={values[p.name] || ''}
-                  displayValue={displayValues[p.name] || ''}
-                  onChange={(id, name) => { onChange(p.name, id); onChange('_display_' + p.name, name); setDisplayValues(prev => ({ ...prev, [p.name]: name })); }}
-                  multi={p.multi}
-                />
-              </div>
-            );
-          }
-
-          // Select dropdown
-          if (p.type === 'select') {
-            return (
-              <div key={p.name} className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">{label}</label>
-                <select
-                  value={values[p.name] || ''}
-                  onChange={e => onChange(p.name, e.target.value)}
-                  className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
-                >
-                  <option value="">All</option>
-                  {(p.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
-            );
-          }
-
-          // Standard inputs
-          return (
-            <div key={p.name} className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div className="bg-white rounded-xl shadow-2xl w-[480px] max-h-[560px] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+              <h3 className="text-sm font-semibold">Select {label}</h3>
+              <button onClick={() => setOpen(false)} className="text-lg leading-none text-muted-foreground hover:text-foreground">&times;</button>
+            </div>
+            <div className="px-4 py-2 border-b border-border/30">
               <input
-                type={p.type === 'date' ? 'date' : p.type === 'number' ? 'number' : 'text'}
-                value={values[p.name] || ''}
-                onChange={e => onChange(p.name, e.target.value)}
-                className="h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 w-36"
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search..."
+                className="w-full h-8 px-2 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
-          );
-        })}
-        <button
-          onClick={() => onSubmit(values)}
-          disabled={loading}
-          className="h-8 px-4 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            <div className="flex-1 overflow-auto">
+              {options.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-muted-foreground text-center">
+                  {query.length > 0 ? 'No results' : 'Loading...'}
+                </p>
+              ) : (
+                options.map(o => {
+                  const isSelected = pending.some(s => s.id === o.id);
+                  return (
+                    <label key={o.id} className="flex items-center gap-3 px-4 py-2 hover:bg-muted/40 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleItem(o)}
+                        className="w-4 h-4 accent-primary shrink-0"
+                      />
+                      <span className="text-sm truncate">{o.name}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/20">
+              <span className="text-xs text-muted-foreground">{pending.length} selected</span>
+              <div className="flex gap-2">
+                <button onClick={() => setOpen(false)} className="h-8 px-3 text-xs rounded-md border border-border hover:bg-muted/50">Cancel</button>
+                <button onClick={confirm} className="h-8 px-3 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90">OK</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+const SIDEBAR_SECTIONS = [
+  { key: 'primary', label: 'Report Scope' },
+  { key: 'dimensions', label: 'Refine by Dimensions' },
+  { key: 'options', label: 'Display Options' },
+];
+
+function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey }) {
+  const [displayValues, setDisplayValues] = useState({});
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (name, value) => {
+    if (errors[name] && value) setErrors(prev => { const n = { ...prev }; delete n[name]; return n; });
+    onChange(name, value);
+  };
+
+  const handleSubmit = () => {
+    const newErrors = {};
+    for (const p of report.parameters || []) {
+      if (p.required && !params[p.name]) newErrors[p.name] = true;
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length === 0) onSubmit();
+  };
+
+  const grouped = {};
+  for (const p of report.parameters || []) {
+    if (p.hidden) continue;
+    const sec = p.section || 'primary';
+    if (!grouped[sec]) grouped[sec] = [];
+    grouped[sec].push(p);
+  }
+
+  const renderParam = (p) => {
+    const label = p.label?.en_US || p.name;
+    const hasError = !!errors[p.name];
+    const labelEl = (
+      <label className="block text-xs font-medium text-foreground mb-1.5">
+        {label}{p.required && <span className="text-destructive ml-0.5">*</span>}
+      </label>
+    );
+    const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : 'border-border';
+
+    if (p.type === 'search') {
+      if (p.inputStyle === 'popup') {
+        return (
+          <div key={`${p.name}-${resetKey}`}>
+            {labelEl}
+            <PopupMultiSelector
+              key={`${p.name}-${resetKey}`}
+              selector={p.selector}
+              label={label}
+              onChange={(id, name) => { handleChange(p.name, id); handleChange('_display_' + p.name, name); }}
+            />
+          </div>
+        );
+      }
+      return (
+        <div key={p.name}>
+          {labelEl}
+          <SearchInput
+            selector={p.selector}
+            value={params[p.name] || ''}
+            displayValue={displayValues[p.name] || params['_display_' + p.name] || ''}
+            onChange={(id, name) => {
+              handleChange(p.name, id);
+              handleChange('_display_' + p.name, name);
+              setDisplayValues(prev => ({ ...prev, [p.name]: name }));
+            }}
+            multi={p.multi}
+            minLength={p.inputStyle === 'dropdown' ? 0 : 2}
+            fullWidth
+            hasError={hasError}
+          />
+          {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+        </div>
+      );
+    }
+
+    if (p.type === 'select') {
+      // If no explicit options, auto-derive from dimension params that declare groupByValue.
+      // This keeps labels in sync with the dimension parameter labels (single source of truth).
+      const resolvedOptions = p.options ?? (() => {
+        const base = { value: '', label: report.groups?.[0]?.label?.en_US || 'Account' };
+        const fromDimensions = (report.parameters || [])
+          .filter(d => d.section === 'dimensions' && d.groupByValue)
+          .map(d => ({ value: d.groupByValue, label: d.label?.en_US || d.name }));
+        return [base, ...fromDimensions];
+      })();
+      return (
+        <div key={p.name}>
+          {labelEl}
+          <select
+            value={params[p.name] || ''}
+            onChange={e => handleChange(p.name, e.target.value)}
+            className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}
+          >
+            {resolvedOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      );
+    }
+
+    if (p.type === 'boolean') {
+      return (
+        <div key={p.name} className="flex items-start gap-2.5 p-3 rounded-lg border border-border/40 bg-muted/20 cursor-pointer"
+          onClick={() => handleChange(p.name, params[p.name] === 'true' ? '' : 'true')}
         >
-          Run Report
+          <input
+            type="checkbox"
+            checked={params[p.name] === 'true'}
+            onChange={e => handleChange(p.name, e.target.checked ? 'true' : '')}
+            onClick={e => e.stopPropagation()}
+            className="mt-0.5 w-4 h-4 accent-primary shrink-0"
+          />
+          <div>
+            <div className="text-xs font-medium text-foreground">{label}</div>
+            {p.description && <div className="text-[10px] text-muted-foreground mt-0.5">{p.description}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    // date, number, text
+    return (
+      <div key={p.name}>
+        {labelEl}
+        <input
+          type={p.type === 'date' ? 'date' : p.type === 'number' ? 'number' : 'text'}
+          value={params[p.name] || ''}
+          onChange={e => handleChange(p.name, e.target.value)}
+          className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}
+        />
+        {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+      </div>
+    );
+  };
+
+  const renderSection = (sec, sectionParams) => {
+    const dateParams = sectionParams.filter(p => p.type === 'date');
+    const otherParams = sectionParams.filter(p => p.type !== 'date');
+    return (
+      <div className="space-y-3">
+        {dateParams.length > 0 && (
+          <div className={dateParams.length >= 2 ? 'grid grid-cols-2 gap-2' : ''}>
+            {dateParams.map(renderParam)}
+          </div>
+        )}
+        {otherParams.map(renderParam)}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-4 pt-4 pb-3 border-b border-border/30 shrink-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Report Builder</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-4 space-y-6">
+          {SIDEBAR_SECTIONS.map(({ key, label }) => {
+            const sectionParams = grouped[key];
+            if (!sectionParams?.length) return null;
+            return (
+              <div key={key}>
+                <h4 className="text-xs font-semibold text-foreground mb-3">{label}</h4>
+                {renderSection(key, sectionParams)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="px-4 pb-5 pt-3 border-t border-border/30 space-y-2 shrink-0">
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full h-10 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {loading ? 'Running...' : 'Run Report'}
+        </button>
+        <button
+          onClick={onReset}
+          disabled={loading}
+          className="w-full h-9 text-sm font-medium rounded-lg border border-border text-muted-foreground hover:bg-muted/40 disabled:opacity-50"
+        >
+          Reset Filters
         </button>
       </div>
     </div>
@@ -185,65 +470,86 @@ function ReportParamsForm({ parameters, values, onChange, onSubmit, loading }) {
 
 function ReportViewer({ report, onBack, token }) {
   const iframeRef = useRef(null);
-  const [activeFormat, setActiveFormat] = useState('preview');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recordCount, setRecordCount] = useState(null);
   const previewHtmlRef = useRef('');
-  const [params, setParams] = useState(() => {
+  const [resetKey, setResetKey] = useState(0);
+
+  const getDefaultParams = useCallback(() => {
     const defaults = {};
     for (const p of report.parameters || []) {
       if (p.default === '__TODAY__') {
         defaults[p.name] = new Date().toISOString().split('T')[0];
+      } else if (p.default === '__FIRST_OF_PREV_MONTH__') {
+        const now = new Date();
+        defaults[p.name] = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+      } else if (p.default !== undefined && p.default !== null && p.default !== false) {
+        defaults[p.name] = String(p.default);
       } else {
-        defaults[p.name] = p.default || '';
+        defaults[p.name] = '';
       }
     }
     return defaults;
-  });
+  }, [report]);
+
+  const [params, setParams] = useState(getDefaultParams);
+
+  // Auto-load defaults for params marked with autoDefault: true (e.g. org, accounting schema)
+  useEffect(() => {
+    const autoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector);
+    if (!autoParams.length) return;
+    Promise.all(
+      autoParams.map(p =>
+        fetch(`/api/report-selectors/${p.selector}?q=`)
+          .then(r => r.json())
+          .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
+          .catch(() => null)
+      )
+    ).then(results => {
+      const updates = {};
+      for (const r of results) {
+        if (!r) continue;
+        updates[r.name] = r.id;
+        updates['_display_' + r.name] = r.display;
+      }
+      if (Object.keys(updates).length) setParams(prev => ({ ...prev, ...updates }));
+    });
+  }, [report]);
+
+  const writeToIframe = (html) => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    iframe.src = 'about:blank';
+    iframe.onload = () => {
+      try { const d = iframe.contentDocument; d.open(); d.write(html); d.close(); } catch { /* */ }
+      iframe.onload = null;
+    };
+  };
 
   const renderReport = useCallback(async (format) => {
     setLoading(true);
     setError(null);
-
     try {
       const res = await fetch(`/api/reports/${report.id}/render`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ format, params }),
       });
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
         throw new Error(data.error || `Render failed: ${res.status}`);
       }
-
       if (format === 'html' || format === 'preview') {
         const html = await res.text();
         previewHtmlRef.current = html;
-        // Count rows from the rendered HTML
         const rowMatch = html.match(/(\d+) records/);
         if (rowMatch) setRecordCount(parseInt(rowMatch[1], 10));
-
-        const iframe = iframeRef.current;
-        iframe.src = 'about:blank';
-        iframe.onload = () => {
-          try {
-            const doc = iframe.contentDocument;
-            doc.open();
-            doc.write(html);
-            doc.close();
-          } catch { /* cross-origin */ }
-          iframe.onload = null;
-        };
-        setActiveFormat('preview');
+        writeToIframe(html);
       } else if (format === 'pdf') {
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        iframeRef.current.src = url;
-        setActiveFormat('pdf');
+        iframeRef.current.src = URL.createObjectURL(blob);
       } else {
-        // xlsx, csv — download
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -255,125 +561,98 @@ function ReportViewer({ report, onBack, token }) {
     } catch (err) {
       setError(err.message);
     }
-
     setLoading(false);
   }, [report.id, token, params]);
 
-  // Auto-render preview on mount (only once)
   const initialRender = useRef(false);
   useEffect(() => {
-    if (!initialRender.current) {
-      initialRender.current = true;
-      renderReport('html');
-    }
+    if (!initialRender.current) { initialRender.current = true; renderReport('html'); }
   }, []);
 
-  const handleFormatClick = (fmt) => {
-    if (fmt === 'preview') {
-      if (previewHtmlRef.current) {
-        const iframe = iframeRef.current;
-        iframe.src = 'about:blank';
-        iframe.onload = () => {
-          try {
-            const doc = iframe.contentDocument;
-            doc.open();
-            doc.write(previewHtmlRef.current);
-            doc.close();
-          } catch { /* */ }
-          iframe.onload = null;
-        };
-        setActiveFormat('preview');
-      } else {
-        renderReport('html');
-      }
-    } else {
-      renderReport(fmt);
-    }
-  };
-
   const handlePrint = () => {
-    if (activeFormat === 'preview' && iframeRef.current?.contentDocument?.body?.innerHTML) {
+    if (iframeRef.current?.contentDocument?.body?.innerHTML) {
       iframeRef.current.contentWindow.print();
     } else if (previewHtmlRef.current) {
       const w = window.open('', '_blank', 'width=1200,height=800');
-      w.document.open();
-      w.document.write(previewHtmlRef.current);
-      w.document.close();
+      w.document.open(); w.document.write(previewHtmlRef.current); w.document.close();
       w.onload = () => { w.print(); w.close(); };
     }
   };
 
+  const handleReset = () => {
+    setParams(getDefaultParams());
+    setResetKey(k => k + 1);
+  };
+
   const title = report.title?.en_US || report.id;
+  const DOWNLOAD_FORMATS = [
+    { id: 'pdf', label: 'PDF', icon: FileDown },
+    { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet },
+    { id: 'csv', label: 'CSV', icon: FileText },
+  ];
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border/30 shrink-0">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <h2 className="text-sm font-semibold">{title}</h2>
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-          {recordCount != null && !loading && (
-            <span className="text-xs text-muted-foreground">{recordCount} records</span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {FORMATS.map(fmt => {
-            const Icon = fmt.icon;
-            const isActive = activeFormat === fmt.id;
-            return (
-              <button
-                key={fmt.id}
-                onClick={() => handleFormatClick(fmt.id)}
-                disabled={loading}
-                className={[
-                  'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors',
-                  isActive ? 'bg-primary text-primary-foreground' : 'bg-white border border-border text-foreground hover:bg-muted/50',
-                  loading ? 'opacity-40' : '',
-                ].join(' ')}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {fmt.label}
-              </button>
-            );
-          })}
-          <div className="w-px h-6 bg-border/50 mx-1" />
-          <button
-            onClick={handlePrint}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            <Printer className="h-3.5 w-3.5" />
-            Print
-          </button>
-        </div>
+    <div className="h-full flex overflow-hidden">
+      {/* Left sidebar */}
+      <div className="w-72 shrink-0 flex flex-col border-r border-border/30 bg-white overflow-hidden">
+        <ReportSidebar
+          report={report}
+          params={params}
+          onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
+          onSubmit={() => renderReport('html')}
+          onReset={handleReset}
+          loading={loading}
+          resetKey={resetKey}
+        />
       </div>
 
-      <ReportParamsForm
-        parameters={report.parameters}
-        values={params}
-        onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
-        onSubmit={() => renderReport(activeFormat === 'pdf' ? 'html' : activeFormat)}
-        loading={loading}
-      />
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-border/30 shrink-0">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <h2 className="text-sm font-semibold">{title} Preview</h2>
+              {recordCount != null && !loading && (
+                <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{recordCount} records found</p>
+              )}
+            </div>
+            {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-1" />}
+          </div>
+          <div className="flex items-center gap-1">
+            {DOWNLOAD_FORMATS.map(fmt => {
+              const Icon = fmt.icon;
+              return (
+                <button key={fmt.id} onClick={() => renderReport(fmt.id)} disabled={loading}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-border bg-white text-foreground hover:bg-muted/50 disabled:opacity-40">
+                  <Icon className="h-3.5 w-3.5" />{fmt.label}
+                </button>
+              );
+            })}
+            <div className="w-px h-6 bg-border/50 mx-1" />
+            <button onClick={handlePrint} disabled={loading}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              <Printer className="h-3.5 w-3.5" />Print
+            </button>
+          </div>
+        </div>
 
-      {/* Preview */}
-      <div className="flex-1 overflow-hidden bg-slate-100 p-4">
-        <div className="bg-white rounded-lg shadow-lg h-full overflow-hidden relative">
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Rendering report...</span>
-            </div>
-          )}
-          {error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">
-              {error}
-            </div>
-          )}
-          <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+        {/* Report iframe */}
+        <div className="flex-1 overflow-hidden p-4">
+          <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden relative border border-border/30">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" /><span>Rendering report...</span>
+              </div>
+            )}
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>
+            )}
+            <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+          </div>
         </div>
       </div>
     </div>

@@ -444,7 +444,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {} }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false }) {
   const t = useLabel();
   let displayFields;
   if (section) {
@@ -493,7 +493,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     // Resolution order: per-window AD_Field label (most specific) → global locale by column → camelCase key
     const label = f.label ?? t(f.column) ?? f.key;
     // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
-    const isReadOnly = f.readOnly
+    const isReadOnly = formReadOnly
+      || f.readOnly
       || displayLogic?.readOnly?.[f.key] === true
       || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
     const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
@@ -799,7 +800,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
   if (imageField) {
     const imgLabel = imageField.label ?? t(imageField.column) ?? imageField.key;
-    const imgReadOnly = imageField.readOnly
+    const imgReadOnly = formReadOnly
+      || imageField.readOnly
       || displayLogic?.readOnly?.[imageField.key] === true
       || (typeof imageField.readOnlyLogic === 'function' && !!imageField.readOnlyLogic(data ?? {}));
     return (

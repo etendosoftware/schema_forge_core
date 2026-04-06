@@ -4,8 +4,6 @@ import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import PaymentPlanTable from './FinPaymentScheduleTable';
-import PaymentPlanForm from './FinPaymentScheduleForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
 import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
@@ -121,6 +119,14 @@ const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress"
+    },
+    {
+      "entity": "header",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
     },
     {
       "entity": "header",
@@ -335,9 +341,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={[
-          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
-        ]}
         documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
@@ -348,6 +351,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        salesTheme
         {...props}
       />
     );
@@ -357,7 +361,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
     <ListView
       entity="header"
       Table={HeaderTable}
-      entityLabel="Headers"
+      entityLabel="Sales Invoice"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
