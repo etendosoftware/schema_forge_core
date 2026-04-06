@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { toast } from 'sonner';
 import ImportFromPurchaseOrderModal from './ImportFromPurchaseOrderModal.jsx';
 
 function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh }) {
@@ -50,7 +49,6 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, 
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             setShowImportModal(false);
-            toast.success('Lines imported from purchase order');
             onRefresh?.();
           }}
         />,
@@ -93,7 +91,6 @@ function ReceiptLineActions({ data, recordId, token, apiBaseUrl, onRefresh }) {
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             setShowImportModal(false);
-            toast.success('Lines imported from purchase order');
             onRefresh?.();
           }}
         />,
