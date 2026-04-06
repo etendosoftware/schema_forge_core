@@ -57,17 +57,26 @@ export function getStatusPillClass(status) {
   return 'bg-gray-100 text-gray-700';
 }
 
-export function statusLabel(status) {
+export function statusLabel(status, dictionary) {
+  // 1. DB-sourced translation from AD_Ref_List_Trl (via extract-labels.js)
+  if (dictionary?.statuses?.[status]?.label) return dictionary.statuses[status].label;
+
+  // 2. Manually authored genericLabels fallback
   const MAP = {
     // Boolean processed fields
     true: 'Processed', false: 'Not Processed',
     // Document statuses
-    DR: 'Draft', CO: 'Complete', VO: 'Void', IP: 'In Process',
-    CL: 'Closed', PA: 'Paid', UE: 'Under Evaluation', CA: 'Cancelled',
+    DR: 'statusDraft', CO: 'statusComplete', VO: 'statusVoid', IP: 'statusInProcess',
+    CL: 'statusClosed', PA: 'statusPaid', UE: 'statusUnderEvaluation', CA: 'statusCancelled',
     // Payment statuses
-    RPR: 'Payment Received', RPAE: 'Awaiting Execution', RPAP: 'Awaiting Payment',
-    RPPC: 'Payment Cleared', RPVOID: 'Void',
-    PPM: 'Payment Made', PWNC: 'Withdrawn not Cleared', RDNC: 'Deposited not Cleared',
+    RPR: 'statusPaymentReceived', RPAE: 'statusAwaitingExecution', RPAP: 'statusAwaitingPayment',
+    RPPC: 'statusPaymentCleared', RPVOID: 'statusVoid',
+    PPM: 'statusPaymentMade', PWNC: 'statusWithdrawnNotCleared', RDNC: 'statusDepositedNotCleared',
   };
-  return MAP[status] || status;
+  const key = MAP[status];
+  if (!key) return status;
+  if (dictionary?.genericLabels?.[key]) return dictionary.genericLabels[key];
+
+  // 3. Last resort: humanize the key name
+  return key.replace('status', '').replace(/([A-Z])/g, ' $1').trim();
 }

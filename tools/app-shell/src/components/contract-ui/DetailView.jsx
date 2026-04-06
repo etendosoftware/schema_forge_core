@@ -10,7 +10,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
-import { useMenuLabel } from '@/i18n';
+import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -153,6 +153,8 @@ export function DetailView({
   const [searchParams] = useSearchParams();
   const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
+  const ui = useUI();
+  const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [activeTab, setActiveTab] = useState(0);
@@ -436,7 +438,7 @@ export function DetailView({
 
   const data = hook.editing || currentItem || {};
   const title = isNew
-    ? `New ${entityLabel || entity}`
+    ? `${ui('newRecord')} ${tMenu(entityLabel) || entityLabel || entity}`
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
 
   const allEntryFields = addLineFields.entry ?? [];
@@ -474,13 +476,13 @@ export function DetailView({
   });
 
   if (showOthers === true) {
-    tabs.push({ key: 'others', label: othersLabel || 'Others' });
+    tabs.push({ key: 'others', label: othersLabel || ui('others') });
   }
 
   if (hook.loading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Loading...
+        {ui('loading')}
       </div>
     );
   }
@@ -509,7 +511,7 @@ export function DetailView({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search clients, orders, invoices..."
+                placeholder={ui('searchPlaceholder')}
                 readOnly
                 tabIndex={-1}
                 className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
@@ -559,7 +561,7 @@ export function DetailView({
               onClick={() => navigate(`/${windowName}`)}
             >
               <X className="h-3.5 w-3.5" />
-              Cancel
+              {ui('cancel')}
             </Button>
             {!topbarRight && statusField && data[statusField] != null && (() => {
               const _s = data[statusField];
@@ -568,7 +570,7 @@ export function DetailView({
                   <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
                   {statusFieldLabel || 'Document Status'}
                   <span style={{ opacity: 0.4 }}>&middot;</span>
-                  <span className="font-semibold">{statusLabel(_s)}</span>
+                  <span className="font-semibold">{statusLabel(_s, dictionary)}</span>
                 </span>
               );
             })()}
@@ -604,7 +606,7 @@ export function DetailView({
               <button
                 onClick={() => setShowPrint(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-                title="Send / Preview"
+                title={ui('sendPreview')}
                 data-testid="action-document-preview"
               >
                 <Send className="h-4 w-4" />
@@ -615,7 +617,7 @@ export function DetailView({
               <button
                 onClick={() => setShowPrint(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-                title="Print"
+                title={ui('print')}
               >
                 <Printer className="h-4 w-4" />
               </button>
@@ -625,7 +627,7 @@ export function DetailView({
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                title="Delete"
+                title={ui('delete')}
                 data-testid="action-delete"
               >
                 <Trash2 className="h-4 w-4" />
@@ -727,7 +729,7 @@ export function DetailView({
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                 }}>
                   <Save className="h-3.5 w-3.5" />
-                  Save draft
+                  {ui('saveDraft')}
                 </Button>
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
@@ -740,7 +742,7 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  Save &amp; {draftMode.label || 'Process'}
+                  {ui('save')} &amp; {draftMode.label || ui('process')}
                 </Button>
               </>
             ) : (
@@ -755,7 +757,7 @@ export function DetailView({
                 }
               }}>
                 <Check className="h-3.5 w-3.5" />
-                Save
+                {ui('save')}
               </Button>
             )}
           </div>
@@ -818,7 +820,7 @@ export function DetailView({
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
             <div className={`${sidePanel ? 'mt-2' : 'mt-6'}${embedded ? ' pointer-events-none' : ''}`}>
-            <CollapsibleSection title="More details">
+            <CollapsibleSection title={ui('moreDetails')}>
               <Form
                 entity={entity}
                 data={data}
@@ -958,18 +960,18 @@ export function DetailView({
                               }}
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                             >
-                              {savingChild ? 'Saving…' : 'Save'}
+                              {savingChild ? ui('loading') : ui('save')}
                             </button>
                             <button
                               onClick={() => setEditingChild(null)}
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
                             >
-                              Cancel
+                              {ui('cancel')}
                             </button>
                             <button
                               disabled={savingChild}
                               onClick={async () => {
-                                if (!window.confirm('Delete this record?')) return;
+                                if (!window.confirm(ui('deleteConfirmMessage'))) return;
                                 setSavingChild(true);
                                 try {
                                   const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', editingChild.id)
@@ -983,7 +985,7 @@ export function DetailView({
                               }}
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                             >
-                              Delete
+                              {ui('delete')}
                             </button>
                           </div>
                         </div>
@@ -1078,13 +1080,13 @@ export function DetailView({
                                   }}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                 >
-                                  {savingLine ? 'Saving…' : 'Save'}
+                                  {savingLine ? ui('loading') : ui('save')}
                                 </button>
                                 <button
                                   onClick={() => setLineEdits(null)}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
                                 >
-                                  Discard
+                                  {ui('discard')}
                                 </button>
                               </>
                             )}
@@ -1092,7 +1094,7 @@ export function DetailView({
                               <button
                                 disabled={savingLine}
                                 onClick={async () => {
-                                  if (!window.confirm('Delete this record?')) return;
+                                  if (!window.confirm(ui('deleteConfirmMessage'))) return;
                                   setSavingLine(true);
                                   try {
                                     const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', selectedLine.id)
@@ -1115,7 +1117,7 @@ export function DetailView({
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                               >
                                 <Trash2 className="h-4 w-4" />
-                                Delete
+                                {ui('delete')}
                               </button>
                             )}
                           </div>
@@ -1270,13 +1272,13 @@ export function DetailView({
                                   }}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                 >
-                                  {savingSecondaryLine ? 'Saving…' : 'Save'}
+                                  {savingSecondaryLine ? ui('loading') : ui('save')}
                                 </button>
                                 <button
                                   onClick={() => setSecondaryLineEdits(null)}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent"
                                 >
-                                  Discard
+                                  {ui('discard')}
                                 </button>
                               </>
                             )}
@@ -1284,7 +1286,7 @@ export function DetailView({
                               <button
                                 disabled={savingSecondaryLine}
                                 onClick={async () => {
-                                  if (!window.confirm('Delete this record?')) return;
+                                  if (!window.confirm(ui('deleteConfirmMessage'))) return;
                                   setSavingSecondaryLine(true);
                                   try {
                                     const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
@@ -1306,7 +1308,7 @@ export function DetailView({
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                               >
                                 <Trash2 className="h-4 w-4" />
-                                Delete
+                                {ui('delete')}
                               </button>
                             )}
                           </div>
@@ -1509,14 +1511,14 @@ export function DetailView({
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete record</DialogTitle>
+            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this record? This action cannot be undone.
+              {ui('deleteConfirmMessage')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" size="sm">Cancel</Button>
+              <Button variant="outline" size="sm">{ui('cancel')}</Button>
             </DialogClose>
             <Button
               variant="destructive"
@@ -1528,7 +1530,7 @@ export function DetailView({
                 navigate(`/${windowName}`);
               }}
             >
-              Delete
+              {ui('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
