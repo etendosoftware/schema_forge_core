@@ -346,37 +346,42 @@ export default function reportApiPlugin() {
               const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
               const queries = {
                 'bpartner': {
-                  fromWhere: `FROM c_bpartner WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  fromWhere: `FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
                   orderBy: 'ORDER BY name',
                   select: `SELECT c_bpartner_id AS id, name, name AS label`
                 },
                 'product': {
-                  fromWhere: `FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND (name ILIKE $1 OR value ILIKE $1)`,
+                  fromWhere: `FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND (name ILIKE $1 OR value ILIKE $1)`,
                   orderBy: 'ORDER BY value, name',
                   select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`
                 },
                 'warehouse': {
-                  fromWhere: `FROM m_warehouse WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  fromWhere: `FROM m_warehouse WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
                   orderBy: 'ORDER BY name',
                   select: `SELECT m_warehouse_id AS id, name, name AS label`
                 },
                 'project': {
-                  fromWhere: `FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  fromWhere: `FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
                   orderBy: 'ORDER BY name',
                   select: `SELECT c_project_id AS id, name, name AS label`
                 },
                 'org': {
-                  fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1`,
+                  fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1`,
                   orderBy: 'ORDER BY name',
                   select: `SELECT ad_org_id AS id, name, name AS label`
                 },
                 'account': {
-                  fromWhere: `FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1)`,
+                  fromWhere: `FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1)`,
                   orderBy: 'ORDER BY value',
                   select: `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name, value || ' - ' || name AS label`
                 },
                 'accounting': {
-                  fromWhere: `FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_acctschema_id AS id, name, name AS label`
+                },
+                'acctschema': {
+                  fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
                   orderBy: 'ORDER BY name',
                   select: `SELECT c_acctschema_id AS id, name, name AS label`
                 },
@@ -385,7 +390,8 @@ export default function reportApiPlugin() {
               if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
               const search = `%${q}%`;
               const whereFragments = [queryCfg.fromWhere];
-              const values = [search, clientId];
+              // $1 = search; additional dynamic params start at $2
+              const values = [search];
 
               if (type === 'warehouse') {
                 if (selectedOrgId) {

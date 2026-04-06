@@ -56,7 +56,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title }) {
     const t = setTimeout(() => {
       fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
-        .then(data => { setOptions(data); setFocusIdx(-1); })
+        .then(data => { setOptions(Array.isArray(data) ? data : (data?.items ?? [])); setFocusIdx(-1); })
         .catch(() => setOptions([]))
         .finally(() => setLoading(false));
     }, query ? 300 : 0);
@@ -348,7 +348,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
     const t = setTimeout(() => {
       fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
-        .then(setOptions)
+        .then(data => setOptions(Array.isArray(data) ? data : (data?.items ?? [])))
         .catch(() => setOptions([]));
     }, query ? 300 : 0);
     return () => clearTimeout(t);
