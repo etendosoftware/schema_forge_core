@@ -3,7 +3,12 @@
   "window": {
     "category": "warehouse",
     "name": "Physical Inventory",
-    "statusField": "processed"
+    "statusField": "processed",
+    "processOverrides": {
+      "processNow": {
+        "requiresLines": true
+      }
+    }
   },
   "entities": {
     "header": {

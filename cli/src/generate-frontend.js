@@ -446,7 +446,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const label = ovr.label || f.label || toLabel(f.name);
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
       const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw} },`;
+      const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
     ...Object.entries(processOverrides)
@@ -458,7 +459,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const dlRaw = ovr.displayLogicRaw
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw} },`;
+        const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
       }),
   ].join('\n');
 
