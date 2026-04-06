@@ -28,8 +28,8 @@
   "parameters": [
     { "name": "dateFrom", "label": { "en_US": "From Date", "es_ES": "Desde" }, "type": "date", "default": "__FIRST_OF_PREV_MONTH__", "required": true, "section": "primary" },
     { "name": "dateTo", "label": { "en_US": "To Date", "es_ES": "Hasta" }, "type": "date", "default": "__TODAY__", "required": true, "section": "primary" },
-    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "dropdown", "required": true, "autoDefault": true, "section": "primary" },
-    { "name": "acctSchemaId", "label": { "en_US": "General Ledger", "es_ES": "Contabilidad" }, "type": "search", "selector": "accounting", "inputStyle": "dropdown", "required": true, "autoDefault": true, "section": "primary" },
+    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "modal", "required": true, "autoDefault": true, "section": "primary" },
+    { "name": "acctSchemaId", "label": { "en_US": "General Ledger", "es_ES": "Contabilidad" }, "type": "search", "selector": "accounting", "inputStyle": "modal", "required": true, "autoDefault": true, "section": "primary" },
     { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner", "multi": true, "inputStyle": "popup", "section": "dimensions", "groupByValue": "bpartner", "groupByField": "bpname" },
     { "name": "productId", "label": { "en_US": "Product", "es_ES": "Producto" }, "type": "search", "selector": "product", "multi": true, "inputStyle": "popup", "section": "dimensions", "groupByValue": "product", "groupByField": "productname" },
     { "name": "projectId", "label": { "en_US": "Project", "es_ES": "Proyecto" }, "type": "search", "selector": "project", "multi": true, "inputStyle": "popup", "section": "dimensions" },

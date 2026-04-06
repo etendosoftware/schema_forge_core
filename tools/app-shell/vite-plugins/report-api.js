@@ -300,6 +300,7 @@ export default function reportApiPlugin() {
         if (req.method === 'GET' && selectorMatch) {
           const type = selectorMatch[1];
           const q = (url.searchParams.get('q') || '').trim();
+          const orgId = (url.searchParams.get('orgId') || '').trim();
           try {
             const gradlePath = findGradleProps();
             if (!gradlePath) throw new Error('gradle.properties not found');
@@ -316,12 +317,15 @@ export default function reportApiPlugin() {
                 'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
                 'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
                 'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org-bs': `SELECT o.ad_org_id AS id, o.name FROM ad_org o JOIN ad_orgtype ot ON ot.ad_orgtype_id = o.ad_orgtype_id WHERE o.isactive='Y' AND o.ad_org_id != '0' AND o.ad_client_id = $2 AND ot.isaccountsigns='Y' AND o.name ILIKE $1 ORDER BY o.name LIMIT 20`,
                 'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
                 'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'year': `SELECT cy.c_year_id AS id, cy.year || ' (' || cal.name || ')' AS name FROM c_year cy JOIN c_calendar cal ON cal.c_calendar_id = cy.c_calendar_id WHERE cy.isactive='Y' AND cy.ad_client_id = $2 AND ($3 = '' OR EXISTS (SELECT 1 FROM ad_org org WHERE AD_ORG_ISINNATURALTREE($3, org.ad_org_id, $2) = 'Y' AND org.c_calendar_id = cy.c_calendar_id)) AND (cy.year || ' (' || cal.name || ')') ILIKE $1 ORDER BY cy.year DESC LIMIT 20`,
               };
               const sql = queries[type];
               if (!sql) throw new Error(`Unknown selector type: ${type}`);
-              const { rows } = await pool.query(sql, [`%${q}%`, clientId]);
+              const queryParams = type === 'year' ? [`%${q}%`, clientId, orgId] : [`%${q}%`, clientId];
+              const { rows } = await pool.query(sql, queryParams);
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(rows));
             } finally { await pool.end(); }
@@ -468,7 +472,7 @@ export default function reportApiPlugin() {
 
             if (recipe === 'chrome-pdf') {
               payload.template.chrome = {
-                landscape: contract.orientation === 'landscape',
+                landscape: contract.orientation === 'landscape' || params.showLandscape === 'true',
                 format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm',
               };
             }

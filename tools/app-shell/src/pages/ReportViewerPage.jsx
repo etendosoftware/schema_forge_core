@@ -39,20 +39,30 @@ function ReportCard({ report, onRun }) {
 // Dropdown / search-as-you-type selector.
 // minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
 // minLength=2 (default) → search-as-you-type (used for accounts, etc.).
-function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false }) {
+function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, extraParams = {} }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
   const ref = useRef(null);
   const touched = useRef(false); // prevent auto-fetch on mount
+  const extraParamsRef = useRef(extraParams);
+  useEffect(() => { extraParamsRef.current = extraParams; });
+
+  const buildUrl = useCallback((q) => {
+    const extra = Object.entries(extraParamsRef.current)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+    return `/api/report-selectors/${selector}?q=${encodeURIComponent(q)}${extra ? '&' + extra : ''}`;
+  }, [selector]); // selector-only dep: extraParams read from ref at call time
 
   const fetchOptions = useCallback((q) => {
-    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`)
+    fetch(buildUrl(q))
       .then(r => r.json())
       .then(data => { setOptions(data); setOpen(true); })
       .catch(() => setOptions([]));
-  }, [selector]);
+  }, [buildUrl]);
 
   useEffect(() => {
     if (!touched.current) return;
@@ -275,6 +285,102 @@ function PopupMultiSelector({ selector, label, onChange }) {
   );
 }
 
+// Single-select modal: shows a button with the current value, opens a modal with
+// a search input and a clickable list. Single click selects and closes immediately.
+function SingleSelectModal({ selector, label, value, displayValue, onChange, hasError = false, extraParams = {} }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [options, setOptions] = useState([]);
+  const inputRef = useRef(null);
+  const extraParamsRef = useRef(extraParams);
+  useEffect(() => { extraParamsRef.current = extraParams; });
+
+  useEffect(() => {
+    if (!open) return;
+    const extra = Object.entries(extraParamsRef.current)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+    const url = `/api/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`;
+    const t = setTimeout(() => {
+      fetch(url).then(r => r.json()).then(setOptions).catch(() => setOptions([]));
+    }, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [query, open, selector]);
+
+  const openModal = () => {
+    setQuery('');
+    setOptions([]);
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const selectItem = (item) => {
+    onChange(item.id, item.name);
+    setOpen(false);
+  };
+
+  const clear = (e) => {
+    e.stopPropagation();
+    onChange('', '');
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={openModal}
+        className={`w-full h-9 px-3 text-sm rounded-md border bg-white hover:bg-muted/50 flex items-center justify-between gap-2 ${hasError ? 'border-destructive ring-1 ring-destructive/30' : 'border-border'}`}
+      >
+        <span className={`truncate ${displayValue ? 'text-foreground' : 'text-muted-foreground'}`}>
+          {displayValue || `Select ${label}...`}
+        </span>
+        {displayValue && (
+          <span onClick={clear} className="text-muted-foreground hover:text-destructive shrink-0 text-base leading-none">&times;</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div className="bg-white rounded-xl shadow-2xl w-[420px] max-h-[500px] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+              <h3 className="text-sm font-semibold">{label}</h3>
+              <button onClick={() => setOpen(false)} className="text-lg leading-none text-muted-foreground hover:text-foreground">&times;</button>
+            </div>
+            <div className="px-4 py-2 border-b border-border/30">
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search..."
+                className="w-full h-8 px-2 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+            <div className="flex-1 overflow-auto">
+              {options.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-muted-foreground text-center">
+                  {query.length > 0 ? 'No results' : 'Loading...'}
+                </p>
+              ) : (
+                options.map(o => (
+                  <button
+                    key={o.id}
+                    onClick={() => selectItem(o)}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 truncate ${value === o.id ? 'bg-primary/10 text-primary font-medium' : ''}`}
+                  >
+                    {o.name}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 const SIDEBAR_SECTIONS = [
   { key: 'primary', label: 'Report Scope' },
   { key: 'dimensions', label: 'Refine by Dimensions' },
@@ -318,6 +424,26 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
     const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : 'border-border';
 
     if (p.type === 'search') {
+      if (p.inputStyle === 'modal') {
+        return (
+          <div key={p.name}>
+            {labelEl}
+            <SingleSelectModal
+              selector={p.selector}
+              label={label}
+              value={params[p.name] || ''}
+              displayValue={params['_display_' + p.name] || ''}
+              onChange={(id, name) => {
+                handleChange(p.name, id);
+                handleChange('_display_' + p.name, name);
+              }}
+              hasError={hasError}
+              extraParams={p.dependsOn ? { [p.dependsOn]: params[p.dependsOn] || '' } : {}}
+            />
+            {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+          </div>
+        );
+      }
       if (p.inputStyle === 'popup') {
         return (
           <div key={`${p.name}-${resetKey}`}>
@@ -347,6 +473,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             minLength={p.inputStyle === 'dropdown' ? 0 : 2}
             fullWidth
             hasError={hasError}
+            extraParams={p.dependsOn ? { [p.dependsOn]: params[p.dependsOn] || '' } : {}}
           />
           {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
         </div>
@@ -380,12 +507,12 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
     if (p.type === 'boolean') {
       return (
         <div key={p.name} className="flex items-start gap-2.5 p-3 rounded-lg border border-border/40 bg-muted/20 cursor-pointer"
-          onClick={() => handleChange(p.name, params[p.name] === 'true' ? '' : 'true')}
+          onClick={() => handleChange(p.name, params[p.name] === 'true' ? 'false' : 'true')}
         >
           <input
             type="checkbox"
             checked={params[p.name] === 'true'}
-            onChange={e => handleChange(p.name, e.target.checked ? 'true' : '')}
+            onChange={e => handleChange(p.name, e.target.checked ? 'true' : 'false')}
             onClick={e => e.stopPropagation()}
             className="mt-0.5 w-4 h-4 accent-primary shrink-0"
           />
@@ -495,18 +622,21 @@ function ReportViewer({ report, onBack, token }) {
 
   const [params, setParams] = useState(getDefaultParams);
 
-  // Auto-load defaults for params marked with autoDefault: true (e.g. org, accounting schema)
+  // Auto-load defaults for params marked with autoDefault: true.
+  // Params with dependsOn are loaded in a second pass, after their dependency is resolved.
   useEffect(() => {
-    const autoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector);
-    if (!autoParams.length) return;
-    Promise.all(
-      autoParams.map(p =>
-        fetch(`/api/report-selectors/${p.selector}?q=`)
-          .then(r => r.json())
-          .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
-          .catch(() => null)
-      )
-    ).then(results => {
+    const allAutoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector);
+    if (!allAutoParams.length) return;
+    const independent = allAutoParams.filter(p => !p.dependsOn);
+    const dependent = allAutoParams.filter(p => p.dependsOn);
+
+    const fetchParam = (p, extraQuery = '') =>
+      fetch(`/api/report-selectors/${p.selector}?q=${extraQuery}`)
+        .then(r => r.json())
+        .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
+        .catch(() => null);
+
+    Promise.all(independent.map(p => fetchParam(p))).then(results => {
       const updates = {};
       for (const r of results) {
         if (!r) continue;
@@ -514,6 +644,21 @@ function ReportViewer({ report, onBack, token }) {
         updates['_display_' + r.name] = r.display;
       }
       if (Object.keys(updates).length) setParams(prev => ({ ...prev, ...updates }));
+
+      if (!dependent.length) return;
+      // Second pass: fetch dependent params using resolved parent values
+      Promise.all(dependent.map(p => {
+        const parentId = updates[p.dependsOn] || '';
+        return fetchParam(p, `&${p.dependsOn}=${encodeURIComponent(parentId)}`);
+      })).then(depResults => {
+        const depUpdates = {};
+        for (const r of depResults) {
+          if (!r) continue;
+          depUpdates[r.name] = r.id;
+          depUpdates['_display_' + r.name] = r.display;
+        }
+        if (Object.keys(depUpdates).length) setParams(prev => ({ ...prev, ...depUpdates }));
+      });
     });
   }, [report]);
 
