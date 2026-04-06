@@ -18,10 +18,13 @@ export default defineConfig(({ mode }) => {
     schemaApiPlugin(),
     reportApiPlugin(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
       },
       manifest: {
         name: 'Etendo',
@@ -32,7 +35,7 @@ export default defineConfig(({ mode }) => {
         display: 'standalone',
         icons: [
           {
-            src: '/favicon.png',
+            src: 'favicon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
