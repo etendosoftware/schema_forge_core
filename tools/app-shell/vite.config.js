@@ -55,6 +55,9 @@ export default defineConfig(({ mode }) => {
       '@': resolve(__dirname, './src'),
       '@generated': resolve(__dirname, '../../artifacts'),
     },
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'sonner', 'lucide-react'],
+    // Ensure modules imported from artifacts/ resolve to app-shell node_modules
+    modules: [resolve(__dirname, 'node_modules'), 'node_modules'],
   },
   server: {
     port: 3100,

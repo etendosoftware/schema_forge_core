@@ -13,7 +13,8 @@ export const quotation = [
     "grandTotalAmount": 38907,
     "summedLineAmount": 38907,
     "currency": "USD",
-    "description": "Standard order for Q1 delivery"
+    "description": "Standard order for Q1 delivery",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-002",
@@ -27,7 +28,8 @@ export const quotation = [
     "grandTotalAmount": 9306,
     "summedLineAmount": 9306,
     "currency": "EUR",
-    "description": "Rush order - priority shipping required"
+    "description": "Rush order - priority shipping required",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-003",
@@ -41,7 +43,8 @@ export const quotation = [
     "grandTotalAmount": 11544,
     "summedLineAmount": 11544,
     "currency": "GBP",
-    "description": "Bulk purchase for warehouse restocking"
+    "description": "Bulk purchase for warehouse restocking",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-004",
@@ -55,7 +58,8 @@ export const quotation = [
     "grandTotalAmount": 11872,
     "summedLineAmount": 11872,
     "currency": "USD",
-    "description": "Sample order for client evaluation"
+    "description": "Sample order for client evaluation",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-005",
@@ -69,7 +73,8 @@ export const quotation = [
     "grandTotalAmount": 48460,
     "summedLineAmount": 48460,
     "currency": "EUR",
-    "description": "Recurring monthly supply order"
+    "description": "Recurring monthly supply order",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-006",
@@ -83,7 +88,8 @@ export const quotation = [
     "grandTotalAmount": 45418,
     "summedLineAmount": 45418,
     "currency": "GBP",
-    "description": "Special pricing agreement applies"
+    "description": "Special pricing agreement applies",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-007",
@@ -97,7 +103,8 @@ export const quotation = [
     "grandTotalAmount": 33840,
     "summedLineAmount": 33840,
     "currency": "USD",
-    "description": "Consolidated order from multiple requests"
+    "description": "Consolidated order from multiple requests",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-008",
@@ -111,7 +118,8 @@ export const quotation = [
     "grandTotalAmount": 25716,
     "summedLineAmount": 25716,
     "currency": "EUR",
-    "description": "Trial order for new product line"
+    "description": "Trial order for new product line",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-009",
@@ -125,7 +133,8 @@ export const quotation = [
     "grandTotalAmount": 44780,
     "summedLineAmount": 44780,
     "currency": "GBP",
-    "description": "Replacement for damaged goods"
+    "description": "Replacement for damaged goods",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-010",
@@ -139,7 +148,8 @@ export const quotation = [
     "grandTotalAmount": 12483,
     "summedLineAmount": 12483,
     "currency": "USD",
-    "description": "Pre-season inventory build-up"
+    "description": "Pre-season inventory build-up",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-011",
@@ -153,7 +163,8 @@ export const quotation = [
     "grandTotalAmount": 46022,
     "summedLineAmount": 46022,
     "currency": "EUR",
-    "description": "Customer-specific configuration"
+    "description": "Customer-specific configuration",
+    "processed": "Sample processed"
   },
   {
     "id": "mock-quotation-012",
@@ -167,7 +178,8 @@ export const quotation = [
     "grandTotalAmount": 38634,
     "summedLineAmount": 38634,
     "currency": "GBP",
-    "description": "Government contract fulfillment"
+    "description": "Government contract fulfillment",
+    "processed": "Sample processed"
   }
 ];
 

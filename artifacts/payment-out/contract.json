@@ -27,7 +27,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "DocumentType",
             "inputMode": "selector",
             "section": "principal",
@@ -46,7 +46,8 @@
             "required": true,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "seq": 10
           },
           {
             "name": "referenceNo",
@@ -59,7 +60,8 @@
             "required": false,
             "grid": false,
             "form": true,
-            "section": "other"
+            "section": "collapsed",
+            "seq": 70
           },
           {
             "name": "paymentDate",
@@ -75,13 +77,14 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
-            }
+            },
+            "seq": 40
           },
           {
             "name": "businessPartner",
             "apiKey": "businessPartner",
             "column": "C_Bpartner_ID",
-            "label": "Paying To",
+            "label": "Payment To",
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
@@ -94,12 +97,7 @@
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_BPartner"
             },
-            "displayLogic": {
-              "raw": "@ACCT_DIMENSION_DISPLAY@",
-              "evaluable": false,
-              "reason": "server-macro",
-              "js": null
-            }
+            "seq": 20
           },
           {
             "name": "description",
@@ -112,7 +110,8 @@
             "required": false,
             "grid": false,
             "form": true,
-            "section": "other"
+            "section": "collapsed",
+            "seq": 80
           },
           {
             "name": "paymentMethod",
@@ -130,13 +129,14 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
-            }
+            },
+            "seq": 50
           },
           {
             "name": "account",
             "apiKey": "account",
             "column": "Fin_Financial_Account_ID",
-            "label": "Paying From",
+            "label": "Payment From",
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
@@ -148,7 +148,8 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_FinAccount"
-            }
+            },
+            "seq": 30
           },
           {
             "name": "currency",
@@ -163,10 +164,11 @@
             "form": true,
             "reference": "Currency",
             "inputMode": "selector",
-            "section": "other",
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
-            }
+            },
+            "seq": 60
           },
           {
             "name": "financialTransactionAmount",
@@ -178,7 +180,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
@@ -198,7 +200,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
@@ -218,7 +220,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
@@ -234,7 +236,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "displayLogic": {
               "raw": "@Processed@='N'",
@@ -251,7 +253,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "displayLogic": {
               "raw": "@Processed@='Y' & @Status@!'RPVOID'",
@@ -268,7 +270,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "displayLogic": {
               "raw": "@Status@='RPAE'",
@@ -285,7 +287,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
@@ -305,7 +307,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "enumValues": [
               {
                 "value": "RPAP",
@@ -352,7 +354,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other"
           },
           {
@@ -365,7 +367,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other"
           },
           {
@@ -378,7 +380,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Payment",
             "inputMode": "selector",
             "section": "other",
@@ -397,7 +399,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Project",
             "inputMode": "search",
             "section": "other",
@@ -418,7 +420,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "CostCenter",
             "inputMode": "selector",
             "section": "other",
@@ -439,7 +441,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension1",
             "inputMode": "selector",
             "section": "other",
@@ -460,7 +462,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension2",
             "inputMode": "selector",
             "section": "other",
@@ -568,7 +570,9 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 10
           },
           {
             "name": "invoiceAmount",
@@ -580,7 +584,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "expected",
@@ -592,7 +596,9 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 30
           },
           {
             "name": "amount",
@@ -604,7 +610,9 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 20
           },
           {
             "name": "orderNo",
@@ -616,7 +624,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true
@@ -632,7 +640,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Payment_Schedule",
             "inputMode": "search",
             "displayLogic": {
@@ -650,7 +658,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true
@@ -672,7 +680,9 @@
             "displayLogic": {
               "raw": "@FIN_Payment_Schedule_Invoice@!''",
               "evaluable": true
-            }
+            },
+            "section": "principal",
+            "seq": 40
           },
           {
             "name": "gLItem",
@@ -684,7 +694,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Glitem",
             "inputMode": "selector"
           },
@@ -698,7 +708,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "businessPartner",
@@ -710,7 +720,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "reference": "BusinessPartner",
             "inputMode": "search",
             "displayLogic": {
@@ -730,7 +740,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Activity",
             "inputMode": "selector",
             "displayLogic": {
@@ -750,7 +760,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Product",
             "inputMode": "search",
             "displayLogic": {
@@ -770,7 +780,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Campaign",
             "inputMode": "selector",
             "displayLogic": {
@@ -790,7 +800,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Project",
             "inputMode": "search",
             "displayLogic": {
@@ -810,7 +820,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "SalesRegion",
             "inputMode": "selector",
             "displayLogic": {
@@ -830,7 +840,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "CostCenter",
             "inputMode": "selector",
             "displayLogic": {
@@ -850,7 +860,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension1",
             "inputMode": "selector",
             "displayLogic": {
@@ -870,7 +880,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension2",
             "inputMode": "selector",
             "displayLogic": {

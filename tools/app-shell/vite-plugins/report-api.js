@@ -334,13 +334,13 @@ export default function reportApiPlugin() {
               const clientId = getClientIdFromRequest(req);
               const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
               const queries = {
-                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'product':  `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org':      `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'account':  `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
+                'bpartner':   `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'product':    `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'org':        `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'account':    `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
                 'acctschema': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
                 'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'project':  `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'project':    `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1 ORDER BY name LIMIT 20`,
               };
               const sql = queries[type];
               if (!sql) throw new Error(`Unknown selector type: ${type}`);
