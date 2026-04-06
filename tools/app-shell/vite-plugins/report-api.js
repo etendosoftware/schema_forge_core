@@ -8,11 +8,24 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
 import { resolve, join } from 'node:path';
 
 const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
 const ROOT = resolve(ARTIFACTS_DIR, '..');
 const JSREPORT_URL = process.env.JSREPORT_URL || 'http://localhost:5488';
+
+// Decode JWT payload (no verification needed — dev proxy only) to extract Etendo claims.
+function getClientIdFromRequest(req) {
+  try {
+    const auth = req.headers['authorization'] || '';
+    const token = auth.replace(/^Bearer\s+/i, '');
+    if (!token) return null;
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return payload.client || null;
+  } catch { return null; }
+}
 
 // Find gradle.properties for DB connection
 function findGradleProps() {
@@ -124,7 +137,18 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
     }
     if (!Array.isArray(rows)) throw new Error('NEO response did not contain rows array');
     if (limit) rows = rows.slice(0, parseInt(limit, 10));
-    return { rows, contract };
+
+    // Extract backend meta (sibling of the data array in the response path)
+    let neoMeta = {};
+    if (contract.neo.dataPath) {
+      const pathParts = contract.neo.dataPath.split('.');
+      const metaParts = [...pathParts.slice(0, -1), 'meta'];
+      let metaObj = data;
+      for (const key of metaParts) metaObj = metaObj?.[key];
+      if (metaObj && typeof metaObj === 'object') neoMeta = metaObj;
+    }
+
+    return { rows, contract, neoMeta };
   }
 
   // Document type: multiple queries (header + lines + taxes)
@@ -300,7 +324,17 @@ export default function reportApiPlugin() {
         if (req.method === 'GET' && selectorMatch) {
           const type = selectorMatch[1];
           const q = (url.searchParams.get('q') || '').trim();
-          const orgId = (url.searchParams.get('orgId') || '').trim();
+          const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100));
+          const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
+          const selectedOrgId = (url.searchParams.get('selectedOrgId') || '').trim();
+          const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+          const roleOrgIds = (url.searchParams.get('roleOrgIds') || '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
           try {
             const gradlePath = findGradleProps();
             if (!gradlePath) throw new Error('gradle.properties not found');
@@ -308,26 +342,109 @@ export default function reportApiPlugin() {
             const pg = await import('pg');
             const pool = new pg.default.Pool({ host: gradle['bbdd.host'] || 'localhost', port: parseInt(gradle['bbdd.port']) || 5432, user: gradle['bbdd.user'], password: gradle['bbdd.password'], database: gradle['bbdd.sid'], max: 2 });
             try {
-              const clientRes = await pool.query(
-                `SELECT ad_client_id FROM ad_client WHERE isactive='Y' AND ad_client_id != '0' ORDER BY name LIMIT 1`
-              );
-              const clientId = clientRes.rows[0]?.ad_client_id || '0';
+              const clientId = getClientIdFromRequest(req);
+              const byClient = (col) => clientId ? `AND ${col} = '${clientId}'` : '';
               const queries = {
-                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org-bs': `SELECT o.ad_org_id AS id, o.name FROM ad_org o JOIN ad_orgtype ot ON ot.ad_orgtype_id = o.ad_orgtype_id WHERE o.isactive='Y' AND o.ad_org_id != '0' AND o.ad_client_id = $2 AND ot.isaccountsigns='Y' AND o.name ILIKE $1 ORDER BY o.name LIMIT 20`,
-                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
-                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'year': `SELECT cy.c_year_id AS id, cy.year || ' (' || cal.name || ')' AS name FROM c_year cy JOIN c_calendar cal ON cal.c_calendar_id = cy.c_calendar_id WHERE cy.isactive='Y' AND cy.ad_client_id = $2 AND ($3 = '' OR EXISTS (SELECT 1 FROM ad_org org WHERE AD_ORG_ISINNATURALTREE($3, org.ad_org_id, $2) = 'Y' AND org.c_calendar_id = cy.c_calendar_id)) AND (cy.year || ' (' || cal.name || ')') ILIKE $1 ORDER BY cy.year DESC LIMIT 20`,
+                'bpartner': {
+                  fromWhere: `FROM c_bpartner WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_bpartner_id AS id, name, name AS label`
+                },
+                'product': {
+                  fromWhere: `FROM m_product WHERE isactive='Y' ${byClient('ad_client_id')} AND (name ILIKE $1 OR value ILIKE $1)`,
+                  orderBy: 'ORDER BY value, name',
+                  select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`
+                },
+                'warehouse': {
+                  fromWhere: `FROM m_warehouse WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT m_warehouse_id AS id, name, name AS label`
+                },
+                'project': {
+                  fromWhere: `FROM c_project WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_project_id AS id, name, name AS label`
+                },
+                'org': {
+                  fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT ad_org_id AS id, name, name AS label`
+                },
+                'account': {
+                  fromWhere: `FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1)`,
+                  orderBy: 'ORDER BY value',
+                  select: `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name, value || ' - ' || name AS label`
+                },
+                'accounting': {
+                  fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_acctschema_id AS id, name, name AS label`
+                },
+                'acctschema': {
+                  fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_acctschema_id AS id, name, name AS label`
+                },
               };
-              const sql = queries[type];
-              if (!sql) throw new Error(`Unknown selector type: ${type}`);
-              const queryParams = type === 'year' ? [`%${q}%`, clientId, orgId] : [`%${q}%`, clientId];
-              const { rows } = await pool.query(sql, queryParams);
+              const queryCfg = queries[type];
+              if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
+              const search = `%${q}%`;
+              const whereFragments = [queryCfg.fromWhere];
+              // $1 = search; additional dynamic params start at $2
+              const values = [search];
+
+              if (type === 'warehouse') {
+                if (selectedOrgId) {
+                  values.push(selectedOrgId);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = $${values.length})`
+                  );
+                }
+
+                if (roleOrgIds.length > 0) {
+                  values.push(roleOrgIds);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = ANY($${values.length}))`
+                  );
+                }
+              }
+
+              if (type === 'product') {
+                if (selectedWarehouseIds.length > 0) {
+                  values.push(selectedWarehouseIds);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.m_warehouse_id = ANY($${values.length}))`
+                  );
+                }
+
+                if (selectedOrgId) {
+                  values.push(selectedOrgId);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND ad_isorgincluded(l.ad_org_id, $${values.length}, m_product.ad_client_id) <> -1)`
+                  );
+                }
+
+                if (roleOrgIds.length > 0) {
+                  values.push(roleOrgIds);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.ad_org_id = ANY($${values.length}))`
+                  );
+                }
+              }
+
+              const fullFromWhere = whereFragments.join(' ');
+              const countSql = `SELECT COUNT(*)::int AS total ${fullFromWhere}`;
+              const rowsSql = `${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+
+              const countResult = await pool.query(countSql, values);
+              const totalCount = countResult.rows[0]?.total ?? 0;
+              const { rows } = await pool.query(rowsSql, [...values, limit, offset]);
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(rows));
+              res.end(JSON.stringify({
+                items: rows,
+                totalCount,
+                hasMore: offset + rows.length < totalCount,
+              }));
             } finally { await pool.end(); }
           } catch (e) {
             res.statusCode = 500;
@@ -376,7 +493,7 @@ export default function reportApiPlugin() {
           try {
             const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
             const result = await fetchReportData(reportId, { limit, authToken, params });
-            let { rows, contract, documentData } = result;
+            let { rows, contract, documentData, neoMeta = {} } = result;
 
             // Handle groupBy parameter: find the dimension param whose groupByValue matches,
             // re-sort rows by that field, then remap 'name' so the template group-break logic works.
@@ -409,6 +526,9 @@ export default function reportApiPlugin() {
                   const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
                   displayValue = dimParam?.label?.en_US || v;
                 }
+                if (typeof displayValue === 'string' && displayValue.includes(' | ')) {
+                  displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
+                }
                 // Format date values from ISO (YYYY-MM-DD) to DD/MM/YYYY
                 if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
                   const [y, m, d] = displayValue.split('-');
@@ -438,18 +558,21 @@ export default function reportApiPlugin() {
             }
             const templateData = documentData
               ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
-              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel }, rows };
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 
             // Direct HTML render — no jsreport needed for preview
             if (format === 'html') {
-              const Handlebars = (await import('handlebars')).default;
+              const Handlebars = _require('handlebars');
 
               // Execute helpers.js in an isolated scope and extract all functions
               if (helpersCode) {
                 // eslint-disable-next-line no-new-func
                 const helperFn = new Function(helpersCode + `
-                  return { isGroupBreak, resetGroupTracking, formatDate, formatCurrency,
-                           formatBoolean, formatNumber, ifCond, eq };
+                  var _out = {};
+                  ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
+                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay']
+                  .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
+                  return _out;
                 `);
                 const helpers = helperFn();
                 if (typeof helpers.resetGroupTracking === 'function') helpers.resetGroupTracking();

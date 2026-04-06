@@ -8,13 +8,16 @@ export const header = [
     "businessPartner": "Acme Corp",
     "partnerAddress": "Acme Corp",
     "description": "Standard order for Q1 delivery",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "DR",
     "grandTotalAmount": 38907,
     "summedLineAmount": 38907,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 38907
+    "posted": "Sample posted",
+    "outstandingAmount": 38907,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-002",
@@ -23,13 +26,16 @@ export const header = [
     "businessPartner": "TechFlow Inc",
     "partnerAddress": "TechFlow Inc",
     "description": "Rush order - priority shipping required",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "CO",
     "grandTotalAmount": 9306,
     "summedLineAmount": 9306,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 9306
+    "posted": "Sample posted",
+    "outstandingAmount": 9306,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-003",
@@ -38,13 +44,16 @@ export const header = [
     "businessPartner": "Global Trade Ltd",
     "partnerAddress": "Global Trade Ltd",
     "description": "Bulk purchase for warehouse restocking",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "VO",
     "grandTotalAmount": 11544,
     "summedLineAmount": 11544,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 11544
+    "posted": "Sample posted",
+    "outstandingAmount": 11544,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-004",
@@ -53,13 +62,16 @@ export const header = [
     "businessPartner": "Summit Industries",
     "partnerAddress": "Summit Industries",
     "description": "Sample order for client evaluation",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "IP",
     "grandTotalAmount": 11872,
     "summedLineAmount": 11872,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 11872
+    "posted": "Sample posted",
+    "outstandingAmount": 11872,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-005",
@@ -68,13 +80,16 @@ export const header = [
     "businessPartner": "Pacific Partners",
     "partnerAddress": "Pacific Partners",
     "description": "Recurring monthly supply order",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "DR",
     "grandTotalAmount": 48460,
     "summedLineAmount": 48460,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 48460
+    "posted": "Sample posted",
+    "outstandingAmount": 48460,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-006",
@@ -83,13 +98,16 @@ export const header = [
     "businessPartner": "Alpine Solutions",
     "partnerAddress": "Alpine Solutions",
     "description": "Special pricing agreement applies",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "CO",
     "grandTotalAmount": 45418,
     "summedLineAmount": 45418,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 45418
+    "posted": "Sample posted",
+    "outstandingAmount": 45418,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-007",
@@ -98,13 +116,16 @@ export const header = [
     "businessPartner": "Meridian Group",
     "partnerAddress": "Meridian Group",
     "description": "Consolidated order from multiple requests",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "VO",
     "grandTotalAmount": 33840,
     "summedLineAmount": 33840,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 33840
+    "posted": "Sample posted",
+    "outstandingAmount": 33840,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-008",
@@ -113,13 +134,16 @@ export const header = [
     "businessPartner": "Vertex Systems",
     "partnerAddress": "Vertex Systems",
     "description": "Trial order for new product line",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "IP",
     "grandTotalAmount": 25716,
     "summedLineAmount": 25716,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 25716
+    "posted": "Sample posted",
+    "outstandingAmount": 25716,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-009",
@@ -128,13 +152,16 @@ export const header = [
     "businessPartner": "Atlas Manufacturing",
     "partnerAddress": "Atlas Manufacturing",
     "description": "Replacement for damaged goods",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "DR",
     "grandTotalAmount": 44780,
     "summedLineAmount": 44780,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 44780
+    "posted": "Sample posted",
+    "outstandingAmount": 44780,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-010",
@@ -143,13 +170,16 @@ export const header = [
     "businessPartner": "Nova Enterprises",
     "partnerAddress": "Nova Enterprises",
     "description": "Pre-season inventory build-up",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "CO",
     "grandTotalAmount": 12483,
     "summedLineAmount": 12483,
     "currency": "USD",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 12483
+    "posted": "Sample posted",
+    "outstandingAmount": 12483,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-011",
@@ -158,13 +188,16 @@ export const header = [
     "businessPartner": "Pinnacle Services",
     "partnerAddress": "Pinnacle Services",
     "description": "Customer-specific configuration",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "VO",
     "grandTotalAmount": 46022,
     "summedLineAmount": 46022,
     "currency": "EUR",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 46022
+    "posted": "Sample posted",
+    "outstandingAmount": 46022,
+    "processed": "Sample processed"
   },
   {
     "id": "mock-header-012",
@@ -173,13 +206,16 @@ export const header = [
     "businessPartner": "Horizon Labs",
     "partnerAddress": "Horizon Labs",
     "description": "Government contract fulfillment",
+    "paymentTerms": "Sample paymentTerms",
     "paymentMethod": "Sample paymentMethod",
     "documentStatus": "IP",
     "grandTotalAmount": 38634,
     "summedLineAmount": 38634,
     "currency": "GBP",
     "paymentComplete": "Sample paymentComplete",
-    "outstandingAmount": 38634
+    "posted": "Sample posted",
+    "outstandingAmount": 38634,
+    "processed": "Sample processed"
   }
 ];
 

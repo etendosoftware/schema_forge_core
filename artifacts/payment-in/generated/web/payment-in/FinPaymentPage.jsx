@@ -5,6 +5,7 @@ import FinPaymentForm from './FinPaymentForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import PaymentBottomPanel from '../../../custom/PaymentBottomPanel';
 import PaymentActivityToggle from '../../../custom/PaymentActivityToggle';
+import NewPaymentModal from '../../../custom/NewPaymentModal';
 import catalogs from './mockCatalogs';
 
 
@@ -174,6 +175,9 @@ const api = {
 // @sf-generated-start component:FinPaymentPage
 export default function FinPaymentPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:FinPaymentPage
+  if (recordId === 'new') {
+    return <NewPaymentModal token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
+  }
   if (recordId) {
     return (
       <DetailView

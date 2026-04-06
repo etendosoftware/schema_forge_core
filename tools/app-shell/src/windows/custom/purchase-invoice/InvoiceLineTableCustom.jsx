@@ -1,7 +1,6 @@
 import { DataTable } from '@/components/contract-ui';
 
 const columns = [
-  { key: 'lineNo',            column: 'Line',        type: 'number' },
   { key: 'product',           column: 'M_Product_ID', type: 'string' },
   { key: 'invoicedQuantity',  column: 'QtyInvoiced',  type: 'string', label: 'Quantity' },
   { key: 'unitPrice',         column: 'PriceActual',  type: 'string' },

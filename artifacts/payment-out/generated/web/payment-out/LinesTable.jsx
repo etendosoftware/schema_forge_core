@@ -2,12 +2,12 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:lines
 const columns = [
-  { key: 'dueDate', column: 'DueDate', type: 'date' },
-  { key: 'expected', column: 'ExpectedAmount', type: 'amount' },
-  { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'orderNo', column: 'DocumentNo', type: 'string' },
-  { key: 'invoiceNo', column: 'DocumentNo', type: 'string' },
-  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string' },
+  { key: 'dueDate', column: 'DueDate', type: 'date', label: 'Due Date' },
+  { key: 'expected', column: 'ExpectedAmount', type: 'amount', label: 'Expected Amount' },
+  { key: 'amount', column: 'Amount', type: 'amount', label: 'Paid Amount' },
+  { key: 'orderNo', column: 'DocumentNo', type: 'string', label: 'Order No.' },
+  { key: 'invoiceNo', column: 'DocumentNo', type: 'string', label: 'Invoice No.' },
+  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string', label: 'Business Partner' },
 ];
 // @sf-generated-end columns:lines
 

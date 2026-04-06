@@ -5,6 +5,7 @@ import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import QuotationTopbarActions from '../../../custom/QuotationTopbarActions';
 import catalogs from './mockCatalogs';
 
 
@@ -28,12 +29,12 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
-  { name: 'Void', label: 'Void', style: 'destructive', columnName: 'documentAction',
+  { name: 'Void', label: 'Void', style: 'destructive',
     displayLogicRaw: "@documentStatus@='CO'" },
-  { name: 'Reactivate', label: 'Reactivate', style: 'positive', columnName: 'documentAction',
+  { name: 'Reactivate', label: 'Reactivate', style: 'positive',
     displayLogicRaw: "@documentStatus@='VO'" },
+  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'DocAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:quotation
 
@@ -350,10 +351,11 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Quotation', pdfUrl: null }}
         hideDeleteWhenComplete
+        hidePrint
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }

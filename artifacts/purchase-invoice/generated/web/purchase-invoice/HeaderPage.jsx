@@ -20,8 +20,6 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
-  { key: 'prepaymentAmount', column: 'Prepaymentamt', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -45,27 +43,17 @@ const draftMode = null;
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.' },
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'account', column: 'Account_ID', type: 'search', label: 'Account', reference: 'GLAccount', inputMode: 'search' },
-    { key: 'operativeQuantity', column: 'Aumqty', type: 'number', label: 'Operative Quantity' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'selector', label: 'Alternative UOM', reference: 'UOM', inputMode: 'selector' },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity' },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', reference: 'Project', inputMode: 'search' },
-    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'CostCenter', inputMode: 'selector' },
-    { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'UserDimension1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'UserDimension2', inputMode: 'selector' },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_InvoiceLine WHERE C_Invoice_ID=@C_Invoice_ID@' },
   ],
 };
 // @sf-generated-end addLineFields:lines

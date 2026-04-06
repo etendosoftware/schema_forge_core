@@ -1,11 +1,10 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import PaymentPlanTable from './FinPaymentScheduleTable';
-import PaymentPlanForm from './FinPaymentScheduleForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
 import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
@@ -33,7 +32,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'documentAction',
+  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'DocAction',
     displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
@@ -121,6 +120,14 @@ const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress"
+    },
+    {
+      "entity": "header",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
     },
     {
       "entity": "header",
@@ -314,7 +321,17 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:HeaderPage
+  // @sf-custom-start hooks:HeaderPage
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.entity === 'header' && e.detail?.process?.columnName === 'DocAction' && e.detail?.recordId) {
+        sessionStorage.setItem(`invoice:sendAfterConfirm:${e.detail.recordId}`, '1');
+      }
+    };
+    window.addEventListener('neo:processSuccess', handler);
+    return () => window.removeEventListener('neo:processSuccess', handler);
+  }, []);
+  // @sf-custom-end hooks:HeaderPage
   if (recordId) {
     return (
       <DetailView
@@ -335,10 +352,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={[
-          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
-        ]}
-        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
@@ -348,6 +361,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        salesTheme
         {...props}
       />
     );
@@ -357,7 +371,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
     <ListView
       entity="header"
       Table={HeaderTable}
-      entityLabel="Headers"
+      entityLabel="Sales Invoice"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

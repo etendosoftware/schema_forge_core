@@ -20,7 +20,6 @@ const breadcrumb = 'Purchases / Purchase Order';
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'priceIncludesTax', column: 'IsTaxIncluded', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -44,30 +43,20 @@ const draftMode = null;
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.' },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'operativeQuantity', column: 'Aumqty', type: 'number', label: 'Operative Quantity' },
-    { key: 'operativeUOM', column: 'C_Aum', type: 'selector', label: 'Alternative UOM', reference: 'UOM', inputMode: 'selector' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
-    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'scheduledDeliveryDate', column: 'DatePromised', type: 'date', label: 'Scheduled Delivery Date' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', reference: 'Project', inputMode: 'search' },
-    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'CostCenter', inputMode: 'selector' },
-    { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', reference: 'Asset', inputMode: 'selector' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'UserDimension1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'UserDimension2', inputMode: 'selector' },
   ],
   derived: [
-    { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'number', label: 'Gross Unit Price' },
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
-    { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number', label: 'Alternate Taxable Amount' },
   ],
   hidden: [
-
+    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@' },
+    { key: 'grossUnitPrice', value: '0' },
+    { key: 'scheduledDeliveryDate', value: '@DatePromised@' },
   ],
 };
 // @sf-generated-end addLineFields:lines

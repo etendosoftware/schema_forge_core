@@ -4,14 +4,13 @@
     "category": "sales",
     "name": "Goods Shipment",
     "salesTheme": true,
-    "documentPreview": {
-      "titlePrefix": "Shipment"
-    },
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "hidePrint": true,
     "customComponents": {
-      "topbarRight": "GoodsShipmentActions"
+      "topbarRight": "GoodsShipmentActions",
+      "bulkActions": "BulkInvoiceFromShipment"
     },
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
@@ -36,28 +35,27 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "inputMode": "search",
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "section": "principal"
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "warehouse": {
           "grid": true,
           "searchable": true,
           "inputMode": "search",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false
+          "form": false,
+          "display": "dot"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -66,7 +64,7 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
+          "grid": true,
           "section": "principal"
         },
         "accountingDate": {
@@ -131,7 +129,9 @@
           "visibility": "discarded"
         },
         "processed": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "movementType": {
           "visibility": "discarded"
@@ -176,7 +176,14 @@
           "visibility": "discarded"
         },
         "completelyInvoiced": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": true,
+          "name": "invoiced",
+          "badge": true,
+          "badgeLabels": {
+            "true": "Invoiced",
+            "false": "Pending"
+          }
         },
         "invoicefromshipment": {
           "visibility": "discarded"
@@ -196,13 +203,11 @@
           "grid": true,
           "searchable": true,
           "inputMode": "search",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "movementQuantity": {
           "grid": true,
           "inputMode": "number",
-          "readOnlyLogic": null,
           "section": "principal"
         },
         "uOM": {
