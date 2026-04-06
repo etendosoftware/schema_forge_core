@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-31T21:25:34.111Z",
-  "checksum": "98fad3d7f8408057",
+  "version": "0.1.0",
+  "generatedAt": "2026-04-01T18:55:37.505Z",
+  "checksum": "8c4a1295f87a131c",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -27,7 +27,9 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 10
           },
           {
             "name": "warehouse",
@@ -42,6 +44,8 @@
             "form": true,
             "reference": "Warehouse",
             "inputMode": "selector",
+            "section": "principal",
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             }
@@ -59,6 +63,8 @@
             "form": true,
             "reference": "BusinessPartner",
             "inputMode": "search",
+            "section": "principal",
+            "seq": 20,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
             }
@@ -79,7 +85,9 @@
             "dependsOn": {
               "field": "businessPartner",
               "filterKey": "C_BPartner_ID"
-            }
+            },
+            "section": "principal",
+            "seq": 30
           },
           {
             "name": "movementDate",
@@ -93,6 +101,8 @@
             "grid": true,
             "form": true,
             "defaultValue": "@#Date@",
+            "section": "principal",
+            "seq": 50,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             }
@@ -107,7 +117,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "@#Date@"
           },
           {
@@ -120,7 +130,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Order",
             "inputMode": "search"
           },
@@ -134,7 +144,9 @@
             "visibility": "editable",
             "required": false,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 60
           },
           {
             "name": "description",
@@ -146,7 +158,9 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "collapsed",
+            "seq": 70
           },
           {
             "name": "documentStatus",
@@ -213,7 +227,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Project",
             "inputMode": "search"
           },
@@ -227,7 +241,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "CostCenter",
             "inputMode": "selector"
           },
@@ -241,7 +255,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Asset",
             "inputMode": "selector"
           },
@@ -255,7 +269,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension1",
             "inputMode": "selector"
           },
@@ -269,7 +283,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension2",
             "inputMode": "selector"
           },
@@ -283,7 +297,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false
           }
         ],
         "searchableFields": [
@@ -340,7 +354,7 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@"
           },
           {
@@ -356,6 +370,8 @@
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "section": "principal",
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOutLine_Product"
             }
@@ -370,7 +386,9 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 20
           },
           {
             "name": "operativeQuantity",
@@ -382,7 +400,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.OperativeQuantity_To_BaseQuantity"
             }
@@ -397,7 +415,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UOM",
             "inputMode": "selector",
             "callout": {
@@ -415,7 +433,9 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "0"
+            "defaultValue": "0",
+            "section": "principal",
+            "seq": 40
           },
           {
             "name": "uOM",
@@ -429,7 +449,9 @@
             "grid": true,
             "form": true,
             "reference": "UOM",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "section": "principal",
+            "seq": 30
           },
           {
             "name": "storageBin",
@@ -444,7 +466,9 @@
             "form": true,
             "reference": "Locator",
             "inputMode": "selector",
-            "defaultValue": "@OnHandLocatorDefault@"
+            "defaultValue": "@OnHandLocatorDefault@",
+            "section": "principal",
+            "seq": 50
           },
           {
             "name": "description",
@@ -456,7 +480,9 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 60
           },
           {
             "name": "salesOrderLine",
@@ -468,7 +494,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "OrderLine",
             "inputMode": "search"
           },
@@ -482,7 +508,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "BusinessPartner",
             "inputMode": "search"
           },
@@ -496,7 +522,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Project",
             "inputMode": "search"
           },
@@ -510,7 +536,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "CostCenter",
             "inputMode": "selector"
           },
@@ -524,7 +550,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Asset",
             "inputMode": "selector"
           },
@@ -538,7 +564,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension1",
             "inputMode": "selector"
           },
@@ -552,7 +578,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "UserDimension2",
             "inputMode": "selector"
           },
@@ -566,7 +592,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "0"
           }
         ],
@@ -1520,17 +1546,17 @@
             "required": false
           },
           {
-            "name": "receiveMaterials",
-            "apiKey": "receiveMaterials",
-            "column": "RM_Receipt_PickEdit",
+            "name": "sendMaterials",
+            "apiKey": "sendMaterials",
+            "column": "RM_Shipment_Pickedit",
             "type": "button",
             "visibility": "discarded",
             "required": false
           },
           {
-            "name": "sendMaterials",
-            "apiKey": "sendMaterials",
-            "column": "RM_Shipment_Pickedit",
+            "name": "receiveMaterials",
+            "apiKey": "receiveMaterials",
+            "column": "RM_Receipt_PickEdit",
             "type": "button",
             "visibility": "discarded",
             "required": false
@@ -3080,18 +3106,18 @@
       },
       {
         "entity": "goodsReceipt",
-        "field": "receiveMaterials",
-        "column": "RM_Receipt_PickEdit",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
-        "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
-        "processType": "obuiapp"
-      },
-      {
-        "entity": "goodsReceipt",
         "field": "sendMaterials",
         "column": "RM_Shipment_Pickedit",
         "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
         "processId": "4AD70293357245AB96E59C2CDB43A35D",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "goodsReceipt",
+        "field": "receiveMaterials",
+        "column": "RM_Receipt_PickEdit",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
+        "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
         "processType": "obuiapp"
       },
       {
@@ -4629,17 +4655,17 @@
         "id": "t-184",
         "category": "system-field",
         "entity": "goodsReceipt",
-        "field": "receiveMaterials",
+        "field": "sendMaterials",
         "runner": "node",
-        "description": "System field 'receiveMaterials' should exist in backend but not frontend for goodsReceipt"
+        "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsReceipt"
       },
       {
         "id": "t-185",
         "category": "system-field",
         "entity": "goodsReceipt",
-        "field": "sendMaterials",
+        "field": "receiveMaterials",
         "runner": "node",
-        "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsReceipt"
+        "description": "System field 'receiveMaterials' should exist in backend but not frontend for goodsReceipt"
       },
       {
         "id": "t-186",
@@ -5915,17 +5941,17 @@
         "id": "t-350",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
-        "field": "receiveMaterials",
+        "field": "sendMaterials",
         "runner": "node",
-        "description": "Action endpoint for 'receiveMaterials' in goodsReceipt should exist"
+        "description": "Action endpoint for 'sendMaterials' in goodsReceipt should exist"
       },
       {
         "id": "t-351",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
-        "field": "sendMaterials",
+        "field": "receiveMaterials",
         "runner": "node",
-        "description": "Action endpoint for 'sendMaterials' in goodsReceipt should exist"
+        "description": "Action endpoint for 'receiveMaterials' in goodsReceipt should exist"
       },
       {
         "id": "t-352",
