@@ -153,6 +153,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
+      if (f.popup) mapped.popup = true;
 
       // UI hints
       if (f.defaultValue) mapped.defaultValue = f.defaultValue;

@@ -245,6 +245,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     if (dependsOn) field.dependsOn = dependsOn;
 
     if (fieldDecision.lookup) field.lookup = true;
+    if (fieldDecision.popup) field.popup = true;
   }
 
   // derivation — carry from raw field

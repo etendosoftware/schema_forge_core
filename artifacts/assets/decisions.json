@@ -35,7 +35,8 @@
         },
         "product": {
           "inputMode": "search",
-          "reference": "Product"
+          "reference": "Product",
+          "popup": true
         },
         "summaryLevel": {
           "visibility": "discarded",

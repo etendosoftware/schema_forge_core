@@ -161,6 +161,7 @@ export function DetailView({
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
   const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+  const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1020,7 +1021,7 @@ export function DetailView({
                         </div>
                         <DetailForm
                           data={lineEdits ?? selectedLine}
-                          readOnly={!hook.editing || isDocumentReadOnly || detailFormReadOnly}
+                          readOnly={!hook.editing || isProcessed}
                           onChange={(key, val, column) => {
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
