@@ -6,9 +6,7 @@
     "entityLabel": "Contact",
     "breadcrumb": "",
     "sidebarLayout": true,
-    "detailLabel": "Location/Address",
-    "detailTabIndex": 3,
-    "detailEntity": "locationAddress",
+    "detailEntity": null,
     "listKpiCards": {
       "customComponent": "ContactsKpiCards"
     },
@@ -19,7 +17,7 @@
       "contact": {
         "tabMode": "table-form",
         "tabOrder": 1,
-        "label": "Contact",
+        "label": "Contact Person",
         "addLineFields": [
           "firstName",
           "lastName",
@@ -37,15 +35,6 @@
           "bankFormat",
           "accountNo",
           "iBAN"
-        ]
-      },
-      "basicDiscount": {
-        "tabMode": "table-form",
-        "tabOrder": 3,
-        "label": "Basic Discount",
-        "addLineFields": [
-          "lineNo",
-          "discount"
         ]
       }
     }
@@ -109,6 +98,34 @@
           "label": "Credit Used",
           "grid": false,
           "section": "other"
+        },
+        "name2": {
+          "visibility": "editable",
+          "form": false
+        },
+        "uRL": {
+          "visibility": "editable",
+          "form": false
+        },
+        "consumptionDays": {
+          "visibility": "editable",
+          "form": false
+        },
+        "referenceNo": {
+          "visibility": "editable",
+          "form": false
+        },
+        "greeting": {
+          "visibility": "editable",
+          "form": false
+        },
+        "bPCurrencyID": {
+          "visibility": "editable",
+          "form": false
+        },
+        "isCustomerConsent": {
+          "visibility": "editable",
+          "form": false
         },
         "active": {
           "visibility": "readOnly",

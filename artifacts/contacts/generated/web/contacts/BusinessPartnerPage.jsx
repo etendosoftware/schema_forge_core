@@ -2,14 +2,10 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import BusinessPartnerTable from './BusinessPartnerTable';
 import BusinessPartnerForm from './BusinessPartnerForm';
-import LocationAddressTable from './LocationAddressTable';
-import LocationAddressForm from './LocationAddressForm';
 import ContactTable from './ContactTable';
 import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
-import BasicDiscountTable from './BasicDiscountTable';
-import BasicDiscountForm from './BasicDiscountForm';
 import BillingPreferencesForm from '@/windows/custom/contacts/BillingPreferencesForm';
 import ContactsKpiCards from '@/windows/custom/contacts/ContactsKpiCards';
 import catalogs from './mockCatalogs';
@@ -22,7 +18,6 @@ const breadcrumb = '';
 // @sf-generated-start summary:businessPartner
 const summary = [
   { key: 'active', column: 'IsActive', type: 'boolean' },
-  { key: 'bPCurrencyID', column: 'BP_Currency_ID', type: 'string' },
   { key: 'creditUsed', column: 'SO_CreditUsed', type: 'amount' },
 ];
 
@@ -44,26 +39,7 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:businessPartner
 
-// @sf-generated-start addLineFields:locationAddress
-const addLineFields = {
-  entry: [
-    { key: 'locationAddress', column: 'C_Location_ID', type: 'search', required: true, lookup: true, label: 'Location / Address', reference: 'Location', inputMode: 'search' },
-    { key: 'phone', column: 'Phone', type: 'text', label: 'Phone' },
-    { key: 'alternativePhone', column: 'Phone2', type: 'text', label: 'Alternative Phone' },
-    { key: 'name', column: 'Name', type: 'text', required: true, label: 'Name' },
-    { key: 'fax', column: 'Fax', type: 'text', label: 'Fax' },
-    { key: 'shipToAddress', column: 'IsShipTo', type: 'checkbox', required: true, label: 'Shipping Address' },
-    { key: 'invoiceToAddress', column: 'IsBillTo', type: 'checkbox', required: true, label: 'Invoicing Address' },
-    { key: 'taxLocation', column: 'IsTaxLocation', type: 'checkbox', required: true, label: 'Tax Location' },
-  ],
-  derived: [
 
-  ],
-  hidden: [
-
-  ],
-};
-// @sf-generated-end addLineFields:locationAddress
 
 const api = {
   "specName": "contacts",
@@ -597,25 +573,19 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
     return (
       <DetailView
         entity="businessPartner"
-        detailEntity="locationAddress"
         Form={BusinessPartnerForm}
-        DetailTable={LocationAddressTable}
-        DetailForm={LocationAddressForm}
         summary={summary}
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Contact"
-        detailLabel="Location/Address"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        detailTabIndex={3}
         secondaryTabs={[
-          { key: 'contact', label: 'Contact', Table: ContactTable, Form: ContactForm, addLineFields: { entry: [
+          { key: 'contact', label: 'Contact Person', Table: ContactTable, Form: ContactForm, addLineFields: { entry: [
           { key: 'firstName', column: 'Firstname', type: 'text', label: 'First Name' },
           { key: 'lastName', column: 'Lastname', type: 'text', label: 'Last Name' },
           { key: 'email', column: 'Email', type: 'text', label: 'Email' },
@@ -627,10 +597,6 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
-          ], derived: [], hidden: [] } },
-          { key: 'basicDiscount', label: 'Basic Discount', Table: BasicDiscountTable, Form: BasicDiscountForm, addLineFields: { entry: [
-          { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.' },
-          { key: 'discount', column: 'C_Discount_ID', type: 'selector', required: true, label: 'Basic Discount', reference: 'Discount', inputMode: 'selector' },
           ], derived: [], hidden: [] } },
         ]}
         formFooter={BillingPreferencesForm}

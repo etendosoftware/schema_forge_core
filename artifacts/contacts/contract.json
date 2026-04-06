@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-04-06T16:04:58.300Z",
-  "checksum": "8ec09d07c1106845",
+  "version": "0.3.2",
+  "generatedAt": "2026-04-06T16:42:04.456Z",
+  "checksum": "326d01a57c4c8ab7",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -11,13 +11,11 @@
       "sidebarLayout": true,
       "breadcrumb": "",
       "entityLabel": "Contact",
-      "detailLabel": "Location/Address",
-      "detailTabIndex": 3,
       "secondaryTabs": {
         "contact": {
           "tabMode": "table-form",
           "tabOrder": 1,
-          "label": "Contact",
+          "label": "Contact Person",
           "addLineFields": [
             "firstName",
             "lastName",
@@ -36,18 +34,9 @@
             "accountNo",
             "iBAN"
           ]
-        },
-        "basicDiscount": {
-          "tabMode": "table-form",
-          "tabOrder": 3,
-          "label": "Basic Discount",
-          "addLineFields": [
-            "lineNo",
-            "discount"
-          ]
         }
       },
-      "detailEntity": "locationAddress",
+      "detailEntity": null,
       "listKpiCards": {
         "customComponent": "ContactsKpiCards"
       },
@@ -128,7 +117,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "description",
@@ -153,7 +142,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "referenceNo",
@@ -165,7 +154,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false
           },
           {
             "name": "consumptionDays",
@@ -177,7 +166,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "1000"
           },
           {
@@ -204,7 +193,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Greeting",
             "inputMode": "selector"
           },
@@ -299,10 +288,10 @@
             "label": "Currency",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Currency",
             "inputMode": "search",
             "displayLogic": {
@@ -320,7 +309,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N"
           },
           {
@@ -2408,13 +2397,11 @@
       "sidebarLayout": true,
       "breadcrumb": "",
       "entityLabel": "Contact",
-      "detailLabel": "Location/Address",
-      "detailTabIndex": 3,
       "secondaryTabs": {
         "contact": {
           "tabMode": "table-form",
           "tabOrder": 1,
-          "label": "Contact",
+          "label": "Contact Person",
           "addLineFields": [
             "firstName",
             "lastName",
@@ -2433,18 +2420,9 @@
             "accountNo",
             "iBAN"
           ]
-        },
-        "basicDiscount": {
-          "tabMode": "table-form",
-          "tabOrder": 3,
-          "label": "Basic Discount",
-          "addLineFields": [
-            "lineNo",
-            "discount"
-          ]
         }
       },
-      "detailEntity": "locationAddress",
+      "detailEntity": null,
       "listKpiCards": {
         "customComponent": "ContactsKpiCards"
       },
@@ -2703,7 +2681,7 @@
             "apiKey": "bPCurrencyID",
             "column": "BP_Currency_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false
           },
           {
