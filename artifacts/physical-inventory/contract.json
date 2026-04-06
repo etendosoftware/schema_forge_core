@@ -1,7 +1,7 @@
 {
-  "version": "0.10.0",
-  "generatedAt": "2026-03-31T21:06:15.340Z",
-  "checksum": "2ba65411be28db4e",
+  "version": "0.12.0",
+  "generatedAt": "2026-04-01T13:12:57.403Z",
+  "checksum": "e800e07ccfa71327",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -67,7 +67,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "other"
           },
           {
             "name": "processNow",
@@ -133,7 +134,8 @@
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['posted'] === 'Y'"
             }
           },
           {
@@ -260,7 +262,8 @@
             "form": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           },
           {
@@ -331,7 +334,8 @@
             "form": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === 'Y'"
             }
           }
         ],

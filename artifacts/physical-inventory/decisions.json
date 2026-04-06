@@ -33,7 +33,8 @@
           "grid": true
         },
         "description": {
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "section": "other"
         },
         "docStatus": {
           "visibility": "readOnly",

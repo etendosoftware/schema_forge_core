@@ -8,6 +8,7 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Warehouse / Physical Inventory';
 
+
 // @sf-generated-start summary:inventory
 const summary = [
   { key: 'inventoryType', column: 'Inventory_Type', type: 'enum' },
@@ -23,7 +24,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:inventory
 const processes = [
-  { name: 'processNow', label: 'Process Inventory Count', style: 'positive', displayLogicRaw: '@Processed@=\'N\'' },
+  { name: 'processNow', label: 'Process Inventory Count', style: 'positive',
+    displayLogicRaw: "@Processed@='N'" },
 ];
 // @sf-generated-end processes:inventory
 
@@ -200,7 +202,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
     <ListView
       entity="inventory"
       Table={InventoryTable}
-      entityLabel="Inventories"
+      entityLabel="Physical Inventory"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
