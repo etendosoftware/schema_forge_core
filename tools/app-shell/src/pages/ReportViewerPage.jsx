@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
+import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -112,20 +113,36 @@ function SelectorPopup({ open, onClose, onSelect, selector, title }) {
 // Dropdown / search-as-you-type selector.
 // minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
 // minLength=2 (default) → search-as-you-type (used for accounts, etc.).
-function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false }) {
+function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, token, label, selectedOrgId, roleOrgIds, selectedWarehouseId }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selected, setSelected] = useState([]); // [{id, name}]
   const ref = useRef(null);
   const touched = useRef(false); // prevent auto-fetch on mount
 
+  const useDrawerSearch = selector === 'product';
+  const showDropdownArrow = selector === 'warehouse' && !multi;
+  const inputWidthClass = fullWidth ? 'w-full' : 'w-44';
+
+  const normalizeOptions = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  };
+
   const fetchOptions = useCallback((q) => {
-    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+    const params = new URLSearchParams({ q });
+    if (selector === 'warehouse') {
+      if (selectedOrgId) params.set('selectedOrgId', selectedOrgId);
+      if (roleOrgIds && roleOrgIds.length > 0) params.set('roleOrgIds', roleOrgIds.join(','));
+    }
+    fetch(`/api/report-selectors/${selector}?${params.toString()}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
-      .then(data => { setOptions(data); setOpen(true); })
+      .then(data => { setOptions(normalizeOptions(data)); setOpen(true); })
       .catch(() => setOptions([]));
-  }, [selector]);
+  }, [selector, selectedOrgId, roleOrgIds]);
 
   useEffect(() => {
     if (!touched.current) return;
@@ -147,33 +164,165 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
     if (!multi && !e.target.value) onChange('', '');
   };
 
+  useEffect(() => {
+    if (!multi) return;
+    if (!value) {
+      setSelected([]);
+      return;
+    }
+    const ids = String(value).split(',').map(s => s.trim()).filter(Boolean);
+    const currentById = new Map(selected.map(s => [s.id, s.name]));
+    const next = ids.map((id) => ({ id, name: currentById.get(id) || id }));
+    setSelected(next);
+  }, [multi, value]);
+
   const addItem = (item) => {
     if (multi) {
-      const next = [...selected.filter(s => s.id !== item.id), item];
+      const next = [...selected, item].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
       setSelected(next);
-      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
       setQuery('');
+      setOpen(false);
     } else {
-      onChange(item.id, item.name);
-      setQuery(item.name);
+      const nextLabel = item.label || item.name || '';
+      onChange(item.id, nextLabel);
+      setQuery(nextLabel);
       setOpen(false);
     }
   };
 
+  const removeItem = (id) => {
+    const next = selected.filter(s => s.id !== id);
+    setSelected(next);
+    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
+  };
+
+
   const selectedIds = new Set(selected.map(s => s.id));
 
+  if (useDrawerSearch) {
+    const displayText = displayValue || '';
+    const productSelectorParams = new URLSearchParams();
+    if (selectedOrgId) productSelectorParams.set('selectedOrgId', selectedOrgId);
+    if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
+    if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
+    const productSelectorUrl = productSelectorParams.toString()
+      ? `/api/report-selectors/product?${productSelectorParams.toString()}`
+      : '/api/report-selectors/product';
+
+    const selectedItems = multi
+      ? selected
+      : ((value || displayValue) ? [{ id: value, name: displayValue }] : []);
+
+    const handleDrawerSelect = (item) => {
+      const normalized = {
+        id: item.id,
+        name: item.label || item.name || item.searchKey || item.id,
+      };
+      if (multi) {
+        const next = [...selected, normalized].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
+        setSelected(next);
+        onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
+      } else {
+        onChange(normalized.id, normalized.name);
+      }
+    };
+
+    return (
+      <div className={inputWidthClass}>
+        <div className="flex items-center h-8 border border-border rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-primary/30">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex-1 h-full px-2 text-sm text-left focus:outline-none min-w-0"
+            title={multi && selectedItems.length > 0 ? selectedItems.map(s => s.name).join(', ') : (displayText || '')}
+          >
+            <span className={`block truncate whitespace-nowrap ${selectedItems.length > 0 || displayText ? 'text-foreground' : 'text-muted-foreground'}`}>
+              {multi
+                ? (selectedItems.length > 0 ? `${selectedItems.length} selected` : `Search ${label || 'Product'}...`)
+                : (displayText || `Search ${label || 'Product'}...`)}
+            </span>
+          </button>
+          {((multi && selectedItems.length > 0) || (!multi && (value || displayValue))) && (
+            <button
+              type="button"
+              onClick={() => {
+                if (multi) setSelected([]);
+                onChange('', '');
+              }}
+              className="shrink-0 h-full px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+              aria-label={`Clear ${label || 'product'}`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <ProductSearchDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSelect={(item) => {
+            if (multi && selected.some(s => s.id === item.id)) {
+              removeItem(item.id);
+            } else {
+              handleDrawerSelect(item);
+            }
+          }}
+          selectorUrl={productSelectorUrl}
+          token={token}
+          title={label || 'Product'}
+          keepOpenOnSelect={multi}
+          selectedIds={selectedItems.map(s => s.id)}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div ref={ref} className={`relative ${fullWidth ? 'w-full' : 'inline-block'}`}>
-      <input
-        type="text"
-        value={multi ? query : (query || displayValue || '')}
-        onChange={handleChange}
-        onFocus={handleFocus}
-        placeholder="Search..."
-        className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 ${fullWidth ? 'w-full' : 'w-44'} border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'}`}
-      />
+    <div className="relative" ref={ref}>
+      {multi && selected.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-1">
+          {selected.map(s => (
+            <span key={s.id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">
+              {s.name}
+              <button onClick={() => removeItem(s.id)} className="ml-0.5 hover:text-destructive">&times;</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className={`relative ${inputWidthClass}`}>
+        <input
+          type="text"
+          value={multi ? query : (query || displayValue || '')}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          placeholder="Search..."
+          className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 w-full border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'} ${showDropdownArrow ? 'pr-7' : ''}`}
+        />
+        {showDropdownArrow && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setOpen(prev => !prev)}
+            className="absolute right-1 top-1.5 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+            aria-label={`Toggle ${label || 'selector'} options`}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {multi && selected.length > 0 && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { setSelected([]); onChange('', ''); }}
+            className="absolute right-7 top-1.5 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+            aria-label={`Clear ${label || 'selector'}`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       {open && options.length > 0 && (
-        <div className={`absolute z-50 top-full left-0 mt-1 ${fullWidth ? 'w-full' : 'w-56'} max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1`}>
+        <div className="absolute z-50 top-full left-0 mt-1 w-full max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
           {options.filter(o => !selectedIds.has(o.id)).map(o => (
             <button key={o.id} onClick={() => addItem(o)}
               className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
@@ -331,7 +480,7 @@ const SIDEBAR_SECTIONS = [
   { key: 'options', label: 'Display Options' },
 ];
 
-function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey }) {
+function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey, token, selectedOrgId, roleOrgIds }) {
   const [displayValues, setDisplayValues] = useState({});
   const [errors, setErrors] = useState({});
   const [popup, setPopup] = useState(null); // { name, selector, label } for popup-single
@@ -433,6 +582,11 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             minLength={p.inputStyle === 'dropdown' ? 0 : 2}
             fullWidth
             hasError={hasError}
+            token={token}
+            label={label}
+            selectedOrgId={selectedOrgId}
+            roleOrgIds={roleOrgIds}
+            selectedWarehouseId={params.M_Warehouse_ID || ''}
           />
           {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
         </div>
@@ -608,7 +762,7 @@ function DrillDownViewer({ report, token, baseParams, bpId }) {
       }
     } catch (err) { setError(err.message); }
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report.id, token, bpId]);
 
   useEffect(() => { fetchFormat('preview'); }, [fetchFormat]);
@@ -638,7 +792,7 @@ function DrillDownViewer({ report, token, baseParams, bpId }) {
   );
 }
 
-function ReportViewer({ report, onBack, token }) {
+function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -775,127 +929,130 @@ function ReportViewer({ report, onBack, token }) {
 
   return (
     <>
-    <div className="h-full flex overflow-hidden">
-      {/* Left sidebar */}
-      <div className="w-72 shrink-0 flex flex-col border-r border-border/30 bg-white overflow-hidden">
-        <ReportSidebar
-          report={report}
-          params={params}
-          onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
-          onSubmit={() => renderReport('html')}
-          onReset={handleReset}
-          loading={loading}
-          resetKey={resetKey}
-        />
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-border/30 shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <div>
-              <h2 className="text-sm font-semibold">{title} Preview</h2>
-              {recordCount != null && !loading && (
-                <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{recordCount} records found</p>
-              )}
-            </div>
-            {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-1" />}
-          </div>
-          <div className="flex items-center gap-1">
-            {DOWNLOAD_FORMATS.map(fmt => {
-              const Icon = fmt.icon;
-              return (
-                <button key={fmt.id} onClick={() => renderReport(fmt.id)} disabled={loading}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-border bg-white text-foreground hover:bg-muted/50 disabled:opacity-40">
-                  <Icon className="h-3.5 w-3.5" />{fmt.label}
-                </button>
-              );
-            })}
-            <div className="w-px h-6 bg-border/50 mx-1" />
-            <button onClick={handlePrint} disabled={loading}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-              <Printer className="h-3.5 w-3.5" />Print
-            </button>
-          </div>
+      <div className="h-full flex overflow-hidden">
+        {/* Left sidebar */}
+        <div className="w-72 shrink-0 flex flex-col border-r border-border/30 bg-white overflow-hidden">
+          <ReportSidebar
+            report={report}
+            params={params}
+            onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
+            onSubmit={() => renderReport('html')}
+            onReset={handleReset}
+            loading={loading}
+            resetKey={resetKey}
+            token={token}
+            selectedOrgId={selectedOrgId}
+            roleOrgIds={roleOrgIds}
+          />
         </div>
 
-        {/* Report iframe */}
-        <div className="flex-1 overflow-hidden p-4">
-          <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden relative border border-border/30">
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" /><span>Rendering report...</span>
+        {/* Right panel */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-border/30 shrink-0">
+            <div className="flex items-center gap-3">
+              <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div>
+                <h2 className="text-sm font-semibold">{title} Preview</h2>
+                {recordCount != null && !loading && (
+                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{recordCount} records found</p>
+                )}
               </div>
-            )}
-            {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>
-            )}
-            {!loading && !error && !previewHtmlRef.current && (
-              <div className="absolute inset-0 overflow-hidden">
-                {/* Skeleton table background */}
-                <div className="p-6 opacity-30 pointer-events-none select-none blur-[2px]">
-                  <div className="h-4 w-48 bg-slate-200 rounded mb-6" />
-                  <div className="space-y-0">
-                    <div className="grid grid-cols-6 gap-3 pb-2 border-b border-slate-200 mb-1">
-                      {[40,15,15,15,15,15].map((w,i) => (
-                        <div key={i} className="h-3 bg-slate-300 rounded" style={{width:`${w}%`}} />
-                      ))}
-                    </div>
-                    {Array.from({length: 8}).map((_, r) => (
-                      <div key={r} className="grid grid-cols-6 gap-3 py-2.5 border-b border-slate-100">
-                        {[40,15,15,15,15,15].map((w,i) => (
-                          <div key={i} className="h-3 rounded" style={{width:`${w}%`, background: r%2===0?'#e2e8f0':'#edf2f7'}} />
+              {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-1" />}
+            </div>
+            <div className="flex items-center gap-1">
+              {DOWNLOAD_FORMATS.map(fmt => {
+                const Icon = fmt.icon;
+                return (
+                  <button key={fmt.id} onClick={() => renderReport(fmt.id)} disabled={loading}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-border bg-white text-foreground hover:bg-muted/50 disabled:opacity-40">
+                    <Icon className="h-3.5 w-3.5" />{fmt.label}
+                  </button>
+                );
+              })}
+              <div className="w-px h-6 bg-border/50 mx-1" />
+              <button onClick={handlePrint} disabled={loading}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <Printer className="h-3.5 w-3.5" />Print
+              </button>
+            </div>
+          </div>
+
+          {/* Report iframe */}
+          <div className="flex-1 overflow-hidden p-4">
+            <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden relative border border-border/30">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" /><span>Rendering report...</span>
+                </div>
+              )}
+              {error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>
+              )}
+              {!loading && !error && !previewHtmlRef.current && (
+                <div className="absolute inset-0 overflow-hidden">
+                  {/* Skeleton table background */}
+                  <div className="p-6 opacity-30 pointer-events-none select-none blur-[2px]">
+                    <div className="h-4 w-48 bg-slate-200 rounded mb-6" />
+                    <div className="space-y-0">
+                      <div className="grid grid-cols-6 gap-3 pb-2 border-b border-slate-200 mb-1">
+                        {[40, 15, 15, 15, 15, 15].map((w, i) => (
+                          <div key={i} className="h-3 bg-slate-300 rounded" style={{ width: `${w}%` }} />
                         ))}
                       </div>
-                    ))}
+                      {Array.from({ length: 8 }).map((_, r) => (
+                        <div key={r} className="grid grid-cols-6 gap-3 py-2.5 border-b border-slate-100">
+                          {[40, 15, 15, 15, 15, 15].map((w, i) => (
+                            <div key={i} className="h-3 rounded" style={{ width: `${w}%`, background: r % 2 === 0 ? '#e2e8f0' : '#edf2f7' }} />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Centered message */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-base font-semibold text-foreground mb-1">Your report is ready to go</p>
+                      <p className="text-sm text-muted-foreground">Choose your filters and hit <span className="font-medium text-foreground">Run Report</span></p>
+                    </div>
                   </div>
                 </div>
-                {/* Centered message */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <p className="text-base font-semibold text-foreground mb-1">Your report is ready to go</p>
-                    <p className="text-sm text-muted-foreground">Choose your filters and hit <span className="font-medium text-foreground">Run Report</span></p>
-                  </div>
-                </div>
-              </div>
-            )}
-            <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+              )}
+              <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <Dialog open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
-      <DialogContent className="max-w-5xl w-[85vw] h-[70vh] flex flex-col gap-3 p-4">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>{drillDownBp?.name} — Details</DialogTitle>
-        </DialogHeader>
-        {drillDownBp && (
-          <DrillDownViewer
-            report={report}
-            token={token}
-            baseParams={params}
-            bpId={drillDownBp.id}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+      <Dialog open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
+        <DialogContent className="max-w-5xl w-[85vw] h-[70vh] flex flex-col gap-3 p-4">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>{drillDownBp?.name} — Details</DialogTitle>
+          </DialogHeader>
+          {drillDownBp && (
+            <DrillDownViewer
+              report={report}
+              token={token}
+              baseParams={params}
+              bpId={drillDownBp.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
-    <Dialog open={!!invoicePopup} onOpenChange={(o) => !o && setInvoicePopup(null)}>
-      <DialogContent className="max-w-5xl w-[85vw] h-[80vh] p-0 overflow-hidden">
-        {invoicePopup && (
-          <iframe
-            src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}?embedded=1`}
-            title="Invoice"
-            className="w-full h-full border-0"
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+      <Dialog open={!!invoicePopup} onOpenChange={(o) => !o && setInvoicePopup(null)}>
+        <DialogContent className="max-w-5xl w-[85vw] h-[80vh] p-0 overflow-hidden">
+          {invoicePopup && (
+            <iframe
+              src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}?embedded=1`}
+              title="Invoice"
+              className="w-full h-full border-0"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -909,7 +1066,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function ReportViewerPage() {
-  const { token } = useAuth();
+  const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -939,7 +1096,15 @@ export default function ReportViewerPage() {
   };
 
   if (selectedReport) {
-    return <ReportViewer report={selectedReport} onBack={clearReport} token={token} />;
+    return (
+      <ReportViewer
+        report={selectedReport}
+        onBack={clearReport}
+        token={token}
+        selectedOrgId={selectedOrg?.id || null}
+        roleOrgIds={(selectedRole?.orgList || []).map(o => o.id).filter(Boolean)}
+      />
+    );
   }
 
   // Group reports by category, optionally filtering
