@@ -111,7 +111,7 @@ export function ListView({
               </button>
             </div>
             {breadcrumb && (
-              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}</p>
             )}
           </div>
 
