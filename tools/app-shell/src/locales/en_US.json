@@ -14070,7 +14070,19 @@
     "lowStockAlert": "{count} low stock alert",
     "lowStockAlerts": "{count} low stock alerts",
     "invoiceTrendLabel": "Revenue and expenses trend chart for the last 12 months",
-    "barChartAria": "Monthly sales bar chart"
+    "barChartAria": "Monthly sales bar chart",
+    "logout": "Logout",
+    "organization": "Organization",
+    "selectOrg": "Select org...",
+    "apply": "Apply",
+    "switching": "Switching...",
+    "contextUpdated": "Context updated",
+    "enterPasswordToSwitch": "Enter password to switch.",
+    "failedToSwitch": "Failed to switch context.",
+    "password": "Password",
+    "yourPassword": "Your password...",
+    "noRole": "No role",
+    "noOrg": "No org"
   },
   "menus": {
     "Home": {

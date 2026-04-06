@@ -14445,7 +14445,19 @@
     "lowStockAlert": "{count} alerta de stock bajo",
     "lowStockAlerts": "{count} alertas de stock bajo",
     "invoiceTrendLabel": "Gráfico de tendencia de ingresos y gastos de los últimos 12 meses",
-    "barChartAria": "Gráfico de barras de ventas mensuales"
+    "barChartAria": "Gráfico de barras de ventas mensuales",
+    "logout": "Cerrar sesión",
+    "organization": "Organización",
+    "selectOrg": "Selecciona una organización...",
+    "apply": "Aplicar",
+    "switching": "Cambiando...",
+    "contextUpdated": "Contexto actualizado",
+    "enterPasswordToSwitch": "Introduce la contraseña para cambiar.",
+    "failedToSwitch": "Error al cambiar de contexto.",
+    "password": "Contraseña",
+    "yourPassword": "Tu contraseña...",
+    "noRole": "Sin rol",
+    "noOrg": "Sin organización"
   },
   "menus": {
     "Currency": {
