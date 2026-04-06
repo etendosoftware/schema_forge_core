@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -639,7 +639,6 @@ function DrillDownViewer({ report, token, baseParams, bpId }) {
 }
 
 function ReportViewer({ report, onBack, token }) {
-  const navigate = useNavigate();
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -647,6 +646,7 @@ function ReportViewer({ report, onBack, token }) {
   const previewHtmlRef = useRef('');
   const [resetKey, setResetKey] = useState(0);
   const [drillDownBp, setDrillDownBp] = useState(null);
+  const [invoicePopup, setInvoicePopup] = useState(null);
 
   useEffect(() => {
     const handler = (e) => {
@@ -654,7 +654,7 @@ function ReportViewer({ report, onBack, token }) {
         setDrillDownBp({ id: e.data.bpId, name: e.data.bpName || '' });
       } else if (e.data?.type === 'navigate-invoice' && e.data.invoiceId) {
         setDrillDownBp(null);
-        navigate(`/purchase-invoice/${e.data.invoiceId}`);
+        setInvoicePopup({ id: e.data.invoiceId });
       }
     };
     window.addEventListener('message', handler);
@@ -881,6 +881,18 @@ function ReportViewer({ report, onBack, token }) {
             token={token}
             baseParams={params}
             bpId={drillDownBp.id}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={!!invoicePopup} onOpenChange={(o) => !o && setInvoicePopup(null)}>
+      <DialogContent className="max-w-5xl w-[85vw] h-[80vh] p-0 overflow-hidden">
+        {invoicePopup && (
+          <iframe
+            src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}`}
+            title="Invoice"
+            className="w-full h-full border-0"
           />
         )}
       </DialogContent>
