@@ -3,8 +3,9 @@ import { useEffect, useCallback, useRef } from 'react';
 /**
  * Hook to manage service worker updates.
  *
- * Registration is handled by vite-plugin-pwa's registerSW.js (autoUpdate mode
- * with skipWaiting + clientsClaim). This hook only:
+ * Registration is handled by vite-plugin-pwa via injectRegister:'auto', which
+ * injects a script tag in the built HTML (autoUpdate mode with skipWaiting +
+ * clientsClaim). This hook only:
  * - Listens for SW controller changes (new version activated)
  * - Notifies via onUpdateAvailable when a new SW takes over
  * - Checks for updates on tab focus and route changes
@@ -55,15 +56,18 @@ export function useServiceWorker({ onUpdateAvailable } = {}) {
 
   /** Delete every cache entry and unregister the SW, then reload */
   const clearCacheAndReload = useCallback(async () => {
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      }
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (reg) {
+        await reg.unregister();
+      }
+    } finally {
+      window.location.reload();
     }
-    const reg = await navigator.serviceWorker?.getRegistration();
-    if (reg) {
-      await reg.unregister();
-    }
-    window.location.reload();
   }, []);
 
   /** Manually trigger an update check (useful on route changes) */
