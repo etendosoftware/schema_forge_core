@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
@@ -31,7 +32,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'documentAction',
+  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'DocAction',
     displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
@@ -320,7 +321,17 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:HeaderPage
+  // @sf-custom-start hooks:HeaderPage
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.entity === 'header' && e.detail?.process?.columnName === 'DocAction' && e.detail?.recordId) {
+        sessionStorage.setItem(`invoice:sendAfterConfirm:${e.detail.recordId}`, '1');
+      }
+    };
+    window.addEventListener('neo:processSuccess', handler);
+    return () => window.removeEventListener('neo:processSuccess', handler);
+  }, []);
+  // @sf-custom-end hooks:HeaderPage
   if (recordId) {
     return (
       <DetailView
@@ -341,7 +352,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}

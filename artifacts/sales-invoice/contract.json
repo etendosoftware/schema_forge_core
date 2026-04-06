@@ -8,9 +8,6 @@
       "name": "Sales Invoice",
       "primaryEntity": "header",
       "category": "sales",
-      "documentPreview": {
-        "titlePrefix": "Invoice"
-      },
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
@@ -35,7 +32,7 @@
         "Complete": {
           "add": true,
           "label": "Confirm & Send",
-          "columnName": "documentAction",
+          "columnName": "DocAction",
           "displayLogicRaw": "@documentStatus@='DR'"
         }
       },
@@ -254,7 +251,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "display": "dot"
           },
           {
             "name": "grandTotalAmount",

@@ -1,19 +1,19 @@
 {
   "version": "0.5.0",
-  "generatedAt": "2026-04-01T16:22:19.607Z",
-  "checksum": "55b55cead4b5c870",
+  "generatedAt": "2026-04-01T17:22:38.274Z",
+  "checksum": "911376dc8e55553d",
   "frontendContract": {
     "window": {
       "id": "143",
       "name": "Sales Order",
       "primaryEntity": "header",
       "category": "sales",
-      "documentPreview": {
-        "titlePrefix": "Order"
-      },
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "topbarRight": "OrderCreateInvoice"
+      },
       "menuActions": [
         {
           "key": "duplicate",
@@ -30,7 +30,7 @@
         "Complete": {
           "add": true,
           "label": "Complete",
-          "columnName": "documentAction",
+          "columnName": "DocAction",
           "displayLogicRaw": "@documentStatus@='DR'"
         }
       },
@@ -593,6 +593,9 @@
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "customComponents": {
+        "topbarRight": "OrderCreateInvoice"
+      },
       "menuActions": [
         {
           "key": "duplicate",

@@ -4,12 +4,10 @@
     "category": "sales",
     "name": "Sales Invoice",
     "salesTheme": true,
-    "documentPreview": {
-      "titlePrefix": "Invoice"
-    },
     "relatedDocuments": true,
     "notesField": "description",
     "hideDeleteWhenComplete": true,
+    "hidePrint": true,
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "InvoiceBottomPanel",
@@ -21,7 +19,7 @@
     ],
     "secondaryTabs": {},
     "processOverrides": {
-      "Complete": { "add": true, "label": "Confirm & Send", "columnName": "documentAction", "displayLogicRaw": "@documentStatus@='DR'" }
+      "Complete": { "add": true, "label": "Confirm & Send", "columnName": "DocAction", "displayLogicRaw": "@documentStatus@='DR'" }
     }
   },
   "entities": {
@@ -119,7 +117,8 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false
+          "form": false,
+          "display": "dot"
         },
         "processed": {
           "visibility": "readOnly",

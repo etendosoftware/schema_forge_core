@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 const STATUS_LABELS = {
   RPAP: 'Awaiting Payment', RPPC: 'Payment Cleared', RPR: 'Payment Received',
@@ -55,6 +56,7 @@ const BADGE_STYLES = {
  */
 export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, api }) {
   const [showPaymentsModal, setShowPaymentsModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
   const [installments, setInstallments] = useState([]);
   const [installmentsLoading, setInstallmentsLoading] = useState(true);
 
@@ -87,7 +89,19 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
 
   useEffect(() => { fetchInstallments(); }, [fetchInstallments]);
 
-  if (!data?.documentStatus || isDraft) return null;
+  // Auto-open Send modal after Confirm & Send
+  // Flag set by HeaderPage event listener, checked here on mount
+  useEffect(() => {
+    if (isCompleted && recordId) {
+      const key = `invoice:sendAfterConfirm:${recordId}`;
+      if (sessionStorage.getItem(key)) {
+        sessionStorage.removeItem(key);
+        setShowSendModal(true);
+      }
+    }
+  }, [isCompleted, recordId]);
+
+  if (!data?.documentStatus) return null;
 
   // Derive badge status from installments
   const badgeInfo = useMemo(() => {
@@ -135,6 +149,27 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
     installments.reduce((sum, i) => sum + (parseFloat(i.outstandingAmount) || 0), 0),
     [installments],
   );
+
+  // Draft — only show Send button
+  if (isDraft) {
+    return (
+      <>
+        <SendDocumentButton onClick={() => setShowSendModal(true)} />
+        {showSendModal && (
+          <SendDocumentModal
+            documentType="Invoice"
+            documentNo={data?.documentNo}
+            bpName={data?.['businessPartner$_identifier']}
+            bpEmail={data?.['userContact$_identifier']}
+            documentId={data?.id}
+            windowName="sales-invoice"
+            token={token}
+            onClose={() => setShowSendModal(false)}
+          />
+        )}
+      </>
+    );
+  }
 
   // While loading, show a subtle placeholder
   if (installmentsLoading) {
@@ -206,6 +241,8 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
         <span style={{ opacity: 0.6, marginLeft: 4 }}>View &rarr;</span>
       </button>
 
+      <SendDocumentButton onClick={() => setShowSendModal(true)} />
+
       {/* View payments modal — installment breakdown */}
       {showPaymentsModal && (
         <ViewPaymentsModal
@@ -223,6 +260,20 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
           onPaymentAdded={() => {
             fetchInstallments();
           }}
+        />
+      )}
+
+      {/* Send Invoice modal */}
+      {showSendModal && (
+        <SendDocumentModal
+          documentType="Invoice"
+          documentNo={data?.documentNo}
+          bpName={data?.['businessPartner$_identifier']}
+          bpEmail={data?.['userContact$_identifier']}
+          documentId={data?.id}
+          windowName="sales-invoice"
+          token={token}
+          onClose={() => setShowSendModal(false)}
         />
       )}
     </>
@@ -361,6 +412,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                   {isExpanded && (
                     <InlineRegisterForm
                       invoiceId={recordId}
+                      invoiceData={invoiceData}
                       installment={inst}
                       currency={currency}
                       base={base}
@@ -397,7 +449,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
 
 // ─── INLINE REGISTER FORM (expands inside installment row) ───────────────────
 
-function InlineRegisterForm({ invoiceId, installment, currency, base, headers, onCancel, onSuccess }) {
+function InlineRegisterForm({ invoiceId, invoiceData, installment, currency, base, headers, onCancel, onSuccess }) {
   const installmentOutstanding = parseFloat(installment.outstandingAmount) || 0;
   const [amount, setAmount] = useState(installmentOutstanding);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -405,22 +457,47 @@ function InlineRegisterForm({ invoiceId, installment, currency, base, headers, o
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resolvedOrgId, setResolvedOrgId] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
-        if (res.ok) {
-          const json = await res.json();
-          const items = json.items || json?.response?.data || [];
-          const mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
-          setAccounts(mapped);
-          if (mapped.length > 0) setAccountId(mapped[0].id);
+        // Find an existing payment for this invoice to get the correct account
+        const pmId = invoiceData?.paymentMethod;
+        const bpId = invoiceData?.businessPartner;
+        let mapped = [];
+
+        // Strategy 1: Find the account from existing payments for this BP + payment method
+        if (pmId && bpId) {
+          try {
+            const payRes = await fetch(`${base}/payment-in/finPayment?businessPartner=${bpId}&_startRow=0&_endRow=5`, { headers });
+            if (payRes.ok) {
+              const payments = (await payRes.json())?.response?.data || [];
+              const matching = payments.find(p => p.paymentMethod === pmId && p.account);
+              if (matching) {
+                mapped = [{ id: matching.account, name: matching['account$_identifier'] || 'Account' }];
+                if (matching.organization) setResolvedOrgId(matching.organization);
+              }
+            }
+          } catch { /* silent */ }
         }
+
+        // Strategy 2: Fallback to selector
+        if (mapped.length === 0) {
+          const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
+          if (res.ok) {
+            const json = await res.json();
+            const items = json.items || json?.response?.data || [];
+            mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
+          }
+        }
+
+        setAccounts(mapped);
+        if (mapped.length > 0) setAccountId(mapped[0].id);
       } catch { /* silent */ }
       finally { setLoadingAccounts(false); }
     })();
-  }, [base, headers]);
+  }, [base, headers, invoiceData?.paymentMethod, invoiceData?.businessPartner]);
 
   const amountExceeded = amount > installmentOutstanding;
 
@@ -430,17 +507,35 @@ function InlineRegisterForm({ invoiceId, installment, currency, base, headers, o
     if (!accountId) { toast.error('Select an account'); return; }
     setSaving(true);
     try {
-      const res = await fetch(`${base}/sales-invoice/header/${invoiceId}/action/aPRMAddpayment`, {
+      const res = await fetch(`${base}/sales-invoice/header/${invoiceId}/action/EM_APRM_Addpayment`, {
         method: 'POST', headers,
-        body: JSON.stringify({ fieldValues: {
-          amount: String(amount),
-          paymentDate: date,
+        body: JSON.stringify({
+          fin_payment_id: 'null',
+          trxtype: 'BPW',
+          ad_org_id: invoiceData.organization || resolvedOrgId || '',
+          payment_documentno: '<>',
+          c_currency_id: invoiceData.currency,
+          received_from: invoiceData.businessPartner,
+          fin_paymentmethod_id: invoiceData.paymentMethod,
+          actual_payment: String(amount),
+          converted_amount: String(amount),
+          expected_payment: String(installmentOutstanding),
+          payment_date: date,
           fin_financial_account_id: accountId,
-        } }),
+          conversion_rate: '1',
+          transaction_type: 'I',
+          document_action: '345',
+          issotrx: true,
+          reference_no: '',
+          difference: '',
+        }),
       });
+      const resJson = await res.json().catch(() => null);
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.response?.message || err?.message || `Failed (${res.status})`);
+        throw new Error(resJson?.response?.message || resJson?.message || `Failed (${res.status})`);
+      }
+      if (resJson?.response?.error || resJson?.response?.status === -1) {
+        throw new Error(resJson?.response?.error?.message || resJson?.response?.message?.text || 'Payment failed');
       }
       onSuccess();
     } catch (err) { toast.error(err.message); }
@@ -530,6 +625,190 @@ function InlineRegisterForm({ invoiceId, installment, currency, base, headers, o
         >
           {saving ? 'Saving...' : 'Confirm'}
         </button>
+      </div>
+    </div>
+  );
+}
+
+// SendInvoiceModal moved to shared SendDocumentModal component
+// Kept here as dead code marker — safe to delete
+function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
+  const docNo = invoiceData?.documentNo || '';
+  const bpName = invoiceData?.['businessPartner$_identifier'] || '';
+  const bpEmail = invoiceData?.['userContact$_identifier'] || '';
+  const invoiceId = invoiceData?.id;
+
+  const hasEmail = bpEmail && bpEmail.includes('@');
+  const [to, setTo] = useState(hasEmail ? bpEmail : '');
+  const [subject, setSubject] = useState(`Invoice #${docNo} — ${bpName}`);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [pdfError, setPdfError] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+  const iframeRef = useCallback(node => { if (node) renderPreview(node); }, []);
+
+  const reportId = 'print-sales-invoice';
+
+  const renderPreview = async (iframe) => {
+    if (!invoiceId || !token) return;
+    setPdfLoading(true);
+    setPdfError(null);
+    try {
+      const res = await fetch(`/api/reports/${reportId}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ format: 'html', params: { documentId: invoiceId } }),
+      });
+      if (!res.ok) throw new Error(`Preview failed (${res.status})`);
+      const html = await res.text();
+      iframe.src = 'about:blank';
+      iframe.onload = () => {
+        try { const doc = iframe.contentDocument; doc.open(); doc.write(html); doc.close(); } catch {}
+        iframe.onload = null;
+      };
+    } catch (err) {
+      setPdfError(err.message);
+    }
+    setPdfLoading(false);
+  };
+
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(`/api/reports/${reportId}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ format: 'html', params: { documentId: invoiceId } }),
+      });
+      if (!res.ok) throw new Error('Failed to render');
+      const html = await res.text();
+      const pdfRes = await fetch('/jsreport/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ template: { content: html, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } }, data: {} }),
+      });
+      if (!pdfRes.ok) throw new Error('PDF generation failed');
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${docNo}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err.message);
+    }
+    setDownloading(false);
+  };
+
+  const handleSend = () => {
+    setSending(true);
+    setTimeout(() => {
+      toast.success('Invoice sent ✓');
+      setSending(false);
+      onClose();
+    }, 800);
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB' }}>
+
+        {/* Header */}
+        <div style={{ padding: '12px 16px', background: '#F5F5F5', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Send Invoice #{docNo}</span>
+          </div>
+          <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
+        </div>
+
+        {/* Body — two columns */}
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          {/* Left column — PDF preview (60%) */}
+          <div style={{ width: '60%', display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #E5E7EB' }}>
+            <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
+              {pdfLoading && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>Loading preview...</div>
+              )}
+              {pdfError && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>PDF preview</span>
+                  <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 200 }}>The invoice PDF will appear here once document templates are configured</span>
+                </div>
+              )}
+              <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title="Invoice preview" />
+            </div>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 16px', borderTop: '0.5px solid #E5E7EB', background: '#fff', border: 'none', borderTop: '0.5px solid #E5E7EB', fontSize: 13, color: '#374151', cursor: downloading ? 'wait' : 'pointer', flexShrink: 0 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              {downloading ? 'Downloading...' : 'Download PDF'}
+            </button>
+          </div>
+
+          {/* Right column — Email fields (40%) */}
+          <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>To</label>
+              <input
+                type="email"
+                value={to}
+                onChange={e => setTo(e.target.value)}
+                placeholder="email@company.com"
+                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !hasEmail ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+              />
+              {!to && !hasEmail && (
+                <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>No email found for this contact</span>
+              )}
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>Subject</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>Message</label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="Add a personal message..."
+                style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
+          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!to.trim() || sending}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!to.trim() || sending) ? 'not-allowed' : 'pointer', opacity: (!to.trim() || sending) ? 0.4 : 1 }}
+          >
+            {sending ? 'Sending...' : (
+              <>
+                Send
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

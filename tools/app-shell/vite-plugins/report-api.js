@@ -300,6 +300,17 @@ export default function reportApiPlugin() {
         if (req.method === 'GET' && selectorMatch) {
           const type = selectorMatch[1];
           const q = (url.searchParams.get('q') || '').trim();
+          const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100));
+          const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
+          const selectedOrgId = (url.searchParams.get('selectedOrgId') || '').trim();
+          const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+          const roleOrgIds = (url.searchParams.get('roleOrgIds') || '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
           try {
             const gradlePath = findGradleProps();
             if (!gradlePath) throw new Error('gradle.properties not found');
@@ -312,18 +323,102 @@ export default function reportApiPlugin() {
               );
               const clientId = clientRes.rows[0]?.ad_client_id || '0';
               const queries = {
-                'bpartner': `SELECT c_bpartner_id AS id, name FROM c_bpartner WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'product': `SELECT m_product_id AS id, name FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'project': `SELECT c_project_id AS id, name FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'org': `SELECT ad_org_id AS id, name FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
-                'account': `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1) ORDER BY value LIMIT 20`,
-                'accounting': `SELECT c_acctschema_id AS id, name FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1 ORDER BY name LIMIT 20`,
+                'bpartner': {
+                  fromWhere: `FROM c_bpartner WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_bpartner_id AS id, name, name AS label`
+                },
+                'product': {
+                  fromWhere: `FROM m_product WHERE isactive='Y' AND ad_client_id = $2 AND (name ILIKE $1 OR value ILIKE $1)`,
+                  orderBy: 'ORDER BY value, name',
+                  select: `SELECT m_product_id AS id, value AS "searchKey", name, value || ' - ' || name AS label`
+                },
+                'warehouse': {
+                  fromWhere: `FROM m_warehouse WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT m_warehouse_id AS id, name, name AS label`
+                },
+                'project': {
+                  fromWhere: `FROM c_project WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_project_id AS id, name, name AS label`
+                },
+                'org': {
+                  fromWhere: `FROM ad_org WHERE isactive='Y' AND ad_org_id != '0' AND ad_client_id = $2 AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT ad_org_id AS id, name, name AS label`
+                },
+                'account': {
+                  fromWhere: `FROM c_elementvalue WHERE isactive='Y' AND issummary='N' AND ad_client_id = $2 AND (value ILIKE $1 OR name ILIKE $1)`,
+                  orderBy: 'ORDER BY value',
+                  select: `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name, value || ' - ' || name AS label`
+                },
+                'accounting': {
+                  fromWhere: `FROM c_acctschema WHERE isactive='Y' AND ad_client_id = $2 AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_acctschema_id AS id, name, name AS label`
+                },
               };
-              const sql = queries[type];
-              if (!sql) throw new Error(`Unknown selector type: ${type}`);
-              const { rows } = await pool.query(sql, [`%${q}%`, clientId]);
+              const queryCfg = queries[type];
+              if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
+              const search = `%${q}%`;
+              const whereFragments = [queryCfg.fromWhere];
+              const values = [search, clientId];
+
+              if (type === 'warehouse') {
+                if (selectedOrgId) {
+                  values.push(selectedOrgId);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = $${values.length})`
+                  );
+                }
+
+                if (roleOrgIds.length > 0) {
+                  values.push(roleOrgIds);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM ad_org_warehouse ow WHERE ow.m_warehouse_id = m_warehouse.m_warehouse_id AND ow.ad_org_id = ANY($${values.length}))`
+                  );
+                }
+              }
+
+              if (type === 'product') {
+                if (selectedWarehouseIds.length > 0) {
+                  values.push(selectedWarehouseIds);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.m_warehouse_id = ANY($${values.length}))`
+                  );
+                }
+
+                if (selectedOrgId) {
+                  values.push(selectedOrgId);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND ad_isorgincluded(l.ad_org_id, $${values.length}, m_product.ad_client_id) <> -1)`
+                  );
+                }
+
+                if (roleOrgIds.length > 0) {
+                  values.push(roleOrgIds);
+                  whereFragments.push(
+                    `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.ad_org_id = ANY($${values.length}))`
+                  );
+                }
+              }
+
+              const fullFromWhere = whereFragments.join(' ');
+              const countSql = `SELECT COUNT(*)::int AS total ${fullFromWhere}`;
+              const rowsSql = `${queryCfg.select} ${fullFromWhere} ${queryCfg.orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+
+              const countResult = await pool.query(countSql, values);
+              const totalCount = countResult.rows[0]?.total ?? 0;
+              const { rows } = await pool.query(rowsSql, [...values, limit, offset]);
+
+
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(rows));
+              res.end(JSON.stringify({
+                items: rows,
+                totalCount,
+                hasMore: offset + rows.length < totalCount,
+              }));
             } finally { await pool.end(); }
           } catch (e) {
             res.statusCode = 500;
@@ -404,6 +499,9 @@ export default function reportApiPlugin() {
                 if (k === 'groupBy') {
                   const dimParam = (contract.parameters || []).find(p => p.groupByValue === v);
                   displayValue = dimParam?.label?.en_US || v;
+                }
+                if (typeof displayValue === 'string' && displayValue.includes(' | ')) {
+                  displayValue = displayValue.split(' | ').filter(Boolean).join(', ');
                 }
                 // Format date values from ISO (YYYY-MM-DD) to DD/MM/YYYY
                 if (paramDef?.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {

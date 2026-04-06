@@ -4,14 +4,13 @@
     "category": "sales",
     "name": "Goods Shipment",
     "salesTheme": true,
-    "documentPreview": {
-      "titlePrefix": "Shipment"
-    },
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "hidePrint": true,
     "customComponents": {
-      "topbarRight": "GoodsShipmentActions"
+      "topbarRight": "GoodsShipmentActions",
+      "bulkActions": "BulkInvoiceFromShipment"
     },
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
@@ -55,7 +54,8 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false
+          "form": false,
+          "display": "dot"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -64,6 +64,7 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
+          "grid": true,
           "section": "principal"
         },
         "accountingDate": {
@@ -175,7 +176,9 @@
           "visibility": "discarded"
         },
         "completelyInvoiced": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": true,
+          "name": "invoiced"
         },
         "invoicefromshipment": {
           "visibility": "discarded"

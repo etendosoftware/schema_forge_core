@@ -8,9 +8,6 @@
       "name": "Sales Quotation",
       "primaryEntity": "quotation",
       "category": "sales",
-      "documentPreview": {
-        "titlePrefix": "Quotation"
-      },
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
@@ -30,7 +27,7 @@
         "Complete": {
           "add": true,
           "label": "Confirm",
-          "columnName": "documentAction",
+          "columnName": "DocAction",
           "displayLogicRaw": "@documentStatus@='DR'"
         },
         "Convert to Order": {
@@ -47,7 +44,10 @@
         }
       },
       "salesTheme": true,
-      "layoutType": "default"
+      "layoutType": "default",
+      "customComponents": {
+        "topbarRight": "QuotationTopbarActions"
+      }
     },
     "entities": {
       "quotation": {
@@ -256,7 +256,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "display": "dot"
           },
           {
             "name": "grandTotalAmount",
