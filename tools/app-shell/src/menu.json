@@ -55,6 +55,7 @@
         { "name": "physical-inventory", "label": "Physical Inventory" },
         { "name": "goods-movements", "label": "Goods Movements" },
         { "name": "warehouse", "label": "Warehouses" },
+        { "name": "report-viewer-inventory", "label": "Reports", "path": "report-viewer?category=inventory" },
         { "name": "warehouse-storage-bins", "label": "Storage Bins", "hidden": true }
       ]
     },

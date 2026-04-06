@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
@@ -148,6 +148,8 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
@@ -482,7 +484,7 @@ export function DetailView({
   return (
     <div className="h-full flex flex-col" data-testid="detail-view">
       {/* Top bar area (gray background, inherited from parent) */}
-      <div className="px-6 pt-3 pb-3">
+      {!embedded && <div className="px-6 pt-3 pb-3">
         {/* Row: Title + Global search + action icons */}
         <div className="flex items-center gap-4">
           {/* Left: title + breadcrumb */}
@@ -526,11 +528,23 @@ export function DetailView({
             <LocaleSwitcher />
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Action bar: Cancel + status | actions + save */}
+        {embedded ? (
+          statusField && data[statusField] ? (
+            <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
+                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
+                {statusFieldLabel || 'Document Status'}
+                <span style={{ opacity: 0.4 }}>&middot;</span>
+                <span className="font-semibold">{statusLabel(data[statusField])}</span>
+              </span>
+            </div>
+          ) : null
+        ) : (
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Button
@@ -742,6 +756,7 @@ export function DetailView({
             )}
           </div>
         </div>
+        )}
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
@@ -752,7 +767,7 @@ export function DetailView({
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div style={{ padding: '24px 0 8px' }}>
+            <div style={{ padding: '24px 0 8px' }} className={embedded ? 'pointer-events-none' : ''}>
               <Form
                 entity={entity}
                 data={data}
@@ -768,7 +783,7 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className={sidePanel ? 'mt-2' : 'mt-6'}>
+            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}${embedded ? ' pointer-events-none' : ''}`}>
             <CollapsibleSection title="More details">
               <Form
                 entity={entity}
@@ -788,7 +803,7 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className="pt-2">
+              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
                 {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
@@ -835,7 +850,7 @@ export function DetailView({
                       apiBaseUrl={apiBaseUrl}
                     />
                   ) : (
-                  <div className="pt-3 flex items-start gap-4">
+                  <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {/* Table + add button */}
                     <div className="flex-1 min-w-0">
                       <DetailTable
@@ -1075,7 +1090,7 @@ export function DetailView({
 
                 {/* Tab content: CustomLines (replaces standard lines table) */}
                 {tabs[activeTab]?.key === 'customLines' && CustomLines && (
-                  <div className="pt-3">
+                  <div className={`pt-3${embedded ? ' pointer-events-none' : ''}`}>
                     <CustomLines
                       recordId={data?.id || recordId}
                       data={data}
@@ -1091,7 +1106,7 @@ export function DetailView({
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className="pt-3 flex items-start gap-4">
+                  <div key={st.key} className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -1267,7 +1282,7 @@ export function DetailView({
 
                 {/* Tab content: Others (secondary header fields) */}
                 {tabs[activeTab]?.key === 'others' && (
-                  <div className="pt-5">
+                  <div className={`pt-5${embedded ? ' pointer-events-none' : ''}`}>
                     <Form
                       entity={entity}
                       data={data}
