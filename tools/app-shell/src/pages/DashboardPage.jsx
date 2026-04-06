@@ -771,6 +771,7 @@ function TopClients({ clients = [] }) {
 
 function QuickActions({ actions = [] }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   return (
     <Card>
       <CardHeader className="pb-2">
