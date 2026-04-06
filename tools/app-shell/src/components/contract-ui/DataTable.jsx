@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
-import { useLabel } from '@/i18n';
+import { useLabel, useUI, useLocale } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
@@ -154,18 +154,19 @@ function TableSkeleton({ columns }) {
  * Empty state shown when the table has no data (or all rows are filtered out).
  */
 function EmptyState({ hasFilter, totalCount }) {
+  const ui = useUI();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
       <Inbox className="h-10 w-10 mb-3 opacity-40" />
       {hasFilter ? (
         <>
-          <p className="text-sm font-medium">No matching records</p>
-          <p className="text-xs mt-1">Try adjusting your filters to find what you are looking for.</p>
+          <p className="text-sm font-medium">{ui('noMatchingRecords')}</p>
+          <p className="text-xs mt-1">{ui('adjustFilters')}</p>
         </>
       ) : (
         <>
-          <p className="text-sm font-medium">No records yet</p>
-          <p className="text-xs mt-1">Create a new record to get started.</p>
+          <p className="text-sm font-medium">{ui('noRecordsYet')}</p>
+          <p className="text-xs mt-1">{ui('createNewRecord')}</p>
         </>
       )}
     </div>
@@ -178,6 +179,7 @@ function EmptyState({ hasFilter, totalCount }) {
  */
 function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
+  const ui = useUI();
   const fieldMap = useMemo(() => {
     const map = {};
     for (const f of fields) map[f.key] = f;
@@ -295,7 +297,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
               className="h-7 w-7 flex items-center justify-center rounded text-emerald-600 hover:bg-emerald-50">
               <Check className="h-3.5 w-3.5" />
             </button>
-            <button type="button" onClick={onCancel} title="Cancel (Esc)"
+            <button type="button" onClick={onCancel} title={ui('cancelEsc')}
               className="h-7 w-7 flex items-center justify-center rounded text-red-500 hover:bg-red-50">
               <X className="h-3.5 w-3.5" />
             </button>
@@ -524,6 +526,8 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
  */
 export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext }) {
   const t = useLabel();
+  const ui = useUI();
+  const dictionary = useLocale();
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -612,7 +616,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
     if (col.type === 'status') {
       const raw = row[col.key];
-      const label = col.enumLabels?.[raw] ?? statusLabel(raw);
+      const label = col.enumLabels?.[raw] ?? statusLabel(raw, dictionary);
       if (col.display === 'dot') {
         const dotColor = getStatusDotColor(raw);
         return (
@@ -645,8 +649,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     if (col.type === 'boolean') {
       const val = row[col.key];
       if (col.badge) {
-        const trueLabel  = col.badgeLabels?.true  ?? 'Completed';
-        const falseLabel = col.badgeLabels?.false ?? 'In Progress';
+        const trueLabel  = col.badgeLabels?.true  ?? ui('statusComplete');
+        const falseLabel = col.badgeLabels?.false ?? ui('statusInProcess');
         if (val === true || val === 'Y') return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
             {trueLabel}
@@ -658,8 +662,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      if (val === true || val === 'Y') return <span className="text-emerald-600">Yes</span>;
-      if (val === false || val === 'N') return <span className="text-slate-400">No</span>;
+      if (val === true || val === 'Y') return <span className="text-emerald-600">{ui('yes')}</span>;
+      if (val === false || val === 'N') return <span className="text-slate-400">{ui('no')}</span>;
       return <span className="text-slate-300">&mdash;</span>;
     }
     if (col.type === 'date') {
@@ -744,7 +748,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                     {hasColumnFilter && (
                       <button
                         onClick={() => setColumnFilters({})}
-                        title="Clear all filters"
+                        title={ui('clearAllFilters')}
                         className="h-4 w-4 flex items-center justify-center rounded text-muted-foreground/50 hover:text-foreground transition-colors"
                       >
                         <X className="h-3 w-3" />
@@ -773,7 +777,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                           type="text"
                           value={columnFilters[col.key] || ''}
                           onChange={e => setColumnFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
-                          placeholder="Filter..."
+                          placeholder={ui('filter')}
                           className={[
                             'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
                             'placeholder:text-muted-foreground/35 transition-colors',

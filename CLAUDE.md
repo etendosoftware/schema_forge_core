@@ -216,9 +216,10 @@ Etendo AD findings go in `docs/etendo-ad/`, NOT in per-window artifacts.
 
 ## Frontend Build & Deploy (MANDATORY final step)
 
-`make deploy` builds + copies to Etendo module. `make dev` for hot reload at localhost:3100.
-Full pipeline sequence: Extract → Classify → Contract → Push to NEO → export.database → Generate Frontend → make deploy
-Override target: `make deploy MODULE_WEB={path}`. No Tomcat restart needed.
+`make deploy` is deprecated. The UI is now compiled during commits and deployed in a separate container, so the target only prints a warning unless you pass `LEGACY_DEPLOY=1`.
+`make dev` is still used for hot reload at localhost:3100.
+Full pipeline sequence: Extract → Classify → Contract → Push to NEO → export.database → Generate Frontend → deploy via the dedicated UI container
+Legacy override: `make deploy LEGACY_DEPLOY=1 MODULE_WEB={path}`. No Tomcat restart needed in legacy mode.
 
 ## NEO Headless
 
