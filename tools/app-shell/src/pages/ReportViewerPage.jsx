@@ -771,6 +771,7 @@ function ReportViewer({ report, onBack, token }) {
   ];
 
   return (
+    <>
     <div className="h-full flex overflow-hidden">
       {/* Left sidebar */}
       <div className="w-72 shrink-0 flex flex-col border-r border-border/30 bg-white overflow-hidden">
@@ -880,6 +881,7 @@ function ReportViewer({ report, onBack, token }) {
         )}
       </SheetContent>
     </Sheet>
+    </>
   );
 }
 
