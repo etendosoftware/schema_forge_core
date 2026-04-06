@@ -273,6 +273,10 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
       field.displayLogicJs = fieldDecision.displayLogicJs;
     }
 
+    if (fieldDecision.readOnlyLogicJs != null) {
+      field.readOnlyLogicJs = fieldDecision.readOnlyLogicJs;
+    }
+
     // callout — carry from raw
     if (rawField.callout) field.callout = rawField.callout;
   }
@@ -579,7 +583,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.othersLabel) {
     schema.window.othersLabel = windowDecisions.othersLabel;
   }
-
+  if (windowDecisions.disableProcessedLock) {
+    schema.window.disableProcessedLock = true;
+  }
   const rules = resolveRules(rulesRaw, decisions);
 
   return { schema, rules };

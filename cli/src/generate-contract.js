@@ -228,6 +228,12 @@ export function generateFrontendContract(schema, rules = []) {
           mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
         }
       }
+      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation
+      if (f.readOnlyLogicJs != null) {
+        if (!mapped.readOnlyLogic) mapped.readOnlyLogic = {};
+        mapped.readOnlyLogic.js = f.readOnlyLogicJs;
+        mapped.readOnlyLogic.evaluable = true;
+      }
 
       return mapped;
     });

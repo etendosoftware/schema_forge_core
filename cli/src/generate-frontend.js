@@ -388,7 +388,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
-  const isSidebar = isGallery && !!contract?.frontendContract?.window?.sidebarLayout;
+  const isSidebar = !!contract?.frontendContract?.window?.sidebarLayout;
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
@@ -771,6 +771,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const othersLabelValue = windowConfig.othersLabel ?? null;
   const othersLabelProp = othersLabelValue ? `\n        othersLabel="${othersLabelValue}"` : '';
 
+  // disableProcessedLock support
+  const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
+
   return `import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
@@ -843,7 +846,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
         {...props}${sidebarContentProp}
       />
     );
