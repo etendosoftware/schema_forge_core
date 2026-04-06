@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
+import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -36,23 +38,111 @@ function ReportCard({ report, onRun }) {
   );
 }
 
+// Single-select popup modal — used for fields with inputStyle: 'popup-single'.
+function SelectorPopup({ open, onClose, onSelect, selector, title }) {
+  const [query, setQuery] = useState('');
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(-1);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (open) { setQuery(''); setOptions([]); setFocusIdx(-1); setTimeout(() => inputRef.current?.focus(), 50); }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    const t = setTimeout(() => {
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+        .then(r => r.json())
+        .then(data => { setOptions(Array.isArray(data) ? data : (data?.items ?? [])); setFocusIdx(-1); })
+        .catch(() => setOptions([]))
+        .finally(() => setLoading(false));
+    }, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [query, selector, open]);
+
+  const handleKey = (e) => {
+    if (e.key === 'Escape') { onClose(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIdx(i => Math.min(i + 1, options.length - 1)); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIdx(i => Math.max(i - 1, 0)); }
+    if (e.key === 'Enter' && focusIdx >= 0 && options[focusIdx]) { onSelect(options[focusIdx]); onClose(); }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onMouseDown={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-96 max-h-[480px] flex flex-col" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+          <span className="text-sm font-semibold">{title}</span>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="px-4 py-2 border-b border-border/20">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Search..."
+            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex-1 overflow-auto py-1">
+          {loading && <div className="flex justify-center py-6 text-muted-foreground text-xs">Loading...</div>}
+          {!loading && options.length === 0 && (
+            <div className="text-center py-6 text-muted-foreground text-xs">No results</div>
+          )}
+          {options.map((o, idx) => (
+            <button
+              key={o.id}
+              onClick={() => { onSelect(o); onClose(); }}
+              className={['w-full text-left px-4 py-2 text-sm truncate', idx === focusIdx ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'].join(' ')}
+            >
+              {o.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Dropdown / search-as-you-type selector.
 // minLength=0 → shows all options on focus (used for small catalogs like org, accounting schema).
 // minLength=2 (default) → search-as-you-type (used for accounts, etc.).
-function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false }) {
+function SearchInput({ selector, value, displayValue, onChange, multi, minLength = 2, fullWidth = false, hasError = false, token, label, selectedOrgId, roleOrgIds, selectedWarehouseId }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selected, setSelected] = useState([]); // [{id, name}]
   const ref = useRef(null);
   const touched = useRef(false); // prevent auto-fetch on mount
 
+  const useDrawerSearch = selector === 'product';
+  const showDropdownArrow = selector === 'warehouse' && !multi;
+  const inputWidthClass = fullWidth ? 'w-full' : 'w-44';
+
+  const normalizeOptions = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  };
+
   const fetchOptions = useCallback((q) => {
-    fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(q)}`)
+    const params = new URLSearchParams({ q });
+    if (selector === 'warehouse') {
+      if (selectedOrgId) params.set('selectedOrgId', selectedOrgId);
+      if (roleOrgIds && roleOrgIds.length > 0) params.set('roleOrgIds', roleOrgIds.join(','));
+    }
+    fetch(`/api/report-selectors/${selector}?${params.toString()}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
-      .then(data => { setOptions(data); setOpen(true); })
+      .then(data => { setOptions(normalizeOptions(data)); setOpen(true); })
       .catch(() => setOptions([]));
-  }, [selector]);
+  }, [selector, selectedOrgId, roleOrgIds]);
 
   useEffect(() => {
     if (!touched.current) return;
@@ -60,13 +150,6 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
     const t = setTimeout(() => fetchOptions(query), 300);
     return () => clearTimeout(t);
   }, [query, minLength, fetchOptions]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
 
   const handleFocus = () => {
     touched.current = true;
@@ -81,15 +164,29 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
     if (!multi && !e.target.value) onChange('', '');
   };
 
+  useEffect(() => {
+    if (!multi) return;
+    if (!value) {
+      setSelected([]);
+      return;
+    }
+    const ids = String(value).split(',').map(s => s.trim()).filter(Boolean);
+    const currentById = new Map(selected.map(s => [s.id, s.name]));
+    const next = ids.map((id) => ({ id, name: currentById.get(id) || id }));
+    setSelected(next);
+  }, [multi, value]);
+
   const addItem = (item) => {
     if (multi) {
-      const next = [...selected.filter(s => s.id !== item.id), item];
+      const next = [...selected, item].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
       setSelected(next);
-      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+      onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
       setQuery('');
+      setOpen(false);
     } else {
-      onChange(item.id, item.name);
-      setQuery(item.name);
+      const nextLabel = item.label || item.name || '';
+      onChange(item.id, nextLabel);
+      setQuery(nextLabel);
       setOpen(false);
     }
   };
@@ -97,10 +194,88 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
   const removeItem = (id) => {
     const next = selected.filter(s => s.id !== id);
     setSelected(next);
-    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(', '));
+    onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
   };
 
+
   const selectedIds = new Set(selected.map(s => s.id));
+
+  if (useDrawerSearch) {
+    const displayText = displayValue || '';
+    const productSelectorParams = new URLSearchParams();
+    if (selectedOrgId) productSelectorParams.set('selectedOrgId', selectedOrgId);
+    if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
+    if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
+    const productSelectorUrl = productSelectorParams.toString()
+      ? `/api/report-selectors/product?${productSelectorParams.toString()}`
+      : '/api/report-selectors/product';
+
+    const selectedItems = multi
+      ? selected
+      : ((value || displayValue) ? [{ id: value, name: displayValue }] : []);
+
+    const handleDrawerSelect = (item) => {
+      const normalized = {
+        id: item.id,
+        name: item.label || item.name || item.searchKey || item.id,
+      };
+      if (multi) {
+        const next = [...selected, normalized].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx);
+        setSelected(next);
+        onChange(next.map(s => s.id).join(','), next.map(s => s.name).join(' | '));
+      } else {
+        onChange(normalized.id, normalized.name);
+      }
+    };
+
+    return (
+      <div className={inputWidthClass}>
+        <div className="flex items-center h-8 border border-border rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-primary/30">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex-1 h-full px-2 text-sm text-left focus:outline-none min-w-0"
+            title={multi && selectedItems.length > 0 ? selectedItems.map(s => s.name).join(', ') : (displayText || '')}
+          >
+            <span className={`block truncate whitespace-nowrap ${selectedItems.length > 0 || displayText ? 'text-foreground' : 'text-muted-foreground'}`}>
+              {multi
+                ? (selectedItems.length > 0 ? `${selectedItems.length} selected` : `Search ${label || 'Product'}...`)
+                : (displayText || `Search ${label || 'Product'}...`)}
+            </span>
+          </button>
+          {((multi && selectedItems.length > 0) || (!multi && (value || displayValue))) && (
+            <button
+              type="button"
+              onClick={() => {
+                if (multi) setSelected([]);
+                onChange('', '');
+              }}
+              className="shrink-0 h-full px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+              aria-label={`Clear ${label || 'product'}`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <ProductSearchDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSelect={(item) => {
+            if (multi && selected.some(s => s.id === item.id)) {
+              removeItem(item.id);
+            } else {
+              handleDrawerSelect(item);
+            }
+          }}
+          selectorUrl={productSelectorUrl}
+          token={token}
+          title={label || 'Product'}
+          keepOpenOnSelect={multi}
+          selectedIds={selectedItems.map(s => s.id)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -114,16 +289,40 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
           ))}
         </div>
       )}
-      <input
-        type="text"
-        value={multi ? query : (query || displayValue || '')}
-        onChange={handleChange}
-        onFocus={handleFocus}
-        placeholder="Search..."
-        className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 ${fullWidth ? 'w-full' : 'w-44'} border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'}`}
-      />
+      <div className={`relative ${inputWidthClass}`}>
+        <input
+          type="text"
+          value={multi ? query : (query || displayValue || '')}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          placeholder="Search..."
+          className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 w-full border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'} ${showDropdownArrow ? 'pr-7' : ''}`}
+        />
+        {showDropdownArrow && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setOpen(prev => !prev)}
+            className="absolute right-1 top-1.5 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+            aria-label={`Toggle ${label || 'selector'} options`}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {multi && selected.length > 0 && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { setSelected([]); onChange('', ''); }}
+            className="absolute right-7 top-1.5 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center"
+            aria-label={`Clear ${label || 'selector'}`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       {open && options.length > 0 && (
-        <div className={`absolute z-50 top-full left-0 mt-1 ${fullWidth ? 'w-full' : 'w-56'} max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1`}>
+        <div className="absolute z-50 top-full left-0 mt-1 w-full max-h-48 overflow-auto rounded-lg border bg-white shadow-lg py-1">
           {options.filter(o => !selectedIds.has(o.id)).map(o => (
             <button key={o.id} onClick={() => addItem(o)}
               className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 truncate">{o.name}</button>
@@ -147,9 +346,9 @@ function PopupMultiSelector({ selector, label, onChange }) {
   useEffect(() => {
     if (!open) return;
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`)
+      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
-        .then(setOptions)
+        .then(data => setOptions(Array.isArray(data) ? data : (data?.items ?? [])))
         .catch(() => setOptions([]));
     }, query ? 300 : 0);
     return () => clearTimeout(t);
@@ -218,7 +417,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
           className="h-8 px-3 text-xs font-medium rounded-md border border-border bg-white hover:bg-muted/50 flex items-center gap-1.5 text-muted-foreground"
         >
           <span className="text-sm font-bold leading-none">+</span>
-          {confirmed.length === 0 ? label : 'Edit selection'}
+          {label}
         </button>
       </div>
 
@@ -281,9 +480,15 @@ const SIDEBAR_SECTIONS = [
   { key: 'options', label: 'Display Options' },
 ];
 
-function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey }) {
+function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey, token, selectedOrgId, roleOrgIds }) {
   const [displayValues, setDisplayValues] = useState({});
   const [errors, setErrors] = useState({});
+  const [popup, setPopup] = useState(null); // { name, selector, label } for popup-single
+
+  useEffect(() => {
+    setDisplayValues({});
+    setErrors({});
+  }, [resetKey]);
 
   const handleChange = (name, value) => {
     if (errors[name] && value) setErrors(prev => { const n = { ...prev }; delete n[name]; return n; });
@@ -318,6 +523,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
     const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : 'border-border';
 
     if (p.type === 'search') {
+      // Multi-select popup (checkboxes)
       if (p.inputStyle === 'popup') {
         return (
           <div key={`${p.name}-${resetKey}`}>
@@ -331,6 +537,35 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
           </div>
         );
       }
+
+      // Single-select popup modal
+      if (p.inputStyle === 'popup-single') {
+        const display = displayValues[p.name] || params['_display_' + p.name] || '';
+        return (
+          <div key={p.name}>
+            {labelEl}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPopup({ name: p.name, selector: p.selector, label })}
+                className={`flex-1 h-9 px-3 text-sm border rounded-md bg-white hover:bg-muted/50 text-left truncate text-muted-foreground ${errorBorder}`}
+              >
+                {display || <span className="opacity-50">Select...</span>}
+              </button>
+              {display && (
+                <button
+                  type="button"
+                  onClick={() => { handleChange(p.name, ''); handleChange('_display_' + p.name, ''); setDisplayValues(prev => ({ ...prev, [p.name]: '' })); }}
+                  className="h-9 w-7 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
+                ><X className="h-3.5 w-3.5" /></button>
+              )}
+            </div>
+            {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+          </div>
+        );
+      }
+
+      // Inline search dropdown (default)
       return (
         <div key={p.name}>
           {labelEl}
@@ -347,6 +582,11 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             minLength={p.inputStyle === 'dropdown' ? 0 : 2}
             fullWidth
             hasError={hasError}
+            token={token}
+            label={label}
+            selectedOrgId={selectedOrgId}
+            roleOrgIds={roleOrgIds}
+            selectedWarehouseId={params.M_Warehouse_ID || ''}
           />
           {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
         </div>
@@ -354,8 +594,6 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
     }
 
     if (p.type === 'select') {
-      // If no explicit options, auto-derive from dimension params that declare groupByValue.
-      // This keeps labels in sync with the dimension parameter labels (single source of truth).
       const resolvedOptions = p.options ?? (() => {
         const base = { value: '', label: report.groups?.[0]?.label?.en_US || 'Account' };
         const fromDimensions = (report.parameters || [])
@@ -429,6 +667,21 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
 
   return (
     <div className="flex flex-col h-full">
+      {popup && (
+        <SelectorPopup
+          open
+          onClose={() => setPopup(null)}
+          selector={popup.selector}
+          title={popup.label}
+          onSelect={(item) => {
+            handleChange(popup.name, item.id);
+            handleChange('_display_' + popup.name, item.name);
+            setDisplayValues(prev => ({ ...prev, [popup.name]: item.name }));
+            setPopup(null);
+          }}
+        />
+      )}
+
       <div className="px-4 pt-4 pb-3 border-b border-border/30 shrink-0">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Report Builder</p>
       </div>
@@ -468,13 +721,98 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   );
 }
 
-function ReportViewer({ report, onBack, token }) {
+function DrillDownViewer({ report, token, baseParams, bpId }) {
+  const iframeRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const drillParams = { ...baseParams, bPartnerId: bpId, showDetails: 'true' };
+
+  const writeToIframe = (html) => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    iframe.src = 'about:blank';
+    iframe.onload = () => {
+      try { const d = iframe.contentDocument; d.open(); d.write(html); d.close(); } catch { /* */ }
+      iframe.onload = null;
+    };
+  };
+
+  const fetchFormat = useCallback(async (format) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/reports/${report.id}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ format, params: drillParams }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `Render failed: ${res.status}`);
+      }
+      if (format === 'html' || format === 'preview') {
+        writeToIframe(await res.text());
+      } else if (format === 'pdf') {
+        iframeRef.current.src = URL.createObjectURL(await res.blob());
+      } else {
+        const url = URL.createObjectURL(await res.blob());
+        const a = document.createElement('a'); a.href = url; a.download = `${report.id}-detail.${format}`; a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) { setError(err.message); }
+    setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report.id, token, bpId]);
+
+  useEffect(() => { fetchFormat('preview'); }, [fetchFormat]);
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-2">
+      <div className="flex items-center gap-2 px-1">
+        {[{ id: 'preview', label: 'Preview', icon: Eye }, { id: 'pdf', label: 'PDF', icon: FileDown }, { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet }].map(f => (
+          <button key={f.id} onClick={() => fetchFormat(f.id)} disabled={loading}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium border border-border bg-background hover:bg-muted disabled:opacity-50">
+            <f.icon className="h-3.5 w-3.5" />{f.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 bg-white rounded-lg border border-border/30 overflow-hidden relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" /><span>Loading details...</span>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center text-destructive text-sm px-8 text-center">{error}</div>
+        )}
+        <iframe ref={iframeRef} title="Detail Report" className="w-full h-full border-0" />
+      </div>
+    </div>
+  );
+}
+
+function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recordCount, setRecordCount] = useState(null);
   const previewHtmlRef = useRef('');
   const [resetKey, setResetKey] = useState(0);
+  const [drillDownBp, setDrillDownBp] = useState(null);
+  const [invoicePopup, setInvoicePopup] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === 'aging-drilldown' && e.data.bpId) {
+        setDrillDownBp({ id: e.data.bpId, name: e.data.bpName || '' });
+      } else if (e.data?.type === 'navigate-invoice' && e.data.invoiceId) {
+        setInvoicePopup({ id: e.data.invoiceId });
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
   const getDefaultParams = useCallback(() => {
     const defaults = {};
@@ -501,7 +839,7 @@ function ReportViewer({ report, onBack, token }) {
     if (!autoParams.length) return;
     Promise.all(
       autoParams.map(p =>
-        fetch(`/api/report-selectors/${p.selector}?q=`)
+        fetch(`/api/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
           .then(r => r.json())
           .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
           .catch(() => null)
@@ -564,10 +902,7 @@ function ReportViewer({ report, onBack, token }) {
     setLoading(false);
   }, [report.id, token, params]);
 
-  const initialRender = useRef(false);
-  useEffect(() => {
-    if (!initialRender.current) { initialRender.current = true; renderReport('html'); }
-  }, []);
+  // No auto-render on mount — wait for user to click Run Report
 
   const handlePrint = () => {
     if (iframeRef.current?.contentDocument?.body?.innerHTML) {
@@ -586,76 +921,139 @@ function ReportViewer({ report, onBack, token }) {
 
   const title = report.title?.en_US || report.id;
   const DOWNLOAD_FORMATS = [
+    { id: 'html', label: 'Preview', icon: Eye },
     { id: 'pdf', label: 'PDF', icon: FileDown },
     { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet },
     { id: 'csv', label: 'CSV', icon: FileText },
   ];
 
   return (
-    <div className="h-full flex overflow-hidden">
-      {/* Left sidebar */}
-      <div className="w-72 shrink-0 flex flex-col border-r border-border/30 bg-white overflow-hidden">
-        <ReportSidebar
-          report={report}
-          params={params}
-          onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
-          onSubmit={() => renderReport('html')}
-          onReset={handleReset}
-          loading={loading}
-          resetKey={resetKey}
-        />
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-border/30 shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <div>
-              <h2 className="text-sm font-semibold">{title} Preview</h2>
-              {recordCount != null && !loading && (
-                <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{recordCount} records found</p>
-              )}
-            </div>
-            {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-1" />}
-          </div>
-          <div className="flex items-center gap-1">
-            {DOWNLOAD_FORMATS.map(fmt => {
-              const Icon = fmt.icon;
-              return (
-                <button key={fmt.id} onClick={() => renderReport(fmt.id)} disabled={loading}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-border bg-white text-foreground hover:bg-muted/50 disabled:opacity-40">
-                  <Icon className="h-3.5 w-3.5" />{fmt.label}
-                </button>
-              );
-            })}
-            <div className="w-px h-6 bg-border/50 mx-1" />
-            <button onClick={handlePrint} disabled={loading}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-              <Printer className="h-3.5 w-3.5" />Print
-            </button>
-          </div>
+    <>
+      <div className="h-full flex overflow-hidden">
+        {/* Left sidebar */}
+        <div className="w-72 shrink-0 flex flex-col border-r border-border/30 bg-white overflow-hidden">
+          <ReportSidebar
+            report={report}
+            params={params}
+            onChange={(name, value) => setParams(prev => ({ ...prev, [name]: value }))}
+            onSubmit={() => renderReport('html')}
+            onReset={handleReset}
+            loading={loading}
+            resetKey={resetKey}
+            token={token}
+            selectedOrgId={selectedOrgId}
+            roleOrgIds={roleOrgIds}
+          />
         </div>
 
-        {/* Report iframe */}
-        <div className="flex-1 overflow-hidden p-4">
-          <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden relative border border-border/30">
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" /><span>Rendering report...</span>
+        {/* Right panel */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-border/30 shrink-0">
+            <div className="flex items-center gap-3">
+              <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div>
+                <h2 className="text-sm font-semibold">{title} Preview</h2>
+                {recordCount != null && !loading && (
+                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{recordCount} records found</p>
+                )}
               </div>
-            )}
-            {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>
-            )}
-            <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+              {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-1" />}
+            </div>
+            <div className="flex items-center gap-1">
+              {DOWNLOAD_FORMATS.map(fmt => {
+                const Icon = fmt.icon;
+                return (
+                  <button key={fmt.id} onClick={() => renderReport(fmt.id)} disabled={loading}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-border bg-white text-foreground hover:bg-muted/50 disabled:opacity-40">
+                    <Icon className="h-3.5 w-3.5" />{fmt.label}
+                  </button>
+                );
+              })}
+              <div className="w-px h-6 bg-border/50 mx-1" />
+              <button onClick={handlePrint} disabled={loading}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <Printer className="h-3.5 w-3.5" />Print
+              </button>
+            </div>
+          </div>
+
+          {/* Report iframe */}
+          <div className="flex-1 overflow-hidden p-4">
+            <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden relative border border-border/30">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" /><span>Rendering report...</span>
+                </div>
+              )}
+              {error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>
+              )}
+              {!loading && !error && !previewHtmlRef.current && (
+                <div className="absolute inset-0 overflow-hidden">
+                  {/* Skeleton table background */}
+                  <div className="p-6 opacity-30 pointer-events-none select-none blur-[2px]">
+                    <div className="h-4 w-48 bg-slate-200 rounded mb-6" />
+                    <div className="space-y-0">
+                      <div className="grid grid-cols-6 gap-3 pb-2 border-b border-slate-200 mb-1">
+                        {[40, 15, 15, 15, 15, 15].map((w, i) => (
+                          <div key={i} className="h-3 bg-slate-300 rounded" style={{ width: `${w}%` }} />
+                        ))}
+                      </div>
+                      {Array.from({ length: 8 }).map((_, r) => (
+                        <div key={r} className="grid grid-cols-6 gap-3 py-2.5 border-b border-slate-100">
+                          {[40, 15, 15, 15, 15, 15].map((w, i) => (
+                            <div key={i} className="h-3 rounded" style={{ width: `${w}%`, background: r % 2 === 0 ? '#e2e8f0' : '#edf2f7' }} />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Centered message */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-base font-semibold text-foreground mb-1">Your report is ready to go</p>
+                      <p className="text-sm text-muted-foreground">Choose your filters and hit <span className="font-medium text-foreground">Run Report</span></p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <Dialog open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
+        <DialogContent className="max-w-5xl w-[85vw] h-[70vh] flex flex-col gap-3 p-4">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>{drillDownBp?.name} — Details</DialogTitle>
+          </DialogHeader>
+          {drillDownBp && (
+            <DrillDownViewer
+              report={report}
+              token={token}
+              baseParams={params}
+              bpId={drillDownBp.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!invoicePopup} onOpenChange={(o) => !o && setInvoicePopup(null)}>
+        <DialogContent className="max-w-5xl w-[85vw] h-[80vh] p-0 overflow-hidden">
+          {invoicePopup && (
+            <iframe
+              src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}?embedded=1`}
+              title="Invoice"
+              className="w-full h-full border-0"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -668,7 +1066,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function ReportViewerPage() {
-  const { token } = useAuth();
+  const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -698,7 +1096,15 @@ export default function ReportViewerPage() {
   };
 
   if (selectedReport) {
-    return <ReportViewer report={selectedReport} onBack={clearReport} token={token} />;
+    return (
+      <ReportViewer
+        report={selectedReport}
+        onBack={clearReport}
+        token={token}
+        selectedOrgId={selectedOrg?.id || null}
+        roleOrgIds={(selectedRole?.orgList || []).map(o => o.id).filter(Boolean)}
+      />
+    );
   }
 
   // Group reports by category, optionally filtering

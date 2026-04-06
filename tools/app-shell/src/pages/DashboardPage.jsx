@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
+import { useMenuLabel, useLocaleSwitch } from '@/i18n';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -370,6 +371,7 @@ const snapToRows = (px) =>
 const TALL_DEFAULT = new Set(['pending-tasks', 'top-clients']);
 
 function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset }) {
+  const tMenu = useMenuLabel();
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
 
@@ -402,8 +404,8 @@ function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset })
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:w-[560px] sm:max-w-[560px] flex flex-col p-0 overflow-hidden">
         <SheetHeader className="px-6 py-4 border-b shrink-0">
-          <SheetTitle>Customize Dashboard</SheetTitle>
-          <p className="text-xs text-muted-foreground">Drag cards to reorder. Toggle to show/hide.</p>
+          <SheetTitle>{tMenu('Customize Dashboard')}</SheetTitle>
+          <p className="text-xs text-muted-foreground">{tMenu('Drag cards to reorder. Toggle to show/hide.')}</p>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -443,7 +445,7 @@ function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset })
                   <div className="p-2.5 bg-white space-y-2">
                     {/* Name + toggle */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium leading-tight truncate">{meta.label}</span>
+                      <span className="text-xs font-medium leading-tight truncate">{tMenu(meta.label)}</span>
                       <Switch
                         checked={item.visible}
                         onCheckedChange={() => toggle(item.id)}
@@ -461,12 +463,12 @@ function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset })
         </div>
 
         <div className="px-6 py-3 border-t shrink-0 flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">Changes are saved automatically.</p>
+          <p className="text-xs text-muted-foreground">{tMenu('Changes are saved automatically.')}</p>
           <button
             onClick={onReset}
             className="text-xs text-destructive hover:text-destructive/80 font-medium transition-colors shrink-0"
           >
-            Reset to defaults
+            {tMenu('Reset to defaults')}
           </button>
         </div>
       </SheetContent>
@@ -494,8 +496,20 @@ function useCollapsed(key) {
 }
 
 function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
+  const tMenu = useMenuLabel();
+  const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
+
+  // Generate locale-aware month abbreviations for the same window as the incoming labels
+  const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
+  const fmt = new Intl.DateTimeFormat(bcp47, { month: 'short' });
+  const localizedLabels = labels.map((_, i) => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - (labels.length - 1 - i), 1);
+    const s = fmt.format(d);
+    return s.charAt(0).toUpperCase() + s.slice(1).replace('.', '');
+  });
 
   const switchChartType = (type) => {
     setChartType(type);
@@ -544,7 +558,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
           <div className="flex items-center gap-2 cursor-pointer select-none" onClick={toggleCollapsed}>
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
             <CardTitle className="text-sm font-medium">
-              {chartType === 'line' && hasExpenses ? 'Revenue vs Expenses (12 months)' : 'Revenue (12 months)'}
+              {chartType === 'line' && hasExpenses ? tMenu('Revenue vs Expenses (12 months)') : tMenu('Revenue (12 months)')}
             </CardTitle>
           </div>
           {!collapsed && (
@@ -553,11 +567,11 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    Revenue
+                    {tMenu('Revenue')}
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-                    Expenses
+                    {tMenu('Expenses')}
                   </span>
                 </div>
               )}
@@ -630,10 +644,10 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                 <circle key={i} cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2" />
               ))}
 
-              {labels.map((m, i) => {
-                const x = PAD_X + (i / (labels.length - 1)) * plotW;
+              {localizedLabels.map((m, i) => {
+                const x = PAD_X + (i / (localizedLabels.length - 1)) * plotW;
                 return (
-                  <text key={m} x={x} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
+                  <text key={i} x={x} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
                     {m}
                   </text>
                 );
@@ -665,7 +679,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                       fill={i === lastIdx ? '#10b981' : 'rgba(16,185,129,0.35)'}
                     />
                     <text x={x + barW / 2} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
-                      {labels[i]}
+                      {localizedLabels[i]}
                     </text>
                   </g>
                 );
@@ -683,18 +697,19 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
  * ----------------------------------------------------------------*/
 
 function TopClients({ clients = [] }) {
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">Top Clients (12 months)</CardTitle>
+          <CardTitle className="text-sm font-medium">{tMenu('Top Clients (12 months)')}</CardTitle>
         </div>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0">
+      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
         {clients.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No data available</p>
+          <p className="text-sm text-muted-foreground">{tMenu('No data available')}</p>
         ) : (
           <div className="space-y-0">
             {clients.map((c, i) => (
@@ -723,10 +738,11 @@ function TopClients({ clients = [] }) {
  * ----------------------------------------------------------------*/
 
 function QuickActions({ actions = [] }) {
+  const tMenu = useMenuLabel();
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+        <CardTitle className="text-sm font-medium">{tMenu('Quick Actions')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="flex flex-wrap gap-2">
@@ -736,7 +752,7 @@ function QuickActions({ actions = [] }) {
               <Button key={action.to} variant="outline" size="sm" asChild>
                 <Link to={action.to}>
                   <Icon className="h-4 w-4 mr-1.5" />
-                  {action.label}
+                  {tMenu(action.label)}
                 </Link>
               </Button>
             );
@@ -752,16 +768,20 @@ function QuickActions({ actions = [] }) {
  * ----------------------------------------------------------------*/
 
 function PendingTasks({ tasks = [] }) {
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+          <CardTitle className="text-sm font-medium">{tMenu('Pending Tasks')}</CardTitle>
         </div>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0">
+      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+        {tasks.length === 0 && (
+          <p className="text-sm text-muted-foreground">{tMenu('No pending tasks')}</p>
+        )}
         <div className="space-y-1">
           {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
@@ -778,7 +798,11 @@ function PendingTasks({ tasks = [] }) {
                     <Info className="h-4 w-4 shrink-0 text-blue-500" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{task.text}</p>
+                    <p className="text-sm truncate">
+                      {task.labelKey
+                        ? `${task.count} ${tMenu(task.labelKey)}`
+                        : tMenu(task.text)}
+                    </p>
                     {(task.amount || task.detail) && (
                       <p className="text-xs text-muted-foreground truncate">
                         {task.amount || task.detail}
@@ -812,6 +836,7 @@ function PendingTasks({ tasks = [] }) {
  * ----------------------------------------------------------------*/
 
 function CashFlowWidget({ kpis = [] }) {
+  const tMenu = useMenuLabel();
   const revenue = kpis.find((k) => k.key === 'revenueThisMonth');
   const expenses = kpis.find((k) => k.key === 'expensesThisMonth');
   const profit = kpis.find((k) => k.key === 'netProfit');
@@ -825,14 +850,14 @@ function CashFlowWidget({ kpis = [] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Cash Flow — This Month</CardTitle>
+        <CardTitle className="text-sm font-medium">{tMenu('Cash Flow — This Month')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span className="text-muted-foreground">Income</span>
+              <span className="text-muted-foreground">{tMenu('Income')}</span>
             </div>
             <span className="font-medium">${revenue.value.toLocaleString('en-US')}</span>
           </div>
@@ -844,7 +869,7 @@ function CashFlowWidget({ kpis = [] }) {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-              <span className="text-muted-foreground">Expenses</span>
+              <span className="text-muted-foreground">{tMenu('Expenses')}</span>
             </div>
             <span className="font-medium">${expenses.value.toLocaleString('en-US')}</span>
           </div>
@@ -854,7 +879,7 @@ function CashFlowWidget({ kpis = [] }) {
         </div>
         <Separator />
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground font-medium">Net</span>
+          <span className="text-muted-foreground font-medium">{tMenu('Net')}</span>
           <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-destructive'}`}>
             {isPositive ? '+' : ''}${(profit?.value ?? 0).toLocaleString('en-US')}
           </span>
@@ -869,19 +894,20 @@ function CashFlowWidget({ kpis = [] }) {
  * ----------------------------------------------------------------*/
 
 function CollectionsPayments({ pendingAmounts = {} }) {
+  const tMenu = useMenuLabel();
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Collections & Payments</CardTitle>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 flex-none">
+        <CardTitle className="text-sm font-medium">{tMenu('Collections & Payments')}</CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-3">
+      <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
         <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
             <div>
-              <p className="text-sm font-medium">To Collect</p>
-              <p className="text-xs text-muted-foreground">{toCollect.count} invoice{toCollect.count !== 1 ? 's' : ''} pending</p>
+              <p className="text-sm font-medium">{tMenu('To Collect')}</p>
+              <p className="text-xs text-muted-foreground">{toCollect.count} {toCollect.count !== 1 ? tMenu('invoices pending') : tMenu('invoice pending')}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -894,8 +920,8 @@ function CollectionsPayments({ pendingAmounts = {} }) {
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
             <div>
-              <p className="text-sm font-medium">To Pay</p>
-              <p className="text-xs text-muted-foreground">{toPay.count} invoice{toPay.count !== 1 ? 's' : ''} pending</p>
+              <p className="text-sm font-medium">{tMenu('To Pay')}</p>
+              <p className="text-xs text-muted-foreground">{toPay.count} {toPay.count !== 1 ? tMenu('invoices pending') : tMenu('invoice pending')}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -922,19 +948,20 @@ function fmtDate(str) {
 }
 
 function RecentInvoices({ invoices = [] }) {
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">Recent Invoices</CardTitle>
+          <CardTitle className="text-sm font-medium">{tMenu('Recent Invoices')}</CardTitle>
         </div>
       </CardHeader>
       {!collapsed && (
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
           {invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No invoices found</p>
+            <p className="text-sm text-muted-foreground">{tMenu('No invoices found')}</p>
           ) : (
             <div className="space-y-0">
               {invoices.map((inv, i) => (
@@ -949,7 +976,7 @@ function RecentInvoices({ invoices = [] }) {
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${inv.status === 'CO' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {inv.status === 'CO' ? 'Done' : 'Draft'}
+                        {inv.status === 'CO' ? tMenu('Done') : tMenu('Draft')}
                       </span>
                       <span className="text-sm font-medium">${inv.amount.toLocaleString('en-US')}</span>
                     </div>
@@ -980,22 +1007,23 @@ function fmtCompact(n) {
  * ----------------------------------------------------------------*/
 
 function BestProducts({ products = [] }) {
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_products');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer select-none">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">Best Products</CardTitle>
+            <CardTitle className="text-sm font-medium">{tMenu('Best Products')}</CardTitle>
           </div>
-          <span className="text-xs text-muted-foreground">12 months · by revenue</span>
+          <span className="text-xs text-muted-foreground">{tMenu('12 months · by revenue')}</span>
         </div>
       </CardHeader>
       {!collapsed && (
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
           {products.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No data available</p>
+            <p className="text-sm text-muted-foreground">{tMenu('No data available')}</p>
           ) : (
             <div className="space-y-0">
               {products.map((p, i) => (
@@ -1026,28 +1054,29 @@ function BestProducts({ products = [] }) {
  * ----------------------------------------------------------------*/
 
 function BestSellers({ sellers = [] }) {
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
   return (
-    <Card>
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={toggleCollapsed}>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">Best Sellers</CardTitle>
+            <CardTitle className="text-sm font-medium">{tMenu('Best Sellers')}</CardTitle>
           </div>
-          <span className="text-xs text-muted-foreground">12 months · by qty</span>
+          <span className="text-xs text-muted-foreground">{tMenu('12 months · by qty')}</span>
         </div>
       </CardHeader>
       {!collapsed && (
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
           {sellers.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-4">No data available</p>
+            <p className="text-sm text-muted-foreground p-4">{tMenu('No data available')}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">Product Name</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">Qty</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Product Name')}</th>
+                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Qty')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1148,6 +1177,7 @@ export default function DashboardPage() {
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
   const { config, toggle, resize, setHeight, reorder, reset } = useWidgetConfig();
+  const tMenu = useMenuLabel();
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = actions.map((a) => ({ label: a.label, to: a.route, icon: ICON_MAP[a.icon] || FileText }));
@@ -1158,7 +1188,7 @@ export default function DashboardPage() {
     const kpiWidget = (kpiKey) => {
       const kpi = resolvedKpis.find((k) => k.key === kpiKey);
       if (!kpi) return null;
-      return <KPICard key={id} label={kpi.label} value={kpi.value} format={kpi.format} trend={kpi.trend} previousValue={kpi.previousValue} icon={kpi.icon} kpiKey={kpi.key} />;
+      return <KPICard key={id} label={tMenu(kpi.label)} value={kpi.value} format={kpi.format} trend={kpi.trend} previousValue={kpi.previousValue} icon={kpi.icon} kpiKey={kpi.key} />;
     };
     switch (id) {
       case 'kpi-revenue':          return kpiWidget('revenueThisMonth');
@@ -1184,14 +1214,14 @@ export default function DashboardPage() {
       <div className="px-6 pt-3 pb-3">
         <div className="flex items-center gap-4">
           <div className="shrink-0">
-            <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-xl font-bold text-foreground">{tMenu('Dashboard')}</h1>
           </div>
           <div className="flex-1 flex justify-center">
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search clients, orders, invoices..."
+                placeholder={tMenu('Search clients, orders, invoices...')}
                 readOnly
                 tabIndex={-1}
                 className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
