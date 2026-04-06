@@ -220,6 +220,7 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
   if (draftSalesInvoices.length > 0) {
     tasks.push({
       type: 'info',
+      taskKey: draftSalesInvoices.length > 1 ? 'pendingSalesInvoices_plural' : 'pendingSalesInvoices',
       text: `${draftSalesInvoices.length} Sales Invoice${draftSalesInvoices.length > 1 ? 's' : ''} pending`,
       link: '/sales-invoice',
       count: draftSalesInvoices.length,
@@ -230,6 +231,7 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
   if (draftPurchaseInvoices.length > 0) {
     tasks.push({
       type: 'info',
+      taskKey: draftPurchaseInvoices.length > 1 ? 'pendingPurchaseInvoices_plural' : 'pendingPurchaseInvoices',
       text: `${draftPurchaseInvoices.length} Purchase Invoice${draftPurchaseInvoices.length > 1 ? 's' : ''} pending`,
       link: '/purchase-invoice',
       count: draftPurchaseInvoices.length,
@@ -240,6 +242,7 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
   if (draftShipments.length > 0) {
     tasks.push({
       type: 'info',
+      taskKey: 'pendingShipments',
       text: `${draftShipments.length} orders pending shipment`,
       link: '/goods-shipment',
       count: draftShipments.length,
@@ -249,6 +252,7 @@ function buildPendingTasks(allSalesInvoices, allPurchaseInvoices, allPurchaseOrd
   if (draftPOs.length > 0) {
     tasks.push({
       type: 'info',
+      taskKey: 'pendingPOs',
       text: `${draftPOs.length} purchase orders to confirm`,
       link: '/purchase-order',
       count: draftPOs.length,
@@ -422,6 +426,32 @@ const MOCK_PENDING_AMOUNTS = {
   toPay: { count: 3, amount: 14650 },
 };
 
+function inferPendingTaskKey(task) {
+  const text = String(task?.text ?? '').toLowerCase();
+
+  if (task?.taskKey) return task.taskKey;
+  if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
+    return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
+  }
+  if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
+    return 'pendingShipments';
+  }
+  if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
+    return 'purchaseOrdersToConfirm';
+  }
+  if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
+    return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
+  }
+  return null;
+}
+
+function localizePendingTasks(tasks = []) {
+  return tasks.map((task) => {
+    const taskKey = inferPendingTaskKey(task);
+    return taskKey ? { ...task, taskKey } : task;
+  });
+}
+
 function buildMockFallback() {
   const kpis = kpisConfig.map((cfg) => ({
     ...cfg,
@@ -433,7 +463,7 @@ function buildMockFallback() {
   return {
     kpis,
     revenueTrend: mockRevenueTrend,
-    pendingTasks: mockPendingTasks,
+    pendingTasks: localizePendingTasks(mockPendingTasks),
     recentMessages: mockRecentMessages,
     recentInvoices: MOCK_RECENT_INVOICES,
     bestProducts: MOCK_BEST_PRODUCTS,
@@ -471,8 +501,8 @@ export function useDashboardData() {
       // does not reliably apply field-level query parameters as filters.
       const [salesRes, purchasesRes, posRes, shipmentsRes, orderLinesRes, salesOrdersRes] = await Promise.allSettled([
         fetchAllRecords(apiBase, token, 'sales-invoice', 'header'),
-        fetchAllRecords(apiBase, token, 'purchase-invoice', 'invoice'),
-        fetchAllRecords(apiBase, token, 'purchase-order', 'order'),
+        fetchAllRecords(apiBase, token, 'purchase-invoice', 'header'),
+        fetchAllRecords(apiBase, token, 'purchase-order', 'header'),
         fetchAllRecords(apiBase, token, 'goods-shipment', 'goodsShipment'),
         fetchAllRecords(apiBase, token, 'sales-order', 'lines'),
         fetchAllRecords(apiBase, token, 'sales-order', 'header'),

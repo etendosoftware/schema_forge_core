@@ -28,6 +28,35 @@ Complete reference for all configurable options in `decisions.json` files. These
 | `entities` | object | Yes | — | Entity definitions keyed by entity name. |
 | `rules` | object | No | `{}` | Business rule catalog. |
 | `discardPatterns` | array | No | `[]` | Glob patterns to auto-discard fields. |
+| `labelOverrides` | object | No | `{}` | Per-locale label overrides for field columns. See below. |
+
+## Label Overrides (`labelOverrides`)
+
+Per-locale field label overrides. When the simplified interface needs to rename a field differently from the base Etendo AD translation, add it here instead of modifying the global locale dictionary.
+
+**Schema:**
+```json
+{
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Cliente",
+      "DateOrdered": "Fecha de Pedido"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Customer"
+    }
+  }
+}
+```
+
+**Resolution chain** (frontend `useLabel`):
+1. `labelOverrides[currentLocale][columnName]` — per-window override (this section)
+2. `dictionary.fields[columnName].label` — Etendo AD translation from `extract-labels.js`
+3. `null` — caller falls back to raw label from spec
+
+**How to use:**
+- Pass `spec?.window?.labelOverrides` to `useLabel()` in components that have access to the loaded spec
+- `resolve-curated.js` forwards `labelOverrides` to `schema.window.labelOverrides` automatically
 
 ## Window Properties (`window.*`)
 

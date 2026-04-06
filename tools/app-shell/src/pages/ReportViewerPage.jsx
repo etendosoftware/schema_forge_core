@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import { useUI } from '@/i18n';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -137,6 +138,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
 // Multi-select popup: shows selected tags + a "+" button that opens a modal with
 // a searchable list and checkboxes. Used for Business Partner, Product, Project.
 function PopupMultiSelector({ selector, label, onChange }) {
+  const ui = useUI();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
@@ -208,7 +210,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
               onClick={clearAll}
               className="text-[10px] text-muted-foreground hover:text-destructive underline underline-offset-2 ml-1"
             >
-              Clear all
+              {ui('clearAll')}
             </button>
           </div>
         )}
@@ -218,7 +220,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
           className="h-8 px-3 text-xs font-medium rounded-md border border-border bg-white hover:bg-muted/50 flex items-center gap-1.5 text-muted-foreground"
         >
           <span className="text-sm font-bold leading-none">+</span>
-          {confirmed.length === 0 ? label : 'Edit selection'}
+          {confirmed.length === 0 ? label : ui('editSelection')}
         </button>
       </div>
 
@@ -242,7 +244,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
             <div className="flex-1 overflow-auto">
               {options.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                  {query.length > 0 ? 'No results' : 'Loading...'}
+                  {query.length > 0 ? ui('noResults') : ui('loading')}
                 </p>
               ) : (
                 options.map(o => {
@@ -264,7 +266,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
             <div className="flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/20">
               <span className="text-xs text-muted-foreground">{pending.length} selected</span>
               <div className="flex gap-2">
-                <button onClick={() => setOpen(false)} className="h-8 px-3 text-xs rounded-md border border-border hover:bg-muted/50">Cancel</button>
+                <button onClick={() => setOpen(false)} className="h-8 px-3 text-xs rounded-md border border-border hover:bg-muted/50">{ui('cancel')}</button>
                 <button onClick={confirm} className="h-8 px-3 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90">OK</button>
               </div>
             </div>
@@ -282,6 +284,7 @@ const SIDEBAR_SECTIONS = [
 ];
 
 function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey }) {
+  const ui = useUI();
   const [displayValues, setDisplayValues] = useState({});
   const [errors, setErrors] = useState({});
 
@@ -461,7 +464,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
           disabled={loading}
           className="w-full h-9 text-sm font-medium rounded-lg border border-border text-muted-foreground hover:bg-muted/40 disabled:opacity-50"
         >
-          Reset Filters
+          {ui('resetFilters')}
         </button>
       </div>
     </div>

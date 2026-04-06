@@ -13672,59 +13672,421 @@
     }
   },
   "ui": {
-    "Dashboard": { "label": "Dashboard" },
-    "Setup Wizard": { "label": "Setup Wizard" },
-    "Overview": { "label": "Overview" },
-    "Quotations": { "label": "Quotations" },
-    "Sales Orders": { "label": "Sales Orders" },
-    "Shipments": { "label": "Shipments" },
-    "Invoices": { "label": "Invoices" },
-    "Returns": { "label": "Returns" },
-    "Return Receipts": { "label": "Return Receipts" },
-    "Purchase Orders": { "label": "Purchase Orders" },
-    "Goods Receipt": { "label": "Goods Receipt" },
-    "Return Shipments": { "label": "Return Shipments" },
-    "Payments In": { "label": "Payments In" },
-    "Payments Out": { "label": "Payments Out" },
-    "Bank Reconciliation": { "label": "Bank Reconciliation" },
-    "Chart of Accounts": { "label": "Chart of Accounts" },
-    "Recurring Invoices": { "label": "Recurring Invoices" },
-    "Reports": { "label": "Reports" },
-    "Products": { "label": "Products" },
-    "Categories": { "label": "Categories" },
-    "Physical Inventory": { "label": "Physical Inventory" },
-    "Goods Movements": { "label": "Goods Movements" },
-    "Warehouses": { "label": "Warehouses" },
-    "Storage Bins": { "label": "Storage Bins" },
-    "Contacts": { "label": "Contacts" },
-    "Business Partners": { "label": "Business Partners" },
-    "CRM": { "label": "CRM" },
-    "Deals": { "label": "Deals" },
-    "Activities": { "label": "Activities" },
-    "Leads": { "label": "Leads" },
-    "HR": { "label": "HR" },
-    "Employees": { "label": "Employees" },
-    "Absences": { "label": "Absences" },
-    "Projects": { "label": "Projects" },
-    "Time Tracking": { "label": "Time Tracking" },
-    "Documents": { "label": "Documents" },
-    "Price Lists": { "label": "Price Lists" },
-    "Payment Terms": { "label": "Payment Terms" },
-    "Payment Methods": { "label": "Payment Methods" },
-    "Taxes": { "label": "Taxes" },
-    "Units of Measure": { "label": "Units of Measure" },
-    "Users": { "label": "Users" },
-    "Smart Scan": { "label": "Smart Scan" }
+    "Absences": {
+      "label": "Absences"
+    },
+    "Activities": {
+      "label": "Activities"
+    },
+    "Artifacts": {
+      "label": "Artifacts"
+    },
+    "Bank Reconciliation": {
+      "label": "Bank Reconciliation"
+    },
+    "Business Partners": {
+      "label": "Business Partners"
+    },
+    "CRM": {
+      "label": "CRM"
+    },
+    "Categories": {
+      "label": "Categories"
+    },
+    "Chart of Accounts": {
+      "label": "Chart of Accounts"
+    },
+    "Commercial": {
+      "label": "Commercial"
+    },
+    "Contacts": {
+      "label": "Contacts"
+    },
+    "Dashboard": {
+      "label": "Dashboard"
+    },
+    "Deals": {
+      "label": "Deals"
+    },
+    "Documents": {
+      "label": "Documents"
+    },
+    "Employees": {
+      "label": "Employees"
+    },
+    "Expand menu": {
+      "label": "Expand menu"
+    },
+    "Finance": {
+      "label": "Finance"
+    },
+    "General": {
+      "label": "General"
+    },
+    "Goods Movements": {
+      "label": "Goods Movements"
+    },
+    "Goods Receipt": {
+      "label": "Goods Receipt"
+    },
+    "HR": {
+      "label": "HR"
+    },
+    "Home": {
+      "label": "Home"
+    },
+    "Inventory": {
+      "label": "Inventory"
+    },
+    "Invoices": {
+      "label": "Invoices"
+    },
+    "Leads": {
+      "label": "Leads"
+    },
+    "Overview": {
+      "label": "Overview"
+    },
+    "Payment Methods": {
+      "label": "Payment Methods"
+    },
+    "Payment Terms": {
+      "label": "Payment Terms"
+    },
+    "Payments In": {
+      "label": "Payments In"
+    },
+    "Payments Out": {
+      "label": "Payments Out"
+    },
+    "People": {
+      "label": "People"
+    },
+    "Physical Inventory": {
+      "label": "Physical Inventory"
+    },
+    "Price Lists": {
+      "label": "Price Lists"
+    },
+    "Products": {
+      "label": "Products"
+    },
+    "Projects": {
+      "label": "Projects"
+    },
+    "Purchase Orders": {
+      "label": "Purchase Orders"
+    },
+    "Purchases": {
+      "label": "Purchases"
+    },
+    "Quotations": {
+      "label": "Quotations"
+    },
+    "Recurring Invoices": {
+      "label": "Recurring Invoices"
+    },
+    "Reports": {
+      "label": "Reports"
+    },
+    "Return Receipts": {
+      "label": "Return Receipts"
+    },
+    "Return Shipments": {
+      "label": "Return Shipments"
+    },
+    "Returns": {
+      "label": "Returns"
+    },
+    "Sales": {
+      "label": "Sales"
+    },
+    "Sales Orders": {
+      "label": "Sales Orders"
+    },
+    "Settings": {
+      "label": "Settings"
+    },
+    "Setup Wizard": {
+      "label": "Setup Wizard"
+    },
+    "Shipments": {
+      "label": "Shipments"
+    },
+    "Smart Scan": {
+      "label": "Smart Scan"
+    },
+    "Storage Bins": {
+      "label": "Storage Bins"
+    },
+    "Taxes": {
+      "label": "Taxes"
+    },
+    "Time Tracking": {
+      "label": "Time Tracking"
+    },
+    "Units of Measure": {
+      "label": "Units of Measure"
+    },
+    "Users": {
+      "label": "Users"
+    },
+    "Warehouses": {
+      "label": "Warehouses"
+    },
+    "Your company": {
+      "label": "Your company"
+    }
+  },
+  "genericLabels": {
+    "save": "Save",
+    "saveDraft": "Save draft",
+    "saveAndProcess": "Save & {action}",
+    "process": "Process",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleteRecord": "Delete record",
+    "deleteConfirmTitle": "Delete record",
+    "deleteConfirmMessage": "Are you sure you want to delete this record? This action cannot be undone.",
+    "edit": "Edit",
+    "print": "Print",
+    "preview": "Preview",
+    "sendPreview": "Send / Preview",
+    "send": "Send",
+    "sendDownload": "Send / Download",
+    "sending": "Sending...",
+    "clear": "Clear",
+    "clearSort": "Clear sort",
+    "clearAll": "Clear all",
+    "newRecord": "New",
+    "newScan": "New Scan",
+    "sortBy": "Sort by",
+    "allStatuses": "All statuses",
+    "lastYear": "Last year",
+    "loadingMore": "Loading more...",
+    "allRecordsLoaded": "All records loaded",
+    "loading": "Loading...",
+    "loadingPreview": "Loading preview...",
+    "moreDetails": "More details",
+    "others": "Others",
+    "relatedDocuments": "Related Documents",
+    "searchPlaceholder": "Search clients, orders, invoices...",
+    "searchInvoices": "Search invoices...",
+    "searchPages": "Search pages...",
+    "askSomething": "Ask something...",
+    "noResults": "No results",
+    "noResultsFor": "No results for \"{query}\"",
+    "noResultsFound": "No results found.",
+    "createNewRecord": "Create a new record to get started.",
+    "previewNotAvailable": "Preview not available",
+    "pdfPreview": "PDF preview",
+    "pdfPreviewPlaceholder": "The PDF will appear here once document templates are configured",
+    "downloadPdf": "Download PDF",
+    "downloading": "Downloading...",
+    "noEmailFound": "No email found for this contact",
+    "addNote": "Add a note...",
+    "addMessage": "Add a personal message...",
+    "sendByEmail": "Send by email",
+    "selected": "{count} Selected",
+    "editSelection": "Edit selection",
+    "resetFilters": "Reset Filters",
+    "resetToDefaults": "Reset to defaults",
+    "filter": "Filter...",
+    "clearAllFilters": "Clear all filters",
+    "cancelEsc": "Cancel (Esc)",
+    "statusDraft": "Draft",
+    "statusComplete": "Complete",
+    "statusCompleted": "Completed",
+    "statusVoid": "Void",
+    "statusVoided": "Voided",
+    "statusInProcess": "In Process",
+    "statusClosed": "Closed",
+    "statusPaid": "Paid",
+    "statusUnderEvaluation": "Under Evaluation",
+    "statusCancelled": "Cancelled",
+    "statusPaymentReceived": "Payment Received",
+    "statusAwaitingExecution": "Awaiting Execution",
+    "statusAwaitingPayment": "Awaiting Payment",
+    "statusPaymentCleared": "Payment Cleared",
+    "statusPaymentMade": "Payment Made",
+    "statusWithdrawnNotCleared": "Withdrawn not Cleared",
+    "statusDepositedNotCleared": "Deposited not Cleared",
+    "dashboardTitle": "Dashboard",
+    "setupWizard": "Setup Wizard",
+    "smartScanTitle": "Smart Scan",
+    "smartScanUploadTitle": "Drop documents here or click to upload",
+    "smartScanUploadHint": "Supports PDF, JPG, PNG up to 25 MB. Batch upload supported.",
+    "smartScanBrowseFiles": "Browse Files",
+    "smartScanRecentScans": "Recent Scans",
+    "smartScanDocument": "Document",
+    "smartScanType": "Type",
+    "smartScanStatus": "Status",
+    "smartScanDate": "Date",
+    "smartScanConfidence": "Confidence",
+    "smartScanActivity": "Scan Activity",
+    "smartScanDocumentsScanned": "Documents Scanned",
+    "smartScanPendingReview": "Pending Review",
+    "smartScanAutoMatched": "Auto-Matched",
+    "smartScanExceptions": "Exceptions",
+    "smartScanInvoiceType": "Invoice",
+    "smartScanPurchaseOrderType": "Purchase Order",
+    "smartScanReceiptType": "Receipt",
+    "smartScanStatementType": "Statement",
+    "smartScanMatchedStatus": "Matched",
+    "smartScanReviewStatus": "Review",
+    "smartScanExceptionStatus": "Exception",
+    "smartScanActivity1": "INV-2026-0891 auto-matched to SO-4421",
+    "smartScanActivity2": "Batch scan completed: 12 documents processed",
+    "smartScanActivity3": "REC-2026-0112 flagged for manual review",
+    "smartScanActivity4": "STMT-2026-03 marked as exception",
+    "smartScanActivity5": "INV-2026-0890 auto-matched to PO-3398",
+    "smartScanTime2Min": "2 min ago",
+    "smartScanTime15Min": "15 min ago",
+    "smartScanTime1Hr": "1 hr ago",
+    "smartScanTime3Hr": "3 hr ago",
+    "smartScanTime5Hr": "5 hr ago",
+    "copilot": "Copilot",
+    "closeCopilot": "Close Copilot",
+    "openCopilot": "Open Copilot",
+    "copilotWelcome": "Hi! I'm your ERP assistant. What do you need today?",
+    "copilotInvoiceResponse": "I'll help you create an invoice. Opening Sales Invoice...\n\nYou can also say 'show pending invoices' to see what's outstanding.",
+    "copilotStockResponse": "Here's a quick stock summary:\n• Cerveza Ale 0.5L: 150 units\n• Vino Tinto Reserva: 80 units\n• Aceite de Oliva 1L: 230 units\n\nWould you like to check a specific product?",
+    "copilotOrderResponse": "You have 5 pending orders:\n• SO-2026-0234 — Empresa ABC ($8,500)\n• SO-2026-0235 — Tech Solutions ($3,200)\n• SO-2026-0236 — Global Trade ($15,000)\n\nShould I open the orders list?",
+    "copilotContactResponse": "I found 156 contacts. Top customers by revenue:\n1. Global Trade Ltd — $85,000\n2. Empresa ABC — $52,000\n3. Ibérica Industrial — $34,000\n\nWho are you looking for?",
+    "copilotDefaultResponse": "I can help with invoices, orders, stock, contacts, and more. What would you like to do?",
+    "createInvoice": "Create an invoice",
+    "checkStockLevels": "Check stock levels",
+    "showPendingOrders": "Show pending orders",
+    "findContact": "Find a contact",
+    "onboardingCompanySetup": "Company Setup",
+    "onboardingUserProfile": "User Profile",
+    "onboardingModuleSelection": "Module Selection",
+    "onboardingImportData": "Import Data",
+    "onboardingReviewLaunch": "Review & Launch",
+    "stepOf": "Step {step} of {total}",
+    "company": "Company",
+    "companyName": "Company Name",
+    "name": "Name",
+    "industry": "Industry",
+    "companySize": "Company Size",
+    "size": "Size",
+    "timezone": "Timezone",
+    "fullName": "Full Name",
+    "email": "Email",
+    "role": "Role",
+    "selectedModules": "Selected Modules",
+    "dataImport": "Data Import",
+    "avatarGenerated": "Avatar will be generated from your initials",
+    "selectIndustry": "Select industry...",
+    "selectSize": "Select size...",
+    "selectTimezone": "Select timezone...",
+    "selectRole": "Select role...",
+    "administrator": "Administrator",
+    "manager": "Manager",
+    "standardUser": "Standard User",
+    "viewer": "Viewer",
+    "back": "Back",
+    "next": "Next",
+    "launch": "Launch",
+    "moduleSales": "Sales",
+    "moduleSalesDesc": "Quotations, orders, invoices",
+    "modulePurchases": "Purchases",
+    "modulePurchasesDesc": "Purchase orders, receipts",
+    "moduleInventory": "Inventory",
+    "moduleInventoryDesc": "Stock, movements, warehouses",
+    "moduleAccounting": "Accounting",
+    "moduleAccountingDesc": "GL, payments, reconciliation",
+    "moduleCrm": "CRM",
+    "moduleCrmDesc": "Leads, deals, activities",
+    "moduleHr": "HR",
+    "moduleHrDesc": "Employees, absences, payroll",
+    "moduleProjects": "Projects",
+    "moduleProjectsDesc": "Tasks, time tracking, docs",
+    "importStartFresh": "Start Fresh",
+    "importStartFreshDesc": "Begin with an empty database and configure everything from scratch.",
+    "importCsv": "Import from CSV",
+    "importCsvDesc": "Upload CSV files for products, contacts, and opening balances.",
+    "customizeDashboard": "Customize dashboard",
+    "revenueThisMonth": "Revenue this month",
+    "expensesThisMonth": "Expenses this month",
+    "netProfit": "Net Profit",
+    "pendingInvoices": "Pending Invoices",
+    "revenueVsExpenses": "Revenue vs Expenses",
+    "pendingTasks": "Pending Tasks",
+    "topClients": "Top Clients",
+    "quickActions": "Quick Actions",
+    "cashFlow": "Cash Flow",
+    "collectionsPayments": "Collections & Payments",
+    "recentInvoices": "Recent Invoices",
+    "bestProducts": "Best Products",
+    "bestSellers": "Best Sellers",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net",
+    "toCollect": "To Collect",
+    "toPay": "To Pay",
+    "done": "Done",
+    "draft": "Draft",
+    "invoice": "Invoice",
+    "order": "Order",
+    "contact": "Contact",
+    "product": "Product",
+    "productName": "Product Name",
+    "qty": "Qty",
+    "revenue": "Revenue",
+    "revenueVsExpenses12m": "Revenue vs Expenses (12 months)",
+    "revenue12m": "Revenue (12 months)",
+    "topClients12m": "Top Clients (12 months)",
+    "months12ByRevenue": "12 months · by revenue",
+    "months12ByQty": "12 months · by qty",
+    "noDataAvailable": "No data available",
+    "noInvoicesFound": "No invoices found",
+    "dragCardsToReorder": "Drag cards to reorder. Toggle to show/hide.",
+    "dragToReorder": "drag to reorder",
+    "changesSavedAutomatically": "Changes are saved automatically.",
+    "units": "units",
+    "invoicePending": "{count} invoice pending",
+    "invoicesPending": "{count} invoices pending",
+    "pendingSalesInvoices": "{count} Sales Invoice pending",
+    "pendingSalesInvoices_plural": "{count} Sales Invoices pending",
+    "pendingPurchaseInvoices": "{count} Purchase Invoice pending",
+    "pendingPurchaseInvoices_plural": "{count} Purchase Invoices pending",
+    "pendingShipments": "{count} orders pending shipment",
+    "pendingPOs": "{count} purchase orders to confirm",
+    "overdueInvoices": "{count} overdue invoice",
+    "overdueInvoices_plural": "{count} overdue invoices",
+    "purchaseOrdersToConfirm": "{count} purchase order to confirm",
+    "purchaseOrdersToConfirm_plural": "{count} purchase orders to confirm",
+    "lowStockAlert": "{count} low stock alert",
+    "lowStockAlerts": "{count} low stock alerts",
+    "invoiceTrendLabel": "Revenue and expenses trend chart for the last 12 months",
+    "barChartAria": "Monthly sales bar chart"
   },
   "menus": {
-    "Home": { "label": "Home" },
-    "Sales": { "label": "Sales" },
-    "Purchases": { "label": "Purchases" },
-    "Finance": { "label": "Finance" },
-    "Inventory": { "label": "Inventory" },
-    "People": { "label": "People" },
-    "Projects": { "label": "Projects" },
-    "Settings": { "label": "Settings" },
+    "Home": {
+      "label": "Home"
+    },
+    "Sales": {
+      "label": "Sales"
+    },
+    "Purchases": {
+      "label": "Purchases"
+    },
+    "Finance": {
+      "label": "Finance"
+    },
+    "Inventory": {
+      "label": "Inventory"
+    },
+    "People": {
+      "label": "People"
+    },
+    "Projects": {
+      "label": "Projects"
+    },
+    "Settings": {
+      "label": "Settings"
+    },
     "Currency": {
       "label": "Currency"
     },

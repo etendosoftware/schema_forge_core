@@ -570,6 +570,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.headerExtra) {
     schema.window.headerExtra = windowDecisions.headerExtra;
   }
+  if (windowDecisions.labelOverrides) {
+    schema.window.labelOverrides = windowDecisions.labelOverrides;
+  }
 
   const rules = resolveRules(rulesRaw, decisions);
 

@@ -89,16 +89,16 @@ function printNextSteps({ pushToNeoRan, frontendGenerated }) {
   console.log('Next steps:');
 
   if (pushToNeoRan && frontendGenerated) {
-    console.log('  → Deploy UI, rebuild, and export config in one step:');
-    console.log('    make deploy');
+    console.log('  → UI is deployed in the separate container now; legacy copy flow only if needed:');
+    console.log('    make deploy LEGACY_DEPLOY=1');
     console.log('    cd <etendo_root> && ./gradlew smartbuild export.database --info');
     console.log('  → Restart Tomcat (if not using Docker — Docker auto-restarts after a few seconds)');
   } else if (pushToNeoRan) {
     console.log('  → Run export.database to persist NEO config to XML sourcedata:');
     console.log('    cd <etendo_root> && ./gradlew export.database --info');
   } else if (frontendGenerated) {
-    console.log('  → Deploy the UI and rebuild:');
-    console.log('    make deploy');
+    console.log('  → UI is deployed in the separate container now; legacy copy flow only if needed:');
+    console.log('    make deploy LEGACY_DEPLOY=1');
     console.log('    cd <etendo_root> && ./gradlew smartbuild --info');
     console.log('  → Restart Tomcat (if not using Docker — Docker auto-restarts after a few seconds)');
   }
