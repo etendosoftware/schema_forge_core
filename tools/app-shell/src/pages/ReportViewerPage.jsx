@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuth } from '@/auth/AuthContext.jsx';
 
 const FORMATS = [
@@ -566,6 +567,77 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   );
 }
 
+function DrillDownViewer({ report, token, baseParams, bpId }) {
+  const iframeRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const drillParams = { ...baseParams, bPartnerId: bpId, showDetails: 'true' };
+
+  const writeToIframe = (html) => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    iframe.src = 'about:blank';
+    iframe.onload = () => {
+      try { const d = iframe.contentDocument; d.open(); d.write(html); d.close(); } catch { /* */ }
+      iframe.onload = null;
+    };
+  };
+
+  const fetchFormat = useCallback(async (format) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/reports/${report.id}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ format, params: drillParams }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `Render failed: ${res.status}`);
+      }
+      if (format === 'html' || format === 'preview') {
+        writeToIframe(await res.text());
+      } else if (format === 'pdf') {
+        iframeRef.current.src = URL.createObjectURL(await res.blob());
+      } else {
+        const url = URL.createObjectURL(await res.blob());
+        const a = document.createElement('a'); a.href = url; a.download = `${report.id}-detail.${format}`; a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) { setError(err.message); }
+    setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report.id, token, bpId]);
+
+  useEffect(() => { fetchFormat('preview'); }, [fetchFormat]);
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-2">
+      <div className="flex items-center gap-2 px-1">
+        {[{ id: 'pdf', label: 'PDF', icon: FileDown }, { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet }].map(f => (
+          <button key={f.id} onClick={() => fetchFormat(f.id)} disabled={loading}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium border border-border bg-background hover:bg-muted disabled:opacity-50">
+            <f.icon className="h-3.5 w-3.5" />{f.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 bg-white rounded-lg border border-border/30 overflow-hidden relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" /><span>Loading details...</span>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center text-destructive text-sm px-8 text-center">{error}</div>
+        )}
+        <iframe ref={iframeRef} title="Detail Report" className="w-full h-full border-0" />
+      </div>
+    </div>
+  );
+}
+
 function ReportViewer({ report, onBack, token }) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -573,6 +645,17 @@ function ReportViewer({ report, onBack, token }) {
   const [recordCount, setRecordCount] = useState(null);
   const previewHtmlRef = useRef('');
   const [resetKey, setResetKey] = useState(0);
+  const [drillDownBp, setDrillDownBp] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === 'aging-drilldown' && e.data.bpId) {
+        setDrillDownBp({ id: e.data.bpId, name: e.data.bpName || '' });
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
   const getDefaultParams = useCallback(() => {
     const defaults = {};
@@ -781,6 +864,22 @@ function ReportViewer({ report, onBack, token }) {
         </div>
       </div>
     </div>
+
+    <Sheet open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
+      <SheetContent side="bottom" className="h-[85vh] flex flex-col gap-3 p-4">
+        <SheetHeader className="shrink-0">
+          <SheetTitle>{drillDownBp?.name} — Details</SheetTitle>
+        </SheetHeader>
+        {drillDownBp && (
+          <DrillDownViewer
+            report={report}
+            token={token}
+            baseParams={params}
+            bpId={drillDownBp.id}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
 

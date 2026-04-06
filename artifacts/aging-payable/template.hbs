@@ -9,6 +9,8 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
 .bp-header-row td { font-weight: bold; font-size: 13px; padding-top: 12px; padding-bottom: 2px; border: none; background: transparent; }
 .bp-subtotal-row td { font-weight: bold; border-top: 1px solid #aaa; border-bottom: 2px solid #333; }
 .doc-row td { border: none; font-size: 11px; }
+.bp-drilldown-link { cursor: pointer; color: #2563eb; text-decoration: underline; }
+.bp-drilldown-link:hover { opacity: 0.75; text-decoration: none; }
 </style></head>
 <body><div class="report-container">
 
@@ -113,7 +115,7 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
     </tr></thead>
     <tbody>
       {{#each rows}}<tr>
-        <td>{{lookup this 'bPartner'}}</td>
+        <td><span class="bp-drilldown-link" onclick="window.parent.postMessage({type:'aging-drilldown',bpId:'{{lookup this 'bPartnerId'}}',bpName:'{{lookup this 'bPartner'}}'},'*')">{{lookup this 'bPartner'}}</span></td>
         <td class="cell-amount">{{formatCurrency (lookup this 'current')}}</td>
         <td class="cell-amount">{{formatCurrency (lookup this 'days30')}}</td>
         {{#if @root.meta.showBucket2}}<td class="cell-amount">{{formatCurrency (lookup this 'days60')}}</td>{{/if}}
