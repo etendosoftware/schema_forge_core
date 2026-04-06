@@ -179,24 +179,24 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       : 'opacity-100 transition-opacity duration-[280ms]';
 
   const cardClass = animState === 'opening'
-    ? 'opacity-0 translate-y-4 scale-[0.98]'
+    ? 'translate-x-full'
     : animState === 'closing'
-      ? 'opacity-0 translate-y-4 scale-[0.98] transition-all duration-[280ms]'
+      ? 'translate-x-full transition-transform duration-[280ms]'
       : animState === 'closingUp'
-        ? 'opacity-0 -translate-y-8 scale-[0.98] transition-all duration-[280ms]'
-        : 'opacity-100 translate-y-0 scale-100 transition-all duration-[280ms]';
+        ? 'opacity-0 translate-x-full transition-all duration-[280ms]'
+        : 'translate-x-0 transition-transform duration-[280ms]';
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4 ${backdropClass}`}
+        className={`fixed inset-0 z-50 bg-black/30 ${backdropClass}`}
         onClick={handleClose}
       >
-        {/* Modal card */}
+        {/* Side panel — slides in from the right, preserving all original content */}
         <div
-          className={`bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
-          style={{ width: '90vw', height: '88vh', maxWidth: '1200px' }}
+          className={`absolute right-0 top-0 bottom-0 bg-white shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
+          style={{ width: '80vw', maxWidth: '1100px' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Top bar ── */}
