@@ -26,17 +26,34 @@ Agent definitions live in `.claude/agents/` — each agent wrote their own file 
 | Agent File | Name | Role | Style |
 |------------|------|------|-------|
 | workflow.md | Clerk | WORKFLOW | Mechanical |
-| developer-1.md | Catalyst | DEV | Exploratory |
-| developer-2.md | Forge | DEV | Exploratory |
-| developer-3.md | Catalyst | DEV | Exploratory |
-| developer-4.md | Forge | DEV | Exploratory |
+| schema-forge-developer.md | Developer (slots 1–4) | DEV — extends the tooling (new decisions features, generators, generic UI components) | Exploratory |
+| window-agent.md | Window Agent | PIPELINE RUNNER — processes windows using existing tooling (extract, decisions config, pipeline) | Systematic |
 | reviewer.md | Alex | REVIEW | Balanced |
 | qa.md | Sentinel | QA | Methodical |
 | documentarian.md | Sage | DOCS | Comprehensive |
 
 When spawning agents, use `subagent_type="general-purpose"` and include the agent identity/role in the prompt.
-Custom agent types from `.claude/agents/` are NOT valid subagent_type values.
+Pass `name="developer-1"` (or 2/3/4) to address each slot independently via `SendMessage`.
+The `.claude/agents/` files are NOT valid `subagent_type` values — always use `"general-purpose"`.
 Include the agent's name, role, and key rules in the prompt passed to the subagent.
+
+### Agent Dispatch Guide
+
+**Question to ask: Is the task changing the tool, or using the tool?**
+
+| User request | Agent | Why |
+|-------------|-------|-----|
+| "Process the Purchase Order window" | **Window Agent** | Running existing pipeline on a window |
+| "Extract and classify this new window" | **Window Agent** | Using existing extractors and classifiers |
+| "Change field X to readOnly in sales" | **Window Agent** | Editing decisions.json config values |
+| "Run the pipeline on all finance windows" | **Window Agent** | Batch pipeline execution |
+| "Add a new `statusBar` option type" | **Schema Forge Developer** | Extending `decisions.json` schema + generator |
+| "The generator emits broken JSX for header-only windows" | **Schema Forge Developer** | Fixing `generate-frontend.js` |
+| "Add a new custom component slot for sidebars" | **Schema Forge Developer** | New extension point in generator + docs |
+| "Build a generic component for document preview" | **Schema Forge Developer** | New shared UI component in `tools/app-shell/` |
+| "Create the feature branch and PR" | **Clerk** | Workflow operations |
+
+**Mixed tasks:** If a task requires both (e.g., "add a new layout type and apply it to sales"), split into two subtasks — developer first (build the feature), then window-agent (configure the window).
 </team>
 
 <pipeline>
