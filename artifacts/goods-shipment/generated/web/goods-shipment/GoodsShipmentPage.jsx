@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import GoodsShipmentTable from './GoodsShipmentTable';
@@ -6,6 +7,7 @@ import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
+import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
 import catalogs from './mockCatalogs';
 
 
@@ -232,7 +234,10 @@ const api = {
 
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:GoodsShipmentPage
+  // @sf-custom-start hooks:GoodsShipmentPage
+  const bulkActions = (ctx) => <BulkInvoiceFromShipment {...ctx} />;
+  props = { ...props, bulkActions };
+  // @sf-custom-end hooks:GoodsShipmentPage
   if (recordId) {
     return (
       <DetailView
@@ -253,7 +258,6 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}

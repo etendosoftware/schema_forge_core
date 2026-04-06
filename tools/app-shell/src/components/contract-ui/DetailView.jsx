@@ -106,6 +106,7 @@ export function DetailView({
   extraActions = [],
   menuActions = [],
   hideDeleteWhenComplete = false,
+  hidePrint = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
@@ -120,6 +121,8 @@ export function DetailView({
   onAfterSave,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
+  const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
   const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
   const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
@@ -590,7 +593,7 @@ export function DetailView({
               </button>
             )}
             {/* Print document — shown when documentPreview is not provided */}
-            {!documentPreview && !isNew && recordId && (
+            {!documentPreview && !hidePrint && !isNew && recordId && (
               <button
                 onClick={() => setShowPrint(true)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -723,7 +726,7 @@ export function DetailView({
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+              <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
                 const saved = await hook.handleSave(data);
                 if (saved) {
                   if (onAfterSave) {
@@ -823,6 +826,15 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
+                  hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                    <LinesEmptyState
+                      data={data}
+                      onAddLine={() => { setAddingLine(true); setEditingChild(null); }}
+                      recordId={data?.id || recordId}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                    />
+                  ) : (
                   <div className="pt-3 flex items-start gap-4">
                     {/* Table + add button */}
                     <div className="flex-1 min-w-0">
@@ -927,13 +939,20 @@ export function DetailView({
                         </div>
                       )}
 
-                      {allEntryFields.length > 0 && hook.editing && !isDocumentReadOnly && (
-                        <button
-                          onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                        >
-                          + Add {detailLabel || 'line'}
-                        </button>
+                      {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
+                          {allEntryFields.length > 0 && (
+                            <button
+                              onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
+                              style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
+                            >
+                              + Add Lines
+                            </button>
+                          )}
+                          {DetailExtraActions && (
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} />
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -1051,6 +1070,7 @@ export function DetailView({
                       </div>
                     )}
                   </div>
+                  )
                 )}
 
                 {/* Tab content: CustomLines (replaces standard lines table) */}

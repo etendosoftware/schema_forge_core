@@ -527,6 +527,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.hideDeleteWhenComplete) {
     schema.window.hideDeleteWhenComplete = true;
   }
+  if (windowDecisions.hidePrint) {
+    schema.window.hidePrint = true;
+  }
   if (windowDecisions.customComponents) {
     schema.window.customComponents = windowDecisions.customComponents;
   }
