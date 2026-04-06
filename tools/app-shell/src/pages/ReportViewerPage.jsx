@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/auth/AuthContext.jsx';
 
 const FORMATS = [
@@ -616,7 +616,7 @@ function DrillDownViewer({ report, token, baseParams, bpId }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-2">
       <div className="flex items-center gap-2 px-1">
-        {[{ id: 'pdf', label: 'PDF', icon: FileDown }, { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet }].map(f => (
+        {[{ id: 'preview', label: 'Preview', icon: Eye }, { id: 'pdf', label: 'PDF', icon: FileDown }, { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet }].map(f => (
           <button key={f.id} onClick={() => fetchFormat(f.id)} disabled={loading}
             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium border border-border bg-background hover:bg-muted disabled:opacity-50">
             <f.icon className="h-3.5 w-3.5" />{f.label}
@@ -639,6 +639,7 @@ function DrillDownViewer({ report, token, baseParams, bpId }) {
 }
 
 function ReportViewer({ report, onBack, token }) {
+  const navigate = useNavigate();
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -651,6 +652,9 @@ function ReportViewer({ report, onBack, token }) {
     const handler = (e) => {
       if (e.data?.type === 'aging-drilldown' && e.data.bpId) {
         setDrillDownBp({ id: e.data.bpId, name: e.data.bpName || '' });
+      } else if (e.data?.type === 'navigate-invoice' && e.data.invoiceId) {
+        setDrillDownBp(null);
+        navigate(`/purchase-invoice/${e.data.invoiceId}`);
       }
     };
     window.addEventListener('message', handler);
@@ -866,11 +870,11 @@ function ReportViewer({ report, onBack, token }) {
       </div>
     </div>
 
-    <Sheet open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
-      <SheetContent side="bottom" className="h-[85vh] flex flex-col gap-3 p-4">
-        <SheetHeader className="shrink-0">
-          <SheetTitle>{drillDownBp?.name} — Details</SheetTitle>
-        </SheetHeader>
+    <Dialog open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
+      <DialogContent className="max-w-5xl w-[85vw] h-[70vh] flex flex-col gap-3 p-4">
+        <DialogHeader className="shrink-0">
+          <DialogTitle>{drillDownBp?.name} — Details</DialogTitle>
+        </DialogHeader>
         {drillDownBp && (
           <DrillDownViewer
             report={report}
@@ -879,8 +883,8 @@ function ReportViewer({ report, onBack, token }) {
             bpId={drillDownBp.id}
           />
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
