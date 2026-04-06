@@ -88,8 +88,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "details"
+            "form": false
           },
           {
             "name": "paymentDate",
@@ -101,9 +100,8 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "@#Date@",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             },
@@ -123,10 +121,9 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "reference": "BPartner",
             "inputMode": "search",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_BPartner"
             },
@@ -152,8 +149,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "collapsed"
+            "form": false
           },
           {
             "name": "paymentMethod",
@@ -165,10 +161,9 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Paymentmethod",
             "inputMode": "search",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -188,9 +183,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "0",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             },
@@ -211,14 +205,13 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Financial_Account",
             "inputMode": "dependent",
             "dependsOn": {
               "field": "paymentMethod",
               "filterKey": "Fin_Paymentmethod_ID"
             },
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_FinAccount"
             },
@@ -238,14 +231,13 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Currency",
             "inputMode": "dependent",
             "dependsOn": {
               "field": "account",
               "filterKey": "FIN_Financial_Account_ID"
             },
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             },
@@ -369,7 +361,7 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "0"
           },
           {

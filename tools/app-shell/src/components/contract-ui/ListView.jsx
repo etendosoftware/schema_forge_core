@@ -25,6 +25,8 @@ export function ListView({
   hideCreate = false,
   headerContent = null,
   api = null,
+  bulkActions = null,
+  isRowSelectable = null,
 }) {
   const hook = useEntity(entity, null, { token, apiBaseUrl });
   const navigate = useNavigate();
@@ -171,6 +173,7 @@ export function ListView({
                 <Printer className="h-3.5 w-3.5" />
                 Print ({selectedRows.length})
               </Button>
+              {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
               <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
                 Clear
               </Button>
@@ -337,6 +340,7 @@ export function ListView({
                     data={hook.items}
                     onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
                     onSelectionChange={setSelectedRows}
+                    isRowSelectable={isRowSelectable}
                     compact={false}
                     sortColumn={hook.sortColumn}
                     sortDirection={hook.sortDirection}
