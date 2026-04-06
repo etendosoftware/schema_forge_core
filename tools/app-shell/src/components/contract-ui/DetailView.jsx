@@ -757,14 +757,14 @@ export function DetailView({
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">
-        <div className={`flex-1 overflow-auto px-6 pb-6 min-w-0${embedded ? ' pointer-events-none' : ''}`}>
+        <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div style={{ padding: '24px 0 8px' }}>
+            <div style={{ padding: '24px 0 8px' }} className={embedded ? 'pointer-events-none' : ''}>
               <Form
                 entity={entity}
                 data={data}
@@ -780,7 +780,7 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className={sidePanel ? 'mt-2' : 'mt-6'}>
+            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}${embedded ? ' pointer-events-none' : ''}`}>
             <CollapsibleSection title="More details">
               <Form
                 entity={entity}
@@ -800,7 +800,7 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className="pt-2">
+              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
                 {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
@@ -838,7 +838,7 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  <div className="pt-3 flex items-start gap-4">
+                  <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {/* Table + add button */}
                     <div className="flex-1 min-w-0">
                       <DetailTable
@@ -1070,7 +1070,7 @@ export function DetailView({
 
                 {/* Tab content: CustomLines (replaces standard lines table) */}
                 {tabs[activeTab]?.key === 'customLines' && CustomLines && (
-                  <div className="pt-3">
+                  <div className={`pt-3${embedded ? ' pointer-events-none' : ''}`}>
                     <CustomLines
                       recordId={data?.id || recordId}
                       data={data}
@@ -1086,7 +1086,7 @@ export function DetailView({
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className="pt-3 flex items-start gap-4">
+                  <div key={st.key} className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -1262,7 +1262,7 @@ export function DetailView({
 
                 {/* Tab content: Others (secondary header fields) */}
                 {tabs[activeTab]?.key === 'others' && (
-                  <div className="pt-5">
+                  <div className={`pt-5${embedded ? ' pointer-events-none' : ''}`}>
                     <Form
                       entity={entity}
                       data={data}

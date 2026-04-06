@@ -653,7 +653,6 @@ function ReportViewer({ report, onBack, token }) {
       if (e.data?.type === 'aging-drilldown' && e.data.bpId) {
         setDrillDownBp({ id: e.data.bpId, name: e.data.bpName || '' });
       } else if (e.data?.type === 'navigate-invoice' && e.data.invoiceId) {
-        setDrillDownBp(null);
         setInvoicePopup({ id: e.data.invoiceId });
       }
     };
