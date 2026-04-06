@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import AppSidebar from './Sidebar.jsx';
 import { CommandPalette } from '@/components/CommandPalette.jsx';
 import { InspectorProvider } from '@/components/inspector/InspectorProvider.jsx';
@@ -11,6 +11,8 @@ import { CopilotWidget } from '@/components/CopilotWidget';
 
 export default function AppLayout({ menuGroups }) {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  if (searchParams.get('embedded') === '1') return <Outlet />;
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
   const sectionColor = getSectionColor(activeGroup?.group);
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {

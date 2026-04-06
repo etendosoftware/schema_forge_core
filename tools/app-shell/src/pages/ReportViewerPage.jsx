@@ -890,7 +890,7 @@ function ReportViewer({ report, onBack, token }) {
       <DialogContent className="max-w-5xl w-[85vw] h-[80vh] p-0 overflow-hidden">
         {invoicePopup && (
           <iframe
-            src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}`}
+            src={`${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/purchase-invoice/${invoicePopup.id}?embedded=1`}
             title="Invoice"
             className="w-full h-full border-0"
           />
