@@ -283,11 +283,12 @@ export default function QuotationConfirmModal({
             subtitle="Para productos con stock, entregas o pedidos con múltiples envíos."
           />
           <OptionCard
-            selected={selected === 'invoice'}
-            onClick={() => setSelected('invoice')}
+            selected={false}
+            onClick={() => {}}
             icon={<FileText size={16} />}
             title="Facturar directamente"
-            subtitle="Para servicios o ventas simples sin gestión de entrega."
+            subtitle="Próximamente — por ahora, creá el pedido y facturá desde ahí."
+            disabled
           />
         </div>
 
@@ -327,16 +328,17 @@ export default function QuotationConfirmModal({
 
 /* ── Option card ───────────────────────────────────────────────── */
 
-function OptionCard({ selected, onClick, icon, title, badge, subtitle }) {
+function OptionCard({ selected, onClick, icon, title, badge, subtitle, disabled }) {
   return (
     <div
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: 10,
         border: selected ? '2px solid #3B82F6' : '0.5px solid #E5E7EB',
         borderRadius: 8, padding: selected ? '11px 13px' : '12px 14px',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         background: selected ? '#EFF6FF' : '#fff',
+        opacity: disabled ? 0.5 : 1,
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
