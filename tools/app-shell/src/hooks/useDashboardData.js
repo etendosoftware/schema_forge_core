@@ -200,6 +200,18 @@ function mapBestSellers(handlerData) {
 }
 
 /**
+ * Map top clients handler response.
+ * Handler returns: [{name, total}]
+ */
+function mapTopClients(handlerData) {
+  if (!handlerData || handlerData.length === 0) return null;
+  return handlerData.map((c) => ({
+    name: c.name || '',
+    total: c.total || 0,
+  }));
+}
+
+/**
  * Map pending amounts handler response.
  * Handler returns: {toCollect: {count, amount}, toPay: {count, amount}}
  * Note: this endpoint returns a single object, not an array.
@@ -307,6 +319,7 @@ export function useDashboardData() {
       const [
         kpisRes, trendsRes, pendingRes, activityRes,
         invoicesRes, bestProductsRes, bestSellersRes, pendingAmountsRes,
+        topClientsRes,
       ] = await Promise.allSettled([
         fetchWidget(apiBase, token, 'kpis'),
         fetchWidget(apiBase, token, 'trends'),
@@ -316,6 +329,7 @@ export function useDashboardData() {
         fetchWidget(apiBase, token, 'best-products'),
         fetchWidget(apiBase, token, 'best-sellers'),
         fetchWidget(apiBase, token, 'pending-amounts'),
+        fetchWidget(apiBase, token, 'top-clients'),
       ]);
 
       const kpisData    = kpisRes.status    === 'fulfilled' ? kpisRes.value    : null;
@@ -326,6 +340,7 @@ export function useDashboardData() {
       const bestProductsData = bestProductsRes.status === 'fulfilled' ? bestProductsRes.value : null;
       const bestSellersData = bestSellersRes.status === 'fulfilled' ? bestSellersRes.value : null;
       const pendingAmountsData = pendingAmountsRes.status === 'fulfilled' ? pendingAmountsRes.value : null;
+      const topClientsData = topClientsRes.status === 'fulfilled' ? topClientsRes.value : null;
 
       console.debug('[dashboard] widget fetch results:', {
         kpis: kpisData?.length ?? 'FAILED',
@@ -336,11 +351,13 @@ export function useDashboardData() {
         bestProducts: bestProductsData?.length ?? 'FAILED',
         bestSellers: bestSellersData?.length ?? 'FAILED',
         pendingAmounts: pendingAmountsData ? 'OK' : 'FAILED',
+        topClients: topClientsData?.length ?? 'FAILED',
       });
 
       // If ALL handlers failed, fall back to full mock
       const allFailed = !kpisData && !trendsData && !pendingData && !activityData
-        && !invoicesData && !bestProductsData && !bestSellersData && !pendingAmountsData;
+        && !invoicesData && !bestProductsData && !bestSellersData && !pendingAmountsData
+        && !topClientsData;
       if (allFailed) {
         console.warn('[dashboard] All widget endpoints failed — using mock data');
         setData(buildMockFallback());
@@ -356,7 +373,7 @@ export function useDashboardData() {
         kpis: mappedKpis ?? mock.kpis,
         revenueTrend: mappedTrends ?? mock.revenueTrend,
         expenseTrend: mock.revenueTrend.values.map(() => 0),
-        topClients: [],
+        topClients: mapTopClients(topClientsData) ?? [],
         pendingTasks: mapPendingTasks(pendingData),
         recentMessages: mapActivity(activityData) || mock.recentMessages,
         recentInvoices: mapRecentInvoices(invoicesData) ?? mock.recentInvoices,
