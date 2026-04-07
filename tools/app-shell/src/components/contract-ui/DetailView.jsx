@@ -698,6 +698,7 @@ export function DetailView({
               .filter(p => p.displayLogicRaw
                 ? evalDisplayLogicRaw(p.displayLogicRaw, data)
                 : displayLogic?.visibility?.[p.name] !== false)
+              .filter(p => !p.requiresLines || hook.children.length > 0)
               .map(p => {
                 const isPrimary = p.style === 'positive';
                 const btnClass = salesTheme

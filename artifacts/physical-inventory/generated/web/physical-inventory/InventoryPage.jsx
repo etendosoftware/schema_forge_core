@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import InventoryTable from './InventoryTable';
 import InventoryForm from './InventoryForm';
@@ -25,7 +26,7 @@ const extraBadges = [];
 // @sf-generated-start processes:inventory
 const processes = [
   { name: 'processNow', label: 'Process Inventory Count', style: 'positive',
-    displayLogicRaw: "@Processed@='N'" },
+    displayLogicRaw: "@Processed@='N'", requiresLines: true },
 ];
 // @sf-generated-end processes:inventory
 
@@ -173,6 +174,7 @@ const api = {
 // @sf-generated-start component:InventoryPage
 export default function InventoryPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:InventoryPage
+  
   if (recordId) {
     return (
       <DetailView
