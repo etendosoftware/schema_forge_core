@@ -246,6 +246,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     if (dependsOn) field.dependsOn = dependsOn;
 
     if (fieldDecision.lookup) field.lookup = true;
+    if (fieldDecision.popup) field.popup = true;
   }
 
   // derivation — carry from raw field
@@ -272,6 +273,10 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
     if (fieldDecision.displayLogicJs != null) {
       field.displayLogicJs = fieldDecision.displayLogicJs;
+    }
+
+    if (fieldDecision.readOnlyLogicJs != null) {
+      field.readOnlyLogicJs = fieldDecision.readOnlyLogicJs;
     }
 
     // callout — carry from raw
@@ -595,7 +600,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.othersLabel) {
     schema.window.othersLabel = windowDecisions.othersLabel;
   }
-
+  if (windowDecisions.disableProcessedLock) {
+    schema.window.disableProcessedLock = true;
+  }
   const rules = resolveRules(rulesRaw, decisions);
 
   return { schema, rules };

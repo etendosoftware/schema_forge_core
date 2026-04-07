@@ -120,6 +120,7 @@ export function DetailView({
   sidebarContent = null,
   othersLabel = null,
   primaryTabs = null,
+  lockWhenProcessed = true,
   onAfterSave,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
@@ -161,7 +162,8 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
-  const isDocumentReadOnly = _headerData?.processed === true || _headerData?.processed === 'Y';
+  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
+  const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -696,6 +698,7 @@ export function DetailView({
               .filter(p => p.displayLogicRaw
                 ? evalDisplayLogicRaw(p.displayLogicRaw, data)
                 : displayLogic?.visibility?.[p.name] !== false)
+              .filter(p => !p.requiresLines || hook.children.length > 0)
               .map(p => {
                 const isPrimary = p.style === 'positive';
                 const btnClass = salesTheme
@@ -884,7 +887,7 @@ export function DetailView({
                       recordId={data?.id || recordId}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
-                      onRefresh={() => hook.refetch?.()}
+                      onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
                     />
                   ) : (
                   <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
@@ -1002,7 +1005,7 @@ export function DetailView({
                             </button>
                           )}
                           {DetailExtraActions && (
-                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.refetch?.()} />
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
                           )}
                         </div>
                       )}
@@ -1025,7 +1028,7 @@ export function DetailView({
                         </div>
                         <DetailForm
                           data={lineEdits ?? selectedLine}
-                          readOnly={!hook.editing || isDocumentReadOnly}
+                          readOnly={!hook.editing || isProcessed}
                           onChange={(key, val, column) => {
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
@@ -1139,14 +1142,14 @@ export function DetailView({
                       apiBaseUrl={apiBaseUrl}
                       api={api}
                       editing={hook.editing}
-                      onRefresh={() => hook.refetch?.()}
+                      onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
                     />
                   </div>
                 )}
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
+                  <div key={st.key} className={`pt-3 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -1173,6 +1176,7 @@ export function DetailView({
                       </div>
                     ) : (
                     <>
+                    <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <st.Table
                         data={secondaryHooks[stIdx]?.children ?? []}
@@ -1197,14 +1201,6 @@ export function DetailView({
                           catalogs,
                         } : undefined}
                       />
-                      {st.addLineFields?.entry?.length > 0 && hook.editing && (
-                        <button
-                          onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                        >
-                          + Add {st.label}
-                        </button>
-                      )}
                     </div>
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
@@ -1314,6 +1310,15 @@ export function DetailView({
                           </div>
                         )}
                       </div>
+                    )}
+                    </div>
+                    {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                      <button
+                        onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        + Add {st.label}
+                      </button>
                     )}
                     </>
                     )}

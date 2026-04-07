@@ -264,10 +264,10 @@ function StockChart({ transactions, currentStock, locationRows = [] }) {
             <div className="flex-1 min-w-0" style={{ height: 300 }}>
               <ChartSVG {...(chartLarge ?? chart)} W={600} H={250} PAD_X={52} PAD_Y={16} gradId="sbGradLarge" fontSize={13} />
             </div>
-            {/* Stock por almacén */}
+            {/* Stock by warehouse */}
             {locationRows.length > 0 && (
               <div className="w-56 flex-shrink-0 flex flex-col gap-2">
-                <div className="text-sm font-semibold text-gray-700">Stock por almacén</div>
+                <div className="text-sm font-semibold text-gray-700">Stock by warehouse</div>
                 {locationRows
                   .sort((a, b) => b.quantityOnHand - a.quantityOnHand)
                   .map((b, i) => (
@@ -360,7 +360,7 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
 
       {locationRows.length > 0 && (
         <div className="mt-1">
-          <div className="text-sm font-semibold text-gray-700 mb-2">Stock por almacén</div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Stock by warehouse</div>
           <div className="flex flex-col gap-1.5">
             {locationRows
               .sort((a, b) => b.quantityOnHand - a.quantityOnHand)

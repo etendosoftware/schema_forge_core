@@ -6,7 +6,7 @@ import ContactTable from './ContactTable';
 import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
-import BillingPreferencesForm from '@/windows/custom/contacts/BillingPreferencesForm';
+import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
 import ContactsKpiCards from '@/windows/custom/contacts/ContactsKpiCards';
 import catalogs from './mockCatalogs';
 
@@ -17,8 +17,7 @@ const breadcrumb = '';
 
 // @sf-generated-start summary:businessPartner
 const summary = [
-  { key: 'active', column: 'IsActive', type: 'boolean' },
-  { key: 'creditUsed', column: 'SO_CreditUsed', type: 'amount' },
+
 ];
 
 const statusField = null;
@@ -569,6 +568,7 @@ const api = {
 // @sf-generated-start component:BusinessPartnerPage
 export default function BusinessPartnerPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:BusinessPartnerPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -599,7 +599,10 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
           ], derived: [], hidden: [] } },
         ]}
-        formFooter={BillingPreferencesForm}
+        primaryTabs={[
+          { key: 'general', label: 'General' },
+          { key: 'financial', label: 'Financial', Panel: ContactsFinancialPanel },
+        ]}
         {...props}
         sidebarContent={(data) => (
           <BusinessPartnerSidebar

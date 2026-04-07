@@ -16,6 +16,9 @@ import {
   ShoppingCart,
   Users,
   Box,
+  Truck,
+  ShoppingBag,
+  FileInput,
   AlertTriangle,
   Info,
   ChevronRight,
@@ -42,7 +45,7 @@ import { useMenuLabel, useLocaleSwitch } from '@/i18n';
  * Icon lookup
  * ----------------------------------------------------------------*/
 
-const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box };
+const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box, Truck, ShoppingBag, FileInput };
 
 /* ------------------------------------------------------------------
  * Widget Registry

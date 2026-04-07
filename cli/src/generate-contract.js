@@ -153,6 +153,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.inputMode) mapped.inputMode = f.inputMode;
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
+      if (f.popup) mapped.popup = true;
 
       // UI hints
       if (f.defaultValue) mapped.defaultValue = f.defaultValue;
@@ -228,6 +229,12 @@ export function generateFrontendContract(schema, rules = []) {
         } else if (!mapped.readOnlyLogic.js) {
           mapped.readOnlyLogic.js = convertLogicToJs(f.readOnlyLogic, columnMap, booleanFields);
         }
+      }
+      // Prefer explicit readOnlyLogicJs from decisions over AD-expression translation
+      if (f.readOnlyLogicJs != null) {
+        if (!mapped.readOnlyLogic) mapped.readOnlyLogic = {};
+        mapped.readOnlyLogic.js = f.readOnlyLogicJs;
+        mapped.readOnlyLogic.evaluable = true;
       }
 
       return mapped;
