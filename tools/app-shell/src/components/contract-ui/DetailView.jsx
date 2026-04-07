@@ -1148,7 +1148,7 @@ export function DetailView({
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
+                  <div key={st.key} className={`pt-3 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -1175,6 +1175,7 @@ export function DetailView({
                       </div>
                     ) : (
                     <>
+                    <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <st.Table
                         data={secondaryHooks[stIdx]?.children ?? []}
@@ -1199,14 +1200,6 @@ export function DetailView({
                           catalogs,
                         } : undefined}
                       />
-                      {st.addLineFields?.entry?.length > 0 && hook.editing && (
-                        <button
-                          onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-3 font-medium"
-                        >
-                          + Add {st.label}
-                        </button>
-                      )}
                     </div>
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
@@ -1316,6 +1309,15 @@ export function DetailView({
                           </div>
                         )}
                       </div>
+                    )}
+                    </div>
+                    {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                      <button
+                        onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        + Add {st.label}
+                      </button>
                     )}
                     </>
                     )}

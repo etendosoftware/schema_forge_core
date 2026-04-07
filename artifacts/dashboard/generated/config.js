@@ -7,34 +7,37 @@ export const meta = {
   "route": "/dashboard"
 };
 
-export const kpisConfig = [
-  {
+export const kpisConfig = [];
+
+export const sections = {
+  "kpi-revenue": {
+    "type": "kpi-single",
     "key": "revenueThisMonth",
     "label": "Revenue this month",
     "format": "currency",
     "icon": "DollarSign"
   },
-  {
+  "kpi-expenses": {
+    "type": "kpi-single",
     "key": "expensesThisMonth",
     "label": "Expenses this month",
     "format": "currency",
     "icon": "CreditCard"
   },
-  {
+  "kpi-profit": {
+    "type": "kpi-single",
     "key": "netProfit",
     "label": "Net Profit",
     "format": "currency",
     "icon": "TrendingUp"
   },
-  {
+  "kpi-pending": {
+    "type": "kpi-single",
     "key": "pendingInvoices",
     "label": "Pending Invoices",
     "format": "number",
     "icon": "Clock"
-  }
-];
-
-export const sections = {
+  },
   "revenue-trend": {
     "type": "chart",
     "chartType": "line",
@@ -60,8 +63,20 @@ export const sections = {
 
 export const layout = [
   {
-    "section": "kpi-header",
-    "span": "full"
+    "section": "kpi-revenue",
+    "span": "1/4"
+  },
+  {
+    "section": "kpi-expenses",
+    "span": "1/4"
+  },
+  {
+    "section": "kpi-profit",
+    "span": "1/4"
+  },
+  {
+    "section": "kpi-pending",
+    "span": "1/4"
   },
   {
     "section": "revenue-trend",
@@ -98,8 +113,18 @@ export const actions = [
     "icon": "Users"
   },
   {
-    "label": "+ Product",
-    "route": "/product",
-    "icon": "Box"
+    "label": "+ Purchase Invoice",
+    "route": "/purchase-invoice",
+    "icon": "FileInput"
+  },
+  {
+    "label": "+ Purchase Order",
+    "route": "/purchase-order",
+    "icon": "ShoppingBag"
+  },
+  {
+    "label": "+ Shipment",
+    "route": "/goods-shipment",
+    "icon": "Truck"
   }
 ];

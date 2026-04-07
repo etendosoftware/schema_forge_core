@@ -71,8 +71,24 @@ function generateMockData(contract) {
     '',
   ];
 
+  // Group kpi-single sections into a combined 'kpis' object keyed by their `key` field
+  const kpiSingleSections = sectionsList.filter(s => s.type === 'kpi-single');
+  if (kpiSingleSections.length > 0) {
+    const kpisObj = {};
+    for (const s of kpiSingleSections) {
+      if (s.key && mockData[s.id] !== undefined) {
+        kpisObj[s.key] = mockData[s.id];
+      }
+    }
+    if (Object.keys(kpisObj).length > 0) {
+      lines.push(`export const kpis = ${JSON.stringify(kpisObj, null, 2)};`);
+      lines.push('');
+    }
+  }
+
   for (const section of sectionsList) {
     if (section.type === 'quick-actions') continue;
+    if (section.type === 'kpi-single') continue; // already handled above
 
     const data = mockData[section.id];
     if (data === undefined) continue;
