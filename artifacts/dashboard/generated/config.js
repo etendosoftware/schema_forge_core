@@ -136,20 +136,5 @@ export const actions = [
     "label": "+ Contact",
     "route": "/contacts",
     "icon": "Users"
-  },
-  {
-    "label": "+ Purchase Invoice",
-    "route": "/purchase-invoice",
-    "icon": "FileInput"
-  },
-  {
-    "label": "+ Purchase Order",
-    "route": "/purchase-order",
-    "icon": "ShoppingBag"
-  },
-  {
-    "label": "+ Shipment",
-    "route": "/goods-shipment",
-    "icon": "Truck"
   }
 ];
