@@ -18,7 +18,8 @@
         { "name": "sales-order", "label": "Sales Order" },
         { "name": "goods-shipment", "label": "Goods Shipment" },
         { "name": "sales-invoice", "label": "Sales Invoice" },
-        { "name": "return-from-customer", "label": "Return from Customer" }
+        { "name": "return-from-customer", "label": "Return from Customer" },
+        { "name": "return-material-receipt", "label": "Return Material Receipt" }
       ]
     },
     {

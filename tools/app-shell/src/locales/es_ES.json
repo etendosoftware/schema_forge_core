@@ -16077,19 +16077,22 @@
     "invoice.docstatus.voided": { "label": "Anulada" },
     "invoice.docstatus.closed": { "label": "Cerrada" },
     "Customer Return": {
-      "label": "Devolución de cliente"
+      "label": "Devolución"
     },
     "Customer Returns": {
-      "label": "Devolución de cliente"
+      "label": "Devolución"
+    },
+    "Returns": {
+      "label": "Devolución"
     },
     "Return Material": {
-      "label": "Devolución a proveedor"
+      "label": "Devolución"
     },
     "Return Shipment": {
-      "label": "Devolución a albarán de proveedor"
+      "label": "Albarán de devolución"
     },
     "Purchase Invoice": {
-      "label": "Factura (Proveedor)"
+      "label": "Factura"
     },
     "Warehouses": {
       "label": "Almacén"
@@ -16158,7 +16161,7 @@
       "label": "General"
     },
     "Goods Receipt": {
-      "label": "Recepción de mercancía"
+      "label": "Albarán"
     },
     "Return Shipments": {
       "label": "Envíos de devolución"
@@ -16177,6 +16180,51 @@
     },
     "Recurring Invoices": {
       "label": "Facturas recurrentes"
+    },
+    "Sales Quotation": {
+      "label": "Presupuesto"
+    },
+    "Sales Order": {
+      "label": "Pedido"
+    },
+    "Goods Shipment": {
+      "label": "Albarán"
+    },
+    "Sales Invoice": {
+      "label": "Factura"
+    },
+    "Return from Customer": {
+      "label": "Devolución"
+    },
+    "Return Material Receipt": {
+      "label": "Albarán de devolución"
+    },
+    "Purchase Order": {
+      "label": "Pedido"
+    },
+    "Return to Vendor": {
+      "label": "Devolución"
+    },
+    "Return to Vendor Shipment": {
+      "label": "Albarán de devolución"
+    },
+    "Quotation": {
+      "label": "Presupuesto"
+    },
+    "Return Material Receipts": {
+      "label": "Albarán de devolución"
+    },
+    "Return Receipt": {
+      "label": "Albarán de devolución"
+    },
+    "Invoice": {
+      "label": "Factura"
+    },
+    "Orders": {
+      "label": "Pedidos"
+    },
+    "Order": {
+      "label": "Pedido"
     },
     "Reports": {
       "label": "Informes"
