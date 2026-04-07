@@ -123,6 +123,7 @@ export function DetailView({
   primaryTabs = null,
   lockWhenProcessed = true,
   onAfterSave,
+  onAfterCreate,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
@@ -755,6 +756,7 @@ export function DetailView({
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved) {
+                    if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
                     if (onAfterSave) {
                       navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
                     } else if (saved.id && isNew) {
@@ -770,6 +772,7 @@ export function DetailView({
               <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
                 const saved = await hook.handleSave(data);
                 if (saved) {
+                  if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
                   if (onAfterSave) {
                     navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
                   } else if (saved.id && isNew) {
@@ -1519,7 +1522,7 @@ export function DetailView({
           )}
           </div>
         </div>
-        {sidebarContent && (
+        {sidebarContent && (!primaryTabs || activePrimaryTab === 'general') && (
           <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto p-5 bg-gray-50/40">
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
