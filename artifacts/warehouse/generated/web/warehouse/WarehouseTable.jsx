@@ -2,10 +2,8 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:warehouse
 const columns = [
-  { key: 'searchKey', column: 'Value', type: 'string' },
-  { key: 'name', column: 'Name', type: 'string' },
-  { key: 'description', column: 'Description', type: 'string' },
-  { key: 'location', column: 'C_Location_ID', type: 'string' },
+  { key: 'searchKey', column: 'Value', type: 'string', label: 'Search Key' },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
 ];
 // @sf-generated-end columns:warehouse
 
