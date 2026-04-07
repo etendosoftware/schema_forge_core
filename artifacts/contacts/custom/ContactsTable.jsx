@@ -1,19 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { DataTable } from '@/components/contract-ui';
-
-const BASE_COLUMNS = [
-  { key: 'name', column: 'Name', type: 'string', label: 'Commercial Name' },
-];
-
-const ENRICHED_COLUMNS = [
-  ...BASE_COLUMNS,
-  { key: '__location', type: 'string', label: 'Location',  render: (row) => row.__location ?? '—' },
-  { key: '__email',    type: 'string', label: 'Email',     render: (row) => row.__email    ?? '—' },
-];
+import { useLocale } from '@/i18n';
 
 const filters = ['searchKey', 'name'];
 
 export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest }) {
+  const dictionary = useLocale();
+  const gl = dictionary?.genericLabels || {};
+  const t = (key) => gl[key] || key;
+
+  const columns = useMemo(() => [
+    { key: 'name', column: 'Name', type: 'string', label: t('commercialName') },
+    { key: '__location', type: 'string', label: t('locationColumn'), render: (row) => row.__location ?? '—' },
+    { key: '__email',    type: 'string', label: t('emailColumn'),    render: (row) => row.__email    ?? '—' },
+  ], [gl]);
   const [enrichedData, setEnrichedData] = useState(data);
   const lastDataRef = useRef(null);
 
@@ -54,5 +54,5 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
     }).catch(() => setEnrichedData(data));
   }, [data, token, apiBaseUrl]);
 
-  return <DataTable columns={ENRICHED_COLUMNS} filters={filters} data={enrichedData} {...rest} />;
+  return <DataTable columns={columns} filters={filters} data={enrichedData} {...rest} />;
 }
