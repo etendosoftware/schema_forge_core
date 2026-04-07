@@ -327,6 +327,7 @@ export default function reportApiPlugin() {
           const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100));
           const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
           const selectedOrgId = (url.searchParams.get('selectedOrgId') || '').trim();
+          const selectedAcctSchemaId = (url.searchParams.get('selectedAcctSchemaId') || '').trim();
           const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '')
             .split(',')
             .map(s => s.trim())
@@ -371,9 +372,9 @@ export default function reportApiPlugin() {
                   select: `SELECT ad_org_id AS id, name, name AS label`
                 },
                 'account': {
-                  fromWhere: `FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1)`,
-                  orderBy: 'ORDER BY value',
-                  select: `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name, value || ' - ' || name AS label`
+                  fromWhere: `FROM c_elementvalue ev WHERE ev.isactive='Y' AND ev.issummary='N' ${byClient('ev.ad_client_id')} AND (ev.value ILIKE $1 OR ev.name ILIKE $1)`,
+                  orderBy: 'ORDER BY ev.value',
+                  select: `SELECT ev.value AS id, ev.value || ' - ' || ev.name AS name, ev.value || ' - ' || ev.name AS label`
                 },
                 'accounting': {
                   fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
@@ -442,6 +443,11 @@ export default function reportApiPlugin() {
                     `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.ad_org_id = ANY($${values.length}))`
                   );
                 }
+              }
+
+              if (type === 'account' && selectedAcctSchemaId) {
+                values.push(selectedAcctSchemaId);
+                whereFragments.push(`AND ev.c_element_id IN (SELECT c_element_id FROM c_acctschema_element WHERE c_acctschema_id = $${values.length} AND c_element_id IS NOT NULL)`);
               }
 
               const fullFromWhere = whereFragments.join(' ');

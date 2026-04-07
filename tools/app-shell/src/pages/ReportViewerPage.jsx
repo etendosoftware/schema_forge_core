@@ -40,30 +40,67 @@ function ReportCard({ report, onRun }) {
 }
 
 // Single-select popup modal — used for fields with inputStyle: 'popup-single'.
+const SELECTOR_PAGE_SIZE = 30;
+
 function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams = {} }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
   const [focusIdx, setFocusIdx] = useState(-1);
   const inputRef = useRef(null);
+  const listRef = useRef(null);
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
-    if (open) { setQuery(''); setOptions([]); setFocusIdx(-1); setTimeout(() => inputRef.current?.focus(), 50); }
+    if (open) { setQuery(''); setOptions([]); setOffset(0); setHasMore(false); setFocusIdx(-1); setTimeout(() => inputRef.current?.focus(), 50); }
   }, [open]);
+
+  const fetchPage = useCallback((q, off, append) => {
+    const extra = Object.entries(extraParams).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+    const params = `q=${encodeURIComponent(q)}&limit=${SELECTOR_PAGE_SIZE}&offset=${off}${extra ? '&' + extra : ''}`;
+    return fetch(`/api/report-selectors/${selector}?${params}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+      .then(r => r.json())
+      .then(data => {
+        const items = Array.isArray(data) ? data : (data?.items ?? []);
+        const more = Array.isArray(data) ? false : (data?.hasMore ?? false);
+        if (append) {
+          setOptions(prev => [...prev, ...items]);
+        } else {
+          setOptions(items);
+        }
+        setHasMore(more);
+        setOffset(off + items.length);
+        setFocusIdx(-1);
+      });
+  }, [selector, extraParams]);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    const extra = Object.entries(extraParams).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+    setOptions([]);
+    setOffset(0);
+    setHasMore(false);
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
-        .then(r => r.json())
-        .then(data => { setOptions(Array.isArray(data) ? data : (data?.items ?? [])); setFocusIdx(-1); })
-        .catch(() => setOptions([]))
-        .finally(() => setLoading(false));
+      fetchPage(query, 0, false).catch(() => setOptions([])).finally(() => setLoading(false));
     }, query ? 300 : 0);
     return () => clearTimeout(t);
   }, [query, selector, open, extraParams]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+        setLoadingMore(true);
+        fetchPage(query, offset, true).catch(() => {}).finally(() => setLoadingMore(false));
+      }
+    }, { threshold: 0.1 });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, offset, query, fetchPage]);
 
   const handleKey = (e) => {
     if (e.key === 'Escape') { onClose(); return; }
@@ -92,7 +129,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
             className="w-full h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
-        <div className="flex-1 overflow-auto py-1">
+        <div ref={listRef} className="flex-1 overflow-auto py-1">
           {loading && <div className="flex justify-center py-6 text-muted-foreground text-xs">Loading...</div>}
           {!loading && options.length === 0 && (
             <div className="text-center py-6 text-muted-foreground text-xs">No results</div>
@@ -106,6 +143,9 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
               {o.name}
             </button>
           ))}
+          <div ref={sentinelRef} className="py-1 flex justify-center">
+            {loadingMore && <span className="text-xs text-muted-foreground">Loading more...</span>}
+          </div>
         </div>
       </div>
     </div>
@@ -659,7 +699,10 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
                 type="button"
                 onClick={() => {
                 const extra = {};
-                if (p.dependsOn) extra.selectedOrgId = params[p.dependsOn] || '';
+                if (p.dependsOn) {
+                  const paramKey = p.selector === 'account' ? 'selectedAcctSchemaId' : 'selectedOrgId';
+                  extra[paramKey] = params[p.dependsOn] || '';
+                }
                 setPopup({ name: p.name, selector: p.selector, label, extraParams: extra });
               }}
                 className={`flex-1 h-9 px-3 text-sm border rounded-md bg-white hover:bg-muted/50 text-left truncate text-muted-foreground ${errorBorder}`}
@@ -836,12 +879,13 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   );
 }
 
-function DrillDownViewer({ report, token, baseParams, bpId }) {
+function DrillDownViewer({ report, token, baseParams, bpId, targetReportId, extraParams = {} }) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const drillParams = { ...baseParams, bPartnerId: bpId, showDetails: 'true' };
+  const reportId = targetReportId || report.id;
+  const drillParams = { ...baseParams, ...(bpId ? { bPartnerId: bpId, showDetails: 'true' } : {}), ...extraParams };
 
   const writeToIframe = (html) => {
     const iframe = iframeRef.current;
@@ -857,7 +901,7 @@ function DrillDownViewer({ report, token, baseParams, bpId }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/reports/${report.id}/render`, {
+      const res = await fetch(`/api/reports/${reportId}/render`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ format, params: drillParams }),
@@ -915,12 +959,15 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
   const previewHtmlRef = useRef('');
   const [resetKey, setResetKey] = useState(0);
   const [drillDownBp, setDrillDownBp] = useState(null);
+  const [drillDownAccount, setDrillDownAccount] = useState(null);
   const [invoicePopup, setInvoicePopup] = useState(null);
 
   useEffect(() => {
     const handler = (e) => {
       if (e.data?.type === 'aging-drilldown' && e.data.bpId) {
         setDrillDownBp({ id: e.data.bpId, name: e.data.bpName || '' });
+      } else if (e.data?.type === 'trial-balance-drilldown' && e.data.accountId) {
+        setDrillDownAccount({ id: e.data.accountId, name: e.data.accountName || '', value: e.data.accountValue || '' });
       } else if (e.data?.type === 'navigate-invoice' && e.data.invoiceId) {
         setInvoicePopup({ id: e.data.invoiceId });
       }
@@ -1153,6 +1200,23 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds }) {
               token={token}
               baseParams={params}
               bpId={drillDownBp.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!drillDownAccount} onOpenChange={(o) => !o && setDrillDownAccount(null)}>
+        <DialogContent className="max-w-5xl w-[85vw] h-[70vh] flex flex-col gap-3 p-4">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>{drillDownAccount?.value} — {drillDownAccount?.name}</DialogTitle>
+          </DialogHeader>
+          {drillDownAccount && (
+            <DrillDownViewer
+              report={report}
+              token={token}
+              baseParams={params}
+              targetReportId="report-general-ledger"
+              extraParams={{ fromAccountId: drillDownAccount.value, toAccountId: drillDownAccount.value }}
             />
           )}
         </DialogContent>
