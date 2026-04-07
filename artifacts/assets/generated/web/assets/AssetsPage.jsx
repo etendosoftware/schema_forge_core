@@ -205,6 +205,7 @@ const api = {
 // @sf-generated-start component:AssetsPage
 export default function AssetsPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:AssetsPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -236,7 +237,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
             recordId={recordId}
             data={data}
             token={props.token}
-            apiBaseUrl={api.baseUrl}
+            apiBaseUrl={props.apiBaseUrl}
           />
         )}
       />
