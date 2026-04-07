@@ -409,7 +409,13 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           try {
             const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
             const existingContract = JSON.parse(existingRaw);
-            prevVersion = existingContract.version ?? null;
+            // Guard: version may be a nested object if a previous run had a bug.
+            // Drill down until we reach a string.
+            let rawVersion = existingContract.version ?? null;
+            while (rawVersion !== null && typeof rawVersion === 'object') {
+              rawVersion = rawVersion.version ?? null;
+            }
+            prevVersion = rawVersion;
             // Snapshot for version diffing
             await writeFile(`artifacts/${windowName}/contract.prev.json`, existingRaw, 'utf-8');
           } catch {
