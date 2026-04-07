@@ -1992,6 +1992,10 @@
       "label": "Email",
       "description": "An email address for a specified business partner."
     },
+    "EMail": {
+      "label": "Email",
+      "description": "Email address"
+    },
     "Supervisor_ID": {
       "label": "Supervisor",
       "description": "Supervisor for this user - used for escalation"
@@ -16311,6 +16315,21 @@
     "statusInProcess": "In Process",
     "statusClosed": "Closed",
     "statusPaid": "Paid",
+    "statusPending": "Pending",
+    "statusPartial": "Partial",
+    "statusOverdue": "Overdue",
+    "allTab": "All",
+    "invoicesTab": "Invoices",
+    "creditNotesTab": "Credit notes",
+    "allPayments": "All payments",
+    "statusColumn": "Status",
+    "creditNoteLabel": "Credit note",
+    "totalContacts": "Total Contacts",
+    "customers": "Customers",
+    "vendors": "Vendors",
+    "commercialName": "Commercial Name",
+    "locationColumn": "Location",
+    "emailColumn": "Email",
     "statusUnderEvaluation": "Under Evaluation",
     "statusCancelled": "Cancelled",
     "statusPaymentReceived": "Payment Received",
@@ -16323,6 +16342,7 @@
     "dashboardTitle": "Dashboard",
     "setupWizard": "Setup Wizard",
     "smartScanTitle": "Smart Scan",
+    "smartScanSubtitle": "Process incoming documents automatically.",
     "smartScanUploadTitle": "Drop documents here or click to upload",
     "smartScanUploadHint": "Supports PDF, JPG, PNG up to 25 MB. Batch upload supported.",
     "smartScanBrowseFiles": "Browse Files",
@@ -16495,6 +16515,9 @@
     },
     "Account Tree": {
       "label": "Account Tree"
+    },
+    "Account": {
+      "label": "Chart of Accounts"
     },
     "Account Combination": {
       "label": "Account Combination"

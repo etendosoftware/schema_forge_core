@@ -629,8 +629,8 @@
       "description": "Enable this to include an endpoint for creating a new entity."
     },
     "Description": {
-      "label": "Description (Main)",
-      "description": "General description for the context of the Endpoints. "
+      "label": "Descripción",
+      "description": "Descripción general"
     },
     "Getbyid_Description": {
       "label": "GET by ID Description",
@@ -661,7 +661,7 @@
       "description": ""
     },
     "Value": {
-      "label": "Value",
+      "label": "Clave de búsqueda",
       "description": ""
     },
     "Getapikey": {
@@ -857,7 +857,7 @@
       "description": "Query about invoices sent to SII"
     },
     "Paymentdate": {
-      "label": "Payment/Collection Date",
+      "label": "Fecha de cobro/pago",
       "description": ""
     },
     "Fecha_Presentacion": {
@@ -1061,8 +1061,8 @@
       "description": "The total sum on which taxes are added for purchase flow"
     },
     "Name": {
-      "label": "Identificator",
-      "description": "Identificator"
+      "label": "Nombre",
+      "description": "Nombre"
     },
     "Total_Pymnts_Right": {
       "label": "Right Payments",
@@ -1193,7 +1193,7 @@
       "description": "Financial account used to deposit / withdrawal money such as bank accounts or petty cash"
     },
     "Amount": {
-      "label": "Amount Paid/Collected",
+      "label": "Importe cobrado/pagado",
       "description": ""
     },
     "Sent_Amount": {
@@ -9896,6 +9896,10 @@
       "label": "Correo electrónico",
       "description": "Dirección de correo electrónico de un tercero específico."
     },
+    "EMail": {
+      "label": "Correo electrónico",
+      "description": "Dirección de correo electrónico"
+    },
     "EnforcePriceLimit": {
       "label": "Forzar pr.límite",
       "description": "No permitir precios por debajo del precio límite"
@@ -13914,7 +13918,7 @@
     "Goods Shipment": {
       "label": "Albarán (Cliente)"
     },
-    "Goods Movements": {
+    "Goods Movement": {
       "label": "Movimiento entre almacenes"
     },
     "Title": {
@@ -14137,7 +14141,7 @@
       "label": "Amortización"
     },
     "Assets": {
-      "label": "Activos"
+      "label": "Activosa"
     },
     "Discounts and Promotions": {
       "label": "Modificación de precios"
@@ -14356,7 +14360,7 @@
       "label": "Crear Líneas de Factura Desde Líneas de Albarán"
     },
     "Payment In": {
-      "label": "Cobros"
+      "label": "Cobro"
     },
     "Period Control Log": {
       "label": "Histórico de Control de Periodos"
@@ -15249,7 +15253,7 @@
       "label": "Tarea estándar"
     },
     "Contact": {
-      "label": "Personas de contacto"
+      "label": "Contacto"
     },
     "Parameters": {
       "label": "Parámetros"
@@ -15479,7 +15483,7 @@
     "Month": {
       "label": "Mes"
     },
-    "Assets": {
+    "Asset": {
       "label": "Activos"
     },
     "Discounts and Promotions": {
@@ -16057,6 +16061,42 @@
     }
   },
   "ui": {
+    "invoice.status": { "label": "Estado" },
+    "invoice.filter.all": { "label": "Todas" },
+    "invoice.filter.invoices": { "label": "Facturas" },
+    "invoice.filter.credit-notes": { "label": "Abonos" },
+    "invoice.payment.all": { "label": "Todos los pagos" },
+    "invoice.payment.paid": { "label": "Pagadas" },
+    "invoice.payment.pending": { "label": "Pendientes" },
+    "invoice.payment.partial": { "label": "Parciales" },
+    "invoice.docstatus.draft": { "label": "Borrador" },
+    "invoice.docstatus.paid": { "label": "Pagada" },
+    "invoice.docstatus.partial": { "label": "Parcial" },
+    "invoice.docstatus.pending": { "label": "Pendiente" },
+    "invoice.docstatus.overdue": { "label": "Vencida" },
+    "invoice.docstatus.voided": { "label": "Anulada" },
+    "invoice.docstatus.closed": { "label": "Cerrada" },
+    "Customer Return": {
+      "label": "Devolución de cliente"
+    },
+    "Customer Returns": {
+      "label": "Devolución de cliente"
+    },
+    "Return Material": {
+      "label": "Devolución a proveedor"
+    },
+    "Return Shipment": {
+      "label": "Devolución a albarán de proveedor"
+    },
+    "Purchase Invoice": {
+      "label": "Factura (Proveedor)"
+    },
+    "Warehouses": {
+      "label": "Almacén"
+    },
+    "Account": {
+      "label": "Plan de cuentas"
+    },
     "Home": {
       "label": "Inicio"
     },
@@ -16091,31 +16131,31 @@
       "label": "Panel"
     },
     "Setup Wizard": {
-      "label": "Asistente"
+      "label": "Asistente de configuración"
+    },
+    "Grouped Report": {
+      "label": "Informe agrupado"
+    },
+    "Listing Report": {
+      "label": "Informe de listado"
+    },
+    "Landscape": {
+      "label": "Horizontal"
+    },
+    "Search": {
+      "label": "Buscar"
+    },
+    "Loading": {
+      "label": "Cargando"
+    },
+    "No results": {
+      "label": "Sin resultados"
+    },
+    "Preview": {
+      "label": "Vista previa"
     },
     "Overview": {
       "label": "General"
-    },
-    "Quotations": {
-      "label": "Presupuestos"
-    },
-    "Sales Orders": {
-      "label": "Pedidos de venta"
-    },
-    "Shipments": {
-      "label": "Envíos"
-    },
-    "Invoices": {
-      "label": "Facturas"
-    },
-    "Returns": {
-      "label": "Devoluciones"
-    },
-    "Return Receipts": {
-      "label": "Recibos de devolución"
-    },
-    "Purchase Orders": {
-      "label": "Pedidos de compra"
     },
     "Goods Receipt": {
       "label": "Recepción de mercancía"
@@ -16150,9 +16190,6 @@
     "Physical Inventory": {
       "label": "Inventario físico"
     },
-    "Goods Movements": {
-      "label": "Movimientos de mercancía"
-    },
     "Warehouses": {
       "label": "Almacenes"
     },
@@ -16160,7 +16197,7 @@
       "label": "Ubicaciones"
     },
     "Contacts": {
-      "label": "Contactos"
+      "label": "Contacto"
     },
     "Business Partners": {
       "label": "Terceros"
@@ -16214,7 +16251,7 @@
       "label": "Usuarios"
     },
     "Smart Scan": {
-      "label": "Smart Scan"
+      "label": "Escaneo Inteligente"
     },
     "Revenue this month": {
       "label": "Ingresos del mes"
@@ -16398,6 +16435,10 @@
     "loadingMore": "Cargando más...",
     "allRecordsLoaded": "Todos los registros cargados",
     "loading": "Cargando...",
+    "Grouped Report": "Informe agrupado",
+    "Listing Report": "Informe de listado",
+    "Landscape": "Horizontal",
+    "Search": "Buscar",
     "loadingPreview": "Cargando vista previa...",
     "moreDetails": "Más detalles",
     "others": "Otros",
@@ -16437,6 +16478,21 @@
     "statusInProcess": "En proceso",
     "statusClosed": "Cerrado",
     "statusPaid": "Pagado",
+    "statusPending": "Pendiente",
+    "statusPartial": "Parcial",
+    "statusOverdue": "Vencido",
+    "allTab": "Todos",
+    "invoicesTab": "Facturas",
+    "creditNotesTab": "Notas de crédito",
+    "allPayments": "Todos los pagos",
+    "statusColumn": "Estado",
+    "creditNoteLabel": "Nota de crédito",
+    "totalContacts": "Total de contactos",
+    "customers": "Clientes",
+    "vendors": "Proveedores",
+    "commercialName": "Nombre comercial",
+    "locationColumn": "Ubicación",
+    "emailColumn": "Correo electrónico",
     "statusUnderEvaluation": "En evaluación",
     "statusCancelled": "Cancelado",
     "statusPaymentReceived": "Pago recibido",
@@ -16449,6 +16505,7 @@
     "dashboardTitle": "Panel",
     "setupWizard": "Asistente de configuración",
     "smartScanTitle": "Escaneo inteligente",
+    "smartScanSubtitle": "Procesa documentos entrantes automáticamente.",
     "smartScanUploadTitle": "Suelta documentos aquí o haz clic para subirlos",
     "smartScanUploadHint": "Compatible con PDF, JPG y PNG hasta 25 MB. Se admite carga por lotes.",
     "smartScanBrowseFiles": "Buscar archivos",
@@ -16480,7 +16537,7 @@
     "smartScanTime1Hr": "hace 1 h",
     "smartScanTime3Hr": "hace 3 h",
     "smartScanTime5Hr": "hace 5 h",
-    "copilot": "Copiloto",
+    "copilot": "Copilot",
     "closeCopilot": "Cerrar Copilot",
     "openCopilot": "Abrir Copilot",
     "copilotWelcome": "¡Hola! Soy tu asistente ERP. ¿En qué puedo ayudarte hoy?",
@@ -16610,6 +16667,18 @@
     "noOrg": "Sin organización"
   },
   "menus": {
+    "Tax": {
+      "label": "Impuesto"
+    },
+    "Contact": {
+      "label": "Contacto"
+    },
+    "Asset": {
+      "label": "Activo"
+    },
+    "Warehouse": {
+      "label": "Almacén"
+    },
     "Service": {
       "label": "Servicios"
     },
@@ -17769,7 +17838,7 @@
       "label": "Algoritmo de Reconciliación"
     },
     "Payment In": {
-      "label": "Cobros"
+      "label": "Cobro"
     },
     "Window Personalization": {
       "label": "Personalización de Ventana"
