@@ -6,6 +6,7 @@ import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import QuotationTopbarActions from '../../../custom/QuotationTopbarActions';
+import QuotationStatusBadge from '../../../custom/QuotationStatusBadge';
 import catalogs from './mockCatalogs';
 
 
@@ -33,8 +34,6 @@ const processes = [
     displayLogicRaw: "@documentStatus@='CO'" },
   { name: 'Reactivate', label: 'Reactivate', style: 'positive',
     displayLogicRaw: "@documentStatus@='VO'" },
-  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'DocAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:quotation
 
@@ -356,6 +355,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
+        topbarExtra={QuotationStatusBadge}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }

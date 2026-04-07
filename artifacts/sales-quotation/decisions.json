@@ -16,7 +16,7 @@
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
     ],
     "processOverrides": {
-      "Complete": { "add": true, "label": "Confirm", "columnName": "DocAction", "displayLogicRaw": "@documentStatus@='DR'" },
+      "Complete": { "exclude": true },
       "Convert to Order": { "exclude": true },
       "Void": { "label": "Void", "style": "destructive", "displayLogicRaw": "@documentStatus@='CO'" },
       "Reactivate": { "label": "Reactivate", "displayLogicRaw": "@documentStatus@='VO'" }

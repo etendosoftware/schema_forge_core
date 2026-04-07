@@ -316,6 +316,16 @@ export function DetailView({
         hook.handleChange(key, entry.value);
         if (entry._identifier) {
           hook.handleChange(key + '$_identifier', entry._identifier);
+        } else if (entry.value && api?.selectors) {
+          // Callout returned an ID without _identifier — resolve from loaded catalogs
+          const sel = api.selectors.find(s => s.field === key);
+          if (sel) {
+            const options = getCatalogOptions(catalogs, sel.entity, sel);
+            const match = Array.isArray(options) && options.find(o => o.id === entry.value);
+            if (match) {
+              hook.handleChange(key + '$_identifier', match.label || match.name || match._identifier);
+            }
+          }
         }
       }
     }
