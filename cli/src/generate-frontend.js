@@ -729,7 +729,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             recordId={recordId}
             data={data}
             token={props.token}
-            apiBaseUrl={api.baseUrl}
+            apiBaseUrl={props.apiBaseUrl}
           />
         )}`
     : '';
