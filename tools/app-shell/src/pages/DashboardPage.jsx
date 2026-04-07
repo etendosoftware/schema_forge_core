@@ -834,7 +834,7 @@ function PendingTasks({ tasks = [] }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">
-                      {task.labelKey
+                      {task.labelKey && task.count != null
                         ? `${task.count} ${tMenu(task.labelKey)}`
                         : taskKey ? ui(taskKey, { count: task.count }) : task.text}
                     </p>

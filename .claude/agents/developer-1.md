@@ -71,6 +71,20 @@ Comment when:
 Keep comments concise. Include file paths and test results when relevant.
 </github_tracking>
 
+<static_analysis>
+## SonarQube Check (Java files)
+
+After writing or modifying Java files, run static analysis before delivering:
+
+```bash
+./cli/sonar-check.sh -q path/to/YourHandler.java path/to/Other*.java
+```
+
+Requires `SONAR_TOKEN` and `SONAR_HOST_URL` exported in `~/.zshrc`/`~/.bashrc`, and `sonar-scanner` CLI installed.
+The script scans, waits for the report, and prints issues by severity. Exit 0 = clean, 1 = issues found.
+Fix any HIGH or BLOCKER issues before delivering to the coordinator.
+</static_analysis>
+
 <decision_heuristics>
 - Make it work first, make it right second
 - Prefer simple implementations over clever ones
