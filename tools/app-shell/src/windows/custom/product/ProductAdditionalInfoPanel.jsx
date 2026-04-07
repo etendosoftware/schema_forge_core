@@ -22,7 +22,7 @@ export default function ProductAdditionalInfoPanel({ data, token, apiBaseUrl, ca
     <div className="space-y-4 pt-5 pb-6">
       <FieldGroup
         title="Commercial"
-        description="Configuración comercial secundaria para el producto."
+        description="Secondary commercial configuration for the product."
       >
         <EntityForm
           fields={[
@@ -43,7 +43,7 @@ export default function ProductAdditionalInfoPanel({ data, token, apiBaseUrl, ca
 
       <FieldGroup
         title="Logistics"
-        description="Datos operativos para stock, peso y comportamiento logístico."
+        description="Operational data for stock, weight, and logistics behavior."
       >
         <EntityForm
           fields={[

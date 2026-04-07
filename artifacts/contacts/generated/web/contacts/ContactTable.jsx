@@ -5,7 +5,6 @@ const columns = [
   { key: 'firstName', column: 'Firstname', type: 'string', label: 'First Name' },
   { key: 'lastName', column: 'Lastname', type: 'string', label: 'Last Name' },
   { key: 'email', column: 'Email', type: 'string', label: 'Email' },
-  { key: 'name', column: 'Name', type: 'string', label: 'User' },
   { key: 'phone', column: 'Phone', type: 'string', label: 'Phone' },
 ];
 // @sf-generated-end columns:contact

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
@@ -20,7 +20,6 @@ import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
 import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
-import { showUpdateToast } from './components/UpdateToast.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -161,24 +160,10 @@ function AppRoutes({ menuGroups, windowMap }) {
   );
 }
 
-/** Registers the service worker and checks for updates on route changes */
+/** Checks for SW updates on route changes; reload is automatic via controllerchange */
 function ServiceWorkerManager() {
   const location = useLocation();
-
-  const onUpdateAvailable = useCallback(() => {
-    showUpdateToast(() => {
-      // applyUpdate is called inside the toast action via closure below
-      window.__swApplyUpdate?.();
-    });
-  }, []);
-
-  const { applyUpdate, checkForUpdate } = useServiceWorker({ onUpdateAvailable });
-
-  // Expose applyUpdate so the toast action can call it
-  useEffect(() => {
-    window.__swApplyUpdate = applyUpdate;
-    return () => { delete window.__swApplyUpdate; };
-  }, [applyUpdate]);
+  const { checkForUpdate } = useServiceWorker();
 
   // Check for updates on every route change
   useEffect(() => {
