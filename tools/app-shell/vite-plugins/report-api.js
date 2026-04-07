@@ -582,7 +582,7 @@ export default function reportApiPlugin() {
                 const helperFn = new Function(helpersCode + `
                   var _out = {};
                   ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
-                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay']
+                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay','sumRowsByCategory']
                   .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
                   return _out;
                 `);
