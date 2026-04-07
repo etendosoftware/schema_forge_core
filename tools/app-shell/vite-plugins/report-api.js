@@ -255,6 +255,12 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
         sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
       }
     }
+    // Apply contract defaults for any remaining unreplaced tokens (e.g. number params cleared by user)
+    for (const p of (contract.parameters || [])) {
+      if (p.default !== undefined && p.default !== null && p.default !== '') {
+        sql = sql.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), String(p.default));
+      }
+    }
     // Convert equality checks with comma-separated values to IN clauses
     sql = sql.replace(/=\s*'([^']*,[^']*)'/g, (match, ids) => {
       const inList = ids.split(',').map(id => `'${id.trim()}'`).join(',');
