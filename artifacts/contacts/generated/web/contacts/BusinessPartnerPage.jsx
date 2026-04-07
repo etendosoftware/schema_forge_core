@@ -609,7 +609,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
             recordId={recordId}
             data={data}
             token={props.token}
-            apiBaseUrl={api.baseUrl}
+            apiBaseUrl={props.apiBaseUrl}
           />
         )}
       />
