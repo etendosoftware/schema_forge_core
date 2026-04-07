@@ -7,7 +7,32 @@ export const meta = {
   "route": "/dashboard"
 };
 
-export const kpisConfig = [];
+export const kpisConfig = [
+  {
+    "key": "revenueThisMonth",
+    "label": "Revenue this month",
+    "format": "currency",
+    "icon": "DollarSign"
+  },
+  {
+    "key": "expensesThisMonth",
+    "label": "Expenses this month",
+    "format": "currency",
+    "icon": "CreditCard"
+  },
+  {
+    "key": "netProfit",
+    "label": "Net Profit",
+    "format": "currency",
+    "icon": "TrendingUp"
+  },
+  {
+    "key": "pendingInvoices",
+    "label": "Pending Invoices",
+    "format": "number",
+    "icon": "Clock"
+  }
+];
 
 export const sections = {
   "kpi-revenue": {

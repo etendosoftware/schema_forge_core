@@ -28,11 +28,16 @@ export function generateAggregateFiles(contract) {
 function generateConfig(contract) {
   const { meta, sections: sectionsList, layout, actions } = contract;
 
-  // Find the kpi-header section and extract its kpis array
-  const kpiSection = sectionsList.find(s => s.id === 'kpi-header');
-  const kpisConfig = kpiSection?.kpis ?? [];
+  // Build kpisConfig from individual kpi-single sections (new format)
+  // or fall back to the legacy kpi-header.kpis array (old format)
+  const kpiHeaderSection = sectionsList.find(s => s.id === 'kpi-header');
+  const kpisConfig = kpiHeaderSection?.kpis
+    ?? sectionsList
+        .filter(s => s.type === 'kpi-single')
+        .map(({ id, type, ...cfg }) => cfg);
 
-  // Build sections object keyed by id, excluding kpi-header
+  // Build sections object keyed by id, excluding kpi-header and kpi-single entries
+  // (kpi-single sections are represented via kpisConfig, not as standalone sections)
   const sectionsObj = {};
   for (const section of sectionsList) {
     if (section.id === 'kpi-header') continue;
