@@ -788,20 +788,19 @@ export function DetailView({
 
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
-          <div className="flex border-b border-border/50 px-6 shrink-0">
+          <div className="flex items-center gap-2 px-6 py-3 shrink-0">
             {primaryTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
-                  activePrimaryTab === tab.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  'px-4 py-1.5 text-sm font-medium rounded-md border transition-colors',
+                  activePrimaryTab === tab.key
+                    ? 'bg-white border-border text-foreground shadow-sm'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/50',
                 ].join(' ')}
               >
                 {tab.label}
-                {activePrimaryTab === tab.key && (
-                  <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
-                )}
               </button>
             ))}
           </div>
@@ -825,7 +824,7 @@ export function DetailView({
             {/* Principal header fields (horizontal row) */}
             {/* Visibility logic is intentionally not applied here: principal fields must always
                 be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div style={{ padding: '24px 0 8px' }} className={embedded ? 'pointer-events-none' : ''}>
+            <div className={`mt-4 rounded-xl border border-border/60 bg-white p-6 shadow-sm${embedded ? ' pointer-events-none' : ''}`}>
               <Form
                 entity={entity}
                 data={data}
