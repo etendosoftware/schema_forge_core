@@ -158,6 +158,7 @@
         "vendor": {
           "visibility": "editable",
           "label": "Vendor",
+          "grid": true,
           "form": false,
           "section": "principal"
         },
@@ -202,6 +203,7 @@
         "customer": {
           "visibility": "editable",
           "label": "Customer",
+          "grid": true,
           "form": false,
           "section": "principal"
         },

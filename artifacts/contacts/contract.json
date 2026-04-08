@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-08T15:52:53.117Z",
-  "checksum": "1f31f064126f3c65",
+  "version": "0.2.1",
+  "generatedAt": "2026-04-08T17:22:33.433Z",
+  "checksum": "aa2a2ddd6341b8e9",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -286,7 +286,7 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "defaultValue": "Y",
             "section": "principal",
@@ -305,7 +305,7 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": false,
             "section": "principal",
             "displayLogic": {
