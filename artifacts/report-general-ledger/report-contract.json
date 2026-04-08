@@ -33,8 +33,8 @@
     { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner", "multi": true, "inputStyle": "popup", "section": "dimensions", "groupByValue": "bpartner", "groupByField": "bpname" },
     { "name": "productId", "label": { "en_US": "Product", "es_ES": "Producto" }, "type": "search", "selector": "product", "multi": true, "inputStyle": "popup", "section": "dimensions", "groupByValue": "product", "groupByField": "productname" },
     { "name": "projectId", "label": { "en_US": "Project", "es_ES": "Proyecto" }, "type": "search", "selector": "project", "multi": true, "inputStyle": "popup", "section": "dimensions" },
-    { "name": "fromAccountId", "label": { "en_US": "From Account", "es_ES": "Desde Cuenta" }, "type": "search", "selector": "account", "inputStyle": "popup-single", "dependsOn": "acctSchemaId", "section": "primary" },
-    { "name": "toAccountId", "label": { "en_US": "To Account", "es_ES": "Hasta Cuenta" }, "type": "search", "selector": "account", "inputStyle": "popup-single", "dependsOn": "acctSchemaId", "section": "primary" },
+    { "name": "fromAccountId", "label": { "en_US": "From Account", "es_ES": "Desde la cuenta" }, "type": "search", "selector": "account", "inputStyle": "popup-single", "dependsOn": "acctSchemaId", "section": "primary" },
+    { "name": "toAccountId", "label": { "en_US": "To Account", "es_ES": "A la cuenta" }, "type": "search", "selector": "account", "inputStyle": "popup-single", "dependsOn": "acctSchemaId", "section": "primary" },
     { "name": "groupBy", "label": { "en_US": "Group results by", "es_ES": "Agrupar por" }, "type": "select", "section": "options" },
     { "name": "showOpenBalances", "label": { "en_US": "Include open balances", "es_ES": "Incluir saldos iniciales" }, "type": "boolean", "description": "Keep open items visible in the generated report.", "section": "options" }
   ],
