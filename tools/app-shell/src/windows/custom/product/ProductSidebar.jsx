@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Boxes, Lock, PackageCheck, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useUI } from '@/i18n';
 
 function formatCompact(v) {
   if (v === null || v === undefined) return null;
@@ -201,13 +202,14 @@ const PERIOD_OPTIONS = [
   { label: '1M', months: 1 },
   { label: '3M', months: 3 },
   { label: '6M', months: 6 },
-  { label: '1A', months: 12 },
-  { label: '2A', months: 24 },
+  { label: '1Y', months: 12 },
+  { label: '2Y', months: 24 },
 ];
 
 function StockChart({ transactions, currentStock, locationRows = [] }) {
   const [open, setOpen] = useState(false);
-  const [period, setPeriod] = useState('1A');
+  const [period, setPeriod] = useState('1Y');
+  const ui = useUI();
 
   const chart = buildChartData(transactions, currentStock, 12);
 
@@ -221,11 +223,11 @@ function StockChart({ transactions, currentStock, locationRows = [] }) {
     <>
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-sm font-semibold text-gray-700">Stock movement</div>
+          <div className="text-sm font-semibold text-gray-700">{ui('stockMovement')}</div>
           <button
             onClick={() => setOpen(true)}
             className="p-1 rounded hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-600"
-            title="Ver en grande"
+            title={ui('viewLarger')}
           >
             <Maximize2 size={13} />
           </button>
@@ -240,7 +242,7 @@ function StockChart({ transactions, currentStock, locationRows = [] }) {
           <DialogHeader>
             <DialogTitle>
               <div className="flex items-center justify-between gap-4 pr-8">
-                <span>Stock movement</span>
+                <span>{ui('stockMovement')}</span>
                 {/* Period selector */}
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   {PERIOD_OPTIONS.map(opt => (
@@ -267,7 +269,7 @@ function StockChart({ transactions, currentStock, locationRows = [] }) {
             {/* Stock by warehouse */}
             {locationRows.length > 0 && (
               <div className="w-56 flex-shrink-0 flex flex-col gap-2">
-                <div className="text-sm font-semibold text-gray-700">Stock by warehouse</div>
+                <div className="text-sm font-semibold text-gray-700">{ui('stockByWarehouse')}</div>
                 {locationRows
                   .sort((a, b) => b.quantityOnHand - a.quantityOnHand)
                   .map((b, i) => (
@@ -282,7 +284,7 @@ function StockChart({ transactions, currentStock, locationRows = [] }) {
                     </div>
                   ))}
                 <div className="text-xs text-gray-400 mt-auto pt-2">
-                  Total: {currentStock?.toLocaleString()} units
+                  {ui('total')}: {currentStock?.toLocaleString()} {ui('units')}
                 </div>
               </div>
             )}
@@ -295,6 +297,7 @@ function StockChart({ transactions, currentStock, locationRows = [] }) {
 
 
 export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
+  const ui = useUI();
   const [stockRows, setStockRows] = useState(null);
   const [transactions, setTransactions] = useState(null);
 
@@ -342,7 +345,7 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
     const r = locationRows[0];
     onHandSubtitle = r['storageBin$_identifier'] ?? r.storageBin ?? null;
   } else if (binCount > 1) {
-    onHandSubtitle = `${binCount} locations`;
+    onHandSubtitle = `${binCount} ${ui('locations')}`;
   }
 
   const availablePct = onHand > 0 && available !== null ? Math.round((available / onHand) * 100) : null;
@@ -352,15 +355,15 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <StatCard icon={Boxes} label="On Hand" value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
-      <StatCard icon={PackageCheck} label="Available" value={fmt(available)} subtitle={availableSubtitle} color={availableColor} />
-      <StatCard icon={Lock} label="Reserved" value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? 'units held' : null} color="amber" />
+      <StatCard icon={Boxes} label={ui('onHand')} value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
+      <StatCard icon={PackageCheck} label={ui('available')} value={fmt(available)} subtitle={availableSubtitle} color={availableColor} />
+      <StatCard icon={Lock} label={ui('reserved')} value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? ui('unitsHeld') : null} color="amber" />
 
       {hasChart && <StockChart transactions={transactions} currentStock={onHand} locationRows={locationRows} />}
 
       {locationRows.length > 0 && (
         <div className="mt-1">
-          <div className="text-sm font-semibold text-gray-700 mb-2">Stock by warehouse</div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">{ui('stockByWarehouse')}</div>
           <div className="flex flex-col gap-1.5">
             {locationRows
               .sort((a, b) => b.quantityOnHand - a.quantityOnHand)

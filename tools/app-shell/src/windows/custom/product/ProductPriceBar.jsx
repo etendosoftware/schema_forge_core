@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
+import { useUI } from '@/i18n';
 
 function formatPrice(v) {
   if (v === null || v === undefined) return '—';
@@ -129,6 +130,7 @@ function resolveOptionId(options, candidate) {
 
 function PriceCard({ label, description, value, editing, draft, onDraftChange, onKeyDown }) {
   const inputRef = useRef(null);
+  const ui = useUI();
 
   useEffect(() => {
     if (editing) setTimeout(() => inputRef.current?.select(), 0);
@@ -138,11 +140,11 @@ function PriceCard({ label, description, value, editing, draft, onDraftChange, o
     <div className="flex-1 rounded-xl border border-gray-200 bg-white p-4 min-w-[200px]">
       <div className="flex items-start justify-between mb-1">
         <span className="text-sm font-semibold text-gray-800">{label}</span>
-        <span className="text-[11px] font-semibold bg-gray-900 text-white px-2 py-0.5 rounded-full">Main</span>
+        <span className="text-[11px] font-semibold bg-gray-900 text-white px-2 py-0.5 rounded-full">{ui('main')}</span>
       </div>
       <p className="text-xs text-gray-400 mb-3 leading-snug">{description}</p>
       <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5">
-        <div className="text-[11px] text-gray-400 mb-1">Principal price</div>
+        <div className="text-[11px] text-gray-400 mb-1">{ui('principalPrice')}</div>
         {editing ? (
           <input
             ref={inputRef}
@@ -163,6 +165,7 @@ function PriceCard({ label, description, value, editing, draft, onDraftChange, o
 }
 
 export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api }) {
+  const ui = useUI();
   const recordId = data?.id;
   const [priceRows, setPriceRows] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -299,7 +302,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
 
   const save = async () => {
     if (!recordId) {
-      toast.info('Save the product first, then configure pricing.');
+      toast.info(ui('saveProductFirstPricing'));
       return;
     }
 
@@ -340,7 +343,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         }
       } else if (!hasRows) {
         if (saleNumber === null && purchaseNumber === null) {
-          toast.info('Enter at least one value to create pricing.');
+          toast.info(ui('enterAtLeastOneValueCreatePricing'));
           return;
         }
 
@@ -476,16 +479,16 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
           throw new Error(await extractErrorMessage(createRes));
         }
 
-        toast.success('Pricing created using default values.');
+        toast.success(ui('pricingCreatedUsingDefaultValues'));
       } else {
-        toast.info('Enter at least one value to update pricing.');
+        toast.info(ui('enterAtLeastOneValueUpdatePricing'));
         return;
       }
 
       await refreshPrices();
       savedSuccessfully = true;
     } catch (err) {
-      toast.error(err?.message || 'Unable to save pricing.');
+      toast.error(err?.message || ui('unableToSavePricing'));
     } finally {
       setSaving(false);
       if (savedSuccessfully) {
@@ -502,9 +505,9 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   if (!recordId) {
     return (
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 mb-2">
-        <div className="text-sm font-semibold text-gray-800">Pricing</div>
+        <div className="text-sm font-semibold text-gray-800">{ui('pricing')}</div>
         <div className="text-xs text-gray-500 mt-1">
-          Save the product first. Then you can define sale and purchase prices in a default price list version.
+          {ui('saveProductFirstPricing')}
         </div>
       </div>
     );
@@ -514,9 +517,9 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 mb-2">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="text-sm font-semibold text-gray-800">Pricing</div>
+          <div className="text-sm font-semibold text-gray-800">{ui('pricing')}</div>
           <div className="text-xs text-gray-400 mt-0.5">
-            Configure a main sale price and purchase price. If no pricing exists yet, a default price list row is created automatically.
+            {ui('configureMainSaleAndPurchasePrice')}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
@@ -527,7 +530,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                 disabled={saving}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                Cancel
+                {ui('cancel')}
               </button>
               <button
                 onClick={save}
@@ -535,7 +538,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                 className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-1.5"
               >
                 {saving && <Loader2 size={11} className="animate-spin" />}
-                Save pricing
+                {ui('savePricing')}
               </button>
             </>
           ) : (
@@ -544,7 +547,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
               disabled={loading}
               className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium"
             >
-              {hasRows ? 'Edit pricing' : 'Set pricing'}
+              {hasRows ? ui('editPricing') : ui('setPricing')}
             </button>
           )}
         </div>
@@ -552,7 +555,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
 
       {!hasRows && !editing && !loading && (
         <div className="mb-3 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-2 text-xs text-gray-500">
-          No pricing is configured for this product yet.
+          {ui('noPricingConfigured')}
         </div>
       )}
 
@@ -560,13 +563,13 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         {loading ? (
           <div className="w-full rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-500 flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" />
-            Loading pricing...
+            {ui('loadingPricing')}
           </div>
         ) : (
           <>
           <PriceCard
             label="Sales price"
-            description="Main price used for sales."
+            description={ui('mainPriceUsedForSales')}
             value={saleRow?.standardPrice}
             editing={editing}
             draft={saleDraft}
@@ -575,7 +578,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
           />
           <PriceCard
             label="Purchase price"
-            description={purchaseIsFallback ? 'Uses list price from the same row when no dedicated purchase row exists.' : 'Main price used for purchasing.'}
+            description={purchaseIsFallback ? ui('usesListPriceFromSameRow') : ui('mainPriceUsedForPurchasing')}
             value={purchaseValue}
             editing={editing}
             draft={purchaseDraft}

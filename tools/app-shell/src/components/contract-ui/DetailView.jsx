@@ -564,7 +564,7 @@ export function DetailView({
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
                 <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                {statusFieldLabel || 'Document Status'}
+                {statusFieldLabel || ui('documentStatus')}
                 <span style={{ opacity: 0.4 }}>&middot;</span>
                 <span className="font-semibold">{statusEnumLabels?.[data[statusField]] || statusLabel(data[statusField])}</span>
               </span>
@@ -588,7 +588,7 @@ export function DetailView({
               return (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
                   <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
-                  {statusFieldLabel || 'Document Status'}
+                  {statusFieldLabel || ui('documentStatus')}
                   <span style={{ opacity: 0.4 }}>&middot;</span>
                   <span className="font-semibold">{statusEnumLabels?.[_s] || statusLabel(_s, dictionary)}</span>
                 </span>
@@ -738,7 +738,7 @@ export function DetailView({
                     className={btnClass}
                     onClick={() => hook.handleProcess?.(p)}
                   >
-                    {p.label}
+                    {tMenu(p.label)}
                   </Button>
                 );
               })}
@@ -797,7 +797,7 @@ export function DetailView({
                   activePrimaryTab === tab.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
-                {tab.label}
+                {tMenu(tab.label)}
                 {activePrimaryTab === tab.key && (
                   <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
                 )}
@@ -884,7 +884,7 @@ export function DetailView({
                         ].join(' ')}
                       >
                         <List className="h-4 w-4" />
-                        {tab.label}
+                        {tMenu(tab.label)}
                         {tab.count != null && (
                           <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
                             {tab.count}
@@ -1021,7 +1021,7 @@ export function DetailView({
                               onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
                               style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
                             >
-                              + Add {detailLabel || 'Lines'}
+                              {ui('addEntity', { label: tMenu(detailLabel || 'Lines') })}
                             </button>
                           )}
                           {DetailExtraActions && (
@@ -1030,7 +1030,7 @@ export function DetailView({
                         </div>
                       )}
                       {allEntryFields.length > 0 && isNew && (
-                        <p className="text-xs text-muted-foreground mt-3">Save the header first to add lines.</p>
+                        <p className="text-xs text-muted-foreground mt-3">{ui('saveHeaderFirst')}</p>
                       )}
                     </div>
 
@@ -1038,7 +1038,7 @@ export function DetailView({
                     {DetailForm && (selectedLine || isClosingLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-foreground">{detailLabel || 'Line'} Detail</span>
+                          <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(detailLabel || 'Line') })}</span>
                           <button
                             onClick={closeLine}
                             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -1225,7 +1225,7 @@ export function DetailView({
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-foreground">{st.label} Detail</span>
+                          <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(st.label) })}</span>
                           <button
                             onClick={closeSecondaryLine}
                             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -1337,7 +1337,7 @@ export function DetailView({
                         onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        + Add {st.label}
+                        {ui('addEntity', { label: tMenu(st.label) })}
                       </button>
                     )}
                     </>
@@ -1423,19 +1423,19 @@ export function DetailView({
                       <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
                         {subtotal != null && (
                           <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="text-muted-foreground">{ui('subtotal')}</span>
                             <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
                           </div>
                         )}
                         {taxes != null && taxes !== 0 && (
                           <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">Tax</span>
+                            <span className="text-muted-foreground">{ui('tax')}</span>
                             <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
                           </div>
                         )}
                         {total != null && (
                           <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
-                            <span>Total</span>
+                            <span>{ui('total')}</span>
                             <span className="tabular-nums">{formatAmount(total, currency)}</span>
                           </div>
                         )}
@@ -1455,7 +1455,7 @@ export function DetailView({
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                     {customTabs.length > 0 && (
                       <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">Docs</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">{ui('docs')}</span>
                         <div className="flex-1">
                           {customTabs.map(ct => {
                             const TabComponent = ct.Component;
@@ -1476,14 +1476,14 @@ export function DetailView({
                     )}
                     {notesField && (
                       <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">Notes</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">{ui('notes')}</span>
                         <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
                             <textarea
                               value={data[notesField] || ''}
                               onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
                               onBlur={() => setNotesFocused(false)}
-                              placeholder="Description"
+                              placeholder={ui('description')}
                               rows={3}
                               autoFocus
                               className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
@@ -1496,7 +1496,7 @@ export function DetailView({
                               onFocus={() => setNotesFocused(true)}
                               className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
                             >
-                              {data[notesField] || <span className="text-muted-foreground/40">Description</span>}
+                              {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
                             </div>
                           )}
                         </div>

@@ -1,6 +1,6 @@
 import AssetsPage from './AssetsPage';
 
-const windowMeta = { category: 'accounting', name: 'Assets' };
+const windowMeta = { category: 'finance', name: 'Assets' };
 
 const api = {
   "specName": "assets",

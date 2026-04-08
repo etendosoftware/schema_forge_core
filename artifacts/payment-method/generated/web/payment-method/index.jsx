@@ -4,6 +4,7 @@ import PaymentMethodForm from './PaymentMethodForm';
 import catalogs from './mockCatalogs';
 
 const windowMeta = { category: 'reference', name: 'Payment Method' };
+const breadcrumb = 'Settings / Payment Method';
 
 export default function App({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -15,6 +16,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Payment Method"
         windowName={windowName}
         recordId={recordId}
+        breadcrumb={breadcrumb}
         window={windowMeta}
         {...props}
       />
@@ -27,6 +29,7 @@ export default function App({ windowName, recordId, ...props }) {
       Table={PaymentMethodTable}
       entityLabel="Payment Method"
       windowName={windowName}
+      breadcrumb={breadcrumb}
       window={windowMeta}
       {...props}
     />

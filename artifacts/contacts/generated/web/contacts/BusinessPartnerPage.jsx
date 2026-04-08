@@ -12,7 +12,7 @@ import catalogs from './mockCatalogs';
 
 import BusinessPartnerSidebar from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
 
-const breadcrumb = '';
+const breadcrumb = 'Contact / Contacts';
 
 
 // @sf-generated-start summary:businessPartner
