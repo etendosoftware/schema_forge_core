@@ -840,21 +840,23 @@ export function DetailView({
             </div>
 
             {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}${embedded ? ' pointer-events-none' : ''}`}>
+            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}`}>
             <CollapsibleSection title={ui('moreDetails')}>
-              <Form
-                entity={entity}
-                data={data}
-                onChange={handleChangeWithCallout}
-                catalogs={catalogs}
-                layout="horizontal"
-                section="collapsed"
-                excludeFields={notesField ? [notesField] : []}
-                displayLogic={displayLogic}
-                api={api}
-                token={token}
-                apiBaseUrl={apiBaseUrl}
-              />
+              <div className={embedded ? 'pointer-events-none' : ''}>
+                <Form
+                  entity={entity}
+                  data={data}
+                  onChange={handleChangeWithCallout}
+                  catalogs={catalogs}
+                  layout="horizontal"
+                  section="collapsed"
+                  excludeFields={notesField ? [notesField] : []}
+                  displayLogic={displayLogic}
+                  api={api}
+                  token={token}
+                  apiBaseUrl={apiBaseUrl}
+                />
+              </div>
             </CollapsibleSection>
             </div>
 
@@ -1452,7 +1454,7 @@ export function DetailView({
                 {(customTabs.length > 0 || !!notesField) && (
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                     {customTabs.length > 0 && (
-                      <div className="flex items-start gap-3 px-4 py-2.5 border-b border-border/30" style={{ borderBottomWidth: '0.5px' }}>
+                      <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
                         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">Docs</span>
                         <div className="flex-1">
                           {customTabs.map(ct => {
@@ -1473,7 +1475,7 @@ export function DetailView({
                       </div>
                     )}
                     {notesField && (
-                      <div className="flex items-start gap-3 px-4 py-2.5">
+                      <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
                         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">Notes</span>
                         <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
