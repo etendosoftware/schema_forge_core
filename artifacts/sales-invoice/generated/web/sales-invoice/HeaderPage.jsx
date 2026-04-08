@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
@@ -25,7 +24,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
-// @sf-custom-slot extraBadges:header
 // @sf-generated-start extraBadges:header
 const extraBadges = [];
 // @sf-generated-end extraBadges:header
@@ -321,17 +319,6 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-start hooks:HeaderPage
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.detail?.entity === 'header' && e.detail?.process?.columnName === 'DocAction' && e.detail?.recordId) {
-        sessionStorage.setItem(`invoice:sendAfterConfirm:${e.detail.recordId}`, '1');
-      }
-    };
-    window.addEventListener('neo:processSuccess', handler);
-    return () => window.removeEventListener('neo:processSuccess', handler);
-  }, []);
-  // @sf-custom-end hooks:HeaderPage
   if (recordId) {
     return (
       <DetailView
@@ -380,5 +367,3 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:HeaderPage
-
-// @sf-custom-slot section:HeaderPage-custom
