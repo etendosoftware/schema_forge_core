@@ -350,8 +350,10 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
         if (data?.items) {
           const items = data.items.map(i => ({ id: i.id, name: i.label || i.name || i.id, ...i }));
           setDynamicOptions(items);
-          // Auto-select first option if no current value
-          if (!value && items.length > 0 && field.required) {
+          // Auto-select first option if current value is empty or not in the new options
+          // (e.g., BP changed → old address no longer valid)
+          const currentValid = value && items.some(i => i.id === value);
+          if (!currentValid && items.length > 0) {
             onChange(items[0].id, items[0].name);
           }
         }

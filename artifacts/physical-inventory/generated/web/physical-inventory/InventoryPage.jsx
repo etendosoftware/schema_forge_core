@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import InventoryTable from './InventoryTable';
 import InventoryForm from './InventoryForm';
@@ -8,12 +9,13 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Warehouse / Physical Inventory';
 
+
 // @sf-generated-start summary:inventory
 const summary = [
   { key: 'inventoryType', column: 'Inventory_Type', type: 'enum' },
 ];
 
-const statusField = null;
+const statusField = 'processed';
 // @sf-generated-end summary:inventory
 
 // @sf-custom-slot extraBadges:inventory
@@ -23,7 +25,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:inventory
 const processes = [
-  { name: 'processNow', label: 'Process Inventory Count', style: 'positive', displayLogicRaw: '@Processed@=\'N\'' },
+  { name: 'processNow', label: 'Process Inventory Count', style: 'positive',
+    displayLogicRaw: "@Processed@='N'", requiresLines: true },
 ];
 // @sf-generated-end processes:inventory
 
@@ -171,6 +174,7 @@ const api = {
 // @sf-generated-start component:InventoryPage
 export default function InventoryPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:InventoryPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -200,7 +204,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
     <ListView
       entity="inventory"
       Table={InventoryTable}
-      entityLabel="Inventories"
+      entityLabel="Physical Inventory"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

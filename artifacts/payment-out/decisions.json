@@ -7,23 +7,12 @@
   "entities": {
     "finPayment": {
       "fields": {
-        "documentType": {
-          "visibility": "editable",
-          "section": "principal",
-          "reference": "DocumentType",
-          "readOnlyLogic": null
-        },
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "readOnlyLogic": null
-        },
-        "paymentDate": {
-          "grid": true,
-          "searchable": true,
-          "section": "principal",
+          "seq": 10,
           "readOnlyLogic": null
         },
         "businessPartner": {
@@ -31,101 +20,136 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "section": "principal",
-          "readOnlyLogic": null
-        },
-        "paymentMethod": {
-          "reference": "PaymentMethod",
-          "section": "principal",
+          "seq": 20,
           "readOnlyLogic": null
         },
         "account": {
           "reference": "FinancialAccount",
           "section": "principal",
+          "seq": 30,
+          "readOnlyLogic": null
+        },
+        "paymentDate": {
+          "grid": true,
+          "searchable": true,
+          "section": "principal",
+          "seq": 40,
+          "readOnlyLogic": null
+        },
+        "paymentMethod": {
+          "reference": "PaymentMethod",
+          "section": "principal",
+          "seq": 50,
+          "readOnlyLogic": null
+        },
+        "currency": {
+          "visibility": "editable",
+          "section": "principal",
+          "seq": 60,
+          "readOnlyLogic": null
+        },
+        "referenceNo": {
+          "searchable": true,
+          "section": "collapsed",
+          "seq": 70,
+          "readOnlyLogic": null
+        },
+        "description": {
+          "section": "collapsed",
+          "seq": 80,
+          "readOnlyLogic": null
+        },
+        "documentType": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal",
+          "reference": "DocumentType",
+          "readOnlyLogic": null
+        },
+        "financialTransactionAmount": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other",
+          "readOnlyLogic": null
+        },
+        "financialTransactionConvertRate": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other",
+          "readOnlyLogic": null
+        },
+        "generatedCredit": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other",
           "readOnlyLogic": null
         },
         "amount": {
           "visibility": "readOnly",
           "grid": true,
+          "form": false,
           "section": "principal"
         },
         "status": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
+          "form": false,
           "section": "principal"
-        },
-        "referenceNo": {
-          "searchable": true,
-          "section": "other",
-          "readOnlyLogic": null
-        },
-        "description": {
-          "section": "other",
-          "readOnlyLogic": null
-        },
-        "currency": {
-          "visibility": "editable",
-          "section": "other",
-          "readOnlyLogic": null
-        },
-        "financialTransactionAmount": {
-          "visibility": "editable",
-          "section": "other",
-          "readOnlyLogic": null
-        },
-        "financialTransactionConvertRate": {
-          "visibility": "editable",
-          "section": "other",
-          "readOnlyLogic": null
-        },
-        "generatedCredit": {
-          "visibility": "editable",
-          "section": "other",
-          "readOnlyLogic": null
         },
         "usedCredit": {
           "visibility": "readOnly",
+          "form": false,
           "section": "other"
         },
         "writeoffAmount": {
           "visibility": "readOnly",
+          "form": false,
           "section": "other"
         },
         "reversedPayment": {
           "visibility": "readOnly",
+          "form": false,
           "section": "other",
           "reference": "Payment",
           "inputMode": "selector"
         },
         "project": {
+          "form": false,
           "section": "other",
           "readOnlyLogic": null
         },
         "costCenter": {
           "reference": "CostCenter",
+          "form": false,
           "section": "other",
           "readOnlyLogic": null
         },
         "stDimension": {
           "reference": "UserDimension1",
+          "form": false,
           "section": "other",
           "readOnlyLogic": null
         },
         "ndDimension": {
           "reference": "UserDimension2",
+          "form": false,
           "section": "other",
           "readOnlyLogic": null
         },
         "aPRMProcessPayment": {
           "visibility": "editable",
+          "form": false,
           "section": "other"
         },
         "aprmExecutepayment": {
           "visibility": "editable",
+          "form": false,
           "section": "other"
         },
         "aPRMAddScheduledpayments": {
           "visibility": "editable",
+          "form": false,
           "section": "other"
         }
       }
@@ -133,73 +157,96 @@
     "finPaymentScheduleDetail": {
       "name": "lines",
       "fields": {
+        "dueDate": {
+          "visibility": "readOnly",
+          "grid": true,
+          "section": "principal",
+          "seq": 10
+        },
+        "amount": {
+          "grid": true,
+          "section": "principal",
+          "seq": 20,
+          "readOnlyLogic": null
+        },
+        "expected": {
+          "visibility": "readOnly",
+          "grid": true,
+          "section": "principal",
+          "seq": 30
+        },
+        "invoicePaymentSchedule": {
+          "section": "principal",
+          "seq": 40,
+          "readOnlyLogic": null
+        },
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "form": false,
           "name": "orderNo"
         },
         "documentNo2": {
           "visibility": "readOnly",
           "grid": true,
+          "form": false,
           "name": "invoiceNo"
         },
-        "dueDate": {
+        "invoiceAmount": {
           "visibility": "readOnly",
-          "grid": true
+          "form": false
         },
-        "expected": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "amount": {
-          "grid": true,
+        "orderPaymentSchedule": {
+          "form": false,
           "readOnlyLogic": null
+        },
+        "gLItem": {
+          "form": false,
+          "readOnlyLogic": null
+        },
+        "canceled": {
+          "visibility": "readOnly",
+          "form": false
         },
         "businessPartner": {
           "visibility": "readOnly",
           "grid": true,
+          "form": false,
           "reference": "BusinessPartner"
         },
-        "invoiceAmount": {
-          "visibility": "readOnly"
-        },
-        "invoicePaymentSchedule": {
-          "readOnlyLogic": null
-        },
-        "orderPaymentSchedule": {
-          "readOnlyLogic": null
-        },
-        "gLItem": {
-          "readOnlyLogic": null
-        },
-        "canceled": {
-          "visibility": "readOnly"
-        },
         "activity": {
+          "form": false,
           "readOnlyLogic": null
         },
         "product": {
+          "form": false,
           "readOnlyLogic": null
         },
         "salesCampaign": {
+          "form": false,
           "readOnlyLogic": null
         },
         "project": {
+          "form": false,
           "readOnlyLogic": null
         },
         "salesRegion": {
+          "form": false,
           "readOnlyLogic": null
         },
         "costCenter": {
           "reference": "CostCenter",
+          "form": false,
           "readOnlyLogic": null
         },
         "stDimension": {
           "reference": "UserDimension1",
+          "form": false,
           "readOnlyLogic": null
         },
         "ndDimension": {
           "reference": "UserDimension2",
+          "form": false,
           "readOnlyLogic": null
         }
       }

@@ -1,7 +1,7 @@
 {
-  "version": "0.10.0",
-  "generatedAt": "2026-04-01T16:22:23.274Z",
-  "checksum": "2e650e91110fd5d4",
+  "version": "0.1.0",
+  "generatedAt": "2026-04-06T15:44:32.158Z",
+  "checksum": "dc6efc2bfe73d2b1",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -11,12 +11,12 @@
       "documentPreview": {
         "titlePrefix": "Payment"
       },
-      "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
       "customComponents": {
         "bottomSection": "PaymentBottomPanel",
-        "topbarRight": "PaymentActivityToggle"
+        "topbarRight": "PaymentActivityToggle",
+        "newRecordComponent": "NewPaymentModal"
       },
       "menuActions": [
         {
@@ -50,6 +50,7 @@
         }
       },
       "detailEntity": null,
+      "summaryFields": [],
       "salesTheme": true,
       "layoutType": "default"
     },
@@ -87,8 +88,7 @@
             "visibility": "readOnly",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "details"
+            "form": false
           },
           {
             "name": "paymentDate",
@@ -100,9 +100,8 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "@#Date@",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             },
@@ -122,10 +121,9 @@
             "visibility": "readOnly",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "reference": "BPartner",
             "inputMode": "search",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_BPartner"
             },
@@ -151,8 +149,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "collapsed"
+            "form": false
           },
           {
             "name": "paymentMethod",
@@ -164,10 +161,9 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Paymentmethod",
             "inputMode": "search",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -187,9 +183,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "defaultValue": "0",
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             },
@@ -210,14 +205,13 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Financial_Account",
             "inputMode": "dependent",
             "dependsOn": {
               "field": "paymentMethod",
               "filterKey": "Fin_Paymentmethod_ID"
             },
-            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_FinAccount"
             },
@@ -237,7 +231,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "Currency",
             "inputMode": "dependent",
             "dependsOn": {
@@ -412,12 +406,12 @@
       "documentPreview": {
         "titlePrefix": "Payment"
       },
-      "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
       "customComponents": {
         "bottomSection": "PaymentBottomPanel",
-        "topbarRight": "PaymentActivityToggle"
+        "topbarRight": "PaymentActivityToggle",
+        "newRecordComponent": "NewPaymentModal"
       },
       "menuActions": [
         {
@@ -451,6 +445,7 @@
         }
       },
       "detailEntity": null,
+      "summaryFields": [],
       "salesTheme": true
     },
     "entities": {

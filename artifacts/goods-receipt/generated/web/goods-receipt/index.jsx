@@ -408,18 +408,18 @@ const api = {
     },
     {
       "entity": "goodsReceipt",
-      "field": "receiveMaterials",
-      "column": "RM_Receipt_PickEdit",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
-      "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsReceipt",
       "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "receiveMaterials",
+      "column": "RM_Receipt_PickEdit",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
+      "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {

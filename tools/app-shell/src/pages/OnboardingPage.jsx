@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useUI } from '@/i18n';
 import {
   Building2,
   User,
@@ -19,11 +20,11 @@ import {
 } from 'lucide-react';
 
 const STEPS = [
-  { label: 'Company Setup', icon: Building2 },
-  { label: 'User Profile', icon: User },
-  { label: 'Module Selection', icon: Blocks },
-  { label: 'Import Data', icon: Upload },
-  { label: 'Review & Launch', icon: Rocket },
+  { labelKey: 'onboardingCompanySetup', icon: Building2 },
+  { labelKey: 'onboardingUserProfile', icon: User },
+  { labelKey: 'onboardingModuleSelection', icon: Blocks },
+  { labelKey: 'onboardingImportData', icon: Upload },
+  { labelKey: 'onboardingReviewLaunch', icon: Rocket },
 ];
 
 const INDUSTRIES = [
@@ -39,26 +40,26 @@ const TIMEZONES = [
 ];
 
 const MODULES = [
-  { key: 'sales', label: 'Sales', description: 'Quotations, orders, invoices' },
-  { key: 'purchases', label: 'Purchases', description: 'Purchase orders, receipts' },
-  { key: 'inventory', label: 'Inventory', description: 'Stock, movements, warehouses' },
-  { key: 'accounting', label: 'Accounting', description: 'GL, payments, reconciliation' },
-  { key: 'crm', label: 'CRM', description: 'Leads, deals, activities' },
-  { key: 'hr', label: 'HR', description: 'Employees, absences, payroll' },
-  { key: 'projects', label: 'Projects', description: 'Tasks, time tracking, docs' },
+  { key: 'sales', labelKey: 'moduleSales', descriptionKey: 'moduleSalesDesc' },
+  { key: 'purchases', labelKey: 'modulePurchases', descriptionKey: 'modulePurchasesDesc' },
+  { key: 'inventory', labelKey: 'moduleInventory', descriptionKey: 'moduleInventoryDesc' },
+  { key: 'accounting', labelKey: 'moduleAccounting', descriptionKey: 'moduleAccountingDesc' },
+  { key: 'crm', labelKey: 'moduleCrm', descriptionKey: 'moduleCrmDesc' },
+  { key: 'hr', labelKey: 'moduleHr', descriptionKey: 'moduleHrDesc' },
+  { key: 'projects', labelKey: 'moduleProjects', descriptionKey: 'moduleProjectsDesc' },
 ];
 
 const IMPORT_OPTIONS = [
   {
     key: 'fresh',
-    label: 'Start Fresh',
-    description: 'Begin with an empty database and configure everything from scratch.',
+    labelKey: 'importStartFresh',
+    descriptionKey: 'importStartFreshDesc',
     icon: Sparkles,
   },
   {
     key: 'csv',
-    label: 'Import from CSV',
-    description: 'Upload CSV files for products, contacts, and opening balances.',
+    labelKey: 'importCsv',
+    descriptionKey: 'importCsvDesc',
     icon: FileSpreadsheet,
   },
 ];
@@ -76,6 +77,7 @@ const INITIAL_FORM = {
 };
 
 export default function OnboardingPage() {
+  const ui = useUI();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(INITIAL_FORM);
@@ -90,14 +92,14 @@ export default function OnboardingPage() {
         : [...prev.modules, key],
     }));
 
-  const canNext =
-    step === 0
-      ? form.companyName && form.industry && form.companySize && form.timezone
-      : step === 1
-        ? form.userName && form.userEmail && form.userRole
-        : step === 2
-          ? form.modules.length > 0
-          : true;
+  let canNext = true;
+  if (step === 0) {
+    canNext = Boolean(form.companyName && form.industry && form.companySize && form.timezone);
+  } else if (step === 1) {
+    canNext = Boolean(form.userName && form.userEmail && form.userRole);
+  } else if (step === 2) {
+    canNext = form.modules.length > 0;
+  }
 
   const handleLaunch = () => {
     navigate('/dashboard');
@@ -108,7 +110,7 @@ export default function OnboardingPage() {
   const renderCompanySetup = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
-        <Label htmlFor="companyName">Company Name</Label>
+        <Label htmlFor="companyName">{ui('companyName')}</Label>
         <Input
           id="companyName"
           placeholder="Acme Corp"
@@ -117,42 +119,42 @@ export default function OnboardingPage() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="industry">Industry</Label>
+        <Label htmlFor="industry">{ui('industry')}</Label>
         <select
           id="industry"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={form.industry}
           onChange={(e) => set('industry', e.target.value)}
         >
-          <option value="">Select industry...</option>
+          <option value="">{ui('selectIndustry')}</option>
           {INDUSTRIES.map((i) => (
             <option key={i} value={i}>{i}</option>
           ))}
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="companySize">Company Size</Label>
+        <Label htmlFor="companySize">{ui('companySize')}</Label>
         <select
           id="companySize"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={form.companySize}
           onChange={(e) => set('companySize', e.target.value)}
         >
-          <option value="">Select size...</option>
+          <option value="">{ui('selectSize')}</option>
           {COMPANY_SIZES.map((s) => (
             <option key={s} value={s}>{s} employees</option>
           ))}
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="timezone">Timezone</Label>
+        <Label htmlFor="timezone">{ui('timezone')}</Label>
         <select
           id="timezone"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={form.timezone}
           onChange={(e) => set('timezone', e.target.value)}
         >
-          <option value="">Select timezone...</option>
+          <option value="">{ui('selectTimezone')}</option>
           {TIMEZONES.map((tz) => (
             <option key={tz} value={tz}>{tz}</option>
           ))}
@@ -168,11 +170,11 @@ export default function OnboardingPage() {
           {form.userName ? form.userName.charAt(0).toUpperCase() : '?'}
         </div>
         <div className="text-sm text-muted-foreground">
-          Avatar will be generated from your initials
+          {ui('avatarGenerated')}
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="userName">Full Name</Label>
+        <Label htmlFor="userName">{ui('fullName')}</Label>
         <Input
           id="userName"
           placeholder="Jane Smith"
@@ -181,7 +183,7 @@ export default function OnboardingPage() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="userEmail">Email</Label>
+        <Label htmlFor="userEmail">{ui('email')}</Label>
         <Input
           id="userEmail"
           type="email"
@@ -191,18 +193,18 @@ export default function OnboardingPage() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="userRole">Role</Label>
+        <Label htmlFor="userRole">{ui('role')}</Label>
         <select
           id="userRole"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={form.userRole}
           onChange={(e) => set('userRole', e.target.value)}
         >
-          <option value="">Select role...</option>
-          <option value="admin">Administrator</option>
-          <option value="manager">Manager</option>
-          <option value="user">Standard User</option>
-          <option value="viewer">Viewer</option>
+          <option value="">{ui('selectRole')}</option>
+          <option value="admin">{ui('administrator')}</option>
+          <option value="manager">{ui('manager')}</option>
+          <option value="user">{ui('standardUser')}</option>
+          <option value="viewer">{ui('viewer')}</option>
         </select>
       </div>
     </div>
@@ -233,8 +235,8 @@ export default function OnboardingPage() {
                 {selected && <Check className="h-3.5 w-3.5" />}
               </div>
               <div>
-                <p className="font-medium text-sm">{mod.label}</p>
-                <p className="text-xs text-muted-foreground">{mod.description}</p>
+                <p className="font-medium text-sm">{ui(mod.labelKey)}</p>
+                  <p className="text-xs text-muted-foreground">{ui(mod.descriptionKey)}</p>
               </div>
             </CardContent>
           </Card>
@@ -262,8 +264,8 @@ export default function OnboardingPage() {
               <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                 <Icon className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="font-medium">{opt.label}</p>
-              <p className="text-xs text-muted-foreground">{opt.description}</p>
+              <p className="font-medium">{ui(opt.labelKey)}</p>
+              <p className="text-xs text-muted-foreground">{ui(opt.descriptionKey)}</p>
             </CardContent>
           </Card>
         );
@@ -276,24 +278,24 @@ export default function OnboardingPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Building2 className="h-4 w-4" /> Company
+            <Building2 className="h-4 w-4" /> {ui('company')}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Name</span>
+            <span className="text-muted-foreground">{ui('name')}</span>
             <p className="font-medium">{form.companyName}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Industry</span>
+            <span className="text-muted-foreground">{ui('industry')}</span>
             <p className="font-medium">{form.industry}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Size</span>
+            <span className="text-muted-foreground">{ui('size')}</span>
             <p className="font-medium">{form.companySize}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Timezone</span>
+            <span className="text-muted-foreground">{ui('timezone')}</span>
             <p className="font-medium">{form.timezone}</p>
           </div>
         </CardContent>
@@ -302,20 +304,20 @@ export default function OnboardingPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <User className="h-4 w-4" /> User Profile
+            <User className="h-4 w-4" /> {ui('userProfile')}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Name</span>
+            <span className="text-muted-foreground">{ui('name')}</span>
             <p className="font-medium">{form.userName}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Email</span>
+            <span className="text-muted-foreground">{ui('email')}</span>
             <p className="font-medium">{form.userEmail}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Role</span>
+            <span className="text-muted-foreground">{ui('role')}</span>
             <p className="font-medium">{form.userRole}</p>
           </div>
         </CardContent>
@@ -324,7 +326,7 @@ export default function OnboardingPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Blocks className="h-4 w-4" /> Selected Modules
+            <Blocks className="h-4 w-4" /> {ui('selectedModules')}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
@@ -342,12 +344,12 @@ export default function OnboardingPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Upload className="h-4 w-4" /> Data Import
+            <Upload className="h-4 w-4" /> {ui('dataImport')}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm">
           <p className="font-medium">
-            {IMPORT_OPTIONS.find((o) => o.key === form.importMethod)?.label}
+            {ui(IMPORT_OPTIONS.find((o) => o.key === form.importMethod)?.labelKey)}
           </p>
         </CardContent>
       </Card>
@@ -368,8 +370,8 @@ export default function OnboardingPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Setup Wizard</h1>
-        <Badge variant="outline">Step {step + 1} of {STEPS.length}</Badge>
+        <h1 className="text-2xl font-bold tracking-tight">{ui('setupWizard')}</h1>
+        <Badge variant="outline">{ui('stepOf', { step: step + 1, total: STEPS.length })}</Badge>
       </div>
 
       {/* Progress bar */}
@@ -377,10 +379,10 @@ export default function OnboardingPage() {
         <div className="flex justify-between text-xs text-muted-foreground">
           {STEPS.map((s, i) => (
             <span
-              key={s.label}
+              key={s.labelKey}
               className={i <= step ? 'text-primary font-medium' : ''}
             >
-              {s.label}
+              {ui(s.labelKey)}
             </span>
           ))}
         </div>
@@ -397,7 +399,7 @@ export default function OnboardingPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <StepIcon className="h-5 w-5" />
-            {STEPS[step].label}
+            {ui(STEPS[step].labelKey)}
           </CardTitle>
         </CardHeader>
         <CardContent>{STEP_RENDERERS[step]()}</CardContent>
@@ -411,18 +413,18 @@ export default function OnboardingPage() {
           disabled={step === 0}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Back
+          {ui('back')}
         </Button>
 
         {step < STEPS.length - 1 ? (
           <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
-            Next
+            {ui('next')}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         ) : (
           <Button onClick={handleLaunch}>
             <Rocket className="h-4 w-4 mr-1" />
-            Launch
+            {ui('launch')}
           </Button>
         )}
       </div>

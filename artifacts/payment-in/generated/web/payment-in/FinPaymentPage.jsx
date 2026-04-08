@@ -5,6 +5,7 @@ import FinPaymentForm from './FinPaymentForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import PaymentBottomPanel from '../../../custom/PaymentBottomPanel';
 import PaymentActivityToggle from '../../../custom/PaymentActivityToggle';
+import NewPaymentModal from '../../../custom/NewPaymentModal';
 import catalogs from './mockCatalogs';
 
 
@@ -13,13 +14,7 @@ const breadcrumb = 'Sales / Payment In';
 
 // @sf-generated-start summary:finPayment
 const summary = [
-  { key: 'referenceNo', column: 'Referenceno', type: 'string' },
-  { key: 'paymentDate', column: 'Paymentdate', type: 'date' },
-  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string' },
-  { key: 'paymentMethod', column: 'Fin_Paymentmethod_ID', type: 'string' },
-  { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'account', column: 'Fin_Financial_Account_ID', type: 'string' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+
 ];
 
 const statusField = 'status';
@@ -180,6 +175,9 @@ const api = {
 // @sf-generated-start component:FinPaymentPage
 export default function FinPaymentPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:FinPaymentPage
+  if (recordId === 'new') {
+    return <NewPaymentModal token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
+  }
   if (recordId) {
     return (
       <DetailView

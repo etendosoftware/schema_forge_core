@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import GoodsShipmentTable from './GoodsShipmentTable';
@@ -6,6 +7,7 @@ import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
+import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
 import catalogs from './mockCatalogs';
 
 
@@ -20,7 +22,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:goodsShipment
 
-// @sf-custom-slot extraBadges:goodsShipment
 // @sf-generated-start extraBadges:goodsShipment
 const extraBadges = [];
 // @sf-generated-end extraBadges:goodsShipment
@@ -232,7 +233,6 @@ const api = {
 
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:GoodsShipmentPage
   if (recordId) {
     return (
       <DetailView
@@ -253,7 +253,6 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Shipment', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
@@ -275,10 +274,9 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       {...props}
     />
   );
 }
 // @sf-generated-end component:GoodsShipmentPage
-
-// @sf-custom-slot section:GoodsShipmentPage-custom

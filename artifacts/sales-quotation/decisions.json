@@ -4,18 +4,19 @@
     "category": "sales",
     "name": "Sales Quotation",
     "salesTheme": true,
-    "documentPreview": {
-      "titlePrefix": "Quotation"
-    },
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "hidePrint": true,
+    "customComponents": {
+      "topbarRight": "QuotationTopbarActions"
+    },
     "menuActions": [
       { "key": "duplicate", "label": "Duplicate" },
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
     ],
     "processOverrides": {
-      "Complete": { "add": true, "label": "Confirm", "columnName": "documentAction", "displayLogicRaw": "@documentStatus@='DR'" },
+      "Complete": { "exclude": true },
       "Convert to Order": { "exclude": true },
       "Void": { "label": "Void", "style": "destructive", "displayLogicRaw": "@documentStatus@='CO'" },
       "Reactivate": { "label": "Reactivate", "displayLogicRaw": "@documentStatus@='VO'" }
@@ -98,7 +99,8 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false
+          "form": false,
+          "display": "dot"
         },
         "invoiceAddress": {
           "visibility": "discarded"

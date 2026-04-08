@@ -111,7 +111,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
         setChildren(rows);
       })
       .catch(() => setChildren([]));
-  }, [apiBaseUrl, childEntity, token]);
+  }, [apiBaseUrl, childEntity, token, childSortBy]);
 
   const fetchById = useCallback((id) => {
     if (!id) return;
@@ -267,8 +267,9 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
         return null;
       }
       const data = await res.json().catch(() => null);
-      // Refresh children from backend
+      // Refresh children and header (totals recalculated by backend)
       fetchChildren(selected.id);
+      fetchById(selected.id);
       setSaveError(null);
       toast.success('Line added');
       return data?.response?.data?.[0] ?? data ?? true;
@@ -286,11 +287,15 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-  }, []);
+    // Refetch header to update totals after line edit
+    if (selected?.id) fetchById(selected.id);
+  }, [selected, fetchById]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
-  }, []);
+    // Refetch header to update totals after line deletion
+    if (selected?.id) fetchById(selected.id);
+  }, [selected, fetchById]);
 
   const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
     const saved = await handleSave();
@@ -330,6 +335,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
       });
       if (res.ok) {
         toast.success(process.label ? `${process.label} completed` : 'Process completed');
+        window.dispatchEvent(new CustomEvent('neo:processSuccess', { detail: { process, entity, recordId: selected.id } }));
         fetchById(selected.id);
         refresh();
       } else {
@@ -345,7 +351,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
     items, selected, editing, children, loading, loadingMore, hasMore, saveError,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
-    refresh, fetchById, loadMore,
+    refresh, fetchById, fetchChildren, loadMore,
     sortColumn, sortDirection, setSortColumn, setSortDirection,
   };
 }

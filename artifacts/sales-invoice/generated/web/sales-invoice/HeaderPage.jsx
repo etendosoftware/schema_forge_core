@@ -24,14 +24,13 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
-// @sf-custom-slot extraBadges:header
 // @sf-generated-start extraBadges:header
 const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'documentAction',
+  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'DocAction',
     displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:header
@@ -320,7 +319,6 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:HeaderPage
   if (recordId) {
     return (
       <DetailView
@@ -341,7 +339,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        documentPreview={{ titlePrefix: 'Invoice', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
@@ -370,5 +367,3 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:HeaderPage
-
-// @sf-custom-slot section:HeaderPage-custom

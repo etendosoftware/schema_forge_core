@@ -89,16 +89,16 @@ function printNextSteps({ pushToNeoRan, frontendGenerated }) {
   console.log('Next steps:');
 
   if (pushToNeoRan && frontendGenerated) {
-    console.log('  → Deploy UI, rebuild, and export config in one step:');
-    console.log('    make deploy');
+    console.log('  → UI is deployed in the separate container now; legacy copy flow only if needed:');
+    console.log('    make deploy LEGACY_DEPLOY=1');
     console.log('    cd <etendo_root> && ./gradlew smartbuild export.database --info');
     console.log('  → Restart Tomcat (if not using Docker — Docker auto-restarts after a few seconds)');
   } else if (pushToNeoRan) {
     console.log('  → Run export.database to persist NEO config to XML sourcedata:');
     console.log('    cd <etendo_root> && ./gradlew export.database --info');
   } else if (frontendGenerated) {
-    console.log('  → Deploy the UI and rebuild:');
-    console.log('    make deploy');
+    console.log('  → UI is deployed in the separate container now; legacy copy flow only if needed:');
+    console.log('    make deploy LEGACY_DEPLOY=1');
     console.log('    cd <etendo_root> && ./gradlew smartbuild --info');
     console.log('  → Restart Tomcat (if not using Docker — Docker auto-restarts after a few seconds)');
   }
@@ -409,7 +409,13 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           try {
             const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
             const existingContract = JSON.parse(existingRaw);
-            prevVersion = existingContract.version ?? null;
+            // Guard: version may be a nested object if a previous run had a bug.
+            // Drill down until we reach a string.
+            let rawVersion = existingContract.version ?? null;
+            while (rawVersion !== null && typeof rawVersion === 'object') {
+              rawVersion = rawVersion.version ?? null;
+            }
+            prevVersion = rawVersion;
             // Snapshot for version diffing
             await writeFile(`artifacts/${windowName}/contract.prev.json`, existingRaw, 'utf-8');
           } catch {

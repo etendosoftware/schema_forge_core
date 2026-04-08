@@ -1,19 +1,20 @@
 {
-  "version": "0.5.0",
-  "generatedAt": "2026-04-01T16:22:19.607Z",
-  "checksum": "55b55cead4b5c870",
+  "version": "0.5.1",
+  "generatedAt": "2026-04-06T14:56:40.536Z",
+  "checksum": "3eed5ecc81ccfcc9",
   "frontendContract": {
     "window": {
       "id": "143",
       "name": "Sales Order",
       "primaryEntity": "header",
       "category": "sales",
-      "documentPreview": {
-        "titlePrefix": "Order"
-      },
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "hidePrint": true,
+      "customComponents": {
+        "topbarRight": "OrderCreateInvoice"
+      },
       "menuActions": [
         {
           "key": "duplicate",
@@ -30,7 +31,7 @@
         "Complete": {
           "add": true,
           "label": "Complete",
-          "columnName": "documentAction",
+          "columnName": "DocAction",
           "displayLogicRaw": "@documentStatus@='DR'"
         }
       },
@@ -587,12 +588,13 @@
       "name": "Sales Order",
       "primaryEntity": "header",
       "category": "sales",
-      "documentPreview": {
-        "titlePrefix": "Order"
-      },
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "hidePrint": true,
+      "customComponents": {
+        "topbarRight": "OrderCreateInvoice"
+      },
       "menuActions": [
         {
           "key": "duplicate",
@@ -609,7 +611,7 @@
         "Complete": {
           "add": true,
           "label": "Complete",
-          "columnName": "documentAction",
+          "columnName": "DocAction",
           "displayLogicRaw": "@documentStatus@='DR'"
         }
       },
@@ -1585,7 +1587,7 @@
             "apiKey": "invoicedQuantity",
             "column": "QtyInvoiced",
             "type": "quantity",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {
@@ -1593,7 +1595,7 @@
             "apiKey": "deliveredQuantity",
             "column": "QtyDelivered",
             "type": "quantity",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {

@@ -116,9 +116,10 @@ export function generateTableComponent(entityName, contract) {
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
     const badgePart = f.badge ? ', badge: true' : '';
+    const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${summablePart}${displayPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -179,6 +180,7 @@ export function generateFormComponent(entityName, contract) {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
     const lookupPart = f.lookup ? ', lookup: true' : '';
+    const popupPart = f.popup ? ', popup: true' : '';
     const readOnlyPart = f.visibility === 'readOnly' ? ', readOnly: true' : '';
     const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
     const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
@@ -209,13 +211,12 @@ export function generateFormComponent(entityName, contract) {
         readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
       }
     }
-    // Custom slots for callout and onChangeFunction behavioral hints
     const slotLines = [];
     const optionsPart = (type === 'select' && f.enumValues?.length)
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -374,7 +375,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
-  const isSidebar = isGallery && !!contract?.frontendContract?.window?.sidebarLayout;
+  const isSidebar = !!contract?.frontendContract?.window?.sidebarLayout;
   const processes = getProcessesForEntity(contract, headerEntity);
   const readOnlyFields = getReadOnlyFields(contract, headerEntity);
 
@@ -386,8 +387,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
-  const statusField = docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status'));
-  const summaryFields = readOnlyFields.filter(f => f !== statusField);
+  const statusFieldOverride = contract.frontendContract.window.statusField;
+  const statusField = statusFieldOverride
+    ? (allEntityFields.find(f => f.name === statusFieldOverride) ?? null)
+    : (docStatusField ?? allEntityFields.find(f => f.visibility === 'readOnly' && f.name.toLowerCase().includes('status')));
+  const summaryFieldsOverride = contract.frontendContract.window.summaryFields;
+  const summaryFields = Array.isArray(summaryFieldsOverride)
+    ? summaryFieldsOverride.length === 0
+      ? []
+      : readOnlyFields.filter(f => f !== statusField && summaryFieldsOverride.includes(f.name))
+    : readOnlyFields.filter(f => f !== statusField);
 
   // Summary config
   const summaryArray = summaryFields.map(f => {
@@ -424,7 +433,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const label = ovr.label || f.label || toLabel(f.name);
       const dlRawVal = ovr.displayLogicRaw || f.displayLogic?.raw;
       const dlRaw = dlRawVal ? `,\n    displayLogicRaw: "${dlRawVal.replace(/"/g, '\\"')}"` : '';
-      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw} },`;
+      const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+      return `  { name: '${f.name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${dlRaw}${requiresLinesPart} },`;
     }).filter(Boolean),
     // Extra processes defined purely in decisions.json (not in backend contract)
     ...Object.entries(processOverrides)
@@ -436,7 +446,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const dlRaw = ovr.displayLogicRaw
           ? `,\n    displayLogicRaw: "${ovr.displayLogicRaw.replace(/"/g, '\\"')}"`
           : '';
-        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw} },`;
+        const requiresLinesPart = ovr.requiresLines ? `, requiresLines: true` : '';
+        return `  { name: '${name}', label: '${label.replace(/'/g, "\\'")}', style: '${style}'${colPart}${dlRaw}${requiresLinesPart} },`;
       }),
   ].join('\n');
 
@@ -485,6 +496,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
+  const windowBreadcrumbOverride = contract?.frontendContract?.window?.breadcrumb;
   const windowCategory = capitalize(contract?.frontendContract?.window?.category ?? 'general');
   const windowLabel = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
 
@@ -494,6 +506,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const hidePrint = windowConfig.hidePrint ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
@@ -609,6 +622,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
 
+  // hidePrint prop
+  const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
   const customComponentProps = [];
@@ -620,12 +636,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
+  if (customComponents.bulkActions) {
+    customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
+  }
   if (customComponents.sidePanel) {
     customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
     if (customComponents.sidePanelStyle) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
+  }
+  if (customComponents.newRecordComponent) {
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -693,7 +715,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             recordId={recordId}
             data={data}
             token={props.token}
-            apiBaseUrl={api.baseUrl}
+            apiBaseUrl={props.apiBaseUrl}
           />
         )}`
     : '';
@@ -714,6 +736,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
   }
 
+  // bulkActions → render function prop in ListView
+  const bulkActionsProp = customComponents.bulkActions
+    ? `\n      bulkActions={(ctx) => <${customComponents.bulkActions} {...ctx} />}`
+    : '';
+
   // headerExtra → formFooter prop
   const headerExtraConfig = windowConfig.headerExtra ?? null;
   let formFooterImport = '';
@@ -724,17 +751,42 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     formFooterProp = `\n        formFooter={${compName}}`;
   }
 
-  return `import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+  // primaryTabs support
+  const primaryTabsConfig = windowConfig.primaryTabs ?? null;
+  let primaryTabsImports = '';
+  let primaryTabsProp = '';
+  if (primaryTabsConfig && specName) {
+    const imports = [];
+    const tabEntries = primaryTabsConfig.map(tab => {
+      if (tab.panel) {
+        imports.push(`import ${tab.panel} from '@/windows/custom/${specName}/${tab.panel}';`);
+        return `{ key: '${tab.key}', label: '${tab.label}', Panel: ${tab.panel} }`;
+      }
+      return `{ key: '${tab.key}', label: '${tab.label}' }`;
+    });
+    primaryTabsImports = imports.length > 0 ? imports.join('\n') + '\n' : '';
+    primaryTabsProp = `\n        primaryTabs={[\n          ${tabEntries.join(',\n          ')},\n        ]}`;
+  }
+
+  // othersLabel support
+  const othersLabelValue = windowConfig.othersLabel ?? null;
+  const othersLabelProp = othersLabelValue ? `\n        othersLabel="${othersLabelValue}"` : '';
+
+  // disableProcessedLock support
+  const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
+
+  return `import { useEffect } from 'react';
+import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';` : ''}${isSidebar ? `
 import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
-const breadcrumb = '${windowCategory} / ${windowLabel}';
+const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
 ${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
@@ -775,6 +827,9 @@ ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
+  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
+    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
+  }` : ''}
   if (recordId) {
     return (
       <DetailView
@@ -793,7 +848,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${documentPreviewProp}${hideDeleteProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -803,10 +858,10 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${windowConfig.name || pluralize(entityLabel)}"
+      entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${bulkActionsProp}
       {...props}
     />
   );

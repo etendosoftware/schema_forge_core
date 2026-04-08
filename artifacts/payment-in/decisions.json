@@ -5,14 +5,15 @@
     "name": "Payment In",
     "salesTheme": true,
     "documentPreview": { "titlePrefix": "Payment" },
-    "notesField": "description",
     "relatedDocuments": true,
     "customComponents": {
       "bottomSection": "PaymentBottomPanel",
-      "topbarRight": "PaymentActivityToggle"
+      "topbarRight": "PaymentActivityToggle",
+      "newRecordComponent": "NewPaymentModal"
     },
     "detailEntity": null,
     "hideDeleteWhenComplete": true,
+    "summaryFields": [],
     "menuActions": [
       { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
     ],
@@ -40,42 +41,43 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "inputMode": "date",
-          "section": "principal"
+          "form": false,
+          "inputMode": "date"
         },
         "businessPartner": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "form": false
         },
         "amount": {
           "visibility": "readOnly",
           "grid": true,
-          "inputMode": "number",
-          "section": "principal"
+          "form": false,
+          "inputMode": "number"
         },
         "paymentMethod": {
           "visibility": "readOnly",
-          "inputMode": "search",
-          "section": "principal"
+          "form": false,
+          "inputMode": "search"
         },
         "account": {
           "visibility": "readOnly",
+          "form": false,
           "inputMode": "search",
           "dependsOn": {
             "field": "paymentMethod",
             "filterKey": "Fin_Paymentmethod_ID"
-          },
-          "section": "principal"
+          }
         },
         "referenceNo": {
           "visibility": "readOnly",
-          "inputMode": "text",
-          "section": "details"
+          "form": false,
+          "inputMode": "text"
         },
         "currency": {
           "visibility": "readOnly",
+          "form": false,
           "inputMode": "search",
           "dependsOn": {
             "field": "account",
@@ -84,8 +86,8 @@
           "section": "principal"
         },
         "description": {
-          "inputMode": "textarea",
-          "section": "collapsed"
+          "form": false,
+          "inputMode": "textarea"
         },
         "status": {
           "visibility": "readOnly",

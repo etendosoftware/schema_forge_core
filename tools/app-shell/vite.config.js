@@ -12,16 +12,19 @@ export default defineConfig(({ mode }) => {
   const ETENDO_URL = env.ETENDO_URL || process.env.ETENDO_URL || 'http://localhost:8080/etendo';
 
   return {
-  base: './',
+  base: '/',
   plugins: [
     react(),
     schemaApiPlugin(),
     reportApiPlugin(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
       },
       manifest: {
         name: 'Etendo',
@@ -32,7 +35,7 @@ export default defineConfig(({ mode }) => {
         display: 'standalone',
         icons: [
           {
-            src: '/favicon.png',
+            src: 'favicon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
@@ -55,6 +58,9 @@ export default defineConfig(({ mode }) => {
       '@': resolve(__dirname, './src'),
       '@generated': resolve(__dirname, '../../artifacts'),
     },
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'sonner', 'lucide-react'],
+    // Ensure modules imported from artifacts/ resolve to app-shell node_modules
+    modules: [resolve(__dirname, 'node_modules'), 'node_modules'],
   },
   server: {
     port: 3100,

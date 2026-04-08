@@ -1,13 +1,19 @@
 {
-  "version": "0.10.0",
-  "generatedAt": "2026-03-31T21:06:15.340Z",
-  "checksum": "2ba65411be28db4e",
+  "version": "0.16.0",
+  "generatedAt": "2026-04-06T18:44:12.236Z",
+  "checksum": "c29a907f9de7a2c7",
   "frontendContract": {
     "window": {
       "id": "168",
       "name": "Physical Inventory",
       "primaryEntity": "inventory",
       "category": "warehouse",
+      "processOverrides": {
+        "processNow": {
+          "requiresLines": true
+        }
+      },
+      "statusField": "processed",
       "layoutType": "default"
     },
     "entities": {
@@ -67,7 +73,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "other"
           },
           {
             "name": "processNow",
@@ -125,6 +132,7 @@
             "form": true,
             "reference": "Project",
             "inputMode": "search",
+            "section": "other",
             "displayLogic": {
               "raw": "@ACCT_DIMENSION_DISPLAY@",
               "evaluable": false,
@@ -133,20 +141,22 @@
             },
             "readOnlyLogic": {
               "raw": "@Posted@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['posted'] === 'Y'"
             }
           },
           {
             "name": "processed",
             "apiKey": "processed",
             "column": "Processed",
-            "label": "Processed",
+            "label": "Status",
             "type": "boolean",
             "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
-            "form": false
+            "grid": true,
+            "form": false,
+            "columnType": "status"
           }
         ],
         "searchableFields": [
@@ -260,7 +270,8 @@
             "form": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -331,7 +342,8 @@
             "form": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
-              "evaluable": true
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           }
         ],
@@ -367,7 +379,13 @@
       "id": "168",
       "name": "Physical Inventory",
       "primaryEntity": "inventory",
-      "category": "warehouse"
+      "category": "warehouse",
+      "processOverrides": {
+        "processNow": {
+          "requiresLines": true
+        }
+      },
+      "statusField": "processed"
     },
     "entities": {
       "inventory": {

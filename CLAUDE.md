@@ -228,6 +228,28 @@ Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OB
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
 
+## Static Analysis (SonarQube)
+
+Run `cli/sonar-check.sh` to analyze specific Java files with SonarQube and get results inline.
+Requires `SONAR_TOKEN` and `SONAR_HOST_URL` exported in `~/.zshrc` or `~/.bashrc`, and `sonar-scanner` CLI installed.
+
+```bash
+# Analyze specific files
+./cli/sonar-check.sh path/to/SomeHandler.java path/to/OtherHandler.java
+
+# Analyze with glob
+./cli/sonar-check.sh path/to/Widget*.java
+
+# Quiet mode (suppress scanner output, show only results)
+./cli/sonar-check.sh -q path/to/*.java
+
+# Custom project key
+./cli/sonar-check.sh --project-key my-project path/to/*.java
+```
+
+The script scans, waits for the report to process, and prints issues sorted by severity. Exit code 0 = clean, 1 = issues found.
+**Delegate to Alex (Reviewer) or Sentinel (QA)** for running static analysis as part of the pipeline.
+
 ## Decisions
 
 `decisions.json` is the primary config per window. Before modifying, read `docs/decisions-reference.md`.
@@ -251,9 +273,10 @@ Etendo AD findings go in `docs/etendo-ad/`, NOT in per-window artifacts.
 
 ## Frontend Build & Deploy (MANDATORY final step)
 
-`make deploy` builds + copies to Etendo module. `make dev` for hot reload at localhost:3100.
-Full pipeline sequence: Extract → Classify → Contract → Push to NEO → export.database → Generate Frontend → make deploy
-Override target: `make deploy MODULE_WEB={path}`. No Tomcat restart needed.
+`make deploy` is deprecated. The UI is now compiled during commits and deployed in a separate container, so the target only prints a warning unless you pass `LEGACY_DEPLOY=1`.
+`make dev` is still used for hot reload at localhost:3100.
+Full pipeline sequence: Extract → Classify → Contract → Push to NEO → export.database → Generate Frontend → deploy via the dedicated UI container
+Legacy override: `make deploy LEGACY_DEPLOY=1 MODULE_WEB={path}`. No Tomcat restart needed in legacy mode.
 
 ## NEO Headless
 

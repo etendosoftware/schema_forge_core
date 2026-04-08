@@ -3,25 +3,19 @@ import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import ExecutionHistoryTable from './ExecutionHistoryTable';
-import ExecutionHistoryForm from './ExecutionHistoryForm';
-import ExchangeRatesTable from './ExchangeRatesTable';
-import ExchangeRatesForm from './ExchangeRatesForm';
-import UsedCreditSourceTable from './UsedCreditSourceTable';
-import UsedCreditSourceForm from './UsedCreditSourceForm';
 import AccountingTable from './AccountingTable';
 import AccountingForm from './AccountingForm';
+import ExecutionHistoryTable from './ExecutionHistoryTable';
+import ExecutionHistoryForm from './ExecutionHistoryForm';
 import catalogs from './mockCatalogs';
 
+
 const breadcrumb = 'Purchases / Payment Out';
+
 
 // @sf-generated-start summary:finPayment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'amount', column: 'Amount', type: 'amount' },
-  { key: 'usedCredit', column: 'Used_Credit', type: 'amount' },
-  { key: 'writeoffAmount', column: 'Writeoffamt', type: 'amount' },
-  { key: 'reversedPayment', column: 'FIN_Rev_Payment_ID', type: 'string' },
 ];
 
 const statusField = 'status';
@@ -38,23 +32,21 @@ const processes = [
 ];
 // @sf-generated-end processes:finPayment
 
+// @sf-generated-start draftMode:finPayment
+const draftMode = null;
+// @sf-generated-end draftMode:finPayment
+
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'orderPaymentSchedule', column: 'FIN_Payment_Schedule_Order', type: 'search', lookup: true, reference: 'Payment_Schedule', inputMode: 'search' },
-    { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', reference: 'Payment_Schedule', inputMode: 'search' },
-    { key: 'gLItem', column: 'C_Glitem_ID', type: 'selector', reference: 'Glitem', inputMode: 'selector' },
-    { key: 'activity', column: 'C_Activity_ID', type: 'selector', reference: 'Activity', inputMode: 'selector' },
-    { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
-    { key: 'salesCampaign', column: 'C_Campaign_ID', type: 'selector', reference: 'Campaign', inputMode: 'selector' },
-    { key: 'project', column: 'C_Project_ID', type: 'search', reference: 'Project', inputMode: 'search' },
-    { key: 'salesRegion', column: 'C_Salesregion_ID', type: 'selector', reference: 'SalesRegion', inputMode: 'selector' },
-    { key: 'stDimension', column: 'User1_ID', type: 'selector', reference: 'UserDimension1', inputMode: 'selector' },
-    { key: 'ndDimension', column: 'User2_ID', type: 'selector', reference: 'UserDimension2', inputMode: 'selector' },
+    { key: 'amount', column: 'Amount', type: 'number', required: true, label: 'Paid Amount' },
+    { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', lookup: true, label: 'Invoice Payment Schedule', reference: 'Payment_Schedule', inputMode: 'search' },
   ],
   derived: [
-    { key: 'amount', column: 'Amount', type: 'number' },
-    { key: 'costCenter', column: 'C_Costcenter_ID', type: 'selector', reference: 'CostCenter', inputMode: 'selector' },
+
+  ],
+  hidden: [
+
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -519,10 +511,8 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         secondaryTabs={[
-          { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
-          { key: 'exchangeRates', label: 'Exchange rates', Table: ExchangeRatesTable, Form: ExchangeRatesForm },
-          { key: 'usedCreditSource', label: 'Used Credit Source', Table: UsedCreditSourceTable, Form: UsedCreditSourceForm },
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
+          { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
         ]}
         {...props}
       />
@@ -533,7 +523,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
     <ListView
       entity="finPayment"
       Table={FinPaymentTable}
-      entityLabel="Fin Payments"
+      entityLabel="Payment Out"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}

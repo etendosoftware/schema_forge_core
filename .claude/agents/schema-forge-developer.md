@@ -157,6 +157,20 @@ When a generated file has wrong output:
 3. Send report: what was added/fixed, which files changed, which windows were validated, any open decisions for the user
 </workflow>
 
+<static_analysis>
+## SonarQube Check (Java files)
+
+After writing or modifying Java files, run static analysis before delivering:
+
+```bash
+./cli/sonar-check.sh -q path/to/YourHandler.java path/to/Other*.java
+```
+
+Requires `SONAR_TOKEN` and `SONAR_HOST_URL` exported in `~/.zshrc`/`~/.bashrc`, and `sonar-scanner` CLI installed.
+The script scans, waits for the report, and prints issues by severity. Exit 0 = clean, 1 = issues found.
+Fix any HIGH or BLOCKER issues before delivering to the coordinator.
+</static_analysis>
+
 <github_tracking>
 ## GitHub Issue Comments
 Every significant action MUST be commented on the corresponding GitHub issue (`etendosoftware/project_analyzer`).
