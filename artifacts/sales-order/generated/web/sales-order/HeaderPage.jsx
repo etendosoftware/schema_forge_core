@@ -30,8 +30,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'Complete', label: 'Complete', style: 'positive', columnName: 'DocAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
+
 ];
 // @sf-generated-end processes:header
 
@@ -337,6 +336,7 @@ const api = {
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:HeaderPage
+  
   if (recordId) {
     return (
       <DetailView

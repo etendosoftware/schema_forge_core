@@ -27,14 +27,7 @@
           "visibleWhenStatus": "CO"
         }
       ],
-      "processOverrides": {
-        "Complete": {
-          "add": true,
-          "label": "Complete",
-          "columnName": "DocAction",
-          "displayLogicRaw": "@documentStatus@='DR'"
-        }
-      },
+      "processOverrides": {},
       "salesTheme": true,
       "layoutType": "default"
     },

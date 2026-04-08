@@ -12,9 +12,7 @@
       { "key": "duplicate", "label": "Duplicate" },
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
     ],
-    "processOverrides": {
-      "Complete": { "add": true, "label": "Complete", "columnName": "DocAction", "displayLogicRaw": "@documentStatus@='DR'" }
-    },
+    "processOverrides": {},
     "customComponents": {
       "topbarRight": "OrderCreateInvoice"
     }
@@ -142,9 +140,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "grid": false,
-          "searchable": true,
-          "section": "collapsed"
+          "visibility": "discarded"
         },
         "cancelandreplace": {
           "visibility": "discarded",

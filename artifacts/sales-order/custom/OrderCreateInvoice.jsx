@@ -2,13 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
+import OrderConfirmModal from './OrderConfirmModal';
 
 export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }) {
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showSend, setShowSend] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const isCompleted = data?.documentStatus === 'CO';
+  const isDraft = data?.documentStatus === 'DR';
 
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
@@ -69,6 +72,36 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 
   return (
     <>
+      {isDraft && (
+        <button
+          type="button"
+          onClick={() => setShowConfirm(true)}
+          style={{
+            padding: '4px 14px', borderRadius: 6, border: 'none',
+            background: '#185FA5', color: '#fff', fontWeight: 500, fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          Confirm
+        </button>
+      )}
+      {isCompleted && (
+        <button
+          type="button"
+          onClick={() => setShowConfirm(true)}
+          style={{
+            padding: '4px 12px', borderRadius: 6,
+            border: '1px solid #B5D4F4', background: '#E6F1FB',
+            color: '#185FA5', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8l5 5-5 5" /><path d="M21 13H9" />
+          </svg>
+          Crear albarán
+        </button>
+      )}
       {isCompleted && <button
         type="button"
         onClick={() => setShowPreview(true)}
@@ -110,6 +143,16 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
           windowName="sales-order"
           token={token}
           onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
+      {showConfirm && createPortal(
+        <OrderConfirmModal
+          orderId={recordId}
+          data={data}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          onClose={() => setShowConfirm(false)}
         />,
         document.body,
       )}
