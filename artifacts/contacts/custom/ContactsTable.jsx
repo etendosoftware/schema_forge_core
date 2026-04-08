@@ -5,8 +5,8 @@ import { useLocale } from '@/i18n';
 const filters = ['searchKey', 'name'];
 
 function TypeBadge({ row }) {
-  const isCust = row.customer === 'Y';
-  const isVend = row.vendor === 'Y';
+  const isCust = row.customer === true || row.customer === 'Y';
+  const isVend = row.vendor === true || row.vendor === 'Y';
   if (isCust && isVend) {
     return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">Both</span>;
   }
