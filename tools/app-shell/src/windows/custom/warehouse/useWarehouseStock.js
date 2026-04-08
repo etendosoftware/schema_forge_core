@@ -13,9 +13,9 @@ async function fetchJson(url, token) {
 export function aggregateProducts(rows) {
   const map = new Map();
   for (const row of rows) {
-    const id = row.product?.id ?? row.product ?? 'unknown';
-    const label = row.product?.$_identifier ?? row.product ?? id;
-    const uom = row.uOM?.$_identifier ?? row.uOM ?? '';
+    const id = row.product ?? 'unknown';
+    const label = row['product$_identifier'] ?? id;
+    const uom = row['uOM$_identifier'] ?? row.uOM ?? '';
     const qty = Number(row.quantityOnHand) || 0;
     if (map.has(id)) {
       map.get(id).qty += qty;
