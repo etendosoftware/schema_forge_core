@@ -503,46 +503,10 @@
       }
     },
     "accounting": {
-      "name": "accounting",
-      "fields": {
-        "account": {
-          "grid": true,
-          "reference": null,
-          "inputMode": null
-        },
-        "accountingDate": {
-          "grid": true
-        },
-        "postingType": {
-          "visibility": "readOnly"
-        },
-        "debit": {
-          "grid": true
-        },
-        "credit": {
-          "grid": true
-        },
-        "description": {
-          "visibility": "readOnly"
-        },
-        "accountingFact": {
-          "name": "factAcct"
-        },
-        "table": {
-          "name": "adTable"
-        }
-      },
-      "javaQualifier": "factAcctHandler"
+      "exclude": true
     },
     "reversedInvoices": {
-      "name": "reversedInvoices",
-      "fields": {
-        "reversedInvoice": {
-          "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
-        }
-      }
+      "exclude": true
     },
     "lineTax": {
       "exclude": true
@@ -582,6 +546,18 @@
       }
     },
     "exchangeRates": {
+      "exclude": true
+    },
+    "intrastat": {
+      "exclude": true
+    },
+    "cashVat": {
+      "exclude": true
+    },
+    "siiData": {
+      "exclude": true
+    },
+    "batuz": {
       "exclude": true
     }
   },

@@ -297,6 +297,9 @@
     },
     "mInOutLineTax": {
       "exclude": true
+    },
+    "intrastat": {
+      "exclude": true
     }
   },
   "rules": {
