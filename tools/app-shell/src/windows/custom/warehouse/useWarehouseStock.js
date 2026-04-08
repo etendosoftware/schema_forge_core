@@ -9,13 +9,31 @@ async function fetchJson(url, token) {
   return json?.response?.data ?? json?.data ?? [];
 }
 
+/** Fetch translated UoM names from C_UOM_TRL via the binContents selector. */
+async function fetchUomNames(apiBaseUrl, token) {
+  try {
+    const data = await fetchJson(
+      `${apiBaseUrl}/binContents/selectors/uOM?_startRow=0&_endRow=500`,
+      token,
+    );
+    const map = {};
+    for (const item of data) {
+      if (item.id) map[item.id] = item.identifier ?? item.name ?? item.id;
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
 /** Deduplicate M_Storage_Detail rows by product, summing qtyOnHand. */
-export function aggregateProducts(rows) {
+export function aggregateProducts(rows, uomMap = {}) {
   const map = new Map();
   for (const row of rows) {
     const id = row.product ?? 'unknown';
     const label = row['product$_identifier'] ?? id;
-    const uom = row['uOM$_identifier'] ?? row.uOM ?? '';
+    const uomId = row.uOM ?? '';
+    const uom = uomMap[uomId] ?? row['uOM$_identifier'] ?? uomId;
     const qty = Number(row.quantityOnHand) || 0;
     if (map.has(id)) {
       map.get(id).qty += qty;
@@ -28,7 +46,7 @@ export function aggregateProducts(rows) {
 
 /**
  * Fetch all storageBins for a warehouse, then aggregate binContents + productTransactions
- * across all bins in parallel.
+ * across all bins in parallel. Also resolves UoM names from C_UOM_TRL via the selector.
  * Returns { loading, error, products, transactions }.
  */
 export function useWarehouseStock(warehouseId, token, apiBaseUrl) {
@@ -41,10 +59,14 @@ export function useWarehouseStock(warehouseId, token, apiBaseUrl) {
 
     (async () => {
       try {
-        const bins = await fetchJson(
-          `${apiBaseUrl}/storageBin?parentId=${warehouseId}&_startRow=0&_endRow=100`,
-          token,
-        );
+        const [bins, uomMap] = await Promise.all([
+          fetchJson(
+            `${apiBaseUrl}/storageBin?parentId=${warehouseId}&_startRow=0&_endRow=100`,
+            token,
+          ),
+          fetchUomNames(apiBaseUrl, token),
+        ]);
+
         if (bins.length === 0) {
           if (!cancelled) setState({ loading: false, error: null, products: [], transactions: [] });
           return;
@@ -62,7 +84,7 @@ export function useWarehouseStock(warehouseId, token, apiBaseUrl) {
         if (!cancelled) setState({
           loading: false,
           error: null,
-          products: aggregateProducts(allContents),
+          products: aggregateProducts(allContents, uomMap),
           transactions: allTxs,
         });
       } catch (e) {

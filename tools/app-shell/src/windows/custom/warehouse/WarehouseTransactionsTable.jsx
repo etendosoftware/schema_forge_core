@@ -1,17 +1,18 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useUI } from '@/i18n';
 import { useWarehouseStock } from './useWarehouseStock';
 
-const TYPE_LABELS = {
-  'V+': 'Vendor Receipt',
-  'I+': 'Inventory In',
-  'I-': 'Inventory Out',
-  'M+': 'Movement To',
-  'M-': 'Movement From',
-  'P+': 'Production +',
-  'P-': 'Production -',
-  'C-': 'Customer Shipment',
-  'D-': 'Internal Consumption',
+const TYPE_KEY_MAP = {
+  'V+': 'movTypeVendorReceipt',
+  'I+': 'movTypeInventoryIn',
+  'I-': 'movTypeInventoryOut',
+  'M+': 'movTypeMovementTo',
+  'M-': 'movTypeMovementFrom',
+  'P+': 'movTypeProductionIn',
+  'P-': 'movTypeProductionOut',
+  'C-': 'movTypeCustomerShipment',
+  'D-': 'movTypeInternalConsumption',
 };
 
 function fmtDate(iso) {
@@ -32,6 +33,7 @@ function SortIcon({ field, sortKey, sortDir }) {
 }
 
 export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl, onCount }) {
+  const ui = useUI();
   const { loading, error, transactions } = useWarehouseStock(parentId, token, apiBaseUrl);
 
   useEffect(() => {
@@ -43,6 +45,9 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState('movementDate');
   const [sortDir, setSortDir] = useState('desc');
+
+  const resolveTypeLabel = (tx) =>
+    tx['movementType$_identifier'] ?? (TYPE_KEY_MAP[tx.movementType] ? ui(TYPE_KEY_MAP[tx.movementType]) : tx.movementType) ?? '';
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -59,7 +64,7 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
     return transactions.filter(tx => {
       if (!q) return true;
       const product = (tx['product$_identifier'] ?? tx.product ?? '').toLowerCase();
-      const type = (tx['movementType$_identifier'] ?? TYPE_LABELS[tx.movementType] ?? tx.movementType ?? '').toLowerCase();
+      const type = resolveTypeLabel(tx).toLowerCase();
       return product.includes(q) || type.includes(q);
     });
   }, [transactions, search]);
@@ -74,8 +79,8 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
         av = (a['product$_identifier'] ?? a.product ?? '').toLowerCase();
         bv = (b['product$_identifier'] ?? b.product ?? '').toLowerCase();
       } else if (sortKey === 'movementType') {
-        av = (a['movementType$_identifier'] ?? TYPE_LABELS[a.movementType] ?? a.movementType ?? '').toLowerCase();
-        bv = (b['movementType$_identifier'] ?? TYPE_LABELS[b.movementType] ?? b.movementType ?? '').toLowerCase();
+        av = resolveTypeLabel(a).toLowerCase();
+        bv = resolveTypeLabel(b).toLowerCase();
       } else if (sortKey === 'movementQuantity') {
         av = Number(a.movementQuantity) || 0;
         bv = Number(b.movementQuantity) || 0;
@@ -88,15 +93,15 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
     });
   }, [filtered, sortKey, sortDir]);
 
-  if (loading) return <div className="text-sm text-muted-foreground p-6">Loading transactions…</div>;
-  if (error) return <div className="text-sm text-destructive p-6">Could not load transactions: {error}</div>;
+  if (loading) return <div className="text-sm text-muted-foreground p-6">{ui('warehouseLoadingTransactions')}</div>;
+  if (error) return <div className="text-sm text-destructive p-6">{ui('warehouseTransactionsError', { error })}</div>;
 
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-2 border-b border-border">
         <input
           type="text"
-          placeholder="Filter by product or type…"
+          placeholder={ui('warehouseFilterPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full max-w-sm text-sm bg-transparent border border-border rounded-md px-3 py-1.5 outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
@@ -105,7 +110,7 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
 
       {sorted.length === 0 ? (
         <div className="text-sm text-muted-foreground p-6">
-          {transactions?.length === 0 ? 'No transactions found for this warehouse.' : 'No results match your filter.'}
+          {transactions?.length === 0 ? ui('warehouseNoTransactions') : ui('warehouseNoFilterResults')}
         </div>
       ) : (
         <div className="overflow-auto flex-1">
@@ -116,33 +121,32 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
                   className="text-left py-2 px-4 font-medium cursor-pointer select-none whitespace-nowrap"
                   onClick={() => handleSort('movementDate')}
                 >
-                  Date <SortIcon field="movementDate" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseDate')} <SortIcon field="movementDate" sortKey={sortKey} sortDir={sortDir} />
                 </th>
                 <th
                   className="text-left py-2 px-4 font-medium cursor-pointer select-none"
                   onClick={() => handleSort('product')}
                 >
-                  Product <SortIcon field="product" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseProduct')} <SortIcon field="product" sortKey={sortKey} sortDir={sortDir} />
                 </th>
                 <th
                   className="text-left py-2 px-4 font-medium cursor-pointer select-none whitespace-nowrap"
                   onClick={() => handleSort('movementType')}
                 >
-                  Type <SortIcon field="movementType" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseType')} <SortIcon field="movementType" sortKey={sortKey} sortDir={sortDir} />
                 </th>
                 <th
                   className="text-right py-2 px-4 font-medium cursor-pointer select-none"
                   onClick={() => handleSort('movementQuantity')}
                 >
-                  Qty <SortIcon field="movementQuantity" sortKey={sortKey} sortDir={sortDir} />
+                  {ui('warehouseQty')} <SortIcon field="movementQuantity" sortKey={sortKey} sortDir={sortDir} />
                 </th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((tx, i) => {
                 const qty = Number(tx.movementQuantity);
-                const typeCode = tx['movementType'] ?? '';
-                const typeLabel = tx['movementType$_identifier'] ?? TYPE_LABELS[typeCode] ?? typeCode;
+                const typeLabel = resolveTypeLabel(tx);
                 const product = tx['product$_identifier'] ?? tx.product ?? '—';
                 return (
                   <tr key={tx.id ?? i} className="border-b border-border/50 hover:bg-muted/30">

@@ -1,7 +1,9 @@
 import { toast } from 'sonner';
+import { useUI } from '@/i18n';
 import WarehousePage from '@generated/warehouse/generated/web/warehouse/WarehousePage';
 import WarehouseSummary from './WarehouseSummary';
 import WarehouseProductsTab from './WarehouseProductsTab';
+import WarehouseTransactionsTable from './WarehouseTransactionsTable';
 
 async function createDefaultStorageBin(warehouse, { token, apiBaseUrl }) {
   const searchKey = `${warehouse.searchKey}-0-0-0`;
@@ -29,13 +31,18 @@ async function createDefaultStorageBin(warehouse, { token, apiBaseUrl }) {
   }
 }
 
-const PRIMARY_TABS = [
-  { key: 'general', label: 'Summary' },
-  { key: 'products', label: 'Products', Panel: WarehouseProductsTab },
-];
-
 export default function WarehouseWindow(props) {
   const { token, apiBaseUrl } = props;
+  const ui = useUI();
+
+  const primaryTabs = [
+    { key: 'general', label: ui('warehouseSummaryTab') },
+    { key: 'products', label: ui('warehouseProductsTab'), Panel: WarehouseProductsTab },
+  ];
+
+  const secondaryTabs = [
+    { key: 'productTransactions', label: ui('warehouseTransactionsTab'), Panel: WarehouseTransactionsTable },
+  ];
 
   const handleAfterCreate = async (warehouse, context) => {
     try {
@@ -57,7 +64,8 @@ export default function WarehouseWindow(props) {
       {...props}
       onAfterCreate={handleAfterCreate}
       sidebarContent={sidebarContent}
-      primaryTabs={PRIMARY_TABS}
+      primaryTabs={primaryTabs}
+      secondaryTabs={secondaryTabs}
     />
   );
 }

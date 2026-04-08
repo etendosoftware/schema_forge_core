@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LineChart, BarChart2, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useUI } from '@/i18n';
 import { useWarehouseStock } from './useWarehouseStock';
 
 // Sidebar chart dimensions
@@ -66,8 +67,8 @@ function fmtNum(val) {
 }
 
 /** Floating tooltip rendered inside the SVG. */
-function SvgTooltip({ x, y, label, value, cw }) {
-  const text = `${label}: ${fmtNum(value)} units`;
+function SvgTooltip({ x, y, label, value, cw, ui }) {
+  const text = ui('warehouseTooltipUnits', { label, n: fmtNum(value) });
   const TW = Math.min(text.length * 6.2 + 16, 200);
   const TH = 22;
   const tx = Math.min(Math.max(x - TW / 2, 4), cw - TW - 4);
@@ -85,6 +86,7 @@ function SvgTooltip({ x, y, label, value, cw }) {
 
 /** Pure SVG chart — accepts explicit dimensions so it can be used at any size. */
 function StockSvg({ values, labels, chartType, cw, ch }) {
+  const ui = useUI();
   const [hovered, setHovered] = useState(null); // { i, x, y }
   const n = values.length;
   const showLine = chartType === 'line' && n > 1;
@@ -166,7 +168,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
           </text>
         ))}
         {hovered && (
-          <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} />
+          <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} ui={ui} />
         )}
       </svg>
     );
@@ -215,6 +217,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
 }
 
 function StockChart({ transactions }) {
+  const ui = useUI();
   const [chartType, setChartType] = useState(
     () => localStorage.getItem('warehouse_chart_type') || 'line',
   );
@@ -273,11 +276,11 @@ function StockChart({ transactions }) {
     <>
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Stock trend</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{ui('warehouseStockTrend')}</span>
           {toolbar}
         </div>
         {!hasData ? (
-          <p className="text-xs text-muted-foreground py-10 text-center">No movement data for this period</p>
+          <p className="text-xs text-muted-foreground py-10 text-center">{ui('warehouseNoMovementData')}</p>
         ) : (
           <StockSvg values={values} labels={labels} chartType={chartType} cw={CW} ch={CH} />
         )}
@@ -287,12 +290,12 @@ function StockChart({ transactions }) {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <div className="flex items-center justify-between pr-6">
-              <DialogTitle className="text-sm font-medium">Stock trend</DialogTitle>
+              <DialogTitle className="text-sm font-medium">{ui('warehouseStockTrend')}</DialogTitle>
               {toolbar}
             </div>
           </DialogHeader>
           {!hasData ? (
-            <p className="text-xs text-muted-foreground py-10 text-center">No movement data for this period</p>
+            <p className="text-xs text-muted-foreground py-10 text-center">{ui('warehouseNoMovementData')}</p>
           ) : (
             <StockSvg values={values} labels={labels} chartType={chartType} cw={CW_MODAL} ch={CH_MODAL} />
           )}
@@ -303,23 +306,24 @@ function StockChart({ transactions }) {
 }
 
 export default function WarehouseSummary({ data, token, apiBaseUrl }) {
+  const ui = useUI();
   const { loading, error, products, transactions } = useWarehouseStock(data?.id, token, apiBaseUrl);
 
   const totalProducts = products.length;
   const totalUnits = products.reduce((sum, p) => sum + p.qty, 0);
 
-  if (loading) return <div className="text-sm text-muted-foreground py-4">Loading stock data…</div>;
-  if (error) return <div className="text-sm text-destructive py-4">Could not load stock data.</div>;
+  if (loading) return <div className="text-sm text-muted-foreground py-4">{ui('warehouseLoadingStock')}</div>;
+  if (error) return <div className="text-sm text-destructive py-4">{ui('warehouseStockError')}</div>;
 
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Products</p>
+          <p className="text-xs text-muted-foreground mb-1">{ui('warehouseProducts')}</p>
           <p className="text-2xl font-light tabular-nums">{fmtNum(totalProducts)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Total units</p>
+          <p className="text-xs text-muted-foreground mb-1">{ui('warehouseTotalUnits')}</p>
           <p className="text-2xl font-light tabular-nums">{fmtNum(totalUnits)}</p>
         </div>
       </div>

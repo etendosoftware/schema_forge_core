@@ -1,20 +1,22 @@
+import { useUI } from '@/i18n';
 import { useWarehouseStock } from './useWarehouseStock';
 
 export default function WarehouseProductsTab({ data, token, apiBaseUrl }) {
+  const ui = useUI();
   const { loading, error, products } = useWarehouseStock(data?.id, token, apiBaseUrl);
 
-  if (loading) return <div className="text-sm text-muted-foreground p-6">Loading products…</div>;
-  if (error) return <div className="text-sm text-destructive p-6">Could not load products: {error}</div>;
-  if (products.length === 0) return <div className="text-sm text-muted-foreground p-6">No stock found for this warehouse.</div>;
+  if (loading) return <div className="text-sm text-muted-foreground p-6">{ui('warehouseLoadingProducts')}</div>;
+  if (error) return <div className="text-sm text-destructive p-6">{ui('warehouseProductsError', { error })}</div>;
+  if (products.length === 0) return <div className="text-sm text-muted-foreground p-6">{ui('warehouseNoStock')}</div>;
 
   return (
     <div className="overflow-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-muted-foreground">
-            <th className="text-left py-2 px-4 font-medium">Product</th>
-            <th className="text-left py-2 px-4 font-medium">UoM</th>
-            <th className="text-right py-2 px-4 font-medium">Qty on Hand</th>
+            <th className="text-left py-2 px-4 font-medium">{ui('warehouseProduct')}</th>
+            <th className="text-left py-2 px-4 font-medium">{ui('warehouseUom')}</th>
+            <th className="text-right py-2 px-4 font-medium">{ui('warehouseQtyOnHand')}</th>
           </tr>
         </thead>
         <tbody>
