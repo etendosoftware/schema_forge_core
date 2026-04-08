@@ -6,6 +6,7 @@ function detectBaseUrl() {
 }
 
 const DEFAULT_BASE_URL = detectBaseUrl();
+console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env.VITE_API_BASE);
 
 export function buildHeaders(token) {
   const headers = { 'Content-Type': 'application/json' };
@@ -26,7 +27,7 @@ export async function login(baseUrl, username, password, roleId, orgId) {
   if (roleId) body.role = roleId;
   if (orgId) body.organization = orgId;
 
-  const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}/sws/login`, {
+  const res = await fetch(`${baseUrl != null ? baseUrl : DEFAULT_BASE_URL}/sws/login`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -49,7 +50,7 @@ export async function login(baseUrl, username, password, roleId, orgId) {
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const token = getToken();
-    const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}${path}`, {
+    const res = await fetch(`${baseUrl != null ? baseUrl : DEFAULT_BASE_URL}${path}`, {
       ...options,
       headers: {
         ...buildHeaders(token),

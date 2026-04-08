@@ -84,6 +84,13 @@
       ]
     },
     {
+      "group": "Connections",
+      "icon": "Plug",
+      "items": [
+        { "name": "authorize", "label": "Connect con Claude" }
+      ]
+    },
+    {
       "group": "Settings",
       "icon": "Settings",
       "items": [

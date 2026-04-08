@@ -27,6 +27,7 @@ import {
   PanelLeftOpen,
   PanelLeftClose,
   ChevronRight,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
@@ -44,6 +45,7 @@ const ICON_MAP = {
   Target,
   Eye,
   FileJson,
+  Plug,
 };
 
 export function findActiveGroup(menuGroups, pathname, search) {

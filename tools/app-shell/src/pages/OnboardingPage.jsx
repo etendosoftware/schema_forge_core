@@ -7,31 +7,23 @@ import {
   Loader2, Check, ChevronRight, ChevronDown,
   Plus, LogIn, Building2, RefreshCw,
   Briefcase, Users, Database, FileText, Rocket, Settings,
+  UserPlus, Mail, Lock, KeyRound,
 } from 'lucide-react';
 
 const SETUP_STEPS = [
-  { name: 'createClient', label: 'Crear empresa', icon: Briefcase, estimate: '2 min' },
-  { name: 'createOrganization', label: 'Crear organizacion', icon: Building2, estimate: '1 min' },
-  { name: 'createRole', label: 'Configurar roles', icon: Users, estimate: '1 min' },
-  { name: 'seedReferenceData', label: 'Datos de referencia', icon: Database, estimate: '3 min' },
-  { name: 'createDocTypes', label: 'Tipos de documento', icon: FileText, estimate: '1 min' },
-  { name: 'markOrgReady', label: 'Finalizar configuracion', icon: Rocket, estimate: '1 min' },
+  { name: 'setup', label: 'Preparando contexto', icon: Settings, estimate: '1s' },
+  { name: 'client', label: 'Crear empresa', icon: Briefcase, estimate: '2 min' },
+  { name: 'organization', label: 'Crear organizacion', icon: Building2, estimate: '1 min' },
+  { name: 'finalize', label: 'Finalizar configuracion', icon: Rocket, estimate: '1s' },
 ];
 
-const CURRENCIES = ['EUR', 'USD', 'ARS', 'GBP', 'BRL', 'MXN', 'CLP', 'COP'];
+const CURRENCIES = ['EUR'];
 const LANGUAGES = [
-  { value: 'es_ES', label: 'Espanol' },
+  { value: 'es_ES', label: 'Español' },
   { value: 'en_US', label: 'English' },
 ];
 const COUNTRIES = [
-  { value: 'AR', label: 'Argentina' },
-  { value: 'ES', label: 'Espana' },
-  { value: 'US', label: 'United States' },
-  { value: 'MX', label: 'Mexico' },
-  { value: 'BR', label: 'Brasil' },
-  { value: 'CL', label: 'Chile' },
-  { value: 'CO', label: 'Colombia' },
-  { value: 'GB', label: 'United Kingdom' },
+  { value: 'ES', label: 'España' },
 ];
 
 function formatMs(ms) {
@@ -94,17 +86,62 @@ function SelectField({ id, value, onChange, disabled, children, label }) {
   );
 }
 
+// Shared page header — shown in all views
+function PageHeader({ accountName, onLogout, isAuthenticated }) {
+  return (
+    <header className="bg-white border-b border-gray-100 px-6 py-4">
+      <div className="max-w-2xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">E</span>
+          </div>
+          <span className="font-semibold text-gray-900">Etendo</span>
+        </div>
+        {isAuthenticated && accountName && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">{accountName}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLogout}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Cerrar sesion
+            </Button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const [view, setView] = useState('list');
+  const [view, setView] = useState(null); // null = loading initial state
+  const [accountName, setAccountName] = useState(null);
+
+  // Platform token — authenticates against /sws/go/*
+  const getPlatformToken = () => localStorage.getItem('sf_platform_token');
+
+  // Register form state
+  const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
+  const [registerError, setRegisterError] = useState(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+
+  // Login form state
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Environments state
   const [environments, setEnvironments] = useState([]);
-  const [loadingEnvs, setLoadingEnvs] = useState(true);
+  const [loadingEnvs, setLoadingEnvs] = useState(false);
   const [loggingIn, setLoggingIn] = useState(null);
 
   // Create form
   const [form, setForm] = useState({
-    clientName: '', orgName: '', adminUser: '', adminPassword: '',
-    currency: 'EUR', language: 'es_ES', countryCode: 'AR',
+    clientName: '',
+    currency: 'EUR', language: 'es_ES', countryCode: 'ES',
   });
   const [steps, setSteps] = useState(
     SETUP_STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null }))
@@ -113,43 +150,145 @@ export default function OnboardingPage() {
   const [running, setRunning] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
 
-  const systemToken = import.meta.env.VITE_SYSTEM_TOKEN;
-  const token = systemToken || localStorage.getItem('token');
-
-  // API base: use VITE_ETENDO_URL directly (bypass proxy), fallback to relative path in production
-  const etendoUrl = import.meta.env.VITE_ETENDO_URL || '';
-  const apiBase = etendoUrl ? `${etendoUrl}/sws/go/onboarding` : '/sws/go/onboarding';
-
-  // Load environments
-  const loadEnvironments = useCallback(async () => {
+  // Fetch environments and route: 0 → create, 1+ → auto-enter first
+  const routeByEnvironments = useCallback(async () => {
+    const token = getPlatformToken();
     setLoadingEnvs(true);
     try {
-      const res = await fetch(`${apiBase}?action=environments`, {
+      const res = await fetch('/sws/go/environments', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
         const data = await res.json();
-        setEnvironments(data.environments || []);
+        const envs = data.environments || [];
+        setEnvironments(envs);
+        if (envs.length === 0) {
+          setView('create');
+        } else {
+          loginToEnvironment(envs[0]);
+        }
+        return;
       }
     } catch (err) {
       console.error('Failed to load environments', err);
     } finally {
       setLoadingEnvs(false);
     }
-  }, [token]);
+    setView('create');
+  }, []);
 
-  useEffect(() => { loadEnvironments(); }, [loadEnvironments]);
+  // Validate existing platform token on mount
+  useEffect(() => {
+    const token = getPlatformToken();
+    if (!token) {
+      setView('register');
+      return;
+    }
+    fetch('/sws/go/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('invalid');
+      })
+      .then(data => {
+        setAccountName(data.name || data.email || null);
+        routeByEnvironments();
+      })
+      .catch(() => {
+        localStorage.removeItem('sf_platform_token');
+        setView('register');
+      });
+  }, []);
+
+  // Save token + account name and route by environments
+  const handleAuthSuccess = (token, account) => {
+    localStorage.setItem('sf_platform_token', token);
+    setAccountName(account?.name || account?.email || null);
+    routeByEnvironments();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('sf_platform_token');
+    setAccountName(null);
+    setRegisterForm({ name: '', email: '', password: '' });
+    setLoginForm({ email: '', password: '' });
+    setRegisterError(null);
+    setLoginError(null);
+    setView('register');
+  };
+
+  // Register
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setRegisterError(null);
+    setRegisterLoading(true);
+    try {
+      const res = await fetch('/sws/go/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        handleAuthSuccess(data.token, data.account);
+      } else {
+        setRegisterError(data?.error?.message || 'No se pudo crear la cuenta.');
+      }
+    } catch (err) {
+      setRegisterError('Error de conexion. Intenta de nuevo.');
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  // Login
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+    try {
+      const res = await fetch('/sws/go/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        handleAuthSuccess(data.token, data.account);
+      } else {
+        setLoginError(data?.error?.message || 'Credenciales invalidas.');
+      }
+    } catch (err) {
+      setLoginError('Error de conexion. Intenta de nuevo.');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   const loginToEnvironment = async (env) => {
+    const token = getPlatformToken();
     setLoggingIn(env.clientId);
     try {
-      const res = await fetch(`${apiBase}?action=login&userId=${env.adminUserId}`, {
+      const res = await fetch(`/sws/go/login?userId=${env.adminUserId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
         const data = await res.json();
         if (data.token) {
-          localStorage.setItem('token', data.token);
+          localStorage.setItem('sf_auth_token', data.token);
+          localStorage.setItem('sf_auth_user', env.adminUser || '');
+          if (data.roleList) {
+            localStorage.setItem('sf_auth_rolelist', JSON.stringify(data.roleList));
+            const role = data.roleList[0];
+            if (role) {
+              localStorage.setItem('sf_auth_selected_role', JSON.stringify(role));
+              const org = role.orgList?.find(o => o.name !== '*') || role.orgList?.[0];
+              if (org) {
+                localStorage.setItem('sf_auth_selected_org', JSON.stringify(org));
+              }
+            }
+          }
           window.location.href = '/dashboard';
           return;
         }
@@ -163,14 +302,15 @@ export default function OnboardingPage() {
   };
 
   const runOnboarding = useCallback(async () => {
+    const token = getPlatformToken();
     setRunning(true);
     setResult(null);
     setFormSubmitted(true);
     setSteps(SETUP_STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null })));
 
-    let succeededToken = null;
+    let succeeded = false;
     try {
-      const res = await fetch(apiBase, {
+      const res = await fetch('/sws/go/onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,13 +334,22 @@ export default function OnboardingPage() {
         for (const line of lines) {
           if (!line.trim()) continue;
           const msg = JSON.parse(line);
-          if (msg.result || msg.status === 'success') {
-            setResult(msg);
-            if (msg.status === 'success' && msg.token) succeededToken = msg.token;
-          } else if (msg.step) {
-            setSteps(prev => prev.map((s, i) =>
-              i === msg.step - 1
-                ? { ...s, status: msg.status, ms: msg.ms || null, error: msg.error || null }
+          if (msg.type === 'result') {
+            const resultObj = {
+              status: msg.success ? 'success' : 'failed',
+              error: msg.success ? null : msg.message,
+            };
+            setResult(resultObj);
+            if (msg.success) succeeded = true;
+          } else if (msg.type === 'progress' && msg.step) {
+            // Map backend status to frontend step status
+            const stepStatus = msg.status === 'in_progress' ? 'running'
+              : msg.status === 'done' ? 'done'
+              : msg.status === 'error' ? 'failed'
+              : msg.status;
+            setSteps(prev => prev.map(s =>
+              s.name === msg.step
+                ? { ...s, status: stepStatus, ms: msg.ms || null, error: msg.status === 'error' ? msg.message : null }
                 : s
             ));
           }
@@ -211,15 +360,37 @@ export default function OnboardingPage() {
       setResult({ result: 'failed', error: err.message });
     } finally {
       setRunning(false);
-      if (succeededToken) {
-        localStorage.setItem('token', succeededToken);
-        setTimeout(() => { window.location.href = '/dashboard'; }, 100);
+      if (succeeded) {
+        // Fetch environments and auto-login to the newly created one
+        const retryLogin = async (attempts = 3, delay = 2000) => {
+          const token = getPlatformToken();
+          for (let i = 0; i < attempts; i++) {
+            await new Promise(r => setTimeout(r, delay));
+            try {
+              const res = await fetch('/sws/go/environments', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              if (res.ok) {
+                const data = await res.json();
+                const envs = data.environments || [];
+                if (envs.length > 0) {
+                  loginToEnvironment(envs[0]);
+                  return;
+                }
+              }
+            } catch (err) {
+              // retry
+            }
+          }
+          routeByEnvironments();
+        };
+        retryLogin();
       }
     }
-  }, [form, token]);
+  }, [form]);
 
   const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }));
-  const isFormValid = form.clientName && form.orgName && form.adminUser && form.adminPassword;
+  const isFormValid = form.clientName;
 
   // Calculate progress
   const completedCount = steps.filter(s => s.status === 'done').length;
@@ -228,24 +399,227 @@ export default function OnboardingPage() {
     ? Math.round(((completedCount + 1) / totalSteps) * 100)
     : 0;
 
+  // ── LOADING (initial token check) ──
+  if (view === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  // ── REGISTER VIEW ──
+  if (view === 'register') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader isAuthenticated={false} />
+
+        <div className="max-w-md mx-auto p-6 pt-12">
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="h-6 w-6 text-amber-500" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Crear cuenta</h1>
+            <p className="text-gray-500 text-sm">Ingresa tus datos para empezar</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <Label htmlFor="reg-name" className="text-sm text-gray-600">
+                  Nombre <span className="text-red-400">*</span>
+                </Label>
+                <div className="relative mt-1">
+                  <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    id="reg-name"
+                    type="text"
+                    value={registerForm.name}
+                    onChange={e => setRegisterForm(f => ({ ...f, name: e.target.value }))}
+                    disabled={registerLoading}
+                    placeholder="Tu nombre"
+                    required
+                    className="h-11 pl-9 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="reg-email" className="text-sm text-gray-600">
+                  Email <span className="text-red-400">*</span>
+                </Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    id="reg-email"
+                    type="email"
+                    value={registerForm.email}
+                    onChange={e => setRegisterForm(f => ({ ...f, email: e.target.value }))}
+                    disabled={registerLoading}
+                    placeholder="tu@email.com"
+                    required
+                    className="h-11 pl-9 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="reg-password" className="text-sm text-gray-600">
+                  Contrasena <span className="text-red-400">*</span>
+                </Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    id="reg-password"
+                    type="password"
+                    value={registerForm.password}
+                    onChange={e => setRegisterForm(f => ({ ...f, password: e.target.value }))}
+                    disabled={registerLoading}
+                    placeholder="********"
+                    required
+                    className="h-11 pl-9 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {registerError && (
+                <p className="text-sm text-red-500">{registerError}</p>
+              )}
+
+              <Button
+                type="submit"
+                disabled={registerLoading}
+                className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium"
+              >
+                {registerLoading
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creando cuenta...</>
+                  : 'Crear cuenta'
+                }
+              </Button>
+            </form>
+          </div>
+
+          <p className="text-center text-sm text-gray-500 mt-5">
+            Ya tenes cuenta?{' '}
+            <button
+              type="button"
+              onClick={() => { setLoginError(null); setView('login'); }}
+              className="text-amber-600 hover:text-amber-700 font-medium"
+            >
+              Iniciar sesion
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LOGIN VIEW ──
+  if (view === 'login') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader isAuthenticated={false} />
+
+        <div className="max-w-md mx-auto p-6 pt-12">
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <KeyRound className="h-6 w-6 text-amber-500" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Iniciar sesion</h1>
+            <p className="text-gray-500 text-sm">Bienvenido de nuevo</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <Label htmlFor="login-email" className="text-sm text-gray-600">
+                  Email <span className="text-red-400">*</span>
+                </Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    id="login-email"
+                    type="email"
+                    value={loginForm.email}
+                    onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
+                    disabled={loginLoading}
+                    placeholder="tu@email.com"
+                    required
+                    className="h-11 pl-9 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="login-password" className="text-sm text-gray-600">
+                  Contrasena <span className="text-red-400">*</span>
+                </Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    id="login-password"
+                    type="password"
+                    value={loginForm.password}
+                    onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
+                    disabled={loginLoading}
+                    placeholder="********"
+                    required
+                    className="h-11 pl-9 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {loginError && (
+                <p className="text-sm text-red-500">{loginError}</p>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium"
+              >
+                {loginLoading
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Iniciando sesion...</>
+                  : 'Iniciar sesion'
+                }
+              </Button>
+            </form>
+          </div>
+
+          <p className="text-center text-sm text-gray-500 mt-5">
+            No tenes cuenta?{' '}
+            <button
+              type="button"
+              onClick={() => { setRegisterError(null); setView('register'); }}
+              className="text-amber-600 hover:text-amber-700 font-medium"
+            >
+              Crear una
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // ── LIST VIEW ──
   if (view === 'list') {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-100 px-6 py-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">E</span>
-              </div>
-              <span className="font-semibold text-gray-900">Etendo</span>
-            </div>
+        <PageHeader
+          isAuthenticated
+          accountName={accountName}
+          onLogout={handleLogout}
+        />
+
+        {/* Extra header actions row */}
+        <div className="bg-white border-b border-gray-100">
+          <div className="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
+            <span className="text-sm text-gray-400">Tus entornos</span>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={loadEnvironments}
+                onClick={routeByEnvironments}
                 disabled={loadingEnvs}
                 className="text-gray-500"
               >
@@ -259,7 +633,7 @@ export default function OnboardingPage() {
               </Button>
             </div>
           </div>
-        </header>
+        </div>
 
         <div className="max-w-2xl mx-auto p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Tus entornos</h1>
@@ -328,31 +702,24 @@ export default function OnboardingPage() {
   // ── CREATE VIEW (matches "Primeros pasos" design) ──
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">E</span>
-            </div>
-            <span className="font-semibold text-gray-900">Etendo</span>
-          </div>
-          {!running && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setView('list'); setResult(null); setFormSubmitted(false); }}
-              className="text-gray-500"
-            >
-              Mis entornos
-            </Button>
-          )}
-        </div>
-      </header>
+      <PageHeader
+        isAuthenticated
+        accountName={accountName}
+        onLogout={handleLogout}
+      />
 
-      {/* Progress bar — always visible */}
+      {/* Back link + progress bar */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-6 py-3 flex items-center gap-3">
+          {!running && environments.length > 1 && (
+            <button
+              type="button"
+              onClick={() => { setView('list'); setResult(null); setFormSubmitted(false); }}
+              className="text-sm text-gray-500 hover:text-gray-700 mr-2"
+            >
+              Mis entornos
+            </button>
+          )}
           <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-gray-900 rounded-full transition-all duration-700 ease-out"
@@ -399,7 +766,7 @@ export default function OnboardingPage() {
                   Datos de tu empresa
                 </p>
                 {formSubmitted && !running && (
-                  <p className="text-xs text-gray-400 mt-0.5">{form.clientName} &middot; {form.orgName}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{form.clientName}</p>
                 )}
               </div>
               {!formSubmitted && (
@@ -410,63 +777,18 @@ export default function OnboardingPage() {
             {/* Inline form (shown when not submitted) */}
             {!formSubmitted && (
               <div className="px-5 pb-5 pt-1 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clientName" className="text-sm text-gray-600">
-                      Nombre de la empresa <span className="text-red-400">*</span>
-                    </Label>
-                    <Input
-                      id="clientName"
-                      value={form.clientName}
-                      onChange={e => updateField('clientName', e.target.value)}
-                      disabled={running}
-                      placeholder="Mi Empresa S.A."
-                      className="mt-1 h-11 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="orgName" className="text-sm text-gray-600">
-                      Nombre de la organizacion <span className="text-red-400">*</span>
-                    </Label>
-                    <Input
-                      id="orgName"
-                      value={form.orgName}
-                      onChange={e => updateField('orgName', e.target.value)}
-                      disabled={running}
-                      placeholder="Sucursal Principal"
-                      className="mt-1 h-11 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="adminUser" className="text-sm text-gray-600">
-                      Email del administrador <span className="text-red-400">*</span>
-                    </Label>
-                    <Input
-                      id="adminUser"
-                      type="email"
-                      value={form.adminUser}
-                      onChange={e => updateField('adminUser', e.target.value)}
-                      disabled={running}
-                      placeholder="admin@miempresa.com"
-                      className="mt-1 h-11 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="adminPassword" className="text-sm text-gray-600">
-                      Contrasena <span className="text-red-400">*</span>
-                    </Label>
-                    <Input
-                      id="adminPassword"
-                      type="password"
-                      value={form.adminPassword}
-                      onChange={e => updateField('adminPassword', e.target.value)}
-                      disabled={running}
-                      placeholder="********"
-                      className="mt-1 h-11 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="clientName" className="text-sm text-gray-600">
+                    Nombre de la empresa <span className="text-red-400">*</span>
+                  </Label>
+                  <Input
+                    id="clientName"
+                    value={form.clientName}
+                    onChange={e => updateField('clientName', e.target.value)}
+                    disabled={running}
+                    placeholder="Mi Empresa S.A."
+                    className="mt-1 h-11 rounded-lg border-gray-200 focus:ring-amber-400 focus:border-amber-400"
+                  />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <SelectField
@@ -515,7 +837,6 @@ export default function OnboardingPage() {
 
           {/* Automated steps */}
           {steps.map((step, i) => {
-            const isExpanded = step.status === 'running' || step.status === 'failed';
             const isPending = step.status === 'pending';
             const isDone = step.status === 'done';
 
@@ -569,12 +890,12 @@ export default function OnboardingPage() {
             {result.status === 'success' ? (
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Check className="h-5 w-5 text-white" strokeWidth={3} />
+                  <Loader2 className="h-5 w-5 text-white animate-spin" />
                 </div>
                 <div>
                   <p className="font-medium text-green-900">Entorno creado</p>
                   <p className="text-sm text-green-700">
-                    Listo en {formatMs(result.totalMs)}. Redirigiendo...
+                    Entrando a tu entorno...
                   </p>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 /**
  * OAuth2 Client Management API
  *
- * Provides functions to interact with the OAuth2 backend endpoints at /sws/oauth2/*.
+ * Provides functions to interact with the OAuth2 backend endpoints at /oauth2/*.
  * All functions receive an `apiFetch` instance (from createApiFetch in auth/api.js)
  * which handles Bearer token injection and 401 redirects.
  */
@@ -12,7 +12,7 @@
  * @returns {Promise<Array>} Array of client objects
  */
 export async function listClients(apiFetch) {
-  const res = await apiFetch('/sws/oauth2/clients');
+  const res = await apiFetch('/oauth2/clients');
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(text || `Failed to list clients: ${res.status}`);
@@ -32,7 +32,7 @@ export async function listClients(apiFetch) {
  * @returns {Promise<Object>} Created client with clientSecret (plaintext, shown once)
  */
 export async function createClient(apiFetch, { name, adUserId, adRoleId, scopes, isActive }) {
-  const res = await apiFetch('/sws/oauth2/clients', {
+  const res = await apiFetch('/oauth2/clients', {
     method: 'POST',
     body: JSON.stringify({ name, adUserId, adRoleId, scopes, isActive }),
   });
@@ -51,7 +51,7 @@ export async function createClient(apiFetch, { name, adUserId, adRoleId, scopes,
  * @returns {Promise<Object>} Updated client
  */
 export async function updateClient(apiFetch, id, { name, adUserId, adRoleId, scopes, isActive }) {
-  const res = await apiFetch(`/sws/oauth2/clients/${id}`, {
+  const res = await apiFetch(`/oauth2/clients/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ name, adUserId, adRoleId, scopes, isActive }),
   });
@@ -69,7 +69,7 @@ export async function updateClient(apiFetch, id, { name, adUserId, adRoleId, sco
  * @returns {Promise<void>}
  */
 export async function deleteClient(apiFetch, id) {
-  const res = await apiFetch(`/sws/oauth2/clients/${id}`, {
+  const res = await apiFetch(`/oauth2/clients/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) {
@@ -85,7 +85,7 @@ export async function deleteClient(apiFetch, id) {
  * @returns {Promise<Object>} Object with clientSecret field
  */
 export async function regenerateSecret(apiFetch, id) {
-  const res = await apiFetch(`/sws/oauth2/clients/${id}/regenerate-secret`, {
+  const res = await apiFetch(`/oauth2/clients/${id}/regenerate-secret`, {
     method: 'PUT',
   });
   if (!res.ok) {
@@ -102,7 +102,7 @@ export async function regenerateSecret(apiFetch, id) {
  * @returns {Promise<void>}
  */
 export async function revokeTokens(apiFetch, id) {
-  const res = await apiFetch('/sws/oauth2/revoke', {
+  const res = await apiFetch('/oauth2/revoke', {
     method: 'POST',
     body: JSON.stringify({ clientId: id }),
   });

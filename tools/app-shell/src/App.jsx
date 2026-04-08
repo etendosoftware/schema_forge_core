@@ -28,6 +28,7 @@ import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
 const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
 const OAuth2ClientsPage = lazy(() => import('./pages/OAuth2ClientsPage.jsx'));
+const AuthorizePage = lazy(() => import('./pages/AuthorizePage.jsx'));
 
 function detectBasePath() {
   const path = window.location.pathname;
@@ -151,6 +152,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
         <Route path="oauth2-clients" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OAuth2ClientsPage /></Suspense>} />
+        <Route path="authorize" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AuthorizePage /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
@@ -216,7 +218,7 @@ export default function App() {
     <BrowserRouter basename={routerBase}>
       <ServiceWorkerManager />
       <LocaleProvider locale={locale} setLocale={setLocale}>
-        <AuthProvider>
+        <AuthProvider baseUrl={apiBase}>
           <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
         </AuthProvider>
       </LocaleProvider>
