@@ -15,6 +15,7 @@ const FORMATS = [
 ];
 
 function ReportCard({ report, onRun }) {
+  const ui = useUI();
   return (
     <button
       onClick={() => onRun(report)}
@@ -24,10 +25,10 @@ function ReportCard({ report, onRun }) {
         <FileText className="h-5 w-5 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold text-foreground">{report.title?.en_US || report.id}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{report.title?.es_ES || report.title?.en_US || report.id}</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {report.type === 'grouped-listing' ? 'Grouped Report' : 'Listing Report'}
-          {report.orientation === 'landscape' ? ' — Landscape' : ''}
+          {report.type === 'grouped-listing' ? ui('Grouped Report') : ui('Listing Report')}
+          {report.orientation === 'landscape' ? ` — ${ui('Landscape')}` : ''}
         </p>
         <div className="flex gap-1 mt-2">
           {(report.outputs || []).map(o => (
@@ -43,6 +44,7 @@ function ReportCard({ report, onRun }) {
 const SELECTOR_PAGE_SIZE = 30;
 
 function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams = {} }) {
+  const ui = useUI();
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -125,14 +127,14 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Search..."
+            placeholder={`${ui('Search')}...`}
             className="w-full h-8 px-2 text-sm border border-border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
         <div ref={listRef} className="flex-1 overflow-auto py-1">
-          {loading && <div className="flex justify-center py-6 text-muted-foreground text-xs">Loading...</div>}
+          {loading && <div className="flex justify-center py-6 text-muted-foreground text-xs">{ui('loading')}</div>}
           {!loading && options.length === 0 && (
-            <div className="text-center py-6 text-muted-foreground text-xs">No results</div>
+            <div className="text-center py-6 text-muted-foreground text-xs">{ui('noResults')}</div>
           )}
           {options.map((o, idx) => (
             <button
@@ -347,7 +349,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
           value={multi ? query : (query || displayValue || '')}
           onChange={handleChange}
           onFocus={handleFocus}
-          placeholder="Search..."
+          placeholder={`${ui('searchPlaceholder')}`}
           className={`h-8 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 w-full border ${hasError ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'} ${showDropdownArrow ? 'pr-7' : ''}`}
         />
         {showDropdownArrow && (
@@ -487,7 +489,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search..."
+                placeholder={`${ui('Search')}...`}
                 className="w-full h-8 px-2 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>

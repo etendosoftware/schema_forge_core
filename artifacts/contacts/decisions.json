@@ -7,11 +7,12 @@
     "breadcrumb": "",
     "sidebarLayout": true,
     "detailEntity": null,
+    "primaryTabs": [
+      { "key": "general",   "label": "General"   },
+      { "key": "financial", "label": "Financial", "panel": "ContactsFinancialPanel" }
+    ],
     "listKpiCards": {
       "customComponent": "ContactsKpiCards"
-    },
-    "headerExtra": {
-      "customForm": "BillingPreferencesForm"
     },
     "customComponents": {
       "headerTable": "ContactsTable"
@@ -88,16 +89,19 @@
         },
         "taxID": {
           "visibility": "editable",
+          "form": false,
           "section": "other"
         },
         "creditLimit": {
           "visibility": "editable",
+          "form": false,
           "label": "Credit Limit",
           "grid": false,
           "section": "other"
         },
         "creditUsed": {
           "visibility": "readOnly",
+          "form": false,
           "label": "Credit Used",
           "grid": false,
           "section": "other"
@@ -132,6 +136,7 @@
         },
         "active": {
           "visibility": "readOnly",
+          "form": false,
           "grid": false,
           "section": "other"
         },
@@ -249,7 +254,8 @@
       "fields": {
         "name": {
           "visibility": "readOnly",
-          "grid": true,
+          "form": false,
+          "grid": false,
           "searchable": true,
           "section": "principal"
         },
@@ -280,6 +286,31 @@
         },
         "active": {
           "visibility": "readOnly",
+          "section": "other"
+        },
+        "alternativePhone": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal"
+        },
+        "isdefaultfordocs": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal"
+        },
+        "commercialauth": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal"
+        },
+        "viasms": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other"
+        },
+        "viaemail": {
+          "visibility": "editable",
+          "form": false,
           "section": "other"
         }
       }

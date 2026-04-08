@@ -111,7 +111,7 @@ export function ListView({
               </button>
             </div>
             {breadcrumb && (
-              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}</p>
             )}
           </div>
 
@@ -299,7 +299,7 @@ export function ListView({
                   onClick={() => navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
-                  {ui('newRecord')} {label}
+                  {ui('newRecord')}
                 </Button>
                 <div className="w-px bg-primary-foreground/20" />
                 <Button

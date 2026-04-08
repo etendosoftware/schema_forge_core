@@ -193,6 +193,28 @@ Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OB
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
 
+## Static Analysis (SonarQube)
+
+Run `cli/sonar-check.sh` to analyze specific Java files with SonarQube and get results inline.
+Requires `SONAR_TOKEN` and `SONAR_HOST_URL` exported in `~/.zshrc` or `~/.bashrc`, and `sonar-scanner` CLI installed.
+
+```bash
+# Analyze specific files
+./cli/sonar-check.sh path/to/SomeHandler.java path/to/OtherHandler.java
+
+# Analyze with glob
+./cli/sonar-check.sh path/to/Widget*.java
+
+# Quiet mode (suppress scanner output, show only results)
+./cli/sonar-check.sh -q path/to/*.java
+
+# Custom project key
+./cli/sonar-check.sh --project-key my-project path/to/*.java
+```
+
+The script scans, waits for the report to process, and prints issues sorted by severity. Exit code 0 = clean, 1 = issues found.
+**Delegate to Alex (Reviewer) or Sentinel (QA)** for running static analysis as part of the pipeline.
+
 ## Decisions
 
 `decisions.json` is the primary config per window. Before modifying, read `docs/decisions-reference.md`.

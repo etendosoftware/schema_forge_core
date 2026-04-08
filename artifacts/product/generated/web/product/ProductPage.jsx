@@ -446,6 +446,7 @@ const api = {
 // @sf-generated-start component:ProductPage
 export default function ProductPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:ProductPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -472,7 +473,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
             recordId={recordId}
             data={data}
             token={props.token}
-            apiBaseUrl={api.baseUrl}
+            apiBaseUrl={props.apiBaseUrl}
           />
         )}
       />

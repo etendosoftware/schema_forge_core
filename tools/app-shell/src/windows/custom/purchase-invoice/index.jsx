@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { useMenuLabel } from '@/i18n';
 import { Button } from '@/components/ui/button.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
@@ -46,6 +47,7 @@ function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }
   const navigate = useNavigate();
   const hook = useEntity('header', null, { token, apiBaseUrl });
   const [previewRow, setPreviewRow] = useState(null);
+  const tMenu = useMenuLabel();
 
   const count = hook.items?.length ?? 0;
 
@@ -54,7 +56,7 @@ function PurchaseInvoiceListView({ windowName, token, apiBaseUrl, api, ...rest }
       {/* List header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-gray-900">Purchase Invoices</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{tMenu('Purchase Invoice')}</h1>
           {count > 0 && (
             <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-full">
               {count}

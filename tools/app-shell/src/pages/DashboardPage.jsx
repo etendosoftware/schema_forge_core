@@ -16,6 +16,9 @@ import {
   ShoppingCart,
   Users,
   Box,
+  Truck,
+  ShoppingBag,
+  FileInput,
   AlertTriangle,
   Info,
   ChevronRight,
@@ -42,7 +45,7 @@ import { useMenuLabel, useLocaleSwitch } from '@/i18n';
  * Icon lookup
  * ----------------------------------------------------------------*/
 
-const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box };
+const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box, Truck, ShoppingBag, FileInput };
 
 /* ------------------------------------------------------------------
  * Widget Registry
@@ -834,7 +837,7 @@ function PendingTasks({ tasks = [] }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">
-                      {task.labelKey
+                      {task.labelKey && task.count != null
                         ? `${task.count} ${tMenu(task.labelKey)}`
                         : taskKey ? ui(taskKey, { count: task.count }) : task.text}
                     </p>

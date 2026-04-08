@@ -1,7 +1,7 @@
 {
-  "version": "0.3.2",
-  "generatedAt": "2026-04-06T17:10:39.684Z",
-  "checksum": "74fee297ffc17a7f",
+  "version": "0.1.0",
+  "generatedAt": "2026-04-07T16:20:10.636Z",
+  "checksum": "38ad36d7027d8842",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -43,9 +43,17 @@
       "listKpiCards": {
         "customComponent": "ContactsKpiCards"
       },
-      "headerExtra": {
-        "customForm": "BillingPreferencesForm"
-      },
+      "primaryTabs": [
+        {
+          "key": "general",
+          "label": "General"
+        },
+        {
+          "key": "financial",
+          "label": "Financial",
+          "panel": "ContactsFinancialPanel"
+        }
+      ],
       "layoutType": "default"
     },
     "entities": {
@@ -91,7 +99,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other"
           },
           {
@@ -182,7 +190,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "Y",
             "section": "other"
           },
@@ -277,7 +285,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "displayLogic": {
               "raw": "@IsCustomer@='Y' | @IsVendor@='Y'",
@@ -338,7 +346,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
             "displayLogic": {
               "raw": "@IsCustomer@='Y' | @IsVendor@='Y'",
@@ -2063,8 +2071,8 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
-            "form": true,
+            "grid": false,
+            "form": false,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
@@ -2093,7 +2101,8 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": false,
+            "section": "principal"
           },
           {
             "name": "position",
@@ -2143,8 +2152,9 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
-            "defaultValue": "N"
+            "form": false,
+            "defaultValue": "N",
+            "section": "principal"
           },
           {
             "name": "grantPortalAccess",
@@ -2173,8 +2183,9 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
-            "defaultValue": "N"
+            "form": false,
+            "defaultValue": "N",
+            "section": "principal"
           },
           {
             "name": "viasms",
@@ -2186,8 +2197,9 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
+            "section": "other",
             "displayLogic": {
               "raw": "@Commercialauth@='Y'",
               "evaluable": true
@@ -2203,8 +2215,9 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
+            "section": "other",
             "displayLogic": {
               "raw": "@Commercialauth@='Y'",
               "evaluable": true
@@ -2432,9 +2445,17 @@
       "listKpiCards": {
         "customComponent": "ContactsKpiCards"
       },
-      "headerExtra": {
-        "customForm": "BillingPreferencesForm"
-      }
+      "primaryTabs": [
+        {
+          "key": "general",
+          "label": "General"
+        },
+        {
+          "key": "financial",
+          "label": "Financial",
+          "panel": "ContactsFinancialPanel"
+        }
+      ]
     },
     "entities": {
       "businessPartner": {

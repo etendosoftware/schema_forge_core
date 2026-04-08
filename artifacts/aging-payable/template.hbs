@@ -13,6 +13,7 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
 .bp-drilldown-link:hover { opacity: 0.75; text-decoration: none; }
 .doc-link { cursor: pointer; color: #2563eb; text-decoration: underline; }
 .doc-link:hover { opacity: 0.75; text-decoration: none; }
+.report-empty { padding: 48px 0; text-align: center; color: #888; font-size: 14px; }
 </style></head>
 <body><div class="report-container">
 
@@ -32,6 +33,8 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
     <div><span>Contacts: </span><strong>{{meta.params._display_bPartnerId}}</strong></div>
     {{/if}}
   </div>
+
+  {{#if rows.length}}
 
   {{#if meta.showDetails}}
 
@@ -142,6 +145,14 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
       <td class="cell-amount">{{formatCurrency (sumField rows 'net')}}</td>
     </tr></tfoot>
   </table>
+
+  {{/if}}
+
+  {{else}}
+
+  <div class="report-empty">
+    <p>No data found for the selected filters.</p>
+  </div>
 
   {{/if}}
 

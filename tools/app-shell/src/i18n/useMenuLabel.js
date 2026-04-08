@@ -14,5 +14,6 @@ export function useMenuLabel() {
   return (key) =>
     dictionary?.ui?.[key]?.label ??
     dictionary?.menus?.[key]?.label ??
+    dictionary?.windows?.[key]?.label ??
     key;
 }
