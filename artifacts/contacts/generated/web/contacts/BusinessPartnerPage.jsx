@@ -7,17 +7,16 @@ import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
-import ContactsKpiCards from '@/windows/custom/contacts/ContactsKpiCards';
 import catalogs from './mockCatalogs';
 
 import BusinessPartnerSidebar from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
 
-const breadcrumb = '';
+const breadcrumb = 'Contact';
 
 
 // @sf-generated-start summary:businessPartner
 const summary = [
-
+  { key: 'creditLimit', column: 'SO_CreditLimit', type: 'amount' },
 ];
 
 const statusField = null;
@@ -30,7 +29,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:businessPartner
 const processes = [
-  { name: 'setNewCurrency', label: 'Set New Currency', style: 'positive' },
+
 ];
 // @sf-generated-end processes:businessPartner
 
@@ -592,7 +591,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'phone', column: 'Phone', type: 'text', label: 'Phone' },
           { key: 'position', column: 'Title', type: 'text', label: 'Position' },
           ], derived: [], hidden: [] } },
-          { key: 'bankAccount', label: 'Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
+          { key: 'bankAccount', label: 'Contact Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
           { key: 'bankName', column: 'Bank_Name', type: 'text', label: 'Bank Name' },
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
@@ -603,6 +602,8 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'general', label: 'General' },
           { key: 'financial', label: 'Financial', Panel: ContactsFinancialPanel },
         ]}
+        hidePrint
+        hideMoreMenu
         {...props}
         sidebarContent={(data) => (
           <BusinessPartnerSidebar
@@ -624,7 +625,9 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-      headerContent={(p) => <ContactsKpiCards {...p} />}
+      listViewOptions={{"hidePrint":true,"hideEye":true,"hideCounter":true,"hideLink":true,"hideFilters":true}}
+      baseFilter="_neoWhere=(e.customer%3D'Y'+or+e.vendor%3D'Y')"
+      quickFilters={[{"label":"All","filter":null},{"label":"Customers","filter":"_neoWhere=e.customer%3D'Y'"},{"label":"Vendors","filter":"_neoWhere=e.vendor%3D'Y'"}]}
       {...props}
     />
   );

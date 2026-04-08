@@ -31,6 +31,7 @@ export default function CustomerForm(props) {
   // @sf-custom-slot hooks:CustomerForm
   return <EntityForm fields={fields} {...props} />;
 }
+CustomerForm.hasCollapsedFields = false;
 // @sf-generated-end component:CustomerForm
 
 // @sf-custom-slot section:CustomerForm-custom

@@ -9,7 +9,7 @@
       "primaryEntity": "businessPartner",
       "category": "people",
       "sidebarLayout": true,
-      "breadcrumb": "",
+      "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable"
       },
@@ -30,7 +30,7 @@
         "bankAccount": {
           "tabMode": "table-form",
           "tabOrder": 2,
-          "label": "Bank Account",
+          "label": "Contact Bank Account",
           "addLineFields": [
             "bankName",
             "bankFormat",
@@ -40,9 +40,11 @@
         }
       },
       "detailEntity": null,
-      "listKpiCards": {
-        "customComponent": "ContactsKpiCards"
-      },
+      "quickFilters": [
+        { "label": "All",       "filter": null },
+        { "label": "Customers", "filter": "_neoWhere=e.customer%3D'Y'" },
+        { "label": "Vendors",   "filter": "_neoWhere=e.vendor%3D'Y'" }
+      ],
       "primaryTabs": [
         {
           "key": "general",
@@ -54,7 +56,20 @@
           "panel": "ContactsFinancialPanel"
         }
       ],
-      "layoutType": "default"
+      "layoutType": "default",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "processOverrides": {
+        "setNewCurrency": { "exclude": true }
+      },
+      "listViewOptions": {
+        "hidePrint": true,
+        "hideEye": true,
+        "hideCounter": true,
+        "hideLink": true,
+        "hideFilters": true
+      },
+      "listBaseFilter": "_neoWhere=(e.customer%3D'Y'+or+e.vendor%3D'Y')"
     },
     "entities": {
       "businessPartner": {
@@ -90,19 +105,6 @@
             "section": "principal"
           },
           {
-            "name": "taxID",
-            "apiKey": "taxID",
-            "column": "TaxID",
-            "label": "Tax ID",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": false,
-            "section": "other"
-          },
-          {
             "name": "businessPartnerCategory",
             "apiKey": "businessPartnerCategory",
             "column": "C_BP_Group_ID",
@@ -116,6 +118,19 @@
             "reference": "BusinessPartnerCategory",
             "inputMode": "selector",
             "defaultValue": "@SQL=SELECT MAX(C_BP_GROUP_ID) FROM C_BP_GROUP WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@",
+            "section": "principal"
+          },
+          {
+            "name": "taxID",
+            "apiKey": "taxID",
+            "column": "TaxID",
+            "label": "Tax ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
             "section": "principal"
           },
           {
@@ -282,10 +297,10 @@
             "label": "Credit Limit",
             "type": "amount",
             "tsType": "number",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "section": "other",
             "displayLogic": {
               "raw": "@IsCustomer@='Y' | @IsVendor@='Y'",
@@ -2411,7 +2426,7 @@
       "primaryEntity": "businessPartner",
       "category": "people",
       "sidebarLayout": true,
-      "breadcrumb": "",
+      "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable"
       },
@@ -2432,7 +2447,7 @@
         "bankAccount": {
           "tabMode": "table-form",
           "tabOrder": 2,
-          "label": "Bank Account",
+          "label": "Contact Bank Account",
           "addLineFields": [
             "bankName",
             "bankFormat",
@@ -2442,9 +2457,11 @@
         }
       },
       "detailEntity": null,
-      "listKpiCards": {
-        "customComponent": "ContactsKpiCards"
-      },
+      "quickFilters": [
+        { "label": "All",       "filter": null },
+        { "label": "Customers", "filter": "_neoWhere=e.customer%3D'Y'" },
+        { "label": "Vendors",   "filter": "_neoWhere=e.vendor%3D'Y'" }
+      ],
       "primaryTabs": [
         {
           "key": "general",

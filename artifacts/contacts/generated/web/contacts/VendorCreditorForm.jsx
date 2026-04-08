@@ -25,6 +25,7 @@ export default function VendorCreditorForm(props) {
   // @sf-custom-slot hooks:VendorCreditorForm
   return <EntityForm fields={fields} {...props} />;
 }
+VendorCreditorForm.hasCollapsedFields = false;
 // @sf-generated-end component:VendorCreditorForm
 
 // @sf-custom-slot section:VendorCreditorForm-custom

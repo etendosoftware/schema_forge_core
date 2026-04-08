@@ -179,6 +179,8 @@ export function generateFormComponent(entityName, contract) {
     return 'other';
   });
 
+  const hasCollapsed = fieldSections.some(s => s === 'collapsed');
+
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
@@ -250,6 +252,7 @@ export default function ${compName}(props) {
   ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
+${compName}.hasCollapsedFields = ${hasCollapsed};
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 
 ${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
@@ -521,6 +524,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
+  const listViewOptions = windowConfig.listViewOptions ?? null;
+  const listBaseFilter = windowConfig.listBaseFilter ?? null;
+  const quickFilters = windowConfig.quickFilters ?? null;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
@@ -638,6 +645,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hidePrint prop
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+
+  // hideMoreMenu prop
+  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
+
+  // listViewOptions prop
+  const listViewOptionsProp = listViewOptions
+    ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
+    : '';
+  const listBaseFilterProp = listBaseFilter
+    ? `\n      baseFilter="${listBaseFilter}"`
+    : '';
+  const quickFiltersProp = quickFilters
+    ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
+    : '';
 
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
@@ -859,7 +880,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -872,7 +893,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}
       {...props}
     />
   );
