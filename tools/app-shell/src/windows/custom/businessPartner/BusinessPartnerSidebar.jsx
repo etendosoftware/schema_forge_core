@@ -34,14 +34,17 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
   const revPts = revenue.map((v, i) => toPoint(v, i, revenue.length));
   const expPts = expenses.map((v, i) => toPoint(v, i, expenses.length));
 
-  const toLine = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
-  const toArea = (pts) => [
-    `M ${pts[0].x},${pts[0].y}`,
-    ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
-    `L ${pts[pts.length - 1].x},${PY + plotH}`,
-    `L ${pts[0].x},${PY + plotH}`,
-    'Z',
-  ].join(' ');
+  const toLine = (pts) => pts.length === 0 ? '' : pts.map((p) => `${p.x},${p.y}`).join(' ');
+  const toArea = (pts) => {
+    if (pts.length === 0) return '';
+    return [
+      `M ${pts[0].x},${pts[0].y}`,
+      ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
+      `L ${pts[pts.length - 1].x},${PY + plotH}`,
+      `L ${pts[0].x},${PY + plotH}`,
+      'Z',
+    ].join(' ');
+  };
 
   const hasData = allVals.some((v) => v > 0);
 
