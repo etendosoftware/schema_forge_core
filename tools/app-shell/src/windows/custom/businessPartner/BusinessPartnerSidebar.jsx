@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
-
-// Chart dimensions
-const CW = 320;
-const CH = 200;
-const PX = 32;
-const PY = 12;
-const PB = 22;
+import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', {
@@ -36,13 +30,24 @@ function MiniKPICard({ label, value, trend, format, accentColor }) {
           {up ? '+' : ''}{trend.toFixed(1)}%
         </span>
       ) : (
-        <span className="h-4" /> /* spacer to keep cards same height */
+        <span className="h-4" />
       )}
     </div>
   );
 }
 
-function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
+const PERIOD_OPTIONS = [
+  { label: '1M', months: 1 },
+  { label: '3M', months: 3 },
+  { label: '6M', months: 6 },
+];
+
+function BPChartSVGContent({
+  labels = [], revenue = [], expenses = [],
+  CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp',
+}) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
   const plotW = CW - PX * 2;
   const plotH = CH - PY - PB;
 
@@ -59,7 +64,9 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
   const revPts = revenue.map((v, i) => toPoint(v, i, revenue.length));
   const expPts = expenses.map((v, i) => toPoint(v, i, expenses.length));
 
-  const toLine = (pts) => pts.length === 0 ? '' : pts.map((p) => `${p.x},${p.y}`).join(' ');
+  const toLine = (pts) =>
+    pts.length === 0 ? '' : pts.map((p) => `${p.x},${p.y}`).join(' ');
+
   const toArea = (pts) => {
     if (pts.length === 0) return '';
     return [
@@ -73,81 +80,206 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
 
   const hasData = allVals.some((v) => v > 0);
 
+  const handleMouseMove = (e) => {
+    const n = revenue.length;
+    if (n === 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const viewX = ((e.clientX - rect.left) / rect.width) * CW;
+    const rawIdx = n <= 1 ? 0 : ((viewX - PX) * (n - 1)) / plotW;
+    setHoveredIdx(Math.max(0, Math.min(n - 1, Math.round(rawIdx))));
+  };
+
+  // Tooltip geometry
+  const TW = fontSize * 11;
+  const TH = fontSize * 5.5;
+  const TR = 4;
+  const hx = hoveredIdx !== null && revPts[hoveredIdx] ? revPts[hoveredIdx].x : null;
+  const tooltipX = hx !== null
+    ? Math.max(PX, Math.min(CW - PX - TW, hx - TW / 2))
+    : null;
+  const hRevY = hoveredIdx !== null && revPts[hoveredIdx] ? revPts[hoveredIdx].y : null;
+  const hExpY = hoveredIdx !== null && expPts[hoveredIdx] ? expPts[hoveredIdx].y : null;
+  const topY = Math.min(hRevY ?? Infinity, hExpY ?? Infinity);
+  const tooltipY = hoveredIdx !== null ? Math.max(PY, topY - TH - 10) : null;
+
+  const revGradId = `${chartId}-rev-grad`;
+  const expGradId = `${chartId}-exp-grad`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${CW} ${CH}`}
+      className="w-full h-auto cursor-crosshair"
+      role="img"
+      aria-label="Sales and purchases trend"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoveredIdx(null)}
+    >
+      <defs>
+        <linearGradient id={revGradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
+        </linearGradient>
+        <linearGradient id={expGradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity="0.01" />
+        </linearGradient>
+      </defs>
+
+      {[0, 0.5, 1].map((frac) => {
+        const y = PY + plotH - frac * plotH;
+        const val = minVal + frac * range;
+        return (
+          <g key={frac}>
+            <line x1={PX} y1={y} x2={CW - PX} y2={y}
+              stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="3 3" />
+            <text x={PX - 4} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize={fontSize}>
+              {formatY(val)}
+            </text>
+          </g>
+        );
+      })}
+
+      <path d={toArea(expPts)} fill={`url(#${expGradId})`} />
+      <polyline points={toLine(expPts)} fill="none"
+        stroke="hsl(var(--destructive))" strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 2" />
+      {expPts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y}
+          r={hoveredIdx === i ? 3.5 : 2}
+          fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
+      ))}
+
+      <path d={toArea(revPts)} fill={`url(#${revGradId})`} />
+      <polyline points={toLine(revPts)} fill="none"
+        stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {revPts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y}
+          r={hoveredIdx === i ? 4 : 2.5}
+          fill="hsl(var(--background))" stroke="#10b981" strokeWidth="1.5" />
+      ))}
+
+      {labels.map((lbl, i) => {
+        const x = PX + (labels.length <= 1 ? plotW / 2 : (i / (labels.length - 1)) * plotW);
+        return (
+          <text key={i} x={x} y={CH - 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
+            {lbl}
+          </text>
+        );
+      })}
+
+      {!hasData && (
+        <text x={CW / 2} y={PY + plotH / 2 + 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
+          No invoice data
+        </text>
+      )}
+
+      {/* Hover tooltip */}
+      {hoveredIdx !== null && hx !== null && (
+        <>
+          <line x1={hx} y1={PY} x2={hx} y2={PY + plotH}
+            stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 2" />
+          <rect x={tooltipX} y={tooltipY} width={TW} height={TH} rx={TR} fill="#1e293b" opacity="0.95" />
+          {/* Month label */}
+          <text x={tooltipX + TW / 2} y={tooltipY + fontSize + 2}
+            textAnchor="middle" fontSize={fontSize} fill="#94a3b8">
+            {labels[hoveredIdx]}
+          </text>
+          {/* Revenue row */}
+          <circle cx={tooltipX + 8} cy={tooltipY + fontSize * 2.6} r={fontSize * 0.4} fill="#10b981" />
+          <text x={tooltipX + 15} y={tooltipY + fontSize * 2.6 + fontSize * 0.38}
+            fontSize={fontSize} fontWeight="600" fill="white">
+            {formatCurrency(revenue[hoveredIdx] ?? 0)}
+          </text>
+          {/* Expenses row */}
+          <circle cx={tooltipX + 8} cy={tooltipY + fontSize * 4.2} r={fontSize * 0.4} fill="#ef4444" />
+          <text x={tooltipX + 15} y={tooltipY + fontSize * 4.2 + fontSize * 0.38}
+            fontSize={fontSize} fontWeight="600" fill="white">
+            {formatCurrency(expenses[hoveredIdx] ?? 0)}
+          </text>
+        </>
+      )}
+    </svg>
+  );
+}
+
+function ChartLegend() {
+  return (
+    <div className="flex items-center gap-4">
+      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+        Revenue
+      </span>
+      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
+        Expenses
+      </span>
+    </div>
+  );
+}
+
+function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [period, setPeriod] = useState('6M');
+
+  const n = PERIOD_OPTIONS.find((p) => p.label === period)?.months ?? 6;
+  const sl = (arr) => arr.slice(-n);
+
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-1">
+      <div className="flex items-center justify-between mb-1">
         <p className="text-xs font-medium text-foreground">Sales &amp; Purchases</p>
-        <p className="text-[11px] text-muted-foreground">Last 6 months</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[11px] text-muted-foreground">Last 6 months</p>
+          <button
+            onClick={() => setExpanded(true)}
+            className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            title="Expand chart"
+          >
+            <Maximize2 size={12} />
+          </button>
+        </div>
       </div>
-      <svg viewBox={`0 0 ${CW} ${CH}`} className="w-full h-auto" role="img" aria-label="Sales and purchases trend">
-        <defs>
-          <linearGradient id="bp-rev-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
-          </linearGradient>
-          <linearGradient id="bp-exp-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity="0.01" />
-          </linearGradient>
-        </defs>
 
-        {[0, 0.5, 1].map((frac) => {
-          const y = PY + plotH - frac * plotH;
-          const val = minVal + frac * range;
-          return (
-            <g key={frac}>
-              <line x1={PX} y1={y} x2={CW - PX} y2={y}
-                stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="3 3" />
-              <text x={PX - 4} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="8">
-                {formatY(val)}
-              </text>
-            </g>
-          );
-        })}
+      <BPChartSVGContent
+        labels={labels} revenue={revenue} expenses={expenses}
+        CW={320} CH={200} PX={32} PY={12} PB={22}
+        fontSize={9} chartId="bp-mini"
+      />
 
-        <path d={toArea(expPts)} fill="url(#bp-exp-grad)" />
-        <polyline points={toLine(expPts)} fill="none"
-          stroke="hsl(var(--destructive))" strokeWidth="1.5"
-          strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 2" />
-        {expPts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="2"
-            fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
-        ))}
+      <ChartLegend />
 
-        <path d={toArea(revPts)} fill="url(#bp-rev-grad)" />
-        <polyline points={toLine(revPts)} fill="none"
-          stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {revPts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="2.5"
-            fill="hsl(var(--background))" stroke="#10b981" strokeWidth="1.5" />
-        ))}
-
-        {labels.map((lbl, i) => {
-          const x = PX + (labels.length <= 1 ? plotW / 2 : (i / (labels.length - 1)) * plotW);
-          return (
-            <text key={i} x={x} y={CH - 4} textAnchor="middle" className="fill-muted-foreground" fontSize="9">
-              {lbl}
-            </text>
-          );
-        })}
-
-        {!hasData && (
-          <text x={CW / 2} y={PY + plotH / 2 + 4} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
-            No invoice data
-          </text>
-        )}
-      </svg>
-
-      <div className="flex items-center gap-4">
-        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-          Revenue
-        </span>
-        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
-          Expenses
-        </span>
-      </div>
+      <Dialog open={expanded} onOpenChange={setExpanded}>
+        <DialogContent className="max-w-2xl w-full">
+          <DialogHeader>
+            <DialogTitle>
+              <div className="flex items-center justify-between gap-4 pr-8">
+                <span>Sales &amp; Purchases</span>
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  {PERIOD_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setPeriod(opt.label)}
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        period === opt.label
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <BPChartSVGContent
+            labels={sl(labels)} revenue={sl(revenue)} expenses={sl(expenses)}
+            CW={580} CH={280} PX={48} PY={16} PB={28}
+            fontSize={12} chartId="bp-expanded"
+          />
+          <ChartLegend />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -182,7 +314,6 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
 
   return (
     <div className="flex flex-col gap-4">
-      {/* KPI cards — 2 columns */}
       {kpis === null ? (
         <div className="grid grid-cols-2 gap-2 animate-pulse">
           <div className="h-20 rounded-xl bg-gray-100" />
@@ -203,7 +334,6 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
         </div>
       )}
 
-      {/* Trend chart */}
       {trend === null ? (
         <div className="animate-pulse">
           <div className="h-52 rounded-xl bg-gray-100" />
