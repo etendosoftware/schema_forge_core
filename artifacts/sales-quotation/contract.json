@@ -25,10 +25,7 @@
       ],
       "processOverrides": {
         "Complete": {
-          "add": true,
-          "label": "Confirm",
-          "columnName": "DocAction",
-          "displayLogicRaw": "@documentStatus@='DR'"
+          "exclude": true
         },
         "Convert to Order": {
           "exclude": true

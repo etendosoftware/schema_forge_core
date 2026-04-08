@@ -33,8 +33,6 @@ const processes = [
     displayLogicRaw: "@documentStatus@='CO'" },
   { name: 'Reactivate', label: 'Reactivate', style: 'positive',
     displayLogicRaw: "@documentStatus@='VO'" },
-  { name: 'Complete', label: 'Confirm', style: 'positive', columnName: 'DocAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:quotation
 
@@ -356,6 +354,8 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
+        statusFieldLabel="Document Status"
+        statusEnumLabels={{ DR: 'Draft', UE: 'Under Evaluation', CO: 'Confirmed', CA: 'Converted', VO: 'Voided' }}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }

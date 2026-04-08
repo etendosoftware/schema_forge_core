@@ -116,6 +116,7 @@ export function DetailView({
   topbarExtra = null,
   topbarRight = null,
   statusFieldLabel = null,
+  statusEnumLabels = null,
   salesTheme = false,
   sidebarContent = null,
   othersLabel = null,
@@ -316,16 +317,33 @@ export function DetailView({
         hook.handleChange(key, entry.value);
         if (entry._identifier) {
           hook.handleChange(key + '$_identifier', entry._identifier);
+        } else if (entry.value && api?.selectors) {
+          // Callout returned an ID without _identifier — resolve from loaded catalogs
+          const sel = api.selectors.find(s => s.field === key);
+          if (sel) {
+            const options = getCatalogOptions(catalogs, sel.entity, sel);
+            const match = Array.isArray(options) && options.find(o => o.id === entry.value);
+            if (match) {
+              hook.handleChange(key + '$_identifier', match.label || match.name || match._identifier);
+            }
+          }
         }
       }
     }
     if (combos) {
       for (const [key, combo] of Object.entries(combos)) {
-        if (combo.selected != null) {
+        let selectedVal = combo.selected;
+        let selectedLabel = combo._identifier;
+        // Auto-select first entry if no explicit selection (e.g., BP address combo)
+        if (selectedVal == null && Array.isArray(combo.entries) && combo.entries.length > 0) {
+          selectedVal = combo.entries[0].id;
+          selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
+        }
+        if (selectedVal != null) {
           appliedFields.add(key);
-          hook.handleChange(key, combo.selected);
-          if (combo._identifier) {
-            hook.handleChange(key + '$_identifier', combo._identifier);
+          hook.handleChange(key, selectedVal);
+          if (selectedLabel) {
+            hook.handleChange(key + '$_identifier', selectedLabel);
           }
         }
       }
@@ -548,7 +566,7 @@ export function DetailView({
                 <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
                 {statusFieldLabel || 'Document Status'}
                 <span style={{ opacity: 0.4 }}>&middot;</span>
-                <span className="font-semibold">{statusLabel(data[statusField])}</span>
+                <span className="font-semibold">{statusEnumLabels?.[data[statusField]] || statusLabel(data[statusField])}</span>
               </span>
             </div>
           ) : null
@@ -565,14 +583,14 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               {ui('cancel')}
             </Button>
-            {!topbarRight && statusField && data[statusField] != null && (() => {
+            {statusField && data[statusField] != null && (() => {
               const _s = data[statusField];
               return (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
                   <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
                   {statusFieldLabel || 'Document Status'}
                   <span style={{ opacity: 0.4 }}>&middot;</span>
-                  <span className="font-semibold">{statusLabel(_s, dictionary)}</span>
+                  <span className="font-semibold">{statusEnumLabels?.[_s] || statusLabel(_s, dictionary)}</span>
                 </span>
               );
             })()}
