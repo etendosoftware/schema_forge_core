@@ -37,7 +37,6 @@ function MiniKPICard({ label, value, trend, format, accentColor }) {
 }
 
 const PERIOD_OPTIONS = [
-  { label: '1M', months: 1 },
   { label: '3M', months: 3 },
   { label: '6M', months: 6 },
 ];
