@@ -1166,8 +1166,8 @@ describe('generateFormComponent - callout and onChangeFunction are not emitted a
 
   it('field with onChangeFunction does not have onchange in the field config line', () => {
     const code = generateFormComponent('invoice', todoContract);
-    const glLine = code.split('\n').find(l => l.includes("key: 'glItem'"));
-    assert.ok(glLine, 'glItem field should exist');
+    const glLine = code.split('\n').find(l => l.includes("key: 'paidOut'"));
+    assert.ok(glLine, 'paidOut field should exist');
     assert.ok(!glLine.includes('onChange'), 'onChangeFunction should not appear as field config property');
   });
 
