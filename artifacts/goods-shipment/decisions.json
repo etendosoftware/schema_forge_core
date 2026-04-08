@@ -300,6 +300,15 @@
     },
     "intrastat": {
       "exclude": true
+    },
+    "lineTax": {
+      "exclude": true
+    },
+    "basicDiscounts": {
+      "exclude": true
+    },
+    "tax": {
+      "exclude": true
     }
   },
   "rules": {

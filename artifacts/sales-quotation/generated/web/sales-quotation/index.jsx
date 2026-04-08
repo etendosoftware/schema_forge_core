@@ -152,14 +152,6 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "quotation",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
@@ -173,6 +165,14 @@ const api = {
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "quotation",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "quotation",

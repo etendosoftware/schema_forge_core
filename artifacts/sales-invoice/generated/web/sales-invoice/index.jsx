@@ -186,11 +186,51 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
-      "processId": "111",
-      "processType": "classic"
+      "field": "tBAIQRcode",
+      "column": "em_tbai_qrcode",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tBAIQRcode",
+      "processId": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "etvfacRectCreate",
+      "column": "EM_Etvfac_Rect_Create",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/etvfacRectCreate",
+      "processId": "E36A8BA259164E78AFDDC760172C18F5",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiXmlgenerator",
+      "column": "EM_Tbai_Xmlgenerator",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiXmlgenerator",
+      "processId": "BE2486102F2C41779B760609FD69A225",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiVoidxmlgenerator",
+      "column": "EM_Tbai_Voidxmlgenerator",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiVoidxmlgenerator",
+      "processId": "535A8BAE44A34759A7C8FF40D62A5070",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiSend",
+      "column": "EM_Aeatsii_Send",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiSend",
+      "processId": "2ECF46DAAEEB486EAF79D3594D50DE5F",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiModif",
+      "column": "EM_Aeatsii_Modif",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiModif",
+      "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -202,9 +242,33 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
+      "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
       "field": "createLinesFrom",
       "column": "CreateFrom",
       "url": "/sws/neo/sales-invoice/header/{id}/action/createLinesFrom"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDup",
+      "column": "EM_Aeatsii_Dup",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiDup",
+      "processId": "92C02F9A367140C085D1EE3BD27C4E96",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiUnsubscribe",
+      "column": "EM_Aeatsii_Unsubscribe",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiUnsubscribe",
+      "processId": "BE564945CB2D4892AC0EE51204C5DB7D",
+      "processType": "obuiapp"
     },
     {
       "entity": "lines",

@@ -3,7 +3,7 @@ import { EntityForm } from '@/components/contract-ui';
 // @sf-generated-start fields:header
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', label: 'Document No.', required: true, readOnly: true, section: 'principal' },
-  // @sf-custom-slot callout:SE_Invoice_AccountingDate
+  // @sf-custom-slot callout:SifInvoiceOperationDateCallout
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date', required: true, section: 'principal', defaultValue: '@#Date@' },
   // @sf-custom-slot callout:SE_Invoice_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search' },
@@ -15,6 +15,7 @@ const fields = [
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', label: 'Payment Method', required: true, section: 'collapsed', reference: 'PaymentMethod', inputMode: 'selector' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed' },
   { key: 'orderReference', column: 'POReference', type: 'text', label: 'Supplier Reference', section: 'collapsed' },
+  { key: 'cashVAT', column: 'Iscashvat', type: 'checkbox', label: 'Cash VAT', required: true, section: 'principal', defaultValue: 'N', readOnlyLogic: (record) => record['processed'] === true },
 ];
 // @sf-generated-end fields:header
 

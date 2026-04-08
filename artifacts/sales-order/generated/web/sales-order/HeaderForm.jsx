@@ -13,7 +13,6 @@ const fields = [
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'search', label: 'Warehouse', required: true, section: 'collapsed', reference: 'Warehouse', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', label: 'Total Gross Amount', required: true, readOnly: true, section: 'summary' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', label: 'Total Net Amount', required: true, readOnly: true, section: 'summary' },
-  { key: 'orderReference', column: 'POReference', type: 'text', label: 'Order Reference', section: 'collapsed' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed' },
 ];
 // @sf-generated-end fields:header

@@ -35,7 +35,12 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirmar"
+};
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
@@ -74,8 +79,7 @@ const api = {
         "documentNo",
         "orderDate",
         "businessPartner",
-        "documentStatus",
-        "orderReference"
+        "documentStatus"
       ]
     },
     "lines": {
@@ -366,6 +370,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        draftMode={draftMode}
         salesTheme
         {...props}
       />

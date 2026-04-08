@@ -19,8 +19,7 @@ const api = {
         "documentNo",
         "orderDate",
         "businessPartner",
-        "documentStatus",
-        "orderReference"
+        "documentStatus"
       ]
     },
     "lines": {

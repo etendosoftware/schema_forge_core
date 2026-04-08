@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import QuotationTable from './QuotationTable';
@@ -29,15 +30,17 @@ const extraBadges = [];
 
 // @sf-generated-start processes:quotation
 const processes = [
-  { name: 'Void', label: 'Void', style: 'destructive',
-    displayLogicRaw: "@documentStatus@='CO'" },
-  { name: 'Reactivate', label: 'Reactivate', style: 'positive',
-    displayLogicRaw: "@documentStatus@='VO'" },
+
 ];
 // @sf-generated-end processes:quotation
 
 // @sf-generated-start draftMode:quotation
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirmar"
+};
 // @sf-generated-end draftMode:quotation
 
 // @sf-generated-start addLineFields:quotationLine
@@ -208,14 +211,6 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "quotation",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
@@ -229,6 +224,14 @@ const api = {
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "quotation",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "quotation",
@@ -329,6 +332,7 @@ const api = {
 // @sf-generated-start component:QuotationPage
 export default function QuotationPage({ windowName, recordId, ...props }) {
   // @sf-custom-slot hooks:QuotationPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -354,12 +358,11 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
-        statusFieldLabel="Document Status"
-        statusEnumLabels={{ DR: 'Draft', UE: 'Under Evaluation', CO: 'Confirmed', CA: 'Converted', VO: 'Voided' }}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        draftMode={draftMode}
         salesTheme
         {...props}
       />
