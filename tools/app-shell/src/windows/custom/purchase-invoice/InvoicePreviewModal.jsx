@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
-import AddPaymentModal from './AddPaymentModal.jsx';
+import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
 
 const TOP_TABS = ['Stats', 'Messages', 'History'];
 
@@ -20,7 +20,7 @@ const ACCEPTED_TYPES = {
 const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
 
 /**
- * InvoicePreviewModal — Holded-style preview popup for a purchase invoice.
+ * InvoicePreviewModal — Holded-style preview popup for a purchase or sales invoice.
  *
  * Layout:
  *   Top bar: title, action buttons, tab switcher (Stats | Messages | History)
@@ -32,14 +32,14 @@ const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
  *   Files section     → placeholder
  *
  * Animation: fade + slide-up on open, reverse on close.
+ *
+ * @param specName — "purchase-invoice" | "sales-invoice" (defaults to "purchase-invoice")
  */
-export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, windowName, onClose, onEdit }) {
+export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, windowName, specName = 'purchase-invoice', onClose, onEdit }) {
   const [activeTab, setActiveTab] = useState('Stats');
   const [paymentPlan, setPaymentPlan] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
-  const [showAddPayment, setShowAddPayment] = useState(false);
-  // Payments added locally (cache until real endpoint exists)
-  const [localPayments, setLocalPayments] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Animation state: 'opening' → 'open' → 'closing' → 'closingUp'
   const [animState, setAnimState] = useState('opening');
@@ -107,7 +107,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   // Two-step fetch: paymentPlan schedules → paymentDetails per schedule
   // paymentDetails (FIN_Payment_ScheduleDetail) holds actual payments applied,
   // not just the installment schedule amounts.
-  useEffect(() => {
+  const fetchPayments = useCallback(() => {
     if (!invoice?.id || !token) return;
     setLoadingPayments(true);
 
@@ -135,19 +135,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       .finally(() => setLoadingPayments(false));
   }, [invoice?.id, apiBaseUrl, token]);
 
-  function handleAddPayment({ amount, date, account }) {
-    const newPayment = {
-      id: `local-${Date.now()}`,
-      _local: true,
-      paymentMethod$_identifier: account,
-      dueDate: date,
-      amount,
-      paidAmount: amount,
-      outstandingAmt: 0,
-    };
-    setLocalPayments((prev) => [...prev, newPayment]);
-    setShowAddPayment(false);
-  }
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   if (!invoice) return null;
 
@@ -156,18 +146,15 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const label = statusLabel(status);
   const partnerName = invoice.businessPartner$_identifier || invoice.businessPartner || '—';
 
-  // Merge fetched paymentDetails + locally-added payments for display
-  const allPayments = [...paymentPlan, ...localPayments];
-
-  // paymentDetails records use `amount` (applied amount); local payments use `paidAmount`
-  const totalPaid = allPayments.reduce((s, r) => s + Number(r._local ? (r.paidAmount ?? 0) : (r.amount ?? 0)), 0);
-  // Outstanding = grand total minus all paid (including local)
+  // paymentDetails records use `amount` (applied amount)
+  const totalPaid = paymentPlan.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+  // Outstanding = grand total minus all paid
   const grandTotal = Number(invoice.grandTotalAmount ?? 0);
   const totalOutstanding = Math.max(0, grandTotal - totalPaid);
 
   // "Add payment" is only available when invoice is Completed (CO) with outstanding balance
   const isDraft = status === 'DR' || status === 'draft';
-  const isFullyPaid = totalOutstanding <= 0 && allPayments.length > 0;
+  const isFullyPaid = totalOutstanding <= 0 && paymentPlan.length > 0;
   const isCompleted = status === 'CO' || status === 'complete' || status === 'completed';
   const canAddPayment = isCompleted && !isFullyPaid;
 
@@ -204,7 +191,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
             {/* Left: title + doc actions */}
             <div className="flex items-center gap-3">
               <span className="font-semibold text-gray-900 text-base">
-                Purchase Invoice
+                {windowName || (specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')}
               </span>
               <button
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -224,7 +211,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                 size="sm"
                 className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!canAddPayment}
-                onClick={canAddPayment ? () => setShowAddPayment(true) : undefined}
+                onClick={canAddPayment ? () => setShowPaymentModal(true) : undefined}
               >
                 <Plus size={13} />
                 Add payment
@@ -364,14 +351,14 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   partnerName={partnerName}
                   badgeProps={badgeProps}
                   statusLabel={label}
-                  allPayments={allPayments}
+                  allPayments={paymentPlan}
                   loadingPayments={loadingPayments}
                   totalPaid={totalPaid}
                   totalOutstanding={totalOutstanding}
                   canAddPayment={canAddPayment}
                   isDraft={isDraft}
                   isFullyPaid={isFullyPaid}
-                  onAddPayment={() => setShowAddPayment(true)}
+                  onAddPayment={() => setShowPaymentModal(true)}
                 />
               )}
               {activeTab === 'Messages' && (
@@ -385,13 +372,18 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
         </div>
       </div>
 
-      {/* Add payment sub-modal */}
-      {showAddPayment && (
-        <AddPaymentModal
-          invoice={invoice}
-          outstanding={totalOutstanding}
-          onClose={() => setShowAddPayment(false)}
-          onSave={handleAddPayment}
+      {/* Payment modal */}
+      {showPaymentModal && (
+        <InvoicePaymentModal
+          invoiceId={invoice.id}
+          invoiceData={invoice}
+          specName={specName}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          onClose={() => {
+            setShowPaymentModal(false);
+            fetchPayments();
+          }}
         />
       )}
     </>
@@ -460,22 +452,9 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
           <div className="space-y-2 mb-3">
             {allPayments.map((row, i) => {
               // paymentDetails records enriched by PaymentDetailsHandler: documentNo, paymentDate
-              // Local payments added via AddPaymentModal: dueDate, paymentMethod$_identifier
-              let date = '—';
-              if (row._local && row.dueDate) {
-                date = new Date(row.dueDate).toLocaleDateString('es-ES');
-              } else if (row.paymentDate) {
-                date = row.paymentDate;
-              }
-
-              let ref = '—';
-              if (row._local) {
-                ref = row.paymentMethod$_identifier || 'PAYMENT';
-              } else {
-                ref = row.documentNo || '—';
-              }
-
-              const amount = row._local ? (row.paidAmount ?? row.amount) : row.amount;
+              const date = row.paymentDate || '—';
+              const ref = row.documentNo || '—';
+              const amount = row.amount;
 
               return (
                 <div key={row.id ?? i} className="flex items-center justify-between text-sm">
@@ -485,9 +464,6 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
                     </div>
                     <div>
                       <span className="text-gray-700 font-medium truncate max-w-[80px] block">{ref}</span>
-                      {row._local && (
-                        <span className="text-[10px] text-amber-600 font-medium">pending sync</span>
-                      )}
                     </div>
                   </div>
                   <div className="text-right">
