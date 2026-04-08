@@ -65,8 +65,27 @@ function fmtNum(val) {
   return Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
+/** Floating tooltip rendered inside the SVG. */
+function SvgTooltip({ x, y, label, value, cw }) {
+  const text = `${label}: ${fmtNum(value)} units`;
+  const TW = Math.min(text.length * 6.2 + 16, 200);
+  const TH = 22;
+  const tx = Math.min(Math.max(x - TW / 2, 4), cw - TW - 4);
+  // Flip below the point if there isn't enough room above
+  const ty = y - TH - 8 < 4 ? y + 10 : y - TH - 8;
+  return (
+    <g pointerEvents="none">
+      <rect x={tx} y={ty} width={TW} height={TH} rx="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
+      <text x={tx + TW / 2} y={ty + TH / 2 + 4} textAnchor="middle" fontSize="10" fontWeight="500" fill="hsl(var(--popover-foreground))">
+        {text}
+      </text>
+    </g>
+  );
+}
+
 /** Pure SVG chart — accepts explicit dimensions so it can be used at any size. */
 function StockSvg({ values, labels, chartType, cw, ch }) {
+  const [hovered, setHovered] = useState(null); // { i, x, y }
   const n = values.length;
   const showLine = chartType === 'line' && n > 1;
 
@@ -124,7 +143,15 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
         <path d={toFillPath(pts)} fill={`url(#${gradId})`} />
         <polyline points={toPolyline(pts)} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         {pts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2" />
+          <circle
+            key={i}
+            cx={p.x} cy={p.y}
+            r={hovered?.i === i ? 5 : 3}
+            fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2"
+            style={{ cursor: 'default', transition: 'r 0.1s' }}
+            onMouseEnter={() => setHovered({ i, x: p.x, y: p.y })}
+            onMouseLeave={() => setHovered(null)}
+          />
         ))}
         {labels.map((m, i) => (
           <text
@@ -138,6 +165,9 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
             {m}
           </text>
         ))}
+        {hovered && (
+          <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} />
+        )}
       </svg>
     );
   }
@@ -159,17 +189,27 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
         const bH = Math.max((v / barMaxVal) * barPlotH, v > 0 ? 3 : 0);
         const x = PAD_X + i * barSlotW + barGap;
         const y = BAR_PAD_Y + barPlotH - bH;
+        const tipX = x + barW / 2;
+        const tipY = y;
         return (
-          <g key={i}>
+          <g key={i}
+            onMouseEnter={() => setHovered({ i, x: tipX, y: tipY })}
+            onMouseLeave={() => setHovered(null)}
+            style={{ cursor: 'default' }}
+          >
             <rect x={x} y={y} width={barW} height={bH} rx="3"
-              fill={i === lastIdx ? '#10b981' : 'rgba(16,185,129,0.35)'}
+              fill={hovered?.i === i ? '#10b981' : (i === lastIdx ? '#10b981' : 'rgba(16,185,129,0.35)')}
+              opacity={hovered?.i === i && i !== lastIdx ? 0.6 : 1}
             />
-            <text x={x + barW / 2} y={ch - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
+            <text x={tipX} y={ch - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
               {labels[i]}
             </text>
           </g>
         );
       })}
+      {hovered && (
+        <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} />
+      )}
     </svg>
   );
 }
