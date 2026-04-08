@@ -129,10 +129,10 @@ export function DetailView({
   const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
-  const secondaryHook0 = useEntity(entity, secondaryTabs[0]?.isFormTab ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
-  const secondaryHook1 = useEntity(entity, secondaryTabs[1]?.isFormTab ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
-  const secondaryHook2 = useEntity(entity, secondaryTabs[2]?.isFormTab ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl });
-  const secondaryHook3 = useEntity(entity, secondaryTabs[3]?.isFormTab ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook0 = useEntity(entity, (secondaryTabs[0]?.isFormTab || secondaryTabs[0]?.Panel) ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook1 = useEntity(entity, (secondaryTabs[1]?.isFormTab || secondaryTabs[1]?.Panel) ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook2 = useEntity(entity, (secondaryTabs[2]?.isFormTab || secondaryTabs[2]?.Panel) ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl });
+  const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   const selectorContextByEntity = useMemo(() => {
@@ -466,10 +466,13 @@ export function DetailView({
   const hiddenEntryDefaults = addLineFields.hidden ?? [];
   const editableChildFields = allEntryFields.filter(f => f.type === 'number' || f.type === 'amount');
 
+  const [panelCounts, setPanelCounts] = useState({});
+  useEffect(() => { setPanelCounts({}); }, [parentRecordId]);
+
   // Build tabs: child entity lines + secondary tabs + "Others" tab for non-principal header fields
   const tabs = [];
   secondaryTabs.forEach((st, i) => {
-    const childCount = !st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null;
+    const childCount = st.Panel ? (panelCounts[st.key] ?? null) : (!st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null);
     tabs.push({ key: st.key, label: st.label, count: childCount });
   });
   if (DetailTable) {
@@ -482,7 +485,7 @@ export function DetailView({
   } else if (CustomLines) {
     tabs.unshift({ key: 'customLines', label: customLinesLabel });
   }
-  // "Others" tab is added dynamically via othersRef after first render
+
   // When primaryTabs is in use, skip auto-adding Others (handled by a primary tab)
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
@@ -1195,6 +1198,7 @@ export function DetailView({
                           parentId={data?.id}
                           token={token}
                           apiBaseUrl={apiBaseUrl}
+                          onCount={(n) => setPanelCounts(prev => ({ ...prev, [st.key]: n }))}
                         />
                       </div>
                     ) : (

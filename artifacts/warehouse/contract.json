@@ -1,13 +1,19 @@
 {
   "version": "0.4.0",
-  "generatedAt": "2026-04-07T11:43:26.893Z",
-  "checksum": "8738e3d877cf1239",
+  "generatedAt": "2026-04-08T15:12:32.237Z",
+  "checksum": "11b903b874759d66",
   "frontendContract": {
     "window": {
       "id": "139",
       "name": "Warehouse",
       "primaryEntity": "warehouse",
       "category": "warehouse",
+      "secondaryTabs": {
+        "productTransactions": {
+          "label": "Transactions",
+          "customPanel": "WarehouseTransactionsTable"
+        }
+      },
       "detailEntity": null,
       "layoutType": "default"
     },
@@ -603,6 +609,12 @@
       "name": "Warehouse",
       "primaryEntity": "warehouse",
       "category": "warehouse",
+      "secondaryTabs": {
+        "productTransactions": {
+          "label": "Transactions",
+          "customPanel": "WarehouseTransactionsTable"
+        }
+      },
       "detailEntity": null
     },
     "entities": {

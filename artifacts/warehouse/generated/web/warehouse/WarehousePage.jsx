@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import WarehouseTable from './WarehouseTable';
 import WarehouseForm from './WarehouseForm';
-import ProductTransactionsTable from './ProductTransactionsTable';
-import ProductTransactionsForm from './ProductTransactionsForm';
+import WarehouseTransactionsTable from '@/windows/custom/warehouse/WarehouseTransactionsTable';
 import catalogs from './mockCatalogs';
 
 
@@ -246,7 +245,7 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         secondaryTabs={[
-          { key: 'productTransactions', label: 'Product Transactions', Table: ProductTransactionsTable, Form: ProductTransactionsForm },
+          { key: 'productTransactions', label: 'Transactions', Panel: WarehouseTransactionsTable },
         ]}
         {...props}
       />

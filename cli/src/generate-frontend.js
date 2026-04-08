@@ -523,6 +523,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       .sort((a, b) => (a[1].tabOrder ?? 99) - (b[1].tabOrder ?? 99))
       .map(([key, cfg]) => {
         const isFormTab = cfg.tabMode === 'form-only';
+        const isPanelTab = !!cfg.customPanel;
+        const PanelName = cfg.customPanel ?? null;
         const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
         const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
@@ -540,7 +542,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, FormName, TableName, addLineEntries };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -581,6 +583,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const specName = contract.apiPrediction?.specName;
   const secondaryTabsImports = secondaryTabDefs
     .map(t => {
+      if (t.isPanelTab && specName) {
+        return `import ${t.PanelName} from '@/windows/custom/${specName}/${t.PanelName}';`;
+      }
       const formImportPath = (t.isCustomForm && specName)
         ? `@/windows/custom/${specName}/${t.FormName}`
         : `./${t.FormName}`;
@@ -597,6 +602,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
     if (t.isFormTab) {
       return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName} },`;
+    }
+    if (t.isPanelTab) {
+      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName} },`;
     }
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`

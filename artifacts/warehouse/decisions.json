@@ -3,7 +3,13 @@
   "window": {
     "category": "warehouse",
     "name": "Warehouse",
-    "detailEntity": null
+    "detailEntity": null,
+    "secondaryTabs": {
+      "productTransactions": {
+        "label": "Transactions",
+        "customPanel": "WarehouseTransactionsTable"
+      }
+    }
   },
   "entities": {
     "header": {
