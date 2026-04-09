@@ -78,11 +78,13 @@ function buildChartData(transactions, currentStock, maxMonths = 12) {
 
   let cum = 0;
   const rawValues = months.map(m => { cum += byMonth[m] || 0; return cum; });
-  if (rawValues.every(v => v === 0)) return null;
 
   // Anchor: shift so the last point equals currentStock
   const offset = currentStock != null ? currentStock - rawValues[rawValues.length - 1] : 0;
   const values = rawValues.map(v => v + offset);
+
+  // Hide chart only if there's truly nothing to show (no movements and no stock)
+  if (values.every(v => v === 0)) return null;
   return { months, values };
 }
 
