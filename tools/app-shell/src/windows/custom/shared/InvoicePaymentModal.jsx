@@ -79,50 +79,29 @@ export function PaymentRegisterForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const prefix = paymentPrefix(specName);
-
   useEffect(() => {
     (async () => {
       try {
-        const pmId = invoiceData?.paymentMethod;
-        const bpId = invoiceData?.businessPartner;
         let mapped = [];
-        let defaultAccountId = null;
 
         const res = await fetch(
-          `${base}/${prefix}/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`,
-          { headers },
+          `${base}/${specName}/header/${invoiceId}/action/invoiceAccounts`,
+          { method: 'POST', headers, body: '{}' },
         );
         if (res.ok) {
           const json = await res.json();
-          const items = json.items || json?.response?.data || [];
-          mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
-        }
-
-        if (pmId && bpId) {
-          try {
-            const payRes = await fetch(
-              `${base}/${prefix}/finPayment?businessPartner=${bpId}&_startRow=0&_endRow=5`,
-              { headers },
-            );
-            if (payRes.ok) {
-              const payments = (await payRes.json())?.response?.data || [];
-              const matching = payments.find(p => p.paymentMethod === pmId && p.account);
-              if (matching) defaultAccountId = matching.account;
-            }
-          } catch { /* silent */ }
+          const items = json.items || [];
+          mapped = items.map(a => ({ id: a.id, name: a.label || a.name, currency: a.currency }));
         }
 
         setAccounts(mapped);
-        if (defaultAccountId && mapped.some(a => a.id === defaultAccountId)) {
-          setAccountId(defaultAccountId);
-        } else if (mapped.length > 0) {
+        if (mapped.length > 0) {
           setAccountId(mapped[0].id);
         }
       } catch { /* silent */ }
       finally { setLoadingAccounts(false); }
     })();
-  }, [base, headers, invoiceData?.paymentMethod, invoiceData?.businessPartner, prefix]);
+  }, [base, headers, invoiceId, specName]);
 
   const amountExceeded = amount > outstanding;
 

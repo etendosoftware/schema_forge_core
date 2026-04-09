@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Upload, Paperclip, Edit2, FileText, Image, Plus, ChevronRight, Check, Trash2 } from 'lucide-react';
+import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
 
-const TOP_TABS = ['Stats', 'Messages', 'History'];
+const TOP_TABS = ['General', 'Messages', 'History'];
 
 const ACCEPTED_TYPES = {
   'application/pdf': 'pdf',
@@ -36,8 +36,9 @@ const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
  * @param specName — "purchase-invoice" | "sales-invoice" (defaults to "purchase-invoice")
  */
 export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, windowName, specName = 'purchase-invoice', onClose, onEdit }) {
-  const [activeTab, setActiveTab] = useState('Stats');
-  const [paymentPlan, setPaymentPlan] = useState([]);
+  const [activeTab, setActiveTab] = useState('General');
+  const [installments, setInstallments] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -104,34 +105,26 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     setTimeout(() => onEdit?.(invoice.id), 280);
   }
 
-  // Two-step fetch: paymentPlan schedules → paymentDetails per schedule
-  // paymentDetails (FIN_Payment_ScheduleDetail) holds actual payments applied,
-  // not just the installment schedule amounts.
+  // Parallel fetch: installment schedules (paymentPlan) + registered payments (invoicePayments)
   const fetchPayments = useCallback(() => {
     if (!invoice?.id || !token) return;
     setLoadingPayments(true);
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-    fetch(`${apiBaseUrl}/paymentPlan?parentId=${invoice.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((data) => {
-        const schedules = data?.response?.data ?? data?.data ?? [];
-        if (schedules.length === 0) return [];
-        // Fetch paymentDetails for each schedule in parallel
-        return Promise.all(
-          schedules.map((s) =>
-            fetch(`${apiBaseUrl}/paymentDetails?parentId=${s.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-              .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-              .then((d) => d?.response?.data ?? d?.data ?? [])
-              .catch(() => [])
-          )
-        ).then((results) => results.flat());
+    Promise.all([
+      fetch(`${apiBaseUrl}/paymentPlan?parentId=${invoice.id}`, { headers })
+        .then((r) => (r.ok ? r.json() : {}))
+        .then((d) => d?.response?.data ?? d?.data ?? [])
+        .catch(() => []),
+      fetch(`${apiBaseUrl}/header/${invoice.id}/action/invoicePayments`, {
+        method: 'POST', headers, body: '{}',
       })
-      .then((details) => setPaymentPlan(details))
-      .catch(() => setPaymentPlan([]))
+        .then((r) => (r.ok ? r.json() : {}))
+        .then((d) => d?.response?.data ?? [])
+        .catch(() => []),
+    ])
+      .then(([sched, pays]) => { setInstallments(sched); setPayments(pays); })
+      .catch(() => { setInstallments([]); setPayments([]); })
       .finally(() => setLoadingPayments(false));
   }, [invoice?.id, apiBaseUrl, token]);
 
@@ -147,14 +140,16 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const partnerName = invoice.businessPartner$_identifier || invoice.businessPartner || '—';
 
   // paymentDetails records use `amount` (applied amount)
-  const totalPaid = paymentPlan.reduce((s, r) => s + Number(r.amount ?? 0), 0);
-  // Outstanding = grand total minus all paid
+  // Derive totals from installment schedule data (more accurate than paymentDetails sum)
   const grandTotal = Number(invoice.grandTotalAmount ?? 0);
-  const totalOutstanding = Math.max(0, grandTotal - totalPaid);
+  const totalOutstanding = installments.length > 0
+    ? installments.reduce((s, i) => s + Math.max(0, Number(i.outstandingAmount ?? 0)), 0)
+    : grandTotal;
+  const totalPaid = grandTotal - totalOutstanding;
 
   // "Add payment" is only available when invoice is Completed (CO) with outstanding balance
   const isDraft = status === 'DR' || status === 'draft';
-  const isFullyPaid = totalOutstanding <= 0 && paymentPlan.length > 0;
+  const isFullyPaid = totalOutstanding <= 0 && installments.length > 0;
   const isCompleted = status === 'CO' || status === 'complete' || status === 'completed';
   const canAddPayment = isCompleted && !isFullyPaid;
 
@@ -191,7 +186,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
             {/* Left: title + doc actions */}
             <div className="flex items-center gap-3">
               <span className="font-semibold text-gray-900 text-base">
-                {windowName || (specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')}
+                Invoice {invoice.documentNo}
               </span>
               <button
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -345,19 +340,19 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
             {/* Right panel: 50% — tab content */}
             <div className="w-1/2 overflow-y-auto">
-              {activeTab === 'Stats' && (
+              {activeTab === 'General' && (
                 <StatsPanel
                   invoice={invoice}
                   partnerName={partnerName}
                   badgeProps={badgeProps}
                   statusLabel={label}
-                  allPayments={paymentPlan}
+                  installments={installments}
+                  payments={payments}
                   loadingPayments={loadingPayments}
-                  totalPaid={totalPaid}
                   totalOutstanding={totalOutstanding}
                   canAddPayment={canAddPayment}
-                  isDraft={isDraft}
                   isFullyPaid={isFullyPaid}
+                  specName={specName}
                   onAddPayment={() => setShowPaymentModal(true)}
                 />
               )}
@@ -392,14 +387,14 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
 // ── Stats panel: General + Payments + Files sections ──
 
-function SectionCard({ title, done, children }) {
+function SectionCard({ title, titleRight, done, noPadding, children }) {
   return (
     <div className="mx-4 mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <span className="font-semibold text-gray-800 text-sm">{title}</span>
-        {done && <Check size={15} className="text-green-500" />}
+        {titleRight ?? (done ? <Check size={15} className="text-green-500" /> : null)}
       </div>
-      <div className="px-4 py-3">{children}</div>
+      <div className={noPadding ? '' : 'px-4 py-3'}>{children}</div>
     </div>
   );
 }
@@ -416,7 +411,16 @@ function InfoRow({ label, value, link }) {
   );
 }
 
-function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPayments, loadingPayments, totalPaid, totalOutstanding, canAddPayment, isDraft, isFullyPaid, onAddPayment }) {
+function fmtPayDate(raw) {
+  if (!raw) return '—';
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? '—'
+    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+const PAID_STATUSES = new Set(['RPR', 'RPPC', 'RDNC', 'PPM']);
+
+function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isFullyPaid, specName, onAddPayment }) {
   const invoiceDate = invoice.invoiceDate
     ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB')
     : '—';
@@ -425,14 +429,19 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
     ? new Date(invoice.dueDate).toLocaleDateString('en-GB')
     : '—';
 
-  const isPaid = allPayments.length > 0 && totalOutstanding <= 0;
+  const payPrefix = specName === 'purchase-invoice' ? 'payment-out' : 'payment-in';
 
   return (
     <div className="pb-4">
       {/* General */}
-      <SectionCard title="General" done={true}>
-        <InfoRow label="Total" value={formatAmount(invoice.grandTotalAmount)} />
-        <InfoRow label="Document number" value={invoice.documentNo} />
+      <SectionCard
+        title="Total"
+        titleRight={
+          <span className="font-semibold text-sm tabular-nums text-gray-900">
+            {formatAmount(invoice.grandTotalAmount)}
+          </span>
+        }
+      >
         <InfoRow label="Contact" value={partnerName} link />
         <InfoRow label="Date" value={invoiceDate} />
         <InfoRow label="Due date" value={dueDate} />
@@ -442,69 +451,64 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
         </div>
       </SectionCard>
 
-      {/* Payments */}
-      <SectionCard title="Payments" done={isPaid}>
+      {/* Payments — flat list of registered payments, max ~3 visible */}
+      <SectionCard
+        title="Payments"
+        noPadding
+        titleRight={
+          canAddPayment ? (
+            <button
+              onClick={onAddPayment}
+              className="text-xs font-medium text-blue-600 hover:underline transition-colors"
+            >
+              Add payment
+            </button>
+          ) : isFullyPaid ? (
+            <Check size={15} className="text-green-500" />
+          ) : null
+        }
+      >
         {loadingPayments ? (
-          <p className="text-xs text-gray-400 py-2 text-center">Loading...</p>
-        ) : allPayments.length === 0 ? (
-          <p className="text-xs text-gray-400 py-2 text-center">No payments recorded</p>
+          <p className="text-xs text-gray-400 py-4 text-center">Loading...</p>
+        ) : payments.length === 0 ? (
+          <p className="text-xs text-gray-400 py-4 text-center">No payments recorded</p>
         ) : (
-          <div className="space-y-2 mb-3">
-            {allPayments.map((row, i) => {
-              // paymentDetails records enriched by PaymentDetailsHandler: documentNo, paymentDate
-              const date = row.paymentDate || '—';
-              const ref = row.documentNo || '—';
-              const amount = row.amount;
+          <div className="overflow-y-auto divide-y divide-gray-100" style={{ maxHeight: '180px' }}>
+            {payments.map((p) => {
+              const isPaid = PAID_STATUSES.has(p.status);
+              const payBadge = isPaid ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
+              const acctLabel = [p.accountName, p.accountCurrency].filter(Boolean).join(' · ');
+              const currencyCode = installments[0]?.['currency$_identifier'] || '';
 
               return (
-                <div key={row.id ?? i} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <div key={p.id} className="px-4 py-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold tabular-nums text-gray-900">
+                        {currencyCode} {formatAmount(p.amount)}
+                      </span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${payBadge}`}>
+                        {isPaid ? 'Paid' : 'Pending'}
+                      </span>
+                      <span className="text-xs text-gray-500 tabular-nums">{fmtPayDate(p.paymentDate)}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-700 font-medium truncate max-w-[80px] block">{ref}</span>
+                    <button
+                      onClick={() => { window.location.href = `/${payPrefix}/${p.id}`; }}
+                      className="text-xs font-medium text-blue-600 hover:underline shrink-0 ml-2"
+                    >
+                      View →
+                    </button>
+                  </div>
+                  {(p.documentNo || acctLabel) && (
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      {[p.documentNo ? `#${p.documentNo}` : null, acctLabel].filter(Boolean).join(' · ')}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-gray-400">{date}</div>
-                    <div className="font-medium text-gray-900">{formatAmount(amount)}</div>
-                  </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
-        <button
-          onClick={canAddPayment ? onAddPayment : undefined}
-          disabled={!canAddPayment}
-          title={
-            !canAddPayment
-              ? isDraft
-                ? 'Cannot add payments to a draft invoice'
-                : isFullyPaid
-                  ? 'Invoice is fully paid'
-                  : 'Invoice must be completed to add payments'
-              : undefined
-          }
-          className={`w-full py-2 text-sm font-medium border rounded-lg transition-colors ${
-            canAddPayment
-              ? 'text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer'
-              : 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed'
-          }`}
-        >
-          Add payment
-        </button>
-      </SectionCard>
-
-      {/* Files */}
-      <SectionCard title="Files">
-        <button
-          disabled
-          className="w-full py-2 text-sm text-gray-400 border border-dashed border-gray-300 rounded-lg cursor-default"
-        >
-          Add attachment
-        </button>
       </SectionCard>
     </div>
   );
