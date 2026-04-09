@@ -62,6 +62,9 @@
   "entities": {
     "businessPartner": {
       "fields": {
+        "tbaiIssimplifiedinv": {
+          "visibility": "discarded"
+        },
         "employee": {
           "visibility": "editable",
           "form": false

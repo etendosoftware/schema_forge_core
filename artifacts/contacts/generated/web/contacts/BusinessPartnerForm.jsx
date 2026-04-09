@@ -9,7 +9,6 @@ const fields = [
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal' },
   { key: 'oBTIKTaxIDKey', column: 'EM_OBTIK_Tax_ID_Key', type: 'select', label: 'Clave NIF País Residencia', required: true, section: 'principal', options: [{ value: '1', label: 'NIF' }, { value: '2', label: 'NOI' }, { value: '3', label: 'Pasaporte' }, { value: '4', label: 'Documento oficial de identificación expedido por el país' }, { value: '5', label: 'Certificado de residencia fiscal' }, { value: '6', label: 'Otro documento probatorio' }, { value: '7', label: 'No Censado' }], defaultValue: '\'1\'' },
   { key: 'creditLimit', column: 'SO_CreditLimit', type: 'number', label: 'Credit Limit', required: true, readOnly: true, section: 'other' },
-  { key: 'tbaiIssimplifiedinv', column: 'EM_Tbai_Issimplifiedinv', type: 'checkbox', label: 'Factura Simplificada', required: true, section: 'principal', defaultValue: 'N' },
 ];
 // @sf-generated-end fields:businessPartner
 
