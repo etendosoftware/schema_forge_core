@@ -98,6 +98,14 @@
         { "name": "user", "label": "User" },
         { "name": "smart-scan", "label": "Smart Scan" }
       ]
+    },
+    {
+      "group": "Proof of Concept",
+      "icon": "FlaskConical",
+      "items": [
+        { "name": "quick-sales-order", "label": "Quick Sales Order" },
+        { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
+      ]
     }
   ]
 }

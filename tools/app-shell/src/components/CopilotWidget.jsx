@@ -6,8 +6,11 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
 import { cn } from '@/lib/utils';
 import { Bot, X, Send, Sparkles } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useCopilot } from './CopilotContext';
 import { useUI } from '@/i18n';
+
+const HIDDEN_ROUTES = ['/quick-sales-order', '/quick-purchase-order'];
 
 function getResponse(text, responses) {
   const lower = text.toLowerCase();
@@ -21,7 +24,10 @@ function getResponse(text, responses) {
 
 export function CopilotWidget() {
   const { isOpen: open, close: closePanel, toggle } = useCopilot();
+  const location = useLocation();
   const ui = useUI();
+
+  if (HIDDEN_ROUTES.includes(location.pathname)) return null;
   const mockResponses = React.useMemo(() => ({
     invoice: ui('copilotInvoiceResponse'),
     stock: ui('copilotStockResponse'),
