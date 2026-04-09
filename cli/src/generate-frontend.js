@@ -176,6 +176,8 @@ export function generateFormComponent(entityName, contract) {
     return 'other';
   });
 
+  const hasCollapsed = fieldSections.some(s => s === 'collapsed');
+
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
@@ -238,6 +240,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
+${compName}.hasCollapsedFields = ${hasCollapsed};
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -507,6 +510,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
+  const listViewOptions = windowConfig.listViewOptions ?? null;
+  const listBaseFilter = windowConfig.listBaseFilter ?? null;
+  const quickFilters = windowConfig.quickFilters ?? null;
+  const contentBg = windowConfig.contentBg ?? null;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
@@ -625,6 +633,22 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // hidePrint prop
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
 
+  // hideMoreMenu prop
+  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
+
+  // listViewOptions prop
+  const listViewOptionsProp = listViewOptions
+    ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
+    : '';
+  const listBaseFilterProp = listBaseFilter
+    ? `\n      baseFilter="${listBaseFilter}"`
+    : '';
+  const quickFiltersProp = quickFilters
+    ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
+    : '';
+  // contentBg prop
+  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
   const customComponentProps = [];
@@ -635,6 +659,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   if (customComponents.topbarRight) {
     customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
+  }
+  if (customComponents.topbarExtra) {
+    customComponentImports.push(`import ${customComponents.topbarExtra} from '../../../custom/${customComponents.topbarExtra}';`);
+    customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
     customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
@@ -775,6 +803,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // disableProcessedLock support
   const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
 
+  // statusEnumLabels support
+  const statusEnumLabelsConfig = windowConfig.statusEnumLabels ?? null;
+  const statusEnumLabelsProp = statusEnumLabelsConfig
+    ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
+    : '';
+
   return `import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
@@ -848,7 +882,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -861,7 +895,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${bulkActionsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}
       {...props}
     />
   );

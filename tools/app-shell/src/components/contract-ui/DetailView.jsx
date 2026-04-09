@@ -44,14 +44,16 @@ import { toast } from 'sonner';
  */
 function CollapsibleSection({ title, children }) {
   const ref = useRef(null);
-  const [empty, setEmpty] = useState(false);
+  const [empty, setEmpty] = useState(true);
 
   useEffect(() => {
-    // Check if the rendered children produced any DOM nodes
-    if (ref.current && ref.current.childElementCount === 0) {
-      setEmpty(true);
-    } else {
-      setEmpty(false);
+    // Check for actual form fields — wrapper divs always render even when
+    // EntityForm returns null, so we must look for real input elements.
+    if (ref.current) {
+      const hasFields = ref.current.querySelector(
+        'input, select, textarea, [role="combobox"], [role="spinbutton"]'
+      ) !== null;
+      setEmpty(!hasFields);
     }
   });
 
@@ -107,6 +109,8 @@ export function DetailView({
   menuActions = [],
   hideDeleteWhenComplete = false,
   hidePrint = false,
+  hideMoreMenu = false,
+  hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
@@ -121,6 +125,7 @@ export function DetailView({
   sidebarContent = null,
   othersLabel = null,
   primaryTabs = null,
+  contentBg = 'bg-white',
   lockWhenProcessed = true,
   onAfterSave,
 }) {
@@ -398,10 +403,19 @@ export function DetailView({
           auxiliaryValues[k] = String(v);
         }
       }
+      // For callouts that compute unit price from qty (e.g., SL_Order_Amt for tax-included
+      // price lists): substitute orderedQuantity = 1 when empty so the callout can compute
+      // the unit price correctly. qty=0 causes grossAmount=0 → netUnitPrice=0, which is
+      // meaningless for unit price display. qty=1 gives the correct per-unit calculation.
+      // This only affects the callout context — the actual form value is unchanged.
+      const formStateForCallout = { ...formState };
+      if (!Number(formStateForCallout.orderedQuantity)) {
+        formStateForCallout.orderedQuantity = 1;
+      }
       const payload = {
         field,
         value,
-        formState,
+        formState: formStateForCallout,
         ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
       };
       const res = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
@@ -450,11 +464,72 @@ export function DetailView({
         const hint = rowValues[field + '_' + key];
         if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
       }
+      // Tax-included price lists: SL_Order_Product sets grossUnitPrice; SL_Order_Amt cascades
+      // to derive unitPrice (net). If unitPrice is still null or 0 after the cascade (e.g.,
+      // cascade ran with qty=0 and computed 0, or cascade did not run), fall back to showing
+      // grossUnitPrice so the user sees a price rather than nothing.
+      if (result.grossUnitPrice != null && !result.unitPrice) {
+        result.unitPrice = result.grossUnitPrice;
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
+
+      // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
+      // unitPrice or grossUnitPrice but did not compute lineNetAmount.
+      // This mirrors classic browser behaviour: detecting a price field change auto-fires
+      // SL_Order_Amt to compute lineNetAmount = unitPrice * qty (and, for gross-price lists,
+      // to derive the correct net unitPrice from grossUnitPrice).
+      const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
+      // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
+      const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
+      if (priceUpdated && amountNotComputed) {
+        try {
+          const cascadePrice = result.unitPrice ?? result.grossUnitPrice;
+          // Merge first callout result into the form state so SL_Order_Amt sees the
+          // freshly set tax, grossUnitPrice, gROSSPRICE, etc.
+          const cascadeState = { ...formStateForCallout };
+          for (const [k, v] of Object.entries(result)) {
+            if (!k.includes('$_identifier')) cascadeState[k] = v;
+          }
+          // The callout endpoint resolves by DB column name (e.g. 'PriceActual'), not by
+          // the SFField API key ('unitPrice'). Look up the column from addLineFields so
+          // NeoCalloutService.resolveCallout can find SL_Order_Amt via equalsIgnoreCase.
+          const unitPriceColumn = (addLineFields?.entry ?? []).find(
+            f => f.key === 'unitPrice'
+          )?.column ?? 'PriceActual';
+          const cascadeRes = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              field: unitPriceColumn,
+              value: String(cascadePrice ?? ''),
+              formState: cascadeState,
+              ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+            }),
+          });
+          if (cascadeRes.ok) {
+            const cascadeData = await cascadeRes.json();
+            const cascadeResult = {};
+            if (cascadeData.updates) {
+              for (const [k, entry] of Object.entries(cascadeData.updates)) {
+                cascadeResult[k] = entry.value;
+                if (entry._identifier) cascadeResult[k + '$_identifier'] = entry._identifier;
+              }
+            }
+            if (cascadeData.combos) {
+              for (const [k, combo] of Object.entries(cascadeData.combos)) {
+                if (combo.selected != null) cascadeResult[k] = combo.selected;
+              }
+            }
+            if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
+          }
+        } catch {
+          // Cascade is best-effort — first callout result was already applied above
+        }
+      }
     } catch {
       // Callout is best-effort
     }
-  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api]);
+  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields]);
 
   const data = hook.editing || currentItem || {};
   const title = isNew
@@ -518,7 +593,7 @@ export function DetailView({
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{title}</h1>
             </div>
-            {breadcrumb && (
+            {!hideTopBar && breadcrumb && (
               <p className="text-sm text-muted-foreground mt-0.5">
                 {breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}{title ? ` / ${title}` : ''}
               </p>
@@ -526,19 +601,22 @@ export function DetailView({
           </div>
 
           {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
+          {!hideTopBar && (
+            <div className="flex-1 flex justify-center">
+              <div className="relative w-full max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder={ui('searchPlaceholder')}
+                  readOnly
+                  tabIndex={-1}
+                  className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
+                />
+                <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
+              </div>
             </div>
-          </div>
+          )}
+          {hideTopBar && <div className="flex-1" />}
 
           {/* Right: action icons */}
           <div className="flex items-center gap-1 shrink-0">
@@ -556,15 +634,15 @@ export function DetailView({
         </div>
       </div>}
 
-      {/* White content card with rounded top-left corner */}
-      <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
+      {/* Content card with rounded top-left corner */}
+      <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}
         {embedded ? (
           statusField && data[statusField] ? (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
                 <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                {statusFieldLabel || 'Document Status'}
+                {statusFieldLabel || ui('documentStatus')}
                 <span style={{ opacity: 0.4 }}>&middot;</span>
                 <span className="font-semibold">{statusEnumLabels?.[data[statusField]] || statusLabel(data[statusField])}</span>
               </span>
@@ -588,7 +666,7 @@ export function DetailView({
               return (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
                   <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
-                  {statusFieldLabel || 'Document Status'}
+                  {statusFieldLabel || ui('documentStatus')}
                   <span style={{ opacity: 0.4 }}>&middot;</span>
                   <span className="font-semibold">{statusEnumLabels?.[_s] || statusLabel(_s, dictionary)}</span>
                 </span>
@@ -654,7 +732,7 @@ export function DetailView({
               </button>
             )}
             {/* More actions */}
-            <div className="relative" ref={moreMenuRef}>
+            {!hideMoreMenu && <div className="relative" ref={moreMenuRef}>
               <button
                 onClick={() => setShowMoreMenu(v => !v)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -696,7 +774,7 @@ export function DetailView({
                   </div>
                 );
               })()}
-            </div>
+            </div>}
             {/* Extra action buttons from page */}
             {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
               action.visible !== false && (
@@ -738,7 +816,7 @@ export function DetailView({
                     className={btnClass}
                     onClick={() => hook.handleProcess?.(p)}
                   >
-                    {p.label}
+                    {tMenu(p.label)}
                   </Button>
                 );
               })}
@@ -787,17 +865,19 @@ export function DetailView({
 
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
-          <div className="flex border-b border-border/50 px-6 shrink-0">
+          <div className="flex items-center gap-1 px-6 py-2 shrink-0">
             {primaryTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
-                  activePrimaryTab === tab.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                  activePrimaryTab === tab.key
+                    ? 'bg-white border border-gray-200 shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
-                {tab.label}
+                {tMenu(tab.label)}
                 {activePrimaryTab === tab.key && (
                   <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
                 )}
@@ -821,43 +901,43 @@ export function DetailView({
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
-            {/* Principal header fields (horizontal row) */}
-            {/* Visibility logic is intentionally not applied here: principal fields must always
-                be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div style={{ padding: '24px 0 8px' }} className={embedded ? 'pointer-events-none' : ''}>
-              <Form
-                entity={entity}
-                data={data}
-                onChange={handleChangeWithCallout}
-                catalogs={catalogs}
-                layout="horizontal"
-                section="principal"
-                displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
-                api={api}
-                token={token}
-                apiBaseUrl={apiBaseUrl}
-              />
-            </div>
-
-            {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}`}>
-            <CollapsibleSection title={ui('moreDetails')}>
-              <div className={embedded ? 'pointer-events-none' : ''}>
+            {/* Principal + collapsed fields wrapped in a card */}
+            <div className={`rounded-2xl border border-gray-200/70 bg-white shadow-sm overflow-hidden${embedded ? ' pointer-events-none' : ''}`}>
+              <div className="p-6">
                 <Form
                   entity={entity}
                   data={data}
                   onChange={handleChangeWithCallout}
                   catalogs={catalogs}
                   layout="horizontal"
-                  section="collapsed"
-                  excludeFields={notesField ? [notesField] : []}
-                  displayLogic={displayLogic}
+                  section="principal"
+                  displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
                   api={api}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                 />
               </div>
-            </CollapsibleSection>
+
+              {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
+              {!sidebarContent && (
+                <CollapsibleSection title={ui('moreDetails')}>
+                  <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
+                    <Form
+                      entity={entity}
+                      data={data}
+                      onChange={handleChangeWithCallout}
+                      catalogs={catalogs}
+                      layout="horizontal"
+                      section="collapsed"
+                      excludeFields={notesField ? [notesField] : []}
+                      displayLogic={displayLogic}
+                      api={api}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                    />
+                  </div>
+                </CollapsibleSection>
+              )}
             </div>
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
@@ -884,7 +964,7 @@ export function DetailView({
                         ].join(' ')}
                       >
                         <List className="h-4 w-4" />
-                        {tab.label}
+                        {tMenu(tab.label)}
                         {tab.count != null && (
                           <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
                             {tab.count}
@@ -1021,7 +1101,7 @@ export function DetailView({
                               onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
                               style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
                             >
-                              + Add {detailLabel || 'Lines'}
+                              {ui('addEntity', { label: tMenu(detailLabel || 'Lines') })}
                             </button>
                           )}
                           {DetailExtraActions && (
@@ -1030,7 +1110,7 @@ export function DetailView({
                         </div>
                       )}
                       {allEntryFields.length > 0 && isNew && (
-                        <p className="text-xs text-muted-foreground mt-3">Save the header first to add lines.</p>
+                        <p className="text-xs text-muted-foreground mt-3">{ui('saveHeaderFirst')}</p>
                       )}
                     </div>
 
@@ -1038,7 +1118,7 @@ export function DetailView({
                     {DetailForm && (selectedLine || isClosingLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-foreground">{detailLabel || 'Line'} Detail</span>
+                          <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(detailLabel || 'Line') })}</span>
                           <button
                             onClick={closeLine}
                             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -1225,7 +1305,7 @@ export function DetailView({
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-foreground">{st.label} Detail</span>
+                          <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(st.label) })}</span>
                           <button
                             onClick={closeSecondaryLine}
                             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -1337,7 +1417,7 @@ export function DetailView({
                         onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        + Add {st.label}
+                        {ui('addEntity', { label: tMenu(st.label) })}
                       </button>
                     )}
                     </>
@@ -1423,19 +1503,19 @@ export function DetailView({
                       <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
                         {subtotal != null && (
                           <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="text-muted-foreground">{ui('subtotal')}</span>
                             <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
                           </div>
                         )}
                         {taxes != null && taxes !== 0 && (
                           <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">Tax</span>
+                            <span className="text-muted-foreground">{ui('tax')}</span>
                             <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
                           </div>
                         )}
                         {total != null && (
                           <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
-                            <span>Total</span>
+                            <span>{ui('total')}</span>
                             <span className="tabular-nums">{formatAmount(total, currency)}</span>
                           </div>
                         )}
@@ -1455,7 +1535,7 @@ export function DetailView({
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                     {customTabs.length > 0 && (
                       <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">Docs</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">{ui('docs')}</span>
                         <div className="flex-1">
                           {customTabs.map(ct => {
                             const TabComponent = ct.Component;
@@ -1476,14 +1556,14 @@ export function DetailView({
                     )}
                     {notesField && (
                       <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">Notes</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">{ui('notes')}</span>
                         <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
                             <textarea
                               value={data[notesField] || ''}
                               onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
                               onBlur={() => setNotesFocused(false)}
-                              placeholder="Description"
+                              placeholder={ui('description')}
                               rows={3}
                               autoFocus
                               className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
@@ -1496,7 +1576,7 @@ export function DetailView({
                               onFocus={() => setNotesFocused(true)}
                               className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
                             >
-                              {data[notesField] || <span className="text-muted-foreground/40">Description</span>}
+                              {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
                             </div>
                           )}
                         </div>
@@ -1509,8 +1589,8 @@ export function DetailView({
           </div>
           {sidePanel && (
             <div
-              className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4"
-              style={{ borderLeftWidth: '1px', ...sidePanelStyle }}
+              className="w-[280px] shrink-0 self-stretch px-4"
+              style={sidePanelStyle}
             >
               {typeof sidePanel === 'function'
                 ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
@@ -1520,7 +1600,7 @@ export function DetailView({
           </div>
         </div>
         {sidebarContent && (
-          <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto p-5 bg-gray-50/40">
+          <div className="w-96 shrink-0 overflow-y-auto pt-0 px-4 pb-5">
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}

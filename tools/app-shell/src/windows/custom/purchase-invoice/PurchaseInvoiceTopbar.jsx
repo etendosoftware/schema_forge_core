@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DocumentStatusPill from '@/components/contract-ui/DocumentStatusPill.jsx';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
+import { useUI } from '@/i18n';
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
@@ -9,6 +10,7 @@ function fmt(val, curr) {
 }
 
 export default function PurchaseInvoiceTopbar({ data, token, apiBaseUrl, onRefresh }) {
+  const ui = useUI();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   if (!data) return null;
@@ -43,7 +45,7 @@ export default function PurchaseInvoiceTopbar({ data, token, apiBaseUrl, onRefre
             onClick={handleBadgeClick}
           >
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10b981' }} />
-            Paid
+            {ui('statusPaid')}
             <span style={{ opacity: 0.4 }}>&middot;</span>
             <span className="font-semibold tabular-nums">{fmt(totalPaid, currency)}</span>
           </span>
@@ -54,7 +56,7 @@ export default function PurchaseInvoiceTopbar({ data, token, apiBaseUrl, onRefre
             onClick={handleBadgeClick}
           >
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#f59e0b' }} />
-            Pending
+            {ui('statusPending')}
             <span style={{ opacity: 0.4 }}>&middot;</span>
             <span className="font-semibold tabular-nums">{fmt(outstanding, currency)}</span>
           </span>

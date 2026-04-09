@@ -10,7 +10,7 @@ import catalogs from './mockCatalogs';
 
 import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
 
-const breadcrumb = 'Accounting / Assets';
+const breadcrumb = 'Finance / Assets';
 
 
 // @sf-generated-start summary:assets
