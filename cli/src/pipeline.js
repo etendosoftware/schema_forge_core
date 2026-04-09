@@ -474,7 +474,6 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
         }
         case 'generate-frontend': {
           const { generateAll } = await import('./generate-frontend.js');
-          const { preserveAndRegenerate } = await import('./preserve-custom-sections.js');
           const { readFile, writeFile, mkdir, access } = await import('node:fs/promises');
           const { resolve: resolvePath, dirname: dirnamePath } = await import('node:path');
           const { fileURLToPath: fileURLToPathMod } = await import('node:url');
@@ -539,26 +538,11 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           const outDir = `artifacts/${windowName}/generated/web/${windowName}`;
           await mkdir(outDir, { recursive: true });
 
-          let totalPreserved = 0;
-          let totalUnmatched = 0;
-
           for (const [filename, code] of Object.entries(files)) {
             // Skip internal marker keys
             if (filename.startsWith('__')) continue;
             const filePath = resolvePath(outDir, filename);
-
-            // Read existing content BEFORE overwriting (for .old backup)
-            const existingContent = await readFile(filePath, 'utf8').catch(() => null);
-
-            const { content, preserved, unmatched } = preserveAndRegenerate(filePath, code);
-            await writeFile(filePath, content, 'utf8');
-            totalPreserved += preserved.length;
-            totalUnmatched += unmatched.length;
-
-            // Save .old backup from the pre-overwrite content
-            if (unmatched.length > 0 && existingContent) {
-              await writeFile(`${filePath}.old`, existingContent, 'utf8');
-            }
+            await writeFile(filePath, code, 'utf8');
           }
 
           // Generate mockData.js (entity record data for local development)
@@ -566,15 +550,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           const mockDataPath = resolvePath(outDir, 'mockData.js');
           await writeFile(mockDataPath, generateMockDataFile(contract), 'utf8');
 
-          let summary = `  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`;
-          if (totalPreserved > 0 || totalUnmatched > 0) {
-            summary += ` (preserved ${totalPreserved} custom sections`;
-            if (totalUnmatched > 0) {
-              summary += `, ${totalUnmatched} unmatched (saved to .old)`;
-            }
-            summary += ')';
-          }
-          console.log(summary);
+          console.log(`  ✓ ${Object.keys(files).filter(k => !k.startsWith('__')).length} frontend components generated`);
 
           // Scaffold customForm stubs for secondary tabs that declare a custom form
           const secondaryTabsDecl = contract.frontendContract?.window?.secondaryTabs;

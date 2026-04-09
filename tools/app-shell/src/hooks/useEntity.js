@@ -39,7 +39,7 @@ function resolveSortKey(sortColumn, sampleRow) {
   return sortColumn;
 }
 
-export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy }) {
+export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -60,7 +60,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
     setHasMore(true);
     setLoading(true);
     const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}`, { headers })
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
@@ -74,14 +74,14 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
         setLoading(false);
       })
       .catch(() => { setItems([]); setHasMore(false); setLoading(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     const start = startRowRef.current;
     const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}`, { headers })
+    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
@@ -94,7 +94,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
         setLoadingMore(false);
       })
       .catch(() => { setLoadingMore(false); setHasMore(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -267,8 +267,9 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
         return null;
       }
       const data = await res.json().catch(() => null);
-      // Refresh children from backend
+      // Refresh children and header (totals recalculated by backend)
       fetchChildren(selected.id);
+      fetchById(selected.id);
       setSaveError(null);
       toast.success('Line added');
       return data?.response?.data?.[0] ?? data ?? true;
@@ -286,11 +287,15 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy 
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-  }, []);
+    // Refetch header to update totals after line edit
+    if (selected?.id) fetchById(selected.id);
+  }, [selected, fetchById]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
-  }, []);
+    // Refetch header to update totals after line deletion
+    if (selected?.id) fetchById(selected.id);
+  }, [selected, fetchById]);
 
   const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
     const saved = await handleSave();

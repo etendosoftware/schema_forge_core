@@ -978,11 +978,8 @@ describe('generateFormComponent - behavioral metadata', () => {
       'should emit readOnlyLogic arrow function from readOnlyLogic.js');
   });
 
-  it('includes custom slot for callout in generated form field config', () => {
+  it('does not include callout as a config property on the field line', () => {
     const code = generateFormComponent('order', behavioralContract);
-    assert.ok(code.includes('// @sf-custom-slot callout:LineNetCallout'),
-      'should include custom slot for callout');
-    // The callout should not appear as a config property on the field line itself
     const lineNetLine = code.split('\n').find(l => l.includes("key: 'lineNetAmount'"));
     assert.ok(lineNetLine, 'lineNetAmount field should exist');
     assert.ok(!lineNetLine.includes('callout'), 'callout should not appear as field config property');
@@ -1159,55 +1156,25 @@ const todoContract = {
   backendContract: { processEndpoints: [] },
 };
 
-describe('generateFormComponent - custom slots for callout and onChangeFunction', () => {
-  it('field with callout has custom slot with short class name', () => {
+describe('generateFormComponent - callout and onChangeFunction are not emitted as field config', () => {
+  it('field with callout does not have callout in the field config line', () => {
     const code = generateFormComponent('invoice', todoContract);
-    assert.ok(code.includes('// @sf-custom-slot callout:SE_Invoice_BPartner'),
-      'should include custom slot for callout');
+    const bpLine = code.split('\n').find(l => l.includes("key: 'businessPartner'"));
+    assert.ok(bpLine, 'businessPartner field should exist');
+    assert.ok(!bpLine.includes('callout'), 'callout should not appear as field config property');
   });
 
-  it('field with onChangeFunction has custom slot with function name', () => {
+  it('field with onChangeFunction does not have onchange in the field config line', () => {
     const code = generateFormComponent('invoice', todoContract);
-    assert.ok(code.includes('// @sf-custom-slot onchange:OB.APRM.AddPayment.glItemAmountOnChange'),
-      'should include custom slot for onChangeFunction');
+    const glLine = code.split('\n').find(l => l.includes("key: 'paidOut'"));
+    assert.ok(glLine, 'paidOut field should exist');
+    assert.ok(!glLine.includes('onChange'), 'onChangeFunction should not appear as field config property');
   });
 
-  it('field with both callout and onChangeFunction has both custom slots', () => {
+  it('no @sf-custom-slot comments are emitted', () => {
     const code = generateFormComponent('invoice', todoContract);
-    assert.ok(code.includes('// @sf-custom-slot callout:SL_Order_Amt'),
-      'should include callout custom slot for grandTotal');
-    assert.ok(code.includes('// @sf-custom-slot onchange:OB.APRM.AddPayment.totalOnChange'),
-      'should include onChangeFunction custom slot for grandTotal');
-  });
-
-  it('field with neither callout nor onChangeFunction has no custom slots', () => {
-    const code = generateFormComponent('invoice', todoContract);
-    const lines = code.split('\n');
-    const docNoIdx = lines.findIndex(l => l.includes("key: 'documentNo'"));
-    assert.ok(docNoIdx >= 0, 'documentNo field should exist');
-    // The line before documentNo should not be a custom slot for callout/onchange
-    const prevLine = lines[docNoIdx - 1];
-    assert.ok(!prevLine.includes('// @sf-custom-slot callout:') && !prevLine.includes('// @sf-custom-slot onchange:'),
-      'no callout/onchange custom slot should precede documentNo');
-  });
-
-  it('custom slots appear BEFORE the field config line', () => {
-    const code = generateFormComponent('invoice', todoContract);
-    const lines = code.split('\n');
-
-    // For businessPartner: callout slot should be directly before the field line
-    const bpFieldIdx = lines.findIndex(l => l.includes("key: 'businessPartner'"));
-    assert.ok(bpFieldIdx > 0, 'businessPartner field should exist');
-    assert.ok(lines[bpFieldIdx - 1].includes('// @sf-custom-slot callout:SE_Invoice_BPartner'),
-      'callout custom slot should be on the line before businessPartner field');
-
-    // For grandTotal: both slots should appear before the field line
-    const gtFieldIdx = lines.findIndex(l => l.includes("key: 'grandTotal'"));
-    assert.ok(gtFieldIdx > 1, 'grandTotal field should exist');
-    assert.ok(lines[gtFieldIdx - 2].includes('// @sf-custom-slot callout:'),
-      'callout custom slot should be 2 lines before grandTotal field');
-    assert.ok(lines[gtFieldIdx - 1].includes('// @sf-custom-slot onchange:'),
-      'onchange custom slot should be 1 line before grandTotal field');
+    assert.ok(!code.includes('// @sf-custom-slot'),
+      'no @sf-custom-slot comments should be in generated output');
   });
 });
 

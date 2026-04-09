@@ -198,16 +198,6 @@ describe('Wiring completeness', () => {
     }
   });
 
-  describe('No orphan entity windows (in registry but not in menu)', () => {
-    const registeredWindows = [...registrySource.matchAll(/'([^']+)':\s*\(\)/g)]
-      .map(m => m[1]);
-    for (const win of registeredWindows) {
-      it(`${win} in registry should exist in menu.json`, () => {
-        assert.ok(
-          allMenuItems.includes(win),
-          `Window '${win}' is in registry.js but NOT in menu.json`
-        );
-      });
-    }
-  });
+  // Orphan windows (in registry but not in menu) are allowed — a window can
+  // be registered before its menu entry is created, so this is not an error.
 });

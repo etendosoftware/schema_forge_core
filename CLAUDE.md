@@ -25,17 +25,35 @@ Agent definitions live in `.claude/agents/` — each agent wrote their own file 
 
 | Agent File | Name | Role | Style |
 |------------|------|------|-------|
-| developer-1.md | Catalyst | DEV | Exploratory |
-| developer-2.md | Forge | DEV | Exploratory |
-| developer-3.md | Catalyst | DEV | Exploratory |
-| developer-4.md | Forge | DEV | Exploratory |
+| workflow.md | Clerk | WORKFLOW | Mechanical |
+| schema-forge-developer.md | Developer (slots 1–4) | DEV — extends the tooling (new decisions features, generators, generic UI components) | Exploratory |
+| window-agent.md | Window Agent | PIPELINE RUNNER — processes windows using existing tooling (extract, decisions config, pipeline) | Systematic |
 | reviewer.md | Alex | REVIEW | Balanced |
 | qa.md | Sentinel | QA | Methodical |
 | documentarian.md | Sage | DOCS | Comprehensive |
 
 When spawning agents, use `subagent_type="general-purpose"` and include the agent identity/role in the prompt.
-Custom agent types from `.claude/agents/` are NOT valid subagent_type values.
+Pass `name="developer-1"` (or 2/3/4) to address each slot independently via `SendMessage`.
+The `.claude/agents/` files are NOT valid `subagent_type` values — always use `"general-purpose"`.
 Include the agent's name, role, and key rules in the prompt passed to the subagent.
+
+### Agent Dispatch Guide
+
+**Question to ask: Is the task changing the tool, or using the tool?**
+
+| User request | Agent | Why |
+|-------------|-------|-----|
+| "Process the Purchase Order window" | **Window Agent** | Running existing pipeline on a window |
+| "Extract and classify this new window" | **Window Agent** | Using existing extractors and classifiers |
+| "Change field X to readOnly in sales" | **Window Agent** | Editing decisions.json config values |
+| "Run the pipeline on all finance windows" | **Window Agent** | Batch pipeline execution |
+| "Add a new `statusBar` option type" | **Schema Forge Developer** | Extending `decisions.json` schema + generator |
+| "The generator emits broken JSX for header-only windows" | **Schema Forge Developer** | Fixing `generate-frontend.js` |
+| "Add a new custom component slot for sidebars" | **Schema Forge Developer** | New extension point in generator + docs |
+| "Build a generic component for document preview" | **Schema Forge Developer** | New shared UI component in `tools/app-shell/` |
+| "Create the feature branch and PR" | **Clerk** | Workflow operations |
+
+**Mixed tasks:** If a task requires both (e.g., "add a new layout type and apply it to sales"), split into two subtasks — developer first (build the feature), then window-agent (configure the window).
 </team>
 
 <pipeline>
@@ -68,10 +86,8 @@ This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broke
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
-## Branching, Worktrees & Merging
-See `docs/branch-workflow.md` for all rules on worktree isolation, local merge, PR targets, feature branch policy, and branch safety.
-
-**NEVER use squash merge.** Always use regular merge to preserve full commit history. Use `gh pr merge --merge`, never `--squash` or `--rebase`.
+## Branching & Merging
+Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full rules.
 
 ## Reject Cycle
 1. Coordinator receives rejection report
@@ -94,8 +110,8 @@ All commits MUST follow Etendo Git Police conventions as defined by the `/etendo
 - Always validate first line length (`<= 80 chars`) before committing.
 - Branch naming: `feature/ETP-1234`, `hotfix/#N-ETP-1234`, `epic/ETP-1234`
 
-## Resolving GitHub Issues (MANDATORY)
-GitHub issues are resolved by creating a **Jira feature task** inside the current epic, then working on a `feature/ETP-XXXX` branch (where `ETP-XXXX` is the Jira task code). The PR targets the epic branch and references the GitHub issue (e.g., `Fixes #141`). Use `/etendo-workflow-manager` to create the Jira task and branch — never invent branch names manually.
+## Resolving GitHub Issues
+Create a Jira task inside the current epic, then delegate branch + PR creation to Clerk. PR must reference the GitHub issue (e.g., `Fixes #141`).
 
 </pipeline_rules>
 
@@ -107,6 +123,7 @@ GitHub issues are resolved by creating a **Jira feature task** inside the curren
 - Manage rejections and re-assignments
 - Parallelize independent tasks
 - Synthesize and report to user
+- Delegate ALL workflow operations to Clerk (workflow agent)
 </what_i_do>
 
 <what_i_never_do>
@@ -117,7 +134,23 @@ GitHub issues are resolved by creating a **Jira feature task** inside the curren
 - Let agents work outside their assigned worktree
 - Commit, merge, or work directly on `main` or `develop` — ALL work happens on feature branches via PRs
 - Create PRs targeting `main`
+- Run `jira`, `git branch/checkout`, or `gh pr create` directly — ALWAYS delegate to Clerk
 </what_i_never_do>
+
+<workflow_delegation>
+## MANDATORY: Delegate to Clerk for all of these
+
+| Operation | Delegate to Clerk |
+|-----------|---------------------|
+| Create feature branch (one or both repos) | ✅ |
+| Transition Jira issue state | ✅ |
+| Assign Jira issue | ✅ |
+| Create / merge PR | ✅ |
+| Check epic status | ✅ |
+
+Clerk agent file: `.claude/agents/workflow.md`
+Spawn with: `subagent_type="general-purpose"` and include full Clerk identity + the operation to perform.
+</workflow_delegation>
 
 <communication>
 - Use SendMessage for direct communication with agents
@@ -175,9 +208,11 @@ All spec names are **kebab-case** via `toSpecName()` in `cli/src/push-to-neo.js`
 Artifact directory name = spec name. **NEVER** guess — use `toSpecName()` or read from artifact dir.
 When referring to a window in code or config, use kebab-case (`purchase-order`), not PascalCase or display name.
 
-## Custom Section Preservation
+## UI Customization
 
-Frontend regeneration preserves custom code via `@sf-custom-start/end` markers. See `cli/src/custom-section-markers.js`.
+**Any UI customization MUST survive pipeline re-runs.** `decisions.json` is the source of truth — if it's not declared there, a regeneration will wipe it. Never patch generated files directly.
+
+All UI extensions are declared in `decisions.json → window.*` — the generator reads them and emits the correct imports and props automatically. Available extension points: `statusBar` (declarative metric cards), `listKpiCards` (KPIs above the list), `headerExtra` (extra section below the form), `customComponents.topbarRight/bottomSection/sidePanel/headerTable` (structural slot overrides), `menuActions` (kebab menu items), `layoutType` (kanban/calendar/gallery/custom), `relatedDocuments`, `notesField`, `hideDeleteWhenComplete`. Custom component files live in `tools/app-shell/src/windows/custom/{window}/` and are never overwritten by the pipeline. Full reference with decision tree and real examples: `docs/ui-customization.md`.
 
 ## Window Template Extensibility
 
@@ -187,11 +222,37 @@ See `docs/window-templates.md` for layout types (kanban, calendar, custom), conf
 
 **NEVER manually edit generated output files** (e.g., files in `artifacts/*/generated/`). All fixes must be made at the **pipeline level** — generators (`cli/src/generate-*.js`), extractors (`cli/src/extract-*.js`), or shared components (`tools/app-shell/src/`) — so they apply to ALL windows, not just the current one. Generated files are outputs, not sources.
 
+## Internationalization (i18n)
+
+**Every user-visible string MUST be translated.** The app is primarily used in Spanish by real clients. Hardcoded English strings are treated as bugs. See `docs/i18n-guide.md` for the full reference (hooks, locale JSON structure, rules for adding keys). Key hooks: `useUI()` for generic labels, `useLabel()` for AD fields, `useMenuLabel()` for menus/tabs. All new keys must be added to BOTH `en_US.json` and `es_ES.json`.
+
 ## Testing
 
 Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OBBaseTest), E2E (Playwright).
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
+
+## Static Analysis (SonarQube)
+
+Run `cli/sonar-check.sh` to analyze specific Java files with SonarQube and get results inline.
+Requires `SONAR_TOKEN` and `SONAR_HOST_URL` exported in `~/.zshrc` or `~/.bashrc`, and `sonar-scanner` CLI installed.
+
+```bash
+# Analyze specific files
+./cli/sonar-check.sh path/to/SomeHandler.java path/to/OtherHandler.java
+
+# Analyze with glob
+./cli/sonar-check.sh path/to/Widget*.java
+
+# Quiet mode (suppress scanner output, show only results)
+./cli/sonar-check.sh -q path/to/*.java
+
+# Custom project key
+./cli/sonar-check.sh --project-key my-project path/to/*.java
+```
+
+The script scans, waits for the report to process, and prints issues sorted by severity. Exit code 0 = clean, 1 = issues found.
+**Delegate to Alex (Reviewer) or Sentinel (QA)** for running static analysis as part of the pipeline.
 
 ## Decisions
 
@@ -224,17 +285,6 @@ Legacy override: `make deploy LEGACY_DEPLOY=1 MODULE_WEB={path}`. No Tomcat rest
 ## NEO Headless
 
 **CRITICAL:** After running `push-to-neo.js`, always remind to run `./gradlew export.database` in Etendo root. Without this, NEO config only lives in DB and won't survive rebuild.
-
-## Developer Tools (MANDATORY)
-
-The following CLI tools are **required** for workflow operations. If any tool is missing when needed, ask the user to install it before proceeding. See `docs/developer-tools.md` for installation instructions and usage.
-
-| Tool | Required for |
-|------|-------------|
-| **gh** (GitHub CLI) | PRs, issues, checks, merges, GitHub API |
-| **jira** (Jira CLI) | Creating/viewing issues, epics, sprint management |
-| **gws** (Google Workspace CLI) | Google Chat notifications, Drive, Gmail |
-| **rtk** (Rust Token Killer) | Automatic via hooks — no manual usage needed |
 
 ## Etendo AD Database Conventions
 

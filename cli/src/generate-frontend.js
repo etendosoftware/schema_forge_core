@@ -104,9 +104,12 @@ function mapFormFieldType(field) {
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid);
+  const gridFields = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
+
+  // Collect known cell type render helpers needed by this table
+  const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
@@ -115,17 +118,37 @@ export function generateTableComponent(entityName, contract) {
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const badgePart = f.badge ? ', badge: true' : '';
+    const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart} },`;
+    const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
-  return `import { DataTable } from '@/components/contract-ui';
+  // Render helper functions for custom cell types
+  const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
+function renderDepreciationProgress(row) {
+  const pct = row.assetValue > 0
+    ? Math.min(100, Math.round(((row.depreciatedValue ?? 0) / row.assetValue) * 100))
+    : null;
+  if (pct == null) return null;
+  const color = pct === 100 ? '#10b981' : '#f59e0b';
+  return (
+    <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
+      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all" style={{ width: \`\${pct}%\`, background: color }} />
+      </div>
+      <span className="text-xs tabular-nums w-8 text-right" style={{ color: '#6b7280' }}>{pct}%</span>
+    </div>
+  );
+}
+` : '';
 
+  return `import { DataTable } from '@/components/contract-ui';
+${depreciationProgressHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -136,12 +159,9 @@ const filters = [${filtersArray}];
 
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -156,7 +176,7 @@ export function generateFormComponent(entityName, contract) {
   const colsProp = formCols != null ? ` cols={${formCols}}` : '';
   // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
   const formFields = entity.fields
-    .filter(f => f.form && f.type !== 'button')
+    .filter(f => f.form && f.type !== 'button' && f.visibility !== 'discarded')
     .sort((a, b) => {
       if (a.seq != null && b.seq != null) return a.seq - b.seq;
       if (a.seq != null) return -1;
@@ -178,6 +198,8 @@ export function generateFormComponent(entityName, contract) {
     }
     return 'other';
   });
+
+  const hasCollapsed = fieldSections.some(s => s === 'collapsed');
 
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
@@ -214,15 +236,7 @@ export function generateFormComponent(entityName, contract) {
         readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
       }
     }
-    // Custom slots for callout and onChangeFunction behavioral hints
     const slotLines = [];
-    if (f.callout) {
-      const calloutId = f.callout.className.replace(/.*\./, '');
-      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`callout:${calloutId}`)}`);
-    }
-    if (f.onChangeFunction) {
-      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
-    }
     const optionsPart = (type === 'select' && f.enumValues?.length)
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
@@ -247,12 +261,10 @@ ${MARKERS.GENERATED_END(`fields:${entityName}`)}
 
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
+${compName}.hasCollapsedFields = ${hasCollapsed};
 ${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -521,10 +533,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
+  const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
+  const listViewOptions = windowConfig.listViewOptions ?? null;
+  const listBaseFilter = windowConfig.listBaseFilter ?? null;
+  const quickFilters = windowConfig.quickFilters ?? null;
+  const contentBg = windowConfig.contentBg ?? null;
+  const hideListFilters = windowConfig.hideListFilters ?? false;
+  const hideLink = windowConfig.hideLink ?? false;
+  const hideEyeCount = windowConfig.hideEyeCount ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
   const detailSortBy = windowConfig.detailSortBy ?? null;
+  const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
 
   // Detect secondary child entities for additional tabs
@@ -537,6 +559,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       .sort((a, b) => (a[1].tabOrder ?? 99) - (b[1].tabOrder ?? 99))
       .map(([key, cfg]) => {
         const isFormTab = cfg.tabMode === 'form-only';
+        const isPanelTab = !!cfg.customPanel;
+        const PanelName = cfg.customPanel ?? null;
         const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
         const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
@@ -554,7 +578,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, FormName, TableName, addLineEntries };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -595,6 +619,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const specName = contract.apiPrediction?.specName;
   const secondaryTabsImports = secondaryTabDefs
     .map(t => {
+      if (t.isPanelTab && specName) {
+        return `import ${t.PanelName} from '@/windows/custom/${specName}/${t.PanelName}';`;
+      }
       const formImportPath = (t.isCustomForm && specName)
         ? `@/windows/custom/${specName}/${t.FormName}`
         : `./${t.FormName}`;
@@ -611,6 +638,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
     if (t.isFormTab) {
       return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName} },`;
+    }
+    if (t.isPanelTab) {
+      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName} },`;
     }
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
@@ -636,8 +666,30 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
 
-  // hidePrint prop
+  // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+  // hideMoreMenu prop (DetailView)
+  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
+  // hideMoreDetails prop (DetailView)
+  const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
+  // listViewOptions props
+  const listViewOptionsProp = listViewOptions
+    ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
+    : '';
+  const listBaseFilterProp = listBaseFilter
+    ? `\n      baseFilter="${listBaseFilter}"`
+    : '';
+  const quickFiltersProp = quickFilters
+    ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
+    : '';
+  // contentBg prop
+  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+  // ListView toolbar props
+  const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
+  const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
+  const hideListFiltersProp = hideListFilters ? '\n      hideListFilters' : '';
+  const hideLinkProp = hideLink ? '\n      hideLink' : '';
+  const hideEyeCountProp = hideEyeCount ? '\n      hideEyeCount' : '';
 
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
@@ -649,6 +701,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   if (customComponents.topbarRight) {
     customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
+  }
+  if (customComponents.topbarExtra) {
+    customComponentImports.push(`import ${customComponents.topbarExtra} from '../../../custom/${customComponents.topbarExtra}';`);
+    customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
     customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
@@ -729,13 +785,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             recordId={recordId}
             data={data}
             token={props.token}
-            apiBaseUrl={api.baseUrl}
+            apiBaseUrl={props.apiBaseUrl}
           />
         )}`
     : '';
 
   // detailSortBy prop
   const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
+
+  // titleField prop
+  const titleFieldProp = titleField ? `\n        titleField="${titleField}"` : '';
 
   // salesTheme prop
   const salesThemeProp = salesTheme ? '\n        salesTheme' : '';
@@ -749,6 +808,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     listKpiCardsImport = `import ${kpiComp} from '@/windows/custom/${specName}/${kpiComp}';\n`;
     listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
   }
+
+  // bulkActions → render function prop in ListView
+  const bulkActionsProp = customComponents.bulkActions
+    ? `\n      bulkActions={(ctx) => <${customComponents.bulkActions} {...ctx} />}`
+    : '';
 
   // headerExtra → formFooter prop
   const headerExtraConfig = windowConfig.headerExtra ?? null;
@@ -784,6 +848,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // disableProcessedLock support
   const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
 
+  // statusEnumLabels support
+  const statusEnumLabelsConfig = windowConfig.statusEnumLabels ?? null;
+  const statusEnumLabelsProp = statusEnumLabelsConfig
+    ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
+    : '';
+
   return `import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
@@ -806,7 +876,6 @@ ${summaryArray}
 const statusField = ${statusFieldLine};
 ${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
-${MARKERS.CUSTOM_SLOT(`extraBadges:${headerEntity}`)}
 ${MARKERS.GENERATED_START(`extraBadges:${headerEntity}`)}
 const extraBadges = [];
 ${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
@@ -837,7 +906,6 @@ ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   ${customComponents.newRecordComponent ? `if (recordId === 'new') {
     return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
   }` : ''}
@@ -859,7 +927,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -869,17 +937,15 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
-      entityLabel="${windowConfig.name || pluralize(entityLabel)}"
+      entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
       {...props}
     />
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -903,12 +969,9 @@ const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  ${MARKERS.CUSTOM_SLOT('hooks:App')}
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
 }
 ${MARKERS.GENERATED_END('component:App')}
-
-${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
 }
 
