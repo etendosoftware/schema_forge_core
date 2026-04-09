@@ -3,7 +3,7 @@
   "window": {
     "category": "reference",
     "name": "Product",
-    "breadcrumb": "Product",
+    "breadcrumb": "Inventory / Product",
     "layoutType": "gallery",
     "sidebarLayout": true,
     "hidePrint": true,

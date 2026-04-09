@@ -8,7 +8,7 @@ import catalogs from './mockCatalogs';
 import ProductGallery from '@/windows/custom/product/ProductGallery';
 import ProductSidebar from '@/windows/custom/product/ProductSidebar';
 
-const breadcrumb = 'Product';
+const breadcrumb = 'Inventory / Product';
 
 
 // @sf-generated-start summary:product
