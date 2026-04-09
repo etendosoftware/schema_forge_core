@@ -1232,7 +1232,7 @@ export function DetailView({
                     {st.Form && !st.Panel && (selectedSecondaryLine?._tabKey === st.key || isClosingSecondaryLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingSecondaryLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-foreground">{st.label} Detail</span>
+                          <span className="text-sm font-medium text-foreground">{ui(st.label)} {ui('detail')}</span>
                           <button
                             onClick={closeSecondaryLine}
                             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -1344,7 +1344,7 @@ export function DetailView({
                         onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        + Add {st.label}
+                        + {ui('add')} {ui(st.label)}
                       </button>
                     )}
                     </>

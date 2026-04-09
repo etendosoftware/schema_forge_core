@@ -485,8 +485,8 @@
       "description": "Especifica si el widget puede ser maximizado"
     },
     "Title": {
-      "label": "Título del Widget",
-      "description": "Título del Widget"
+      "label": "Posición",
+      "description": "Posición del contacto"
     },
     "Showfieldtitle": {
       "label": "Mostrar Título de Campo",
@@ -7693,7 +7693,7 @@
       "description": "Nombre del contacto"
     },
     "Lastname": {
-      "label": "Apellidos",
+      "label": "Apellido",
       "description": "Apellido del contacto"
     },
     "FixMonthDay2": {
@@ -16555,6 +16555,8 @@
     "emailColumn": "Correo electrónico",
     "typeColumn": "Tipo",
     "phoneColumn": "Teléfono",
+    "detail": "Detalle",
+    "add": "Agregar",
     "All": "Todos",
     "Customers": "Clientes",
     "Vendors": "Proveedores",
