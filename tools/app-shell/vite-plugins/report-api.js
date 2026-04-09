@@ -255,6 +255,12 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
         sql = sql.replace(new RegExp(`__${key.toUpperCase()}__`, 'g'), escaped);
       }
     }
+    // Apply contract defaults for any remaining unreplaced tokens (e.g. number params cleared by user)
+    for (const p of (contract.parameters || [])) {
+      if (p.default !== undefined && p.default !== null && p.default !== '') {
+        sql = sql.replace(new RegExp(`__${p.name.toUpperCase()}__`, 'g'), String(p.default));
+      }
+    }
     // Convert equality checks with comma-separated values to IN clauses
     sql = sql.replace(/=\s*'([^']*,[^']*)'/g, (match, ids) => {
       const inList = ids.split(',').map(id => `'${id.trim()}'`).join(',');
@@ -327,6 +333,7 @@ export default function reportApiPlugin() {
           const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100));
           const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
           const selectedOrgId = (url.searchParams.get('selectedOrgId') || '').trim();
+          const selectedAcctSchemaId = (url.searchParams.get('selectedAcctSchemaId') || '').trim();
           const selectedWarehouseIds = (url.searchParams.get('warehouseIds') || '')
             .split(',')
             .map(s => s.trim())
@@ -371,9 +378,9 @@ export default function reportApiPlugin() {
                   select: `SELECT ad_org_id AS id, name, name AS label`
                 },
                 'account': {
-                  fromWhere: `FROM c_elementvalue WHERE isactive='Y' AND issummary='N' ${byClient('ad_client_id')} AND (value ILIKE $1 OR name ILIKE $1)`,
-                  orderBy: 'ORDER BY value',
-                  select: `SELECT c_elementvalue_id AS id, value || ' - ' || name AS name, value || ' - ' || name AS label`
+                  fromWhere: `FROM c_elementvalue ev WHERE ev.isactive='Y' AND ev.issummary='N' ${byClient('ev.ad_client_id')} AND (ev.value ILIKE $1 OR ev.name ILIKE $1)`,
+                  orderBy: 'ORDER BY ev.value',
+                  select: `SELECT ev.value AS id, ev.value || ' - ' || ev.name AS name, ev.value || ' - ' || ev.name AS label`
                 },
                 'accounting': {
                   fromWhere: `FROM c_acctschema WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
@@ -385,6 +392,11 @@ export default function reportApiPlugin() {
                   orderBy: 'ORDER BY name',
                   select: `SELECT c_acctschema_id AS id, name, name AS label`
                 },
+                'year': {
+                  fromWhere: `FROM c_year y JOIN c_calendar c ON c.c_calendar_id = y.c_calendar_id WHERE y.isactive='Y' ${byClient('y.ad_client_id')} AND (y.year || ' (' || c.name || ')') ILIKE $1`,
+                  orderBy: 'ORDER BY y.year DESC',
+                  select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`
+                },
               };
               const queryCfg = queries[type];
               if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
@@ -392,6 +404,13 @@ export default function reportApiPlugin() {
               const whereFragments = [queryCfg.fromWhere];
               // $1 = search; additional dynamic params start at $2
               const values = [search];
+
+              if (type === 'year' && selectedOrgId) {
+                values.push(selectedOrgId);
+                whereFragments.push(
+                  `AND EXISTS (SELECT 1 FROM ad_org o WHERE o.c_calendar_id = c.c_calendar_id AND o.ad_org_id = $${values.length})`
+                );
+              }
 
               if (type === 'warehouse') {
                 if (selectedOrgId) {
@@ -430,6 +449,11 @@ export default function reportApiPlugin() {
                     `AND EXISTS (SELECT 1 FROM m_storage_detail sd JOIN m_locator l ON l.m_locator_id = sd.m_locator_id WHERE sd.m_product_id = m_product.m_product_id AND l.ad_org_id = ANY($${values.length}))`
                   );
                 }
+              }
+
+              if (type === 'account' && selectedAcctSchemaId) {
+                values.push(selectedAcctSchemaId);
+                whereFragments.push(`AND ev.c_element_id IN (SELECT c_element_id FROM c_acctschema_element WHERE c_acctschema_id = $${values.length} AND c_element_id IS NOT NULL)`);
               }
 
               const fullFromWhere = whereFragments.join(' ');
@@ -570,7 +594,7 @@ export default function reportApiPlugin() {
                 const helperFn = new Function(helpersCode + `
                   var _out = {};
                   ['isGroupBreak','resetGroupTracking','formatDate','formatCurrency',
-                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay']
+                   'formatBoolean','formatNumber','ifCond','eq','sumField','formatDateDisplay','sumRowsByCategory']
                   .forEach(function(n) { try { var f = eval(n); if (typeof f === 'function') _out[n] = f; } catch(e) {} });
                   return _out;
                 `);
@@ -595,7 +619,7 @@ export default function reportApiPlugin() {
 
             if (recipe === 'chrome-pdf') {
               payload.template.chrome = {
-                landscape: contract.orientation === 'landscape',
+                landscape: contract.orientation === 'landscape' || params.showLandscape === 'true',
                 format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm',
               };
             }

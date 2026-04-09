@@ -136,12 +136,9 @@ const filters = [${filtersArray}];
 
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -214,15 +211,7 @@ export function generateFormComponent(entityName, contract) {
         readOnlyLogicPart = `, readOnlyLogic: (record) => ${f.readOnlyLogic.js}`;
       }
     }
-    // Custom slots for callout and onChangeFunction behavioral hints
     const slotLines = [];
-    if (f.callout) {
-      const calloutId = f.callout.className.replace(/.*\./, '');
-      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`callout:${calloutId}`)}`);
-    }
-    if (f.onChangeFunction) {
-      slotLines.push(`  ${MARKERS.CUSTOM_SLOT(`onchange:${f.onChangeFunction.name}`)}`);
-    }
     const optionsPart = (type === 'select' && f.enumValues?.length)
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
@@ -247,12 +236,9 @@ ${MARKERS.GENERATED_END(`fields:${entityName}`)}
 
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -758,6 +744,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
   }
 
+  // bulkActions → render function prop in ListView
+  const bulkActionsProp = customComponents.bulkActions
+    ? `\n      bulkActions={(ctx) => <${customComponents.bulkActions} {...ctx} />}`
+    : '';
+
   // headerExtra → formFooter prop
   const headerExtraConfig = windowConfig.headerExtra ?? null;
   let formFooterImport = '';
@@ -814,7 +805,6 @@ ${summaryArray}
 const statusField = ${statusFieldLine};
 ${MARKERS.GENERATED_END(`summary:${headerEntity}`)}
 
-${MARKERS.CUSTOM_SLOT(`extraBadges:${headerEntity}`)}
 ${MARKERS.GENERATED_START(`extraBadges:${headerEntity}`)}
 const extraBadges = [];
 ${MARKERS.GENERATED_END(`extraBadges:${headerEntity}`)}
@@ -845,7 +835,6 @@ ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {
-  ${MARKERS.CUSTOM_SLOT(`hooks:${compName}`)}
   ${customComponents.newRecordComponent ? `if (recordId === 'new') {
     return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
   }` : ''}
@@ -880,14 +869,12 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${bulkActionsProp}
       {...props}
     />
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
-
-${MARKERS.CUSTOM_SLOT(`section:${compName}-custom`)}
 `;
 }
 
@@ -911,12 +898,9 @@ const windowMeta = { category: '${category}', name: '${windowName}' };
 ${apiBlock}
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  ${MARKERS.CUSTOM_SLOT('hooks:App')}
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
 }
 ${MARKERS.GENERATED_END('component:App')}
-
-${MARKERS.CUSTOM_SLOT('section:App-custom')}
 `;
 }
 

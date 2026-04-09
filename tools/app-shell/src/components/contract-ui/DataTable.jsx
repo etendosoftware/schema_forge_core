@@ -668,9 +668,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
     if (col.type === 'date') {
       const dotColor = getDateDotColor(row[col.key]);
-      const formatted = row[col.key]
-        ? new Date(row[col.key]).toLocaleDateString()
-        : '\u2014';
+      const raw = row[col.key];
+      // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
+      const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
+      const formatted = parsed && !isNaN(parsed) ? parsed.toLocaleDateString() : '\u2014';
       return (
         <span className="inline-flex items-center gap-1.5">
           {formatted}
