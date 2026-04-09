@@ -107,6 +107,8 @@ export function DetailView({
   menuActions = [],
   hideDeleteWhenComplete = false,
   hidePrint = false,
+  hideMoreMenu = false,
+  hideMoreDetails = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
@@ -654,7 +656,7 @@ export function DetailView({
               </button>
             )}
             {/* More actions */}
-            <div className="relative" ref={moreMenuRef}>
+            {!hideMoreMenu && <div className="relative" ref={moreMenuRef}>
               <button
                 onClick={() => setShowMoreMenu(v => !v)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -696,7 +698,7 @@ export function DetailView({
                   </div>
                 );
               })()}
-            </div>
+            </div>}
             {/* Extra action buttons from page */}
             {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
               action.visible !== false && (
@@ -839,7 +841,8 @@ export function DetailView({
               />
             </div>
 
-            {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
+            {/* Collapsible secondary header fields (hidden if no collapsed fields or hideMoreDetails) */}
+            {!hideMoreDetails && (
             <div className={`${sidePanel ? 'mt-2' : 'mt-6'}`}>
             <CollapsibleSection title={ui('moreDetails')}>
               <div className={embedded ? 'pointer-events-none' : ''}>
@@ -859,6 +862,7 @@ export function DetailView({
               </div>
             </CollapsibleSection>
             </div>
+            )}
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (

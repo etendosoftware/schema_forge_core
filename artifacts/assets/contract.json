@@ -9,15 +9,18 @@
       "primaryEntity": "assets",
       "category": "accounting",
       "sidebarLayout": true,
-      "secondaryTabs": {
-        "assetAcct": {
-          "label": "Accounting",
-          "tabOrder": 1
-        }
-      },
+      "secondaryTabs": {},
       "detailSortBy": "sEQNoAsset asc",
       "disableProcessedLock": true,
-      "layoutType": "default"
+      "layoutType": "default",
+      "breadcrumb": "Assets",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "contentBg": "bg-slate-50",
+      "hideListFilters": true,
+      "hideLink": true,
+      "hideEyeCount": true,
+      "hideMoreDetails": true
     },
     "entities": {
       "assets": {
@@ -74,7 +77,7 @@
             "label": "Document No.",
             "type": "string",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "discarded",
             "required": false,
             "grid": true,
             "form": true
@@ -118,7 +121,7 @@
             "label": "Product",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false,
             "grid": false,
             "form": true,
@@ -498,11 +501,11 @@
             "grid": true,
             "form": false,
             "defaultValue": "N",
-            "badge": true,
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
               "evaluable": true
-            }
+            },
+            "cellType": "depreciationProgress"
           },
           {
             "name": "project",
@@ -511,7 +514,7 @@
             "label": "Project",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false,
             "grid": false,
             "form": true,

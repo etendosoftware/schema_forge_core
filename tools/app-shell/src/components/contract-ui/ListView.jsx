@@ -23,6 +23,11 @@ export function ListView({
   breadcrumb,
   galleryRenderer,
   hideCreate = false,
+  hidePrint = false,
+  hideMoreMenu = false,
+  hideListFilters = false,
+  hideLink = false,
+  hideEyeCount = false,
   headerContent = null,
   api = null,
   bulkActions = null,
@@ -101,14 +106,16 @@ export function ListView({
           <div className="shrink-0">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{label}</h1>
-              {!hook.loading && (
+              {!hideEyeCount && !hook.loading && (
                 <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 text-xs font-medium text-muted-foreground bg-white/60 rounded-full">
                   {hook.items.length}
                 </span>
               )}
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </button>
+              {!hideMoreMenu && (
+                <button className="text-muted-foreground hover:text-foreground">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              )}
             </div>
             {breadcrumb && (
               <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}</p>
@@ -182,27 +189,31 @@ export function ListView({
           </div>
         ) : (
           <div className="flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
-                {ui('allStatuses')}
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {ui('lastYear')}
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <SlidersHorizontal className="h-4 w-4" />
-              </button>
-            </div>
+            {!hideListFilters ? (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
+                  {ui('allStatuses')}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {ui('lastYear')}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+                <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </button>
+              </div>
+            ) : <div />}
             <div className="flex items-center gap-2">
               <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                 <Search className="h-4 w-4" />
               </button>
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <Link2 className="h-4 w-4" />
-              </button>
+              {!hideLink && (
+                <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+                  <Link2 className="h-4 w-4" />
+                </button>
+              )}
               <div className="relative" ref={sortBtnRef}>
                 <button
                   onClick={() => setShowSortPopover(v => !v)}
@@ -254,25 +265,29 @@ export function ListView({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 ml-1">
-                <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                  <Eye className="h-4 w-4" />
-                </button>
-                {!hook.loading && (
-                  <span className="text-sm text-muted-foreground tabular-nums">
-                    {hook.items.length}
-                  </span>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white"
-                onClick={() => setShowReport(true)}
-              >
-                <Printer className="h-3.5 w-3.5" />
-                {ui('print')}
-              </Button>
+              {!hideEyeCount && (
+                <div className="flex items-center gap-1.5 ml-1">
+                  <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  {!hook.loading && (
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {hook.items.length}
+                    </span>
+                  )}
+                </div>
+              )}
+              {!hidePrint && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white"
+                  onClick={() => setShowReport(true)}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  {ui('print')}
+                </Button>
+              )}
               {/* View toggle */}
               {galleryRenderer && (
                 <div className="inline-flex items-center border border-border rounded-lg overflow-hidden">

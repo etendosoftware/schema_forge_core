@@ -104,9 +104,12 @@ function mapFormFieldType(field) {
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid);
+  const gridFields = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
+
+  // Collect known cell type render helpers needed by this table
+  const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
 
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
@@ -115,17 +118,37 @@ export function generateTableComponent(entityName, contract) {
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const badgePart = f.badge ? ', badge: true' : '';
+    const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart} },`;
+    const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
 
-  return `import { DataTable } from '@/components/contract-ui';
+  // Render helper functions for custom cell types
+  const depreciationProgressHelper = neededCellTypes.has('depreciationProgress') ? `
+function renderDepreciationProgress(row) {
+  const pct = row.assetValue > 0
+    ? Math.min(100, Math.round(((row.depreciatedValue ?? 0) / row.assetValue) * 100))
+    : null;
+  if (pct == null) return null;
+  const color = pct === 100 ? '#10b981' : '#f59e0b';
+  return (
+    <div className="flex items-center gap-1.5" style={{ minWidth: 80 }}>
+      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all" style={{ width: \`\${pct}%\`, background: color }} />
+      </div>
+      <span className="text-xs tabular-nums w-8 text-right" style={{ color: '#6b7280' }}>{pct}%</span>
+    </div>
+  );
+}
+` : '';
 
+  return `import { DataTable } from '@/components/contract-ui';
+${depreciationProgressHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -153,7 +176,7 @@ export function generateFormComponent(entityName, contract) {
   const colsProp = formCols != null ? ` cols={${formCols}}` : '';
   // Sort by seq override if present (stable sort: fields without seq keep natural DB order)
   const formFields = entity.fields
-    .filter(f => f.form && f.type !== 'button')
+    .filter(f => f.form && f.type !== 'button' && f.visibility !== 'discarded')
     .sort((a, b) => {
       if (a.seq != null && b.seq != null) return a.seq - b.seq;
       if (a.seq != null) return -1;
@@ -507,6 +530,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
+  const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
+  const contentBg = windowConfig.contentBg ?? null;
+  const hideListFilters = windowConfig.hideListFilters ?? false;
+  const hideLink = windowConfig.hideLink ?? false;
+  const hideEyeCount = windowConfig.hideEyeCount ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
@@ -622,8 +651,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
 
-  // hidePrint prop
+  // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+  // hideMoreMenu prop (DetailView)
+  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
+  // hideMoreDetails prop (DetailView)
+  const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
+  // contentBg prop (DetailView)
+  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+  // ListView toolbar props
+  const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
+  const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
+  const hideListFiltersProp = hideListFilters ? '\n      hideListFilters' : '';
+  const hideLinkProp = hideLink ? '\n      hideLink' : '';
+  const hideEyeCountProp = hideEyeCount ? '\n      hideEyeCount' : '';
 
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
@@ -848,7 +889,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -861,7 +902,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${bulkActionsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
       {...props}
     />
   );

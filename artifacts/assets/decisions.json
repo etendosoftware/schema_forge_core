@@ -3,15 +3,18 @@
   "window": {
     "category": "accounting",
     "name": "Assets",
+    "breadcrumb": "Assets",
+    "hidePrint": true,
+    "hideMoreMenu": true,
+    "contentBg": "bg-slate-50",
+    "hideListFilters": true,
+    "hideLink": true,
+    "hideEyeCount": true,
+    "hideMoreDetails": true,
     "detailSortBy": "sEQNoAsset asc",
     "sidebarLayout": true,
     "disableProcessedLock": true,
-    "secondaryTabs": {
-      "assetAcct": {
-        "label": "Accounting",
-        "tabOrder": 1
-      }
-    }
+    "secondaryTabs": {}
   },
   "entities": {
     "assets": {
@@ -30,13 +33,12 @@
           "reference": "AssetGroup"
         },
         "documentNo": {
-          "visibility": "readOnly",
-          "grid": true
+          "visibility": "discarded",
+          "reason": "Internal sequential number — not relevant for users in simplified UI"
         },
         "product": {
-          "inputMode": "search",
-          "reference": "Product",
-          "popup": true
+          "visibility": "discarded",
+          "reason": "Not included in this iteration per UX feedback"
         },
         "summaryLevel": {
           "visibility": "discarded",
@@ -119,13 +121,12 @@
         "fullyDepreciated": {
           "grid": true,
           "searchable": true,
-          "badge": true,
+          "cellType": "depreciationProgress",
           "form": false
         },
         "project": {
-          "inputMode": "search",
-          "reference": "Project",
-          "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
+          "visibility": "discarded",
+          "reason": "Projects not included in this iteration per UX feedback"
         },
         "currency": {
           "readOnlyLogicJs": "Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0"

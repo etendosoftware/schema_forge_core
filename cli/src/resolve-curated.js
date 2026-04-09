@@ -542,6 +542,24 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.hidePrint) {
     schema.window.hidePrint = true;
   }
+  if (windowDecisions.hideMoreMenu) {
+    schema.window.hideMoreMenu = true;
+  }
+  if (windowDecisions.hideMoreDetails) {
+    schema.window.hideMoreDetails = true;
+  }
+  if (windowDecisions.contentBg !== undefined) {
+    schema.window.contentBg = windowDecisions.contentBg;
+  }
+  if (windowDecisions.hideListFilters) {
+    schema.window.hideListFilters = true;
+  }
+  if (windowDecisions.hideLink) {
+    schema.window.hideLink = true;
+  }
+  if (windowDecisions.hideEyeCount) {
+    schema.window.hideEyeCount = true;
+  }
   if (windowDecisions.breadcrumb !== undefined) {
     schema.window.breadcrumb = windowDecisions.breadcrumb;
   }

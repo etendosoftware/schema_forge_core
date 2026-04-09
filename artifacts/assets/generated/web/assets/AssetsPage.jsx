@@ -4,24 +4,21 @@ import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
 import AmortizationLineTable from './AmortizationLineTable';
 import AmortizationLineForm from './AmortizationLineForm';
-import AssetAcctTable from './AssetAcctTable';
-import AssetAcctForm from './AssetAcctForm';
 import catalogs from './mockCatalogs';
 
 import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
 
-const breadcrumb = 'Accounting / Assets';
+const breadcrumb = 'Assets';
 
 
 // @sf-generated-start summary:assets
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = null;
 // @sf-generated-end summary:assets
 
-// @sf-custom-slot extraBadges:assets
 // @sf-generated-start extraBadges:assets
 const extraBadges = [];
 // @sf-generated-end extraBadges:assets
@@ -204,7 +201,6 @@ const api = {
 
 // @sf-generated-start component:AssetsPage
 export default function AssetsPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:AssetsPage
   
   if (recordId) {
     return (
@@ -226,9 +222,10 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={[
-          { key: 'assetAcct', label: 'Accounting', Table: AssetAcctTable, Form: AssetAcctForm },
-        ]}
+        hidePrint
+        hideMoreMenu
+        hideMoreDetails
+        contentBg="bg-slate-50"
         detailSortBy="sEQNoAsset asc"
         lockWhenProcessed={false}
         {...props}
@@ -252,10 +249,13 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
+      hideMoreMenu
+      hideListFilters
+      hideLink
+      hideEyeCount
       {...props}
     />
   );
 }
 // @sf-generated-end component:AssetsPage
-
-// @sf-custom-slot section:AssetsPage-custom
