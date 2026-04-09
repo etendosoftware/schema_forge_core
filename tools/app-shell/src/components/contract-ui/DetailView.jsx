@@ -866,7 +866,6 @@ export function DetailView({
                 </CollapsibleSection>
               )}
             </div>
-            )}
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
