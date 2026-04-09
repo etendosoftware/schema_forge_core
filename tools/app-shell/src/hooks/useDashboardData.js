@@ -90,10 +90,24 @@ function mapKpis(handlerData) {
 function mapTrends(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   const trend = handlerData[0];
+
+  const toNumberArray = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map((value) => {
+      const num = Number(value);
+      return Number.isFinite(num) ? num : 0;
+    });
+  };
+
+  const values = toNumberArray(trend.values);
+  const rawExpenseValues = toNumberArray(
+    trend.expenseValues ?? trend.expenses ?? trend.expenseTrend ?? []
+  );
+
   return {
-    labels: trend.labels || [],
-    values: trend.values || [],
-    expenseValues: trend.expenseValues || [],
+    labels: Array.isArray(trend.labels) ? trend.labels : [],
+    values,
+    expenseValues: values.map((_, idx) => rawExpenseValues[idx] ?? 0),
   };
 }
 
@@ -153,19 +167,52 @@ function mapActivity(handlerData) {
   return handlerData;
 }
 
+const COMPLETED_INVOICE_STATUSES = new Set(['CO', 'CL']);
+
+function parseInvoiceDate(input) {
+  if (!input) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(input)) {
+    const parsed = new Date(input);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const ddmmyyyy = String(input).match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (!ddmmyyyy) return null;
+
+  const day = Number(ddmmyyyy[1]);
+  const month = Number(ddmmyyyy[2]);
+  const year = Number(ddmmyyyy[3]);
+  const parsed = new Date(year, month - 1, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isWithinLastDays(input, days) {
+  const parsed = parseInvoiceDate(input);
+  if (!parsed) return false;
+
+  const now = new Date();
+  const threshold = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
+  return parsed >= threshold;
+}
+
 /**
  * Map recent invoices handler response.
  * Handler returns: [{id, client, date, amount, status}]
  */
 function mapRecentInvoices(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
-  return handlerData.map((inv) => ({
-    id: inv.id || '',
-    client: inv.client || '',
-    date: inv.date || '',
-    amount: inv.amount || 0,
-    status: inv.status || '',
-  }));
+
+  return handlerData
+    .filter((inv) => COMPLETED_INVOICE_STATUSES.has(inv?.status))
+    .filter((inv) => isWithinLastDays(inv?.date, 7))
+    .map((inv) => ({
+      id: inv.id || '',
+      client: inv.client || '',
+      date: inv.date || '',
+      amount: inv.amount || 0,
+      status: inv.status || '',
+    }));
 }
 
 /**

@@ -550,14 +550,18 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
     localStorage.setItem('dashboard_chart_type', type);
   };
 
-  const hasExpenses = expenseValues.length === values.length && expenseValues.some((v) => v > 0);
+  const normalizedExpenseValues = values.map((_, idx) => {
+    const n = Number(expenseValues?.[idx] ?? 0);
+    return Number.isFinite(n) ? n : 0;
+  });
+  const hasExpenses = normalizedExpenseValues.some((v) => Math.abs(v) > 0);
 
   const fmtTooltip = (n) =>
     `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const showTooltip = (x, y, i) =>
-    setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? expenseValues[i] : null });
-  const allValues = hasExpenses ? [...values, ...expenseValues] : values;
+    setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? normalizedExpenseValues[i] : null });
+  const allValues = hasExpenses ? [...values, ...normalizedExpenseValues] : values;
   const maxVal = Math.max(...allValues, 0);
   const minVal = Math.min(...allValues, 0);
   const range = maxVal - minVal || 1;
@@ -571,7 +575,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   });
 
   const revPoints = values.map((v, i) => toPoint(v, i, values.length));
-  const expPoints = hasExpenses ? expenseValues.map((v, i) => toPoint(v, i, expenseValues.length)) : [];
+  const expPoints = hasExpenses ? normalizedExpenseValues.map((v, i) => toPoint(v, i, normalizedExpenseValues.length)) : [];
 
   const toPolyline = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
   const toFillPath = (pts) => [
@@ -585,10 +589,12 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   // Bar chart metrics — uses PAD_X for the left offset so bars align with the Y-axis labels
   const barPlotW = CHART_W - PAD_X - BAR_PAD_X;
   const barPlotH = CHART_H - BAR_PAD_Y - BAR_PAD_BOTTOM;
-  const barMaxVal = Math.max(...values, 1);
+  const barAllValues = hasExpenses ? [...values, ...normalizedExpenseValues] : values;
+  const barMaxVal = Math.max(...barAllValues, 1);
   const barSlotW = barPlotW / (values.length || 1);
-  const barW = barSlotW * 0.65;
-  const barGap = (barSlotW - barW) / 2;
+  const barGroupW = barSlotW * 0.72;
+  const barInnerGap = hasExpenses ? Math.min(6, barGroupW * 0.14) : 0;
+  const barW = hasExpenses ? Math.max((barGroupW - barInnerGap) / 2, 2) : barGroupW;
   const lastIdx = values.length - 1;
 
   return (
@@ -603,7 +609,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
           </div>
           {!collapsed && (
             <div className="flex items-center gap-2">
-              {chartType === 'line' && hasExpenses && (
+              {hasExpenses && (
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -735,20 +741,46 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
               })}
               {/* Bars + X-axis labels */}
               {values.map((v, i) => {
-                const bH = Math.max((v / barMaxVal) * barPlotH, v > 0 ? 3 : 0);
-                const x = PAD_X + i * barSlotW + barGap;
-                const y = BAR_PAD_Y + barPlotH - bH;
-                const barCx = x + barW / 2;
+                const expense = hasExpenses ? normalizedExpenseValues[i] : 0;
+                const revenueH = Math.max((Math.max(v, 0) / barMaxVal) * barPlotH, v > 0 ? 3 : 0);
+                const expenseH = hasExpenses
+                  ? Math.max((Math.max(expense, 0) / barMaxVal) * barPlotH, expense > 0 ? 3 : 0)
+                  : 0;
+
+                const groupWidth = hasExpenses ? barW * 2 + barInnerGap : barW;
+                const groupX = PAD_X + i * barSlotW + (barSlotW - groupWidth) / 2;
+                const revenueX = groupX;
+                const expenseX = groupX + barW + barInnerGap;
+                const revenueY = BAR_PAD_Y + barPlotH - revenueH;
+                const expenseY = BAR_PAD_Y + barPlotH - expenseH;
+                const labelX = groupX + groupWidth / 2;
+                const tipY = hasExpenses ? Math.min(revenueY, expenseY) : revenueY;
+
+                const onEnter = () => {
+                  setTooltip({
+                    x: labelX,
+                    y: tipY,
+                    label: localizedLabels[i],
+                    revenue: v,
+                    expense: hasExpenses ? expense : null,
+                  });
+                };
+
                 return (
                   <g key={i}
-                    onMouseEnter={() => setTooltip({ x: barCx, y, label: localizedLabels[i], revenue: v, expense: null })}
+                    onMouseEnter={onEnter}
                     onMouseLeave={() => setTooltip(null)}
                     style={{ cursor: 'crosshair' }}
                   >
-                    <rect x={x} y={y} width={barW} height={bH} rx="3"
+                    <rect x={revenueX} y={revenueY} width={barW} height={revenueH} rx="3"
                       fill={i === lastIdx ? '#10b981' : 'rgba(16,185,129,0.35)'}
                     />
-                    <text x={barCx} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
+                    {hasExpenses && (
+                      <rect x={expenseX} y={expenseY} width={barW} height={expenseH} rx="3"
+                        fill={i === lastIdx ? 'hsl(var(--destructive))' : 'hsl(var(--destructive) / 0.35)'}
+                      />
+                    )}
+                    <text x={labelX} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
                       {localizedLabels[i]}
                     </text>
                   </g>
@@ -756,15 +788,20 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
               })}
 
               {tooltip && (() => {
-                const boxW = 130;
-                const boxH = 36;
+                const boxW = hasExpenses ? 145 : 130;
+                const lineH = 15;
+                const numLines = hasExpenses ? 3 : 2;
+                const boxH = 10 + numLines * lineH + 2;
                 const tipX = Math.min(Math.max(tooltip.x - boxW / 2, PAD_X), CHART_W - PAD_X - boxW);
                 const tipY = Math.max(tooltip.y - boxH - 8, BAR_PAD_Y);
                 return (
                   <g pointerEvents="none">
                     <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
                     <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
-                    <text x={tipX + boxW / 2} y={tipY + 27} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{fmtTooltip(tooltip.revenue)}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${ui('revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
+                    {hasExpenses && (
+                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${ui('expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
+                    )}
                   </g>
                 );
               })()}
@@ -1040,9 +1077,12 @@ function RecentInvoices({ invoices = [] }) {
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">{ui('recentInvoices')}</CardTitle>
+          <div>
+            <CardTitle className="text-sm font-medium">{ui('recentInvoices')}</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">{ui('recentInvoicesSubtitle')}</p>
+          </div>
         </div>
       </CardHeader>
       {!collapsed && (
@@ -1051,25 +1091,24 @@ function RecentInvoices({ invoices = [] }) {
             <p className="text-sm text-muted-foreground">{ui('noInvoicesFound')}</p>
           ) : (
             <div className="space-y-0">
-              {invoices.map((inv, i) => (
-                <React.Fragment key={inv.id || i}>
-                  {i > 0 && <Separator />}
-                  <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="min-w-0">
-                        <p className="text-sm truncate">{inv.client}</p>
-                        <p className="text-xs text-muted-foreground">{fmtDate(inv.date)}</p>
+              {invoices.map((inv, i) => {
+                return (
+                  <React.Fragment key={inv.id || i}>
+                    {i > 0 && <Separator />}
+                    <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="min-w-0">
+                          <p className="text-sm truncate">{inv.client}</p>
+                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date)}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${inv.status === 'CO' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {inv.status === 'CO' ? ui('done') : ui('draft')}
-                      </span>
-                      <span className="text-sm font-medium">${inv.amount.toLocaleString('en-US')}</span>
-                    </div>
-                  </Link>
-                </React.Fragment>
-              ))}
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        <span className="text-sm font-medium">${inv.amount.toLocaleString('en-US')}</span>
+                      </div>
+                    </Link>
+                  </React.Fragment>
+                );
+              })}
             </div>
           )}
         </CardContent>
