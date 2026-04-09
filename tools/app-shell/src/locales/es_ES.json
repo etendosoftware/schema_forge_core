@@ -1829,7 +1829,7 @@
       "description": "Código de identificación compuesto por un número individual de cuenta y dimensiones adicionales, como organización, producto y tercero."
     },
     "AD_User_ID": {
-      "label": "Solicitante",
+      "label": "Usuario/Contacto",
       "description": "Referente que puede aportar información sobre un tercero."
     },
     "CheckDate": {
