@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Truck, FileText, Check } from 'lucide-react';
+import { useUI } from '@/i18n';
 
 /**
  * Confirmation modal for Sales Order.
@@ -17,6 +18,7 @@ export default function OrderConfirmModal({
   onClose,
   defaultSelected = 'shipment',
 }) {
+  const ui = useUI();
   const alreadyConfirmed = data?.documentStatus === 'CO';
   const [selected, setSelected] = useState(defaultSelected);
   const [orderProcessed, setOrderProcessed] = useState(alreadyConfirmed);
@@ -98,7 +100,7 @@ export default function OrderConfirmModal({
         if (!res.ok) {
           const err = await res.json().catch(() => null);
           throw new Error(
-            'El pedido fue procesado pero no se pudo crear el albarán. '
+            ui('soOrderConfirmedShipmentError')
             + (err?.response?.message || err?.message || `Error (${res.status})`),
           );
         }
@@ -120,7 +122,7 @@ export default function OrderConfirmModal({
         if (!res.ok) {
           const err = await res.json().catch(() => null);
           throw new Error(
-            'El pedido fue procesado pero no se pudo crear la factura. '
+            ui('soOrderConfirmedInvoiceError')
             + (err?.response?.message || err?.message || `Error (${res.status})`),
           );
         }
@@ -142,16 +144,16 @@ export default function OrderConfirmModal({
         });
       }
     } catch (err) {
-      setError(err.message || 'Ocurrió un error');
+      setError(err.message || ui('soErrorOccurred'));
     } finally {
       setLoading(false);
     }
   };
 
   const primaryLabel = {
-    shipment: 'Confirmar → Albarán',
-    invoice: 'Confirmar → Factura',
-    confirm: 'Confirmar pedido',
+    shipment: ui('soConfirmActionShipment'),
+    invoice:  ui('soConfirmActionInvoice'),
+    confirm:  ui('soConfirmActionOnly'),
   }[selected];
 
   const handleGoToDoc = () => {
@@ -192,21 +194,21 @@ export default function OrderConfirmModal({
             {isConfirmOnly ? (
               <>
                 <div style={{ fontSize: 15, fontWeight: 500, color: '#111827' }}>
-                  Pedido confirmado
+                  {ui('soOrderConfirmed')}
                 </div>
                 <div style={{ fontSize: 12, color: '#6B7280', marginTop: 8, lineHeight: 1.5 }}>
-                  Order #{createdDoc.documentNo} listo para facturar o generar albarán.
+                  {ui('soOrderConfirmedDesc', { number: createdDoc.documentNo })}
                 </div>
               </>
             ) : (
               <>
                 <div style={{ fontSize: 15, fontWeight: 500, color: '#111827' }}>
-                  {createdDoc.type === 'shipment' ? 'Albarán creado' : 'Factura creada'}
+                  {createdDoc.type === 'shipment' ? ui('soShipmentCreated') : ui('soInvoiceCreated')}
                 </div>
                 <div style={{ fontSize: 12, color: '#6B7280', marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
                   {createdDoc.documentNo && (
                     <span>
-                      {createdDoc.type === 'shipment' ? 'Shipment' : 'Invoice'} #{createdDoc.documentNo}
+                      {createdDoc.type === 'shipment' ? ui('shipmentDoc', { number: createdDoc.documentNo }) : ui('invoiceDoc', { number: createdDoc.documentNo })}
                     </span>
                   )}
                   {createdDoc.total && (
@@ -216,12 +218,12 @@ export default function OrderConfirmModal({
                     fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99,
                     background: '#FEF3C7', color: '#92400E',
                   }}>
-                    Draft
+                    {ui('statusDraft')}
                   </span>
                 </div>
                 {createdDoc.type === 'shipment' && (
                   <div style={{ fontSize: 12, color: '#6B7280', marginTop: 10, lineHeight: 1.5 }}>
-                    Revisá las cantidades antes de procesar la entrega.
+                    {ui('soShipmentCreatedNote')}
                   </div>
                 )}
               </>
@@ -232,11 +234,11 @@ export default function OrderConfirmModal({
             padding: '12px 16px', borderTop: '0.5px solid #E5E7EB',
           }}>
             <button type="button" onClick={handleCloseAfterCreate} style={btnSecondary}>
-              Cerrar
+              {ui('soClose')}
             </button>
             {!isConfirmOnly && createdDoc.id && (
               <button type="button" onClick={handleGoToDoc} style={btnPrimary}>
-                {createdDoc.type === 'shipment' ? 'Ver albarán →' : 'Ver factura →'}
+                {createdDoc.type === 'shipment' ? ui('soViewShipment') : ui('soViewInvoice')}
               </button>
             )}
           </div>
@@ -277,9 +279,9 @@ export default function OrderConfirmModal({
               {fmtNum(grandTotal)}{currency ? ` ${currency}` : ''}
             </div>
             <div style={{ fontSize: 11, color: '#185FA5' }}>
-              {lineCount != null ? lineCount : '...'} líneas
+              {lineCount != null ? ui('soLines', { count: lineCount }) : '...'}
               {' '}<span style={{ color: '#85B7EB' }}>·</span>{' '}
-              Subtotal{' '}
+              {ui('soSubtotal')}{' '}
               <span style={{ fontWeight: 500, color: '#042C53' }}>
                 {fmtNum(totalLines)}{currency ? ` ${currency}` : ''}
               </span>
@@ -290,30 +292,30 @@ export default function OrderConfirmModal({
         {/* Options */}
         <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8, borderBottom: '0.5px solid #E5E7EB' }}>
           <div style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 2 }}>
-            ¿Qué querés hacer?
+            {ui('soWhatToDo')}
           </div>
           <OptionCard
             selected={selected === 'shipment'}
             onClick={() => setSelected('shipment')}
             icon={<Truck size={16} />}
-            title="Crear albarán"
-            badge="Recomendado"
-            subtitle="Genera el albarán en borrador para gestionar la entrega. Desde ahí podés facturar."
+            title={ui('soCreateShipmentTitle')}
+            badge={ui('soRecommended')}
+            subtitle={ui('soCreateShipmentDesc')}
           />
           <OptionCard
             selected={selected === 'invoice'}
             onClick={() => setSelected('invoice')}
             icon={<FileText size={16} />}
-            title="Facturar directamente"
-            subtitle="Para servicios o ventas sin entrega física. Sin albarán."
+            title={ui('soInvoiceDirectly')}
+            subtitle={ui('soInvoiceDirectlyDesc')}
           />
           {!alreadyConfirmed && (
             <OptionCard
               selected={selected === 'confirm'}
               onClick={() => setSelected('confirm')}
               icon={<Check size={16} />}
-              title="Solo confirmar"
-              subtitle="Confirma el pedido sin crear ningún documento adicional ahora."
+              title={ui('soConfirmOnly')}
+              subtitle={ui('soOnlyConfirmDesc')}
             />
           )}
         </div>
@@ -333,7 +335,7 @@ export default function OrderConfirmModal({
             disabled={loading}
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
-            Cancelar
+            {ui('cancel')}
           </button>
           <button
             type="button"
@@ -351,7 +353,7 @@ export default function OrderConfirmModal({
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
               </svg>
             )}
-            {loading ? 'Procesando...' : primaryLabel}
+            {loading ? ui('soProcessing') : primaryLabel}
           </button>
           <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>

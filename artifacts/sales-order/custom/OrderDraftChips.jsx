@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUI } from '@/i18n';
 
 const CRITERIA = (field, value) =>
   encodeURIComponent(JSON.stringify([{ fieldName: field, operator: 'equals', value }]));
 
 export default function OrderDraftChips({ data, recordId, token, apiBaseUrl }) {
   const navigate = useNavigate();
+  const ui = useUI();
   const [state, setState] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -74,23 +76,23 @@ export default function OrderDraftChips({ data, recordId, token, apiBaseUrl }) {
   return (
     <>
       {/* Completion badges — same pill shape as ● Completado, secondary colors */}
-      {allDelivered && <CompletionBadge label="Entregado" />}
-      {allInvoiced  && <CompletionBadge label="Facturado" />}
+      {allDelivered && <CompletionBadge label={ui('soAllDelivered')} />}
+      {allInvoiced  && <CompletionBadge label={ui('soAllInvoiced')} />}
 
       {/* Draft chips — only visible when not yet complete */}
       {shipmentsDraft.length === 1 && (
         <DraftPill
           icon="🚚"
-          label="Envío"
-          sub={shipmentsDraft[0].documentNo || 'En borrador'}
+          label={ui('soShipmentSection')}
+          sub={shipmentsDraft[0].documentNo || ui('soInDraft')}
           onClick={() => navigate(`/goods-shipment/${shipmentsDraft[0].id}`)}
         />
       )}
       {shipmentsDraft.length > 1 && (
         <DraftPill
           icon="🚚"
-          label={`${shipmentsDraft.length} envíos`}
-          sub="En borrador"
+          label={ui('soNShipments', { count: shipmentsDraft.length })}
+          sub={ui('soInDraft')}
           onClick={() => window.dispatchEvent(
             new CustomEvent('sales-order:open-actions-modal', { detail: { scrollTo: 'shipment' } })
           )}
@@ -99,8 +101,8 @@ export default function OrderDraftChips({ data, recordId, token, apiBaseUrl }) {
       {invoiceDraft && (
         <DraftPill
           icon="🧾"
-          label="Factura"
-          sub={invoiceDraft.documentNo || 'En borrador'}
+          label={ui('soInvoiceSection')}
+          sub={invoiceDraft.documentNo || ui('soInDraft')}
           onClick={() => navigate(`/sales-invoice/${invoiceDraft.id}`)}
         />
       )}
