@@ -4108,6 +4108,10 @@
       "label": "Depreciated Plan",
       "description": "Depreciated plan"
     },
+    "depreciation": {
+      "label": "Depreciation",
+      "description": "Depreciation status and progress"
+    },
     "Qtytype": {
       "label": "Quantity Type",
       "description": "Quantity Type"
@@ -16267,6 +16271,141 @@
     "sending": "Sending...",
     "clear": "Clear",
     "clearSort": "Clear sort",
+    "refresh": "Refresh",
+    "newPayment": "New payment",
+    "paymentRecordedLocally": "Payment recorded locally — it will sync when the endpoint is available",
+    "financeCollections": "Finance · Collections",
+    "activity": "Activity",
+    "closeActivityPanel": "Close activity panel",
+    "paymentCreated": "Payment created",
+    "linkedToInvoice": "Linked to Invoice #{number}",
+    "statusChangedTo": "Status → {status}",
+    "noActivityYet": "No activity yet",
+    "add": "Add",
+    "unallocatedCredit": "unallocated credit",
+    "invoice": "Invoice",
+    "paid": "Paid",
+    "pending": "Pending",
+    "you": "You",
+    "customer": "Customer",
+    "paymentDate": "Payment Date",
+    "method": "Method",
+    "depositTo": "Deposit to",
+    "statusCleared": "Cleared",
+    "statusDraft": "Draft",
+    "statusAwaiting": "Awaiting",
+    "statusVoided": "Voided",
+    "statusNotCleared": "Not Cleared",
+    "creditAdvance": "Credit / advance",
+    "creditAdvanceDescription": "Advance or credit left unapplied",
+    "linkedToInvoiceMode": "Linked to invoice",
+    "linkedToInvoiceModeDescription": "Apply the receipt to an existing invoice",
+    "selectCustomer": "Select customer...",
+    "selectCustomerFirst": "Select a customer first",
+    "selectInvoice": "Select invoice...",
+    "selectPaymentMethod": "Select payment method...",
+    "selectAccount": "Select account...",
+    "loadingInvoices": "Loading invoices...",
+    "noPendingInvoices": "No pending invoices",
+    "account": "Account",
+    "date": "Date",
+    "amount": "Amount",
+    "description": "Description",
+    "fillAllRequiredFields": "Fill all required fields",
+    "createPayment": "Create payment →",
+    "createCredit": "Create credit →",
+    "creating": "Creating...",
+    "selectBusinessPartnerToViewPendingInvoices": "Select a business partner to view pending invoices.",
+    "noInvoicesAppliedToThisPayment": "No invoices applied to this payment.",
+    "noPendingInvoicesFoundForThisBusinessPartner": "No pending invoices found for this business partner.",
+    "invoiceNumber": "Invoice #",
+    "dueDate": "Due Date",
+    "totalAmount": "Total",
+    "outstanding": "Outstanding",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "totalToApply": "Total to apply:",
+    "processing": "Processing...",
+    "applyAndProcessPayment": "Apply & Process Payment",
+    "selectAtLeastOneInvoiceToApply": "Select at least one invoice to apply.",
+    "totalAppliedExceedsPaymentAmount": "Total applied exceeds the payment amount.",
+    "paymentRegisteredSuccessfully": "Payment registered successfully",
+    "creditDescriptionPlaceholder": "Reason for the advance or credit...",
+    "appliedToInvoices": "Applied to Invoices",
+    "unallocated": "Unallocated",
+    "remainingCredit": "Remaining Credit",
+    "statusUnknown": "Unknown",
+    "testAccount": "Test account",
+    "mainAccount": "Main account",
+    "pettyCash": "Petty cash",
+    "stockMovement": "Stock movement",
+    "stockByWarehouse": "Stock by warehouse",
+    "onHand": "On Hand",
+    "reserved": "Reserved",
+    "locations": "locations",
+    "unitsHeld": "units held",
+    "units": "units",
+    "viewLarger": "View larger",
+    "inventoryOverview": "Inventory overview",
+    "summary": "Summary",
+    "warehouses": "Warehouses",
+    "available": "Available",
+    "commercial": "Commercial",
+    "logistics": "Logistics",
+    "pricing": "Pricing",
+    "main": "Main",
+    "commercialDescription": "Secondary commercial configuration for the product.",
+    "logisticsDescription": "Operational data for stock, weight, and logistics behavior.",
+    "principalPrice": "Principal price",
+    "saveProductFirstPricing": "Save the product first. Then you can define sale and purchase prices in a default price list version.",
+    "configureMainSaleAndPurchasePrice": "Configure a main sale price and purchase price. If no pricing exists yet, a default price list row is created automatically.",
+    "savePricing": "Save pricing",
+    "editPricing": "Edit pricing",
+    "setPricing": "Set pricing",
+    "noPricingConfigured": "No pricing is configured for this product yet.",
+    "loadingPricing": "Loading pricing...",
+    "mainPriceUsedForSales": "Main price used for sales.",
+    "usesListPriceFromSameRow": "Uses list price from the same row when no dedicated purchase row exists.",
+    "mainPriceUsedForPurchasing": "Main price used for purchasing.",
+    "enterAtLeastOneValueCreatePricing": "Enter at least one value to create pricing.",
+    "enterAtLeastOneValueUpdatePricing": "Enter at least one value to update pricing.",
+    "pricingCreatedUsingDefaultValues": "Pricing created using default values.",
+    "unableToSavePricing": "Unable to save pricing.",
+    "addEntity": "+ Add {label}",
+    "entityDetail": "{label} Detail",
+    "saveHeaderFirst": "Save the header first to add lines.",
+    "documentStatus": "Document Status",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Total",
+    "docs": "Docs",
+    "notes": "Notes",
+    "noRelatedDocuments": "No related documents",
+    "Complete": "Complete",
+    "Confirm & Send": "Confirm & Send",
+    "Process Payment": "Process Payment",
+    "Process  Receipt": "Process Receipt",
+    "Complete Return": "Complete Return",
+    "Process Inventory Count": "Process Inventory Count",
+    "Set New Currency": "Set New Currency",
+    "Doc Action": "Doc Action",
+    "Create P O From Requisition": "Create PO From Requisition",
+    "Doc Action_ Process": "Doc Action Process",
+    "Complete Cost Adjustment": "Complete Cost Adjustment",
+    "Void Cost Adjustment": "Void Cost Adjustment",
+    "Void": "Void",
+    "Reactivate": "Reactivate",
+    "shipmentDoc": "Shipment #{number}",
+    "invoiceDoc": "Invoice #{number}",
+    "paymentDoc": "Payment #{number}",
+    "quotationDoc": "Quotation #{number}",
+    "quotation": "Quotation",
+    "receiptDoc": "Receipt #{number}",
+    "returnDoc": "Return #{number}",
+    "orderDoc": "Order #{number}",
+    "creditNoteDoc": "Credit Note #{number}",
+    "statusReceived": "Received",
+    "statusDeposited": "Deposited",
     "clearAll": "Clear all",
     "newRecord": "New",
     "newScan": "New Scan",
@@ -16276,6 +16415,39 @@
     "loadingMore": "Loading more...",
     "allRecordsLoaded": "All records loaded",
     "loading": "Loading...",
+    "of": "of",
+    "view": "View",
+    "invoicePreviewStats": "Stats",
+    "invoicePreviewMessages": "Messages",
+    "invoicePreviewHistory": "History",
+    "invoicePreviewPdf": "PDF",
+    "invoicePreviewAddPayment": "Add payment",
+    "invoicePreviewEdit": "Edit",
+    "invoicePreviewClose": "Close",
+    "invoicePreviewGeneral": "General",
+    "invoicePreviewPayments": "Payments",
+    "invoicePreviewFiles": "Files",
+    "invoicePreviewTotal": "Total",
+    "invoicePreviewDocumentNumber": "Document number",
+    "invoicePreviewContact": "Contact",
+    "invoicePreviewDate": "Date",
+    "invoicePreviewDueDate": "Due date",
+    "invoicePreviewStatus": "Status",
+    "invoicePreviewNoPaymentsRecorded": "No payments recorded",
+    "invoicePreviewPendingSync": "pending sync",
+    "invoicePreviewDropFileHere": "Drop file here",
+    "invoicePreviewUploadYourDocument": "Upload your document",
+    "invoicePreviewClickHereToUploadYourFile": "Click here to upload your file",
+    "invoicePreviewAcceptedDocumentTypes": "PDF, JPG, PNG, WebP, GIF",
+    "invoicePreviewNoMessagesYet": "No messages yet",
+    "invoicePreviewNoActivityRecorded": "No activity recorded",
+    "invoicePreviewCannotAddPaymentsToDraftInvoice": "Cannot add payments to a draft invoice",
+    "invoicePreviewInvoiceIsFullyPaid": "Invoice is fully paid",
+    "invoicePreviewInvoiceMustBeCompletedToAddPayments": "Invoice must be completed to add payments",
+    "invoicePreviewAddAttachment": "Add attachment",
+    "depreciatedValue": "Depreciated Value",
+    "depreciatedPlan": "Depreciated Plan",
+    "depreciation": "Depreciation",
     "loadingPreview": "Loading preview...",
     "moreDetails": "More details",
     "others": "Others",
@@ -16308,8 +16480,6 @@
     "refineDimensions": "Refine by Dimensions",
     "displayOptions": "Display Options",
     "runReport": "Run Report",
-    "preview": "Preview",
-    "print": "Print",
     "running": "Running...",
     "selectPlaceholder": "Select...",
     "recordsFound": "{count} records found",
@@ -16319,11 +16489,9 @@
     "filter": "Filter...",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
-    "statusDraft": "Draft",
     "statusComplete": "Complete",
     "statusCompleted": "Completed",
     "statusVoid": "Void",
-    "statusVoided": "Voided",
     "statusInProcess": "In Process",
     "statusClosed": "Closed",
     "statusPaid": "Paid",
@@ -16345,7 +16513,6 @@
     "typeColumn": "Type",
     "phoneColumn": "Phone",
     "detail": "Detail",
-    "add": "Add",
     "basicDiscount": "Basic Discount",
     "locationAddress": "Location / Address",
     "billingPreferences": "Billing Preferences",
@@ -16488,7 +16655,6 @@
     "toPay": "To Pay",
     "done": "Done",
     "draft": "Draft",
-    "invoice": "Invoice",
     "order": "Order",
     "contact": "Contact",
     "product": "Product",
@@ -16505,7 +16671,6 @@
     "dragCardsToReorder": "Drag cards to reorder. Toggle to show/hide.",
     "dragToReorder": "drag to reorder",
     "changesSavedAutomatically": "Changes are saved automatically.",
-    "units": "units",
     "invoicePending": "{count} invoice pending",
     "invoicesPending": "{count} invoices pending",
     "pendingSalesInvoices": "{count} Sales Invoice pending",
@@ -16533,7 +16698,15 @@
     "password": "Password",
     "yourPassword": "Your password...",
     "noRole": "No role",
-    "noOrg": "No org"
+    "noOrg": "No org",
+    "vendor": "Vendor",
+    "creditTax": "Credit & Tax",
+    "creditTaxDescription": "Credit limits and tax identification for this contact.",
+    "searchAddress": "Search address…",
+    "typeToSearch": "Type to search…",
+    "searching": "Searching…",
+    "typeAtLeast2Characters": "Type at least 2 characters",
+    "none": "— None —"
   },
   "menus": {
     "Currency": {
@@ -17803,6 +17976,105 @@
     },
     "VO": {
       "label": "Voided"
+    },
+    "basicDiscount": {
+      "label": "Basic Discount"
+    },
+    "locationAddress": {
+      "label": "Location / Address"
+    },
+    "importFromPurchaseOrder": {
+      "label": "Import from Purchase Order"
+    },
+    "searchPurchaseOrder": {
+      "label": "Search purchase order..."
+    },
+    "loadingLines": {
+      "label": "Loading lines..."
+    },
+    "noLinesFound": {
+      "label": "No lines found"
+    },
+    "importQty": {
+      "label": "Import Qty"
+    },
+    "alreadyFullyReceived": {
+      "label": "already fully received"
+    },
+    "selectedLinesCount": {
+      "label": "{count} line(s) selected"
+    },
+    "selectLinesToImport": {
+      "label": "Select lines to import"
+    },
+    "importing": {
+      "label": "Importing..."
+    },
+    "importSelected": {
+      "label": "Import selected{count}"
+    },
+    "importedLinesWithErrors": {
+      "label": "Imported {count} line(s) with {errors} error(s)"
+    },
+    "linesImportedFromPurchaseOrder": {
+      "label": "{count} line(s) imported from purchase order"
+    },
+    "couldNotImportSelectedLines": {
+      "label": "Could not import selected lines"
+    },
+    "noLinesWereImported": {
+      "label": "No lines were imported"
+    },
+    "failedToImportLines": {
+      "label": "Failed to import lines"
+    },
+    "noCompletedPurchaseOrdersWithPendingQuantitiesForThisVendor": {
+      "label": "No completed purchase orders with pending quantities for this vendor."
+    },
+    "noOrdersMatchYourSearch": {
+      "label": "No orders match your search."
+    },
+    "noLinesYet": {
+      "label": "No lines yet"
+    },
+    "addLinesManuallyOrImportFromPurchaseOrder": {
+      "label": "Add lines manually or import from a purchase order"
+    },
+    "addLines": {
+      "label": "Add Lines"
+    },
+    "noPaymentDetailsFound": {
+      "label": "No payment details found"
+    },
+    "financialAccount": {
+      "label": "Financial Account"
+    },
+    "receivedAmount": {
+      "label": "Received Amount"
+    },
+    "tax": {
+      "label": "Tax"
+    },
+    "paymentDetails": {
+      "label": "Payment Details"
+    },
+    "totalNetAmount": {
+      "label": "Total Net Amount"
+    },
+    "totalGrossAmount": {
+      "label": "Total Gross Amount"
+    },
+    "paidAmount": {
+      "label": "Paid Amount"
+    },
+    "businessPartner": {
+      "label": "Business Partner"
+    },
+    "invoiceDate": {
+      "label": "Invoice Date"
+    },
+    "noProductsFound": {
+      "label": "No products found"
     }
   }
 }

@@ -1,4 +1,5 @@
 import { TrendingDown, CheckCircle2 } from 'lucide-react';
+import { useUI } from '@/i18n';
 
 function fmt(v) {
   if (v == null) return '—';
@@ -25,6 +26,8 @@ function StatCard({ icon: Icon, label, value, color }) {
 }
 
 export default function AssetsSidebar({ data }) {
+  const ui = useUI();
+
   if (!data) return null;
 
   const depreciate = data.depreciate === true || data.depreciate === 'Y';
@@ -42,13 +45,13 @@ export default function AssetsSidebar({ data }) {
     <div className="flex flex-col gap-3">
       <StatCard
         icon={TrendingDown}
-        label="Depreciated Value"
+        label={ui('depreciatedValue')}
         value={fmt(depreciatedValue)}
         color="blue"
       />
       <StatCard
         icon={TrendingDown}
-        label="Depreciated Plan"
+        label={ui('depreciatedPlan')}
         value={fmt(depreciatedPlan)}
         color="teal"
       />
@@ -59,7 +62,7 @@ export default function AssetsSidebar({ data }) {
               ? <CheckCircle2 size={15} className="text-emerald-500" />
               : <TrendingDown size={15} className="text-orange-500" />}
             <span className={`text-sm font-semibold ${isComplete ? 'text-emerald-600' : 'text-orange-600'}`}>
-              Depreciation
+              {ui('depreciation')}
             </span>
           </div>
           <div className={`text-2xl font-bold leading-none ${isComplete ? 'text-emerald-700' : 'text-orange-700'}`}>
