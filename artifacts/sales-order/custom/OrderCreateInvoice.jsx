@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useUI } from '@/i18n';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,7 @@ function Spinner() {
 
 export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }) {
   const navigate = useNavigate();
+  const ui = useUI();
   const [showConfirm,  setShowConfirm]  = useState(false);
   const [showActions,  setShowActions]  = useState(false);
   const [actionsScroll, setActionsScroll] = useState(null); // 'shipment'|'invoice'|null
@@ -88,7 +90,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     return (
       <>
         <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-          Confirmar
+          {ui('soConfirmBtn')}
         </button>
         {showConfirm && createPortal(
           <ConfirmModal
@@ -135,9 +137,9 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     const needsInvoice = totalPending > 0 && !invoiceDraft;
 
     let buttonLabel = null;
-    if      (needsShip && needsInvoice) buttonLabel = 'Gestionar envío y factura ▾';
-    else if (needsShip)                 buttonLabel = 'Gestionar envío ▾';
-    else if (needsInvoice)              buttonLabel = 'Gestionar factura ▾';
+    if      (needsShip && needsInvoice) buttonLabel = ui('soManageShipmentAndInvoice');
+    else if (needsShip)                 buttonLabel = ui('soManageShipment');
+    else if (needsInvoice)              buttonLabel = ui('soManageInvoice');
 
     const openModal = (scrollTo = null) => {
       setActionsScroll(scrollTo);
@@ -182,15 +184,16 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
 
-const CONFIRM_OPTIONS = [
-  { value: 'confirm',  icon: '✓',  title: 'Solo confirmar',           subtitle: 'El pedido queda confirmado sin generar documentos' },
-  { value: 'shipment', icon: '🚚', title: 'Confirmar y crear albarán', subtitle: 'Se generará un envío en borrador' },
-  { value: 'invoice',  icon: '🧾', title: 'Confirmar y facturar',      subtitle: 'Se generará una factura en borrador' },
-];
-
 function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
   const navigate  = useNavigate();
+  const ui        = useUI();
   const [selected, setSelected] = useState('confirm');
+
+  const CONFIRM_OPTIONS = [
+    { value: 'confirm',  icon: '✓',  title: ui('soConfirmOnly'),        subtitle: ui('soConfirmOnlyDesc') },
+    { value: 'shipment', icon: '🚚', title: ui('soConfirmWithShipment'), subtitle: ui('soConfirmWithShipmentDesc') },
+    { value: 'invoice',  icon: '🧾', title: ui('soConfirmWithInvoice'),  subtitle: ui('soConfirmWithInvoiceDesc') },
+  ];
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState(null);
 
@@ -211,7 +214,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
       );
       if (!processRes.ok) {
         const e = await processRes.json().catch(() => null);
-        throw new Error(e?.response?.message || `Error al confirmar (${processRes.status})`);
+        throw new Error(e?.response?.message || `Error (${processRes.status})`);
       }
 
       if (selected === 'shipment') {
@@ -219,7 +222,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
           const e = await res.json().catch(() => null);
-          throw new Error('Pedido confirmado. ' + (e?.response?.message || `Error al crear albarán (${res.status})`));
+          throw new Error(ui('soOrderConfirmedShipmentError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
         window.dispatchEvent(new CustomEvent('sales-order:document-created'));
@@ -232,7 +235,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
           const e = await res.json().catch(() => null);
-          throw new Error('Pedido confirmado. ' + (e?.response?.message || `Error al crear factura (${res.status})`));
+          throw new Error(ui('soOrderConfirmedInvoiceError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
         window.dispatchEvent(new CustomEvent('sales-order:document-created'));
@@ -245,7 +248,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
         navigate(`/sales-order/${orderId}`, { replace: true });
       }
     } catch (e) {
-      setError(e.message || 'Ocurrió un error');
+      setError(e.message || ui('soErrorOccurred'));
       setLoading(false);
     }
   };
@@ -257,7 +260,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
         {/* Title row */}
         <div style={{ padding: '16px 20px 14px', borderBottom: '0.5px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
-            Confirmar pedido #{documentNo}
+            {ui('soConfirmTitle', { number: documentNo })}
           </div>
           <button type="button" onClick={onClose} style={closeBtn}>&times;</button>
         </div>
@@ -285,7 +288,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
             }}>
               <span style={{ fontSize: 17, lineHeight: 1, flexShrink: 0 }}>🔒</span>
               <span style={{ fontSize: 12, color: '#92400E', lineHeight: 1.4 }}>
-                Una vez confirmado no podrás editar el pedido
+                {ui('soConfirmWarning')}
               </span>
             </div>
           </div>
@@ -332,12 +335,12 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
           <button type="button" onClick={onClose} disabled={loading} style={{ ...btnSecondary, opacity: loading ? 0.5 : 1 }}>
-            Cancelar
+            {ui('cancel')}
           </button>
           <button type="button" onClick={handleConfirm} disabled={loading}
             style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {loading && <Spinner />}
-            {loading ? 'Procesando...' : 'Confirmar →'}
+            {loading ? ui('soProcessing') : ui('soConfirmAction')}
           </button>
         </div>
       </div>
@@ -349,6 +352,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
 
 function ActionsModal({ orderId, data, base, headers, currency, derived, scrollTo, onClose }) {
   const navigate = useNavigate();
+  const ui       = useUI();
   const [loading, setLoading] = useState(null);
   const [error,   setError]   = useState(null);
   const shipRef = useRef(null);
@@ -392,7 +396,7 @@ function ActionsModal({ orderId, data, base, headers, currency, derived, scrollT
       if (type === 'shipment') navigate(`/goods-shipment/${doc?.id}`);
       else navigate(`/sales-invoice/${doc?.id}`);
     } catch (e) {
-      setError(e.message || 'Ocurrió un error');
+      setError(e.message || ui('soErrorOccurred'));
       setLoading(null);
     }
   };
@@ -421,13 +425,13 @@ function ActionsModal({ orderId, data, base, headers, currency, derived, scrollT
             <div ref={shipRef}>
               <DocSection
                 icon="🚚"
-                title="Envío"
+                title={ui('soShipmentSection')}
                 statusText={qtyOrdered > 0
                   ? (qtyDelivered > 0
-                    ? `${fmtNum(qtyDelivered, 0)} / ${fmtNum(qtyOrdered, 0)} uds. entregadas · ${fmtNum(qtyPending, 0)} pendientes`
-                    : `${fmtNum(qtyPending, 0)} uds. pendientes de entrega`)
+                    ? ui('soQtyDeliveredOf', { delivered: fmtNum(qtyDelivered, 0), total: fmtNum(qtyOrdered, 0), pending: fmtNum(qtyPending, 0) })
+                    : ui('soQtyPendingDelivery', { pending: fmtNum(qtyPending, 0) }))
                   : null}
-                createLabel="+ Crear albarán"
+                createLabel={ui('soCreateShipment')}
                 creating={loading === 'shipment'}
                 onCreateClick={() => createDoc('shipment')}
               />
@@ -437,13 +441,13 @@ function ActionsModal({ orderId, data, base, headers, currency, derived, scrollT
             <div ref={invRef}>
               <DocSection
                 icon="🧾"
-                title="Factura"
+                title={ui('soInvoiceSection')}
                 statusText={totalOrder > 0
                   ? (totalInvoiced > 0
-                    ? `${fmtNum(totalInvoiced)}${currency ? ` ${currency}` : ''} / ${fmtNum(totalOrder)}${currency ? ` ${currency}` : ''} facturados · ${fmtNum(totalPending)}${currency ? ` ${currency}` : ''} pendientes`
-                    : `${fmtNum(totalPending)}${currency ? ` ${currency}` : ''} pendientes de facturar`)
+                    ? ui('soAmountInvoicedOf', { invoiced: `${fmtNum(totalInvoiced)}${currency ? ` ${currency}` : ''}`, total: `${fmtNum(totalOrder)}${currency ? ` ${currency}` : ''}`, pending: `${fmtNum(totalPending)}${currency ? ` ${currency}` : ''}` })
+                    : ui('soAmountPendingInvoice', { pending: `${fmtNum(totalPending)}${currency ? ` ${currency}` : ''}` }))
                   : null}
-                createLabel="+ Crear factura"
+                createLabel={ui('soCreateInvoice')}
                 creating={loading === 'invoice'}
                 onCreateClick={() => createDoc('invoice')}
               />
@@ -458,7 +462,7 @@ function ActionsModal({ orderId, data, base, headers, currency, derived, scrollT
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px', flexShrink: 0 }}>
-          <button type="button" onClick={onClose} style={btnSecondary}>Cancelar</button>
+          <button type="button" onClick={onClose} style={btnSecondary}>{ui('cancel')}</button>
         </div>
       </div>
     </div>
@@ -468,6 +472,7 @@ function ActionsModal({ orderId, data, base, headers, currency, derived, scrollT
 // ── DocSection ─────────────────────────────────────────────────────────────────
 
 function DocSection({ icon, title, statusText, createLabel, creating, onCreateClick }) {
+  const ui = useUI();
   return (
     <div style={{ border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '12px 14px' }}>
       <div style={{ marginBottom: statusText ? 6 : 8 }}>
@@ -485,7 +490,7 @@ function DocSection({ icon, title, statusText, createLabel, creating, onCreateCl
           cursor: creating ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
           opacity: creating ? 0.6 : 1,
         }}>
-        {creating ? 'Creando...' : createLabel}
+        {creating ? ui('soCreating') : createLabel}
       </button>
     </div>
   );
