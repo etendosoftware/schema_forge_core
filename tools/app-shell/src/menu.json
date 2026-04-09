@@ -93,7 +93,7 @@
         { "name": "payment-term", "label": "Payment Term" },
         { "name": "payment-method", "label": "Payment Method" },
         { "name": "tax", "label": "Tax" },
-        { "name": "uom", "label": "Unit of Measure" },
+        { "name": "unit-of-measure", "label": "Unit of Measure" },
         { "name": "user", "label": "User" },
         { "name": "smart-scan", "label": "Smart Scan" }
       ]
