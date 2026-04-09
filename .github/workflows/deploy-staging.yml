@@ -40,7 +40,7 @@ jobs:
         # .env.production (committed) provides VITE_MOCK=false and VITE_API_BASE=/etendo
 
       - name: Generate reports manifest
-        run: node etendo_schema_forge/cli/src/generate-reports-manifest.js
+        run: node cli/src/generate-reports-manifest.js
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
