@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useUI } from '@/i18n';
+import { useUI, useLocaleSwitch } from '@/i18n';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', {
@@ -220,8 +220,19 @@ function ChartLegend() {
 
 function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const [expanded, setExpanded] = useState(false);
   const [period, setPeriod] = useState('6M');
+
+  // Translate backend English month abbreviations (Jan, Feb…) to current locale
+  const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
+  const fmt = new Intl.DateTimeFormat(bcp47, { month: 'short' });
+  const localizedLabels = labels.map((_, i) => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - (labels.length - 1 - i), 1);
+    const s = fmt.format(d);
+    return s.charAt(0).toUpperCase() + s.slice(1).replace('.', '');
+  });
 
   const n = PERIOD_OPTIONS.find((p) => p.label === period)?.months ?? 6;
   const sl = (arr) => arr.slice(-n);
@@ -243,7 +254,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
       </div>
 
       <BPChartSVGContent
-        labels={labels} revenue={revenue} expenses={expenses}
+        labels={localizedLabels} revenue={revenue} expenses={expenses}
         CW={320} CH={200} PX={32} PY={12} PB={22}
         fontSize={9} chartId="bp-mini"
       />
@@ -275,7 +286,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
             </DialogTitle>
           </DialogHeader>
           <BPChartSVGContent
-            labels={sl(labels)} revenue={sl(revenue)} expenses={sl(expenses)}
+            labels={sl(localizedLabels)} revenue={sl(revenue)} expenses={sl(expenses)}
             CW={580} CH={280} PX={48} PY={16} PB={28}
             fontSize={12} chartId="bp-expanded"
           />
