@@ -1189,8 +1189,8 @@
       "description": "Fecha factura"
     },
     "FIN_Financial_Account_ID": {
-      "label": "Bank",
-      "description": "Financial account used to deposit / withdrawal money such as bank accounts or petty cash"
+      "label": "Cuenta",
+      "description": "Cuenta financiera utilizada para depósitos/retiros, como cuentas bancarias o caja chica"
     },
     "Amount": {
       "label": "Importe cobrado/pagado",
@@ -16557,6 +16557,8 @@
     "phoneColumn": "Teléfono",
     "detail": "Detalle",
     "add": "Agregar",
+    "basicDiscount": "Descuento",
+    "locationAddress": "Dirección",
     "All": "Todos",
     "Customers": "Clientes",
     "Vendors": "Proveedores",

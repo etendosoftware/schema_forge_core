@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { EntityForm } from '@/components/contract-ui';
 import { ChevronDown, MapPin, Tag, Loader2 } from 'lucide-react';
+import { useUI } from '@/i18n';
 
 // ─── Billing fields ────────────────────────────────────────────────────────
 
@@ -140,6 +141,7 @@ function DiscountSelect({ value, options, onChange, loading }) {
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function BillingPreferencesForm(props) {
+  const ui = useUI();
   const { data, api, token } = props;
   const bpId = data?.id;
   const apiBase = api?.baseUrl ?? '';
@@ -269,7 +271,7 @@ export default function BillingPreferencesForm(props) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {/* Basic Discount */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Basic Discount</span>
+              <span className="text-xs font-medium text-muted-foreground">{ui('basicDiscount')}</span>
               <DiscountSelect
                 value={currentDiscountId}
                 options={discountOptions}
@@ -280,7 +282,7 @@ export default function BillingPreferencesForm(props) {
 
             {/* Location / Address */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Location / Address</span>
+              <span className="text-xs font-medium text-muted-foreground">{ui('locationAddress')}</span>
               {addressLoading
                 ? <div className="h-9 rounded-md bg-muted animate-pulse" />
                 : (

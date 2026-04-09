@@ -16346,6 +16346,8 @@
     "phoneColumn": "Phone",
     "detail": "Detail",
     "add": "Add",
+    "basicDiscount": "Basic Discount",
+    "locationAddress": "Location / Address",
     "Customer": "Customer",
     "Vendor": "Vendor",
     "Both": "Both",
