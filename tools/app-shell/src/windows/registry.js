@@ -81,6 +81,7 @@ const customLoaders = {
   'purchase-order': () => import('./custom/purchase-order/index.jsx'),
   'goods-receipt': () => import('./custom/goods-receipt/index.jsx'),
   'payment-out': () => import('./custom/payment-out/index.jsx'),
+  'warehouse': () => import('./custom/warehouse/index.jsx'),
 };
 
 /**
