@@ -92,8 +92,18 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
 
   useEffect(() => { fetchInstallments(); }, [fetchInstallments]);
 
+  // Listen for DocAction process completion and auto-open Send modal
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.entity === 'header' && e.detail?.process?.columnName === 'DocAction' && e.detail?.recordId) {
+        sessionStorage.setItem(`invoice:sendAfterConfirm:${e.detail.recordId}`, '1');
+      }
+    };
+    window.addEventListener('neo:processSuccess', handler);
+    return () => window.removeEventListener('neo:processSuccess', handler);
+  }, []);
+
   // Auto-open Send modal after Confirm & Send
-  // Flag set by HeaderPage event listener, checked here on mount
   useEffect(() => {
     if (isCompleted && recordId) {
       const key = `invoice:sendAfterConfirm:${recordId}`;
