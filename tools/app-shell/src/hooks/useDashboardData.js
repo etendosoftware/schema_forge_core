@@ -99,6 +99,7 @@ function mapTrends(handlerData) {
   return {
     labels: trend.labels || [],
     values: trend.values || [],
+    expenseValues: trend.expenseValues || [],
   };
 }
 
@@ -372,7 +373,7 @@ export function useDashboardData() {
       setData({
         kpis: mappedKpis ?? mock.kpis,
         revenueTrend: mappedTrends ?? mock.revenueTrend,
-        expenseTrend: mock.revenueTrend.values.map(() => 0),
+        expenseTrend: mappedTrends?.expenseValues ?? mock.revenueTrend.values.map(() => 0),
         topClients: mapTopClients(topClientsData) ?? [],
         pendingTasks: mapPendingTasks(pendingData),
         recentMessages: mapActivity(activityData) || mock.recentMessages,

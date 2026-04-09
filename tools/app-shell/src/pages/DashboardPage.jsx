@@ -52,17 +52,15 @@ const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, Shopping
  * ----------------------------------------------------------------*/
 
 const WIDGET_REGISTRY = [
-  // Row 1: 4 KPI cards (1 col each → fills all 4 cols)
+  // Row 1: 3 KPI cards + Quick Actions (1 col each → fills all 4 cols)
   { id: 'kpi-revenue',          labelKey: 'revenueThisMonth',      defaultSize: 'small',  defaultVisible: true  },
   { id: 'kpi-expenses',         labelKey: 'expensesThisMonth',     defaultSize: 'small',  defaultVisible: true  },
   { id: 'kpi-profit',           labelKey: 'netProfit',             defaultSize: 'small',  defaultVisible: true  },
-  { id: 'kpi-pending',          labelKey: 'pendingInvoices',       defaultSize: 'small',  defaultVisible: true  },
+  { id: 'quick-actions',        labelKey: 'quickActions',          defaultSize: 'small',  defaultVisible: true  },
   // Row 2: Revenue chart (2 cols) + Pending Tasks (1) + Top Clients (1)
   { id: 'revenue-chart',        labelKey: 'revenueVsExpenses',     defaultSize: 'medium', defaultVisible: true  },
   { id: 'pending-tasks',        labelKey: 'pendingTasks',          defaultSize: 'small',  defaultVisible: true  },
   { id: 'top-clients',          labelKey: 'topClients',            defaultSize: 'small',  defaultVisible: true  },
-  // Row 3: Quick Actions (2 cols)
-  { id: 'quick-actions',        labelKey: 'quickActions',          defaultSize: 'medium', defaultVisible: true  },
   // Hidden by default
   { id: 'cashflow',             labelKey: 'cashFlow',              defaultSize: 'small',  defaultVisible: false },
   { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: false },
@@ -535,6 +533,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
+  const [tooltip, setTooltip] = useState(null);
 
   // Generate locale-aware month abbreviations for the same window as the incoming labels
   const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
@@ -552,6 +551,12 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   };
 
   const hasExpenses = expenseValues.length === values.length && expenseValues.some((v) => v > 0);
+
+  const fmtTooltip = (n) =>
+    `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const showTooltip = (x, y, i) =>
+    setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? expenseValues[i] : null });
   const allValues = hasExpenses ? [...values, ...expenseValues] : values;
   const maxVal = Math.max(...allValues, 0);
   const minVal = Math.min(...allValues, 0);
@@ -593,7 +598,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
           <div className="flex items-center gap-2 cursor-pointer select-none" onClick={toggleCollapsed}>
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
             <CardTitle className="text-sm font-medium">
-              {chartType === 'line' && hasExpenses ? ui('revenueVsExpenses12m') : ui('revenue12m')}
+              {ui('revenueVsExpenses12m')}
             </CardTitle>
           </div>
           {!collapsed && (
@@ -668,7 +673,10 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   <path d={toFillPath(expPoints)} fill="url(#expense-gradient)" />
                   <polyline points={toPolyline(expPoints)} fill="none" stroke="hsl(var(--destructive))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 3" />
                   {expPoints.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
+                    <g key={i} onMouseEnter={() => showTooltip(p.x, p.y, i)} onMouseLeave={() => setTooltip(null)} style={{ cursor: 'crosshair' }}>
+                      <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
+                      <circle cx={p.x} cy={p.y} r="2.5" fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
+                    </g>
                   ))}
                 </>
               )}
@@ -676,7 +684,10 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
               <path d={toFillPath(revPoints)} fill="url(#chart-gradient)" />
               <polyline points={toPolyline(revPoints)} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               {revPoints.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2" />
+                <g key={i} onMouseEnter={() => showTooltip(p.x, p.y, i)} onMouseLeave={() => setTooltip(null)} style={{ cursor: 'crosshair' }}>
+                  <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
+                  <circle cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2" />
+                </g>
               ))}
 
               {localizedLabels.map((m, i) => {
@@ -687,6 +698,25 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   </text>
                 );
               })}
+
+              {tooltip && (() => {
+                const boxW = 145;
+                const lineH = 15;
+                const numLines = hasExpenses ? 3 : 2;
+                const boxH = 10 + numLines * lineH + 2;
+                const tipX = Math.min(Math.max(tooltip.x - boxW / 2, PAD_X), CHART_W - PAD_X - boxW);
+                const tipY = Math.max(tooltip.y - boxH - 10, PAD_Y);
+                return (
+                  <g pointerEvents="none">
+                    <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
+                    <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${ui('revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
+                    {hasExpenses && (
+                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${ui('expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
+                    )}
+                  </g>
+                );
+              })()}
             </svg>
           ) : (
             <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full h-auto" role="img" aria-label={ui('barChartAria')}>
@@ -708,17 +738,36 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                 const bH = Math.max((v / barMaxVal) * barPlotH, v > 0 ? 3 : 0);
                 const x = PAD_X + i * barSlotW + barGap;
                 const y = BAR_PAD_Y + barPlotH - bH;
+                const barCx = x + barW / 2;
                 return (
-                  <g key={i}>
+                  <g key={i}
+                    onMouseEnter={() => setTooltip({ x: barCx, y, label: localizedLabels[i], revenue: v, expense: null })}
+                    onMouseLeave={() => setTooltip(null)}
+                    style={{ cursor: 'crosshair' }}
+                  >
                     <rect x={x} y={y} width={barW} height={bH} rx="3"
                       fill={i === lastIdx ? '#10b981' : 'rgba(16,185,129,0.35)'}
                     />
-                    <text x={x + barW / 2} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
+                    <text x={barCx} y={CHART_H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize="10">
                       {localizedLabels[i]}
                     </text>
                   </g>
                 );
               })}
+
+              {tooltip && (() => {
+                const boxW = 130;
+                const boxH = 36;
+                const tipX = Math.min(Math.max(tooltip.x - boxW / 2, PAD_X), CHART_W - PAD_X - boxW);
+                const tipY = Math.max(tooltip.y - boxH - 8, BAR_PAD_Y);
+                return (
+                  <g pointerEvents="none">
+                    <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
+                    <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 27} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{fmtTooltip(tooltip.revenue)}</text>
+                  </g>
+                );
+              })()}
             </svg>
           )}
         </CardContent>
@@ -1249,7 +1298,6 @@ export default function DashboardPage() {
       case 'kpi-revenue':          return kpiWidget('revenueThisMonth');
       case 'kpi-expenses':         return kpiWidget('expensesThisMonth');
       case 'kpi-profit':           return kpiWidget('netProfit');
-      case 'kpi-pending':          return kpiWidget('pendingInvoices');
       case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} />;
       case 'top-clients':          return <TopClients key={id} clients={topClients} />;
       case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} />;

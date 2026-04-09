@@ -25,12 +25,6 @@ export const kpisConfig = [
     "label": "Net Profit",
     "format": "currency",
     "icon": "TrendingUp"
-  },
-  {
-    "key": "pendingInvoices",
-    "label": "Pending Invoices",
-    "format": "number",
-    "icon": "Clock"
   }
 ];
 
@@ -55,13 +49,6 @@ export const sections = {
     "label": "Net Profit",
     "format": "currency",
     "icon": "TrendingUp"
-  },
-  "kpi-pending": {
-    "type": "kpi-single",
-    "key": "pendingInvoices",
-    "label": "Pending Invoices",
-    "format": "number",
-    "icon": "Clock"
   },
   "revenue-trend": {
     "type": "chart",
@@ -89,19 +76,15 @@ export const sections = {
 export const layout = [
   {
     "section": "kpi-revenue",
-    "span": "1/4"
+    "span": "1/3"
   },
   {
     "section": "kpi-expenses",
-    "span": "1/4"
+    "span": "1/3"
   },
   {
     "section": "kpi-profit",
-    "span": "1/4"
-  },
-  {
-    "section": "kpi-pending",
-    "span": "1/4"
+    "span": "1/3"
   },
   {
     "section": "revenue-trend",
