@@ -4,6 +4,7 @@ import ProductCategoryForm from './ProductCategoryForm';
 import catalogs from './mockCatalogs';
 
 const windowMeta = { category: 'reference', name: 'Product Category' };
+const breadcrumb = 'Inventory / Product Category';
 
 export default function App({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -15,6 +16,7 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Product Category"
         windowName={windowName}
         recordId={recordId}
+        breadcrumb={breadcrumb}
         window={windowMeta}
         {...props}
       />
@@ -27,6 +29,7 @@ export default function App({ windowName, recordId, ...props }) {
       Table={ProductCategoryTable}
       entityLabel="Product Category"
       windowName={windowName}
+      breadcrumb={breadcrumb}
       window={windowMeta}
       {...props}
     />

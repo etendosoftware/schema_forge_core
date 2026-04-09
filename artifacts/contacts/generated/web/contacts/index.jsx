@@ -1,6 +1,6 @@
 import BusinessPartnerPage from './BusinessPartnerPage';
 
-const windowMeta = { category: 'people', name: 'Contacts' };
+const windowMeta = { category: 'contact', name: 'Contacts' };
 
 const api = {
   "specName": "contacts",
