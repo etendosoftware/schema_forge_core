@@ -542,6 +542,12 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.hidePrint) {
     schema.window.hidePrint = true;
   }
+  if (windowDecisions.hideMoreMenu) {
+    schema.window.hideMoreMenu = true;
+  }
+  if (windowDecisions.contentBg !== undefined) {
+    schema.window.contentBg = windowDecisions.contentBg;
+  }
   if (windowDecisions.breadcrumb !== undefined) {
     schema.window.breadcrumb = windowDecisions.breadcrumb;
   }
@@ -602,6 +608,18 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.disableProcessedLock) {
     schema.window.disableProcessedLock = true;
+  }
+  if (windowDecisions.hideMoreMenu) {
+    schema.window.hideMoreMenu = true;
+  }
+  if (windowDecisions.listViewOptions) {
+    schema.window.listViewOptions = windowDecisions.listViewOptions;
+  }
+  if (windowDecisions.listBaseFilter) {
+    schema.window.listBaseFilter = windowDecisions.listBaseFilter;
+  }
+  if (windowDecisions.quickFilters) {
+    schema.window.quickFilters = windowDecisions.quickFilters;
   }
   const rules = resolveRules(rulesRaw, decisions);
 
