@@ -403,10 +403,19 @@ export function DetailView({
           auxiliaryValues[k] = String(v);
         }
       }
+      // For callouts that compute unit price from qty (e.g., SL_Order_Amt for tax-included
+      // price lists): substitute orderedQuantity = 1 when empty so the callout can compute
+      // the unit price correctly. qty=0 causes grossAmount=0 → netUnitPrice=0, which is
+      // meaningless for unit price display. qty=1 gives the correct per-unit calculation.
+      // This only affects the callout context — the actual form value is unchanged.
+      const formStateForCallout = { ...formState };
+      if (!Number(formStateForCallout.orderedQuantity)) {
+        formStateForCallout.orderedQuantity = 1;
+      }
       const payload = {
         field,
         value,
-        formState,
+        formState: formStateForCallout,
         ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
       };
       const res = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
@@ -455,11 +464,72 @@ export function DetailView({
         const hint = rowValues[field + '_' + key];
         if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
       }
+      // Tax-included price lists: SL_Order_Product sets grossUnitPrice; SL_Order_Amt cascades
+      // to derive unitPrice (net). If unitPrice is still null or 0 after the cascade (e.g.,
+      // cascade ran with qty=0 and computed 0, or cascade did not run), fall back to showing
+      // grossUnitPrice so the user sees a price rather than nothing.
+      if (result.grossUnitPrice != null && !result.unitPrice) {
+        result.unitPrice = result.grossUnitPrice;
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
+
+      // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
+      // unitPrice or grossUnitPrice but did not compute lineNetAmount.
+      // This mirrors classic browser behaviour: detecting a price field change auto-fires
+      // SL_Order_Amt to compute lineNetAmount = unitPrice * qty (and, for gross-price lists,
+      // to derive the correct net unitPrice from grossUnitPrice).
+      const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
+      // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
+      const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
+      if (priceUpdated && amountNotComputed) {
+        try {
+          const cascadePrice = result.unitPrice ?? result.grossUnitPrice;
+          // Merge first callout result into the form state so SL_Order_Amt sees the
+          // freshly set tax, grossUnitPrice, gROSSPRICE, etc.
+          const cascadeState = { ...formStateForCallout };
+          for (const [k, v] of Object.entries(result)) {
+            if (!k.includes('$_identifier')) cascadeState[k] = v;
+          }
+          // The callout endpoint resolves by DB column name (e.g. 'PriceActual'), not by
+          // the SFField API key ('unitPrice'). Look up the column from addLineFields so
+          // NeoCalloutService.resolveCallout can find SL_Order_Amt via equalsIgnoreCase.
+          const unitPriceColumn = (addLineFields?.entry ?? []).find(
+            f => f.key === 'unitPrice'
+          )?.column ?? 'PriceActual';
+          const cascadeRes = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              field: unitPriceColumn,
+              value: String(cascadePrice ?? ''),
+              formState: cascadeState,
+              ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+            }),
+          });
+          if (cascadeRes.ok) {
+            const cascadeData = await cascadeRes.json();
+            const cascadeResult = {};
+            if (cascadeData.updates) {
+              for (const [k, entry] of Object.entries(cascadeData.updates)) {
+                cascadeResult[k] = entry.value;
+                if (entry._identifier) cascadeResult[k + '$_identifier'] = entry._identifier;
+              }
+            }
+            if (cascadeData.combos) {
+              for (const [k, combo] of Object.entries(cascadeData.combos)) {
+                if (combo.selected != null) cascadeResult[k] = combo.selected;
+              }
+            }
+            if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
+          }
+        } catch {
+          // Cascade is best-effort — first callout result was already applied above
+        }
+      }
     } catch {
       // Callout is best-effort
     }
-  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api]);
+  }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields]);
 
   const data = hook.editing || currentItem || {};
   const title = isNew
