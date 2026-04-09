@@ -57,7 +57,7 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
   const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 mt-4">
+    <div className="-mt-6 rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="text-sm font-semibold text-gray-800">Amortization Plan</div>

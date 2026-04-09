@@ -191,7 +191,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         formFooter={AssetsAmortizationPanel}
         primaryTabs={[
           { key: 'general', label: 'Overview' },
-          { key: 'configuration', label: 'Configuration', Panel: AssetsConfigPanel },
+          { key: 'configuration', label: 'Depreciation Setup', Panel: AssetsConfigPanel },
         ]}
         hidePrint
         hideMoreMenu

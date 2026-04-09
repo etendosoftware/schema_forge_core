@@ -4,8 +4,8 @@ function SectionCard({ title, description, children }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="mb-4">
-        <div className="text-sm font-semibold text-gray-800">{title}</div>
-        {description && <div className="text-xs text-gray-400 mt-0.5">{description}</div>}
+        {title && <div className="text-sm font-semibold text-gray-800">{title}</div>}
+        {description && <div className={`text-xs text-gray-400${title ? ' mt-0.5' : ''}`}>{description}</div>}
       </div>
       {children}
     </div>
@@ -96,9 +96,9 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
   const common = { data: d, onChange, catalogs, api, token, apiBaseUrl, entity: 'assets', layout: 'horizontal' };
 
   return (
-    <div className="space-y-4 pt-5 pb-6">
+    <div className="space-y-4 pb-6">
       <SectionCard
-        title="Depreciation Setup"
+        title={null}
         description="Keep the accounting setup in one structured view instead of mixing it with the amortization table."
       >
         <div className="space-y-4">

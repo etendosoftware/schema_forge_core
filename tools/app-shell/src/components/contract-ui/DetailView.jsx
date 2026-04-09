@@ -899,12 +899,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className="flex-1 overflow-auto px-6 pb-6 min-w-0">
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidebarContent ? 'pl-6 pr-2' : 'px-6'}`}>
               <activeTab.Panel data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto px-6 pb-6 min-w-0${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
@@ -1607,8 +1607,8 @@ export function DetailView({
           )}
           </div>
         </div>
-        {sidebarContent && (!primaryTabs || activePrimaryTab === 'general') && (
-          <div className="w-96 shrink-0 overflow-y-auto pt-0 px-4 pb-5">
+        {sidebarContent && (
+          <div className="w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5">
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}

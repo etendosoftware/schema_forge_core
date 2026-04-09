@@ -27,7 +27,7 @@
     "detailEntity": null,
     "primaryTabs": [
       { "key": "general", "label": "Overview" },
-      { "key": "configuration", "label": "Configuration", "panel": "AssetsConfigPanel" }
+      { "key": "configuration", "label": "Depreciation Setup", "panel": "AssetsConfigPanel" }
     ],
     "headerExtra": {
       "customForm": "AssetsAmortizationPanel"
