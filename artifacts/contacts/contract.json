@@ -399,7 +399,7 @@
             "label": "Factura Simplificada",
             "type": "boolean",
             "tsType": "boolean",
-            "visibility": "system",
+            "visibility": "discarded",
             "required": false,
             "grid": false,
             "form": false,
