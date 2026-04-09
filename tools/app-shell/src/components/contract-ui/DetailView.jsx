@@ -807,7 +807,7 @@ export function DetailView({
                     : 'text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
-                {tab.label}
+                {ui(tab.label)}
               </button>
             ))}
           </div>
@@ -891,7 +891,7 @@ export function DetailView({
                         ].join(' ')}
                       >
                         <List className="h-4 w-4" />
-                        {tab.label}
+                        {ui(tab.label)}
                         {tab.count != null && (
                           <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
                             {tab.count}
