@@ -467,10 +467,10 @@ export default function ProductPage({ windowName, recordId, ...props }) {
           { key: 'general', label: 'General' },
           { key: 'additionalInfo', label: 'Additional Info', Panel: ProductAdditionalInfoPanel },
         ]}
-        {...props}
-        contentBg="bg-slate-50"
         hidePrint
         hideMoreMenu
+        contentBg="bg-slate-50"
+        {...props}
         sidebarContent={(data) => (
           <ProductSidebar
             recordId={recordId}
