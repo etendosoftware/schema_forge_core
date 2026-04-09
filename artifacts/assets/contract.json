@@ -1,13 +1,13 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-09T15:04:13.241Z",
-  "checksum": "a07a77663f7adc2a",
+  "generatedAt": "2026-04-09T15:27:21.063Z",
+  "checksum": "aaed77a2c22f4ef2",
   "frontendContract": {
     "window": {
       "id": "800027",
       "name": "Assets",
       "primaryEntity": "assets",
-      "category": "accounting",
+      "category": "finance",
       "sidebarLayout": true,
       "hidePrint": true,
       "hideMoreMenu": true,
@@ -742,7 +742,7 @@
       "id": "800027",
       "name": "Assets",
       "primaryEntity": "assets",
-      "category": "accounting",
+      "category": "finance",
       "sidebarLayout": true,
       "hidePrint": true,
       "hideMoreMenu": true,
