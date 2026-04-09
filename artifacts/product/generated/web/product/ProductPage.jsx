@@ -8,7 +8,7 @@ import catalogs from './mockCatalogs';
 import ProductGallery from '@/windows/custom/product/ProductGallery';
 import ProductSidebar from '@/windows/custom/product/ProductSidebar';
 
-const breadcrumb = 'Reference / Product';
+const breadcrumb = 'Product';
 
 
 // @sf-generated-start summary:product
@@ -468,6 +468,9 @@ export default function ProductPage({ windowName, recordId, ...props }) {
           { key: 'additionalInfo', label: 'Additional Info', Panel: ProductAdditionalInfoPanel },
         ]}
         {...props}
+        contentBg="bg-slate-50"
+        hidePrint
+        hideMoreMenu
         sidebarContent={(data) => (
           <ProductSidebar
             recordId={recordId}

@@ -3,8 +3,12 @@
   "window": {
     "category": "reference",
     "name": "Product",
+    "breadcrumb": "Product",
     "layoutType": "gallery",
     "sidebarLayout": true,
+    "hidePrint": true,
+    "hideMoreMenu": true,
+    "contentBg": "bg-slate-50",
     "detailEntity": null,
     "headerExtra": {
       "customForm": "ProductPriceBar"
