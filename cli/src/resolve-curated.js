@@ -217,6 +217,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
   if (fieldDecision.display) field.display = fieldDecision.display;
+  if (fieldDecision.cellType) field.cellType = fieldDecision.cellType;
 
   const isVisible = visibility !== 'system' && visibility !== 'discarded';
 
@@ -620,6 +621,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.disableProcessedLock) {
     schema.window.disableProcessedLock = true;
+  }
+  if (windowDecisions.titleField) {
+    schema.window.titleField = windowDecisions.titleField;
   }
   const rules = resolveRules(rulesRaw, decisions);
 

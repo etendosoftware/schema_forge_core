@@ -540,6 +540,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
   const detailSortBy = windowConfig.detailSortBy ?? null;
+  const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
 
   // Detect secondary child entities for additional tabs
@@ -666,12 +667,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideLinkProp = hideLink ? '\n      hideLink' : '';
   const hideEyeCountProp = hideEyeCount ? '\n      hideEyeCount' : '';
 
-  // hideMoreMenu prop
-  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
-
-  // contentBg prop
-  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
-
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
   const customComponentProps = [];
@@ -769,6 +764,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // detailSortBy prop
   const detailSortByProp = detailSortBy ? `\n        detailSortBy="${detailSortBy}"` : '';
+
+  // titleField prop
+  const titleFieldProp = titleField ? `\n        titleField="${titleField}"` : '';
 
   // salesTheme prop
   const salesThemeProp = salesTheme ? '\n        salesTheme' : '';
@@ -895,7 +893,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}
         {...props}${sidebarContentProp}
       />
     );

@@ -3,7 +3,8 @@
   "window": {
     "category": "accounting",
     "name": "Assets",
-    "breadcrumb": "Assets",
+    "breadcrumb": "Finance / Assets",
+    "titleField": "name",
     "hidePrint": true,
     "hideMoreMenu": true,
     "contentBg": "bg-slate-50",
@@ -14,7 +15,23 @@
     "detailSortBy": "sEQNoAsset asc",
     "sidebarLayout": true,
     "disableProcessedLock": true,
-    "secondaryTabs": {}
+    "processOverrides": {
+      "processed": {
+        "add": true,
+        "label": "Create Amortization",
+        "style": "positive",
+        "columnName": "Processed"
+      }
+    },
+    "secondaryTabs": {},
+    "detailEntity": null,
+    "primaryTabs": [
+      { "key": "general", "label": "Overview" },
+      { "key": "configuration", "label": "Configuration", "panel": "AssetsConfigPanel" }
+    ],
+    "headerExtra": {
+      "customForm": "AssetsAmortizationPanel"
+    }
   },
   "entities": {
     "assets": {
@@ -49,57 +66,73 @@
           "reason": "Tree positioning field not relevant in simplified UI"
         },
         "depreciate": {
+          "form": false,
           "searchable": true
         },
         "depreciationType": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "calculateType": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "annualDepreciation": {
+          "form": false,
           "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType !== 'TI'"
         },
         "amortize": {
+          "form": false,
           "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI'"
         },
         "usableLifeYears": {
+          "form": false,
           "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI' && record.amortize === 'YE'"
         },
         "usableLifeMonths": {
+          "form": false,
           "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI' && record.amortize !== 'YE'"
         },
         "everyMonthIs30Days": {
           "visibility": "editable",
+          "form": false,
           "displayLogicJs": "(record.depreciate === true || record.depreciate === 'Y') && record.calculateType === 'TI'",
           "reason": "Technical calculation detail — shown only when using Time-based depreciation"
         },
         "purchaseDate": {
           "grid": true,
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "cancellationDate": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationStartDate": {
           "grid": true,
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationEndDate": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "assetValue": {
           "grid": true,
           "summable": true,
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "residualAssetValue": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciationAmt": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "previouslyDepreciatedAmt": {
+          "form": false,
           "displayLogicJs": "record.depreciate === true || record.depreciate === 'Y'"
         },
         "depreciatedValue": {
@@ -129,6 +162,7 @@
           "reason": "Projects not included in this iteration per UX feedback"
         },
         "currency": {
+          "form": false,
           "readOnlyLogicJs": "Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0"
         }
       }
