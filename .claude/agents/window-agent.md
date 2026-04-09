@@ -186,6 +186,40 @@ Comment when:
 - Delivery: summary of decisions.json changes + what still needs human input
 </github_tracking>
 
+<i18n_rules>
+## Internationalization (MANDATORY)
+
+**Every user-visible string MUST be translated.** The app is primarily used in Spanish by real clients. Hardcoded English strings are bugs.
+
+Full reference: `docs/i18n-guide.md`
+
+### Quick Reference
+
+| What | Hook | Example |
+|------|------|---------|
+| Custom UI strings (buttons, messages, placeholders, table headers, toasts) | `useUI()` | `ui('save')`, `ui('loading')`, `ui('noResults')` |
+| AD field labels (column names) | `useLabel()` | `t('C_BPartner_ID')` |
+| Menu/tab/window names | `useMenuLabel()` | `tMenu('Order Line')`, `tMenu(tab.label)` |
+
+### When Writing or Editing Custom Components
+
+1. **Import the hook:** `import { useUI } from '@/i18n';`
+2. **Call inside component:** `const ui = useUI();`
+3. **Replace ALL hardcoded strings:** `<button>{ui('save')}</button>` not `<button>Save</button>`
+4. **Add keys to BOTH locale files:** `en_US.json` AND `es_ES.json` under `genericLabels`
+5. **Use interpolation:** `ui('orderDoc', { number: doc.documentNo })` not concatenation
+6. **Reuse existing keys** — check `genericLabels` before adding new ones
+7. **Module-scope arrays with labels** must move inside the component to access `ui()`
+
+### For RelatedDocuments
+
+Use the shared library at `@/components/related-documents`:
+```jsx
+import { DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_COLORS } from '@/components/related-documents';
+// Translate status: ui(STATUS_KEYS[statusCode])
+```
+</i18n_rules>
+
 <decision_heuristics>
 - Always read before writing — never assume `decisions.json` structure
 - Prefer querying the AD over inferring from field names
