@@ -44,14 +44,16 @@ import { toast } from 'sonner';
  */
 function CollapsibleSection({ title, children }) {
   const ref = useRef(null);
-  const [empty, setEmpty] = useState(false);
+  const [empty, setEmpty] = useState(true);
 
   useEffect(() => {
-    // Check if the rendered children produced any DOM nodes
-    if (ref.current && ref.current.childElementCount === 0) {
-      setEmpty(true);
-    } else {
-      setEmpty(false);
+    // Check for actual form fields — wrapper divs always render even when
+    // EntityForm returns null, so we must look for real input elements.
+    if (ref.current) {
+      const hasFields = ref.current.querySelector(
+        'input, select, textarea, [role="combobox"], [role="spinbutton"]'
+      ) !== null;
+      setEmpty(!hasFields);
     }
   });
 
@@ -108,6 +110,7 @@ export function DetailView({
   hideDeleteWhenComplete = false,
   hidePrint = false,
   hideMoreMenu = false,
+  hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
   sidePanel = null,
@@ -122,6 +125,7 @@ export function DetailView({
   sidebarContent = null,
   othersLabel = null,
   primaryTabs = null,
+  contentBg = 'bg-white',
   lockWhenProcessed = true,
   onAfterSave,
 }) {
@@ -519,7 +523,7 @@ export function DetailView({
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-foreground">{title}</h1>
             </div>
-            {breadcrumb && (
+            {!hideTopBar && breadcrumb && (
               <p className="text-sm text-muted-foreground mt-0.5">
                 {breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}{title ? ` / ${title}` : ''}
               </p>
@@ -527,19 +531,22 @@ export function DetailView({
           </div>
 
           {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
+          {!hideTopBar && (
+            <div className="flex-1 flex justify-center">
+              <div className="relative w-full max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder={ui('searchPlaceholder')}
+                  readOnly
+                  tabIndex={-1}
+                  className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
+                />
+                <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
+              </div>
             </div>
-          </div>
+          )}
+          {hideTopBar && <div className="flex-1" />}
 
           {/* Right: action icons */}
           <div className="flex items-center gap-1 shrink-0">
@@ -557,8 +564,8 @@ export function DetailView({
         </div>
       </div>}
 
-      {/* White content card with rounded top-left corner */}
-      <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
+      {/* Content card with rounded top-left corner */}
+      <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}
         {embedded ? (
           statusField && data[statusField] ? (
@@ -788,16 +795,16 @@ export function DetailView({
 
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
-          <div className="flex items-center gap-2 px-6 py-3 shrink-0">
+          <div className="flex items-center gap-1 px-6 py-2 shrink-0">
             {primaryTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'px-4 py-1.5 text-sm font-medium rounded-md border transition-colors',
+                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors',
                   activePrimaryTab === tab.key
-                    ? 'bg-white border-border text-foreground shadow-sm'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/50',
+                    ? 'bg-white border border-gray-200 shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
                 {tab.label}
@@ -821,44 +828,43 @@ export function DetailView({
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-6`}>
-            {/* Principal header fields (horizontal row) */}
-            {/* Visibility logic is intentionally not applied here: principal fields must always
-                be visible (shown as readOnly when needed). Only readOnly state is propagated. */}
-            <div className={`mt-4 rounded-xl border border-border/60 bg-white p-6 shadow-sm${embedded ? ' pointer-events-none' : ''}`}>
-              <Form
-                entity={entity}
-                data={data}
-                onChange={handleChangeWithCallout}
-                catalogs={catalogs}
-                layout="horizontal"
-                section="principal"
-                displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
-                api={api}
-                token={token}
-                apiBaseUrl={apiBaseUrl}
-              />
-            </div>
-
-            {/* Collapsible secondary header fields (hidden if no collapsed fields) */}
-            {Form?.hasCollapsedFields !== false && (
-            <div className={`${sidePanel ? 'mt-2' : 'mt-6'}`}>
-            <CollapsibleSection title={ui('moreDetails')}>
-              <div className={embedded ? 'pointer-events-none' : ''}>
+            {/* Principal + collapsed fields wrapped in a card */}
+            <div className={`rounded-2xl border border-gray-200/70 bg-white shadow-sm overflow-hidden${embedded ? ' pointer-events-none' : ''}`}>
+              <div className="p-6">
                 <Form
                   entity={entity}
                   data={data}
                   onChange={handleChangeWithCallout}
                   catalogs={catalogs}
                   layout="horizontal"
-                  section="collapsed"
-                  excludeFields={notesField ? [notesField] : []}
-                  displayLogic={displayLogic}
+                  section="principal"
+                  displayLogic={{ readOnly: displayLogic?.readOnly ?? {}, visibility: {} }}
                   api={api}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                 />
               </div>
-            </CollapsibleSection>
+
+              {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
+              {!sidebarContent && (
+                <CollapsibleSection title={ui('moreDetails')}>
+                  <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
+                    <Form
+                      entity={entity}
+                      data={data}
+                      onChange={handleChangeWithCallout}
+                      catalogs={catalogs}
+                      layout="horizontal"
+                      section="collapsed"
+                      excludeFields={notesField ? [notesField] : []}
+                      displayLogic={displayLogic}
+                      api={api}
+                      token={token}
+                      apiBaseUrl={apiBaseUrl}
+                    />
+                  </div>
+                </CollapsibleSection>
+              )}
             </div>
             )}
 
@@ -1511,8 +1517,8 @@ export function DetailView({
           </div>
           {sidePanel && (
             <div
-              className="w-[280px] shrink-0 border-l border-border/50 self-stretch bg-muted/20 px-4"
-              style={{ borderLeftWidth: '1px', ...sidePanelStyle }}
+              className="w-[280px] shrink-0 self-stretch px-4"
+              style={sidePanelStyle}
             >
               {typeof sidePanel === 'function'
                 ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
@@ -1522,7 +1528,7 @@ export function DetailView({
           </div>
         </div>
         {sidebarContent && (
-          <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto p-5 bg-gray-50/40">
+          <div className="w-96 shrink-0 overflow-y-auto pt-0 px-4 pb-5">
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}

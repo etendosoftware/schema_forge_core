@@ -514,6 +514,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
+  const contentBg = windowConfig.contentBg ?? null;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
@@ -645,6 +646,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const quickFiltersProp = quickFilters
     ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
     : '';
+  // contentBg prop
+  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
 
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
@@ -869,7 +872,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${salesThemeProp}${disableProcessedLockProp}
         {...props}${sidebarContentProp}
       />
     );

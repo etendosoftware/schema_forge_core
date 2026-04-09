@@ -542,6 +542,12 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.hidePrint) {
     schema.window.hidePrint = true;
   }
+  if (windowDecisions.hideMoreMenu) {
+    schema.window.hideMoreMenu = true;
+  }
+  if (windowDecisions.contentBg !== undefined) {
+    schema.window.contentBg = windowDecisions.contentBg;
+  }
   if (windowDecisions.breadcrumb !== undefined) {
     schema.window.breadcrumb = windowDecisions.breadcrumb;
   }
