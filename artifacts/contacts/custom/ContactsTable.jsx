@@ -14,7 +14,7 @@ function TypeBadge({ row, t }) {
     return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">{t('Customer')}</span>;
   }
   if (isVend) {
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{t('Vendor')}</span>;
+    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">{t('Vendor')}</span>;
   }
   return '—';
 }
