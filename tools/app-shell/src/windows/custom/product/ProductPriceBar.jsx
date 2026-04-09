@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
+import { useUI } from '@/i18n';
 import {
   Dialog,
   DialogContent,
@@ -676,6 +677,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
 }
 
 export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api }) {
+  const ui = useUI();
   const recordId = data?.id;
   const [priceRows, setPriceRows] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -809,7 +811,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
 
   const saveCreate = async () => {
     if (!recordId) {
-      toast.info('Save the product first, then configure pricing.');
+      toast.info(ui('saveProductFirstPricing'));
       return;
     }
 
@@ -820,7 +822,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       const purchaseNumber = toFiniteNumber(purchaseDraft);
 
       if (saleNumber === null && purchaseNumber === null) {
-        toast.info('Enter at least one value to create pricing.');
+        toast.info(ui('enterAtLeastOneValueCreatePricing'));
         return;
       }
 
@@ -960,7 +962,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       await refreshPrices();
       savedSuccessfully = true;
     } catch (err) {
-      toast.error(err?.message || 'Unable to save pricing.');
+      toast.error(err?.message || ui('unableToSavePricing'));
     } finally {
       setSaving(false);
       if (savedSuccessfully) {
@@ -977,9 +979,9 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   if (!recordId) {
     return (
       <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm p-5 mb-2">
-        <div className="text-sm font-semibold text-gray-800">Pricing</div>
+        <div className="text-sm font-semibold text-gray-800">{ui('pricing')}</div>
         <div className="text-sm text-gray-500 mt-1">
-          Save the product first. Then you can define sale and purchase prices in a default price list version.
+          {ui('saveProductFirstPricing')}
         </div>
       </div>
     );
@@ -989,9 +991,9 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
     <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm p-5 mb-2">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="text-base font-semibold text-gray-800">Pricing</div>
+          <div className="text-base font-semibold text-gray-800">{ui('pricing')}</div>
           <div className="text-sm text-gray-400 mt-0.5">
-            Show every price list where this product exists, separated into sales and purchase.
+            {ui('configureMainSaleAndPurchasePrice')}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
@@ -1002,7 +1004,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                 disabled={saving}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                Cancel
+                {ui('cancel')}
               </button>
               <button
                 onClick={saveCreate}
@@ -1010,7 +1012,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
                 className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-1.5"
               >
                 {saving && <Loader2 size={11} className="animate-spin" />}
-                Save pricing
+                {ui('savePricing')}
               </button>
             </>
           ) : (
@@ -1019,7 +1021,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
               disabled={loading}
               className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium"
             >
-              {hasRows ? 'Edit Pricing' : 'Set Pricing'}
+              {hasRows ? ui('editPricing') : ui('setPricing')}
             </button>
           )}
         </div>
@@ -1028,7 +1030,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       {loading ? (
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-500 flex items-center gap-2">
           <Loader2 size={14} className="animate-spin" />
-          Loading pricing...
+          {ui('loadingPricing')}
         </div>
       ) : creating && !hasRows ? (
         <div className="flex gap-3">
@@ -1062,7 +1064,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         </div>
       ) : !hasRows ? (
         <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-400">
-          No pricing is configured for this product yet.
+          {ui('noPricingConfigured')}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

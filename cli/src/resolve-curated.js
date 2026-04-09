@@ -625,6 +625,18 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.titleField) {
     schema.window.titleField = windowDecisions.titleField;
   }
+  if (windowDecisions.hideMoreMenu) {
+    schema.window.hideMoreMenu = true;
+  }
+  if (windowDecisions.listViewOptions) {
+    schema.window.listViewOptions = windowDecisions.listViewOptions;
+  }
+  if (windowDecisions.listBaseFilter) {
+    schema.window.listBaseFilter = windowDecisions.listBaseFilter;
+  }
+  if (windowDecisions.quickFilters) {
+    schema.window.quickFilters = windowDecisions.quickFilters;
+  }
   const rules = resolveRules(rulesRaw, decisions);
 
   return { schema, rules };

@@ -199,6 +199,8 @@ export function generateFormComponent(entityName, contract) {
     return 'other';
   });
 
+  const hasCollapsed = fieldSections.some(s => s === 'collapsed');
+
   const fieldsArray = formFields.map((f, idx) => {
     const type = mapFormFieldType(f);
     const requiredPart = f.required ? ', required: true' : '';
@@ -261,6 +263,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
+${compName}.hasCollapsedFields = ${hasCollapsed};
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -532,6 +535,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hidePrint = windowConfig.hidePrint ?? false;
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
+  const listViewOptions = windowConfig.listViewOptions ?? null;
+  const listBaseFilter = windowConfig.listBaseFilter ?? null;
+  const quickFilters = windowConfig.quickFilters ?? null;
   const contentBg = windowConfig.contentBg ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
   const hideLink = windowConfig.hideLink ?? false;
@@ -658,7 +664,17 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
   // hideMoreDetails prop (DetailView)
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
-  // contentBg prop (DetailView)
+  // listViewOptions props
+  const listViewOptionsProp = listViewOptions
+    ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
+    : '';
+  const listBaseFilterProp = listBaseFilter
+    ? `\n      baseFilter="${listBaseFilter}"`
+    : '';
+  const quickFiltersProp = quickFilters
+    ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
+    : '';
+  // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
   // ListView toolbar props
   const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
@@ -906,7 +922,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
       {...props}
     />
   );

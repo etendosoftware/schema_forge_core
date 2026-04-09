@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Boxes, Lock, PackageCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useUI } from '@/i18n';
 
 function formatCompact(v) {
   if (v === null || v === undefined) return null;
@@ -205,8 +206,8 @@ const PERIOD_OPTIONS = [
   { label: '1M', months: 1 },
   { label: '3M', months: 3 },
   { label: '6M', months: 6 },
-  { label: '1A', months: 12 },
-  { label: '2A', months: 24 },
+  { label: '1Y', months: 12 },
+  { label: '2Y', months: 24 },
 ];
 
 function StockChart({
@@ -217,6 +218,7 @@ function StockChart({
   const [internalOpen, setInternalOpen] = useState(false);
   const [period, setPeriod] = useState('1A');
   const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+  const ui = useUI();
 
   const isOpen = externalOpen || internalOpen;
 
@@ -260,7 +262,7 @@ function StockChart({
       {/* Mini chart shown in Summary tab */}
       <div className="rounded-2xl border border-gray-100 bg-white p-4">
         <div className="flex items-center justify-between mb-1">
-          <div className="text-sm font-semibold text-gray-800">Stock movement</div>
+          <div className="text-sm font-semibold text-gray-800">{ui('stockMovement')}</div>
           <button
             onClick={() => setInternalOpen(true)}
             className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 rounded-lg px-3 py-1"
@@ -280,7 +282,7 @@ function StockChart({
           <DialogHeader>
             <DialogTitle>
               <div className="flex items-center justify-between gap-4 pr-8">
-                <span>Stock movement</span>
+                <span>{ui('stockMovement')}</span>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   {PERIOD_OPTIONS.map(opt => (
                     <button key={opt.label} onClick={() => setPeriod(opt.label)}
@@ -298,7 +300,7 @@ function StockChart({
             </div>
             {sortedRows.length > 0 && (
               <div className="w-56 flex-shrink-0 flex flex-col gap-2">
-                <div className="text-sm font-semibold text-gray-700">Stock by warehouse</div>
+                <div className="text-sm font-semibold text-gray-700">{ui('stockByWarehouse')}</div>
                 {sortedRows.map((b, i) => {
                   const isSelected = selectedWarehouse === b.binName;
                   const isDimmed = selectedWarehouse !== null && !isSelected;
@@ -317,8 +319,8 @@ function StockChart({
                 })}
                 <div className="text-xs text-gray-400 mt-auto pt-2">
                   {selectedWarehouse
-                    ? `${locationRows.find(r => r.binName === selectedWarehouse)?.quantityOnHand?.toLocaleString() ?? 0} units`
-                    : `Total: ${currentStock?.toLocaleString()} units`}
+                    ? `${locationRows.find(r => r.binName === selectedWarehouse)?.quantityOnHand?.toLocaleString() ?? 0} ${ui('units')}`
+                    : `${ui('total')}: ${currentStock?.toLocaleString()} ${ui('units')}`}
                 </div>
               </div>
             )}
@@ -331,6 +333,7 @@ function StockChart({
 
 
 export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
+  const ui = useUI();
   const [stockRows, setStockRows] = useState(null);
   const [transactions, setTransactions] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
@@ -380,7 +383,7 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
 
   let onHandSubtitle = null;
   if (binCount === 1) onHandSubtitle = locationRows[0]?.binName ?? null;
-  else if (binCount > 1) onHandSubtitle = `${binCount} warehouses`;
+  else if (binCount > 1) onHandSubtitle = `${binCount} ${ui('locations')}`;
 
   const availablePct = onHand > 0 && available !== null ? Math.round((available / onHand) * 100) : null;
   const hasChart = transactions !== null && transactions.length > 0;
@@ -404,13 +407,13 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
 
         {/* Header inside the pill */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
-          <span className="text-sm font-semibold text-gray-800">Inventory overview</span>
+          <span className="text-sm font-semibold text-gray-800">{ui('inventoryOverview')}</span>
           <div className="flex bg-gray-100 rounded-lg p-0.5">
             {['summary', 'warehouses'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors
                   ${activeTab === tab ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-                {tab === 'summary' ? 'Summary' : 'Warehouses'}
+                {tab === 'summary' ? ui('summary') : ui('warehouses')}
               </button>
             ))}
           </div>

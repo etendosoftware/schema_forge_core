@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList } from 'lucide-react';
+import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw } from 'lucide-react';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 import ReportDrawer from './ReportDrawer.jsx';
@@ -32,8 +32,15 @@ export function ListView({
   api = null,
   bulkActions = null,
   isRowSelectable = null,
+  listViewOptions = {},
+  baseFilter = null,
+  quickFilters = null,
 }) {
-  const hook = useEntity(entity, null, { token, apiBaseUrl });
+  const [activeFilterIndex, setActiveFilterIndex] = useState(0);
+  const effectiveFilter = quickFilters
+    ? (quickFilters[activeFilterIndex]?.filter ?? baseFilter)
+    : baseFilter;
+  const hook = useEntity(entity, null, { token, apiBaseUrl, baseFilter: effectiveFilter });
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
   const t = useLabel();
@@ -189,27 +196,47 @@ export function ListView({
           </div>
         ) : (
           <div className="flex items-center justify-between px-6 py-3">
-            {!hideListFilters ? (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
-                  {ui('allStatuses')}
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {ui('lastYear')}
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-                <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </button>
-              </div>
-            ) : <div />}
+            <div className="flex items-center gap-2">
+              {quickFilters && (
+                <div className="flex items-center gap-1">
+                  {quickFilters.map((qf, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveFilterIndex(i)}
+                      className={[
+                        'h-9 px-4 text-sm rounded-lg border transition-colors',
+                        activeFilterIndex === i
+                          ? 'border-primary text-primary bg-primary/5 font-medium'
+                          : 'border-border text-muted-foreground hover:text-foreground',
+                      ].join(' ')}
+                    >
+                      {ui(qf.label)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!(listViewOptions?.hideFilters ?? hideListFilters) && (
+                <>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
+                    {ui('allStatuses')}
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {ui('lastYear')}
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                  <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                 <Search className="h-4 w-4" />
               </button>
-              {!hideLink && (
+              {!(listViewOptions?.hideLink ?? hideLink) && (
                 <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                   <Link2 className="h-4 w-4" />
                 </button>
@@ -265,19 +292,26 @@ export function ListView({
                   </div>
                 )}
               </div>
-              {!hideEyeCount && (
+              <button
+                onClick={() => hook.refresh()}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                title={ui('refresh') || 'Refresh'}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              {!(listViewOptions?.hideEye ?? hideEyeCount) && (
                 <div className="flex items-center gap-1.5 ml-1">
                   <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                     <Eye className="h-4 w-4" />
                   </button>
-                  {!hook.loading && (
+                  {!(listViewOptions?.hideCounter ?? hideEyeCount) && !hook.loading && (
                     <span className="text-sm text-muted-foreground tabular-nums">
                       {hook.items.length}
                     </span>
                   )}
                 </div>
               )}
-              {!hidePrint && (
+              {!(listViewOptions?.hidePrint ?? hidePrint) && (
                 <Button
                   variant="outline"
                   size="sm"

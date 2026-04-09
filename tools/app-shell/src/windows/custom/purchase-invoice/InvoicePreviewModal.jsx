@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Upload, Paperclip, Edit2, FileText, Image, Plus, ChevronRight, Check, Trash2 } from 'lucide-react';
+import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { useMenuLabel, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import AddPaymentModal from './AddPaymentModal.jsx';
-
-const TOP_TABS = ['Stats', 'Messages', 'History'];
 
 const ACCEPTED_TYPES = {
   'application/pdf': 'pdf',
@@ -34,7 +33,9 @@ const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
  * Animation: fade + slide-up on open, reverse on close.
  */
 export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, windowName, onClose, onEdit }) {
-  const [activeTab, setActiveTab] = useState('Stats');
+  const ui = useUI();
+  const tMenu = useMenuLabel();
+  const [activeTab, setActiveTab] = useState('stats');
   const [paymentPlan, setPaymentPlan] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
@@ -48,6 +49,11 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const [docFile, setDocFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const topTabs = [
+    { key: 'stats', label: ui('invoicePreviewStats') },
+    { key: 'messages', label: ui('invoicePreviewMessages') },
+    { key: 'history', label: ui('invoicePreviewHistory') },
+  ];
 
   // Release blob URL on unmount or when replaced
   useEffect(() => {
@@ -204,14 +210,14 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
             {/* Left: title + doc actions */}
             <div className="flex items-center gap-3">
               <span className="font-semibold text-gray-900 text-base">
-                Purchase Invoice
+                {tMenu('Purchase Invoice')}
               </span>
               <button
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 disabled
               >
                 <FileText size={13} />
-                PDF
+                {ui('invoicePreviewPdf')}
               </button>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-300 rounded-lg transition-colors" disabled>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
@@ -227,11 +233,11 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                 onClick={canAddPayment ? () => setShowAddPayment(true) : undefined}
               >
                 <Plus size={13} />
-                Add payment
+                {ui('invoicePreviewAddPayment')}
               </Button>
               <Button size="sm" variant="outline" className="gap-1.5" onClick={handleEdit}>
                 <Edit2 size={13} />
-                Edit
+                {ui('invoicePreviewEdit')}
               </Button>
               <button className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
@@ -240,23 +246,23 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
             {/* Right: tab switcher + close */}
             <div className="flex items-center gap-1">
-              {TOP_TABS.map((tab) => (
+              {topTabs.map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    activeTab === tab
+                    activeTab === tab.key
                       ? 'bg-blue-50 text-blue-600 font-medium'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
               <button
                 onClick={handleClose}
                 className="ml-2 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
-                aria-label="Close"
+                aria-label={ui('invoicePreviewClose')}
               >
                 <X size={16} />
               </button>
@@ -282,7 +288,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <button
                       onClick={removeFile}
                       className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors shrink-0"
-                      title="Eliminar documento"
+                      title="Delete document"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -331,17 +337,17 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                       </div>
                     </div>
                     {isDragOver ? (
-                      <p className="text-sm font-medium text-blue-600">Drop file here</p>
+                      <p className="text-sm font-medium text-blue-600">{ui('invoicePreviewDropFileHere')}</p>
                     ) : (
                       <>
-                        <p className="text-sm font-medium text-gray-600 mt-1">Upload your document</p>
+                        <p className="text-sm font-medium text-gray-600 mt-1">{ui('invoicePreviewUploadYourDocument')}</p>
                         <button
                           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                           onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                         >
-                          Click here to upload your file
+                          {ui('invoicePreviewClickHereToUploadYourFile')}
                         </button>
-                        <p className="text-xs text-gray-400">PDF, JPG, PNG, WebP, GIF</p>
+                        <p className="text-xs text-gray-400">{ui('invoicePreviewAcceptedDocumentTypes')}</p>
                       </>
                     )}
                     <input
@@ -358,7 +364,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
             {/* Right panel: 50% — tab content */}
             <div className="w-1/2 overflow-y-auto">
-              {activeTab === 'Stats' && (
+              {activeTab === 'stats' && (
                 <StatsPanel
                   invoice={invoice}
                   partnerName={partnerName}
@@ -374,11 +380,11 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   onAddPayment={() => setShowAddPayment(true)}
                 />
               )}
-              {activeTab === 'Messages' && (
-                <EmptyPanel icon="💬" text="No messages yet" />
+              {activeTab === 'messages' && (
+                <EmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />
               )}
-              {activeTab === 'History' && (
-                <EmptyPanel icon="🕐" text="No activity recorded" />
+              {activeTab === 'history' && (
+                <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />
               )}
             </div>
           </div>
@@ -425,6 +431,7 @@ function InfoRow({ label, value, link }) {
 }
 
 function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPayments, loadingPayments, totalPaid, totalOutstanding, canAddPayment, isDraft, isFullyPaid, onAddPayment }) {
+  const ui = useUI();
   const invoiceDate = invoice.invoiceDate
     ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB')
     : '—';
@@ -438,24 +445,24 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
   return (
     <div className="pb-4">
       {/* General */}
-      <SectionCard title="General" done={true}>
-        <InfoRow label="Total" value={formatAmount(invoice.grandTotalAmount)} />
-        <InfoRow label="Document number" value={invoice.documentNo} />
-        <InfoRow label="Contact" value={partnerName} link />
-        <InfoRow label="Date" value={invoiceDate} />
-        <InfoRow label="Due date" value={dueDate} />
+      <SectionCard title={ui('invoicePreviewGeneral')} done={true}>
+        <InfoRow label={ui('invoicePreviewTotal')} value={formatAmount(invoice.grandTotalAmount)} />
+        <InfoRow label={ui('invoicePreviewDocumentNumber')} value={invoice.documentNo} />
+        <InfoRow label={ui('invoicePreviewContact')} value={partnerName} link />
+        <InfoRow label={ui('invoicePreviewDate')} value={invoiceDate} />
+        <InfoRow label={ui('invoicePreviewDueDate')} value={dueDate} />
         <div className="flex justify-between items-center py-1.5 text-sm">
-          <span className="text-gray-500">Status</span>
+          <span className="text-gray-500">{ui('invoicePreviewStatus')}</span>
           <Badge {...badgeProps}>{sl}</Badge>
         </div>
       </SectionCard>
 
       {/* Payments */}
-      <SectionCard title="Payments" done={isPaid}>
+      <SectionCard title={ui('invoicePreviewPayments')} done={isPaid}>
         {loadingPayments ? (
-          <p className="text-xs text-gray-400 py-2 text-center">Loading...</p>
+          <p className="text-xs text-gray-400 py-2 text-center">{ui('loading')}</p>
         ) : allPayments.length === 0 ? (
-          <p className="text-xs text-gray-400 py-2 text-center">No payments recorded</p>
+          <p className="text-xs text-gray-400 py-2 text-center">{ui('invoicePreviewNoPaymentsRecorded')}</p>
         ) : (
           <div className="space-y-2 mb-3">
             {allPayments.map((row, i) => {
@@ -463,7 +470,7 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
               // Local payments added via AddPaymentModal: dueDate, paymentMethod$_identifier
               let date = '—';
               if (row._local && row.dueDate) {
-                date = new Date(row.dueDate).toLocaleDateString('es-ES');
+                date = new Date(row.dueDate).toLocaleDateString('en-GB');
               } else if (row.paymentDate) {
                 date = row.paymentDate;
               }
@@ -486,7 +493,7 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
                     <div>
                       <span className="text-gray-700 font-medium truncate max-w-[80px] block">{ref}</span>
                       {row._local && (
-                        <span className="text-[10px] text-amber-600 font-medium">pending sync</span>
+                        <span className="text-[10px] text-amber-600 font-medium">{ui('invoicePreviewPendingSync')}</span>
                       )}
                     </div>
                   </div>
@@ -505,10 +512,10 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
           title={
             !canAddPayment
               ? isDraft
-                ? 'Cannot add payments to a draft invoice'
+                  ? ui('invoicePreviewCannotAddPaymentsToDraftInvoice')
                 : isFullyPaid
-                  ? 'Invoice is fully paid'
-                  : 'Invoice must be completed to add payments'
+                    ? ui('invoicePreviewInvoiceIsFullyPaid')
+                    : ui('invoicePreviewInvoiceMustBeCompletedToAddPayments')
               : undefined
           }
           className={`w-full py-2 text-sm font-medium border rounded-lg transition-colors ${
@@ -517,17 +524,17 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, allPaym
               : 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed'
           }`}
         >
-          Add payment
+          {ui('invoicePreviewAddPayment')}
         </button>
       </SectionCard>
 
       {/* Files */}
-      <SectionCard title="Files">
+      <SectionCard title={ui('invoicePreviewFiles')}>
         <button
           disabled
           className="w-full py-2 text-sm text-gray-400 border border-dashed border-gray-300 rounded-lg cursor-default"
         >
-          Add attachment
+          {ui('invoicePreviewAddAttachment')}
         </button>
       </SectionCard>
     </div>

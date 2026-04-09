@@ -1,6 +1,6 @@
 import ProductPage from './ProductPage';
 
-const windowMeta = { category: 'reference', name: 'Product' };
+const windowMeta = { category: 'inventory', name: 'Product' };
 
 const api = {
   "specName": "product",
