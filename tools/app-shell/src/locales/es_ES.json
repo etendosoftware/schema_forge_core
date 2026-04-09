@@ -16245,7 +16245,7 @@
       "label": "Ubicaciones"
     },
     "Contacts": {
-      "label": "Contacto"
+      "label": "Contactos"
     },
     "Business Partners": {
       "label": "Terceros"
@@ -16553,6 +16553,11 @@
     "commercialName": "Nombre comercial",
     "locationColumn": "Ubicación",
     "emailColumn": "Correo electrónico",
+    "typeColumn": "Tipo",
+    "phoneColumn": "Teléfono",
+    "All": "Todos",
+    "Customers": "Clientes",
+    "Vendors": "Proveedores",
     "statusUnderEvaluation": "En evaluación",
     "statusCancelled": "Cancelado",
     "statusPaymentReceived": "Pago recibido",

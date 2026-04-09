@@ -26,9 +26,9 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
 
   const columns = useMemo(() => [
     { key: 'name',       column: 'Name',     type: 'string', label: t('commercialName') },
-    { key: '__type',     type: 'string',     label: 'Type',     render: (row) => <TypeBadge row={row} /> },
+    { key: '__type',     type: 'string',     label: t('typeColumn'),     render: (row) => <TypeBadge row={row} /> },
     { key: '__location', type: 'string',     label: t('locationColumn'), render: (row) => row.__location ?? '—' },
-    { key: '__phone',    type: 'string',     label: 'Phone',    render: (row) => row.__phone    ?? '—' },
+    { key: '__phone',    type: 'string',     label: t('phoneColumn'),    render: (row) => row.__phone    ?? '—' },
     { key: '__email',    type: 'string',     label: t('emailColumn'),    render: (row) => row.__email    ?? '—' },
   ], [gl]);
   const [enrichedData, setEnrichedData] = useState(data);

@@ -203,7 +203,7 @@ export function ListView({
                           : 'border-border text-muted-foreground hover:text-foreground',
                       ].join(' ')}
                     >
-                      {qf.label}
+                      {ui(qf.label)}
                     </button>
                   ))}
                 </div>

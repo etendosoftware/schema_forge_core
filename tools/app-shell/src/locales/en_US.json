@@ -16342,6 +16342,8 @@
     "commercialName": "Commercial Name",
     "locationColumn": "Location",
     "emailColumn": "Email",
+    "typeColumn": "Type",
+    "phoneColumn": "Phone",
     "statusUnderEvaluation": "Under Evaluation",
     "statusCancelled": "Cancelled",
     "statusPaymentReceived": "Payment Received",
