@@ -27,7 +27,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 38907,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 38907
   },
@@ -57,7 +56,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 9306,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 9306
   },
@@ -87,7 +85,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 11544,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 11544
   },
@@ -117,7 +114,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 11872,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 11872
   },
@@ -147,7 +143,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 48460,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 48460
   },
@@ -177,7 +172,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 45418,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 45418
   },
@@ -207,7 +201,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 33840,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 33840
   },
@@ -237,7 +230,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 25716,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 25716
   },
@@ -267,7 +259,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 44780,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 44780
   },
@@ -297,7 +288,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 12483,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 12483
   },
@@ -327,7 +317,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 46022,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 46022
   },
@@ -357,7 +346,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 38634,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 38634
   }
@@ -1154,6 +1142,312 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const reversedInvoices = [
+  {
+    "id": "mock-reversedInvoices-001",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-reversedInvoices-002",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-reversedInvoices-003",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-reversedInvoices-004",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-reversedInvoices-005",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-reversedInvoices-006",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-reversedInvoices-007",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-reversedInvoices-008",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-reversedInvoices-009",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-reversedInvoices-010",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-reversedInvoices-011",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-reversedInvoices-012",
+    "reversedInvoice": "Sample reversedInvoice",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const accounting = [
+  {
+    "id": "mock-accounting-001",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "USD",
+    "period": "Sample period",
+    "accountingDate": "2026-01-15",
+    "account": "Sample account",
+    "debit": 38907,
+    "credit": 38907,
+    "description": "Standard order for Q1 delivery",
+    "businessPartner": "Acme Corp",
+    "product": "Laptop Pro 15",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-accounting-002",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "EUR",
+    "period": "Sample period",
+    "accountingDate": "2026-01-16",
+    "account": "Sample account",
+    "debit": 9306,
+    "credit": 9306,
+    "description": "Rush order - priority shipping required",
+    "businessPartner": "TechFlow Inc",
+    "product": "USB-C Cable",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-accounting-003",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "GBP",
+    "period": "Sample period",
+    "accountingDate": "2026-01-17",
+    "account": "Sample account",
+    "debit": 11544,
+    "credit": 11544,
+    "description": "Bulk purchase for warehouse restocking",
+    "businessPartner": "Global Trade Ltd",
+    "product": "Wireless Mouse",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-accounting-004",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "USD",
+    "period": "Sample period",
+    "accountingDate": "2026-01-18",
+    "account": "Sample account",
+    "debit": 11872,
+    "credit": 11872,
+    "description": "Sample order for client evaluation",
+    "businessPartner": "Summit Industries",
+    "product": "Mechanical Keyboard",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-accounting-005",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "EUR",
+    "period": "Sample period",
+    "accountingDate": "2026-01-19",
+    "account": "Sample account",
+    "debit": 48460,
+    "credit": 48460,
+    "description": "Recurring monthly supply order",
+    "businessPartner": "Pacific Partners",
+    "product": "Monitor 27\"",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-accounting-006",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "GBP",
+    "period": "Sample period",
+    "accountingDate": "2026-01-20",
+    "account": "Sample account",
+    "debit": 45418,
+    "credit": 45418,
+    "description": "Special pricing agreement applies",
+    "businessPartner": "Alpine Solutions",
+    "product": "Webcam HD",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-accounting-007",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "USD",
+    "period": "Sample period",
+    "accountingDate": "2026-01-21",
+    "account": "Sample account",
+    "debit": 33840,
+    "credit": 33840,
+    "description": "Consolidated order from multiple requests",
+    "businessPartner": "Meridian Group",
+    "product": "Headset Pro",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-accounting-008",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "EUR",
+    "period": "Sample period",
+    "accountingDate": "2026-01-22",
+    "account": "Sample account",
+    "debit": 25716,
+    "credit": 25716,
+    "description": "Trial order for new product line",
+    "businessPartner": "Vertex Systems",
+    "product": "Docking Station",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-accounting-009",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "GBP",
+    "period": "Sample period",
+    "accountingDate": "2026-01-23",
+    "account": "Sample account",
+    "debit": 44780,
+    "credit": 44780,
+    "description": "Replacement for damaged goods",
+    "businessPartner": "Atlas Manufacturing",
+    "product": "SSD 1TB",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-accounting-010",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "USD",
+    "period": "Sample period",
+    "accountingDate": "2026-01-24",
+    "account": "Sample account",
+    "debit": 12483,
+    "credit": 12483,
+    "description": "Pre-season inventory build-up",
+    "businessPartner": "Nova Enterprises",
+    "product": "RAM 16GB",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-accounting-011",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "EUR",
+    "period": "Sample period",
+    "accountingDate": "2026-01-25",
+    "account": "Sample account",
+    "debit": 46022,
+    "credit": 46022,
+    "description": "Customer-specific configuration",
+    "businessPartner": "Pinnacle Services",
+    "product": "Power Supply 750W",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-accounting-012",
+    "accountingSchema": "Sample accountingSchema",
+    "currency": "GBP",
+    "period": "Sample period",
+    "accountingDate": "2026-01-26",
+    "account": "Sample account",
+    "debit": 38634,
+    "credit": 38634,
+    "description": "Government contract fulfillment",
+    "businessPartner": "Horizon Labs",
+    "product": "Network Switch",
+    "project": "Sample project",
+    "costcenter": "Sample costcenter",
+    "asset": "Sample asset",
+    "stDimension": "Sample stDimension",
+    "ndDimension": "Sample ndDimension",
+    "postingType": "Sample postingType",
     "headerId": "mock-header-012"
   }
 ];

@@ -77,6 +77,28 @@ const api = {
       "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
       "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
       "supportedFilters": []
+    },
+    "reversedInvoices": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
+      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
+      "supportedFilters": []
+    },
+    "accounting": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/accounting",
+      "detailUrl": "/sws/neo/purchase-invoice/accounting/{id}",
+      "supportedFilters": []
     }
   },
   "selectors": [
@@ -311,6 +333,100 @@ const api = {
       "reference": "Payment",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
+    },
+    {
+      "entity": "reversedInvoices",
+      "field": "reversedInvoice",
+      "column": "Reversed_C_Invoice_ID",
+      "reference": "Invoice",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
+    },
+    {
+      "entity": "accounting",
+      "field": "accountingSchema",
+      "column": "C_AcctSchema_ID",
+      "reference": "AcctSchema",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/accountingSchema"
+    },
+    {
+      "entity": "accounting",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/currency"
+    },
+    {
+      "entity": "accounting",
+      "field": "period",
+      "column": "C_Period_ID",
+      "reference": "Period",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/period"
+    },
+    {
+      "entity": "accounting",
+      "field": "account",
+      "column": "Account_ID",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/account"
+    },
+    {
+      "entity": "accounting",
+      "field": "businessPartner",
+      "column": "C_BPartner_ID",
+      "reference": "BPartner",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/businessPartner"
+    },
+    {
+      "entity": "accounting",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/product"
+    },
+    {
+      "entity": "accounting",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/project"
+    },
+    {
+      "entity": "accounting",
+      "field": "costcenter",
+      "column": "C_Costcenter_ID",
+      "reference": "Costcenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/costcenter"
+    },
+    {
+      "entity": "accounting",
+      "field": "asset",
+      "column": "A_Asset_ID",
+      "reference": "Asset",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/asset"
+    },
+    {
+      "entity": "accounting",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/stDimension"
+    },
+    {
+      "entity": "accounting",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/ndDimension"
     }
   ],
   "actions": [
@@ -386,30 +502,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "aeatsiiSend",
-      "column": "EM_Aeatsii_Send",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiSend",
-      "processId": "2ECF46DAAEEB486EAF79D3594D50DE5F",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "aeatsiiModif",
-      "column": "EM_Aeatsii_Modif",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiModif",
-      "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "tbaiXmlgenerator",
-      "column": "EM_Tbai_Xmlgenerator",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiXmlgenerator",
-      "processId": "BE2486102F2C41779B760609FD69A225",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/processNow",
@@ -421,46 +513,6 @@ const api = {
       "field": "createLinesFrom",
       "column": "CreateFrom",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFrom"
-    },
-    {
-      "entity": "header",
-      "field": "aeatsiiDup",
-      "column": "EM_Aeatsii_Dup",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiDup",
-      "processId": "92C02F9A367140C085D1EE3BD27C4E96",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "aeatsiiUnsubscribe",
-      "column": "EM_Aeatsii_Unsubscribe",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiUnsubscribe",
-      "processId": "BE564945CB2D4892AC0EE51204C5DB7D",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "etvfacRectCreate",
-      "column": "EM_Etvfac_Rect_Create",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/etvfacRectCreate",
-      "processId": "E36A8BA259164E78AFDDC760172C18F5",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "tBAIQRcode",
-      "column": "em_tbai_qrcode",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/tBAIQRcode",
-      "processId": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "tbaiVoidxmlgenerator",
-      "column": "EM_Tbai_Voidxmlgenerator",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiVoidxmlgenerator",
-      "processId": "535A8BAE44A34759A7C8FF40D62A5070",
-      "processType": "obuiapp"
     },
     {
       "entity": "lines",

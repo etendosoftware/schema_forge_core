@@ -3,7 +3,7 @@ import { EntityForm } from '@/components/contract-ui';
 // @sf-generated-start fields:header
 const fields = [
   { key: 'documentNo', column: 'DocumentNo', type: 'text', label: 'Document No.', required: true, readOnly: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
-  // @sf-custom-slot callout:SifInvoiceOperationDateCallout
+  // @sf-custom-slot callout:SE_Invoice_AccountingDate
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date', required: true, section: 'principal', defaultValue: '@#Date@', readOnlyLogic: (record) => record['posted'] === 'Y' || (record['processed'] === true && (record['documentStatus'] !== 'VO')) },
   // @sf-custom-slot callout:SE_Invoice_BPartner
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },

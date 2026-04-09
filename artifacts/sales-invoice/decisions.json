@@ -172,7 +172,7 @@
           "visibility": "discarded"
         },
         "salesOrder": {
-          "visibility": "readOnly"
+          "visibility": "system"
         },
         "externalBusinessPartnerReference": {
           "visibility": "discarded"
@@ -411,24 +411,6 @@
       "exclude": true
     },
     "accounting": {
-      "exclude": true
-    },
-    "intrastat": {
-      "exclude": true
-    },
-    "cashVat": {
-      "exclude": true
-    },
-    "verifactu": {
-      "exclude": true
-    },
-    "siiData": {
-      "exclude": true
-    },
-    "ticketbai": {
-      "exclude": true
-    },
-    "resultadoValidación": {
       "exclude": true
     }
   },
