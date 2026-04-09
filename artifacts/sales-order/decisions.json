@@ -14,11 +14,23 @@
     ],
     "processOverrides": {},
     "customComponents": {
-      "topbarRight": "OrderCreateInvoice"
+      "topbarRight": "OrderCreateInvoice",
+      "topbarExtra": "OrderDraftChips"
+    },
+    "statusEnumLabels": {
+      "DR": "Draft",
+      "CO": "Completado",
+      "CL": "Cerrado",
+      "VO": "Anulado"
     }
   },
   "entities": {
     "header": {
+      "javaQualifier": "salesOrderHeaderHandler",
+      "draftMode": {
+        "enabled": true,
+        "label": "Confirmar"
+      },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",

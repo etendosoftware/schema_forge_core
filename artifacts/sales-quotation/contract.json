@@ -1,7 +1,7 @@
 {
-  "version": "0.10.0",
-  "generatedAt": "2026-04-08T16:55:39.609Z",
-  "checksum": "d6bc7a9b0957065d",
+  "version": "0.10.1",
+  "generatedAt": "2026-04-09T00:16:55.235Z",
+  "checksum": "792d5d94a5b007ad",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -847,7 +847,7 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {
@@ -935,7 +935,7 @@
             "apiKey": "createOrder",
             "column": "Convertquotation",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": false
           },
           {

@@ -25,6 +25,7 @@ export default function OrderConfirmModal({
   const [error, setError] = useState(null);
   const [lineCount, setLineCount] = useState(null);
   const [freshData, setFreshData] = useState(null);
+  const [needsReload, setNeedsReload] = useState(false);
 
   const orderUrl = `${apiBaseUrl}/header`;
   const headers = useMemo(() => ({
@@ -85,6 +86,7 @@ export default function OrderConfirmModal({
           throw new Error(err?.response?.message || err?.message || `Process failed (${processRes.status})`);
         }
         setOrderProcessed(true);
+        setNeedsReload(true);
       }
 
       // Step 2: Create document based on selection
@@ -164,6 +166,11 @@ export default function OrderConfirmModal({
     window.location.reload();
   };
 
+  const handleClose = () => {
+    onClose();
+    if (needsReload) window.location.reload();
+  };
+
   // ── Success state ──────────────────────────────────────────
   if (createdDoc) {
     const isConfirmOnly = createdDoc.type === 'confirm';
@@ -240,14 +247,14 @@ export default function OrderConfirmModal({
 
   // ── Selection state ────────────────────────────────────────
   return (
-    <div onClick={onClose} style={overlayStyle}>
+    <div onClick={handleClose} style={overlayStyle}>
       <div onClick={e => e.stopPropagation()} style={cardStyle}>
 
         {/* Header — blue card */}
         <div style={{ padding: '14px 16px 0', position: 'relative' }}>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               position: 'absolute', top: 10, right: 12,
               fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
@@ -322,7 +329,7 @@ export default function OrderConfirmModal({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, padding: '12px 16px' }}>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >

@@ -23,7 +23,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:quotation
 
-// @sf-custom-slot extraBadges:quotation
 // @sf-generated-start extraBadges:quotation
 const extraBadges = [];
 // @sf-generated-end extraBadges:quotation
@@ -331,7 +330,6 @@ const api = {
 
 // @sf-generated-start component:QuotationPage
 export default function QuotationPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:QuotationPage
   
   if (recordId) {
     return (
@@ -382,5 +380,3 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:QuotationPage
-
-// @sf-custom-slot section:QuotationPage-custom

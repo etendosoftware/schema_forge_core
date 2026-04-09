@@ -172,7 +172,7 @@
           "visibility": "discarded"
         },
         "salesOrder": {
-          "visibility": "system"
+          "visibility": "readOnly"
         },
         "externalBusinessPartnerReference": {
           "visibility": "discarded"

@@ -7,6 +7,7 @@ import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import OrderCreateInvoice from '../../../custom/OrderCreateInvoice';
+import OrderDraftChips from '../../../custom/OrderDraftChips';
 import catalogs from './mockCatalogs';
 
 
@@ -23,7 +24,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
-// @sf-custom-slot extraBadges:header
 // @sf-generated-start extraBadges:header
 const extraBadges = [];
 // @sf-generated-end extraBadges:header
@@ -339,7 +339,6 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:HeaderPage
   
   if (recordId) {
     return (
@@ -366,12 +365,14 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={OrderCreateInvoice}
+        topbarExtra={OrderDraftChips}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
         draftMode={draftMode}
         salesTheme
+        statusEnumLabels={{"DR":"Draft","CO":"Completado","CL":"Cerrado","VO":"Anulado"}}
         {...props}
       />
     );
@@ -390,5 +391,3 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:HeaderPage
-
-// @sf-custom-slot section:HeaderPage-custom

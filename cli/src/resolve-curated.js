@@ -621,6 +621,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.quickFilters) {
     schema.window.quickFilters = windowDecisions.quickFilters;
   }
+  if (windowDecisions.statusEnumLabels) {
+    schema.window.statusEnumLabels = windowDecisions.statusEnumLabels;
+  }
   const rules = resolveRules(rulesRaw, decisions);
 
   return { schema, rules };

@@ -15,9 +15,6 @@ const filters = ['documentNo', 'orderDate', 'businessPartner', 'validUntil', 'do
 
 // @sf-generated-start component:QuotationTable
 export default function QuotationTable(props) {
-  // @sf-custom-slot hooks:QuotationTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:QuotationTable
-
-// @sf-custom-slot section:QuotationTable-custom

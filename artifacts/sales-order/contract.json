@@ -1,7 +1,7 @@
 {
   "version": "0.12.0",
-  "generatedAt": "2026-04-08T16:46:03.784Z",
-  "checksum": "aa04fcb017342246",
+  "generatedAt": "2026-04-09T01:00:46.622Z",
+  "checksum": "324ecbd8f8b15620",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -13,7 +13,8 @@
       "hideDeleteWhenComplete": true,
       "hidePrint": true,
       "customComponents": {
-        "topbarRight": "OrderCreateInvoice"
+        "topbarRight": "OrderCreateInvoice",
+        "topbarExtra": "OrderDraftChips"
       },
       "menuActions": [
         {
@@ -29,6 +30,12 @@
       ],
       "processOverrides": {},
       "salesTheme": true,
+      "statusEnumLabels": {
+        "DR": "Draft",
+        "CO": "Completado",
+        "CL": "Cerrado",
+        "VO": "Anulado"
+      },
       "layoutType": "default"
     },
     "entities": {
@@ -385,6 +392,7 @@
             }
           }
         ],
+        "javaQualifier": "salesOrderHeaderHandler",
         "draftMode": {
           "enabled": true,
           "processField": "documentAction",
@@ -578,7 +586,8 @@
       "hideDeleteWhenComplete": true,
       "hidePrint": true,
       "customComponents": {
-        "topbarRight": "OrderCreateInvoice"
+        "topbarRight": "OrderCreateInvoice",
+        "topbarExtra": "OrderDraftChips"
       },
       "menuActions": [
         {
@@ -593,7 +602,13 @@
         }
       ],
       "processOverrides": {},
-      "salesTheme": true
+      "salesTheme": true,
+      "statusEnumLabels": {
+        "DR": "Draft",
+        "CO": "Completado",
+        "CL": "Cerrado",
+        "VO": "Anulado"
+      }
     },
     "entities": {
       "header": {
@@ -1401,7 +1416,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "salesOrderHeaderHandler"
       },
       "lines": {
         "tableName": "C_OrderLine",
