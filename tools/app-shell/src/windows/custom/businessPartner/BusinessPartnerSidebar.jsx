@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useUI } from '@/i18n';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', {
@@ -202,21 +203,23 @@ function BPChartSVGContent({
 }
 
 function ChartLegend() {
+  const ui = useUI();
   return (
     <div className="flex items-center gap-4">
       <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
         <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-        Revenue
+        {ui('bpRevenue')}
       </span>
       <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
         <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
-        Expenses
+        {ui('bpExpenses')}
       </span>
     </div>
   );
 }
 
 function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
+  const ui = useUI();
   const [expanded, setExpanded] = useState(false);
   const [period, setPeriod] = useState('6M');
 
@@ -226,9 +229,9 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-xs font-medium text-foreground">Sales &amp; Purchases</p>
+        <p className="text-xs font-medium text-foreground">{ui('bpSalesPurchases')}</p>
         <div className="flex items-center gap-1.5">
-          <p className="text-[11px] text-muted-foreground">Last 6 months</p>
+          <p className="text-[11px] text-muted-foreground">{ui('bpLast6Months')}</p>
           <button
             onClick={() => setExpanded(true)}
             className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
@@ -252,7 +255,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
           <DialogHeader>
             <DialogTitle>
               <div className="flex items-center justify-between gap-4 pr-8">
-                <span>Sales &amp; Purchases</span>
+                <span>{ui('bpSalesPurchases')}</span>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   {PERIOD_OPTIONS.map((opt) => (
                     <button
@@ -284,6 +287,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
 }
 
 export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) {
+  const ui = useUI();
   const [kpis, setKpis] = useState(null);
   const [trend, setTrend] = useState(null);
 
@@ -307,8 +311,8 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
   }, [recordId, token, apiBaseUrl]);
 
   const kpiConfig = {
-    revenueThisMonth: { label: 'Revenue this month', accent: 'text-emerald-600' },
-    expensesThisMonth: { label: 'Expenses this month', accent: 'text-foreground' },
+    revenueThisMonth: { label: ui('bpRevenueThisMonth'), accent: 'text-emerald-600' },
+    expensesThisMonth: { label: ui('bpExpensesThisMonth'), accent: 'text-foreground' },
   };
 
   return (

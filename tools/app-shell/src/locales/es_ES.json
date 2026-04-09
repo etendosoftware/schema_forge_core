@@ -661,7 +661,7 @@
       "description": ""
     },
     "Value": {
-      "label": "Clave de búsqueda",
+      "label": "Identificador",
       "description": ""
     },
     "Getapikey": {
@@ -16561,6 +16561,12 @@
     "Customer": "Cliente",
     "Vendor": "Proveedor",
     "Both": "Ambos",
+    "bpRevenueThisMonth": "Ingresos del mes",
+    "bpExpensesThisMonth": "Gastos del mes",
+    "bpSalesPurchases": "Ventas y compras",
+    "bpLast6Months": "Últimos 6 meses",
+    "bpRevenue": "Ingresos",
+    "bpExpenses": "Gastos",
     "General": "General",
     "Financial": "Financiero",
     "Contact Person": "Persona de contacto",
