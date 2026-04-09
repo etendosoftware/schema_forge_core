@@ -666,6 +666,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideLinkProp = hideLink ? '\n      hideLink' : '';
   const hideEyeCountProp = hideEyeCount ? '\n      hideEyeCount' : '';
 
+  // hideMoreMenu prop
+  const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
+
+  // contentBg prop
+  const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+
   // Custom component props (bottomSection, topbarRight)
   const customComponentImports = [];
   const customComponentProps = [];
