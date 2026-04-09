@@ -58,7 +58,7 @@
         { "name": "payment-out", "label": "Payment Out" },
         { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
         { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "assets", "label": "Asset" },
+        { "name": "assets", "label": "Assets" },
         { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
         { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
       ]

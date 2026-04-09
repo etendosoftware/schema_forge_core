@@ -110,6 +110,7 @@ export function DetailView({
   hideDeleteWhenComplete = false,
   hidePrint = false,
   hideMoreMenu = false,
+  hideMoreDetails = false,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -919,7 +920,7 @@ export function DetailView({
               </div>
 
               {/* Collapsible secondary header fields (hidden if no collapsed fields or sidebarContent) */}
-              {!sidebarContent && (
+              {!hideMoreDetails && !sidebarContent && (
                 <CollapsibleSection title={ui('moreDetails')}>
                   <div className={`px-6 pb-6${embedded ? ' pointer-events-none' : ''}`}>
                     <Form
