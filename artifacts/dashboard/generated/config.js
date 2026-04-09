@@ -76,31 +76,31 @@ export const sections = {
 export const layout = [
   {
     "section": "kpi-revenue",
-    "span": "1/3"
+    "span": "1/4"
   },
   {
     "section": "kpi-expenses",
-    "span": "1/3"
+    "span": "1/4"
   },
   {
     "section": "kpi-profit",
-    "span": "1/3"
-  },
-  {
-    "section": "revenue-trend",
-    "span": "2/3"
+    "span": "1/4"
   },
   {
     "section": "quick-actions",
-    "span": "2/3"
+    "span": "1/4"
+  },
+  {
+    "section": "revenue-trend",
+    "span": "2/4"
   },
   {
     "section": "pending-tasks",
-    "span": "1/3"
+    "span": "1/4"
   },
   {
     "section": "recent-messages",
-    "span": "1/3"
+    "span": "1/4"
   }
 ];
 
