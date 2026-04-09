@@ -17,9 +17,6 @@ const fields = [
 
 // @sf-generated-start component:BinContentsForm
 export default function BinContentsForm(props) {
-  // @sf-custom-slot hooks:BinContentsForm
   return <EntityForm fields={fields} {...props} />;
 }
 // @sf-generated-end component:BinContentsForm
-
-// @sf-custom-slot section:BinContentsForm-custom

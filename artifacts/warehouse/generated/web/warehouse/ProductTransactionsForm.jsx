@@ -17,9 +17,6 @@ const fields = [
 
 // @sf-generated-start component:ProductTransactionsForm
 export default function ProductTransactionsForm(props) {
-  // @sf-custom-slot hooks:ProductTransactionsForm
   return <EntityForm fields={fields} {...props} />;
 }
 // @sf-generated-end component:ProductTransactionsForm
-
-// @sf-custom-slot section:ProductTransactionsForm-custom

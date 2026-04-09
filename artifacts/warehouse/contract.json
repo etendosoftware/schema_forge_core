@@ -8,6 +8,7 @@
       "name": "Warehouse",
       "primaryEntity": "warehouse",
       "category": "warehouse",
+      "breadcrumb": "Inventory / Warehouse",
       "secondaryTabs": {
         "productTransactions": {
           "label": "Transactions",

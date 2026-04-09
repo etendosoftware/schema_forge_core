@@ -15,9 +15,6 @@ const fields = [
 
 // @sf-generated-start component:StorageBinForm
 export default function StorageBinForm(props) {
-  // @sf-custom-slot hooks:StorageBinForm
   return <EntityForm fields={fields} {...props} />;
 }
 // @sf-generated-end component:StorageBinForm
-
-// @sf-custom-slot section:StorageBinForm-custom

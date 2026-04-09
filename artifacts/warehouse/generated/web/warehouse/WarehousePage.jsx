@@ -6,7 +6,7 @@ import WarehouseTransactionsTable from '@/windows/custom/warehouse/WarehouseTran
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Warehouse / Warehouse';
+const breadcrumb = 'Inventory / Warehouse';
 
 
 // @sf-generated-start summary:warehouse
@@ -17,7 +17,6 @@ const summary = [
 const statusField = null;
 // @sf-generated-end summary:warehouse
 
-// @sf-custom-slot extraBadges:warehouse
 // @sf-generated-start extraBadges:warehouse
 const extraBadges = [];
 // @sf-generated-end extraBadges:warehouse
@@ -227,7 +226,6 @@ const api = {
 
 // @sf-generated-start component:WarehousePage
 export default function WarehousePage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:WarehousePage
   
   if (recordId) {
     return (
@@ -265,5 +263,3 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:WarehousePage
-
-// @sf-custom-slot section:WarehousePage-custom

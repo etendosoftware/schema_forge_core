@@ -10,9 +10,6 @@ const filters = [];
 
 // @sf-generated-start component:BinContentsTable
 export default function BinContentsTable(props) {
-  // @sf-custom-slot hooks:BinContentsTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:BinContentsTable
-
-// @sf-custom-slot section:BinContentsTable-custom

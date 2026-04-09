@@ -13,9 +13,6 @@ const fields = [
 
 // @sf-generated-start component:WarehouseForm
 export default function WarehouseForm(props) {
-  // @sf-custom-slot hooks:WarehouseForm
   return <EntityForm fields={fields} {...props} />;
 }
 // @sf-generated-end component:WarehouseForm
-
-// @sf-custom-slot section:WarehouseForm-custom
