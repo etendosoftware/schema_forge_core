@@ -4,17 +4,17 @@ import { useLocale } from '@/i18n';
 
 const filters = ['searchKey', 'name'];
 
-function TypeBadge({ row }) {
+function TypeBadge({ row, t }) {
   const isCust = row.customer === true || row.customer === 'Y';
   const isVend = row.vendor === true || row.vendor === 'Y';
   if (isCust && isVend) {
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">Both</span>;
+    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">{t('Both')}</span>;
   }
   if (isCust) {
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">Customer</span>;
+    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">{t('Customer')}</span>;
   }
   if (isVend) {
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Vendor</span>;
+    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{t('Vendor')}</span>;
   }
   return '—';
 }
@@ -26,9 +26,9 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
 
   const columns = useMemo(() => [
     { key: 'name',       column: 'Name',     type: 'string', label: t('commercialName') },
-    { key: '__type',     type: 'string',     label: 'Type',     render: (row) => <TypeBadge row={row} /> },
+    { key: '__type',     type: 'string',     label: t('typeColumn'),     render: (row) => <TypeBadge row={row} t={t} /> },
     { key: '__location', type: 'string',     label: t('locationColumn'), render: (row) => row.__location ?? '—' },
-    { key: '__phone',    type: 'string',     label: 'Phone',    render: (row) => row.__phone    ?? '—' },
+    { key: '__phone',    type: 'string',     label: t('phoneColumn'),    render: (row) => row.__phone    ?? '—' },
     { key: '__email',    type: 'string',     label: t('emailColumn'),    render: (row) => row.__email    ?? '—' },
   ], [gl]);
   const [enrichedData, setEnrichedData] = useState(data);

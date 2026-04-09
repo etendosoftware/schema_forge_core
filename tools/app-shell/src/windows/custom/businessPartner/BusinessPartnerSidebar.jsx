@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useUI, useLocaleSwitch } from '@/i18n';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', {
@@ -202,23 +203,36 @@ function BPChartSVGContent({
 }
 
 function ChartLegend() {
+  const ui = useUI();
   return (
     <div className="flex items-center gap-4">
       <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
         <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-        Revenue
+        {ui('bpRevenue')}
       </span>
       <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
         <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
-        Expenses
+        {ui('bpExpenses')}
       </span>
     </div>
   );
 }
 
 function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
+  const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const [expanded, setExpanded] = useState(false);
   const [period, setPeriod] = useState('6M');
+
+  // Translate backend English month abbreviations (Jan, Feb…) to current locale
+  const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
+  const fmt = new Intl.DateTimeFormat(bcp47, { month: 'short' });
+  const localizedLabels = labels.map((_, i) => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - (labels.length - 1 - i), 1);
+    const s = fmt.format(d);
+    return s.charAt(0).toUpperCase() + s.slice(1).replace('.', '');
+  });
 
   const n = PERIOD_OPTIONS.find((p) => p.label === period)?.months ?? 6;
   const sl = (arr) => arr.slice(-n);
@@ -226,9 +240,9 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-xs font-medium text-foreground">Sales &amp; Purchases</p>
+        <p className="text-xs font-medium text-foreground">{ui('bpSalesPurchases')}</p>
         <div className="flex items-center gap-1.5">
-          <p className="text-[11px] text-muted-foreground">Last 6 months</p>
+          <p className="text-[11px] text-muted-foreground">{ui('bpLast6Months')}</p>
           <button
             onClick={() => setExpanded(true)}
             className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
@@ -240,7 +254,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
       </div>
 
       <BPChartSVGContent
-        labels={labels} revenue={revenue} expenses={expenses}
+        labels={localizedLabels} revenue={revenue} expenses={expenses}
         CW={320} CH={200} PX={32} PY={12} PB={22}
         fontSize={9} chartId="bp-mini"
       />
@@ -252,7 +266,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
           <DialogHeader>
             <DialogTitle>
               <div className="flex items-center justify-between gap-4 pr-8">
-                <span>Sales &amp; Purchases</span>
+                <span>{ui('bpSalesPurchases')}</span>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   {PERIOD_OPTIONS.map((opt) => (
                     <button
@@ -272,7 +286,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
             </DialogTitle>
           </DialogHeader>
           <BPChartSVGContent
-            labels={sl(labels)} revenue={sl(revenue)} expenses={sl(expenses)}
+            labels={sl(localizedLabels)} revenue={sl(revenue)} expenses={sl(expenses)}
             CW={580} CH={280} PX={48} PY={16} PB={28}
             fontSize={12} chartId="bp-expanded"
           />
@@ -284,6 +298,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
 }
 
 export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) {
+  const ui = useUI();
   const [kpis, setKpis] = useState(null);
   const [trend, setTrend] = useState(null);
 
@@ -307,8 +322,8 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
   }, [recordId, token, apiBaseUrl]);
 
   const kpiConfig = {
-    revenueThisMonth: { label: 'Revenue this month', accent: 'text-emerald-600' },
-    expensesThisMonth: { label: 'Expenses this month', accent: 'text-foreground' },
+    revenueThisMonth: { label: ui('bpRevenueThisMonth'), accent: 'text-emerald-600' },
+    expensesThisMonth: { label: ui('bpExpensesThisMonth'), accent: 'text-foreground' },
   };
 
   return (

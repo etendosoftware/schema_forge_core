@@ -485,8 +485,8 @@
       "description": "Especifica si el widget puede ser maximizado"
     },
     "Title": {
-      "label": "Título del Widget",
-      "description": "Título del Widget"
+      "label": "Posición",
+      "description": "Posición del contacto"
     },
     "Showfieldtitle": {
       "label": "Mostrar Título de Campo",
@@ -661,7 +661,7 @@
       "description": ""
     },
     "Value": {
-      "label": "Clave de búsqueda",
+      "label": "Identificador",
       "description": ""
     },
     "Getapikey": {
@@ -1189,8 +1189,8 @@
       "description": "Fecha factura"
     },
     "FIN_Financial_Account_ID": {
-      "label": "Bank",
-      "description": "Financial account used to deposit / withdrawal money such as bank accounts or petty cash"
+      "label": "Cuenta",
+      "description": "Cuenta financiera utilizada para depósitos/retiros, como cuentas bancarias o caja chica"
     },
     "Amount": {
       "label": "Importe cobrado/pagado",
@@ -1829,7 +1829,7 @@
       "description": "Código de identificación compuesto por un número individual de cuenta y dimensiones adicionales, como organización, producto y tercero."
     },
     "AD_User_ID": {
-      "label": "Solicitante",
+      "label": "Usuario/Contacto",
       "description": "Referente que puede aportar información sobre un tercero."
     },
     "CheckDate": {
@@ -7693,7 +7693,7 @@
       "description": "Nombre del contacto"
     },
     "Lastname": {
-      "label": "Apellidos",
+      "label": "Apellido",
       "description": "Apellido del contacto"
     },
     "FixMonthDay2": {
@@ -16065,21 +16065,51 @@
     }
   },
   "ui": {
-    "invoice.status": { "label": "Estado" },
-    "invoice.filter.all": { "label": "Todas" },
-    "invoice.filter.invoices": { "label": "Facturas" },
-    "invoice.filter.credit-notes": { "label": "Abonos" },
-    "invoice.payment.all": { "label": "Todos los pagos" },
-    "invoice.payment.paid": { "label": "Pagadas" },
-    "invoice.payment.pending": { "label": "Pendientes" },
-    "invoice.payment.partial": { "label": "Parciales" },
-    "invoice.docstatus.draft": { "label": "Borrador" },
-    "invoice.docstatus.paid": { "label": "Pagada" },
-    "invoice.docstatus.partial": { "label": "Parcial" },
-    "invoice.docstatus.pending": { "label": "Pendiente" },
-    "invoice.docstatus.overdue": { "label": "Vencida" },
-    "invoice.docstatus.voided": { "label": "Anulada" },
-    "invoice.docstatus.closed": { "label": "Cerrada" },
+    "invoice.status": {
+      "label": "Estado"
+    },
+    "invoice.filter.all": {
+      "label": "Todas"
+    },
+    "invoice.filter.invoices": {
+      "label": "Facturas"
+    },
+    "invoice.filter.credit-notes": {
+      "label": "Abonos"
+    },
+    "invoice.payment.all": {
+      "label": "Todos los pagos"
+    },
+    "invoice.payment.paid": {
+      "label": "Pagadas"
+    },
+    "invoice.payment.pending": {
+      "label": "Pendientes"
+    },
+    "invoice.payment.partial": {
+      "label": "Parciales"
+    },
+    "invoice.docstatus.draft": {
+      "label": "Borrador"
+    },
+    "invoice.docstatus.paid": {
+      "label": "Pagada"
+    },
+    "invoice.docstatus.partial": {
+      "label": "Parcial"
+    },
+    "invoice.docstatus.pending": {
+      "label": "Pendiente"
+    },
+    "invoice.docstatus.overdue": {
+      "label": "Vencida"
+    },
+    "invoice.docstatus.voided": {
+      "label": "Anulada"
+    },
+    "invoice.docstatus.closed": {
+      "label": "Cerrada"
+    },
     "Customer Return": {
       "label": "Devolución"
     },
@@ -16099,7 +16129,7 @@
       "label": "Factura"
     },
     "Warehouses": {
-      "label": "Almacén"
+      "label": "Almacenes"
     },
     "Account": {
       "label": "Plan de cuentas"
@@ -16242,14 +16272,11 @@
     "Physical Inventory": {
       "label": "Inventario físico"
     },
-    "Warehouses": {
-      "label": "Almacenes"
-    },
     "Storage Bins": {
       "label": "Ubicaciones"
     },
     "Contacts": {
-      "label": "Contacto"
+      "label": "Contactos"
     },
     "Business Partners": {
       "label": "Terceros"
@@ -16274,9 +16301,6 @@
     },
     "Absences": {
       "label": "Ausencias"
-    },
-    "Projects": {
-      "label": "Proyectos"
     },
     "Time Tracking": {
       "label": "Control de horas"
@@ -16471,7 +16495,7 @@
     "deleteConfirmMessage": "¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.",
     "edit": "Editar",
     "print": "Imprimir",
-    "preview": "Vista previa",
+    "preview": "Vista Previa",
     "sendPreview": "Enviar / Vista previa",
     "send": "Enviar",
     "sendDownload": "Enviar / Descargar",
@@ -16587,7 +16611,6 @@
     "total": "Total",
     "docs": "Documentos",
     "notes": "Notas",
-    "description": "Descripción",
     "noRelatedDocuments": "Sin documentos relacionados",
     "Complete": "Completar",
     "Confirm & Send": "Confirmar y enviar",
@@ -16692,8 +16715,6 @@
     "refineDimensions": "Refinar por Dimensiones",
     "displayOptions": "Opciones de Visualización",
     "runReport": "Ejecutar Informe",
-    "preview": "Vista Previa",
-    "print": "Imprimir",
     "running": "Ejecutando...",
     "selectPlaceholder": "Seleccionar...",
     "recordsFound": "{count} registros encontrados",
@@ -16703,11 +16724,9 @@
     "filter": "Filtrar...",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
-    "statusDraft": "Borrador",
     "statusComplete": "Completado",
     "statusCompleted": "Completado",
     "statusVoid": "Anulado",
-    "statusVoided": "Anulado",
     "statusInProcess": "En proceso",
     "statusClosed": "Cerrado",
     "statusPaid": "Pagado",
@@ -16726,6 +16745,29 @@
     "commercialName": "Nombre comercial",
     "locationColumn": "Ubicación",
     "emailColumn": "Correo electrónico",
+    "typeColumn": "Tipo",
+    "phoneColumn": "Teléfono",
+    "detail": "Detalle",
+    "basicDiscount": "Descuento",
+    "locationAddress": "Dirección",
+    "billingPreferences": "Preferencias de facturación",
+    "billingPreferencesDesc": "Configuración de facturación de cliente y proveedor.",
+    "All": "Todos",
+    "Customers": "Clientes",
+    "Vendors": "Proveedores",
+    "Customer": "Cliente",
+    "Vendor": "Proveedor",
+    "Both": "Ambos",
+    "bpRevenueThisMonth": "Ingresos del mes",
+    "bpExpensesThisMonth": "Gastos del mes",
+    "bpSalesPurchases": "Ventas y compras",
+    "bpLast6Months": "Últimos 6 meses",
+    "bpRevenue": "Ingresos",
+    "bpExpenses": "Gastos",
+    "General": "General",
+    "Financial": "Financiero",
+    "Contact Person": "Persona de contacto",
+    "Contact Bank Account": "Cuenta bancaria del contacto",
     "statusUnderEvaluation": "En evaluación",
     "statusCancelled": "Cancelado",
     "statusPaymentReceived": "Pago recibido",
@@ -16852,7 +16894,6 @@
     "toPay": "Por pagar",
     "done": "Completado",
     "draft": "Borrador",
-    "invoice": "Factura",
     "order": "Pedido",
     "contact": "Contacto",
     "product": "Producto",
@@ -16869,7 +16910,6 @@
     "dragCardsToReorder": "Arrastra las tarjetas para reordenarlas. Alterna para mostrar/ocultar.",
     "dragToReorder": "Arrastra para reordenar",
     "changesSavedAutomatically": "Los cambios se guardan automáticamente.",
-    "units": "unidades",
     "invoicePending": "{count} factura pendiente",
     "invoicesPending": "{count} facturas pendientes",
     "pendingSalesInvoices": "{count} Factura de venta pendiente",
@@ -16897,7 +16937,15 @@
     "password": "Contraseña",
     "yourPassword": "Tu contraseña...",
     "noRole": "Sin rol",
-    "noOrg": "Sin organización"
+    "noOrg": "Sin organización",
+    "creditTax": "Crédito e impuestos",
+    "creditTaxDescription": "Límites de crédito e identificación fiscal para este contacto.",
+    "vendor": "Proveedor",
+    "searchAddress": "Buscar dirección…",
+    "typeToSearch": "Escribe para buscar…",
+    "searching": "Buscando…",
+    "typeAtLeast2Characters": "Escribe al menos 2 caracteres",
+    "none": "— Ninguno —"
   },
   "menus": {
     "Tax": {
@@ -18176,39 +18224,6 @@
     },
     "VO": {
       "label": "Anulada"
-    },
-    "creditTax": {
-      "label": "Crédito e impuestos"
-    },
-    "creditTaxDescription": {
-      "label": "Límites de crédito e identificación fiscal para este contacto."
-    },
-    "billingPreferences": {
-      "label": "Preferencias de facturación"
-    },
-    "billingPreferencesDescription": {
-      "label": "Configuración de facturación para cliente y proveedor."
-    },
-    "searchAddress": {
-      "label": "Buscar dirección…"
-    },
-    "typeToSearch": {
-      "label": "Escribe para buscar…"
-    },
-    "searching": {
-      "label": "Buscando…"
-    },
-    "typeAtLeast2Characters": {
-      "label": "Escribe al menos 2 caracteres"
-    },
-    "none": {
-      "label": "— Ninguno —"
-    },
-    "customer": {
-      "label": "Cliente"
-    },
-    "vendor": {
-      "label": "Proveedor"
     },
     "basicDiscount": {
       "label": "Descuento básico"

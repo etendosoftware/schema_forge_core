@@ -20,10 +20,10 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
   const ui = useUI();
 
   const creditFields = [
-    { key: 'creditLimit', column: 'SO_CreditLimit', type: 'number', label: ui('creditLimit'), required: true, section: 'other' },
-    { key: 'creditUsed', column: 'SO_CreditUsed', type: 'number', label: ui('creditUsed'), required: true, readOnly: true, section: 'other' },
-    { key: 'taxID', column: 'TaxID', type: 'text', label: ui('taxID'), section: 'other' },
-    { key: 'active', column: 'IsActive', type: 'checkbox', label: ui('active'), required: true, readOnly: true, section: 'other', defaultValue: 'Y' },
+    { key: 'creditLimit', column: 'SO_CreditLimit', type: 'number', required: true, section: 'other' },
+    { key: 'creditUsed', column: 'SO_CreditUsed', type: 'number', required: true, readOnly: true, section: 'other' },
+    { key: 'taxID', column: 'TaxID', type: 'text', section: 'other' },
+    { key: 'active', column: 'IsActive', type: 'checkbox', required: true, readOnly: true, section: 'other', defaultValue: 'Y' },
   ];
 
   return (
@@ -44,7 +44,7 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
           apiBaseUrl={apiBaseUrl}
         />
       </FieldGroup>
-      <FieldGroup title={ui('billingPreferences')} description={ui('billingPreferencesDescription')}>
+      <FieldGroup title={ui('billingPreferences')} description={ui('billingPreferencesDesc')}>
         <BillingPreferencesForm
           data={data}
           api={api}

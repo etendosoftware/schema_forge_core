@@ -16380,7 +16380,6 @@
     "total": "Total",
     "docs": "Docs",
     "notes": "Notes",
-    "description": "Description",
     "noRelatedDocuments": "No related documents",
     "Complete": "Complete",
     "Confirm & Send": "Confirm & Send",
@@ -16481,8 +16480,6 @@
     "refineDimensions": "Refine by Dimensions",
     "displayOptions": "Display Options",
     "runReport": "Run Report",
-    "preview": "Preview",
-    "print": "Print",
     "running": "Running...",
     "selectPlaceholder": "Select...",
     "recordsFound": "{count} records found",
@@ -16492,11 +16489,9 @@
     "filter": "Filter...",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
-    "statusDraft": "Draft",
     "statusComplete": "Complete",
     "statusCompleted": "Completed",
     "statusVoid": "Void",
-    "statusVoided": "Voided",
     "statusInProcess": "In Process",
     "statusClosed": "Closed",
     "statusPaid": "Paid",
@@ -16515,6 +16510,25 @@
     "commercialName": "Commercial Name",
     "locationColumn": "Location",
     "emailColumn": "Email",
+    "typeColumn": "Type",
+    "phoneColumn": "Phone",
+    "detail": "Detail",
+    "basicDiscount": "Basic Discount",
+    "locationAddress": "Location / Address",
+    "billingPreferences": "Billing Preferences",
+    "billingPreferencesDesc": "Customer and vendor billing configuration.",
+    "Customer": "Customer",
+    "Vendor": "Vendor",
+    "Both": "Both",
+    "bpRevenueThisMonth": "Revenue this month",
+    "bpExpensesThisMonth": "Expenses this month",
+    "bpSalesPurchases": "Sales & Purchases",
+    "bpLast6Months": "Last 6 months",
+    "bpRevenue": "Revenue",
+    "bpExpenses": "Expenses",
+    "Financial": "Financial",
+    "Contact Person": "Contact Person",
+    "Contact Bank Account": "Contact Bank Account",
     "statusUnderEvaluation": "Under Evaluation",
     "statusCancelled": "Cancelled",
     "statusPaymentReceived": "Payment Received",
@@ -16641,7 +16655,6 @@
     "toPay": "To Pay",
     "done": "Done",
     "draft": "Draft",
-    "invoice": "Invoice",
     "order": "Order",
     "contact": "Contact",
     "product": "Product",
@@ -16658,7 +16671,6 @@
     "dragCardsToReorder": "Drag cards to reorder. Toggle to show/hide.",
     "dragToReorder": "drag to reorder",
     "changesSavedAutomatically": "Changes are saved automatically.",
-    "units": "units",
     "invoicePending": "{count} invoice pending",
     "invoicesPending": "{count} invoices pending",
     "pendingSalesInvoices": "{count} Sales Invoice pending",
@@ -16686,7 +16698,15 @@
     "password": "Password",
     "yourPassword": "Your password...",
     "noRole": "No role",
-    "noOrg": "No org"
+    "noOrg": "No org",
+    "vendor": "Vendor",
+    "creditTax": "Credit & Tax",
+    "creditTaxDescription": "Credit limits and tax identification for this contact.",
+    "searchAddress": "Search address…",
+    "typeToSearch": "Type to search…",
+    "searching": "Searching…",
+    "typeAtLeast2Characters": "Type at least 2 characters",
+    "none": "— None —"
   },
   "menus": {
     "Currency": {
@@ -17956,39 +17976,6 @@
     },
     "VO": {
       "label": "Voided"
-    },
-    "creditTax": {
-      "label": "Credit & Tax"
-    },
-    "creditTaxDescription": {
-      "label": "Credit limits and tax identification for this contact."
-    },
-    "billingPreferences": {
-      "label": "Billing Preferences"
-    },
-    "billingPreferencesDescription": {
-      "label": "Customer and vendor billing configuration."
-    },
-    "searchAddress": {
-      "label": "Search address…"
-    },
-    "typeToSearch": {
-      "label": "Type to search…"
-    },
-    "searching": {
-      "label": "Searching…"
-    },
-    "typeAtLeast2Characters": {
-      "label": "Type at least 2 characters"
-    },
-    "none": {
-      "label": "— None —"
-    },
-    "customer": {
-      "label": "Customer"
-    },
-    "vendor": {
-      "label": "Vendor"
     },
     "basicDiscount": {
       "label": "Basic Discount"
