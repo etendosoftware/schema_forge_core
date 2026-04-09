@@ -988,7 +988,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm p-5 mb-2">
+    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="text-base font-semibold text-gray-800">{ui('pricing')}</div>
@@ -1067,7 +1067,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
           {ui('noPricingConfigured')}
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
           <PriceTable title="Sales Price Lists" rows={displaySaleRows} variant="sales" />
           <PriceTable title="Purchase Price Lists" rows={displayPurchaseRows} variant="purchase" />
         </div>
