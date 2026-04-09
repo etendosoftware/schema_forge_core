@@ -493,8 +493,8 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   const fieldsToRender = imageField ? displayFields.filter(f => f.type !== 'image') : displayFields;
 
   const renderField = (f) => {
-    // Resolution order: locale translation by column (non-en_US) → hardcoded label → camelCase key
-    const label = (locale !== 'en_US' ? t(f.column) : null) ?? f.label ?? f.key;
+    // Resolution order: locale translation (non-en_US) → hardcoded label → locale translation (en_US fallback) → camelCase key
+    const label = (locale !== 'en_US' ? t(f.column) : null) ?? f.label ?? t(f.column) ?? f.key;
     // Field is read-only if statically declared, dynamically set by evaluate-display, or readOnlyLogic evaluates to true
     const isReadOnly = formReadOnly
       || f.readOnly

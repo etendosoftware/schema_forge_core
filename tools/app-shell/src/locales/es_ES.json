@@ -16559,6 +16559,8 @@
     "add": "Agregar",
     "basicDiscount": "Descuento",
     "locationAddress": "Dirección",
+    "billingPreferences": "Preferencias de facturación",
+    "billingPreferencesDesc": "Configuración de facturación de cliente y proveedor.",
     "All": "Todos",
     "Customers": "Clientes",
     "Vendors": "Proveedores",

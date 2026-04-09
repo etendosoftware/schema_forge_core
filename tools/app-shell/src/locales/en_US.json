@@ -16348,6 +16348,8 @@
     "add": "Add",
     "basicDiscount": "Basic Discount",
     "locationAddress": "Location / Address",
+    "billingPreferences": "Billing Preferences",
+    "billingPreferencesDesc": "Customer and vendor billing configuration.",
     "Customer": "Customer",
     "Vendor": "Vendor",
     "Both": "Both",

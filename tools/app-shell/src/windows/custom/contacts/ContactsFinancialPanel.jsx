@@ -1,4 +1,5 @@
 import BillingPreferencesForm from './BillingPreferencesForm';
+import { useUI } from '@/i18n';
 
 function FieldGroup({ title, description, children }) {
   return (
@@ -15,9 +16,10 @@ function FieldGroup({ title, description, children }) {
 }
 
 export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
+  const ui = useUI();
   return (
     <div className="space-y-4 pt-5 pb-6">
-      <FieldGroup title="Billing Preferences" description="Customer and vendor billing configuration.">
+      <FieldGroup title={ui('billingPreferences')} description={ui('billingPreferencesDesc')}>
         <BillingPreferencesForm
           data={data}
           api={api}
