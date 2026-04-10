@@ -21,10 +21,12 @@ jobs:
             echo "s3_bucket=${{ vars.S3_BUCKET_STAGING }}" >> $GITHUB_OUTPUT
             echo "cf_distribution=${{ vars.CF_DISTRIBUTION_STAGING }}" >> $GITHUB_OUTPUT
             echo "env_label=staging" >> $GITHUB_OUTPUT
+            echo "public_origin=https://go.staging.etendo.cloud" >> $GITHUB_OUTPUT
           else
             echo "s3_bucket=${{ vars.S3_BUCKET_EXPERIMENTAL }}" >> $GITHUB_OUTPUT
             echo "cf_distribution=${{ vars.CF_DISTRIBUTION_EXPERIMENTAL }}" >> $GITHUB_OUTPUT
             echo "env_label=experimental" >> $GITHUB_OUTPUT
+            echo "public_origin=https://go.experimental.etendo.cloud" >> $GITHUB_OUTPUT
           fi
 
       - uses: actions/setup-node@v4
@@ -37,6 +39,11 @@ jobs:
 
       - name: Build app-shell
         run: npm run build --workspace=tools/app-shell
+        env:
+          # VITE_PUBLIC_ORIGIN is consumed by mcpWellKnownPlugin (vite.config.js)
+          # to emit static RFC 9728 / RFC 8414 discovery docs at /.well-known/*
+          # with absolute URLs per environment. See docs/ops/cloudfront-alb-routing.md.
+          VITE_PUBLIC_ORIGIN: ${{ steps.target.outputs.public_origin }}
         # .env.production (committed) provides VITE_MOCK=false and VITE_API_BASE=/etendo
 
       - name: Generate reports manifest
@@ -51,13 +58,18 @@ jobs:
 
       - name: Sync dist to S3 (${{ steps.target.outputs.env_label }})
         run: |
+          # Long-lived immutable assets (hashed files under assets/, icons, etc.)
+          # .well-known/* is EXCLUDED here — OAuth2/MCP discovery metadata must
+          # never be cached with immutable headers; a rollback or endpoint change
+          # would leave stale metadata pinned in every CDN edge for up to a year.
           aws s3 sync tools/app-shell/dist/ s3://${{ steps.target.outputs.s3_bucket }}/ \
             --delete \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "index.html" \
             --exclude "registerSW.js" \
             --exclude "manifest.webmanifest" \
-            --exclude "sw.js"
+            --exclude "sw.js" \
+            --exclude ".well-known/*"
           # HTML, SW and manifest must not be cached long-term
           aws s3 sync tools/app-shell/dist/ s3://${{ steps.target.outputs.s3_bucket }}/ \
             --exclude "*" \
@@ -66,6 +78,14 @@ jobs:
             --include "manifest.webmanifest" \
             --include "sw.js" \
             --cache-control "no-cache, no-store, must-revalidate"
+          # RFC 9728 / RFC 8414 discovery docs — no-cache + explicit JSON
+          # content type. These files have no extension (oauth-protected-resource,
+          # oauth-authorization-server, openid-configuration) so S3 would otherwise
+          # serve them as application/octet-stream, which breaks MCP/OAuth2 clients.
+          aws s3 sync tools/app-shell/dist/.well-known/ \
+            s3://${{ steps.target.outputs.s3_bucket }}/.well-known/ \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "application/json"
 
       - name: Upload reports manifest (${{ steps.target.outputs.env_label }})
         run: |
