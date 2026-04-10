@@ -17003,6 +17003,7 @@
     "regionSearchPlaceholder": "Buscar región...",
     "regionLoadError": "No se pudieron cargar las regiones",
     "selectCountryFirst": "Selecciona un país primero",
+    "removeLocation": "Eliminar",
     "none": "— Ninguno —",
     "soConfirmBtn": "Confirmar",
     "soConfirmTitle": "Confirmar pedido #{number}",

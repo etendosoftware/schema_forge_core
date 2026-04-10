@@ -4,7 +4,7 @@
   "checksum": "b21119370bf96214",
   "frontendContract": {
     "window": {
-      "id": "201",
+      "id": "121",
       "name": "BP Location",
       "primaryEntity": "bpLocation",
       "category": "reference"
@@ -83,6 +83,26 @@
             "form": true,
             "reference": "BusinessPartner",
             "inputMode": "search"
+          },
+          {
+            "name": "region",
+            "column": "C_Region_ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "address2",
+            "column": "Address2",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
           }
         ],
         "searchableFields": [
@@ -96,7 +116,7 @@
   },
   "backendContract": {
     "window": {
-      "id": "201",
+      "id": "121",
       "name": "BP Location",
       "primaryEntity": "bpLocation",
       "category": "reference"
@@ -180,8 +200,25 @@
             "type": "datetime",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "region",
+            "column": "C_Region_ID",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "address2",
+            "column": "Address2",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
           }
-        ]
+        ],
+        "tabName": "Location",
+        "tabId": "154",
+        "tableName": "C_Location"
       }
     },
     "endpoints": [

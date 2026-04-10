@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
 
-const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', region: '' };
+const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '' };
 const SELECTOR_PAGE_SIZE = 120;
 
 function normalizeText(value) {
@@ -43,6 +43,7 @@ export default function LocationEditorModal({
   onClose,
   onSaved,
   bplId,
+  bplLinkId,
   bpId,
   contactsApiBase,
   token,
@@ -114,8 +115,8 @@ export default function LocationEditorModal({
 
   const selectedCountryLabel = useMemo(() => {
     if (!form.country) return '—';
-    return countryOptions.find((country) => country.id === form.country)?.label || form.country;
-  }, [countryOptions, form.country]);
+    return countryOptions.find((country) => country.id === form.country)?.label || form.countryLabel || form.country;
+  }, [countryOptions, form.country, form.countryLabel]);
 
   const regionOptions = useMemo(() => {
     const seen = new Set();
@@ -138,8 +139,8 @@ export default function LocationEditorModal({
 
   const selectedRegionLabel = useMemo(() => {
     if (!form.region) return '—';
-    return regionOptions.find((region) => region.id === form.region)?.label || form.region;
-  }, [regionOptions, form.region]);
+    return regionOptions.find((region) => region.id === form.region)?.label || form.regionLabel || form.region;
+  }, [regionOptions, form.region, form.regionLabel]);
 
   // Reset and load data on open
   useEffect(() => {
@@ -175,7 +176,9 @@ export default function LocationEditorModal({
     const loadCountries = async () => {
       setCountriesLoading(true);
       const selectorBases = [
-        `${bpLocationBase}/bpLocation/selectors/C_Country_ID`,
+        `${contactsApiBase}/intrastatAdquisitions/selectors/country`,
+        `${bpLocationBase}/bpLocation/selectors/country`,
+        `${contactsApiBase}/bankAccount/selectors/country`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/C_Country_ID`,
         `${contactsApiBase}/bankAccount/selectors/C_Country_ID`,
       ];
@@ -222,21 +225,27 @@ export default function LocationEditorModal({
     loadCountries();
 
     // Populate form when editing an existing record
-    if (bplId && selectorContext?.locationId) {
+    if (bplId) {
       setInitialLoading(true);
-      fetch(`${bpLocationBase}/bpLocation/${selectorContext.locationId}`, { headers: authHeader })
+      fetch(`${bpLocationBase}/bpLocation/${bplId}`, { headers: authHeader })
         .then(r => (r.ok ? r.json() : null))
         .then(d => {
           // NEO Headless may return { response: { data: [rec] } } or the record directly
           const rec = d?.response?.data?.[0] ?? d;
           if (rec && rec.id) {
             setForm({
-              address: rec.address ?? '',
-              address2: rec.address2 ?? '',
+              // bpLocation may serialize using configured names (address/city) or
+              // OB Java property names (addressLine1/cityName) depending on the handler.
+              address: rec.address ?? rec.addressLine1 ?? '',
+              address2: rec.address2 ?? rec.addressLine2 ?? '',
               postalCode: rec.postalCode ?? '',
-              city: rec.city ?? '',
+              city: rec.city ?? rec.cityName ?? '',
               country: rec.country ?? '',
+              // Store the known label so the picker shows "Spain" even if the selector
+              // returns a different ID format or hasn't loaded yet.
+              countryLabel: rec['country$_identifier'] ?? '',
               region: rec.region ?? '',
+              regionLabel: rec['region$_identifier'] ?? '',
             });
           }
         })
@@ -489,15 +498,41 @@ export default function LocationEditorModal({
   }
 
   function handleCountrySelect(countryId) {
-    setField('country', countryId);
+    const found = countryOptions.find(c => c.id === countryId);
+    setForm(prev => ({
+      ...prev,
+      country: countryId,
+      countryLabel: found?.label ?? '',
+      region: '',
+      regionLabel: '',
+    }));
     setCountryPickerOpen(false);
     setRegionPickerOpen(false);
     setRegionQuery('');
   }
 
   function handleRegionSelect(regionId) {
-    setField('region', regionId);
+    const found = regionOptions.find(r => r.id === regionId);
+    setForm(prev => ({
+      ...prev,
+      region: regionId,
+      regionLabel: found?.label ?? '',
+    }));
     setRegionPickerOpen(false);
+  }
+
+  async function handleDelete() {
+    if (saving || !bplLinkId) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${contactsApiBase}/locationAddress/${bplLinkId}`, {
+        method: 'DELETE',
+        headers: authHeader,
+      });
+      if (res.ok) onSaved?.();
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSave() {
@@ -505,64 +540,91 @@ export default function LocationEditorModal({
     setSaving(true);
     try {
       const name = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
+      // bpLocation maps to C_Location via Openbravo DAL. The endpoint serialises
+      // using OB Java entity property names for some columns (addressLine1, addressLine2,
+      // cityName) rather than the decisions.json aliases (address, address2, city).
+      // postalCode / country / region happen to match their Java names.
       const payload = {
         name,
-        address: form.address || undefined,
-        address2: form.address2 || undefined,
-        postalCode: form.postalCode || undefined,
-        city: form.city || undefined,
-        country: form.country || undefined,
-        region: form.region || undefined,
+        addressLine1: form.address || null,
+        addressLine2: form.address2 || null,
+        postalCode: form.postalCode || null,
+        cityName: form.city || null,
+        country: form.country || null,
+        region: form.region || null,
       };
-      const headers = { ...authHeader, 'Content-Type': 'application/json' };
-      let res;
+      const postHeaders = { ...authHeader, 'Content-Type': 'application/json' };
 
-      // Ensure C_Location exists first via bp-location
-      const locationId = selectorContext?.locationId;
-      if (locationId) {
-        res = await fetch(`${bpLocationBase}/bpLocation/${locationId}`, {
+      if (bplId) {
+        // EDIT: update existing C_BPartner_Location (+ underlying C_Location via join) via bp-location
+        const res = await fetch(`${bpLocationBase}/bpLocation/${bplId}`, {
           method: 'PUT',
-          headers,
+          headers: postHeaders,
           body: JSON.stringify(payload),
         });
-      } else {
-        res = await fetch(`${bpLocationBase}/bpLocation`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-        });
+        if (res.ok) onSaved?.();
+        return;
       }
+
+      // CREATE: POST to bp-location (creates C_Location; businessPartner links via C_BPartner_ID)
+      const res = await fetch(`${bpLocationBase}/bpLocation?parentId=${bpId}`, {
+        method: 'POST',
+        headers: postHeaders,
+        body: JSON.stringify({ ...payload, businessPartner: bpId }),
+      });
 
       if (!res.ok) {
-        setSaving(false);
+        // Most likely cause: role lacks access to BP Location window in AD_WINDOW_ACCESS.
+        // Fix: UPDATE etgo_sf_spec SET adwindow_id = NULL WHERE name = 'bp-location';
+        console.error('[LocationEditorModal] bpLocation POST failed with status', res.status);
         return;
       }
 
-      const locationData = await res.json();
-      const newLocationId = locationData?.response?.data?.[0]?.id || locationData?.id;
-
-      if (!newLocationId) {
-        setSaving(false);
+      const data = await res.json();
+      if ((data?.response?.status ?? 0) !== 0) {
+        console.error('[LocationEditorModal] bpLocation POST returned NEO error:', data?.response);
         return;
       }
 
-      // Then ensure C_BPartner_Location is linked correctly
-      if (bplId) {
-        await fetch(`${contactsApiBase}/locationAddress/${bplId}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ locationAddress: newLocationId }),
-        });
-      } else {
-        await fetch(`${contactsApiBase}/locationAddress?parentId=${bpId}`, {
+      const newId = data?.response?.data?.[0]?.id ?? data?.id;
+      if (!newId) {
+        console.error('[LocationEditorModal] bpLocation POST: could not extract id from response', data);
+        return;
+      }
+
+      // bpLocation maps to C_Location. After creating the C_Location, check whether a
+      // C_BPartner_Location link (locationAddress) was auto-created via the businessPartner field.
+      // If not, create it explicitly so the contact's address tab reflects the new record.
+      const existingLinks = await fetch(
+        `${contactsApiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=50`,
+        { headers: authHeader },
+      ).then(r => (r.ok ? r.json() : null)).catch(() => null);
+
+      const alreadyLinked = (existingLinks?.response?.data ?? []).some(
+        r => r.id === newId || r.locationAddress === newId,
+      );
+
+      if (!alreadyLinked) {
+        const resLink = await fetch(`${contactsApiBase}/locationAddress?parentId=${bpId}`, {
           method: 'POST',
-          headers,
+          headers: postHeaders,
           body: JSON.stringify({
-            locationAddress: newLocationId,
+            name,
+            businessPartner: bpId,
+            locationAddress: newId,
             shipToAddress: 'Y',
             invoiceToAddress: 'Y',
           }),
         });
+        if (!resLink.ok) {
+          console.error('[LocationEditorModal] locationAddress POST failed with status', resLink.status);
+          return;
+        }
+        const linkData = await resLink.json();
+        if ((linkData?.response?.status ?? 0) !== 0) {
+          console.error('[LocationEditorModal] locationAddress POST returned NEO error:', linkData?.response);
+          return;
+        }
       }
 
       onSaved?.();
@@ -832,21 +894,34 @@ export default function LocationEditorModal({
         )}
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            {ui('cancel')}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || initialLoading}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {saving && <Loader2 size={13} className="animate-spin" />}
-            {ui('save')}
-          </button>
+        <div className="flex items-center justify-between gap-3 mt-6">
+          <div>
+            {bplLinkId && (
+              <button
+                onClick={handleDelete}
+                disabled={saving || initialLoading}
+                className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {ui('removeLocation')}
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              {ui('cancel')}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || initialLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving && <Loader2 size={13} className="animate-spin" />}
+              {ui('save')}
+            </button>
+          </div>
         </div>
 
       </div>

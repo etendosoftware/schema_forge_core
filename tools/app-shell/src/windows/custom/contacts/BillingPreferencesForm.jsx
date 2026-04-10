@@ -198,8 +198,11 @@ export default function BillingPreferencesForm(props) {
   const discountLoading = discountRecord === undefined;
   const addressLoading = addressRecord === undefined;
   const currentDiscountId = discountRecord?.discount ?? null;
+  let identifier = addressRecord?.['locationAddress$_identifier'] || addressRecord?.name || '';
+  if (identifier === '., ') identifier = ui('locationSelectorTitle');
+
   const currentAddress = addressRecord
-    ? { id: addressRecord.locationAddress, _identifier: addressRecord['locationAddress$_identifier'] ?? '' }
+    ? { id: addressRecord.locationAddress, _identifier: identifier }
     : null;
 
   const customerCheckboxField = [
@@ -303,7 +306,8 @@ export default function BillingPreferencesForm(props) {
           await refreshAddressRecord();
           setLocationModalOpen(false);
         }}
-        bplId={addressRecord?.id ?? null}
+        bplId={addressRecord?.locationAddress ?? null}
+        bplLinkId={addressRecord?.id ?? null}
         bpId={bpId}
         contactsApiBase={apiBase}
         token={token}

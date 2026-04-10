@@ -16764,6 +16764,7 @@
     "regionSearchPlaceholder": "Search region...",
     "regionLoadError": "Could not load regions",
     "selectCountryFirst": "Select a country first",
+    "removeLocation": "Remove",
     "none": "— None —",
     "soConfirmBtn": "Confirm",
     "soConfirmTitle": "Confirm order #{number}",
