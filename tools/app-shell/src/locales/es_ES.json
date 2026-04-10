@@ -2689,11 +2689,11 @@
       "description": "Confirmación de que los documentos o peticiones asociadas están en proceso."
     },
     "QtyBook": {
-      "label": "Cantidad teórica",
+      "label": "Conteo del sistema",
       "description": "Cantidad teórica"
     },
     "QtyCount": {
-      "label": "Cant.total",
+      "label": "Conteo del usuario",
       "description": "Cantidad total"
     },
     "AD_Display": {
@@ -17371,7 +17371,24 @@
     "poCreating": "Creando...",
     "poAllReceived": "Recibido",
     "poAllInvoiced": "Facturado",
-    "poNReceipts": "{count} albaranes"
+    "poNReceipts": "{count} albaranes",
+    "createInventoryCountList": "Crear lista de conteo",
+    "productSearchKey": "Clave de búsqueda del producto",
+    "productCategory": "Categoría de producto",
+    "allCategories": "Todas las categorías",
+    "inventoryQuantity": "Cantidad de inventario",
+    "qtyNotZero": "distinto de 0",
+    "qtyZero": "0",
+    "qtyLessZero": "< 0",
+    "qtyGreaterZero": "> 0",
+    "generate": "Generar",
+    "generating": "Generando...",
+    "inventoryListGenerated": "Lista de conteo de inventario generada",
+    "errorGeneratingList": "Error al generar la lista de inventario",
+    "updateListSystemCount": "Actualizar cantidad del sistema",
+    "updating": "Actualizando...",
+    "quantitiesUpdated": "Cantidades del sistema actualizadas",
+    "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema"
   },
   "menus": {
     "Tax": {
