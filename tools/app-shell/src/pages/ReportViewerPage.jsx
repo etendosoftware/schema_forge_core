@@ -656,6 +656,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   const handleSubmit = () => {
     const newErrors = {};
     for (const p of report.parameters || []) {
+      if (p.hidden) continue;
       if (p.required && !params[p.name]) newErrors[p.name] = true;
     }
     setErrors(newErrors);
@@ -774,7 +775,10 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             onChange={e => handleChange(p.name, e.target.value)}
             className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}
           >
-            {resolvedOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {resolvedOptions.map(o => {
+              const optLabel = o.label && typeof o.label === 'object' ? (o.label[locale] || o.label.en_US) : o.label;
+              return <option key={o.value} value={o.value}>{optLabel}</option>;
+            })}
           </select>
         </div>
       );
@@ -1017,7 +1021,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
       autoParams.map(p =>
         fetch(`/api/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
           .then(r => r.json())
-          .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
+          .then(data => { const rows = Array.isArray(data) ? data : (data.items || []); return rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null; })
           .catch(() => null)
       )
     ).then(results => {
