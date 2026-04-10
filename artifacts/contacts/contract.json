@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-04-10T00:54:05.323Z",
-  "checksum": "32296387f66409d6",
+  "version": "0.1.0",
+  "generatedAt": "2026-04-10T20:04:02.547Z",
+  "checksum": "5d27577c6eb577f1",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -351,7 +351,7 @@
             "label": "Credit Limit",
             "type": "amount",
             "tsType": "number",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": false,
             "form": true,
@@ -3603,7 +3603,7 @@
             "apiKey": "creditLimit",
             "column": "SO_CreditLimit",
             "type": "amount",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true
           },
           {
