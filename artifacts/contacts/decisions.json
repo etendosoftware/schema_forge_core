@@ -14,8 +14,8 @@
     ],
     "quickFilters": [
       { "label": "All",       "filter": null },
-      { "label": "Customers", "filter": "_neoWhere=e.customer%3D'Y'" },
-      { "label": "Vendors",   "filter": "_neoWhere=e.vendor%3D'Y'" }
+      { "label": "Customers", "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D" },
+      { "label": "Vendors",   "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D" }
     ],
     "customComponents": {
       "headerTable": "ContactsTable"
@@ -25,7 +25,7 @@
     "processOverrides": {
       "setNewCurrency": { "exclude": true }
     },
-    "listBaseFilter": "_neoWhere=(e.customer%3D'Y'+or+e.vendor%3D'Y')",
+    "listBaseFilter": "criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D",
     "listViewOptions": {
       "hidePrint": true,
       "hideEye": true,

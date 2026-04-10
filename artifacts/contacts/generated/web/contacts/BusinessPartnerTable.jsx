@@ -12,9 +12,6 @@ const filters = ['searchKey', 'name'];
 
 // @sf-generated-start component:BusinessPartnerTable
 export default function BusinessPartnerTable(props) {
-  // @sf-custom-slot hooks:BusinessPartnerTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:BusinessPartnerTable
-
-// @sf-custom-slot section:BusinessPartnerTable-custom

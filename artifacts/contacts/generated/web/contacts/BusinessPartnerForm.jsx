@@ -14,10 +14,7 @@ const fields = [
 
 // @sf-generated-start component:BusinessPartnerForm
 export default function BusinessPartnerForm(props) {
-  // @sf-custom-slot hooks:BusinessPartnerForm
   return <EntityForm fields={fields} {...props} />;
 }
 BusinessPartnerForm.hasCollapsedFields = false;
 // @sf-generated-end component:BusinessPartnerForm
-
-// @sf-custom-slot section:BusinessPartnerForm-custom
