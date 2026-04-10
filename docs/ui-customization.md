@@ -100,6 +100,10 @@ import BillingPreferencesForm from '@/windows/custom/contacts/BillingPreferences
 
 Props received: `recordId`, `data`, `token`, `apiBaseUrl`, `api`. **Real example:** `contacts`.
 
+For `contacts`, the custom `BillingPreferencesForm` keeps customer/vendor billing controls disabled
+until the header record exists (`data.id` present). This mirrors Classic behavior where billing
+details are edited after the Business Partner is created.
+
 ---
 
 ### 4. `window.customComponents` — replace or inject structural components
@@ -300,4 +304,3 @@ artifacts/contacts/generated/web/contacts/
 2. Add the appropriate key to `decisions.json → window.*`
 3. Run `node cli/src/generate-frontend.js {window}` (or full pipeline)
 4. The generated `*Page.jsx` now imports and wires your component automatically
-

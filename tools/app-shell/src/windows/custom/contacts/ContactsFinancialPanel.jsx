@@ -47,6 +47,7 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
       <FieldGroup title={ui('billingPreferences')} description={ui('billingPreferencesDesc')}>
         <BillingPreferencesForm
           data={data}
+          entity="businessPartner"
           api={api}
           token={token}
           catalogs={catalogs}
