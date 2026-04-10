@@ -2,7 +2,8 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
-    "name": "Goods Receipt"
+    "name": "Goods Receipt",
+    "relatedDocuments": true
   },
   "entities": {
     "header": {

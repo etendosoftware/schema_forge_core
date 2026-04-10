@@ -987,7 +987,11 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                  hook.childrenLoading ? (
+                    <div className="flex items-center justify-center py-10 text-muted-foreground">
+                      <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    </div>
+                  ) : hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
                     <LinesEmptyState
                       data={data}
                       onAddLine={() => { setAddingLine(true); setEditingChild(null); }}

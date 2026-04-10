@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useUI } from '@/i18n';
 
 function fmt(v) {
   if (v == null || v === '') return '—';
@@ -29,6 +31,7 @@ function getLineStatuses(lines, depreciatedValue) {
 }
 
 export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
+  const ui = useUI();
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const recordId = data?.id;
@@ -75,7 +78,10 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
       </div>
 
       {loading ? (
-        <div className="text-xs text-gray-400 py-4 text-center">Loading...</div>
+        <div className="text-xs text-gray-400 py-4 text-center inline-flex items-center gap-1.5 justify-center w-full">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          {ui('loading')}
+        </div>
       ) : lines.length === 0 ? (
         <div className="text-xs text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">
           No amortization lines yet. Use &quot;Create Amortization&quot; to generate the plan.

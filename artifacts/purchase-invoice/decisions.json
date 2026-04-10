@@ -2,7 +2,9 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
-    "name": "Purchase Invoice"
+    "name": "Purchase Invoice",
+    "relatedDocuments": true,
+    "notesField": "description"
   },
   "entities": {
     "header": {

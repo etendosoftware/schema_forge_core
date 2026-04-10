@@ -44,6 +44,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
   const [children, setChildren] = useState([]);
+  const [childrenLoading, setChildrenLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -99,7 +100,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   useEffect(() => { refresh(); }, [refresh]);
 
   const fetchChildren = useCallback((parentId) => {
-    if (!childEntity || !parentId) { setChildren([]); return; }
+    if (!childEntity || !parentId) { setChildren([]); setChildrenLoading(false); return; }
+    setChildrenLoading(true);
     // NEO Headless uses ?parentId= to filter child entity records
     fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}${childSortBy ? `&_sortBy=${childSortBy}` : ''}`, { headers })
       .then(res => {
@@ -110,7 +112,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
         setChildren(rows);
       })
-      .catch(() => setChildren([]));
+      .catch(() => setChildren([]))
+      .finally(() => setChildrenLoading(false));
   }, [apiBaseUrl, childEntity, token, childSortBy]);
 
   const fetchById = useCallback((id) => {
@@ -348,7 +351,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   }, [selected, entity, apiBaseUrl, token, refresh, fetchById]);
 
   return {
-    items, selected, editing, children, loading, loadingMore, hasMore, saveError,
+    items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
     refresh, fetchById, fetchChildren, loadMore,
