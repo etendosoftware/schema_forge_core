@@ -25,7 +25,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:assets
 const processes = [
-  { name: 'processed', label: 'Create Amortization', style: 'positive', columnName: 'Processed' },
+  { name: 'processAsset', label: 'Create Amortization', style: 'positive',
+    displayLogicRaw: "@Depreciate@='Y'" },
 ];
 // @sf-generated-end processes:assets
 

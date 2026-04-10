@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-09T19:30:16.584Z",
-  "checksum": "f402bed041130e3d",
+  "generatedAt": "2026-04-09T20:05:40.746Z",
+  "checksum": "c7e82a8b4fdae696",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -18,11 +18,11 @@
       "hideEyeCount": true,
       "breadcrumb": "Finance / Assets",
       "processOverrides": {
-        "processed": {
+        "processAsset": {
           "add": true,
           "label": "Create Amortization",
           "style": "positive",
-          "columnName": "Processed"
+          "displayLogicRaw": "@Depreciate@='Y'"
         }
       },
       "secondaryTabs": {},
@@ -753,11 +753,10 @@
       "hideEyeCount": true,
       "breadcrumb": "Finance / Assets",
       "processOverrides": {
-        "processed": {
+        "processAsset": {
           "add": true,
           "label": "Create Amortization",
-          "style": "positive",
-          "columnName": "Processed"
+          "style": "positive"
         }
       },
       "secondaryTabs": {},

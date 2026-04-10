@@ -51,13 +51,27 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
     fetchLines();
   }, [fetchLines]);
 
+  useEffect(() => {
+    if (!recordId) return undefined;
+
+    function handleProcessSuccess(event) {
+      const detail = event?.detail ?? {};
+      if (detail.entity !== 'assets') return;
+      if (String(detail.recordId) !== String(recordId)) return;
+      fetchLines();
+    }
+
+    window.addEventListener('neo:processSuccess', handleProcessSuccess);
+    return () => window.removeEventListener('neo:processSuccess', handleProcessSuccess);
+  }, [recordId, fetchLines]);
+
   const depreciatedValue = Number(data?.depreciatedValue ?? 0);
   const lineStatuses = getLineStatuses(lines, depreciatedValue);
   const plannedCount = [...lineStatuses.values()].filter(v => !v).length;
   const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
 
   return (
-    <div className="-mt-6 rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="text-sm font-semibold text-gray-800">Amortization Plan</div>

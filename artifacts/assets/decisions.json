@@ -16,11 +16,11 @@
     "sidebarLayout": true,
     "disableProcessedLock": true,
     "processOverrides": {
-      "processed": {
+      "processAsset": {
         "add": true,
         "label": "Create Amortization",
         "style": "positive",
-        "columnName": "Processed"
+        "displayLogicRaw": "@Depreciate@='Y'"
       }
     },
     "secondaryTabs": {},
