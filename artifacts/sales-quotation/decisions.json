@@ -25,6 +25,7 @@
   "entities": {
     "header": {
       "name": "quotation",
+      "draftMode": { "enabled": false },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",

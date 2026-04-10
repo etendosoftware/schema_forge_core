@@ -34,12 +34,7 @@ const processes = [
 // @sf-generated-end processes:quotation
 
 // @sf-generated-start draftMode:quotation
-const draftMode = {
-  "enabled": true,
-  "processField": "documentAction",
-  "processValue": "CO",
-  "label": "Confirmar"
-};
+const draftMode = null;
 // @sf-generated-end draftMode:quotation
 
 // @sf-generated-start addLineFields:quotationLine
@@ -360,7 +355,6 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
-        draftMode={draftMode}
         salesTheme
         {...props}
       />

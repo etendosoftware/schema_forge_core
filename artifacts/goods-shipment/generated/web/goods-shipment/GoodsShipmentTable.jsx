@@ -16,9 +16,6 @@ const filters = ['documentNo', 'warehouse', 'businessPartner', 'movementDate', '
 
 // @sf-generated-start component:GoodsShipmentTable
 export default function GoodsShipmentTable(props) {
-  // @sf-custom-slot hooks:GoodsShipmentTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:GoodsShipmentTable
-
-// @sf-custom-slot section:GoodsShipmentTable-custom

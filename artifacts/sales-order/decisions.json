@@ -28,8 +28,7 @@
     "header": {
       "javaQualifier": "salesOrderHeaderHandler",
       "draftMode": {
-        "enabled": true,
-        "label": "Confirmar"
+        "enabled": false
       },
       "fields": {
         "documentNo": {

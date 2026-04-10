@@ -394,7 +394,7 @@
         ],
         "javaQualifier": "salesOrderHeaderHandler",
         "draftMode": {
-          "enabled": true,
+          "enabled": false,
           "processField": "documentAction",
           "processValue": "CO",
           "label": "Confirmar"

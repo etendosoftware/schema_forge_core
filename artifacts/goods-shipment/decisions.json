@@ -22,6 +22,7 @@
   "entities": {
     "header": {
       "name": "goodsShipment",
+      "draftMode": { "enabled": false },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",

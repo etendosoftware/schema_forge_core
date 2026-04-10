@@ -35,12 +35,7 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = {
-  "enabled": true,
-  "processField": "documentAction",
-  "processValue": "CO",
-  "label": "Confirmar"
-};
+const draftMode = null;
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
@@ -370,7 +365,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
-        draftMode={draftMode}
         salesTheme
         statusEnumLabels={{"DR":"Draft","CO":"Completado","CL":"Cerrado","VO":"Anulado"}}
         {...props}
