@@ -222,9 +222,9 @@ export default function LocationEditorModal({
     loadCountries();
 
     // Populate form when editing an existing record
-    if (bplId) {
+    if (bplId && selectorContext?.locationId) {
       setInitialLoading(true);
-      fetch(`${bpLocationBase}/bpLocation/${bplId}`, { headers: authHeader })
+      fetch(`${bpLocationBase}/bpLocation/${selectorContext.locationId}`, { headers: authHeader })
         .then(r => (r.ok ? r.json() : null))
         .then(d => {
           // NEO Headless may return { response: { data: [rec] } } or the record directly
@@ -516,22 +516,56 @@ export default function LocationEditorModal({
       };
       const headers = { ...authHeader, 'Content-Type': 'application/json' };
       let res;
-      if (bplId) {
-        res = await fetch(`${bpLocationBase}/bpLocation/${bplId}`, {
+
+      // Ensure C_Location exists first via bp-location
+      const locationId = selectorContext?.locationId;
+      if (locationId) {
+        res = await fetch(`${bpLocationBase}/bpLocation/${locationId}`, {
           method: 'PUT',
           headers,
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch(`${bpLocationBase}/bpLocation?parentId=${bpId}`, {
+        res = await fetch(`${bpLocationBase}/bpLocation`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ ...payload, businessPartner: bpId }),
+          body: JSON.stringify(payload),
         });
       }
-      if (res.ok) {
-        onSaved?.();
+
+      if (!res.ok) {
+        setSaving(false);
+        return;
       }
+
+      const locationData = await res.json();
+      const newLocationId = locationData?.response?.data?.[0]?.id || locationData?.id;
+
+      if (!newLocationId) {
+        setSaving(false);
+        return;
+      }
+
+      // Then ensure C_BPartner_Location is linked correctly
+      if (bplId) {
+        await fetch(`${contactsApiBase}/locationAddress/${bplId}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ locationAddress: newLocationId }),
+        });
+      } else {
+        await fetch(`${contactsApiBase}/locationAddress?parentId=${bpId}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            locationAddress: newLocationId,
+            shipToAddress: 'Y',
+            invoiceToAddress: 'Y',
+          }),
+        });
+      }
+
+      onSaved?.();
     } finally {
       setSaving(false);
     }

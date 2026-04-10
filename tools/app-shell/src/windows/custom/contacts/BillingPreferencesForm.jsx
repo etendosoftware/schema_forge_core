@@ -64,17 +64,18 @@ export default function BillingPreferencesForm(props) {
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
+  // Sub-entity records (current BP's discount + address)
+  const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
+  const [addressRecord, setAddressRecord] = useState(undefined);
+
   const selectorContext = useMemo(() => {
     const ctx = {};
     if (organizationId) ctx.AD_Org_ID = organizationId;
     if (clientId) ctx.AD_Client_ID = clientId;
     if (bpId) ctx.parentId = bpId;
+    if (addressRecord?.locationAddress) ctx.locationId = addressRecord.locationAddress;
     return ctx;
-  }, [organizationId, clientId, bpId]);
-
-  // Sub-entity records (current BP's discount + address)
-  const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
-  const [addressRecord, setAddressRecord] = useState(undefined);
+  }, [organizationId, clientId, bpId, addressRecord?.locationAddress]);
   // Available discount catalog
   const [discountOptions, setDiscountOptions] = useState([]);
   const [saving, setSaving] = useState(false);
