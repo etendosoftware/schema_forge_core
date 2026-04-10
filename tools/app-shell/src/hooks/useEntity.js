@@ -27,6 +27,39 @@ async function extractErrorMessage(res) {
 
 const BATCH_SIZE = 75;
 
+const NUMERIC_FIELD_COERCIONS = {
+  assets: {
+    decimal: [
+      'annualDepreciation',
+      'assetValue',
+      'residualAssetValue',
+      'depreciationAmt',
+      'previouslyDepreciatedAmt',
+    ],
+    integer: [
+      'usableLifeYears',
+      'usableLifeMonths',
+    ],
+  },
+};
+
+function normalizePayloadValue(entityName, key, value) {
+  const rules = NUMERIC_FIELD_COERCIONS[entityName] || { decimal: [], integer: [] };
+  if (typeof value === 'string' && rules.decimal.includes(key)) {
+    const trimmed = value.trim();
+    if (!trimmed) return value;
+    const parsed = Number(trimmed);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  if (typeof value === 'string' && rules.integer.includes(key)) {
+    const trimmed = value.trim();
+    if (!trimmed) return value;
+    const parsed = Number.parseInt(trimmed, 10);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return value;
+}
+
 /**
  * Resolve the backend sort key for a given column.
  * FK columns have a companion `col$_identifier` in the response — sorting by that
@@ -178,7 +211,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       const changes = {};
       for (const [key, value] of Object.entries(editing)) {
         if (key === 'id') continue;
-        if (value !== selected[key]) changes[key] = value;
+        const normalizedValue = normalizePayloadValue(entity, key, value);
+        if (normalizedValue !== selected[key]) changes[key] = normalizedValue;
       }
       payload = changes;
     } else {
@@ -186,7 +220,9 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       // resolve proper values for fields not explicitly set by the user or callouts.
       payload = {};
       for (const [key, value] of Object.entries(editing)) {
-        if (value !== '' && value != null) payload[key] = value;
+        if (value !== '' && value != null) {
+          payload[key] = normalizePayloadValue(entity, key, value);
+        }
       }
     }
     // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
