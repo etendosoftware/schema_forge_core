@@ -100,7 +100,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
       if (existsSync(mockPath)) {
         let rows = JSON.parse(readFileSync(mockPath, 'utf8'));
-        if (limit) rows = rows.slice(0, parseInt(limit, 10));
+        if (limit && Array.isArray(rows)) rows = rows.slice(0, parseInt(limit, 10));
         return { rows, contract };
       }
     }
@@ -135,8 +135,8 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
         rows = rows?.[key];
       }
     }
-    if (!Array.isArray(rows)) throw new Error('NEO response did not contain rows array');
-    if (limit) rows = rows.slice(0, parseInt(limit, 10));
+    if (!Array.isArray(rows) && typeof rows !== 'object') throw new Error('NEO response did not contain valid data');
+    if (limit && Array.isArray(rows)) rows = rows.slice(0, parseInt(limit, 10));
 
     // Extract backend meta (sibling of the data array in the response path)
     let neoMeta = {};
@@ -397,6 +397,18 @@ export default function reportApiPlugin() {
                   orderBy: 'ORDER BY y.year DESC',
                   select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`
                 },
+                'currency': {
+                  fromWhere: `FROM c_currency WHERE isactive='Y' AND (iso_code ILIKE $1 OR description ILIKE $1)`,
+                  orderBy: clientId
+                    ? `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '${clientId}') THEN 0 ELSE 1 END), iso_code`
+                    : 'ORDER BY iso_code',
+                  select: `SELECT c_currency_id AS id, iso_code AS name, iso_code || ' - ' || description AS label`
+                },
+                'tax': {
+                  fromWhere: `FROM c_tax WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_tax_id AS id, name, name AS label`
+                },
               };
               const queryCfg = queries[type];
               if (!queryCfg) throw new Error(`Unknown selector type: ${type}`);
@@ -575,14 +587,15 @@ export default function reportApiPlugin() {
             // Listing type: flat rows
             const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
             const totals = {};
-            if (!documentData && amountCols.length) {
+            if (!documentData && amountCols.length && Array.isArray(rows)) {
               for (const col of amountCols) {
                 totals[col.field] = rows.reduce((sum, r) => sum + (Number(r[col.field]) || 0), 0);
               }
             }
+            const recordCount = Array.isArray(rows) ? rows.length : undefined;
             const templateData = documentData
               ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
-              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 
             // Direct HTML render — no jsreport needed for preview
             if (format === 'html') {
