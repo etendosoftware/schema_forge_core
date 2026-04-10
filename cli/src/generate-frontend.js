@@ -854,7 +854,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
     : '';
 
-  return `import { useEffect } from 'react';
+  return `import { ${customComponents.newRecordComponent ? 'useState, ' : ''}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
@@ -905,10 +905,8 @@ ${hiddenDefaultsArray}
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, recordId, ...props }) {
-  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
-    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
-  }` : ''}
+export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
+  const [showNewModal, setShowNewModal] = useState(false);` : ''}
   if (recordId) {
     return (
       <DetailView
@@ -933,7 +931,8 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     );
   }
 
-  return (
+  return (${customComponents.newRecordComponent ? `
+    <>` : ''}
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
@@ -941,8 +940,11 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
-      {...props}
-    />
+      {...props}${customComponents.newRecordComponent ? `
+      onNew={() => setShowNewModal(true)}` : ''}
+    />${customComponents.newRecordComponent ? `
+    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}
+    </>` : ''}
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
