@@ -15,9 +15,7 @@ const fields = [
 
 // @sf-generated-start component:ReturnShipmentLineForm
 export default function ReturnShipmentLineForm(props) {
-  // @sf-custom-slot hooks:ReturnShipmentLineForm
   return <EntityForm fields={fields} {...props} />;
 }
+ReturnShipmentLineForm.hasCollapsedFields = false;
 // @sf-generated-end component:ReturnShipmentLineForm
-
-// @sf-custom-slot section:ReturnShipmentLineForm-custom

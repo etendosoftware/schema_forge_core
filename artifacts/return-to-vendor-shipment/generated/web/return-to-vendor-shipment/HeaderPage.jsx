@@ -1,6 +1,58 @@
-import HeaderPage from './HeaderPage';
+import { useEffect } from 'react';
+import { ListView, DetailView } from '@/components/contract-ui';
+import HeaderTable from './HeaderTable';
+import HeaderForm from './HeaderForm';
+import LinesTable from './LinesTable';
+import LinesForm from './LinesForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
+import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'purchases', name: 'Return to Vendor Shipment' };
+
+const breadcrumb = 'Purchases / Return to Vendor Shipment';
+
+
+// @sf-generated-start summary:header
+const summary = [
+
+];
+
+const statusField = 'documentStatus';
+// @sf-generated-end summary:header
+
+// @sf-generated-start extraBadges:header
+const extraBadges = [];
+// @sf-generated-end extraBadges:header
+
+// @sf-generated-start processes:header
+const processes = [
+  { name: 'sendMaterials', label: 'Pick/Edit Lines', style: 'positive',
+    displayLogicRaw: "@Processed@='N'" },
+  { name: 'documentAction', label: 'Process Shipment', style: 'positive',
+    displayLogicRaw: "@DocStatus@!'CL'&@DocStatus@!'VO'" },
+];
+// @sf-generated-end processes:header
+
+// @sf-generated-start draftMode:header
+const draftMode = null;
+// @sf-generated-end draftMode:header
+
+// @sf-generated-start addLineFields:lines
+const addLineFields = {
+  entry: [
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'project', column: 'C_Project_ID', type: 'search', lookup: true, label: 'Project', reference: 'Project', inputMode: 'search' },
+    { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', reference: 'Costcenter', inputMode: 'selector' },
+    { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', reference: 'User1', inputMode: 'selector' },
+    { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', reference: 'User2', inputMode: 'selector' },
+  ],
+  derived: [
+
+  ],
+  hidden: [
+
+  ],
+};
+// @sf-generated-end addLineFields:lines
 
 const api = {
   "specName": "return-to-vendor-shipment",
@@ -268,8 +320,46 @@ const api = {
   }
 };
 
-// @sf-generated-start component:App
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
+// @sf-generated-start component:HeaderPage
+export default function HeaderPage({ windowName, recordId, ...props }) {
+  
+  if (recordId) {
+    return (
+      <DetailView
+        entity="header"
+        detailEntity="lines"
+        Form={HeaderForm}
+        DetailTable={LinesTable}
+        DetailForm={LinesForm}
+        summary={summary}
+        statusField={statusField}
+        extraBadges={extraBadges}
+        processes={processes}
+        addLineFields={addLineFields}
+        catalogs={catalogs}
+        entityLabel="Header"
+        detailLabel="Lines"
+        windowName={windowName}
+        recordId={recordId}
+        breadcrumb={breadcrumb}
+      api={api}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        {...props}
+      />
+    );
+  }
+
+  return (
+    <ListView
+      entity="header"
+      Table={HeaderTable}
+      entityLabel="Return to Vendor Shipment"
+      windowName={windowName}
+      breadcrumb={breadcrumb}
+      api={api}
+      {...props}
+    />
+  );
 }
-// @sf-generated-end component:App
+// @sf-generated-end component:HeaderPage
