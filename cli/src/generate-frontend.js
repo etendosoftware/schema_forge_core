@@ -750,6 +750,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
+  if (customComponents.moreMenuContent) {
+    customComponentImports.push(`import ${customComponents.moreMenuContent} from '../../../custom/${customComponents.moreMenuContent}';`);
+    customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
+  }
   if (customComponents.newRecordComponent) {
     customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
   }
