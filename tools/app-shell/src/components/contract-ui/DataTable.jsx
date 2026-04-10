@@ -195,7 +195,13 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   const buildEmpty = useCallback(() => {
     const empty = {};
     for (const f of fields) {
-      empty[f.key] = f.key === 'lineNo' ? defaultLineNo : '';
+      if (f.key === 'lineNo') {
+        empty[f.key] = defaultLineNo;
+      } else if (f.defaultValue !== undefined) {
+        empty[f.key] = f.defaultValue;
+      } else {
+        empty[f.key] = '';
+      }
     }
     return empty;
   }, [fields, defaultLineNo]);
@@ -227,7 +233,13 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     const nextLineNo = Math.max(...nums) + 10;
     const next = {};
     for (const f of fields) {
-      next[f.key] = f.key === 'lineNo' ? nextLineNo : '';
+      if (f.key === 'lineNo') {
+        next[f.key] = nextLineNo;
+      } else if (f.defaultValue !== undefined) {
+        next[f.key] = f.defaultValue;
+      } else {
+        next[f.key] = '';
+      }
     }
     // Clear any $_identifier companion values
     for (const key of Object.keys(values)) {
