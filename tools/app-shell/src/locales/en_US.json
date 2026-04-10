@@ -13571,6 +13571,10 @@
     "Aeatsii_Cause_Exemption_ID": {
       "label": "Cause exemption",
       "description": "Allows assigning an exemption cause per invoice"
+    },
+    "Cancellationdate": {
+      "label": "Cancellation Date",
+      "description": ""
     }
   },
   "windows": {
@@ -16937,7 +16941,41 @@
     "unsavedChangesDesc": "You have changes that haven't been saved yet. What would you like to do?",
     "pricingUpdated": "Pricing updated successfully.",
     "uploadImage": "Upload image",
-    "uploadingImage": "Uploading…"
+    "uploadingImage": "Uploading…",
+    "assetsAmortizationPlan": "Amortization Plan",
+    "assetsAmortizationPlanDesc": "This shows what will happen to the asset over time.",
+    "assetsPlannedLine": "planned line",
+    "assetsPlannedLines": "planned lines",
+    "assetsLoading": "Loading...",
+    "assetsNoAmortizationLines": "No amortization lines yet. Use \"Create Amortization\" to generate the plan.",
+    "assetsPeriod": "Period",
+    "assetsPercentage": "Percentage",
+    "assetsStatus": "Status",
+    "assetsTotalPlanned": "Total planned:",
+    "assetsStatusProcessed": "Processed",
+    "assetsStatusPlanned": "Planned",
+    "assetsDepreciationSummary": "Depreciation Summary",
+    "assetsCurrentValue": "Current Value",
+    "assetsBookValue": "Asset book value",
+    "assetsPlannedDepreciation": "Planned Depreciation",
+    "assetsTotalScheduled": "Total scheduled amount",
+    "assetsDepreciated": "Depreciated",
+    "assetsFullyDepreciated": "Fully depreciated",
+    "assetsStillInProgress": "Still in progress",
+    "assetsDepreciationProgress": "Depreciation Progress",
+    "assetsPendingCount": "Pending: {count}",
+    "assetsDoneCount": "Done: {count}",
+    "assetsCreateAmortization": "Create Amortization",
+    "assetsConfigDesc": "Configure the depreciation method, schedule, and amounts for this asset.",
+    "assetsDepreciateLabel": "Depreciate",
+    "assetsDepreciateDesc": "Enable depreciation for this asset.",
+    "assets30DaysLabel": "Every month is 30 days",
+    "assets30DaysDesc": "Use 30-day months for depreciation calculation.",
+    "assetsOptLinear": "Linear",
+    "assetsOptPercentage": "Percentage",
+    "assetsOptTime": "Time",
+    "assetsOptMonthly": "Monthly",
+    "assetsOptYearly": "Yearly"
   },
   "menus": {
     "Currency": {

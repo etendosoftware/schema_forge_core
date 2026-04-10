@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-09T15:27:21.063Z",
-  "checksum": "aaed77a2c22f4ef2",
+  "generatedAt": "2026-04-09T20:05:40.746Z",
+  "checksum": "c7e82a8b4fdae696",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -18,11 +18,11 @@
       "hideEyeCount": true,
       "breadcrumb": "Finance / Assets",
       "processOverrides": {
-        "processed": {
+        "processAsset": {
           "add": true,
           "label": "Create Amortization",
           "style": "positive",
-          "columnName": "Processed"
+          "displayLogicRaw": "@Depreciate@='Y'"
         }
       },
       "secondaryTabs": {},
@@ -38,7 +38,7 @@
         },
         {
           "key": "configuration",
-          "label": "Configuration",
+          "label": "Depreciation Setup",
           "panel": "AssetsConfigPanel"
         }
       ],
@@ -753,11 +753,10 @@
       "hideEyeCount": true,
       "breadcrumb": "Finance / Assets",
       "processOverrides": {
-        "processed": {
+        "processAsset": {
           "add": true,
           "label": "Create Amortization",
-          "style": "positive",
-          "columnName": "Processed"
+          "style": "positive"
         }
       },
       "secondaryTabs": {},
@@ -773,7 +772,7 @@
         },
         {
           "key": "configuration",
-          "label": "Configuration",
+          "label": "Depreciation Setup",
           "panel": "AssetsConfigPanel"
         }
       ],

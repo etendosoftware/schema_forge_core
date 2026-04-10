@@ -13571,6 +13571,10 @@
     "URL_Qr_Base": {
       "label": "Url base para QR",
       "description": "URL base que se utiliza para generar el código QR en las facturas."
+    },
+    "Cancellationdate": {
+      "label": "Fecha de baja",
+      "description": "Fecha en que el activo fue dado de baja"
     }
   },
   "windows": {
@@ -17176,7 +17180,41 @@
     "unsavedChangesDesc": "Tenés cambios sin guardar. ¿Qué querés hacer?",
     "pricingUpdated": "Precios actualizados correctamente.",
     "uploadImage": "Subir imagen",
-    "uploadingImage": "Subiendo…"
+    "uploadingImage": "Subiendo…",
+    "assetsAmortizationPlan": "Plan de amortización",
+    "assetsAmortizationPlanDesc": "Muestra qué pasará con el activo a lo largo del tiempo.",
+    "assetsPlannedLine": "línea planificada",
+    "assetsPlannedLines": "líneas planificadas",
+    "assetsLoading": "Cargando...",
+    "assetsNoAmortizationLines": "Aún no hay líneas de amortización. Usá \"Crear amortización\" para generar el plan.",
+    "assetsPeriod": "Período",
+    "assetsPercentage": "Porcentaje",
+    "assetsStatus": "Estado",
+    "assetsTotalPlanned": "Total planificado:",
+    "assetsStatusProcessed": "Procesado",
+    "assetsStatusPlanned": "Planificado",
+    "assetsDepreciationSummary": "Resumen de depreciación",
+    "assetsCurrentValue": "Valor actual",
+    "assetsBookValue": "Valor contable del activo",
+    "assetsPlannedDepreciation": "Depreciación planificada",
+    "assetsTotalScheduled": "Monto total programado",
+    "assetsDepreciated": "Depreciado",
+    "assetsFullyDepreciated": "Totalmente depreciado",
+    "assetsStillInProgress": "En progreso",
+    "assetsDepreciationProgress": "Progreso de depreciación",
+    "assetsPendingCount": "Pendiente: {count}",
+    "assetsDoneCount": "Hecho: {count}",
+    "assetsCreateAmortization": "Crear amortización",
+    "assetsConfigDesc": "Configurá el método, el calendario y los montos de depreciación para este activo.",
+    "assetsDepreciateLabel": "Depreciar",
+    "assetsDepreciateDesc": "Habilitar la depreciación para este activo.",
+    "assets30DaysLabel": "Cada mes tiene 30 días",
+    "assets30DaysDesc": "Usar meses de 30 días para el cálculo de depreciación.",
+    "assetsOptLinear": "Lineal",
+    "assetsOptPercentage": "Porcentaje",
+    "assetsOptTime": "Tiempo",
+    "assetsOptMonthly": "Mensual",
+    "assetsOptYearly": "Anual"
   },
   "menus": {
     "Tax": {
@@ -18411,6 +18449,12 @@
     },
     "Additional Info": {
       "label": "Información adicional"
+    },
+    "Create Amortization": {
+      "label": "Crear amortización"
+    },
+    "Depreciation Setup": {
+      "label": "Configuración de depreciación"
     }
   },
   "statuses": {
