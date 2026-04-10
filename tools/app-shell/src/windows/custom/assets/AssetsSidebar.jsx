@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useUI } from '@/i18n';
 
 function fmt(v) {
   if (v == null || v === '') return '—';
@@ -35,7 +36,7 @@ function MetricCard({ label, value, subtitle, tint = null }) {
   );
 }
 
-function ProgressCard({ total, completed, pct }) {
+function ProgressCard({ total, completed, pct, ui }) {
   const pending = total - completed;
   const isComplete = pct === 100;
   const barColor = isComplete ? 'bg-emerald-500' : 'bg-blue-500';
@@ -44,7 +45,7 @@ function ProgressCard({ total, completed, pct }) {
   return (
     <div className="rounded-xl bg-gray-50 p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-gray-600">Depreciation Progress</span>
+        <span className="text-xs font-semibold text-gray-600">{ui('assetsDepreciationProgress')}</span>
         <span className="text-xs text-blue-600 font-medium">{completed} / {total}</span>
       </div>
       <div className={`h-1.5 ${trackColor} rounded-full overflow-hidden mb-2`}>
@@ -54,8 +55,8 @@ function ProgressCard({ total, completed, pct }) {
         />
       </div>
       <div className="flex justify-between text-xs text-gray-500">
-        <span>Pending: {pending}</span>
-        <span>Done: {completed}</span>
+        <span>{ui('assetsPendingCount', { count: pending })}</span>
+        <span>{ui('assetsDoneCount', { count: completed })}</span>
       </div>
     </div>
   );
@@ -77,6 +78,7 @@ function countCompletedLines(lines, depreciatedValue) {
 }
 
 export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
+  const ui = useUI();
   const [lineStats, setLineStats] = useState({ total: 0, completed: 0 });
 
   const depreciatedValue = Number(data?.depreciatedValue ?? 0);
@@ -108,30 +110,31 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
     <div className="flex flex-col gap-3">
       <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm">
         <div className="px-4 pt-4 pb-3">
-          <span className="text-sm font-semibold text-gray-800">Depreciation Summary</span>
+          <span className="text-sm font-semibold text-gray-800">{ui('assetsDepreciationSummary')}</span>
         </div>
         <div className="px-4 pb-4 flex flex-col gap-3">
           <MetricCard
-            label="Current Value"
+            label={ui('assetsCurrentValue')}
             value={hasData ? `€ ${fmt(assetValue)}` : '—'}
-            subtitle="Asset book value"
+            subtitle={ui('assetsBookValue')}
           />
           <MetricCard
-            label="Planned Depreciation"
+            label={ui('assetsPlannedDepreciation')}
             value={hasData ? `€ ${fmt(depreciatedPlan)}` : '—'}
-            subtitle="Total scheduled amount"
+            subtitle={ui('assetsTotalScheduled')}
             tint="green"
           />
           <MetricCard
-            label="Depreciated"
+            label={ui('assetsDepreciated')}
             value={hasData ? `${pct}%` : '—'}
-            subtitle={hasData ? (isComplete ? 'Fully depreciated' : 'Still in progress') : null}
+            subtitle={hasData ? (isComplete ? ui('assetsFullyDepreciated') : ui('assetsStillInProgress')) : null}
             tint="amber"
           />
           <ProgressCard
             total={lineStats.total}
             completed={lineStats.completed}
             pct={lineStats.total > 0 ? Math.round((lineStats.completed / lineStats.total) * 100) : 0}
+            ui={ui}
           />
         </div>
       </div>
