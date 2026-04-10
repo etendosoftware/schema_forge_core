@@ -35,6 +35,28 @@ const api = {
         "product"
       ]
     },
+    "intrastat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/intrastat",
+      "detailUrl": "/sws/neo/sales-invoice/intrastat/{id}",
+      "supportedFilters": []
+    },
+    "cashVat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/cashVat",
+      "detailUrl": "/sws/neo/sales-invoice/cashVat/{id}",
+      "supportedFilters": []
+    },
     "paymentPlan": {
       "get": true,
       "getById": true,
@@ -44,6 +66,50 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/sales-invoice/paymentPlan",
       "detailUrl": "/sws/neo/sales-invoice/paymentPlan/{id}",
+      "supportedFilters": []
+    },
+    "verifactu": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/verifactu",
+      "detailUrl": "/sws/neo/sales-invoice/verifactu/{id}",
+      "supportedFilters": []
+    },
+    "siiData": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/siiData",
+      "detailUrl": "/sws/neo/sales-invoice/siiData/{id}",
+      "supportedFilters": []
+    },
+    "ticketbai": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/ticketbai",
+      "detailUrl": "/sws/neo/sales-invoice/ticketbai/{id}",
+      "supportedFilters": []
+    },
+    "resultadoValidación": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/sales-invoice/resultadoValidación",
+      "detailUrl": "/sws/neo/sales-invoice/resultadoValidación/{id}",
       "supportedFilters": []
     }
   },
@@ -89,6 +155,22 @@ const api = {
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
     },
     {
+      "entity": "header",
+      "field": "aeatsiiDescription",
+      "column": "EM_Aeatsii_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
+    },
+    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
@@ -105,6 +187,54 @@ const api = {
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {
+      "entity": "intrastat",
+      "field": "invoiceLine",
+      "column": "C_Invoiceline_ID",
+      "reference": "InvoiceLine",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-invoice/intrastat/selectors/invoiceLine"
+    },
+    {
+      "entity": "intrastat",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "inputMode": "search",
+      "url": "/sws/neo/sales-invoice/intrastat/selectors/product"
+    },
+    {
+      "entity": "intrastat",
+      "field": "incoterms",
+      "column": "C_Incoterms_ID",
+      "reference": "Incoterms",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/intrastat/selectors/incoterms"
+    },
+    {
+      "entity": "intrastat",
+      "field": "supplementaryUOM",
+      "column": "Intr_C_Uom_ID",
+      "reference": "Intr_C_Uom",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/intrastat/selectors/supplementaryUOM"
+    },
+    {
+      "entity": "cashVat",
+      "field": "payment",
+      "column": "FIN_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/cashVat/selectors/payment"
+    },
+    {
+      "entity": "cashVat",
+      "field": "oBCVATMANUALSETTLEMENTLINE",
+      "column": "EM_OBCVAT_MANUALSETTLEMENTLINE_ID",
+      "reference": "OBCVAT_ManualSettlementLine",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/cashVat/selectors/oBCVATMANUALSETTLEMENTLINE"
+    },
+    {
       "entity": "paymentPlan",
       "field": "finPaymentmethodID",
       "column": "Fin_Paymentmethod_ID",
@@ -119,6 +249,22 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/paymentPlan/selectors/currency"
+    },
+    {
+      "entity": "siiData",
+      "field": "conexinSII",
+      "column": "Aeatsii_Conexion_ID",
+      "reference": "Aeatsii_Conexion",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/siiData/selectors/conexinSII"
+    },
+    {
+      "entity": "ticketbai",
+      "field": "invoice",
+      "column": "C_Invoice_ID",
+      "reference": "Invoice",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/ticketbai/selectors/invoice"
     }
   ],
   "actions": [
@@ -186,11 +332,59 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
-      "processId": "111",
-      "processType": "classic"
+      "field": "tBAIQRcode",
+      "column": "em_tbai_qrcode",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tBAIQRcode",
+      "processId": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "etvfacRectCreate",
+      "column": "EM_Etvfac_Rect_Create",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/etvfacRectCreate",
+      "processId": "E36A8BA259164E78AFDDC760172C18F5",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiXmlgenerator",
+      "column": "EM_Tbai_Xmlgenerator",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiXmlgenerator",
+      "processId": "BE2486102F2C41779B760609FD69A225",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/eTBLKCBulkcompletion",
+      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiVoidxmlgenerator",
+      "column": "EM_Tbai_Voidxmlgenerator",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiVoidxmlgenerator",
+      "processId": "535A8BAE44A34759A7C8FF40D62A5070",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiSend",
+      "column": "EM_Aeatsii_Send",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiSend",
+      "processId": "2ECF46DAAEEB486EAF79D3594D50DE5F",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiModif",
+      "column": "EM_Aeatsii_Modif",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiModif",
+      "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -202,9 +396,33 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
+      "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
       "field": "createLinesFrom",
       "column": "CreateFrom",
       "url": "/sws/neo/sales-invoice/header/{id}/action/createLinesFrom"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDup",
+      "column": "EM_Aeatsii_Dup",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiDup",
+      "processId": "92C02F9A367140C085D1EE3BD27C4E96",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiUnsubscribe",
+      "column": "EM_Aeatsii_Unsubscribe",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiUnsubscribe",
+      "processId": "BE564945CB2D4892AC0EE51204C5DB7D",
+      "processType": "obuiapp"
     },
     {
       "entity": "lines",
@@ -264,9 +482,6 @@ const api = {
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
   return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
-
-// @sf-custom-slot section:App-custom

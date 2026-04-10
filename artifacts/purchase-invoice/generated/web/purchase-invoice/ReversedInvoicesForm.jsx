@@ -8,9 +8,7 @@ const fields = [
 
 // @sf-generated-start component:ReversedInvoicesForm
 export default function ReversedInvoicesForm(props) {
-  // @sf-custom-slot hooks:ReversedInvoicesForm
   return <EntityForm fields={fields} {...props} />;
 }
+ReversedInvoicesForm.hasCollapsedFields = false;
 // @sf-generated-end component:ReversedInvoicesForm
-
-// @sf-custom-slot section:ReversedInvoicesForm-custom

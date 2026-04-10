@@ -260,9 +260,7 @@
     "lines": {
       "fields": {
         "lineNo": {
-          "grid": true,
-          "form": false,
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -290,10 +288,7 @@
           "displayLogic": null
         },
         "operativeUOM": {
-          "form": false,
-          "inputMode": "selector",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "invoicedQuantity": {
           "grid": true,
@@ -301,8 +296,7 @@
           "readOnlyLogic": null
         },
         "uOM": {
-          "form": false,
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
@@ -371,13 +365,14 @@
           "displayLogic": null
         },
         "grossUnitPrice": {
-          "visibility": "discarded",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossAmount": {
-          "visibility": "discarded",
-          "displayLogic": null
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossListPrice": {
           "visibility": "discarded",

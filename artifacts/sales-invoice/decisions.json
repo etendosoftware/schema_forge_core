@@ -284,10 +284,14 @@
           "visibility": "discarded"
         },
         "grossUnitPrice": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossAmount": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossListPrice": {
           "visibility": "discarded"

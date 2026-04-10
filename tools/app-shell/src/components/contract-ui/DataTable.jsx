@@ -268,10 +268,19 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
     onFieldChange?.(key, val, snapshot, (updates) => {
-      // Callback to apply callout results to the inline row
-      for (const [field, value] of Object.entries(updates)) {
-        handleChange(field, value);
-      }
+      // Apply callout updates only for fields the user hasn't manually changed
+      // since the callout was triggered. Compares against the snapshot captured
+      // at trigger time — if the current value diverged, the user edited it and
+      // the callout result must not overwrite it (race condition guard).
+      setValues(prev => {
+        const next = { ...prev };
+        for (const [field, value] of Object.entries(updates)) {
+          if (!(field in snapshot) || prev[field] === snapshot[field]) {
+            next[field] = value;
+          }
+        }
+        return next;
+      });
     });
   }, [handleChange, onFieldChange, values]);
 
