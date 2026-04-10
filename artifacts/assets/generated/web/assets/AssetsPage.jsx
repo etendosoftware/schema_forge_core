@@ -25,7 +25,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:assets
 const processes = [
-  { name: 'processed', label: 'Create Amortization', style: 'positive', columnName: 'Processed' },
+  { name: 'processAsset', label: 'Create Amortization', style: 'positive',
+    displayLogicRaw: "@Depreciate@='Y'" },
 ];
 // @sf-generated-end processes:assets
 
@@ -191,7 +192,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         formFooter={AssetsAmortizationPanel}
         primaryTabs={[
           { key: 'general', label: 'Overview' },
-          { key: 'configuration', label: 'Configuration', Panel: AssetsConfigPanel },
+          { key: 'configuration', label: 'Depreciation Setup', Panel: AssetsConfigPanel },
         ]}
         hidePrint
         hideMoreMenu

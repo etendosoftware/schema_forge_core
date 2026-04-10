@@ -16,18 +16,18 @@
     "sidebarLayout": true,
     "disableProcessedLock": true,
     "processOverrides": {
-      "processed": {
+      "processAsset": {
         "add": true,
         "label": "Create Amortization",
         "style": "positive",
-        "columnName": "Processed"
+        "displayLogicRaw": "@Depreciate@='Y'"
       }
     },
     "secondaryTabs": {},
     "detailEntity": null,
     "primaryTabs": [
       { "key": "general", "label": "Overview" },
-      { "key": "configuration", "label": "Configuration", "panel": "AssetsConfigPanel" }
+      { "key": "configuration", "label": "Depreciation Setup", "panel": "AssetsConfigPanel" }
     ],
     "headerExtra": {
       "customForm": "AssetsAmortizationPanel"
