@@ -14,7 +14,7 @@
     "handler": "agingReportHandler"
   },
   "columns": [
-    { "field": "bPartner", "label": { "en_US": "Business Partner", "es_ES": "Tercero" }, "type": "string", "width": "20%", "sortable": true },
+    { "field": "bPartner", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "string", "width": "20%", "sortable": true },
     { "field": "current", "label": { "en_US": "Current", "es_ES": "Corriente" }, "type": "amount", "width": "10%", "sortable": true },
     { "field": "days30", "label": { "en_US": "1-30", "es_ES": "1-30" }, "type": "amount", "width": "9%", "sortable": true },
     { "field": "days60", "label": { "en_US": "31-60", "es_ES": "31-60" }, "type": "amount", "width": "9%", "sortable": true },
@@ -28,10 +28,10 @@
   "groups": [],
   "filters": [],
   "parameters": [
-    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "popup-single", "required": true, "autoDefault": true },
+    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "popup-single", "required": true, "hidden": true, "autoDefault": true },
     { "name": "glId", "label": { "en_US": "General Ledger", "es_ES": "Libro Mayor" }, "type": "search", "selector": "acctschema", "inputStyle": "popup-single", "required": true, "autoDefault": true },
     { "name": "currentDate", "label": { "en_US": "As of Date", "es_ES": "Fecha corte" }, "type": "date", "default": "__TODAY__", "required": true },
-    { "name": "bPartnerId", "label": { "en_US": "Business Partner", "es_ES": "Tercero" }, "type": "search", "selector": "bpartner", "inputStyle": "popup" },
+    { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner", "inputStyle": "popup" },
     { "name": "showDetails", "label": { "en_US": "Show Details", "es_ES": "Mostrar Detalles" }, "type": "boolean" },
     { "name": "column1", "label": { "en_US": "Days Group 1", "es_ES": "Días Tramo 1" }, "type": "number" },
     { "name": "column2", "label": { "en_US": "Days Group 2", "es_ES": "Días Tramo 2" }, "type": "number" },

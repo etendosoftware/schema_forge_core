@@ -656,6 +656,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   const handleSubmit = () => {
     const newErrors = {};
     for (const p of report.parameters || []) {
+      if (p.hidden) continue;
       if (p.required && !params[p.name]) newErrors[p.name] = true;
     }
     setErrors(newErrors);
