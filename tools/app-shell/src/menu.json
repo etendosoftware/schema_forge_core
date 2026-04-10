@@ -14,15 +14,15 @@
       "icon": "Users",
       "section": "Commercial",
       "items": [
-        { "name": "contacts", "label": "Contact" },
-        { "name": "business-partner", "label": "Business Partner", "hidden": true },
+        { "name": "contacts", "label": "Contacts" },
+        { "name": "business-partner", "label": "Business Partners", "hidden": true },
         { "name": "crm", "label": "CRM", "hidden": true },
-        { "name": "deal", "label": "Deal", "hidden": true },
-        { "name": "activity", "label": "Activity", "hidden": true },
-        { "name": "lead", "label": "Lead", "hidden": true },
+        { "name": "deal", "label": "Deals", "hidden": true },
+        { "name": "activity", "label": "Activities", "hidden": true },
+        { "name": "lead", "label": "Leads", "hidden": true },
         { "name": "hr", "label": "HR", "hidden": true },
-        { "name": "employee", "label": "Employee", "hidden": true },
-        { "name": "absence", "label": "Absence", "hidden": true }
+        { "name": "employee", "label": "Employees", "hidden": true },
+        { "name": "absence", "label": "Absences", "hidden": true }
       ]
     },
     {
@@ -30,23 +30,23 @@
       "icon": "ShoppingCart",
       "section": "Commercial",
       "items": [
-        { "name": "sales-quotation", "label": "Sales Quotation" },
-        { "name": "sales-order", "label": "Sales Order" },
-        { "name": "goods-shipment", "label": "Goods Shipment" },
-        { "name": "sales-invoice", "label": "Sales Invoice" },
-        { "name": "return-from-customer", "label": "Return from Customer" },
-        { "name": "return-material-receipt", "label": "Return Material Receipt" }
+        { "name": "sales-quotation", "label": "Quotations" },
+        { "name": "sales-order", "label": "Sales Orders" },
+        { "name": "goods-shipment", "label": "Shipments" },
+        { "name": "sales-invoice", "label": "Invoices" },
+        { "name": "return-from-customer", "label": "Returns" },
+        { "name": "return-material-receipt", "label": "Return Material Receipts" }
       ]
     },
     {
       "group": "Purchases",
       "icon": "Truck",
       "items": [
-        { "name": "purchase-order", "label": "Purchase Order" },
+        { "name": "purchase-order", "label": "Purchase Orders" },
         { "name": "goods-receipt", "label": "Goods Receipt" },
         { "name": "purchase-invoice", "label": "Purchase Invoice" },
-        { "name": "return-to-vendor", "label": "Return to Vendor" },
-        { "name": "return-to-vendor-shipment", "label": "Return to Vendor Shipment" },
+        { "name": "return-to-vendor", "label": "Returns" },
+        { "name": "return-to-vendor-shipment", "label": "Return Shipments" },
         { "name": "report-viewer-purchases", "label": "Reports", "path": "report-viewer?category=purchases" }
       ]
     },
@@ -54,12 +54,12 @@
       "group": "Finance",
       "icon": "Calculator",
       "items": [
-        { "name": "payment-in", "label": "Payment In" },
-        { "name": "payment-out", "label": "Payment Out" },
+        { "name": "payment-in", "label": "Payments In" },
+        { "name": "payment-out", "label": "Payments Out" },
         { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
         { "name": "chart-of-accounts", "label": "Chart of Accounts" },
         { "name": "assets", "label": "Assets" },
-        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
+        { "name": "recurring-invoice", "label": "Recurring Invoices", "hidden": true },
         { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
       ]
     },
@@ -67,13 +67,13 @@
       "group": "Inventory",
       "icon": "Package",
       "items": [
-        { "name": "product", "label": "Product" },
-        { "name": "product-category", "label": "Product Category" },
+        { "name": "product", "label": "Products" },
+        { "name": "product-category", "label": "Categories" },
         { "name": "physical-inventory", "label": "Physical Inventory" },
-        { "name": "goods-movements", "label": "Goods Movement" },
-        { "name": "warehouse", "label": "Warehouse" },
+        { "name": "goods-movements", "label": "Goods Movements" },
+        { "name": "warehouse", "label": "Warehouses" },
         { "name": "report-viewer-inventory", "label": "Reports", "path": "report-viewer?category=inventory" },
-        { "name": "warehouse-storage-bins", "label": "Storage Bin", "hidden": true }
+        { "name": "warehouse-storage-bins", "label": "Storage Bins", "hidden": true }
       ]
     },
     {
@@ -81,22 +81,38 @@
       "icon": "FolderKanban",
       "hidden": true,
       "items": [
-        { "name": "project", "label": "Project" },
+        { "name": "project", "label": "Projects" },
         { "name": "time-tracking", "label": "Time Tracking" },
-        { "name": "document", "label": "Document" }
+        { "name": "document", "label": "Documents" }
+      ]
+    },
+    {
+      "group": "Connections",
+      "icon": "Plug",
+      "items": [
+        { "name": "authorize", "label": "Connect con Claude" }
       ]
     },
     {
       "group": "Settings",
       "icon": "Settings",
       "items": [
-        { "name": "price-list", "label": "Price List" },
-        { "name": "payment-term", "label": "Payment Term" },
-        { "name": "payment-method", "label": "Payment Method" },
-        { "name": "tax", "label": "Tax" },
-        { "name": "unit-of-measure", "label": "Unit of Measure" },
-        { "name": "user", "label": "User" },
-        { "name": "smart-scan", "label": "Smart Scan" }
+        { "name": "price-list", "label": "Price Lists" },
+        { "name": "payment-term", "label": "Payment Terms" },
+        { "name": "payment-method", "label": "Payment Methods" },
+        { "name": "tax", "label": "Taxes" },
+        { "name": "unit-of-measure", "label": "Units of Measure" },
+        { "name": "user", "label": "Users" },
+        { "name": "smart-scan", "label": "Smart Scan" },
+        { "name": "oauth2-clients", "label": "OAuth2 Clients", "icon": "Shield" }
+      ]
+    },
+    {
+      "group": "Proof of Concept",
+      "icon": "FlaskConical",
+      "items": [
+        { "name": "quick-sales-order", "label": "Quick Sales Order" },
+        { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
       ]
     }
   ]

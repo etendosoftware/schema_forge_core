@@ -25,6 +25,10 @@ import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
 const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
+const OAuth2ClientsPage = lazy(() => import('./pages/OAuth2ClientsPage.jsx'));
+const AuthorizePage = lazy(() => import('./pages/AuthorizePage.jsx'));
+const QuickSalesOrderPage = lazy(() => import('./pages/QuickSalesOrderPage.jsx'));
+const QuickPurchaseOrderPage = lazy(() => import('./pages/QuickPurchaseOrderPage.jsx'));
 
 function detectBasePath() {
   const envBase = import.meta.env.VITE_API_BASE;
@@ -63,7 +67,7 @@ async function loadAllMockData() {
     import('@generated/product/generated/web/product/mockData.js'),
     import('@generated/product-category/generated/web/product-category/mockData.js'),
     import('@generated/tax/generated/web/tax/mockData.js'),
-    import('@generated/uom/generated/web/uom/mockData.js'),
+    import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
     import('@generated/user/generated/web/user/mockData.js'),
     import('@generated/purchase-order/generated/web/purchase-order/mockData.js'),
     import('@generated/goods-receipt/generated/web/goods-receipt/mockData.js'),
@@ -107,14 +111,19 @@ async function loadAllMockData() {
 
 function AuthGuard({ children }) {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
   return children;
 }
 
 function AppRoutes({ menuGroups, windowMap }) {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  if (menuGroups.length === 0) {
+  // Public routes render without waiting for menu data
+  const publicPaths = ['/login', '/onboarding'];
+  const isPublicRoute = publicPaths.some(p => location.pathname.startsWith(p));
+
+  if (!isPublicRoute && menuGroups.length === 0) {
     return <div className="p-8 text-muted-foreground">Loading...</div>;
   }
 
@@ -123,6 +132,14 @@ function AppRoutes({ menuGroups, windowMap }) {
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
+            <OnboardingPage />
+          </Suspense>
+        }
       />
       <Route
         element={
@@ -143,8 +160,11 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="crm" element={<CrmPage />} />
         <Route path="hr" element={<HrPage />} />
         <Route path="projects" element={<ProjectsPage />} />
-        <Route path="onboarding" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OnboardingPage /></Suspense>} />
         <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
+        <Route path="oauth2-clients" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OAuth2ClientsPage /></Suspense>} />
+        <Route path="authorize" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AuthorizePage /></Suspense>} />
+        <Route path="quick-sales-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickSalesOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
+        <Route path="quick-purchase-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickPurchaseOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
@@ -196,7 +216,7 @@ export default function App() {
     <BrowserRouter basename={routerBase}>
       <ServiceWorkerManager />
       <LocaleProvider locale={locale} setLocale={setLocale}>
-        <AuthProvider>
+        <AuthProvider baseUrl={apiBase}>
           <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
         </AuthProvider>
       </LocaleProvider>

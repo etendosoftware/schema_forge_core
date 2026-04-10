@@ -21,7 +21,7 @@ function FieldGroup({ title, description, children }) {
 export default function ProductAdditionalInfoPanel({ data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
   const ui = useUI();
   return (
-    <div className="space-y-4 pt-5 pb-6">
+    <div className="space-y-4 pt-0 pb-6">
       <FieldGroup
         title={ui('commercial')}
         description={ui('commercialDescription')}
