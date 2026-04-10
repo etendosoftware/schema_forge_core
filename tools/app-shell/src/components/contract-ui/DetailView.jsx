@@ -878,10 +878,10 @@ export function DetailView({
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
                   activePrimaryTab === tab.key
-                    ? 'bg-white border border-gray-200 shadow-sm text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
+                    ? 'bg-white border-gray-200 shadow-sm text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
                 {tMenu(tab.label)}
@@ -949,8 +949,8 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className={embedded ? 'pointer-events-none' : ''}>
-                {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
+              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
+                {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
 

@@ -10,9 +10,6 @@ const filters = [];
 
 // @sf-generated-start component:CustomerAccountingTable
 export default function CustomerAccountingTable(props) {
-  // @sf-custom-slot hooks:CustomerAccountingTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:CustomerAccountingTable
-
-// @sf-custom-slot section:CustomerAccountingTable-custom

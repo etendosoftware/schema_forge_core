@@ -13,10 +13,7 @@ const fields = [
 
 // @sf-generated-start component:BasicDiscountForm
 export default function BasicDiscountForm(props) {
-  // @sf-custom-slot hooks:BasicDiscountForm
   return <EntityForm fields={fields} {...props} />;
 }
 BasicDiscountForm.hasCollapsedFields = false;
 // @sf-generated-end component:BasicDiscountForm
-
-// @sf-custom-slot section:BasicDiscountForm-custom

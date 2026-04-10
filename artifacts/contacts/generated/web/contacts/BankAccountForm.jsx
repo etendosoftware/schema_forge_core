@@ -15,10 +15,7 @@ const fields = [
 
 // @sf-generated-start component:BankAccountForm
 export default function BankAccountForm(props) {
-  // @sf-custom-slot hooks:BankAccountForm
   return <EntityForm fields={fields} {...props} />;
 }
 BankAccountForm.hasCollapsedFields = false;
 // @sf-generated-end component:BankAccountForm
-
-// @sf-custom-slot section:BankAccountForm-custom

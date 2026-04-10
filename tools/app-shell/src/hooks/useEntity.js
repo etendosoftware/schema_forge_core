@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { useUI } from '@/i18n';
 
 function buildHeaders(token) {
   return {
@@ -11,21 +12,160 @@ function buildHeaders(token) {
 /**
  * Extract a human-readable error message from a NEO Headless error response.
  */
-async function extractErrorMessage(res) {
+async function extractErrorMessage(res, ui) {
   try {
     const data = await res.json();
+
+    const translate = (key, fallback, params = {}) => {
+      if (typeof ui !== 'function') {
+        let text = fallback;
+        Object.keys(params).forEach((p) => {
+          text = text.replace(`{${p}}`, params[p]);
+        });
+        return text;
+      }
+
+      const translated = ui(key, params);
+      if (!translated || translated === key) {
+        let text = fallback;
+        Object.keys(params).forEach((p) => {
+          text = text.replace(`{${p}}`, params[p]);
+        });
+        return text;
+      }
+      return translated;
+    };
+
+    const decodeHtml = (input) => {
+      if (typeof input !== 'string') return '';
+      return input
+        .replace(/&quot;/g, '"')
+        .replace(/&#34;/g, '"')
+        .replace(/&apos;/g, "'")
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+    };
+
+    const toReadableLabel = (columnName) => {
+      const normalized = String(columnName || '').trim();
+      if (!normalized) return translate('validationFieldGeneric', 'Field');
+
+      const withSpaces = normalized
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .toLowerCase();
+
+      return withSpaces.replace(/\b\w/g, (ch) => ch.toUpperCase());
+    };
+
+    const REQUIRED_LABELS_BY_TABLE = {
+      c_bpartner: {
+        value: 'validationFieldSearchKey',
+        name: 'validationFieldName',
+        c_bp_group_id: 'validationFieldBusinessPartnerCategory',
+        em_obtik_tax_id_key: 'validationFieldNifCountryKey',
+      },
+    };
+
+    const REQUIRED_LABELS = {
+      value: 'validationFieldSearchKey',
+      name: 'validationFieldName',
+      ad_org_id: 'validationFieldOrganization',
+      ad_client_id: 'validationFieldClient',
+    };
+
+    const normalizeServerError = (rawMessage) => {
+      const decoded = decodeHtml(rawMessage);
+      if (!decoded) return null;
+
+      const requiredMatch = decoded.match(/null value in column\s+"([^"]+)"\s+of relation\s+"([^"]+)"/i);
+      if (requiredMatch) {
+        const column = requiredMatch[1];
+        const relation = requiredMatch[2]?.toLowerCase?.() || '';
+        const tableLabels = REQUIRED_LABELS_BY_TABLE[relation] || {};
+        const labelKey = tableLabels[column.toLowerCase()] || REQUIRED_LABELS[column.toLowerCase()];
+        const label = labelKey
+          ? translate(labelKey, toReadableLabel(column))
+          : toReadableLabel(column);
+        return translate('validationRequiredField', 'The field "{field}" is required.', { field: label });
+      }
+
+      if (/violates\s+not-null\s+constraint/i.test(decoded)) {
+        return translate('validationRequiredGeneric', 'A required field is missing.');
+      }
+
+      if (/duplicate key value violates unique constraint/i.test(decoded)) {
+        return translate('validationDuplicateRecord', 'A record with the same value already exists.');
+      }
+
+      return decoded.replace(/\s+/g, ' ').trim();
+    };
+
+    const pickMessage = (node) => {
+      if (!node) return null;
+      if (typeof node === 'string') {
+        const txt = node.trim();
+        return txt ? txt : null;
+      }
+      if (Array.isArray(node)) {
+        for (const item of node) {
+          const msg = pickMessage(item);
+          if (msg) return msg;
+        }
+        return null;
+      }
+      if (typeof node === 'object') {
+        const preferredKeys = ['message', 'errorMessage', 'text', 'description', 'title'];
+        for (const key of preferredKeys) {
+          const msg = pickMessage(node[key]);
+          if (msg) return msg;
+        }
+        for (const value of Object.values(node)) {
+          const msg = pickMessage(value);
+          if (msg) return msg;
+        }
+      }
+      return null;
+    };
+
     // NEO Headless top-level error: { error: { message, status } }
-    if (data?.error?.message) return data.error.message;
+    const neoError = pickMessage(data?.error);
+    if (neoError) return normalizeServerError(neoError) || neoError;
+
     // Etendo JsonDataService wraps errors in response.error
-    const err = data?.response?.error;
-    if (err?.message) return err.message;
-    if (typeof err === 'string') return err;
-    if (data?.message) return data.message;
+    const serviceError = pickMessage(data?.response?.error);
+    if (serviceError) return normalizeServerError(serviceError) || serviceError;
+
+    // SmartClient validation payloads can come in response.errors
+    const validationError = pickMessage(data?.response?.errors);
+    if (validationError) return normalizeServerError(validationError) || validationError;
+
+    const fallbackMsg = pickMessage(data?.message);
+    if (fallbackMsg) return normalizeServerError(fallbackMsg) || fallbackMsg;
+
+    if (data?.response?.status === -4) {
+      return translate('validationError', 'Validation error');
+    }
   } catch { /* body not JSON */ }
-  return `Error ${res.status}`;
+  return `${translate('error', 'Error')} ${res.status}`;
 }
 
 const BATCH_SIZE = 75;
+
+const CONTACTS_PRECREATE_BILLING_FIELDS = new Set([
+  'priceList',
+  'paymentMethod',
+  'paymentTerms',
+  'account',
+  'customerBlocking',
+  'purchasePricelist',
+  'pOPaymentMethod',
+  'pOPaymentTerms',
+  'pOFinancialAccount',
+  'vendorBlocking',
+]);
 
 /**
  * Resolve the backend sort key for a given column.
@@ -40,6 +180,7 @@ function resolveSortKey(sortColumn, sampleRow) {
 }
 
 export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
+  const ui = useUI();
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -151,15 +292,24 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
             if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
               const [dd, mm, yyyy] = val.split('-');
               normalized[key] = `${yyyy}-${mm}-${dd}`;
+            } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
+              normalized[key] = val.slice(1, -1).replace(/''/g, "'");
             }
           }
+
+          const isContactsBusinessPartner = entity === 'businessPartner'
+            && /\/contacts$/i.test(apiBaseUrl || '');
+          if (isContactsBusinessPartner && (normalized.oBTIKTaxIDKey == null || normalized.oBTIKTaxIDKey === '')) {
+            normalized.oBTIKTaxIDKey = '1';
+          }
+
           setEditing(prev => ({ ...prev, ...normalized }));
         }
       }
     } catch {
       // Defaults are best-effort; proceed with empty form if endpoint fails
     }
-  }, [apiBaseUrl, entity, token]);
+  }, [apiBaseUrl, entity, token, headers]);
 
   const handleChange = useCallback((field, value) => {
     setEditing(prev => ({ ...prev, [field]: value }));
@@ -185,8 +335,33 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       // For POST (create), strip empty strings — let backend injectMandatoryDefaults
       // resolve proper values for fields not explicitly set by the user or callouts.
       payload = {};
+      const isContactsBusinessPartnerCreate = entity === 'businessPartner'
+        && /\/contacts$/i.test(apiBaseUrl || '');
+
       for (const [key, value] of Object.entries(editing)) {
-        if (value !== '' && value != null) payload[key] = value;
+        if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
+        if (value === '' || value == null) continue;
+
+        // Contacts (Business Partner): keep create aligned with Classic behavior.
+        // Billing preference fields are configured only after header creation.
+        // If sent here, org/window defaults can persist unwanted values on first save.
+        if (isContactsBusinessPartnerCreate && CONTACTS_PRECREATE_BILLING_FIELDS.has(key)) {
+          continue;
+        }
+
+        // Ignore SmartClient temporary import references (e.g. "100_BusinessPartner")
+        // for FK-like fields. These pseudo IDs are client-internal placeholders and are
+        // invalid as persistent FK values in NEO POST payloads.
+        const hasIdentifierCompanion = Object.prototype.hasOwnProperty.call(editing, `${key}$_identifier`);
+        if (
+          hasIdentifierCompanion
+          && typeof value === 'string'
+          && /^\d+_[A-Za-z][A-Za-z0-9]*$/.test(value)
+        ) {
+          continue;
+        }
+
+        payload[key] = value;
       }
     }
     // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
@@ -199,11 +374,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         setSelected(saved);
         setEditing({ ...saved });
         setSaveError(null);
-        toast.success(isNew ? 'Record created' : 'Record saved');
+        toast.success(isNew ? ui('recordCreated') : 'Record saved');
         refresh();
         return saved;
       } else {
-        const msg = await extractErrorMessage(res);
+        const msg = await extractErrorMessage(res, ui);
         setSaveError(msg);
         toast.error(msg);
         return null;
@@ -214,7 +389,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       toast.error(msg);
       return null;
     }
-  }, [editing, selected, apiBaseUrl, entity, token, refresh]);
+  }, [editing, selected, apiBaseUrl, entity, token, refresh, ui]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;
@@ -227,13 +402,13 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         toast.success('Record deleted');
         refresh();
       } else {
-        const msg = await extractErrorMessage(res);
+        const msg = await extractErrorMessage(res, ui);
         toast.error(msg);
       }
     } catch (err) {
       toast.error(err?.message || 'Network error');
     }
-  }, [selected, apiBaseUrl, entity, token, refresh]);
+  }, [selected, apiBaseUrl, entity, token, refresh, ui]);
 
   const handleAddChild = useCallback(async (childData) => {
     if (!childEntity || !apiBaseUrl || !token || !selected?.id) return;
@@ -261,7 +436,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const msg = await extractErrorMessage(res);
+        const msg = await extractErrorMessage(res, ui);
         setSaveError(msg);
         toast.error(msg);
         return null;
@@ -279,7 +454,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       toast.error(msg);
       return null;
     }
-  }, [childEntity, apiBaseUrl, token, selected, headers, fetchChildren]);
+  }, [childEntity, apiBaseUrl, token, selected, headers, fetchChildren, ui]);
 
   const handleUpdateChild = useCallback((childId, fieldOrObject, value) => {
     setChildren(prev => prev.map(c => {
@@ -309,14 +484,14 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       body: JSON.stringify({ fieldValues: { [processField]: processValue } }),
     });
     if (!res.ok) {
-      const msg = await extractErrorMessage(res);
+      const msg = await extractErrorMessage(res, ui);
       toast.error(msg);
       return saved;
     }
     toast.success('Record processed');
     refresh();
     return saved;
-  }, [handleSave, apiBaseUrl, entity, token, refresh]);
+  }, [handleSave, apiBaseUrl, entity, token, refresh, ui]);
 
   const handleProcess = useCallback(async (process, paramValues = {}) => {
     if (!selected?.id) return;
@@ -339,13 +514,13 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         fetchById(selected.id);
         refresh();
       } else {
-        const msg = await extractErrorMessage(res);
+        const msg = await extractErrorMessage(res, ui);
         toast.error(msg);
       }
     } catch (err) {
       toast.error(err?.message || 'Network error');
     }
-  }, [selected, entity, apiBaseUrl, token, refresh, fetchById]);
+  }, [selected, entity, apiBaseUrl, token, refresh, fetchById, ui]);
 
   return {
     items, selected, editing, children, loading, loadingMore, hasMore, saveError,

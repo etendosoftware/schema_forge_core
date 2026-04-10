@@ -4,7 +4,6 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'customer', column: 'IsCustomer', type: 'checkbox', label: 'Customer', required: true, section: 'principal', defaultValue: 'Y' },
   { key: 'priceList', column: 'M_PriceList_ID', type: 'search', label: 'Price List', section: 'principal', reference: 'PriceList', inputMode: 'search' },
-  // @sf-custom-slot callout:SE_PaymentMethod_FinAccount
   { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'search', label: 'Payment Method', section: 'principal', reference: 'PaymentMethod', inputMode: 'search' },
   { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', label: 'Payment Terms', section: 'principal', reference: 'PaymentTerm', inputMode: 'selector' },
   { key: 'account', column: 'FIN_Financial_Account_ID', type: 'search', label: 'Financial Account', section: 'other', reference: 'Financial_Account', inputMode: 'search' },
@@ -30,10 +29,7 @@ const fields = [
 
 // @sf-generated-start component:CustomerForm
 export default function CustomerForm(props) {
-  // @sf-custom-slot hooks:CustomerForm
   return <EntityForm fields={fields} {...props} />;
 }
 CustomerForm.hasCollapsedFields = false;
 // @sf-generated-end component:CustomerForm
-
-// @sf-custom-slot section:CustomerForm-custom
