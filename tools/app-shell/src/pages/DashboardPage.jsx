@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { KPIHeader, KPICard } from '@/components/contract-ui/KPIHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -40,6 +40,8 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
 import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { formatAmount } from '@/lib/formatAmount';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -62,7 +64,6 @@ const WIDGET_REGISTRY = [
   { id: 'pending-tasks',        labelKey: 'pendingTasks',          defaultSize: 'small',  defaultVisible: true  },
   { id: 'top-clients',          labelKey: 'topClients',            defaultSize: 'small',  defaultVisible: true  },
   // Hidden by default
-  { id: 'cashflow',             labelKey: 'cashFlow',              defaultSize: 'small',  defaultVisible: false },
   { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: false },
   { id: 'recent-invoices',      labelKey: 'recentInvoices',        defaultSize: 'medium', defaultVisible: false },
   { id: 'best-products',        labelKey: 'bestProducts',          defaultSize: 'medium', defaultVisible: false },
@@ -81,10 +82,10 @@ function resolvePendingTaskKey(task) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
   if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
-    return 'pendingShipments';
+    return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
   if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
-    return 'purchaseOrdersToConfirm';
+    return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -92,14 +93,86 @@ function resolvePendingTaskKey(task) {
   return null;
 }
 
-function resolveQuickActionLabel(ui, action) {
+function resolveQuickActionLabel(ui, tMenu, action) {
   switch (action?.to) {
-    case '/sales-invoice': return `+ ${ui('invoice')}`;
-    case '/sales-order': return `+ ${ui('order')}`;
-    case '/contacts': return `+ ${ui('contact')}`;
-    case '/product': return `+ ${ui('product')}`;
+    case '/sales-invoice': return `+ ${ui('quickActionSalesInvoice')}`;
+    case '/sales-order': return `+ ${ui('quickActionSalesOrder')}`;
+    case '/contacts': return `+ ${tMenu('Contact')}`;
+    case '/product': return `+ ${tMenu('Product')}`;
     default: return action?.label ?? '';
   }
+}
+
+function resolveQuickActionRoute(route) {
+  switch (route) {
+    case '/sales-invoice':
+    case '/sales-order':
+    case '/contacts':
+      return `${route}/new`;
+    default:
+      return route;
+  }
+}
+
+function useDashboardCurrency(token, selectedOrg) {
+  const [currencyLabel, setCurrencyLabel] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCurrency() {
+      if (!token) {
+        setCurrencyLabel('');
+        return;
+      }
+      try {
+        const headers = { Authorization: `Bearer ${token}` };
+        const endpoints = [
+          '/sws/neo/sales-invoice/header/defaults',
+          '/sws/neo/sales-order/header/defaults',
+          '/sws/neo/purchase-invoice/header/defaults',
+        ];
+
+        for (const endpoint of endpoints) {
+          const res = await fetch(endpoint, { headers });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const defaults = data?.defaults ?? {};
+          const value = defaults['currency$_identifier']
+            ?? defaults.currency$_identifier
+            ?? defaults.currencyIdentifier
+            ?? defaults.currency
+            ?? defaults.C_Currency_ID$_identifier;
+          if (value) {
+            if (!cancelled) setCurrencyLabel(String(value));
+            return;
+          }
+        }
+      } catch {
+        // Best effort only.
+      }
+      if (!cancelled) setCurrencyLabel('');
+    }
+
+    loadCurrency();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, selectedOrg?.id]);
+
+  return currencyLabel;
+}
+
+function formatDashboardAmount(value, currencyLabel) {
+  return formatAmount(value, currencyLabel);
+}
+
+function formatDashboardCompact(value, currencyLabel) {
+  const num = Number(value) || 0;
+  if (!currencyLabel) return num.toLocaleString('en-US');
+  if (Math.abs(num) >= 1_000_000) return `${formatAmount(num / 1_000_000, currencyLabel)}M`;
+  if (Math.abs(num) >= 1_000) return `${formatAmount(num / 1_000, currencyLabel)}K`;
+  return formatAmount(num, currencyLabel);
 }
 
 /* ------------------------------------------------------------------
@@ -293,10 +366,10 @@ const WIDGET_PREVIEWS = {
       ))}
     </svg>
   ),
-  'pending-tasks': (ui) => (
+  'pending-tasks': (ui, tMenu) => (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingShipments', { count: 2 })], ['#3b82f6', ui('purchaseOrdersToConfirm', { count: 5 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
+      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingShipments_plural', { count: 2 })], ['#3b82f6', ui('purchaseOrdersToConfirm_plural', { count: 5 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
         <g key={i} transform={`translate(12, ${10 + i * 22})`}>
           <circle cx="6" cy="7" r="5" fill={color} opacity="0.8" />
           <rect x="18" y="3" width="110" height="7" rx="3.5" fill="#cbd5e1" />
@@ -306,10 +379,10 @@ const WIDGET_PREVIEWS = {
       ))}
     </svg>
   ),
-  'quick-actions': (ui) => (
+  'quick-actions': (ui, tMenu) => (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[`+ ${ui('invoice')}`, `+ ${ui('order')}`, `+ ${ui('contact')}`, `+ ${ui('product')}`].map((label, i) => (
+      {[`+ ${ui('quickActionSalesInvoice')}`, `+ ${ui('quickActionSalesOrder')}`, `+ ${tMenu('Contact')}`, `+ ${tMenu('Product')}`].map((label, i) => (
         <g key={i} transform={`translate(${10 + (i % 2) * 135}, ${10 + Math.floor(i / 2) * 44})`}>
           <rect width="120" height="34" rx="6" fill="white" stroke="#e2e8f0" strokeWidth="1.5" />
           <rect x="12" y="10" width="14" height="14" rx="3" fill="#e0e7ff" />
@@ -317,17 +390,6 @@ const WIDGET_PREVIEWS = {
           <text x="32" y="28" fontSize="7" fill="#64748b">{label}</text>
         </g>
       ))}
-    </svg>
-  ),
-  'cashflow': (ui) => (
-    <svg viewBox="0 0 280 100" className="w-full h-full">
-      <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      <rect x="30" y="20" width="90" height="60" rx="6" fill="#f1f5f9" />
-      <rect x="160" y="20" width="90" height="60" rx="6" fill="#f1f5f9" />
-      <rect x="46" y="35" width="58" height="30" rx="4" fill="#22c55e" opacity="0.7" />
-      <rect x="176" y="42" width="58" height="23" rx="4" fill="#ef4444" opacity="0.7" />
-      <text x="75" y="80" textAnchor="middle" fontSize="8" fill="#64748b">{ui('revenue')}</text>
-      <text x="205" y="80" textAnchor="middle" fontSize="8" fill="#64748b">{ui('expenses')}</text>
     </svg>
   ),
   'collections-payments': (
@@ -404,6 +466,7 @@ const snapToRows = (px) =>
 const TALL_DEFAULT = new Set(['pending-tasks', 'top-clients']);
 
 function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset, ui }) {
+  const tMenu = useMenuLabel();
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
 
@@ -446,7 +509,7 @@ function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset, u
               const meta = getWidgetMeta(item.id);
               if (!meta) return null;
               const preview = WIDGET_PREVIEWS[item.id];
-              const renderedPreview = typeof preview === 'function' ? preview(ui) : preview;
+              const renderedPreview = typeof preview === 'function' ? preview(ui, tMenu) : preview;
               const isDragging = draggingId === item.id;
               const isOver = dragOverId === item.id;
 
@@ -528,8 +591,9 @@ function useCollapsed(key) {
   return [collapsed, toggle];
 }
 
-function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
+function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLabel = '' }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
@@ -556,8 +620,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   });
   const hasExpenses = normalizedExpenseValues.some((v) => Math.abs(v) > 0);
 
-  const fmtTooltip = (n) =>
-    `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel);
 
   const showTooltip = (x, y, i) =>
     setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? normalizedExpenseValues[i] : null });
@@ -613,11 +676,11 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    {ui('revenue')}
+                    {tMenu('Revenue')}
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-                    {ui('expenses')}
+                    {tMenu('Expenses')}
                   </span>
                 </div>
               )}
@@ -716,9 +779,9 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   <g pointerEvents="none">
                     <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
                     <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
-                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${ui('revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${tMenu('Revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
                     {hasExpenses && (
-                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${ui('expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
+                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${tMenu('Expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
                     )}
                   </g>
                 );
@@ -798,9 +861,9 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   <g pointerEvents="none">
                     <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
                     <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
-                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${ui('revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${tMenu('Revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
                     {hasExpenses && (
-                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${ui('expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
+                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${tMenu('Expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
                     )}
                   </g>
                 );
@@ -817,7 +880,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
  * Top Clients
  * ----------------------------------------------------------------*/
 
-function TopClients({ clients = [] }) {
+function TopClients({ clients = [], currencyLabel = '' }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
   return (
@@ -842,7 +905,7 @@ function TopClients({ clients = [] }) {
                     <span className="text-sm truncate">{c.name}</span>
                   </div>
                   <span className="text-sm font-medium shrink-0 ml-2">
-                    ${Number(c.total).toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                    {formatDashboardAmount(c.total, currencyLabel)}
                   </span>
                 </div>
               </React.Fragment>
@@ -956,69 +1019,12 @@ function PendingTasks({ tasks = [] }) {
 }
 
 /* ------------------------------------------------------------------
- * Cash Flow Widget
- * ----------------------------------------------------------------*/
-
-function CashFlowWidget({ kpis = [] }) {
-  const ui = useUI();
-  const revenue = kpis.find((k) => k.key === 'revenueThisMonth');
-  const expenses = kpis.find((k) => k.key === 'expensesThisMonth');
-  const profit = kpis.find((k) => k.key === 'netProfit');
-  if (!revenue || !expenses) return null;
-
-  const total = revenue.value + expenses.value || 1;
-  const revPct = Math.round((revenue.value / total) * 100);
-  const expPct = 100 - revPct;
-  const isPositive = (profit?.value ?? 0) >= 0;
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{ui('cashFlow')}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span className="text-muted-foreground">{ui('income')}</span>
-            </div>
-            <span className="font-medium">${revenue.value.toLocaleString('en-US')}</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${revPct}%` }} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-              <span className="text-muted-foreground">{ui('expenses')}</span>
-            </div>
-            <span className="font-medium">${expenses.value.toLocaleString('en-US')}</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-destructive h-2 rounded-full" style={{ width: `${expPct}%` }} />
-          </div>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground font-medium">{ui('net')}</span>
-          <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-destructive'}`}>
-            {isPositive ? '+' : ''}${(profit?.value ?? 0).toLocaleString('en-US')}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------
  * Collections & Payments Widget
  * ----------------------------------------------------------------*/
 
-function CollectionsPayments({ pendingAmounts = {} }) {
+function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
   return (
     <Card className="flex flex-col h-full">
@@ -1030,12 +1036,12 @@ function CollectionsPayments({ pendingAmounts = {} }) {
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
             <div>
-              <p className="text-sm font-medium">{ui('toCollect')}</p>
+              <p className="text-sm font-medium">{tMenu('To Collect')}</p>
               <p className="text-xs text-muted-foreground">{toCollect.count !== 1 ? ui('invoicesPending', { count: toCollect.count }) : ui('invoicePending', { count: toCollect.count })}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-green-600">${toCollect.amount.toLocaleString('en-US')}</span>
+            <span className="text-sm font-semibold text-green-600">{formatDashboardAmount(toCollect.amount, currencyLabel)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1044,12 +1050,12 @@ function CollectionsPayments({ pendingAmounts = {} }) {
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
             <div>
-              <p className="text-sm font-medium">{ui('toPay')}</p>
+              <p className="text-sm font-medium">{tMenu('To Pay')}</p>
               <p className="text-xs text-muted-foreground">{toPay.count !== 1 ? ui('invoicesPending', { count: toPay.count }) : ui('invoicePending', { count: toPay.count })}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-destructive">${toPay.amount.toLocaleString('en-US')}</span>
+            <span className="text-sm font-semibold text-destructive">{formatDashboardAmount(toPay.amount, currencyLabel)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1071,7 +1077,7 @@ function fmtDate(str) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function RecentInvoices({ invoices = [] }) {
+function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
@@ -1103,7 +1109,7 @@ function RecentInvoices({ invoices = [] }) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-medium">${inv.amount.toLocaleString('en-US')}</span>
+                        <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel)}</span>
                       </div>
                     </Link>
                   </React.Fragment>
@@ -1121,8 +1127,9 @@ function RecentInvoices({ invoices = [] }) {
  * Number formatter helpers
  * ----------------------------------------------------------------*/
 
-function fmtCompact(n) {
+function fmtCompact(n, currencyLabel = '') {
   const v = Number(n) || 0;
+  if (currencyLabel) return formatDashboardCompact(v, currencyLabel);
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
   return v.toLocaleString('en-US');
@@ -1132,8 +1139,9 @@ function fmtCompact(n) {
  * Best Products Widget
  * ----------------------------------------------------------------*/
 
-function BestProducts({ products = [] }) {
+function BestProducts({ products = [], currencyLabel = '' }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_products');
   return (
     <Card className="flex flex-col h-full">
@@ -1161,8 +1169,8 @@ function BestProducts({ products = [] }) {
                       <span className="text-sm truncate">{p.name}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="text-xs text-muted-foreground">{fmtCompact(p.qty)} {ui('units')}</span>
-                      <span className="text-sm font-medium">${fmtCompact(p.amount)}</span>
+                      <span className="text-xs text-muted-foreground">{fmtCompact(p.qty)} {tMenu('Units')}</span>
+                      <span className="text-sm font-medium">{fmtCompact(p.amount, currencyLabel)}</span>
                     </div>
                   </div>
                 </React.Fragment>
@@ -1181,6 +1189,7 @@ function BestProducts({ products = [] }) {
 
 function BestSellers({ sellers = [] }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
   return (
     <Card className="flex flex-col h-full">
@@ -1201,8 +1210,8 @@ function BestSellers({ sellers = [] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{ui('productName')}</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">{ui('qty')}</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Product Name')}</th>
+                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Qty')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1290,6 +1299,8 @@ function DashboardSkeleton() {
 
 export default function DashboardPage() {
   const ui = useUI();
+  const tMenu = useMenuLabel();
+  const { token, selectedOrg } = useAuth();
   const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
@@ -1304,12 +1315,12 @@ export default function DashboardPage() {
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
   const { config, toggle, resize, setHeight, reorder, reset } = useWidgetConfig();
-  const tMenu = useMenuLabel();
+  const dashboardCurrency = useDashboardCurrency(token, selectedOrg);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = actions.map((a) => ({
-    label: resolveQuickActionLabel(ui, { label: a.label, to: a.route }),
-    to: a.route,
+    label: resolveQuickActionLabel(ui, tMenu, { label: a.label, to: a.route }),
+    to: resolveQuickActionRoute(a.route),
     icon: ICON_MAP[a.icon] || FileText,
   }));
 
@@ -1337,14 +1348,13 @@ export default function DashboardPage() {
       case 'kpi-revenue':          return kpiWidget('revenueThisMonth');
       case 'kpi-expenses':         return kpiWidget('expensesThisMonth');
       case 'kpi-profit':           return kpiWidget('netProfit');
-      case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} />;
-      case 'top-clients':          return <TopClients key={id} clients={topClients} />;
+      case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} currencyLabel={dashboardCurrency} />;
+      case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} />;
       case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} />;
       case 'quick-actions':        return <QuickActions key={id} actions={quickActions} />;
-      case 'cashflow':             return <CashFlowWidget key={id} kpis={kpis} />;
-      case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} />;
-      case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} />;
-      case 'best-products':        return <BestProducts key={id} products={bestProducts} />;
+      case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />;
+      case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} currencyLabel={dashboardCurrency} />;
+      case 'best-products':        return <BestProducts key={id} products={bestProducts} currencyLabel={dashboardCurrency} />;
       case 'best-sellers':         return <BestSellers key={id} sellers={bestSellers} />;
       default: return null;
     }
@@ -1357,6 +1367,11 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <h1 className="text-xl font-bold text-foreground">{ui('dashboardTitle')}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {dashboardCurrency
+                ? `${ui('dashboardCurrencyContext')}: ${dashboardCurrency}`
+                : ui('dashboardCurrencyUnavailable')}
+            </p>
           </div>
           <div className="flex-1 flex justify-center">
             <div className="relative w-full max-w-md">
