@@ -543,6 +543,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.hidePrint) {
     schema.window.hidePrint = true;
   }
+  if (windowDecisions.hideSaveStatuses?.length) {
+    schema.window.hideSaveStatuses = windowDecisions.hideSaveStatuses;
+  }
   if (windowDecisions.hideMoreMenu) {
     schema.window.hideMoreMenu = true;
   }
@@ -639,6 +642,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   }
   if (windowDecisions.statusEnumLabels) {
     schema.window.statusEnumLabels = windowDecisions.statusEnumLabels;
+  }
+  if (windowDecisions.noHeaderBorder) {
+    schema.window.noHeaderBorder = true;
   }
   const rules = resolveRules(rulesRaw, decisions);
 

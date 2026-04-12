@@ -294,6 +294,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
               normalized[key] = `${yyyy}-${mm}-${dd}`;
             } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
               normalized[key] = val.slice(1, -1).replace(/''/g, "'");
+            } else if (typeof val === 'number' && Number.isInteger(val)) {
+              // Enum/list fields are stored as strings in the DB (e.g. priority: 5 → "5").
+              // The backend /defaults endpoint returns them as JSON integers, but the
+              // PATCH/POST API expects string values — otherwise OBDal throws a type error.
+              normalized[key] = String(val);
             }
           }
 

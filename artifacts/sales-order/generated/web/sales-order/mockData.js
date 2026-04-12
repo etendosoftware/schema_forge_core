@@ -15,6 +15,7 @@ export const header = [
     "currency": "USD",
     "description": "Standard order for Q1 delivery",
     "deliveryStatus": "DR",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "DR",
     "processed": "Sample processed"
   },
@@ -32,6 +33,7 @@ export const header = [
     "currency": "EUR",
     "description": "Rush order - priority shipping required",
     "deliveryStatus": "CO",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "CO",
     "processed": "Sample processed"
   },
@@ -49,6 +51,7 @@ export const header = [
     "currency": "GBP",
     "description": "Bulk purchase for warehouse restocking",
     "deliveryStatus": "VO",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "VO",
     "processed": "Sample processed"
   },
@@ -66,6 +69,7 @@ export const header = [
     "currency": "USD",
     "description": "Sample order for client evaluation",
     "deliveryStatus": "IP",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "IP",
     "processed": "Sample processed"
   },
@@ -83,6 +87,7 @@ export const header = [
     "currency": "EUR",
     "description": "Recurring monthly supply order",
     "deliveryStatus": "DR",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "DR",
     "processed": "Sample processed"
   },
@@ -100,6 +105,7 @@ export const header = [
     "currency": "GBP",
     "description": "Special pricing agreement applies",
     "deliveryStatus": "CO",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "CO",
     "processed": "Sample processed"
   },
@@ -117,6 +123,7 @@ export const header = [
     "currency": "USD",
     "description": "Consolidated order from multiple requests",
     "deliveryStatus": "VO",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "VO",
     "processed": "Sample processed"
   },
@@ -134,6 +141,7 @@ export const header = [
     "currency": "EUR",
     "description": "Trial order for new product line",
     "deliveryStatus": "IP",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "IP",
     "processed": "Sample processed"
   },
@@ -151,6 +159,7 @@ export const header = [
     "currency": "GBP",
     "description": "Replacement for damaged goods",
     "deliveryStatus": "DR",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "DR",
     "processed": "Sample processed"
   },
@@ -168,6 +177,7 @@ export const header = [
     "currency": "USD",
     "description": "Pre-season inventory build-up",
     "deliveryStatus": "CO",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "CO",
     "processed": "Sample processed"
   },
@@ -185,6 +195,7 @@ export const header = [
     "currency": "EUR",
     "description": "Customer-specific configuration",
     "deliveryStatus": "VO",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "VO",
     "processed": "Sample processed"
   },
@@ -202,6 +213,7 @@ export const header = [
     "currency": "GBP",
     "description": "Government contract fulfillment",
     "deliveryStatus": "IP",
+    "cashVAT": "Sample cashVAT",
     "invoiceStatus": "IP",
     "processed": "Sample processed"
   }

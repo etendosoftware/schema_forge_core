@@ -13,16 +13,27 @@
       "bulkActions": "BulkInvoiceFromShipment"
     },
     "menuActions": [
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "processOverrides": {
-      "documentAction": { "label": "Complete", "displayLogicRaw": "@documentStatus@='DR'" }
-    }
+      "documentAction": {
+        "label": "Complete",
+        "displayLogicRaw": "@documentStatus@='DR'"
+      }
+    },
+    "noHeaderBorder": true
   },
   "entities": {
     "header": {
       "name": "goodsShipment",
-      "draftMode": { "enabled": false },
+      "draftMode": {
+        "enabled": false
+      },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",

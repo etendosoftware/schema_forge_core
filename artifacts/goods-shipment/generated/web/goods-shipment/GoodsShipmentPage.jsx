@@ -17,6 +17,7 @@ const breadcrumb = 'Sales / Goods Shipment';
 // @sf-generated-start summary:goodsShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -256,6 +257,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={GoodsShipmentActions}
@@ -277,6 +279,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
+      hidePrint
       {...props}
     />
   );

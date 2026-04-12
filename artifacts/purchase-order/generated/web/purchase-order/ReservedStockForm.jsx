@@ -14,9 +14,7 @@ const fields = [
 
 // @sf-generated-start component:ReservedStockForm
 export default function ReservedStockForm(props) {
-  // @sf-custom-slot hooks:ReservedStockForm
   return <EntityForm fields={fields} {...props} />;
 }
+ReservedStockForm.hasCollapsedFields = false;
 // @sf-generated-end component:ReservedStockForm
-
-// @sf-custom-slot section:ReservedStockForm-custom

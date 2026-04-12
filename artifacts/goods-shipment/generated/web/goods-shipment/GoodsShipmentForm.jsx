@@ -8,6 +8,7 @@ const fields = [
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', label: 'Partner Address', required: true, section: 'principal', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' }, readOnlyLogic: (record) => record['processed'] === true },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed' },
   { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true, section: 'principal', defaultValue: '@#Date@', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'checkbox', label: 'Completely Invoiced', required: true, readOnly: true, section: 'other', defaultValue: 'N' },
 ];
 // @sf-generated-end fields:goodsShipment
 

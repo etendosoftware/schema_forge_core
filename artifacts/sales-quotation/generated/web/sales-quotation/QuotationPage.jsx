@@ -320,6 +320,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Contacto"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Contact"
+    }
   }
 };
 
@@ -348,6 +356,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
@@ -369,6 +378,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
       {...props}
     />
   );

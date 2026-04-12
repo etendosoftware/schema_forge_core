@@ -1,7 +1,7 @@
 {
   "version": "0.10.1",
-  "generatedAt": "2026-04-09T00:16:55.235Z",
-  "checksum": "792d5d94a5b007ad",
+  "generatedAt": "2026-04-10T15:04:04.081Z",
+  "checksum": "443f31c23df98a20",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -45,6 +45,15 @@
         }
       },
       "salesTheme": true,
+      "labelOverrides": {
+        "es_ES": {
+          "C_BPartner_ID": "Contacto"
+        },
+        "en_US": {
+          "C_BPartner_ID": "Contact"
+        }
+      },
+      "noHeaderBorder": true,
       "layoutType": "default"
     },
     "entities": {
@@ -368,13 +377,7 @@
               "source": "false"
             }
           }
-        ],
-        "draftMode": {
-          "enabled": false,
-          "processField": "documentAction",
-          "processValue": "CO",
-          "label": "Confirmar"
-        }
+        ]
       },
       "quotationLine": {
         "tableName": "C_OrderLine",
@@ -586,7 +589,16 @@
           "displayLogicRaw": "@documentStatus@='VO'"
         }
       },
-      "salesTheme": true
+      "salesTheme": true,
+      "labelOverrides": {
+        "es_ES": {
+          "C_BPartner_ID": "Contacto"
+        },
+        "en_US": {
+          "C_BPartner_ID": "Contact"
+        }
+      },
+      "noHeaderBorder": true
     },
     "entities": {
       "quotation": {
@@ -2333,6 +2345,14 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact"
+      }
     }
   },
   "testManifest": {

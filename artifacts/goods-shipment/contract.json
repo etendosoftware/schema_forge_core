@@ -1,7 +1,7 @@
 {
-  "version": "0.4.0",
-  "generatedAt": "2026-04-08T16:48:39.683Z",
-  "checksum": "29a45799484f7a71",
+  "version": "0.4.1",
+  "generatedAt": "2026-04-10T15:04:04.723Z",
+  "checksum": "b54a87b0b7e2a7e5",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -31,6 +31,7 @@
         }
       },
       "salesTheme": true,
+      "noHeaderBorder": true,
       "layoutType": "default"
     },
     "entities": {
@@ -229,7 +230,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": false,
+            "form": true,
             "defaultValue": "N",
             "badge": true,
             "badgeLabels": {
@@ -293,13 +294,7 @@
               "source": "false"
             }
           }
-        ],
-        "draftMode": {
-          "enabled": false,
-          "processField": "documentAction",
-          "processValue": "CO",
-          "label": "Confirmar"
-        }
+        ]
       },
       "goodsShipmentLine": {
         "tableName": "M_InOutLine",
@@ -431,7 +426,8 @@
           "displayLogicRaw": "@documentStatus@='DR'"
         }
       },
-      "salesTheme": true
+      "salesTheme": true,
+      "noHeaderBorder": true
     },
     "entities": {
       "goodsShipment": {

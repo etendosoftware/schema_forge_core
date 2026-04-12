@@ -9,8 +9,16 @@
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
     "menuActions": [
-      { "key": "duplicate", "label": "Duplicate" },
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "duplicate",
+        "label": "Duplicate"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "processOverrides": {},
     "customComponents": {
@@ -22,7 +30,16 @@
       "CO": "Completado",
       "CL": "Cerrado",
       "VO": "Anulado"
-    }
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact"
+      }
+    },
+    "noHeaderBorder": true
   },
   "entities": {
     "header": {
@@ -459,8 +476,7 @@
         "product": {
           "grid": true
         },
-        "attributeSetValue": {
-        }
+        "attributeSetValue": {}
       },
       "exclude": true
     },
