@@ -8,7 +8,6 @@ import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
 import InvoiceTopbarExtra from '@generated/sales-invoice/custom/InvoiceTopbarExtra.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
-import InvoiceHeaderTable from '@generated/sales-invoice/custom/InvoiceHeaderTable.jsx';
 
 /* eslint-disable react/prop-types */
 
@@ -67,7 +66,6 @@ export default function SalesInvoiceWindow(props) {
     return (
       <HeaderPage
         {...props}
-        DetailTable={InvoiceHeaderTable}
         bottomSection={InvoiceBottomPanel}
         topbarRight={InvoiceTopbarExtra}
         notesField="description"

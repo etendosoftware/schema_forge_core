@@ -4001,11 +4001,11 @@
       "description": "Los documentos son multi idioma"
     },
     "C_Bpartner_ID": {
-      "label": "Tercero",
+      "label": "Contacto",
       "description": "Persona que participa en operaciones diarias de negocios, como cliente, empleado, etc."
     },
     "C_BPartner_ID": {
-      "label": "Tercero",
+      "label": "Contacto",
       "description": "Persona que participa en operaciones diarias de negocios, como cliente, empleado, etc."
     },
     "C_Bpartner_Id_Dim": {
@@ -16611,6 +16611,12 @@
     "total": "Total",
     "docs": "Documentos",
     "notes": "Notas",
+    "addLines": "Añadir líneas",
+    "importFromShipment": "Importar desde envío",
+    "noLinesYet": "Sin líneas todavía",
+    "addLinesManuallyOrImportFromShipment": "Añade líneas manualmente o impórtalas desde un envío",
+    "addNoteHint": "Añadir una nota...",
+    "linesImportedFromShipment": "Líneas importadas desde envío",
     "noRelatedDocuments": "Sin documentos relacionados",
     "Complete": "Completar",
     "Confirm & Send": "Confirmar y enviar",

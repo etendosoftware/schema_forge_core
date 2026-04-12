@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
+import { useUI } from '@/i18n';
 import RelatedDocuments from './RelatedDocuments';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
 
@@ -22,6 +23,7 @@ export default function InvoiceBottomPanel({
   recordId, data, token, apiBaseUrl, api, summary,
   notesField, onFieldChange, notesFocused, setNotesFocused,
 }) {
+  const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
 
   const subtotalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
@@ -38,7 +40,7 @@ export default function InvoiceBottomPanel({
         {/* DOCS */}
         <div className="flex items-start gap-3 px-3 pb-3">
           <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-0.5" style={{ letterSpacing: '0.04em' }}>
-            Docs
+            {ui('docs')}
           </span>
           <div className="flex-1">
             <RelatedDocuments
@@ -56,7 +58,7 @@ export default function InvoiceBottomPanel({
         {notesField && (
           <div className="flex items-start gap-3 px-3 mt-3 pt-3 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
             <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-1.5" style={{ letterSpacing: '0.04em' }}>
-              Notes
+              {ui('notes')}
             </span>
             <div className="flex-1">
               {notesFocused ? (
@@ -64,7 +66,7 @@ export default function InvoiceBottomPanel({
                   value={data?.[notesField] || ''}
                   onChange={(e) => onFieldChange?.(notesField, e.target.value)}
                   onBlur={() => setNotesFocused?.(false)}
-                  placeholder="Add a note..."
+                  placeholder={ui('addNoteHint')}
                   rows={2}
                   autoFocus
                   className="w-full text-sm bg-white border border-border/40 rounded px-2.5 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/40"
@@ -78,7 +80,7 @@ export default function InvoiceBottomPanel({
                   onFocus={() => setNotesFocused?.(true)}
                   className="w-full text-sm px-2.5 py-1.5 cursor-text min-h-[1.5rem] text-foreground/80 border border-transparent rounded hover:border-border/30 transition-colors"
                 >
-                  {data?.[notesField] || <span className="text-muted-foreground/40">Add a note...</span>}
+                  {data?.[notesField] || <span className="text-muted-foreground/40">{ui('addNoteHint')}</span>}
                 </div>
               )}
             </div>
@@ -94,19 +96,19 @@ export default function InvoiceBottomPanel({
         <div className="text-sm space-y-0.5">
           {subtotal != null && (
             <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{ui('subtotal')}</span>
               <span className="tabular-nums">{fmt(subtotal, currency)}</span>
             </div>
           )}
           {taxes != null && taxes !== 0 && (
             <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">Tax</span>
+              <span className="text-muted-foreground">{ui('tax')}</span>
               <span className="tabular-nums">{fmt(taxes, currency)}</span>
             </div>
           )}
           {total != null && (
             <div className="flex justify-between py-1.5 px-1 border-t border-border/40 font-semibold text-base" style={{ borderTopWidth: '0.5px' }}>
-              <span>Total</span>
+              <span>{ui('total')}</span>
               <span className="tabular-nums">{fmt(total, currency)}</span>
             </div>
           )}
@@ -118,6 +120,7 @@ export default function InvoiceBottomPanel({
 }
 
 function InvoiceLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }) {
+  const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
@@ -134,12 +137,12 @@ function InvoiceLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }
           <line x1="8" y1="17" x2="13" y2="17" />
         </svg>
       </div>
-      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>No lines yet</span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>Add lines manually or import from a shipment</span>
+      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>{ui('noLinesYet')}</span>
+      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromShipment')}</span>
       {isDraft && (
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={onAddLine} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer' }}>
-            + Add Lines
+            + {ui('addLines')}
           </button>
           {bpId && (
             <button type="button" onClick={() => setShowImportModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
@@ -148,7 +151,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              Import from Shipment
+              {ui('importFromShipment')}
             </button>
           )}
         </div>
@@ -160,7 +163,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }
           base={base}
           headers={headers}
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); toast.success('Lines imported from shipment'); window.location.reload(); }}
+          onSuccess={() => { setShowImportModal(false); toast.success(ui('linesImportedFromShipment')); window.location.reload(); }}
         />,
         document.body,
       )}
@@ -169,6 +172,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl }
 }
 
 function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
+  const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
@@ -189,7 +193,7 @@ function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        Import from Shipment
+        {ui('importFromShipment')}
       </button>
       {showImportModal && createPortal(
         <ImportFromShipmentModal
@@ -198,7 +202,7 @@ function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
           base={base}
           headers={headers}
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); toast.success('Lines imported from shipment'); window.location.reload(); }}
+          onSuccess={() => { setShowImportModal(false); toast.success(ui('linesImportedFromShipment')); window.location.reload(); }}
         />,
         document.body,
       )}
@@ -208,4 +212,3 @@ function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
 
 InvoiceBottomPanel.linesEmptyState = InvoiceLinesEmptyState;
 InvoiceBottomPanel.detailExtraActions = InvoiceLineActions;
-

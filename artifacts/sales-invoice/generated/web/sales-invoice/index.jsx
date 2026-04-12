@@ -35,28 +35,6 @@ const api = {
         "product"
       ]
     },
-    "intrastat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/intrastat",
-      "detailUrl": "/sws/neo/sales-invoice/intrastat/{id}",
-      "supportedFilters": []
-    },
-    "cashVat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/cashVat",
-      "detailUrl": "/sws/neo/sales-invoice/cashVat/{id}",
-      "supportedFilters": []
-    },
     "paymentPlan": {
       "get": true,
       "getById": true,
@@ -66,50 +44,6 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/sales-invoice/paymentPlan",
       "detailUrl": "/sws/neo/sales-invoice/paymentPlan/{id}",
-      "supportedFilters": []
-    },
-    "verifactu": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/verifactu",
-      "detailUrl": "/sws/neo/sales-invoice/verifactu/{id}",
-      "supportedFilters": []
-    },
-    "siiData": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/siiData",
-      "detailUrl": "/sws/neo/sales-invoice/siiData/{id}",
-      "supportedFilters": []
-    },
-    "ticketbai": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/ticketbai",
-      "detailUrl": "/sws/neo/sales-invoice/ticketbai/{id}",
-      "supportedFilters": []
-    },
-    "resultadoValidación": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/resultadoValidación",
-      "detailUrl": "/sws/neo/sales-invoice/resultadoValidación/{id}",
       "supportedFilters": []
     }
   },
@@ -155,22 +89,6 @@ const api = {
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
     },
     {
-      "entity": "header",
-      "field": "aeatsiiDescription",
-      "column": "EM_Aeatsii_Description_ID",
-      "reference": "aeatsii_description",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
-    },
-    {
-      "entity": "header",
-      "field": "aeatsiiCauseExemption",
-      "column": "EM_Aeatsii_Cause_Exemption_ID",
-      "reference": "aeatsii_cause_exemption",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
-    },
-    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
@@ -187,54 +105,6 @@ const api = {
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {
-      "entity": "intrastat",
-      "field": "invoiceLine",
-      "column": "C_Invoiceline_ID",
-      "reference": "InvoiceLine",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/invoiceLine"
-    },
-    {
-      "entity": "intrastat",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/product"
-    },
-    {
-      "entity": "intrastat",
-      "field": "incoterms",
-      "column": "C_Incoterms_ID",
-      "reference": "Incoterms",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/incoterms"
-    },
-    {
-      "entity": "intrastat",
-      "field": "supplementaryUOM",
-      "column": "Intr_C_Uom_ID",
-      "reference": "Intr_C_Uom",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/supplementaryUOM"
-    },
-    {
-      "entity": "cashVat",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/cashVat/selectors/payment"
-    },
-    {
-      "entity": "cashVat",
-      "field": "oBCVATMANUALSETTLEMENTLINE",
-      "column": "EM_OBCVAT_MANUALSETTLEMENTLINE_ID",
-      "reference": "OBCVAT_ManualSettlementLine",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/cashVat/selectors/oBCVATMANUALSETTLEMENTLINE"
-    },
-    {
       "entity": "paymentPlan",
       "field": "finPaymentmethodID",
       "column": "Fin_Paymentmethod_ID",
@@ -249,22 +119,6 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/paymentPlan/selectors/currency"
-    },
-    {
-      "entity": "siiData",
-      "field": "conexinSII",
-      "column": "Aeatsii_Conexion_ID",
-      "reference": "Aeatsii_Conexion",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/siiData/selectors/conexinSII"
-    },
-    {
-      "entity": "ticketbai",
-      "field": "invoice",
-      "column": "C_Invoice_ID",
-      "reference": "Invoice",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/ticketbai/selectors/invoice"
     }
   ],
   "actions": [

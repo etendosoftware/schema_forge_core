@@ -227,6 +227,9 @@
         },
         "withholdingamount": {
           "visibility": "discarded"
+        },
+        "cashVAT": {
+          "visibility": "discarded"
         }
       }
     },
@@ -405,6 +408,24 @@
         "lastPaymentDate": { "visibility": "readOnly" }
       }
     },
+    "verifactu": {
+      "exclude": true
+    },
+    "siiData": {
+      "exclude": true
+    },
+    "ticketbai": {
+      "exclude": true
+    },
+    "resultadoValidación": {
+      "exclude": true
+    },
+    "cashVat": {
+      "exclude": true
+    },
+    "intrastat": {
+      "exclude": true
+    },
     "paymentDetails": {
       "exclude": true
     },
@@ -468,6 +489,6 @@
       "description": "When price list changes, auto-fill currency from the selected price list"
     }
   },
-  "discardPatterns": [],
+  "discardPatterns": ["EM_*"],
   "version": 2
 }

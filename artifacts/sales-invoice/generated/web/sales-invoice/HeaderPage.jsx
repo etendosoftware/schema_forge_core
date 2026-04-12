@@ -20,21 +20,6 @@ const summary = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  { key: 'etafIssuerName', column: 'EM_Etaf_Issuer_Name', type: 'string' },
-  { key: 'etvfacInvoiceStatus', column: 'EM_Etvfac_Invoice_Status', type: 'status' },
-  { key: 'etvfacQRURL', column: 'EM_Etvfac_Qr_Url', type: 'string' },
-  { key: 'etvfacDateIssue', column: 'EM_Etvfac_Date_Issue', type: 'string' },
-  { key: 'etvfacIssueDescription', column: 'EM_Etvfac_Issue_Description', type: 'string' },
-  { key: 'etvfacVoid', column: 'EM_Etvfac_Void', type: 'boolean' },
-  { key: 'etvfacIssuedExternally', column: 'EM_Etvfac_Issued_Externally', type: 'boolean' },
-  { key: 'etvfacSentToVerifac', column: 'EM_Etvfac_Senttoverifac', type: 'boolean' },
-  { key: 'tbaiSequence', column: 'EM_Tbai_Sequence', type: 'number' },
-  { key: 'tbaiInvoicenum', column: 'EM_Tbai_Invoicenum', type: 'string' },
-  { key: 'tbaiInvoiceseq', column: 'EM_Tbai_Invoiceseq', type: 'string' },
-  { key: 'tbaiIssent', column: 'EM_Tbai_Issent', type: 'boolean' },
-  { key: 'aeatsiiIssent', column: 'EM_Aeatsii_Issent', type: 'boolean' },
-  { key: 'aeatsiiModified', column: 'EM_Aeatsii_Modified', type: 'boolean' },
-  { key: 'aeatsiiEstado', column: 'EM_Aeatsii_Estado', type: 'enum' },
 ];
 
 const statusField = 'documentStatus';
@@ -46,18 +31,6 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'etvfacRectCreate', label: 'Crear Rectificación Importe Negativo', style: 'positive',
-    displayLogicRaw: "@etvfac_has_configuration@='Y' & @Processed@='Y' & @EM_Etvfac_Senttoverifac@='Y'" },
-  { name: 'tbaiXmlgenerator', label: 'Registrar Factura en TBAI', style: 'positive',
-    displayLogicRaw: "@EM_Tbai_Issent@='N' & (@docstatus@='CO') & @TBAI_ExistConfigAndIsAvailable@=1" },
-  { name: 'eTBLKCBulkcompletion', label: 'Bulk Completion', style: 'positive',
-    displayLogicRaw: "@DocStatus@!'CL'&@DocStatus@!'VO'&@InvoiceProcessButton@='Y'" },
-  { name: 'tbaiVoidxmlgenerator', label: 'Enviar anulación a TIcketbai', style: 'destructive',
-    displayLogicRaw: "@EM_Tbai_Issent@='N' & @docstatus@='VO' & @TBAI_ExistConfigAndIsAvailable@=1 & @TBAI_VoidedInvoiceSended@=1" },
-  { name: 'aeatsiiSend', label: 'Send to SII', style: 'positive',
-    displayLogicRaw: "@AEATSII_AcogidaSII@='Y' & @EM_Aeatsii_Error_Registral@='N'" },
-  { name: 'aeatsiiModif', label: 'Modification in SII', style: 'positive',
-    displayLogicRaw: "@AEATSII_AcogidaSII@='Y' & @EM_Aeatsii_Error_Registral@='Y'" },
   { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'DocAction',
     displayLogicRaw: "@documentStatus@='DR'" },
 ];
@@ -118,28 +91,6 @@ const api = {
         "product"
       ]
     },
-    "intrastat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/intrastat",
-      "detailUrl": "/sws/neo/sales-invoice/intrastat/{id}",
-      "supportedFilters": []
-    },
-    "cashVat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/cashVat",
-      "detailUrl": "/sws/neo/sales-invoice/cashVat/{id}",
-      "supportedFilters": []
-    },
     "paymentPlan": {
       "get": true,
       "getById": true,
@@ -149,50 +100,6 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/sales-invoice/paymentPlan",
       "detailUrl": "/sws/neo/sales-invoice/paymentPlan/{id}",
-      "supportedFilters": []
-    },
-    "verifactu": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/verifactu",
-      "detailUrl": "/sws/neo/sales-invoice/verifactu/{id}",
-      "supportedFilters": []
-    },
-    "siiData": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/siiData",
-      "detailUrl": "/sws/neo/sales-invoice/siiData/{id}",
-      "supportedFilters": []
-    },
-    "ticketbai": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/ticketbai",
-      "detailUrl": "/sws/neo/sales-invoice/ticketbai/{id}",
-      "supportedFilters": []
-    },
-    "resultadoValidación": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/sales-invoice/resultadoValidación",
-      "detailUrl": "/sws/neo/sales-invoice/resultadoValidación/{id}",
       "supportedFilters": []
     }
   },
@@ -238,22 +145,6 @@ const api = {
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
     },
     {
-      "entity": "header",
-      "field": "aeatsiiDescription",
-      "column": "EM_Aeatsii_Description_ID",
-      "reference": "aeatsii_description",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
-    },
-    {
-      "entity": "header",
-      "field": "aeatsiiCauseExemption",
-      "column": "EM_Aeatsii_Cause_Exemption_ID",
-      "reference": "aeatsii_cause_exemption",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
-    },
-    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
@@ -270,54 +161,6 @@ const api = {
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {
-      "entity": "intrastat",
-      "field": "invoiceLine",
-      "column": "C_Invoiceline_ID",
-      "reference": "InvoiceLine",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/invoiceLine"
-    },
-    {
-      "entity": "intrastat",
-      "field": "product",
-      "column": "M_Product_ID",
-      "reference": "Product",
-      "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/product"
-    },
-    {
-      "entity": "intrastat",
-      "field": "incoterms",
-      "column": "C_Incoterms_ID",
-      "reference": "Incoterms",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/incoterms"
-    },
-    {
-      "entity": "intrastat",
-      "field": "supplementaryUOM",
-      "column": "Intr_C_Uom_ID",
-      "reference": "Intr_C_Uom",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/intrastat/selectors/supplementaryUOM"
-    },
-    {
-      "entity": "cashVat",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/cashVat/selectors/payment"
-    },
-    {
-      "entity": "cashVat",
-      "field": "oBCVATMANUALSETTLEMENTLINE",
-      "column": "EM_OBCVAT_MANUALSETTLEMENTLINE_ID",
-      "reference": "OBCVAT_ManualSettlementLine",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/cashVat/selectors/oBCVATMANUALSETTLEMENTLINE"
-    },
-    {
       "entity": "paymentPlan",
       "field": "finPaymentmethodID",
       "column": "Fin_Paymentmethod_ID",
@@ -332,22 +175,6 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/paymentPlan/selectors/currency"
-    },
-    {
-      "entity": "siiData",
-      "field": "conexinSII",
-      "column": "Aeatsii_Conexion_ID",
-      "reference": "Aeatsii_Conexion",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/siiData/selectors/conexinSII"
-    },
-    {
-      "entity": "ticketbai",
-      "field": "invoice",
-      "column": "C_Invoice_ID",
-      "reference": "Invoice",
-      "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/ticketbai/selectors/invoice"
     }
   ],
   "actions": [

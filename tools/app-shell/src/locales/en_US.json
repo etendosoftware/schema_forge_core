@@ -1053,7 +1053,7 @@
       "description": "A price list with a specified validity range."
     },
     "C_BPartner_ID": {
-      "label": "Business Partner",
+      "label": "Contact",
       "description": "Anyone who takes part in daily business operations by acting as a customer, employee, etc."
     },
     "IsSOPriceList": {
@@ -16380,6 +16380,12 @@
     "total": "Total",
     "docs": "Docs",
     "notes": "Notes",
+    "addLines": "Add Lines",
+    "importFromShipment": "Import from Shipment",
+    "noLinesYet": "No lines yet",
+    "addLinesManuallyOrImportFromShipment": "Add lines manually or import from a shipment",
+    "addNoteHint": "Add a note...",
+    "linesImportedFromShipment": "Lines imported from shipment",
     "noRelatedDocuments": "No related documents",
     "Complete": "Complete",
     "Confirm & Send": "Confirm & Send",
@@ -17971,7 +17977,7 @@
       "label": "Closed"
     },
     "CO": {
-      "label": "Right"
+      "label": "Completed"
     },
     "DR": {
       "label": "Draft"
