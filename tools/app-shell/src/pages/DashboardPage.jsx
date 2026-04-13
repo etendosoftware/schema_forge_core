@@ -64,7 +64,6 @@ const WIDGET_REGISTRY = [
   { id: 'top-clients',          labelKey: 'topClients',            defaultSize: 'small',  defaultVisible: true  },
   { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: true  },
   { id: 'recent-invoices',      labelKey: 'recentInvoices',        defaultSize: 'medium', defaultVisible: true  },
-  { id: 'best-products',        labelKey: 'bestProducts',          defaultSize: 'medium', defaultVisible: true  },
   { id: 'best-sellers',         labelKey: 'bestSellers',           defaultSize: 'medium', defaultVisible: true  },
 ];
 
@@ -78,7 +77,6 @@ const DEFAULT_WIDGET_CONFIG = [
   { id: 'top-clients', visible: true, size: 'small' },
   { id: 'collections-payments', visible: true, size: 'medium', height: 240 },
   { id: 'recent-invoices', visible: true, size: 'medium', height: 240 },
-  { id: 'best-products', visible: true, size: 'medium', height: 240 },
   { id: 'best-sellers', visible: true, size: 'medium', height: 240 },
 ];
 
@@ -400,27 +398,16 @@ const WIDGET_PREVIEWS = {
       ))}
     </svg>
   ),
-  'best-products': (
-    <svg viewBox="0 0 280 100" className="w-full h-full">
-      <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[0.9, 0.75, 0.6, 0.45, 0.3].map((pct, i) => (
-        <g key={i} transform={`translate(10, ${8 + i * 18})`}>
-          <text x="0" y="11" fontSize="9" fill="#94a3b8" fontWeight="500">{i + 1}</text>
-          <rect x="18" y="2" width="100" height="10" rx="5" fill="#e2e8f0" />
-          <rect x="130" y="2" width={110 * pct} height="10" rx="5" fill="#4f46e5" opacity="0.6" />
-          <rect x={130 + 110 * pct + 4} y="4" width="28" height="6" rx="3" fill="#e2e8f0" />
-        </g>
-      ))}
-    </svg>
-  ),
   'best-sellers': (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      <rect x="10" y="6" width="260" height="10" rx="3" fill="#e2e8f0" />
+      <rect x="180" y="8" width="36" height="12" rx="6" fill="#e0e7ff" />
+      <rect x="220" y="8" width="50" height="12" rx="6" fill="#eef2ff" />
       {[0,1,2,3,4].map((i) => (
-        <g key={i} transform={`translate(10, ${22 + i * 15})`}>
-          <rect width="160" height="8" rx="4" fill="#cbd5e1" opacity={1 - i * 0.12} />
-          <rect x="200" y="0" width="40" height="8" rx="4" fill="#4f46e5" opacity={0.8 - i * 0.12} />
+        <g key={i} transform={`translate(10, ${26 + i * 14})`}>
+          <rect width="150" height="8" rx="4" fill="#cbd5e1" opacity={1 - i * 0.12} />
+          <rect x="190" y="0" width="28" height="8" rx="4" fill="#4f46e5" opacity={0.8 - i * 0.12} />
+          <rect x="226" y="0" width="40" height="8" rx="4" fill="#94a3b8" opacity={0.65 - i * 0.08} />
         </g>
       ))}
     </svg>
@@ -1120,61 +1107,16 @@ function fmtCompact(n, currencyLabel = '') {
 }
 
 /* ------------------------------------------------------------------
- * Best Products Widget
+ * Best Sellers Widget
  * ----------------------------------------------------------------*/
 
-function BestProducts({ products = [], currencyLabel = '' }) {
-  const ui = useUI();
-  const tMenu = useMenuLabel();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_products');
-  return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer select-none">
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestProducts')}</CardTitle>
-          </div>
-          <span className="text-xs text-muted-foreground">{ui('months12ByRevenue')}</span>
-        </div>
-      </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
-          {products.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{ui('noDataAvailable')}</p>
-          ) : (
-            <div className="space-y-0">
-              {products.map((p, i) => (
-                <React.Fragment key={p.name}>
-                  {i > 0 && <Separator />}
-                  <div className="flex items-center justify-between py-2 px-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}</span>
-                      <span className="text-sm truncate">{p.name}</span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="text-xs text-muted-foreground">{fmtCompact(p.qty)} {tMenu('Units')}</span>
-                      <span className="text-sm font-medium">{fmtCompact(p.amount, currencyLabel)}</span>
-                    </div>
-                  </div>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------
- * Best Sellers Widget (table: Product Name / Qty / UOM)
- * ----------------------------------------------------------------*/
-
-function BestSellers({ sellers = [] }) {
+function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
+  const [viewMode, setViewMode] = useState('quantity');
+  const rows = viewMode === 'quantity' ? sellers : products;
+
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
@@ -1183,28 +1125,53 @@ function BestSellers({ sellers = [] }) {
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
             <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers')}</CardTitle>
           </div>
-          <span className="text-xs text-muted-foreground">{ui('months12ByQty')}</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setViewMode('quantity'); }}
+              className={`p-1 transition-colors ${viewMode === 'quantity' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              aria-label={ui('months12ByQty')}
+              title={ui('months12ByQty')}
+            >
+              <BarChart2 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setViewMode('revenue'); }}
+              className={`p-1 transition-colors ${viewMode === 'revenue' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              aria-label={ui('months12ByRevenue')}
+              title={ui('months12ByRevenue')}
+            >
+              <DollarSign className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </CardHeader>
       {!collapsed && (
         <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-          {sellers.length === 0 ? (
+          {rows.length === 0 ? (
             <p className="text-sm text-muted-foreground p-4">{ui('noDataAvailable')}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Product Name')}</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Qty')}</th>
+                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">
+                    {viewMode === 'quantity' ? tMenu('Qty') : tMenu('Revenue')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {sellers.map((s, i) => (
-                  <tr key={s.name} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
+                {rows.map((row, i) => (
+                  <tr key={`${viewMode}-${row.name}`} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
                     <td className="px-4 py-2 truncate max-w-0" style={{ maxWidth: '1px', width: '60%' }}>
-                      <span className="block truncate">{s.name}</span>
+                      <span className="block truncate">{row.name}</span>
                     </td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">{fmtCompact(s.qty)}</td>
+                    <td className="px-4 py-2 text-right font-medium tabular-nums">
+                      {viewMode === 'quantity'
+                        ? fmtCompact(row.qty)
+                        : formatDashboardAmount(row.amount, currencyLabel)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1287,8 +1254,6 @@ export default function DashboardPage() {
   const { token, selectedOrg } = useAuth();
   const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
-  const [dashDraggingId, setDashDraggingId] = useState(null);
-  const [dashDragOverId, setDashDragOverId] = useState(null);
   const gridRef = useRef(null);
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
@@ -1343,8 +1308,7 @@ export default function DashboardPage() {
       case 'quick-actions':        return <QuickActions key={id} actions={quickActions} />;
       case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />;
       case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} currencyLabel={dashboardCurrency} />;
-      case 'best-products':        return <BestProducts key={id} products={bestProducts} currencyLabel={dashboardCurrency} />;
-      case 'best-sellers':         return <BestSellers key={id} sellers={bestSellers} />;
+      case 'best-sellers':         return <BestSellers key={id} sellers={bestSellers} products={bestProducts} currencyLabel={dashboardCurrency} />;
       default: return null;
     }
   };
@@ -1417,50 +1381,16 @@ export default function DashboardPage() {
             };
 
             const makeDraggable = (item, children) => {
-              const isDragging = dashDraggingId === item.id;
-              const isTarget   = dashDragOverId === item.id && dashDraggingId && dashDraggingId !== item.id;
               const h = getHeight(item);
 
               return (
                 <div
                   key={item.id}
                   data-widget-id={item.id}
-                  className={`relative group transition-all duration-150 ${isDragging ? 'opacity-40' : 'opacity-100'} ${h ? 'overflow-hidden [&>:last-child]:h-full [&>:last-child>*]:h-full' : ''}`}
+                  className={`relative transition-all duration-150 ${h ? 'overflow-hidden [&>:last-child]:h-full [&>:last-child>*]:h-full' : ''}`}
                   style={h ? { height: h + 'px' } : undefined}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', item.id);
-                    setDashDraggingId(item.id);
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (item.id !== dashDraggingId) setDashDragOverId(item.id);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dashDraggingId && dashDragOverId && dashDraggingId !== dashDragOverId) {
-                      reorder(dashDraggingId, dashDragOverId);
-                    }
-                    setDashDraggingId(null);
-                    setDashDragOverId(null);
-                  }}
-                  onDragEnd={() => { setDashDraggingId(null); setDashDragOverId(null); }}
                 >
-                  {/* Dashed border overlay on drag target */}
-                  {isTarget && (
-                    <div className="absolute inset-0 rounded-xl border-2 border-dashed border-primary bg-primary/5 z-10 pointer-events-none" />
-                  )}
-                  {/* Resize outline while resizing width or height */}
-                  {/* Drag handle tooltip */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="flex items-center gap-1 bg-background border rounded-b-lg px-2 py-0.5 shadow-sm">
-                      <GripVertical className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground select-none">{ui('dragToReorder')}</span>
-                    </div>
-                  </div>
-                  <div className={dashDraggingId ? 'pointer-events-none' : ''}>{children}</div>
+                  <div>{children}</div>
                 </div>
               );
             };
