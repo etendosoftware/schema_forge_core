@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { EntityForm } from '@/components/contract-ui';
-import { ChevronDown, ChevronRight, MapPin, Tag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ChevronDown, MapPin, Tag, Pencil, X as XIcon } from 'lucide-react';
 import { useUI } from '@/i18n';
 import LocationEditorModal from './LocationEditorModal';
 
@@ -51,6 +53,101 @@ function DiscountSelect({ value, options, onChange, loading }) {
   );
 }
 
+function DiscountCard({ value, options, onChange, loading, ui }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-3">
+      <div className="flex items-center gap-2 px-1">
+        <span className="text-sm font-bold text-gray-800">{ui('basicDiscount')}</span>
+      </div>
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden p-1">
+        <DiscountSelect
+          value={value}
+          options={options}
+          onChange={onChange}
+          loading={loading}
+        />
+      </div>
+    </div>
+  );
+}
+
+function LocationCard({ records, loading, onEdit, onDelete, onAdd, ui }) {
+  const count = records?.length ?? 0;
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-bold text-gray-800">{ui('locationAddress')}</span>
+          {count > 0 && (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700">
+              {count}
+            </span>
+          )}
+        </div>
+
+        {!loading && (
+          <button
+            type="button"
+            onClick={onAdd}
+            title={ui('addLocation')}
+            aria-label={ui('addLocation')}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-semibold leading-none text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-800 shrink-0"
+          >
+            +
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="h-10 rounded-xl bg-white/70 animate-pulse" />
+      ) : (
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          {count > 0 ? (
+            records.map((rec, idx) => {
+              let label = rec['locationAddress$_identifier'] || rec.name || '';
+              if (label === '., ') label = '';
+
+              return (
+                <div
+                  key={rec.id}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm ${idx > 0 ? 'border-t border-gray-100' : ''}`}
+                >
+                  <MapPin size={13} className="text-slate-400 shrink-0" />
+                  <span className="flex-1 truncate text-gray-800">
+                    {label || ui('locationSelectorTitle')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(rec.locationAddress, rec.id)}
+                    title={ui('edit')}
+                    className="text-gray-400 hover:text-gray-700 transition-colors p-0.5 shrink-0"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(rec.id)}
+                    title={ui('removeLocation')}
+                    className="text-gray-400 hover:text-red-500 transition-colors p-0.5 shrink-0"
+                  >
+                    <XIcon size={13} />
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <div className="px-4 py-3 text-sm text-gray-400">
+              {ui('locationSelectorTitle')}
+            </div>
+          )}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function BillingPreferencesForm(props) {
@@ -62,20 +159,21 @@ export default function BillingPreferencesForm(props) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const organizationId = resolveId(data?.organization ?? data?.adOrgId ?? data?.ad_org_id);
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  // { open, bplId: C_Location_ID|null, bplLinkId: C_BPartner_Location_ID|null }
+  const [locationModal, setLocationModal] = useState({ open: false, bplId: null, bplLinkId: null });
+  const [deleteLocationId, setDeleteLocationId] = useState(null);
 
-  // Sub-entity records (current BP's discount + address)
+  // Sub-entity records (current BP's discount + addresses)
   const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
-  const [addressRecord, setAddressRecord] = useState(undefined);
+  const [addressRecords, setAddressRecords] = useState(undefined); // undefined=loading, array otherwise
 
   const selectorContext = useMemo(() => {
     const ctx = {};
     if (organizationId) ctx.AD_Org_ID = organizationId;
     if (clientId) ctx.AD_Client_ID = clientId;
     if (bpId) ctx.parentId = bpId;
-    if (addressRecord?.locationAddress) ctx.locationId = addressRecord.locationAddress;
     return ctx;
-  }, [organizationId, clientId, bpId, addressRecord?.locationAddress]);
+  }, [organizationId, clientId, bpId]);
   // Available discount catalog
   const [discountOptions, setDiscountOptions] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -89,11 +187,11 @@ export default function BillingPreferencesForm(props) {
       .then(d => setDiscountRecord(d?.response?.data?.[0] ?? null))
       .catch(() => setDiscountRecord(null));
 
-    // Fetch current location/address record for this BP
-    fetch(`${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=1`, { headers: { Authorization: `Bearer ${token}` } })
+    // Fetch all location/address records for this BP
+    fetch(`${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=50`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => setAddressRecord(d?.response?.data?.[0] ?? null))
-      .catch(() => setAddressRecord(null));
+      .then(d => setAddressRecords(d?.response?.data ?? []))
+      .catch(() => setAddressRecords([]));
 
     // Fetch available discounts catalog
     const discountParams = new URLSearchParams({ limit: '200', offset: '0' });
@@ -141,14 +239,27 @@ export default function BillingPreferencesForm(props) {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  async function refreshAddressRecord() {
+  async function refreshAddressRecords() {
     const d = await fetch(
-      `${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=1`,
+      `${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=50`,
       { headers: { Authorization: `Bearer ${token}` } }
     )
       .then(r => (r.ok ? r.json() : null))
       .catch(() => null);
-    setAddressRecord(d?.response?.data?.[0] ?? null);
+    setAddressRecords(d?.response?.data ?? []);
+  }
+
+  async function handleDeleteLocation(bplLinkId) {
+    if (!bplLinkId) return;
+    await fetch(`${apiBase}/locationAddress/${bplLinkId}`, {
+      method: 'DELETE',
+      headers,
+    }).catch(() => {});
+    await refreshAddressRecords();
+  }
+
+  function openLocationModal(bplId, bplLinkId) {
+    setLocationModal({ open: true, bplId: bplId ?? null, bplLinkId: bplLinkId ?? null });
   }
 
   async function handleDiscountChange(newDiscountId) {
@@ -196,14 +307,8 @@ export default function BillingPreferencesForm(props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   const discountLoading = discountRecord === undefined;
-  const addressLoading = addressRecord === undefined;
+  const addressLoading = addressRecords === undefined;
   const currentDiscountId = discountRecord?.discount ?? null;
-  let identifier = addressRecord?.['locationAddress$_identifier'] || addressRecord?.name || '';
-  if (identifier === '., ') identifier = ui('locationSelectorTitle');
-
-  const currentAddress = addressRecord
-    ? { id: addressRecord.locationAddress, _identifier: identifier }
-    : null;
 
   const customerCheckboxField = [
     { key: 'customer', column: 'IsCustomer', type: 'checkbox', label: ui('customer'), required: true, section: 'principal' },
@@ -236,38 +341,23 @@ export default function BillingPreferencesForm(props) {
       {/* ── Discount + Address inline fields ─────────────────────────── */}
       {bpId && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {/* Basic Discount */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">{ui('basicDiscount')}</span>
-              <DiscountSelect
-                value={currentDiscountId}
-                options={discountOptions}
-                onChange={handleDiscountChange}
-                loading={discountLoading || saving}
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 items-start">
+            <DiscountCard
+              value={currentDiscountId}
+              options={discountOptions}
+              onChange={handleDiscountChange}
+              loading={discountLoading || saving}
+              ui={ui}
+            />
 
-            {/* Location / Address */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">{ui('locationAddress')}</span>
-              {addressLoading
-                ? <div className="h-9 rounded-md bg-muted animate-pulse" />
-                : (
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 h-9 rounded-md border border-input bg-background px-3 text-sm text-left hover:border-ring transition-colors"
-                    onClick={() => setLocationModalOpen(true)}
-                  >
-                    <MapPin size={13} className="text-muted-foreground shrink-0" />
-                    <span className={`flex-1 truncate ${currentAddress?._identifier ? '' : 'text-muted-foreground'}`}>
-                      {currentAddress?._identifier || ui('setLocation')}
-                    </span>
-                    <ChevronRight size={13} className="text-muted-foreground shrink-0" />
-                  </button>
-                )
-              }
-            </div>
+            <LocationCard
+              records={addressRecords ?? []}
+              loading={addressLoading}
+              onEdit={openLocationModal}
+              onDelete={setDeleteLocationId}
+              onAdd={() => openLocationModal(null, null)}
+              ui={ui}
+            />
           </div>
 
           <div className="border-t border-border" />
@@ -300,20 +390,46 @@ export default function BillingPreferencesForm(props) {
 
     {bpId && (
       <LocationEditorModal
-        open={locationModalOpen}
-        onClose={() => setLocationModalOpen(false)}
+        open={locationModal.open}
+        onClose={() => setLocationModal({ open: false, bplId: null, bplLinkId: null })}
         onSaved={async () => {
-          await refreshAddressRecord();
-          setLocationModalOpen(false);
+          await refreshAddressRecords();
+          setLocationModal({ open: false, bplId: null, bplLinkId: null });
         }}
-        bplId={addressRecord?.locationAddress ?? null}
-        bplLinkId={addressRecord?.id ?? null}
+        bplId={locationModal.bplId}
+        bplLinkId={locationModal.bplLinkId}
         bpId={bpId}
         contactsApiBase={apiBase}
         token={token}
         selectorContext={selectorContext}
       />
     )}
+
+    <Dialog open={Boolean(deleteLocationId)} onOpenChange={(open) => { if (!open) setDeleteLocationId(null); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
+          <DialogDescription>{ui('deleteConfirmMessage')}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="sm">{ui('cancel')}</Button>
+          </DialogClose>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={async () => {
+              const currentId = deleteLocationId;
+              setDeleteLocationId(null);
+              await handleDeleteLocation(currentId);
+            }}
+          >
+            {ui('delete')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     </>
   );
 }

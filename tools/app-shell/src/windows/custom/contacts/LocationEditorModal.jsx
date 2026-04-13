@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { toast } from 'sonner';
 
 const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '' };
 const SELECTOR_PAGE_SIZE = 120;
@@ -176,8 +177,11 @@ export default function LocationEditorModal({
     const loadCountries = async () => {
       setCountriesLoading(true);
       const selectorBases = [
+        `${bpLocationBase}/bpLocation/selectors/C_Country_ID`,
+        `${contactsApiBase}/locationAddress/selectors/C_Country_ID`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/country`,
         `${bpLocationBase}/bpLocation/selectors/country`,
+        `${contactsApiBase}/locationAddress/selectors/country`,
         `${contactsApiBase}/bankAccount/selectors/country`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/C_Country_ID`,
         `${contactsApiBase}/bankAccount/selectors/C_Country_ID`,
@@ -537,6 +541,10 @@ export default function LocationEditorModal({
 
   async function handleSave() {
     if (saving || initialLoading) return;
+    if (!form.country) {
+      toast.error(ui('locationCountryRequired'));
+      return;
+    }
     setSaving(true);
     try {
       const name = [form.city, form.address].filter(Boolean).join(', ') || 'Location';

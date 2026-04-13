@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
-import { useLabel, useLocaleSwitch } from '@/i18n';
+import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -12,10 +12,19 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 
+function buildSelectPlaceholder(ui, label) {
+  return `${ui('selectLabelPrefix')} ${label}...`;
+}
+
+function buildSearchPlaceholder(ui, label) {
+  return `${ui('searchLabelPrefix')} ${label}...`;
+}
+
 /**
  * Button that opens the ProductSearchDrawer popup for fields with popup: true.
  */
 function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, token }) {
+  const ui = useUI();
   const [open, setOpen] = useState(false);
   const displayText = displayValue || (value ? value : '');
   return (
@@ -30,7 +39,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         {displayText ? (
           <span className="truncate text-foreground">{displayText}</span>
         ) : (
-          <span className="truncate text-muted-foreground">Search {label}...</span>
+          <span className="truncate text-muted-foreground">{buildSearchPlaceholder(ui, label)}</span>
         )}
       </button>
       <ProductSearchDrawer
@@ -50,6 +59,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
  * Supports both static catalog data (mock) and server-side filtering via API.
  */
 function SearchInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
+  const ui = useUI();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(displayValue || value || '');
   const [serverResults, setServerResults] = useState(null);
@@ -162,7 +172,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           name={field.key}
           data-testid={`field-${field.key}`}
           type="text"
-          placeholder={`Search ${resolvedLabel}...`}
+          placeholder={buildSearchPlaceholder(ui, resolvedLabel)}
           value={query}
           onChange={(e) => {
             isEditingRef.current = true;
@@ -197,7 +207,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
             onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
             className="absolute right-2 top-2 h-5 w-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             tabIndex={-1}
-            aria-label="Clear"
+            aria-label={ui('clear')}
           >
             <X className="h-3 w-3" />
           </button>
@@ -220,13 +230,13 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       )}
       {open && query.length > 0 && fetching && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
-          <div className="px-3 py-2 text-xs text-muted-foreground">Searching...</div>
+          <div className="px-3 py-2 text-xs text-muted-foreground">{ui('searching')}</div>
         </div>
       )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           <div className="px-3 py-2 text-xs text-muted-foreground">
-            No results for "{query}"
+            {ui('noResultsFor')} "{query}"
           </div>
         </div>
       )}
@@ -242,6 +252,7 @@ const SELECTOR_PAGE = 50;
  * Falls back to catalog when no selectorUrl is provided.
  */
 function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
+  const ui = useUI();
   const catalogOptions = getCatalogOptions(catalogs, entityName, field);
   const [serverOptions, setServerOptions] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -301,17 +312,22 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
 
   return (
     <Select
-      value={value}
+      value={value || '__empty__'}
       onValueChange={(val) => {
+        if (val === '__empty__') {
+          onChange('', '', null);
+          return;
+        }
         const opt = baseOptions.find(o => o.id === val);
         onChange(val, opt?.name, opt);
       }}
       required={field.required}
     >
       <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
-        <SelectValue placeholder={`Select ${resolvedLabel}...`} />
+        <SelectValue placeholder={buildSelectPlaceholder(ui, resolvedLabel)} />
       </SelectTrigger>
       <SelectContent ref={contentCallbackRef}>
+        {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
         {/* When the current value is not among the filtered options (e.g. a purchase price list
             on a sales invoice), render a hidden item so Radix can display the current label in
             the trigger — but the user cannot re-select it from the dropdown. */}
@@ -329,7 +345,7 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
           <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
         {hasMore && selectorUrl && (
-          <div className="py-1 text-center text-xs text-muted-foreground select-none pointer-events-none">Loading…</div>
+          <div className="py-1 text-center text-xs text-muted-foreground select-none pointer-events-none">{ui('loading')}</div>
         )}
       </SelectContent>
     </Select>
@@ -341,6 +357,7 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
  * Re-fetches options whenever the parent value changes.
  */
 function DependentSelect({ field, value, displayValue, onChange, catalogs, formData, resolvedLabel, selectorUrl, selectorContext, token }) {
+  const ui = useUI();
   const [dynamicOptions, setDynamicOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -395,8 +412,12 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 
   return (
     <Select
-      value={value}
+      value={value || '__empty__'}
       onValueChange={(val) => {
+        if (val === '__empty__') {
+          onChange('', '', null);
+          return;
+        }
         const opt = options.find(o => o.id === val);
         onChange(val, opt?.name, opt);
       }}
@@ -405,10 +426,11 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
     >
       <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
         <SelectValue
-          placeholder={loading ? 'Loading...' : (parentValue ? `Select ${resolvedLabel}...` : `Select ${field.dependsOn?.field} first`)}
+          placeholder={loading ? ui('loading') : (parentValue ? buildSelectPlaceholder(ui, resolvedLabel) : ui('selectParentFirst'))}
         />
       </SelectTrigger>
       <SelectContent>
+        {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
         {options.map(opt => (
           <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
@@ -421,6 +443,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
  * Form field that opens a ProductSearchDrawer for lookup-enabled search fields.
  */
 function LookupFormField({ field, value, displayValue, selectorUrl, token, resolvedLabel, onChange }) {
+  const ui = useUI();
   const [open, setOpen] = useState(false);
   const display = displayValue || value || '';
   return (
@@ -435,7 +458,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
         {display ? (
           <span className="flex-1 truncate text-foreground">{display}</span>
         ) : (
-          <span className="flex-1 truncate text-muted-foreground">Search {resolvedLabel}...</span>
+          <span className="flex-1 truncate text-muted-foreground">{buildSearchPlaceholder(ui, resolvedLabel)}</span>
         )}
       </button>
       <ProductSearchDrawer
@@ -466,6 +489,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
  */
 export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null }) {
   const t = useLabel(api?.labelOverrides);
+  const ui = useUI();
   const { locale } = useLocaleSwitch();
   const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
   let displayFields;
@@ -766,15 +790,16 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
             </Label>
             <Select
-              value={data?.[f.key] ?? ''}
-              onValueChange={(val) => onChange?.(f.key, val, f.column)}
+              value={(data?.[f.key] ?? '') || '__empty__'}
+              onValueChange={(val) => onChange?.(f.key, val === '__empty__' ? '' : val, f.column)}
               disabled={isReadOnly}
               required={f.required}
             >
               <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
-                <SelectValue placeholder={`Select ${label}...`} />
+                <SelectValue placeholder={buildSelectPlaceholder(ui, label)} />
               </SelectTrigger>
               <SelectContent>
+                {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
                 {f.options.map(opt => (
                   <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                 ))}
