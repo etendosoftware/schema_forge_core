@@ -145,6 +145,14 @@ const api = {
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
     },
     {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+    },
+    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",

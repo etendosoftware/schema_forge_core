@@ -132,7 +132,7 @@
               "filterKey": "C_BPartner_ID"
             },
             "section": "principal",
-            "seq": 60,
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartnerLocation"
             },
@@ -168,7 +168,7 @@
             "reference": "PaymentTerm",
             "inputMode": "search",
             "section": "principal",
-            "seq": 50,
+            "seq": 60,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -189,7 +189,7 @@
             "reference": "PaymentMethod",
             "inputMode": "selector",
             "section": "principal",
-            "seq": 40,
+            "seq": 50,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
             },
@@ -1130,8 +1130,19 @@
             "apiKey": "priceList",
             "column": "M_PriceList_ID",
             "type": "foreignKey",
-            "visibility": "system",
-            "required": true
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "reference": "PriceList",
+            "inputMode": "selector",
+            "section": "collapsed",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "salesRepresentative",
@@ -1154,8 +1165,17 @@
             "apiKey": "orderReference",
             "column": "POReference",
             "type": "string",
-            "visibility": "discarded",
-            "required": false
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "section": "collapsed",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "accountingDate",
@@ -3026,6 +3046,14 @@
         "url": "/sws/neo/sales-invoice/header/selectors/currency"
       },
       {
+        "entity": "header",
+        "field": "priceList",
+        "column": "M_PriceList_ID",
+        "reference": "PriceList",
+        "inputMode": "selector",
+        "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+      },
+      {
         "entity": "lines",
         "field": "product",
         "column": "M_Product_ID",
@@ -4423,11 +4451,11 @@
       },
       {
         "id": "t-145",
-        "category": "system-field",
+        "category": "editable-field",
         "entity": "header",
         "field": "priceList",
         "runner": "node",
-        "description": "System field 'priceList' should exist in backend but not frontend for header"
+        "description": "Field 'priceList' should be present in header (collapsed section)"
       },
       {
         "id": "t-146",
@@ -4447,11 +4475,11 @@
       },
       {
         "id": "t-148",
-        "category": "system-field",
+        "category": "editable-field",
         "entity": "header",
         "field": "orderReference",
         "runner": "node",
-        "description": "System field 'orderReference' should exist in backend but not frontend for header"
+        "description": "Field 'orderReference' should be present in header (collapsed section)"
       },
       {
         "id": "t-149",

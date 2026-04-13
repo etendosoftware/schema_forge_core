@@ -43,16 +43,6 @@
         "accountingDate": {
           "visibility": "system"
         },
-        "paymentMethod": {
-          "reference": "PaymentMethod",
-          "section": "principal",
-          "seq": 40
-        },
-        "paymentTerms": {
-          "inputMode": "search",
-          "section": "principal",
-          "seq": 50
-        },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
@@ -61,10 +51,24 @@
             "filterKey": "C_BPartner_ID"
           },
           "section": "principal",
+          "seq": 40
+        },
+        "paymentMethod": {
+          "reference": "PaymentMethod",
+          "section": "principal",
+          "seq": 50
+        },
+        "paymentTerms": {
+          "inputMode": "search",
+          "section": "principal",
           "seq": 60
         },
         "priceList": {
-          "visibility": "system"
+          "visibility": "editable",
+          "section": "collapsed",
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "currency": {
           "visibility": "readOnly",
@@ -99,7 +103,9 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "discarded"
+          "visibility": "editable",
+          "section": "collapsed",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "active": {
           "visibility": "discarded",
