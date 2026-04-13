@@ -593,10 +593,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
         }).filter(Boolean);
         return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries };
       });
@@ -668,8 +669,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
   }).join('\n');
 
+  const secondaryTabsRequireSaved = windowConfig.secondaryTabs && Object.values(windowConfig.secondaryTabs).some(t => t.requireSavedRecord);
   const secondaryTabsProp = secondaryTabDefs.length > 0
-    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
+    ? secondaryTabsRequireSaved
+      ? `\n        secondaryTabs={recordId === 'new' ? [] : [\n${secondaryTabsPropEntries}\n        ]}`
+      : `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
   // Build optional DetailView props from window-level decisions config

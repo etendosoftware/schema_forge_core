@@ -453,7 +453,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null }) {
   const t = useLabel(api?.labelOverrides);
   const { locale } = useLocaleSwitch();
   const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
@@ -775,6 +775,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               rows={4}
               value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
               onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+              onBlur={() => onFieldBlur?.(f.key)}
               disabled={isReadOnly}
               className={[
                 'flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm',
@@ -801,9 +802,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             type={inputType}
             value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
             onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+            onBlur={() => onFieldBlur?.(f.key)}
             className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
             required={f.required && !isReadOnly}
-            disabled={isReadOnly}
+            disabled={isReadOnly || savingField === f.key}
           />
         </div>
       </FieldHighlight>

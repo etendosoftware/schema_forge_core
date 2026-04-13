@@ -1,34 +1,9 @@
-import { ListView, DetailView } from '@/components/contract-ui';
-import BpLocationTable from './BpLocationTable';
-import BpLocationForm from './BpLocationForm';
-import catalogs from './mockCatalogs';
+import BpLocationPage from './BpLocationPage';
 
 const windowMeta = { category: 'reference', name: 'BP Location' };
 
-export default function App({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="bpLocation"
-        Form={BpLocationForm}
-        catalogs={catalogs}
-        entityLabel="Bp Location"
-        windowName={windowName}
-        recordId={recordId}
-        window={windowMeta}
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="bpLocation"
-      Table={BpLocationTable}
-      entityLabel="Bp Location"
-      windowName={windowName}
-      window={windowMeta}
-      {...props}
-    />
-  );
+// @sf-generated-start component:App
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <BpLocationPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
 }
+// @sf-generated-end component:App
