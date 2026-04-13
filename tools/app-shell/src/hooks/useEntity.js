@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { useAuth } from '@/auth/AuthContext.jsx';
 
 function buildHeaders(token) {
   return {
@@ -40,6 +41,7 @@ function resolveSortKey(sortColumn, sampleRow) {
 }
 
 export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
+  const { logout } = useAuth();
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -52,49 +54,95 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   const [sortDirection, setSortDirection] = useState('desc');
   const startRowRef = useRef(0);
   const sampleRowRef = useRef(null);
+  const sortSupportedRef = useRef(true);
 
   const headers = buildHeaders(token);
+
+  useEffect(() => {
+    sortSupportedRef.current = true;
+  }, [apiBaseUrl, entity, sortColumn, sortDirection, baseFilter]);
+
+  const fetchRows = useCallback(async (start, end, includeSort = sortSupportedRef.current && !!sortColumn) => {
+    const requestHeaders = buildHeaders(token);
+    const sortKey = includeSort ? resolveSortKey(sortColumn, sampleRowRef.current) : null;
+    const sortPart = sortKey ? `?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${end}` : `?_startRow=${start}&_endRow=${end}`;
+    const filterPart = baseFilter ? `&${baseFilter}` : '';
+    const res = await fetch(`${apiBaseUrl}/${entity}${sortPart}${filterPart}`, { headers: requestHeaders, credentials: 'include' });
+    if (res.status === 401) {
+      logout();
+      throw new Error('401');
+    }
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    return data?.response?.data ?? (Array.isArray(data) ? data : []);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, logout]);
 
   const refresh = useCallback(() => {
     startRowRef.current = 0;
     setHasMore(true);
     setLoading(true);
-    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
-      .then(res => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+    const load = async () => {
+      try {
+        const rows = await fetchRows(0, BATCH_SIZE - 1);
         if (rows.length > 0) sampleRowRef.current = rows[0];
         setItems(rows);
         startRowRef.current = rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
         setLoading(false);
-      })
-      .catch(() => { setItems([]); setHasMore(false); setLoading(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter]);
+      } catch (error) {
+        if (error?.message !== '401' && sortColumn === 'creationDate' && sortSupportedRef.current) {
+          try {
+            const rows = await fetchRows(0, BATCH_SIZE - 1, false);
+            sortSupportedRef.current = false;
+            if (rows.length > 0) sampleRowRef.current = rows[0];
+            setItems(rows);
+            startRowRef.current = rows.length;
+            if (rows.length < BATCH_SIZE) setHasMore(false);
+            setLoading(false);
+            return;
+          } catch {
+            // Fall through to the empty/error state below.
+          }
+        }
+        setItems([]);
+        setHasMore(false);
+        setLoading(false);
+      }
+    };
+    void load();
+  }, [fetchRows, sortColumn]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     const start = startRowRef.current;
-    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
-      .then(res => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+    const loadNext = async () => {
+      try {
+        const rows = await fetchRows(start, start + BATCH_SIZE - 1);
         setItems(prev => [...prev, ...rows]);
         startRowRef.current = start + rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
         setLoadingMore(false);
-      })
-      .catch(() => { setLoadingMore(false); setHasMore(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter]);
+      } catch (error) {
+        if (error?.message !== '401' && sortColumn === 'creationDate' && sortSupportedRef.current) {
+          try {
+            const rows = await fetchRows(start, start + BATCH_SIZE - 1, false);
+            sortSupportedRef.current = false;
+            setItems(prev => [...prev, ...rows]);
+            startRowRef.current = start + rows.length;
+            if (rows.length < BATCH_SIZE) setHasMore(false);
+            setLoadingMore(false);
+            return;
+          } catch {
+            // Fall through to the paging error state below.
+          }
+        }
+        setLoadingMore(false);
+        setHasMore(false);
+      }
+    };
+    void loadNext();
+  }, [fetchRows, sortColumn, hasMore, loadingMore, loading]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -145,10 +193,16 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       if (res.ok) {
         const data = await res.json();
         if (data.defaults) {
-          // Normalize date values from Etendo format (dd-MM-yyyy) to HTML date input (yyyy-MM-dd)
+          // Normalize values from Etendo format:
+          // - Dates: dd-MM-yyyy → yyyy-MM-dd (HTML date input)
+          // - Booleans: "Y" → true, "N" → false (NEO defaults returns strings, not booleans)
           const normalized = { ...data.defaults };
           for (const [key, val] of Object.entries(normalized)) {
-            if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
+            if (val === 'Y') {
+              normalized[key] = true;
+            } else if (val === 'N') {
+              normalized[key] = false;
+            } else if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
               const [dd, mm, yyyy] = val.split('-');
               normalized[key] = `${yyyy}-${mm}-${dd}`;
             }

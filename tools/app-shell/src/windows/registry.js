@@ -77,6 +77,7 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
   'purchase-order': () => import('./custom/purchase-order/index.jsx'),
   'goods-receipt': () => import('./custom/goods-receipt/index.jsx'),

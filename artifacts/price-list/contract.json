@@ -4,73 +4,101 @@
   "checksum": "8fe64c499e01e967",
   "frontendContract": {
     "window": {
-      "id": "203",
+      "id": "146",
       "name": "Price List",
       "primaryEntity": "priceList",
-      "category": "reference"
+      "category": "reference",
+      "breadcrumb": "Settings / Price List"
     },
     "entities": {
       "priceList": {
+        "formCols": 3,
         "fields": [
           {
             "name": "name",
             "column": "Name",
+            "label": "Name",
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "currency",
             "column": "C_Currency_ID",
-            "type": "string",
+            "label": "Currency",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "section": "principal"
           },
           {
-            "name": "isDefault",
-            "column": "IsDefault",
-            "type": "boolean",
-            "tsType": "boolean",
+            "name": "description",
+            "column": "Description",
+            "label": "Description",
+            "type": "string",
+            "tsType": "string",
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal"
           },
           {
-            "name": "isSalesPrice",
+            "name": "salesPriceList",
             "column": "IsSOPriceList",
+            "label": "Sales Price List",
             "type": "boolean",
             "tsType": "boolean",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
-            "tsType": "boolean",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal"
+          },
+          {
+            "name": "costBasedPriceList",
+            "column": "Costbased",
+            "label": "Price list based on cost",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "section": "principal"
+          },
+          {
+            "name": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "label": "Price includes Tax",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "section": "principal"
+          },
+          {
+            "name": "default",
+            "column": "IsDefault",
+            "label": "Default",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "section": "principal"
           }
         ],
         "searchableFields": [
@@ -144,7 +172,7 @@
   },
   "backendContract": {
     "window": {
-      "id": "203",
+      "id": "146",
       "name": "Price List",
       "primaryEntity": "priceList",
       "category": "reference"
@@ -160,6 +188,13 @@
             "required": true
           },
           {
+            "name": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
             "name": "description",
             "column": "Description",
             "type": "string",
@@ -167,59 +202,31 @@
             "required": false
           },
           {
-            "name": "currency",
-            "column": "C_Currency_ID",
-            "type": "string",
+            "name": "salesPriceList",
+            "column": "IsSOPriceList",
+            "type": "boolean",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "isDefault",
+            "name": "costBasedPriceList",
+            "column": "Costbased",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "default",
             "column": "IsDefault",
             "type": "boolean",
             "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "isSalesPrice",
-            "column": "IsSOPriceList",
-            "type": "boolean",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "adClientId",
-            "column": "AD_Client_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "created",
-            "column": "Created",
-            "type": "datetime",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "updated",
-            "column": "Updated",
-            "type": "datetime",
-            "visibility": "system",
             "required": true
           }
         ]

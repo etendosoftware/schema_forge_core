@@ -71,11 +71,11 @@ function mapFieldType(field) {
     }
     return 'status';
   }
+  if (field.enumValues?.length) return 'enum';
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
-  if (field.type === 'enum') return 'enum';
   return 'string';
 }
 
@@ -89,8 +89,8 @@ function mapFormFieldType(field) {
     if (field.inputMode === 'dependent') return 'dependent';
     return 'search';
   }
+  if (field.enumValues?.length) return 'select';
   if (field.type === 'boolean') return 'checkbox';
-  if (field.type === 'enum') return 'select';
   if (field.type === 'image') return 'image';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
@@ -118,12 +118,15 @@ export function generateTableComponent(entityName, contract) {
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const togglePart = f.inlineToggle ? ', toggle: true' : '';
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
+    const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
     const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart}${renderPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -241,7 +244,8 @@ export function generateFormComponent(entityName, contract) {
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -845,6 +849,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const othersLabelValue = windowConfig.othersLabel ?? null;
   const othersLabelProp = othersLabelValue ? `\n        othersLabel="${othersLabelValue}"` : '';
 
+  // showDetailFooterTotals support (default is true in DetailView; false hides the totals row)
+  const showDetailFooterTotalsProp = windowConfig.showDetailFooterTotals === false
+    ? `\n        showDetailFooterTotals={false}`
+    : '';
+
   // disableProcessedLock support
   const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
 
@@ -853,6 +862,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusEnumLabelsProp = statusEnumLabelsConfig
     ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
     : '';
+
+  // labelOverrides support (per-window field label translations from decisions.json)
+  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
+  const labelOverridesConst = labelOverridesConfig
+    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
+    : '';
+  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
+  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
 
   return `import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
@@ -866,7 +883,7 @@ import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${statusBarCode}
+${labelOverridesConst}${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -927,7 +944,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -940,7 +957,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
       {...props}
     />
   );
@@ -1010,6 +1027,12 @@ const CATALOG_DATA = {
     id: `wh-${String(i + 1).padStart(3, '0')}`,
     name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
   })),
+  Currency: [
+    { id: 'USD', name: 'US Dollar', symbol: '$' },
+    { id: 'EUR', name: 'Euro', symbol: 'EUR' },
+    { id: 'GBP', name: 'Pound Sterling', symbol: 'GBP' },
+    { id: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
+  ],
   PriceList: Array.from({ length: 4 }, (_, i) => ({
     id: `pl-${String(i + 1).padStart(3, '0')}`,
     name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],
