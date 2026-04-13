@@ -1,7 +1,7 @@
 {
-  "version": "0.15.0",
-  "generatedAt": "2026-04-13T16:48:02.792Z",
-  "checksum": "5425467cb5d83dec",
+  "version": "0.16.0",
+  "generatedAt": "2026-04-13T16:54:03.058Z",
+  "checksum": "6bfb5a9c90aa4832",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -342,7 +342,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",

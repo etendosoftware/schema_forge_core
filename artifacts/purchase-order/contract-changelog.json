@@ -1212,5 +1212,15 @@
     ],
     "author": "pipeline",
     "date": "2026-04-13"
+  },
+  {
+    "from": "0.15.0",
+    "to": "0.16.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentStatus\" property \"gridOrder\" changed from \"undefined\" to \"4\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-13"
   }
 ]

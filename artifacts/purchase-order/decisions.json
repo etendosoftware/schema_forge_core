@@ -54,7 +54,8 @@
         "documentStatus": {
           "grid": true,
           "form": false,
-          "searchable": true
+          "searchable": true,
+          "gridOrder": 4
         },
         "currency": {
           "form": false,
