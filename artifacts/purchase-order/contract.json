@@ -32,12 +32,7 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-      "statusEnumLabels": {
-        "DR": "Borrador",
-        "CO": "Confirmado",
-        "CL": "Cerrado",
-        "VO": "Anulado"
-      },
+
       "noHeaderBorder": true,
       "layoutType": "default"
     },
@@ -1896,12 +1891,7 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-      "statusEnumLabels": {
-        "DR": "Borrador",
-        "CO": "Confirmado",
-        "CL": "Cerrado",
-        "VO": "Anulado"
-      },
+
       "noHeaderBorder": true
     },
     "entities": {

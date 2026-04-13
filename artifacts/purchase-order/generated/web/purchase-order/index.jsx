@@ -533,6 +533,9 @@ const api = {
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
   },
+  "window": {
+    "category": "purchases"
+  },
   "labelOverrides": {
     "es_ES": {
       "C_BPartner_ID": "Contacto",

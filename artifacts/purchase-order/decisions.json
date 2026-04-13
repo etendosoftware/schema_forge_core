@@ -6,12 +6,6 @@
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
-    "statusEnumLabels": {
-      "DR": "Borrador",
-      "CO": "Confirmado",
-      "CL": "Cerrado",
-      "VO": "Anulado"
-    },
     "customComponents": {
       "topbarRight": "PurchaseOrderActions",
       "topbarExtra": "PurchaseOrderDraftChips"
