@@ -233,6 +233,7 @@ export function DetailView({
   const [secondaryLineEditColumns, setSecondaryLineEditColumns] = useState({});
   const [savingSecondaryLine, setSavingSecondaryLine] = useState(false);
   const [isClosingSecondaryLine, setIsClosingSecondaryLine] = useState(false);
+  const [secondaryDeleteConfirm, setSecondaryDeleteConfirm] = useState(null);
 
   const extractErrorMessage = useCallback(async (res) => {
     try {
@@ -1424,6 +1425,7 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
+                          excludeFields={st.key === 'contact' ? ['active'] : []}
                         />
                         {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
                           <div className="flex gap-2 mt-4">
@@ -1481,26 +1483,11 @@ export function DetailView({
                             {(api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
                               <button
                                 disabled={savingSecondaryLine}
-                                onClick={async () => {
-                                  if (!window.confirm(ui('deleteConfirmMessage'))) return;
-                                  setSavingSecondaryLine(true);
-                                  try {
-                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
-                                    const res = await fetch(secUrl, {
-                                      method: 'DELETE',
-                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                    });
-                                    if (res.ok) {
-                                      secondaryHooks[stIdx]?.handleDeleteChild(selectedSecondaryLine.id);
-                                      toast.success('Record deleted');
-                                      closeSecondaryLine();
-                                    } else {
-                                      toast.error(await extractErrorMessage(res));
-                                    }
-                                  } catch (err) {
-                                    toast.error(err.message || 'Network error');
-                                  } finally { setSavingSecondaryLine(false); }
-                                }}
+                                onClick={() => setSecondaryDeleteConfirm({
+                                  tabKey: st.key,
+                                  tabIndex: stIdx,
+                                  id: selectedSecondaryLine.id,
+                                })}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -1734,6 +1721,50 @@ export function DetailView({
                 setShowDeleteConfirm(false);
                 await hook.handleDelete();
                 navigate(`/${windowName}`);
+              }}
+            >
+              {ui('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={Boolean(secondaryDeleteConfirm)} onOpenChange={(open) => { if (!open) setSecondaryDeleteConfirm(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription>
+              {ui('deleteConfirmMessage')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" size="sm">{ui('cancel')}</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={async () => {
+                if (!secondaryDeleteConfirm) return;
+                setSavingSecondaryLine(true);
+                try {
+                  const secUrl = `${apiBaseUrl}/${secondaryDeleteConfirm.tabKey}/${secondaryDeleteConfirm.id}`;
+                  const res = await fetch(secUrl, {
+                    method: 'DELETE',
+                    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                  });
+                  if (res.ok) {
+                    secondaryHooks[secondaryDeleteConfirm.tabIndex]?.handleDeleteChild(secondaryDeleteConfirm.id);
+                    toast.success('Record deleted');
+                    setSecondaryDeleteConfirm(null);
+                    closeSecondaryLine();
+                  } else {
+                    toast.error(await extractErrorMessage(res));
+                  }
+                } catch (err) {
+                  toast.error(err.message || 'Network error');
+                } finally {
+                  setSavingSecondaryLine(false);
+                }
               }}
             >
               {ui('delete')}
