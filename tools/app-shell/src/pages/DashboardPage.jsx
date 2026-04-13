@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { KPIHeader, KPICard } from '@/components/contract-ui/KPIHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -34,12 +34,13 @@ import {
   LineChart,
   BarChart2,
   GripVertical,
-  Maximize2,
 } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
 import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { formatAmount } from '@/lib/formatAmount';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -61,12 +62,24 @@ const WIDGET_REGISTRY = [
   { id: 'revenue-chart',        labelKey: 'revenueVsExpenses',     defaultSize: 'medium', defaultVisible: true  },
   { id: 'pending-tasks',        labelKey: 'pendingTasks',          defaultSize: 'small',  defaultVisible: true  },
   { id: 'top-clients',          labelKey: 'topClients',            defaultSize: 'small',  defaultVisible: true  },
-  // Hidden by default
-  { id: 'cashflow',             labelKey: 'cashFlow',              defaultSize: 'small',  defaultVisible: false },
-  { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: false },
-  { id: 'recent-invoices',      labelKey: 'recentInvoices',        defaultSize: 'medium', defaultVisible: false },
-  { id: 'best-products',        labelKey: 'bestProducts',          defaultSize: 'medium', defaultVisible: false },
-  { id: 'best-sellers',         labelKey: 'bestSellers',           defaultSize: 'medium', defaultVisible: false },
+  { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: true  },
+  { id: 'recent-invoices',      labelKey: 'recentInvoices',        defaultSize: 'medium', defaultVisible: true  },
+  { id: 'best-products',        labelKey: 'bestProducts',          defaultSize: 'medium', defaultVisible: true  },
+  { id: 'best-sellers',         labelKey: 'bestSellers',           defaultSize: 'medium', defaultVisible: true  },
+];
+
+const DEFAULT_WIDGET_CONFIG = [
+  { id: 'kpi-revenue', visible: true, size: 'small' },
+  { id: 'kpi-expenses', visible: true, size: 'small' },
+  { id: 'kpi-profit', visible: true, size: 'small' },
+  { id: 'quick-actions', visible: true, size: 'small' },
+  { id: 'revenue-chart', visible: true, size: 'medium' },
+  { id: 'pending-tasks', visible: true, size: 'small' },
+  { id: 'top-clients', visible: true, size: 'small' },
+  { id: 'collections-payments', visible: true, size: 'medium', height: 240 },
+  { id: 'recent-invoices', visible: true, size: 'medium', height: 240 },
+  { id: 'best-products', visible: true, size: 'medium', height: 240 },
+  { id: 'best-sellers', visible: true, size: 'medium', height: 240 },
 ];
 
 function getWidgetMeta(id) {
@@ -81,10 +94,10 @@ function resolvePendingTaskKey(task) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
   if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
-    return 'pendingShipments';
+    return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
   if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
-    return 'purchaseOrdersToConfirm';
+    return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -92,14 +105,86 @@ function resolvePendingTaskKey(task) {
   return null;
 }
 
-function resolveQuickActionLabel(ui, action) {
+function resolveQuickActionLabel(ui, tMenu, action) {
   switch (action?.to) {
-    case '/sales-invoice': return `+ ${ui('invoice')}`;
-    case '/sales-order': return `+ ${ui('order')}`;
-    case '/contacts': return `+ ${ui('contact')}`;
-    case '/product': return `+ ${ui('product')}`;
+    case '/sales-invoice': return `+ ${ui('quickActionSalesInvoice')}`;
+    case '/sales-order': return `+ ${ui('quickActionSalesOrder')}`;
+    case '/contacts': return `+ ${tMenu('Contact')}`;
+    case '/product': return `+ ${tMenu('Product')}`;
     default: return action?.label ?? '';
   }
+}
+
+function resolveQuickActionRoute(route) {
+  switch (route) {
+    case '/sales-invoice':
+    case '/sales-order':
+    case '/contacts':
+      return `${route}/new`;
+    default:
+      return route;
+  }
+}
+
+function useDashboardCurrency(token, selectedOrg) {
+  const [currencyLabel, setCurrencyLabel] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCurrency() {
+      if (!token) {
+        setCurrencyLabel('');
+        return;
+      }
+      try {
+        const headers = { Authorization: `Bearer ${token}` };
+        const endpoints = [
+          '/sws/neo/sales-invoice/header/defaults',
+          '/sws/neo/sales-order/header/defaults',
+          '/sws/neo/purchase-invoice/header/defaults',
+        ];
+
+        for (const endpoint of endpoints) {
+          const res = await fetch(endpoint, { headers });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const defaults = data?.defaults ?? {};
+          const value = defaults['currency$_identifier']
+            ?? defaults.currency$_identifier
+            ?? defaults.currencyIdentifier
+            ?? defaults.currency
+            ?? defaults.C_Currency_ID$_identifier;
+          if (value) {
+            if (!cancelled) setCurrencyLabel(String(value));
+            return;
+          }
+        }
+      } catch {
+        // Best effort only.
+      }
+      if (!cancelled) setCurrencyLabel('');
+    }
+
+    loadCurrency();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, selectedOrg?.id]);
+
+  return currencyLabel;
+}
+
+function formatDashboardAmount(value, currencyLabel) {
+  return formatAmount(value, currencyLabel);
+}
+
+function formatDashboardCompact(value, currencyLabel) {
+  const num = Number(value) || 0;
+  if (!currencyLabel) return num.toLocaleString('en-US');
+  if (Math.abs(num) >= 1_000_000) return `${formatAmount(num / 1_000_000, currencyLabel)}M`;
+  if (Math.abs(num) >= 1_000) return `${formatAmount(num / 1_000, currencyLabel)}K`;
+  return formatAmount(num, currencyLabel);
 }
 
 /* ------------------------------------------------------------------
@@ -107,49 +192,18 @@ function resolveQuickActionLabel(ui, action) {
  * ----------------------------------------------------------------*/
 
 function useWidgetConfig() {
-  const [config, setConfig] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dashboard_widget_config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const savedIds = parsed.map((c) => c.id);
-        const missing = WIDGET_REGISTRY
-          .filter((w) => !savedIds.includes(w.id))
-          .map((w) => ({ id: w.id, visible: w.defaultVisible, size: w.defaultSize }));
-        // Backfill size for items saved before size was tracked
-        const withSize = parsed.map((c) => ({
-          size: getWidgetMeta(c.id)?.defaultSize ?? 'medium',
-          ...c,
-        }));
-        // Migrate legacy size names to new ones
-        const LEGACY_SIZE_MAP = { full: 'large', wide: 'medium', half: 'medium', narrow: 'small' };
-        const migrated = withSize.map((c) => ({
-          ...c,
-          size: LEGACY_SIZE_MAP[c.size] || c.size,
-          // Normalize any previously saved arbitrary heights to nearest row step
-          ...(c.height != null ? { height: snapToRows(c.height) } : {}),
-        }));
-        return [...migrated, ...missing];
-      }
-    } catch {}
-    return WIDGET_REGISTRY.map((w) => ({ id: w.id, visible: w.defaultVisible, size: w.defaultSize }));
-  });
+  const [config, setConfig] = useState(() => DEFAULT_WIDGET_CONFIG);
+
+  useEffect(() => {
+    localStorage.removeItem('dashboard_widget_config');
+  }, []);
 
   const update = (newConfig) => {
     setConfig(newConfig);
-    localStorage.setItem('dashboard_widget_config', JSON.stringify(newConfig));
   };
 
   const toggle = (id) => {
     update(config.map((c) => c.id === id ? { ...c, visible: !c.visible } : c));
-  };
-
-  const resize = (id, size) => {
-    update(config.map((c) => c.id === id ? { ...c, size } : c));
-  };
-
-  const setHeight = (id, height) => {
-    update(config.map((c) => c.id === id ? { ...c, height } : c));
   };
 
   const moveUp = (id) => {
@@ -199,7 +253,7 @@ function useWidgetConfig() {
   };
 
   const reset = () => {
-    const defaults = WIDGET_REGISTRY.map((w) => ({ id: w.id, visible: w.defaultVisible, size: w.defaultSize }));
+    const defaults = DEFAULT_WIDGET_CONFIG;
     update(defaults);
   };
 
@@ -213,7 +267,7 @@ function useWidgetConfig() {
     update(next);
   };
 
-  return { config, toggle, moveUp, moveDown, resize, setHeight, reorder, reorderToIndex, swap, reset };
+  return { config, toggle, moveUp, moveDown, reorder, reorderToIndex, swap, reset };
 }
 
 /* ------------------------------------------------------------------
@@ -293,10 +347,10 @@ const WIDGET_PREVIEWS = {
       ))}
     </svg>
   ),
-  'pending-tasks': (ui) => (
+  'pending-tasks': (ui, tMenu) => (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingShipments', { count: 2 })], ['#3b82f6', ui('purchaseOrdersToConfirm', { count: 5 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
+      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingShipments_plural', { count: 2 })], ['#3b82f6', ui('purchaseOrdersToConfirm_plural', { count: 5 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
         <g key={i} transform={`translate(12, ${10 + i * 22})`}>
           <circle cx="6" cy="7" r="5" fill={color} opacity="0.8" />
           <rect x="18" y="3" width="110" height="7" rx="3.5" fill="#cbd5e1" />
@@ -306,10 +360,10 @@ const WIDGET_PREVIEWS = {
       ))}
     </svg>
   ),
-  'quick-actions': (ui) => (
+  'quick-actions': (ui, tMenu) => (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[`+ ${ui('invoice')}`, `+ ${ui('order')}`, `+ ${ui('contact')}`, `+ ${ui('product')}`].map((label, i) => (
+      {[`+ ${ui('quickActionSalesInvoice')}`, `+ ${ui('quickActionSalesOrder')}`, `+ ${tMenu('Contact')}`, `+ ${tMenu('Product')}`].map((label, i) => (
         <g key={i} transform={`translate(${10 + (i % 2) * 135}, ${10 + Math.floor(i / 2) * 44})`}>
           <rect width="120" height="34" rx="6" fill="white" stroke="#e2e8f0" strokeWidth="1.5" />
           <rect x="12" y="10" width="14" height="14" rx="3" fill="#e0e7ff" />
@@ -317,17 +371,6 @@ const WIDGET_PREVIEWS = {
           <text x="32" y="28" fontSize="7" fill="#64748b">{label}</text>
         </g>
       ))}
-    </svg>
-  ),
-  'cashflow': (ui) => (
-    <svg viewBox="0 0 280 100" className="w-full h-full">
-      <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      <rect x="30" y="20" width="90" height="60" rx="6" fill="#f1f5f9" />
-      <rect x="160" y="20" width="90" height="60" rx="6" fill="#f1f5f9" />
-      <rect x="46" y="35" width="58" height="30" rx="4" fill="#22c55e" opacity="0.7" />
-      <rect x="176" y="42" width="58" height="23" rx="4" fill="#ef4444" opacity="0.7" />
-      <text x="75" y="80" textAnchor="middle" fontSize="8" fill="#64748b">{ui('revenue')}</text>
-      <text x="205" y="80" textAnchor="middle" fontSize="8" fill="#64748b">{ui('expenses')}</text>
     </svg>
   ),
   'collections-payments': (
@@ -404,6 +447,7 @@ const snapToRows = (px) =>
 const TALL_DEFAULT = new Set(['pending-tasks', 'top-clients']);
 
 function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset, ui }) {
+  const tMenu = useMenuLabel();
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
 
@@ -446,7 +490,7 @@ function WidgetManagerSheet({ open, onClose, config, toggle, reorder, onReset, u
               const meta = getWidgetMeta(item.id);
               if (!meta) return null;
               const preview = WIDGET_PREVIEWS[item.id];
-              const renderedPreview = typeof preview === 'function' ? preview(ui) : preview;
+              const renderedPreview = typeof preview === 'function' ? preview(ui, tMenu) : preview;
               const isDragging = draggingId === item.id;
               const isOver = dragOverId === item.id;
 
@@ -522,14 +566,18 @@ const BAR_PAD_X = 20;
 const BAR_PAD_Y = 10;
 const BAR_PAD_BOTTOM = 28;
 
+const WIDGET_HEADER_CLASS = 'pt-4 pb-2 flex-none';
+const WIDGET_TITLE_CLASS = 'text-xs font-medium text-muted-foreground';
+
 function useCollapsed(key) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(key) === 'true');
   const toggle = () => setCollapsed((c) => { const next = !c; localStorage.setItem(key, String(next)); return next; });
   return [collapsed, toggle];
 }
 
-function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
+function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLabel = '' }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
@@ -556,8 +604,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
   });
   const hasExpenses = normalizedExpenseValues.some((v) => Math.abs(v) > 0);
 
-  const fmtTooltip = (n) =>
-    `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel);
 
   const showTooltip = (x, y, i) =>
     setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? normalizedExpenseValues[i] : null });
@@ -599,11 +646,11 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className={WIDGET_HEADER_CLASS}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer select-none" onClick={toggleCollapsed}>
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className={WIDGET_TITLE_CLASS}>
               {ui('revenueVsExpenses12m')}
             </CardTitle>
           </div>
@@ -613,11 +660,11 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    {ui('revenue')}
+                    {tMenu('Revenue')}
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-                    {ui('expenses')}
+                    {tMenu('Expenses')}
                   </span>
                 </div>
               )}
@@ -716,9 +763,9 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   <g pointerEvents="none">
                     <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
                     <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
-                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${ui('revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${tMenu('Revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
                     {hasExpenses && (
-                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${ui('expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
+                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${tMenu('Expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
                     )}
                   </g>
                 );
@@ -798,9 +845,9 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
                   <g pointerEvents="none">
                     <rect x={tipX} y={tipY} width={boxW} height={boxH} rx="4" ry="4" fill="hsl(var(--popover))" stroke="hsl(var(--border))" strokeWidth="1" />
                     <text x={tipX + boxW / 2} y={tipY + 12} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{tooltip.label}</text>
-                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${ui('revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
+                    <text x={tipX + boxW / 2} y={tipY + 12 + lineH} textAnchor="middle" fontSize="10" fontWeight="600" fill="#10b981">{`${tMenu('Revenue')}: ${fmtTooltip(tooltip.revenue)}`}</text>
                     {hasExpenses && (
-                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${ui('expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
+                      <text x={tipX + boxW / 2} y={tipY + 12 + lineH * 2} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--destructive))">{`${tMenu('Expenses')}: ${fmtTooltip(tooltip.expense)}`}</text>
                     )}
                   </g>
                 );
@@ -817,15 +864,15 @@ function RevenueChart({ labels = [], values = [], expenseValues = [] }) {
  * Top Clients
  * ----------------------------------------------------------------*/
 
-function TopClients({ clients = [] }) {
+function TopClients({ clients = [], currencyLabel = '' }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">{ui('topClients12m')}</CardTitle>
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('topClients12m')}</CardTitle>
         </div>
       </CardHeader>
       {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
@@ -842,7 +889,7 @@ function TopClients({ clients = [] }) {
                     <span className="text-sm truncate">{c.name}</span>
                   </div>
                   <span className="text-sm font-medium shrink-0 ml-2">
-                    ${Number(c.total).toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                    {formatDashboardAmount(c.total, currencyLabel)}
                   </span>
                 </div>
               </React.Fragment>
@@ -863,8 +910,8 @@ function QuickActions({ actions = [] }) {
   const tMenu = useMenuLabel();
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{ui('quickActions')}</CardTitle>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('quickActions')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="flex flex-wrap gap-2">
@@ -895,10 +942,10 @@ function PendingTasks({ tasks = [] }) {
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">{ui('pendingTasks')}</CardTitle>
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('pendingTasks')}</CardTitle>
         </div>
       </CardHeader>
       {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
@@ -956,86 +1003,29 @@ function PendingTasks({ tasks = [] }) {
 }
 
 /* ------------------------------------------------------------------
- * Cash Flow Widget
- * ----------------------------------------------------------------*/
-
-function CashFlowWidget({ kpis = [] }) {
-  const ui = useUI();
-  const revenue = kpis.find((k) => k.key === 'revenueThisMonth');
-  const expenses = kpis.find((k) => k.key === 'expensesThisMonth');
-  const profit = kpis.find((k) => k.key === 'netProfit');
-  if (!revenue || !expenses) return null;
-
-  const total = revenue.value + expenses.value || 1;
-  const revPct = Math.round((revenue.value / total) * 100);
-  const expPct = 100 - revPct;
-  const isPositive = (profit?.value ?? 0) >= 0;
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{ui('cashFlow')}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span className="text-muted-foreground">{ui('income')}</span>
-            </div>
-            <span className="font-medium">${revenue.value.toLocaleString('en-US')}</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${revPct}%` }} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-              <span className="text-muted-foreground">{ui('expenses')}</span>
-            </div>
-            <span className="font-medium">${expenses.value.toLocaleString('en-US')}</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-destructive h-2 rounded-full" style={{ width: `${expPct}%` }} />
-          </div>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground font-medium">{ui('net')}</span>
-          <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-destructive'}`}>
-            {isPositive ? '+' : ''}${(profit?.value ?? 0).toLocaleString('en-US')}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------
  * Collections & Payments Widget
  * ----------------------------------------------------------------*/
 
-function CollectionsPayments({ pendingAmounts = {} }) {
+function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 flex-none">
-        <CardTitle className="text-sm font-medium">{ui('collectionsPayments')}</CardTitle>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('collectionsPayments')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
         <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
             <div>
-              <p className="text-sm font-medium">{ui('toCollect')}</p>
+              <p className="text-sm font-medium">{tMenu('To Collect')}</p>
               <p className="text-xs text-muted-foreground">{toCollect.count !== 1 ? ui('invoicesPending', { count: toCollect.count }) : ui('invoicePending', { count: toCollect.count })}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-green-600">${toCollect.amount.toLocaleString('en-US')}</span>
+            <span className="text-sm font-semibold text-green-600">{formatDashboardAmount(toCollect.amount, currencyLabel)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1044,12 +1034,12 @@ function CollectionsPayments({ pendingAmounts = {} }) {
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
             <div>
-              <p className="text-sm font-medium">{ui('toPay')}</p>
+              <p className="text-sm font-medium">{tMenu('To Pay')}</p>
               <p className="text-xs text-muted-foreground">{toPay.count !== 1 ? ui('invoicesPending', { count: toPay.count }) : ui('invoicePending', { count: toPay.count })}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-destructive">${toPay.amount.toLocaleString('en-US')}</span>
+            <span className="text-sm font-semibold text-destructive">{formatDashboardAmount(toPay.amount, currencyLabel)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1071,16 +1061,16 @@ function fmtDate(str) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function RecentInvoices({ invoices = [] }) {
+function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-start gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
           <div>
-            <CardTitle className="text-sm font-medium">{ui('recentInvoices')}</CardTitle>
+            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('recentInvoices')}</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">{ui('recentInvoicesSubtitle')}</p>
           </div>
         </div>
@@ -1103,7 +1093,7 @@ function RecentInvoices({ invoices = [] }) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-medium">${inv.amount.toLocaleString('en-US')}</span>
+                        <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel)}</span>
                       </div>
                     </Link>
                   </React.Fragment>
@@ -1121,8 +1111,9 @@ function RecentInvoices({ invoices = [] }) {
  * Number formatter helpers
  * ----------------------------------------------------------------*/
 
-function fmtCompact(n) {
+function fmtCompact(n, currencyLabel = '') {
   const v = Number(n) || 0;
+  if (currencyLabel) return formatDashboardCompact(v, currencyLabel);
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
   return v.toLocaleString('en-US');
@@ -1132,16 +1123,17 @@ function fmtCompact(n) {
  * Best Products Widget
  * ----------------------------------------------------------------*/
 
-function BestProducts({ products = [] }) {
+function BestProducts({ products = [], currencyLabel = '' }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_products');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer select-none">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">{ui('bestProducts')}</CardTitle>
+            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestProducts')}</CardTitle>
           </div>
           <span className="text-xs text-muted-foreground">{ui('months12ByRevenue')}</span>
         </div>
@@ -1161,8 +1153,8 @@ function BestProducts({ products = [] }) {
                       <span className="text-sm truncate">{p.name}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="text-xs text-muted-foreground">{fmtCompact(p.qty)} {ui('units')}</span>
-                      <span className="text-sm font-medium">${fmtCompact(p.amount)}</span>
+                      <span className="text-xs text-muted-foreground">{fmtCompact(p.qty)} {tMenu('Units')}</span>
+                      <span className="text-sm font-medium">{fmtCompact(p.amount, currencyLabel)}</span>
                     </div>
                   </div>
                 </React.Fragment>
@@ -1181,14 +1173,15 @@ function BestProducts({ products = [] }) {
 
 function BestSellers({ sellers = [] }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">{ui('bestSellers')}</CardTitle>
+            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers')}</CardTitle>
           </div>
           <span className="text-xs text-muted-foreground">{ui('months12ByQty')}</span>
         </div>
@@ -1201,8 +1194,8 @@ function BestSellers({ sellers = [] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{ui('productName')}</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">{ui('qty')}</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Product Name')}</th>
+                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Qty')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1290,26 +1283,22 @@ function DashboardSkeleton() {
 
 export default function DashboardPage() {
   const ui = useUI();
+  const tMenu = useMenuLabel();
+  const { token, selectedOrg } = useAuth();
   const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
   const [dashDragOverId, setDashDragOverId] = useState(null);
-  const [resizingId, setResizingId] = useState(null);
-  const [resizePreviewSize, setResizePreviewSize] = useState(null);
-  const [resizingHeightId, setResizingHeightId] = useState(null);
-  const [resizeHeightPreview, setResizeHeightPreview] = useState(null);
   const gridRef = useRef(null);
-  const resizePreviewRef = useRef(null);
-  const resizeHeightRef = useRef(null);
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
-  const { config, toggle, resize, setHeight, reorder, reset } = useWidgetConfig();
-  const tMenu = useMenuLabel();
+  const { config, toggle, reorder, reset } = useWidgetConfig();
+  const dashboardCurrency = useDashboardCurrency(token, selectedOrg);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = actions.map((a) => ({
-    label: resolveQuickActionLabel(ui, { label: a.label, to: a.route }),
-    to: a.route,
+    label: resolveQuickActionLabel(ui, tMenu, { label: a.label, to: a.route }),
+    to: resolveQuickActionRoute(a.route),
     icon: ICON_MAP[a.icon] || FileText,
   }));
 
@@ -1337,14 +1326,13 @@ export default function DashboardPage() {
       case 'kpi-revenue':          return kpiWidget('revenueThisMonth');
       case 'kpi-expenses':         return kpiWidget('expensesThisMonth');
       case 'kpi-profit':           return kpiWidget('netProfit');
-      case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} />;
-      case 'top-clients':          return <TopClients key={id} clients={topClients} />;
+      case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} currencyLabel={dashboardCurrency} />;
+      case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} />;
       case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} />;
       case 'quick-actions':        return <QuickActions key={id} actions={quickActions} />;
-      case 'cashflow':             return <CashFlowWidget key={id} kpis={kpis} />;
-      case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} />;
-      case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} />;
-      case 'best-products':        return <BestProducts key={id} products={bestProducts} />;
+      case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />;
+      case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} currencyLabel={dashboardCurrency} />;
+      case 'best-products':        return <BestProducts key={id} products={bestProducts} currencyLabel={dashboardCurrency} />;
       case 'best-sellers':         return <BestSellers key={id} sellers={bestSellers} />;
       default: return null;
     }
@@ -1357,6 +1345,11 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <h1 className="text-xl font-bold text-foreground">{ui('dashboardTitle')}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {dashboardCurrency
+                ? `${ui('dashboardCurrencyContext')}: ${dashboardCurrency}`
+                : ui('dashboardCurrencyUnavailable')}
+            </p>
           </div>
           <div className="flex-1 flex justify-center">
             <div className="relative w-full max-w-md">
@@ -1379,9 +1372,11 @@ export default function DashboardPage() {
               <Sparkles className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setWidgetManagerOpen(true)}
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-              title={ui('customizeDashboard')}
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground/40 cursor-not-allowed transition-colors"
+              title={`${ui('customizeDashboard')} (${ui('comingSoon')})`}
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
@@ -1401,111 +1396,18 @@ export default function DashboardPage() {
       {loading ? <DashboardSkeleton /> : (
         <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto">
           {visibleItems.length > 0 && (() => {
-            // During resize, use the preview size for the widget being resized
-            const getSize = (item) =>
-              (resizingId === item.id && resizePreviewSize) ? resizePreviewSize
-              : item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
+            const getSize = (item) => item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
             const getColSpan = (item) => SIZE_COLS[getSize(item)] ?? 1;
             const getHeight = (item) => {
-              if (resizingHeightId === item.id && resizeHeightPreview != null) return resizeHeightPreview;
               if (item.height != null) return item.height;
               if (item.id === 'revenue-chart') return null;
               // pending-tasks and top-clients default to 4 rows, all others to 2
               return TALL_DEFAULT.has(item.id) ? ROW_STEP * 4 : ROW_STEP * MIN_ROWS;
             };
 
-            const SPAN_TO_SIZE = { 1: 'small', 2: 'medium', 3: 'wide', 4: 'large' };
-            const GAP = 24; // gap-6 = 1.5rem = 24px (default base font)
-            const COLS = 4;
-
-            const startHeightResize = (e, item) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const startY = e.clientY;
-              const wrapperEl = e.currentTarget.closest('[data-widget-id]');
-              const initialHeight = wrapperEl
-                ? snapToRows(wrapperEl.getBoundingClientRect().height)
-                : ROW_STEP * MIN_ROWS;
-              resizeHeightRef.current = initialHeight;
-              setResizingHeightId(item.id);
-              setResizeHeightPreview(initialHeight);
-              document.body.style.cursor = 'ns-resize';
-              document.body.style.userSelect = 'none';
-
-              const onMouseMove = (moveE) => {
-                const deltaY = moveE.clientY - startY;
-                // Bidirectional snap to nearest row step
-                const newH = snapToRows(initialHeight + deltaY);
-                if (newH !== resizeHeightRef.current) {
-                  resizeHeightRef.current = newH;
-                  setResizeHeightPreview(newH);
-                }
-              };
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-                setHeight(item.id, resizeHeightRef.current ?? initialHeight);
-                resizeHeightRef.current = null;
-                setResizingHeightId(null);
-                setResizeHeightPreview(null);
-              };
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            };
-
-            const startResize = (e, item) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const startX = e.clientX;
-              const initialSize = getSize(item);
-              const initialCols = SIZE_COLS[initialSize] ?? 1;
-              resizePreviewRef.current = initialSize;
-              setResizingId(item.id);
-              setResizePreviewSize(initialSize);
-              document.body.style.cursor = 'ew-resize';
-              document.body.style.userSelect = 'none';
-
-              const onMouseMove = (moveE) => {
-                const gridWidth = gridRef.current?.clientWidth ?? 800;
-                const colWidth = (gridWidth - (COLS - 1) * GAP) / COLS;
-                const deltaX = moveE.clientX - startX;
-                const newWidthPx = initialCols * colWidth + deltaX;
-                // Snap to nearest valid span (1, 2, 3, 4)
-                let nearest = 1;
-                let minDist = Infinity;
-                for (const span of [1, 2, 3, 4]) {
-                  const dist = Math.abs(span * colWidth - newWidthPx);
-                  if (dist < minDist) { minDist = dist; nearest = span; }
-                }
-                const newSize = SPAN_TO_SIZE[nearest] || 'medium';
-                if (newSize !== resizePreviewRef.current) {
-                  resizePreviewRef.current = newSize;
-                  setResizePreviewSize(newSize);
-                }
-              };
-
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-                resize(item.id, resizePreviewRef.current ?? initialSize);
-                resizePreviewRef.current = null;
-                setResizingId(null);
-                setResizePreviewSize(null);
-              };
-
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            };
-
             const makeDraggable = (item, children) => {
               const isDragging = dashDraggingId === item.id;
               const isTarget   = dashDragOverId === item.id && dashDraggingId && dashDraggingId !== item.id;
-              const isResizing = resizingId === item.id;
-              const isResizingH = resizingHeightId === item.id;
               const h = getHeight(item);
 
               return (
@@ -1514,7 +1416,7 @@ export default function DashboardPage() {
                   data-widget-id={item.id}
                   className={`relative group transition-all duration-150 ${isDragging ? 'opacity-40' : 'opacity-100'} ${h ? 'overflow-hidden [&>:last-child]:h-full [&>:last-child>*]:h-full' : ''}`}
                   style={h ? { height: h + 'px' } : undefined}
-                  draggable={!isResizing && !isResizingH}
+                  draggable
                   onDragStart={(e) => {
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', item.id);
@@ -1540,9 +1442,6 @@ export default function DashboardPage() {
                     <div className="absolute inset-0 rounded-xl border-2 border-dashed border-primary bg-primary/5 z-10 pointer-events-none" />
                   )}
                   {/* Resize outline while resizing width or height */}
-                  {(isResizing || isResizingH) && (
-                    <div className="absolute inset-0 rounded-xl border-2 border-primary ring-2 ring-primary/20 z-10 pointer-events-none" />
-                  )}
                   {/* Drag handle tooltip */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     <div className="flex items-center gap-1 bg-background border rounded-b-lg px-2 py-0.5 shadow-sm">
@@ -1550,34 +1449,6 @@ export default function DashboardPage() {
                       <span className="text-[10px] text-muted-foreground select-none">{ui('dragToReorder')}</span>
                     </div>
                   </div>
-                  {/* Width resize handle — bottom-right corner */}
-                  <div
-                    className="absolute bottom-1 right-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 cursor-ew-resize flex items-center justify-center rounded hover:bg-muted"
-                    title="Drag to resize width"
-                    onMouseDown={(e) => startResize(e, item)}
-                  >
-                    <Maximize2 className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                  {/* Row count badge — visible while resizing height */}
-                  {isResizingH && h && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-primary text-primary-foreground text-xs font-medium px-2 py-0.5 rounded-full shadow pointer-events-none">
-                      {Math.round(h / ROW_STEP)} rows
-                    </div>
-                  )}
-                  {/* Height resize handle — bottom-center (all widgets except revenue-chart) */}
-                  {item.id !== 'revenue-chart' && (
-                    <div
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-0.5 cursor-ns-resize flex items-center justify-center"
-                      title="Drag to resize height"
-                      onMouseDown={(e) => startHeightResize(e, item)}
-                    >
-                      <div className="flex gap-0.5">
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                      </div>
-                    </div>
-                  )}
                   <div className={dashDraggingId ? 'pointer-events-none' : ''}>{children}</div>
                 </div>
               );
