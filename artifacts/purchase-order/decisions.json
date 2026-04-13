@@ -49,14 +49,12 @@
           "searchable": true,
           "form": true,
           "section": "principal",
-          "order": 2,
-          "gridOrder": 2
+          "order": 2
         },
         "documentStatus": {
           "grid": true,
           "form": false,
-          "searchable": true,
-          "gridOrder": 4
+          "searchable": true
         },
         "currency": {
           "form": false,
@@ -69,8 +67,7 @@
           "searchable": true,
           "section": "principal",
           "form": true,
-          "order": 3,
-          "gridOrder": 3
+          "order": 3
         },
         "businessPartner": {
           "grid": true,
@@ -79,8 +76,7 @@
           "section": "principal",
           "displayLogic": null,
           "form": true,
-          "order": 1,
-          "gridOrder": 1
+          "order": 1
         },
         "partnerAddress": {
           "visibility": "readOnly",
