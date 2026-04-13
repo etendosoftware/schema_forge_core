@@ -9,8 +9,16 @@
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
     "menuActions": [
-      { "key": "duplicate", "label": "Duplicate" },
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "duplicate",
+        "label": "Duplicate"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "processOverrides": {},
     "customComponents": {
@@ -22,21 +30,30 @@
       "CO": "Completado",
       "CL": "Cerrado",
       "VO": "Anulado"
-    }
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact"
+      }
+    },
+    "noHeaderBorder": true
   },
   "entities": {
     "header": {
       "javaQualifier": "salesOrderHeaderHandler",
       "draftMode": {
-        "enabled": true,
-        "label": "Confirmar"
+        "enabled": false
       },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 2
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -86,7 +103,8 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "displayLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 1
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -138,10 +156,14 @@
         "ndDimension": {
           "visibility": "discarded"
         },
+        "cashVAT": {
+          "visibility": "discarded"
+        },
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 3
         },
         "scheduledDeliveryDate": {
           "displayLogic": null,
@@ -460,8 +482,7 @@
         "product": {
           "grid": true
         },
-        "attributeSetValue": {
-        }
+        "attributeSetValue": {}
       },
       "exclude": true
     },

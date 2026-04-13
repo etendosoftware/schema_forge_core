@@ -115,7 +115,7 @@
         "processed": {
           "visibility": "system"
         },
-        "payment": {
+        "id": {
           "visibility": "system"
         },
         "active": {
@@ -197,7 +197,7 @@
         "client": {
           "visibility": "system"
         },
-        "fINPaymentScheduledetailID": {
+        "id": {
           "visibility": "system"
         },
         "writeoffAmount": {

@@ -1,7 +1,2715 @@
 {
-  "version": "0.10.1",
-  "generatedAt": "2026-04-09T00:16:55.235Z",
-  "checksum": "792d5d94a5b007ad",
+  "version": {
+    "schema": {
+      "version": "0.1.0",
+      "window": {
+        "id": "6CB5B67ED33F47DFA334079D3EA2340E",
+        "name": "Sales Quotation",
+        "primaryEntity": "quotation",
+        "category": "sales",
+        "notesField": "description",
+        "relatedDocuments": true,
+        "hideDeleteWhenComplete": true,
+        "hidePrint": true,
+        "customComponents": {
+          "topbarRight": "QuotationTopbarActions"
+        },
+        "menuActions": [
+          {
+            "key": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "key": "cancel",
+            "label": "Cancel",
+            "destructive": true,
+            "visibleWhenStatus": "CO"
+          }
+        ],
+        "processOverrides": {
+          "Complete": {
+            "exclude": true
+          },
+          "Convert to Order": {
+            "exclude": true
+          },
+          "Void": {
+            "label": "Void",
+            "style": "destructive",
+            "displayLogicRaw": "@documentStatus@='CO'"
+          },
+          "Reactivate": {
+            "label": "Reactivate",
+            "displayLogicRaw": "@documentStatus@='VO'"
+          }
+        },
+        "salesTheme": true,
+        "labelOverrides": {
+          "es_ES": {
+            "C_BPartner_ID": "Contacto"
+          },
+          "en_US": {
+            "C_BPartner_ID": "Contact"
+          }
+        },
+        "noHeaderBorder": true
+      },
+      "entities": [
+        {
+          "name": "quotation",
+          "tableName": "C_Order",
+          "tabId": "F87F1EB7EB404F1F916EBAFAD1A0A334",
+          "tabName": "Header",
+          "fields": [
+            {
+              "name": "organization",
+              "column": "AD_Org_ID",
+              "label": "Organization",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.organization"
+              },
+              "defaultValue": "@#AD_Org_ID@"
+            },
+            {
+              "name": "transactionDocument",
+              "column": "C_DocTypeTarget_ID",
+              "label": "Transaction Document",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "doctype.salesOrder"
+              }
+            },
+            {
+              "name": "cReturnReasonID",
+              "column": "C_Return_Reason_ID",
+              "label": "C_Return_Reason_ID",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "documentNo",
+              "column": "DocumentNo",
+              "label": "Document No.",
+              "type": "string",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": true,
+              "section": "principal",
+              "seq": 2,
+              "derivation": {
+                "type": "sequence",
+                "source": "documentType.sequence"
+              },
+              "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'"
+            },
+            {
+              "name": "orderDate",
+              "column": "DateOrdered",
+              "label": "Quotation Date",
+              "type": "date",
+              "visibility": "editable",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": true,
+              "section": "principal",
+              "seq": 3,
+              "derivation": {
+                "type": "computed",
+                "source": "@#Date@"
+              },
+              "defaultValue": "@#Date@",
+              "readOnlyLogic": "@Processed@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
+            },
+            {
+              "name": "businessPartner",
+              "column": "C_BPartner_ID",
+              "label": "Business Partner",
+              "type": "foreignKey",
+              "visibility": "editable",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": true,
+              "section": "principal",
+              "seq": 1,
+              "reference": "BusinessPartner",
+              "inputMode": "search",
+              "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
+            },
+            {
+              "name": "rMPickFromShipment",
+              "column": "RM_PickFromShipment",
+              "label": "RM_PickFromShipment",
+              "type": "button",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "partnerAddress",
+              "column": "C_BPartner_Location_ID",
+              "label": "Partner Address",
+              "type": "foreignKey",
+              "visibility": "editable",
+              "required": true,
+              "grid": false,
+              "form": true,
+              "searchable": false,
+              "section": "principal",
+              "reference": "BusinessPartnerLocation",
+              "inputMode": "dependent",
+              "dependsOn": {
+                "field": "businessPartner",
+                "filterKey": "C_BPartner_ID"
+              },
+              "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartnerLocation"
+            },
+            {
+              "name": "priceList",
+              "column": "M_PriceList_ID",
+              "label": "Price List",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "rMReceiveMaterials",
+              "column": "RM_ReceiveMaterials",
+              "label": "RM_ReceiveMaterials",
+              "type": "button",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "scheduledDeliveryDate",
+              "column": "DatePromised",
+              "label": "Scheduled Delivery Date",
+              "type": "date",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "@#Date@"
+              },
+              "defaultValue": "@#Date@"
+            },
+            {
+              "name": "validUntil",
+              "column": "validuntil",
+              "label": "Valid Until",
+              "type": "date",
+              "visibility": "editable",
+              "required": false,
+              "grid": true,
+              "form": true,
+              "searchable": true,
+              "section": "principal"
+            },
+            {
+              "name": "rMCreateInvoice",
+              "column": "RM_CreateInvoice",
+              "label": "Create Invoice",
+              "type": "button",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "FF80808133362F6A013336781FCE0066",
+              "processType": "classic"
+            },
+            {
+              "name": "paymentMethod",
+              "column": "FIN_Paymentmethod_ID",
+              "label": "Payment Method",
+              "type": "foreignKey",
+              "visibility": "editable",
+              "required": false,
+              "grid": false,
+              "form": true,
+              "searchable": false,
+              "section": "collapsed",
+              "reference": "Paymentmethod",
+              "inputMode": "selector",
+              "readOnlyLogic": "@Processed@='Y'"
+            },
+            {
+              "name": "paymentTerms",
+              "column": "C_PaymentTerm_ID",
+              "label": "Payment Terms",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "warehouse",
+              "column": "M_Warehouse_ID",
+              "label": "Warehouse",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "rejectReason",
+              "column": "C_Reject_Reason_ID",
+              "label": "Reject Reason",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "invoiceTerms",
+              "column": "InvoiceRule",
+              "label": "Invoice Terms",
+              "type": "enum",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "D"
+              },
+              "defaultValue": "D",
+              "enumValues": [
+                {
+                  "value": "D",
+                  "name": "After Delivery"
+                },
+                {
+                  "value": "O",
+                  "name": "After Order Delivered"
+                },
+                {
+                  "value": "S",
+                  "name": "Customer Schedule After Delivery"
+                },
+                {
+                  "value": "N",
+                  "name": "Do Not Invoice"
+                },
+                {
+                  "value": "I",
+                  "name": "Immediate"
+                }
+              ]
+            },
+            {
+              "name": "documentStatus",
+              "column": "DocStatus",
+              "label": "Document Status",
+              "type": "enum",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": true,
+              "form": false,
+              "searchable": true,
+              "display": "dot",
+              "derivation": {
+                "type": "computed",
+                "source": "DR"
+              },
+              "defaultValue": "DR",
+              "enumValues": [
+                {
+                  "value": "AE",
+                  "name": "Automatic Evaluation"
+                },
+                {
+                  "value": "CO",
+                  "name": "Booked"
+                },
+                {
+                  "value": "CL",
+                  "name": "Closed"
+                },
+                {
+                  "value": "CA",
+                  "name": "Closed - Order Created"
+                },
+                {
+                  "value": "CJ",
+                  "name": "Closed - Rejected"
+                },
+                {
+                  "value": "DR",
+                  "name": "Draft"
+                },
+                {
+                  "value": "ME",
+                  "name": "Manual Evaluation"
+                },
+                {
+                  "value": "NA",
+                  "name": "Not Accepted"
+                },
+                {
+                  "value": "NC",
+                  "name": "Not Confirmed"
+                },
+                {
+                  "value": "WP",
+                  "name": "Not Paid"
+                },
+                {
+                  "value": "RE",
+                  "name": "Re-Opened"
+                },
+                {
+                  "value": "TMP",
+                  "name": "Temporal"
+                },
+                {
+                  "value": "UE",
+                  "name": "Under Evaluation"
+                },
+                {
+                  "value": "IP",
+                  "name": "Under Way"
+                },
+                {
+                  "value": "??",
+                  "name": "Unknown"
+                },
+                {
+                  "value": "VO",
+                  "name": "Voided"
+                }
+              ]
+            },
+            {
+              "name": "grandTotalAmount",
+              "column": "GrandTotal",
+              "label": "Total Gross Amount",
+              "type": "amount",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": false,
+              "section": "summary"
+            },
+            {
+              "name": "summedLineAmount",
+              "column": "TotalLines",
+              "label": "Total Net Amount",
+              "type": "amount",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": false,
+              "form": true,
+              "searchable": false,
+              "section": "summary"
+            },
+            {
+              "name": "currency",
+              "column": "C_Currency_ID",
+              "label": "Currency",
+              "type": "foreignKey",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "section": "summary",
+              "reference": "Currency",
+              "inputMode": "selector",
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.cCurrencyId"
+              },
+              "defaultValue": "@C_Currency_ID@"
+            },
+            {
+              "name": "userContact",
+              "column": "AD_User_ID",
+              "label": "User/Contact",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "documentType",
+              "column": "C_DocType_ID",
+              "label": "Document Type",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "doctype.salesOrder"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "orderReference",
+              "column": "POReference",
+              "label": "Order Reference",
+              "type": "string",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "salesRepresentative",
+              "column": "SalesRep_ID",
+              "label": "Sales Representative",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "description",
+              "column": "Description",
+              "label": "Description",
+              "type": "text",
+              "visibility": "editable",
+              "required": false,
+              "grid": false,
+              "form": true,
+              "searchable": false,
+              "section": "collapsed"
+            },
+            {
+              "name": "invoiceAddress",
+              "column": "BillTo_ID",
+              "label": "Invoice Address",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "deliveryLocation",
+              "column": "Delivery_Location_ID",
+              "label": "Delivery Location",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "copyFrom",
+              "column": "CopyFrom",
+              "label": "Copy Lines",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "211",
+              "processType": "classic"
+            },
+            {
+              "name": "copyFromPO",
+              "column": "CopyFromPO",
+              "label": "Copy from Orders",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "8B81D80B06364566B87853FEECAB5DE0",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "documentAction",
+              "column": "DocAction",
+              "label": "Process Order",
+              "type": "button",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "CO"
+              },
+              "defaultValue": "CO",
+              "processId": "104",
+              "processType": "classic"
+            },
+            {
+              "name": "deliveryMethod",
+              "column": "DeliveryViaRule",
+              "label": "Delivery Method",
+              "type": "enum",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "P"
+              },
+              "defaultValue": "P",
+              "enumValues": [
+                {
+                  "value": "D",
+                  "name": "Delivery"
+                },
+                {
+                  "value": "P",
+                  "name": "Pickup"
+                },
+                {
+                  "value": "S",
+                  "name": "Shipper"
+                }
+              ]
+            },
+            {
+              "name": "shippingCompany",
+              "column": "M_Shipper_ID",
+              "label": "Shipping Company",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "deliveryTerms",
+              "column": "DeliveryRule",
+              "label": "Delivery Terms",
+              "type": "enum",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "A"
+              },
+              "defaultValue": "A",
+              "enumValues": [
+                {
+                  "value": "R",
+                  "name": "After Receipt"
+                },
+                {
+                  "value": "A",
+                  "name": "Availability"
+                },
+                {
+                  "value": "L",
+                  "name": "Complete Line"
+                },
+                {
+                  "value": "O",
+                  "name": "Complete Order"
+                }
+              ]
+            },
+            {
+              "name": "freightCostRule",
+              "column": "FreightCostRule",
+              "label": "Freight Cost Rule",
+              "type": "enum",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "I"
+              },
+              "defaultValue": "I",
+              "enumValues": [
+                {
+                  "value": "C",
+                  "name": "Calculated"
+                },
+                {
+                  "value": "I",
+                  "name": "Freight included"
+                }
+              ]
+            },
+            {
+              "name": "freightAmount",
+              "column": "FreightAmt",
+              "label": "Freight Amount",
+              "type": "amount",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "printDiscount",
+              "column": "IsDiscountPrinted",
+              "label": "Print Discount",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "priority",
+              "column": "PriorityRule",
+              "label": "Priority",
+              "type": "enum",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "5"
+              },
+              "defaultValue": "5",
+              "enumValues": [
+                {
+                  "value": "3",
+                  "name": "High"
+                },
+                {
+                  "value": "7",
+                  "name": "Low"
+                },
+                {
+                  "value": "5",
+                  "name": "Medium"
+                }
+              ]
+            },
+            {
+              "name": "chargeAmount",
+              "column": "ChargeAmt",
+              "label": "Charge Amount",
+              "type": "amount",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "charge",
+              "column": "C_Charge_ID",
+              "label": "Charge",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "cashVAT",
+              "column": "Iscashvat",
+              "label": "Cash VAT",
+              "type": "boolean",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N"
+            },
+            {
+              "name": "createOrder",
+              "column": "Convertquotation",
+              "label": "Create Order",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "A3FE1F9892394386A49FB707AA50A0FA",
+              "processType": "classic"
+            },
+            {
+              "name": "calculatePromotions",
+              "column": "Calculate_Promotions",
+              "label": "Calculate Promotions",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
+              "processType": "classic"
+            },
+            {
+              "name": "project",
+              "column": "C_Project_ID",
+              "label": "Project",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "activity",
+              "column": "C_Activity_ID",
+              "label": "Activity",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "salesCampaign",
+              "column": "C_Campaign_ID",
+              "label": "Sales Campaign",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "trxOrganization",
+              "column": "AD_OrgTrx_ID",
+              "label": "Trx Organization",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "stDimension",
+              "column": "User1_ID",
+              "label": "1st Dimension",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "ndDimension",
+              "column": "User2_ID",
+              "label": "2nd Dimension",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "generateTemplate",
+              "column": "Generatetemplate",
+              "label": "Copy Product Template",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "800022",
+              "processType": "classic"
+            },
+            {
+              "name": "accountingDate",
+              "column": "DateAcct",
+              "label": "Accounting Date",
+              "type": "date",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "@#Date@"
+              },
+              "defaultValue": "@#Date@"
+            },
+            {
+              "name": "print",
+              "column": "IsPrinted",
+              "label": "Print",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "deliveryNotes",
+              "column": "Deliverynotes",
+              "label": "Delivery notes",
+              "type": "text",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "salesTransaction",
+              "column": "IsSOTrx",
+              "label": "Sales Transaction",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.isSotrx"
+              },
+              "defaultValue": "@IsSOTrx@"
+            },
+            {
+              "name": "reinvoice",
+              "column": "IsInvoiced",
+              "label": "Re-invoice",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "selfService",
+              "column": "IsSelfService",
+              "label": "Self-Service",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "processNow",
+              "column": "Processing",
+              "label": "Process Order",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "false"
+              },
+              "processId": "104",
+              "processType": "classic"
+            },
+            {
+              "name": "dropShipLocation",
+              "column": "DropShip_Location_ID",
+              "label": "Drop Ship Location",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "formOfPayment",
+              "column": "PaymentRule",
+              "label": "Form of Payment",
+              "type": "enum",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "B"
+              },
+              "defaultValue": "B",
+              "enumValues": [
+                {
+                  "value": "5",
+                  "name": "Bank Deposit"
+                },
+                {
+                  "value": "R",
+                  "name": "Bank Remittance"
+                },
+                {
+                  "value": "B",
+                  "name": "Cash"
+                },
+                {
+                  "value": "C",
+                  "name": "Cash on Delivery"
+                },
+                {
+                  "value": "2",
+                  "name": "Check"
+                },
+                {
+                  "value": "SDFP_Cheque bancario",
+                  "name": "Cheque bancario"
+                },
+                {
+                  "value": "SDFP_Cheque conformado",
+                  "name": "Cheque conformado"
+                },
+                {
+                  "value": "SDFP_Compensación",
+                  "name": "Compensación"
+                },
+                {
+                  "value": "SDFP_Contrato Adjudicación",
+                  "name": "Contrato Adjudicación"
+                },
+                {
+                  "value": "K",
+                  "name": "Credit Card"
+                },
+                {
+                  "value": "SDFP_Crédito Documentario",
+                  "name": "Crédito Documentario"
+                },
+                {
+                  "value": "SDFP_Especiales",
+                  "name": "Especiales"
+                },
+                {
+                  "value": "SDFP_Giro postal",
+                  "name": "Giro postal"
+                },
+                {
+                  "value": "SDFP_Letra Aceptada",
+                  "name": "Letra Aceptada"
+                },
+                {
+                  "value": "SDFP_Letra de cambio",
+                  "name": "Letra de cambio"
+                },
+                {
+                  "value": "4",
+                  "name": "Money Order"
+                },
+                {
+                  "value": "P",
+                  "name": "On Credit"
+                },
+                {
+                  "value": "SDFP_Pagaré a la orden",
+                  "name": "Pagaré a la orden"
+                },
+                {
+                  "value": "SDFP_Pagaré No a la orden",
+                  "name": "Pagaré No a la orden"
+                },
+                {
+                  "value": "3",
+                  "name": "Promissory Note"
+                },
+                {
+                  "value": "SDFP_Recibo",
+                  "name": "Recibo"
+                },
+                {
+                  "value": "SDFP_Recibo domiciliado",
+                  "name": "Recibo domiciliado"
+                },
+                {
+                  "value": "SDFP_Reposición",
+                  "name": "Reposición"
+                },
+                {
+                  "value": "1",
+                  "name": "Wire Transfer"
+                },
+                {
+                  "value": "W",
+                  "name": "Withholding"
+                }
+              ]
+            },
+            {
+              "name": "processed",
+              "column": "Processed",
+              "label": "Processed",
+              "type": "boolean",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "false"
+              }
+            },
+            {
+              "name": "client",
+              "column": "AD_Client_ID",
+              "label": "Client",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.client"
+              },
+              "defaultValue": "@AD_CLIENT_ID@"
+            },
+            {
+              "name": "dropShipContact",
+              "column": "DropShip_User_ID",
+              "label": "Drop Ship Contact",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "priceIncludesTax",
+              "column": "IsTaxIncluded",
+              "label": "Price includes Tax",
+              "type": "boolean",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "selected",
+              "column": "IsSelected",
+              "label": "Selected",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "dropShipPartner",
+              "column": "DropShip_BPartner_ID",
+              "label": "Drop Ship Partner",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "active",
+              "column": "IsActive",
+              "label": "Active",
+              "type": "boolean",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "true"
+              }
+            },
+            {
+              "name": "iNCOTERMSDescription",
+              "column": "Incotermsdescription",
+              "label": "INCOTERMS description",
+              "type": "text",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "delivered",
+              "column": "IsDelivered",
+              "label": "Delivered",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "posted",
+              "column": "Posted",
+              "label": "Posted",
+              "type": "button",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "'N'"
+              },
+              "defaultValue": "N",
+              "processId": "57496FB9CF9E4E8F847224017941570E",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "id",
+              "column": "C_Order_ID",
+              "label": "Sales Order",
+              "type": "id",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "sequence"
+              }
+            },
+            {
+              "name": "incoterms",
+              "column": "C_Incoterms_ID",
+              "label": "Incoterms",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "datePrinted",
+              "column": "DatePrinted",
+              "label": "Date printed",
+              "type": "date",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "asset",
+              "column": "A_Asset_ID",
+              "label": "A_Asset_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "externalBusinessPartnerReference",
+              "column": "BPartner_ExtRef",
+              "label": "BPartner_ExtRef",
+              "type": "string",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "cancelandreplace",
+              "column": "Cancelandreplace",
+              "label": "Cancelandreplace",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "A2FAF49712D1445ABE750315CE1B473A",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "cancelledorder",
+              "column": "Cancelledorder_id",
+              "label": "Cancelledorder_id",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "costcenter",
+              "column": "C_Costcenter_ID",
+              "label": "C_Costcenter_ID",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "confirmcancelandreplace",
+              "column": "Confirmcancelandreplace",
+              "label": "Confirmcancelandreplace",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "creationDate",
+              "column": "Created",
+              "label": "Created",
+              "type": "dateTime",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "new Date()"
+              }
+            },
+            {
+              "name": "createdBy",
+              "column": "CreatedBy",
+              "label": "CreatedBy",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.user"
+              }
+            },
+            {
+              "name": "createPOLines",
+              "column": "Create_POLines",
+              "label": "Create_POLines",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N",
+              "processId": "6995A4C2592D434A9E16B71E1694CBCA",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "deliveryStatus",
+              "column": "DeliveryStatus",
+              "label": "DeliveryStatus",
+              "type": "integer",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "deliveryStatusPurchase",
+              "column": "DeliveryStatusPurchase",
+              "label": "DeliveryStatusPurchase",
+              "type": "integer",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "aeatsiiDescripcionSii",
+              "column": "EM_Aeatsii_Descripcion_Sii",
+              "label": "EM_Aeatsii_Descripcion_Sii",
+              "type": "text",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "aeatsiiFechaOperacion",
+              "column": "EM_Aeatsii_Fecha_Operacion",
+              "label": "EM_Aeatsii_Fecha_Operacion",
+              "type": "date",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "aPRMAddPayment",
+              "column": "EM_APRM_AddPayment",
+              "label": "EM_APRM_AddPayment",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "9BED7889E1034FE68BD85D5D16857320",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "etvfacReversedInvoice",
+              "column": "EM_Etvfac_Reversed_Invoice",
+              "label": "EM_Etvfac_Reversed_Invoice",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "fINPaymentPriorityID",
+              "column": "FIN_Payment_Priority_ID",
+              "label": "FIN_Payment_Priority_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "lookup",
+                "source": "SELECT FIN_Payment_Priority_ID FROM FIN_Payment_Priority WHERE AD_ISORGINCLUDED( (CASE WHEN @#AD_Org_ID@='0' THEN (SELECT ad_org_id FROM ad_org WHERE name = ( SELECT min(o.name) FROM ad_org o join ad_orgtype ot on (o.ad_orgtype_id=ot.ad_orgtype_id) join ad_role_orgaccess ra on (o.ad_org_id=ra.ad_org_id) join ad_role r on (ra.ad_role_id = r.ad_role_id) WHERE ot.istransactionsallowed = 'Y' and r.ad_role_id=@AD_Role_ID@)) ELSE @#AD_Org_ID@ END), AD_Org_ID, @#AD_Client_ID@) <> -1 AND Isdefault = 'Y' ORDER BY Priority"
+              },
+              "defaultValue": "@SQL=SELECT FIN_Payment_Priority_ID FROM FIN_Payment_Priority WHERE AD_ISORGINCLUDED( (CASE WHEN @#AD_Org_ID@='0' THEN (SELECT ad_org_id FROM ad_org WHERE name = ( SELECT min(o.name) FROM ad_org o join ad_orgtype ot on (o.ad_orgtype_id=ot.ad_orgtype_id) join ad_role_orgaccess ra on (o.ad_org_id=ra.ad_org_id) join ad_role r on (ra.ad_role_id = r.ad_role_id) WHERE ot.istransactionsallowed = 'Y' and r.ad_role_id=@AD_Role_ID@)) ELSE @#AD_Org_ID@ END), AD_Org_ID, @#AD_Client_ID@) <> -1 AND Isdefault = 'Y' ORDER BY Priority"
+            },
+            {
+              "name": "invoiceStatus",
+              "column": "InvoiceStatus",
+              "label": "InvoiceStatus",
+              "type": "integer",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "iscancelled",
+              "column": "Iscancelled",
+              "label": "Iscancelled",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N"
+            },
+            {
+              "name": "paymentStatus",
+              "column": "PaymentStatus",
+              "label": "PaymentStatus",
+              "type": "integer",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "quotation",
+              "column": "Quotation_ID",
+              "label": "Quotation_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "replacedorder",
+              "column": "Replacedorder_id",
+              "label": "Replacedorder_id",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "replacementorderID",
+              "column": "Replacementorder_ID",
+              "label": "Replacementorder_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "rMAddOrphanLine",
+              "column": "RM_AddOrphanLine",
+              "label": "RM_AddOrphanLine",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+              "processType": "classic"
+            },
+            {
+              "name": "rMPickfromreceipt",
+              "column": "RM_Pickfromreceipt",
+              "label": "RM_Pickfromreceipt",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "reservationStatus",
+              "column": "SO_Res_Status",
+              "label": "SO_Res_Status",
+              "type": "enum",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "enumValues": [
+                {
+                  "value": "CR",
+                  "name": "Completely Reserved"
+                },
+                {
+                  "value": "NR",
+                  "name": "Not Reserved"
+                },
+                {
+                  "value": "PR",
+                  "name": "Partially Reserved"
+                }
+              ]
+            },
+            {
+              "name": "updated",
+              "column": "Updated",
+              "label": "Updated",
+              "type": "dateTime",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "new Date()"
+              }
+            },
+            {
+              "name": "updatedBy",
+              "column": "UpdatedBy",
+              "label": "UpdatedBy",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.user"
+              }
+            }
+          ],
+          "draftMode": {
+            "enabled": false,
+            "processField": "documentAction",
+            "processValue": "CO",
+            "label": "Process"
+          }
+        },
+        {
+          "name": "quotationLine",
+          "tableName": "C_OrderLine",
+          "tabId": "E2F36B4352DA4CA8BE324DC428BEE358",
+          "tabName": "Lines",
+          "fields": [
+            {
+              "name": "lineNo",
+              "column": "Line",
+              "label": "Line No.",
+              "type": "integer",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "lookup",
+                "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@"
+              },
+              "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@"
+            },
+            {
+              "name": "product",
+              "column": "M_Product_ID",
+              "label": "Product",
+              "type": "foreignKey",
+              "visibility": "editable",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": true,
+              "reference": "Product",
+              "inputMode": "search",
+              "readOnlyLogic": "@Processed@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"
+            },
+            {
+              "name": "operativeQuantity",
+              "column": "Aumqty",
+              "label": "Operative Quantity",
+              "type": "quantity",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "operativeUOM",
+              "column": "C_Aum",
+              "label": "Alternative UOM",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "orderedQuantity",
+              "column": "QtyOrdered",
+              "label": "Ordered Quantity",
+              "type": "quantity",
+              "visibility": "editable",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "1"
+              },
+              "defaultValue": "1",
+              "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+            },
+            {
+              "name": "goodsShipmentLine",
+              "column": "M_Inoutline_ID",
+              "label": "Goods Shipment Line",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "attributeSetValue",
+              "column": "M_AttributeSetInstance_ID",
+              "label": "Attribute Set Value",
+              "type": "productAttribute",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "uOM",
+              "column": "C_UOM_ID",
+              "label": "UOM",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "cReturnReasonID",
+              "column": "C_Return_Reason_ID",
+              "label": "C_Return_Reason_ID",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "unitPrice",
+              "column": "PriceActual",
+              "label": "Net Unit Price",
+              "type": "price",
+              "visibility": "editable",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": false,
+              "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+            },
+            {
+              "name": "grossUnitPrice",
+              "column": "Gross_Unit_Price",
+              "label": "Gross Unit Price",
+              "type": "price",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "lineNetAmount",
+              "column": "LineNetAmt",
+              "label": "Line Net Amount",
+              "type": "amount",
+              "visibility": "readOnly",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": false,
+              "readOnlyLogic": "@Iseditlinenetamt@='N'|@GROSSPRICE@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+            },
+            {
+              "name": "lineGrossAmount",
+              "column": "Line_Gross_Amount",
+              "label": "Line Gross Amount",
+              "type": "amount",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "tax",
+              "column": "C_Tax_ID",
+              "label": "Tax",
+              "type": "foreignKey",
+              "visibility": "editable",
+              "required": true,
+              "grid": true,
+              "form": true,
+              "searchable": false,
+              "reference": "Tax",
+              "inputMode": "selector",
+              "readOnlyLogic": "@Processed@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+            },
+            {
+              "name": "listPrice",
+              "column": "PriceList",
+              "label": "Net List Price",
+              "type": "price",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "grossListPrice",
+              "column": "GrossPriceList",
+              "label": "Gross List Price",
+              "type": "decimal",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "discount",
+              "column": "Discount",
+              "label": "Discount",
+              "type": "decimal",
+              "visibility": "editable",
+              "required": false,
+              "grid": true,
+              "form": true,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0",
+              "readOnlyLogic": "@Processed@='Y'",
+              "callout": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
+            },
+            {
+              "name": "description",
+              "column": "Description",
+              "label": "Description",
+              "type": "text",
+              "visibility": "editable",
+              "required": false,
+              "grid": false,
+              "form": true,
+              "searchable": false
+            },
+            {
+              "name": "taxableAmount",
+              "column": "Taxbaseamt",
+              "label": "Alternate Taxable Amount",
+              "type": "amount",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "invoicedQuantity",
+              "column": "QtyInvoiced",
+              "label": "Invoiced Quantity",
+              "type": "quantity",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "deliveredQuantity",
+              "column": "QtyDelivered",
+              "label": "Delivered Quantity",
+              "type": "quantity",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "orderDate",
+              "column": "DateOrdered",
+              "label": "Order Date",
+              "type": "date",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.dateOrdered"
+              },
+              "defaultValue": "@DateOrdered@"
+            },
+            {
+              "name": "scheduledDeliveryDate",
+              "column": "DatePromised",
+              "label": "Scheduled Delivery Date",
+              "type": "date",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.datePromised"
+              },
+              "defaultValue": "@DatePromised@"
+            },
+            {
+              "name": "warehouse",
+              "column": "M_Warehouse_ID",
+              "label": "Warehouse",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.mWarehouseId"
+              },
+              "defaultValue": "@M_Warehouse_ID@"
+            },
+            {
+              "name": "reservedQuantity",
+              "column": "QtyReserved",
+              "label": "Reserved Quantity",
+              "type": "quantity",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "shippingCompany",
+              "column": "M_Shipper_ID",
+              "label": "Shipping Company",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.mShipperId"
+              },
+              "defaultValue": "@M_Shipper_ID@"
+            },
+            {
+              "name": "businessPartner",
+              "column": "C_BPartner_ID",
+              "label": "Business Partner",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "lookup",
+                "source": "SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@"
+              },
+              "defaultValue": "@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@"
+            },
+            {
+              "name": "directShipment",
+              "column": "DirectShip",
+              "label": "Direct shipment",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "freightAmount",
+              "column": "FreightAmt",
+              "label": "Freight Amount",
+              "type": "amount",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "partnerAddress",
+              "column": "C_BPartner_Location_ID",
+              "label": "Partner Address",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.cBpartnerLocationId"
+              },
+              "defaultValue": "@C_BPartner_Location_ID@"
+            },
+            {
+              "name": "cancelPriceAdjustment",
+              "column": "CANCELPRICEAD",
+              "label": "Cancel Discounts and Promotions",
+              "type": "boolean",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N"
+            },
+            {
+              "name": "orderUOM",
+              "column": "M_Product_Uom_Id",
+              "label": "Order UOM",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "orderQuantity",
+              "column": "QuantityOrder",
+              "label": "Order Quantity",
+              "type": "quantity",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "baseGrossUnitPrice",
+              "column": "grosspricestd",
+              "label": "Base Gross Unit Price",
+              "type": "price",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "standardPrice",
+              "column": "PriceStd",
+              "label": "Base Net Unit Price",
+              "type": "price",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "editLineAmount",
+              "column": "Iseditlinenetamt",
+              "label": "Edit Line Net Amount",
+              "type": "boolean",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N"
+            },
+            {
+              "name": "project",
+              "column": "C_Project_ID",
+              "label": "Project",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "stDimension",
+              "column": "User1_ID",
+              "label": "1st Dimension",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "ndDimension",
+              "column": "User2_ID",
+              "label": "2nd Dimension",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "currency",
+              "column": "C_Currency_ID",
+              "label": "Currency",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.cCurrencyId"
+              },
+              "defaultValue": "@C_Currency_ID@"
+            },
+            {
+              "name": "invoiceDate",
+              "column": "DateInvoiced",
+              "label": "Invoice Date",
+              "type": "date",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "client",
+              "column": "AD_Client_ID",
+              "label": "Client",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.client"
+              },
+              "defaultValue": "@AD_Client_ID@"
+            },
+            {
+              "name": "active",
+              "column": "IsActive",
+              "label": "Active",
+              "type": "boolean",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "true"
+              }
+            },
+            {
+              "name": "dateDelivered",
+              "column": "DateDelivered",
+              "label": "Date Delivered",
+              "type": "date",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "salesOrder",
+              "column": "C_Order_ID",
+              "label": "Sales Order",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "cOrderDiscountID",
+              "column": "C_Order_Discount_ID",
+              "label": "C_Order_Discount_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "id",
+              "column": "C_OrderLine_ID",
+              "label": "Sales Order Line",
+              "type": "id",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "sequence"
+              }
+            },
+            {
+              "name": "priceLimit",
+              "column": "PriceLimit",
+              "label": "Price Limit",
+              "type": "price",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "charge",
+              "column": "C_Charge_ID",
+              "label": "Charge",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "resourceAssignment",
+              "column": "S_ResourceAssignment_ID",
+              "label": "Resource Assignment",
+              "type": "string",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "sOPOReference",
+              "column": "Ref_OrderLine_ID",
+              "label": "SO/PO Reference",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "chargeAmount",
+              "column": "ChargeAmt",
+              "label": "Charge Amount",
+              "type": "amount",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "0"
+              },
+              "defaultValue": "0"
+            },
+            {
+              "name": "organization",
+              "column": "AD_Org_ID",
+              "label": "Organization",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.organization"
+              },
+              "defaultValue": "@AD_Org_ID@"
+            },
+            {
+              "name": "priceAdjustment",
+              "column": "M_Offer_ID",
+              "label": "Promotion/Discount",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "descriptionOnly",
+              "column": "IsDescription",
+              "label": "Description Only",
+              "type": "boolean",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N"
+            },
+            {
+              "name": "asset",
+              "column": "A_Asset_ID",
+              "label": "A_Asset_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "bOMParentID",
+              "column": "BOM_Parent_ID",
+              "label": "BOM_Parent_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "costcenter",
+              "column": "C_Costcenter_ID",
+              "label": "C_Costcenter_ID",
+              "type": "foreignKey",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "creationDate",
+              "column": "Created",
+              "label": "Created",
+              "type": "dateTime",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "new Date()"
+              }
+            },
+            {
+              "name": "createdBy",
+              "column": "CreatedBy",
+              "label": "CreatedBy",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.user"
+              }
+            },
+            {
+              "name": "createReservation",
+              "column": "Create_Reservation",
+              "label": "Create_Reservation",
+              "type": "enum",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "enumValues": [
+                {
+                  "value": "CRP",
+                  "name": "Automatic"
+                },
+                {
+                  "value": "CR",
+                  "name": "Manual"
+                }
+              ]
+            },
+            {
+              "name": "explode",
+              "column": "Explode",
+              "label": "Explode",
+              "type": "button",
+              "visibility": "discarded",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "DFC78024B1F54CBB95DC73425BA6687F",
+              "processType": "classic"
+            },
+            {
+              "name": "managePrereservation",
+              "column": "Manage_Prereservation",
+              "label": "Manage_Prereservation",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "manageReservation",
+              "column": "Manage_Reservation",
+              "label": "Manage_Reservation",
+              "type": "button",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "processId": "5F547560D3DE401AA0B570F22E2C6C06",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "warehouseRule",
+              "column": "M_Warehouse_Rule_ID",
+              "label": "M_Warehouse_Rule_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "overdueReturnDays",
+              "column": "Overdue_Return_Days",
+              "label": "Overdue_Return_Days",
+              "type": "integer",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "printDescription",
+              "column": "Print_Description",
+              "label": "Print_Description",
+              "type": "boolean",
+              "visibility": "discarded",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N"
+            },
+            {
+              "name": "quotationLine",
+              "column": "Quotationline_ID",
+              "label": "Quotationline_ID",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "selectOrderLine",
+              "column": "Relate_Orderline",
+              "label": "Relate_Orderline",
+              "type": "button",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "computed",
+                "source": "N"
+              },
+              "defaultValue": "N",
+              "processId": "C4265E27C8134096B49DFBF69369DFC6",
+              "processType": "obuiapp"
+            },
+            {
+              "name": "replacedorderline",
+              "column": "Replacedorderline_id",
+              "label": "Replacedorderline_id",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "returnline",
+              "column": "Returnline",
+              "label": "Returnline",
+              "type": "string",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false
+            },
+            {
+              "name": "reservationStatus",
+              "column": "SO_Res_Status",
+              "label": "SO_Res_Status",
+              "type": "enum",
+              "visibility": "system",
+              "required": false,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "enumValues": [
+                {
+                  "value": "CR",
+                  "name": "Completely Reserved"
+                },
+                {
+                  "value": "NR",
+                  "name": "Not Reserved"
+                },
+                {
+                  "value": "PR",
+                  "name": "Partially Reserved"
+                }
+              ]
+            },
+            {
+              "name": "updated",
+              "column": "Updated",
+              "label": "Updated",
+              "type": "dateTime",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "new Date()"
+              }
+            },
+            {
+              "name": "updatedBy",
+              "column": "UpdatedBy",
+              "label": "UpdatedBy",
+              "type": "foreignKey",
+              "visibility": "system",
+              "required": true,
+              "grid": false,
+              "form": false,
+              "searchable": false,
+              "derivation": {
+                "type": "fromConfig",
+                "source": "context.user"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "rules": [
+      {
+        "name": "BP_AutoFill_Address",
+        "type": "callout",
+        "entity": "quotation",
+        "decision": "Keep",
+        "description": "When changing business partner, auto-fill delivery address and price list"
+      },
+      {
+        "name": "Line_Recalc_Totals",
+        "type": "eventHandler",
+        "entity": "quotationLine",
+        "decision": "Keep",
+        "description": "After saving a line, recalculate header totals (TotalLines, GrandTotal)"
+      },
+      {
+        "name": "Product_AutoFill_Price",
+        "type": "callout",
+        "entity": "quotationLine",
+        "decision": "Keep",
+        "description": "When selecting a product, auto-fill unit price, tax and UOM from price list"
+      },
+      {
+        "name": "Line_Calc_NetAmount",
+        "type": "callout",
+        "entity": "quotationLine",
+        "decision": "Keep",
+        "description": "Recalculate line net amount when quantity, price or discount changes"
+      },
+      {
+        "name": "ReadOnly_When_Processed",
+        "type": "displayLogic",
+        "entity": "quotation",
+        "decision": "Keep",
+        "description": "Lock all editable fields when quotation status is Completed or Voided"
+      },
+      {
+        "name": "ValidUntil_Default",
+        "type": "callout",
+        "entity": "quotation",
+        "decision": "Keep",
+        "description": "Default validUntil to orderDate + 30 days when creating a new quotation"
+      },
+      {
+        "name": "Convert_To_Order",
+        "type": "process",
+        "entity": "quotation",
+        "decision": "Keep",
+        "description": "Process to convert an approved quotation into a Sales Order (copies header + lines, sets new doc type)"
+      },
+      {
+        "name": "Delivery_Fields_Hidden",
+        "type": "displayLogic",
+        "entity": "quotation",
+        "decision": "Omit",
+        "description": "Delivery-related fields (isDelivered, deliveryLocation, warehouse on header) are not relevant for quotations and are omitted from the schema"
+      }
+    ]
+  },
+  "generatedAt": "2026-04-13T11:54:21.851Z",
+  "checksum": "673ab633dbab494e",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -45,6 +2753,15 @@
         }
       },
       "salesTheme": true,
+      "labelOverrides": {
+        "es_ES": {
+          "C_BPartner_ID": "Contacto"
+        },
+        "en_US": {
+          "C_BPartner_ID": "Contact"
+        }
+      },
+      "noHeaderBorder": true,
       "layoutType": "default"
     },
     "entities": {
@@ -66,6 +2783,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
+            "seq": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
@@ -85,6 +2803,7 @@
             "form": true,
             "defaultValue": "@#Date@",
             "section": "principal",
+            "seq": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
             },
@@ -108,6 +2827,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
+            "seq": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
             },
@@ -368,13 +3088,7 @@
               "source": "false"
             }
           }
-        ],
-        "draftMode": {
-          "enabled": true,
-          "processField": "documentAction",
-          "processValue": "CO",
-          "label": "Confirmar"
-        }
+        ]
       },
       "quotationLine": {
         "tableName": "C_OrderLine",
@@ -586,7 +3300,16 @@
           "displayLogicRaw": "@documentStatus@='VO'"
         }
       },
-      "salesTheme": true
+      "salesTheme": true,
+      "labelOverrides": {
+        "es_ES": {
+          "C_BPartner_ID": "Contacto"
+        },
+        "en_US": {
+          "C_BPartner_ID": "Contact"
+        }
+      },
+      "noHeaderBorder": true
     },
     "entities": {
       "quotation": {
@@ -2333,6 +5056,14 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact"
+      }
     }
   },
   "testManifest": {

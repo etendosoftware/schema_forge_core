@@ -15,9 +15,6 @@ const filters = [];
 
 // @sf-generated-start component:PaymentDetailsTable
 export default function PaymentDetailsTable(props) {
-  // @sf-custom-slot hooks:PaymentDetailsTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:PaymentDetailsTable
-
-// @sf-custom-slot section:PaymentDetailsTable-custom

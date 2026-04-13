@@ -11,9 +11,7 @@ const fields = [
 
 // @sf-generated-start component:TaxForm
 export default function TaxForm(props) {
-  // @sf-custom-slot hooks:TaxForm
   return <EntityForm fields={fields} {...props} />;
 }
+TaxForm.hasCollapsedFields = false;
 // @sf-generated-end component:TaxForm
-
-// @sf-custom-slot section:TaxForm-custom
