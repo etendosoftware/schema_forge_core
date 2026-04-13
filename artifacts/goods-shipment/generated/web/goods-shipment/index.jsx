@@ -118,19 +118,11 @@ const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
-      "processId": "154",
-      "processType": "classic"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "updateLines",
-      "column": "UpdateLines",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
-      "processId": "800010",
-      "processType": "classic"
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/eTBLKCBulkcompletion",
+      "processId": "33338B1F2C4F499EBA4F5547BE0B2A4E",
+      "processType": "obuiapp"
     },
     {
       "entity": "goodsShipment",
@@ -142,11 +134,27 @@ const api = {
     },
     {
       "entity": "goodsShipment",
+      "field": "updateLines",
+      "column": "UpdateLines",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
+      "processId": "800010",
+      "processType": "classic"
+    },
+    {
+      "entity": "goodsShipment",
       "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsShipment",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
+      "processId": "154",
+      "processType": "classic"
     },
     {
       "entity": "goodsShipmentLine",

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
@@ -130,6 +130,7 @@ export function DetailView({
   primaryTabs = null,
   contentBg = 'bg-white',
   lockWhenProcessed = true,
+  addLineGuard = null,
   onAfterSave,
   onAfterCreate,
 }) {
@@ -144,11 +145,28 @@ export function DetailView({
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   const selectorContextByEntity = useMemo(() => {
-    if (!parentRecordId) return {};
+    const headerData = hook.editing || hook.selected;
+    const priceListId = headerData?.priceList ?? null;
+
+    // Derive isSOTrx from window category so NEO's validation filter resolves
+    // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
+    // purchase price lists depending on the document type.
+    const category = api?.window?.category;
+    const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
 
     const next = {};
+    // Primary entity (header): inject isSOTrx so the priceList selector filters by direction
+    if (entity) {
+      next[entity] = {
+        ...(isSOTrx ? { isSOTrx } : {}),
+      };
+    }
+    if (!parentRecordId) return next;
     if (detailEntity) {
-      next[detailEntity] = { parentId: parentRecordId };
+      next[detailEntity] = {
+        parentId: parentRecordId,
+        ...(priceListId ? { priceList: priceListId } : {}),
+      };
     }
     for (const tab of secondaryTabs) {
       if (tab?.key) {
@@ -156,11 +174,12 @@ export function DetailView({
       }
     }
     return next;
-  }, [detailEntity, parentRecordId, secondaryTabs]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabs, hook.editing, hook.selected, api]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
@@ -252,6 +271,26 @@ export function DetailView({
       hook.handleNew();
     }
   }, [isNew, hook.editing, hook.handleNew]);
+
+  // Auto-open add-line form after header auto-save navigation (openAddLine flag in route state).
+  useEffect(() => {
+    if (!location.state?.openAddLine || isNew || !hook.editing) return;
+    setAddingLine(true);
+    setEditingChild(null);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openAddLine, isNew, hook.editing]);
+
+  // Save header first (if new), then open add-line form.
+  const handleAddLineClick = useCallback(async () => {
+    if (isNew) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return;
+      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { openAddLine: true } });
+      return;
+    }
+    setAddingLine(prev => !prev);
+    setEditingChild(null);
+  }, [isNew, hook.handleSave, navigate, windowName]);
 
   // Resolve $_identifier for default FK values and auto-select first option for
   // mandatory combo selectors (inputMode: "selector") that have no value.
@@ -468,12 +507,49 @@ export function DetailView({
         const hint = rowValues[field + '_' + key];
         if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
       }
-      // Tax-included price lists: SL_Order_Product sets grossUnitPrice; SL_Order_Amt cascades
-      // to derive unitPrice (net). If unitPrice is still null or 0 after the cascade (e.g.,
-      // cascade ran with qty=0 and computed 0, or cascade did not run), fall back to showing
-      // grossUnitPrice so the user sees a price rather than nothing.
+      // Tax-included price lists: SL_Order_Product sets grossUnitPrice (price with tax) but
+      // omits netUnitPrice (net price). Fetch the real tax rate from the Etendo DAL REST API
+      // so the backend receives a valid netUnitPrice instead of null/0 at save time.
+      if (result.grossUnitPrice != null && result.netUnitPrice == null) {
+        const taxId = result.tax;
+        let taxRate = 0;
+        if (taxId) {
+          try {
+            // Derive Etendo context path from the current URL (same logic as detectBaseUrl in auth/api.js)
+            const path = window.location.pathname;
+            const webIdx = path.indexOf('/web/');
+            const etendoBase = webIdx !== -1
+              ? path.substring(0, webIdx)
+              : (import.meta.env.VITE_API_BASE || '');
+            const dalUrl = `${etendoBase}/openapi/dal/C_Tax/${taxId}?_selectedProperties=rate`;
+            const res = await fetch(dalUrl, {
+              credentials: 'include',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              taxRate = parseFloat(data.rate ?? 0);
+            }
+          } catch {
+            taxRate = 0;
+          }
+        }
+        const gross = Number(result.grossUnitPrice);
+        result.netUnitPrice = taxRate > 0
+          ? parseFloat((gross / (1 + taxRate / 100)).toFixed(6))
+          : gross;
+        console.log('[PRICE FIX] derived netUnitPrice from grossUnitPrice',
+          { gross, taxRate, net: result.netUnitPrice, taxId });
+      }
+      // Show the net price to the user; fall back to gross only if net is still unavailable.
       if (result.grossUnitPrice != null && !result.unitPrice) {
-        result.unitPrice = result.grossUnitPrice;
+        result.unitPrice = result.netUnitPrice ?? result.grossUnitPrice;
+      }
+      // SL_Invoice_Product / SL_Order_Product callouts reset quantity fields to 0 as a
+      // classic Etendo "clear-for-entry" signal. Discard any qty=0 update when the row
+      // already has a positive value so the user's default (or entered) quantity is kept.
+      for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
+        if (result[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete result[qtyKey];
       }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
 
@@ -525,6 +601,10 @@ export function DetailView({
                 if (combo.selected != null) cascadeResult[k] = combo.selected;
               }
             }
+            // Same guard: don't let the cascade zero out a quantity the user already set.
+            for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
+              if (cascadeResult[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete cascadeResult[qtyKey];
+            }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }
         } catch {
@@ -537,6 +617,9 @@ export function DetailView({
   }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields]);
 
   const data = hook.editing || currentItem || {};
+  // Guard that controls whether "+ Add Lines" is shown.
+  // When addLineGuard is provided, it receives the current record data and must return true to allow.
+  const canAddLines = addLineGuard ? addLineGuard(data) : true;
   const title = isNew
     ? ui('newRecord')
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
@@ -838,6 +921,7 @@ export function DetailView({
                   <Save className="h-3.5 w-3.5" />
                   {ui('saveDraft')}
                 </Button>
+                {!isProcessed && hook.children.length > 0 && (
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved) {
@@ -850,8 +934,9 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  {ui('save')} &amp; {draftMode.label || ui('process')}
+                  {ui('saveAndProcess', { action: tMenu(draftMode.label) || ui('process') })}
                 </Button>
+                )}
               </>
             ) : (
               <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
@@ -925,6 +1010,7 @@ export function DetailView({
                   api={api}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
+                  selectorContext={selectorContextByEntity[entity]}
                 />
               </div>
 
@@ -944,6 +1030,7 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      selectorContext={selectorContextByEntity[entity]}
                     />
                   </div>
                 </CollapsibleSection>
@@ -993,7 +1080,8 @@ export function DetailView({
                   hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
                     <LinesEmptyState
                       data={data}
-                      onAddLine={() => { setAddingLine(true); setEditingChild(null); }}
+                      onAddLine={handleAddLineClick}
+                      canAddLine={canAddLines}
                       recordId={data?.id || recordId}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
@@ -1106,11 +1194,11 @@ export function DetailView({
                         </div>
                       )}
 
-                      {hook.editing && !isDocumentReadOnly && ((!isNew && allEntryFields.length > 0) || DetailExtraActions) && (
+                      {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
-                          {allEntryFields.length > 0 && !isNew && (
+                          {allEntryFields.length > 0 && (
                             <button
-                              onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
+                              onClick={handleAddLineClick}
                               style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
                             >
                               {ui('addEntity', { label: tMenu(detailLabel || 'Lines') })}
@@ -1120,9 +1208,6 @@ export function DetailView({
                             <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
                           )}
                         </div>
-                      )}
-                      {allEntryFields.length > 0 && isNew && (
-                        <p className="text-xs text-muted-foreground mt-3">{ui('saveHeaderFirst')}</p>
                       )}
                     </div>
 
@@ -1454,6 +1539,7 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      selectorContext={selectorContextByEntity[entity]}
                     />
                   </div>
                 )}

@@ -1053,7 +1053,7 @@
       "description": "A price list with a specified validity range."
     },
     "C_BPartner_ID": {
-      "label": "Business Partner",
+      "label": "Contact",
       "description": "Anyone who takes part in daily business operations by acting as a customer, employee, etc."
     },
     "IsSOPriceList": {
@@ -16380,6 +16380,13 @@
     "total": "Total",
     "docs": "Docs",
     "notes": "Notes",
+    "addLines": "Add Lines",
+    "importFromShipment": "Import from Shipment",
+    "noLinesYet": "No lines yet",
+    "addLinesManuallyOrImportFromShipment": "Add lines manually or import from a shipment",
+    "addLinesManually": "Add lines manually",
+    "addNoteHint": "Add a note...",
+    "linesImportedFromShipment": "Lines imported from shipment",
     "noRelatedDocuments": "No related documents",
     "Complete": "Complete",
     "Confirm & Send": "Confirm & Send",
@@ -16493,8 +16500,8 @@
     "filter": "Filter...",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
-    "statusComplete": "Complete",
-    "statusCompleted": "Completed",
+    "statusComplete": "Confirmed",
+    "statusCompleted": "Confirmed",
     "statusVoid": "Void",
     "statusInProcess": "In Process",
     "statusClosed": "Closed",
@@ -16535,6 +16542,27 @@
     "validationFieldNifCountryKey": "Clave NIF País Residencia",
     "lineAdded": "Line added",
     "recordCreated": "Record created",
+    "recordSaved": "Record saved",
+    "recordProcessed": "Record processed",
+    "lineAdded": "Line added",
+    "Confirm": "Confirm",
+    "close": "Close",
+    "payments": "Payments",
+    "installment": "Installment",
+    "confirmPayment": "Confirm payment",
+    "invoiceFullyPaid": "Invoice fully paid",
+    "paymentRegistered": "Payment registered",
+    "fullyPaid": "Fully paid",
+    "viewArrow": "View →",
+    "paidAmount": "Paid",
+    "outstandingLabel": "Outstanding",
+    "registerPayment": "Register payment",
+    "invoiceNumber": "Invoice #",
+    "paymentDate": "Date",
+    "paymentAmount": "Amount",
+    "paymentAccount": "Account",
+    "selectAccount": "Select account...",
+    "amountExceedsOutstanding": "Amount exceeds outstanding",
     "Customer": "Customer",
     "Vendor": "Vendor",
     "Both": "Both",
@@ -18116,7 +18144,7 @@
       "label": "Closed"
     },
     "CO": {
-      "label": "Right"
+      "label": "Completed"
     },
     "DR": {
       "label": "Draft"

@@ -4001,11 +4001,11 @@
       "description": "Los documentos son multi idioma"
     },
     "C_Bpartner_ID": {
-      "label": "Tercero",
+      "label": "Contacto",
       "description": "Persona que participa en operaciones diarias de negocios, como cliente, empleado, etc."
     },
     "C_BPartner_ID": {
-      "label": "Tercero",
+      "label": "Contacto",
       "description": "Persona que participa en operaciones diarias de negocios, como cliente, empleado, etc."
     },
     "C_Bpartner_Id_Dim": {
@@ -16611,6 +16611,13 @@
     "total": "Total",
     "docs": "Documentos",
     "notes": "Notas",
+    "addLines": "Añadir líneas",
+    "importFromShipment": "Importar desde envío",
+    "noLinesYet": "Sin líneas todavía",
+    "addLinesManuallyOrImportFromShipment": "Añade líneas manualmente o impórtalas desde un envío",
+    "addLinesManually": "Añade líneas manualmente",
+    "addNoteHint": "Añadir una nota...",
+    "linesImportedFromShipment": "Líneas importadas desde envío",
     "noRelatedDocuments": "Sin documentos relacionados",
     "Complete": "Completar",
     "Confirm & Send": "Confirmar y enviar",
@@ -16728,8 +16735,8 @@
     "filter": "Filtrar...",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
-    "statusComplete": "Completado",
-    "statusCompleted": "Completado",
+    "statusComplete": "Confirmado",
+    "statusCompleted": "Confirmado",
     "statusVoid": "Anulado",
     "statusInProcess": "En proceso",
     "statusClosed": "Cerrado",
@@ -16770,6 +16777,27 @@
     "validationFieldNifCountryKey": "Clave NIF País Residencia",
     "lineAdded": "Línea agregada",
     "recordCreated": "Registro creado",
+    "recordSaved": "Registro guardado",
+    "recordProcessed": "Registro procesado",
+    "lineAdded": "Línea añadida",
+    "Confirm": "Confirmar",
+    "close": "Cerrar",
+    "payments": "Pagos",
+    "installment": "Cuota",
+    "confirmPayment": "Confirmar pago",
+    "invoiceFullyPaid": "Factura pagada completamente",
+    "paymentRegistered": "Pago registrado",
+    "fullyPaid": "Pagado",
+    "viewArrow": "Ver →",
+    "paidAmount": "Pagado",
+    "outstandingLabel": "Pendiente",
+    "registerPayment": "Registrar pago",
+    "invoiceNumber": "Factura #",
+    "paymentDate": "Fecha",
+    "paymentAmount": "Importe",
+    "paymentAccount": "Cuenta",
+    "selectAccount": "Seleccionar cuenta...",
+    "amountExceedsOutstanding": "El importe supera el pendiente",
     "All": "Todos",
     "Customers": "Clientes",
     "Vendors": "Proveedores",
@@ -18364,7 +18392,7 @@
       "label": "Cerrado"
     },
     "CO": {
-      "label": "Completada"
+      "label": "Completado"
     },
     "DR": {
       "label": "Borrador"

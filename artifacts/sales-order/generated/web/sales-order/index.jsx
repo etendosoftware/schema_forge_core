@@ -55,6 +55,14 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/priceList"
+    },
+    {
+      "entity": "header",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
@@ -191,14 +199,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
-      "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
@@ -211,6 +211,14 @@ const api = {
       "column": "Processing",
       "url": "/sws/neo/sales-order/header/{id}/action/processNow",
       "processId": "104",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
+      "processId": "800022",
       "processType": "classic"
     },
     {
@@ -274,6 +282,9 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   },
   "labelOverrides": {
     "es_ES": {

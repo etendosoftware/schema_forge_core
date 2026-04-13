@@ -288,7 +288,7 @@
           "visibility": "discarded"
         },
         "salesOrderLine": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "project": {
           "visibility": "discarded"

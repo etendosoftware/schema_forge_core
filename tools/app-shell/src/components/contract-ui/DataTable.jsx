@@ -8,7 +8,7 @@ import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
@@ -280,10 +280,19 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
     onFieldChange?.(key, val, snapshot, (updates) => {
-      // Callback to apply callout results to the inline row
-      for (const [field, value] of Object.entries(updates)) {
-        handleChange(field, value);
-      }
+      // Apply callout updates only for fields the user hasn't manually changed
+      // since the callout was triggered. Compares against the snapshot captured
+      // at trigger time — if the current value diverged, the user edited it and
+      // the callout result must not overwrite it (race condition guard).
+      setValues(prev => {
+        const next = { ...prev };
+        for (const [field, value] of Object.entries(updates)) {
+          if (!(field in snapshot) || prev[field] === snapshot[field]) {
+            next[field] = value;
+          }
+        }
+        return next;
+      });
     });
   }, [handleChange, onFieldChange, values]);
 
@@ -623,8 +632,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      const badgeProps = getStatusBadgeProps(raw);
-      return <Badge {...badgeProps}>{label}</Badge>;
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
@@ -638,11 +646,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      const badgeProps = getStatusBadgeProps(raw);
-      if (badgeProps.variant === 'outline' && !badgeProps.className) {
-        return <span className="text-sm text-muted-foreground">{label}</span>;
-      }
-      return <Badge {...badgeProps}>{label}</Badge>;
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
     }
     if (col.type === 'percent') {
       const val = Number(row[col.key]);

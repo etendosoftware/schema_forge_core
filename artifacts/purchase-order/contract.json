@@ -1,7 +1,7 @@
 {
-  "version": "0.13.2",
-  "generatedAt": "2026-04-10T16:41:08.027Z",
-  "checksum": "ab2610ad8e35526f",
+  "version": "0.16.0",
+  "generatedAt": "2026-04-13T16:54:03.058Z",
+  "checksum": "6bfb5a9c90aa4832",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -32,12 +32,7 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-      "statusEnumLabels": {
-        "DR": "Borrador",
-        "CO": "Confirmado",
-        "CL": "Cerrado",
-        "VO": "Anulado"
-      },
+
       "noHeaderBorder": true,
       "layoutType": "default"
     },
@@ -118,7 +113,7 @@
             "label": "Partner Address",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": false,
             "form": true,
@@ -232,7 +227,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "collapsed",
@@ -252,10 +247,10 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": false,
+            "form": true,
             "reference": "PriceList",
             "inputMode": "selector",
-            "section": "other",
+            "section": "collapsed",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList"
             },
@@ -342,7 +337,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",
@@ -912,7 +908,8 @@
               "source": "@#Date@"
             }
           }
-        ]
+        ],
+        "javaQualifier": "purchaseOrderHeaderHandler"
       },
       "lines": {
         "tableName": "C_OrderLine",
@@ -1894,12 +1891,7 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-      "statusEnumLabels": {
-        "DR": "Borrador",
-        "CO": "Confirmado",
-        "CL": "Cerrado",
-        "VO": "Anulado"
-      },
+
       "noHeaderBorder": true
     },
     "entities": {
@@ -2708,7 +2700,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "purchaseOrderHeaderHandler"
       },
       "lines": {
         "tableName": "C_OrderLine",
@@ -4581,6 +4574,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "purchases"
     },
     "labelOverrides": {
       "es_ES": {

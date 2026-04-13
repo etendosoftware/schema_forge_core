@@ -13,9 +13,6 @@ const filters = [];
 
 // @sf-generated-start component:TaxTable
 export default function TaxTable(props) {
-  // @sf-custom-slot hooks:TaxTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:TaxTable
-
-// @sf-custom-slot section:TaxTable-custom

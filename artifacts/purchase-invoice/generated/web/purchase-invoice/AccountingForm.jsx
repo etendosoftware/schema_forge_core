@@ -23,9 +23,7 @@ const fields = [
 
 // @sf-generated-start component:AccountingForm
 export default function AccountingForm(props) {
-  // @sf-custom-slot hooks:AccountingForm
   return <EntityForm fields={fields} {...props} />;
 }
+AccountingForm.hasCollapsedFields = false;
 // @sf-generated-end component:AccountingForm
-
-// @sf-custom-slot section:AccountingForm-custom
