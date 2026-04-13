@@ -52,7 +52,8 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 2
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -102,7 +103,8 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "displayLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 1
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -157,7 +159,8 @@
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 3
         },
         "scheduledDeliveryDate": {
           "displayLogic": null,
