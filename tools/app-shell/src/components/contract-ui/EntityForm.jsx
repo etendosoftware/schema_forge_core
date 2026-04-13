@@ -252,7 +252,7 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
   const fetchPage = useCallback((offset) => {
     if (!selectorUrl || !token || loadingRef.current || !hasMoreRef.current) return;
     loadingRef.current = true;
-    fetch(`${selectorUrl}?limit=${SELECTOR_PAGE}&offset=${offset}`, {
+    fetch(buildUrlWithParams(selectorUrl, { limit: SELECTOR_PAGE, offset }), {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(res => res.ok ? res.json() : null)
@@ -291,16 +291,14 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
   }, [fetchPage, selectorUrl]);
 
   const baseOptions = serverOptions ?? catalogOptions;
+  // Whether the current value is among the (possibly filtered) server options.
   const hasValue = value && baseOptions.some(opt => opt.id === value);
-  const options = (!hasValue && value && displayValue)
-    ? [{ id: value, name: displayValue }, ...baseOptions]
-    : baseOptions;
 
   return (
     <Select
       value={value}
       onValueChange={(val) => {
-        const opt = options.find(o => o.id === val);
+        const opt = baseOptions.find(o => o.id === val);
         onChange(val, opt?.name, opt);
       }}
       required={field.required}
@@ -309,7 +307,20 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
         <SelectValue placeholder={`Select ${resolvedLabel}...`} />
       </SelectTrigger>
       <SelectContent ref={contentCallbackRef}>
-        {options.map(opt => (
+        {/* When the current value is not among the filtered options (e.g. a purchase price list
+            on a sales invoice), render a hidden item so Radix can display the current label in
+            the trigger — but the user cannot re-select it from the dropdown. */}
+        {!hasValue && value && displayValue && (
+          <SelectItem
+            key={`__current__${value}`}
+            value={value}
+            style={{ display: 'none', height: 0, padding: 0, overflow: 'hidden' }}
+            aria-hidden="true"
+          >
+            {displayValue}
+          </SelectItem>
+        )}
+        {baseOptions.map(opt => (
           <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
         ))}
         {hasMore && selectorUrl && (
@@ -623,7 +634,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               }}
               catalogs={catalogs}
               resolvedLabel={label}
-              selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+              selectorUrl={(() => {
+                if (!apiBaseUrl) return null;
+                // Use api.selectors URL when it carries explicit context params (e.g. ?isSOTrx=Y).
+                // Otherwise compute from f.column so the backend gets the DB column name it expects.
+                const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
+                return entry?.url?.includes('?') ? entry.url : `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+              })()}
               token={token}
             />
           </div>
@@ -643,7 +660,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           </FieldHighlight>
         );
       }
-      const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null;
+      // Use the URL from api.selectors when it carries explicit context params (e.g. ?isSOTrx=Y).
+      // For standard selectors (no context params), always compute from f.column so the
+      // backend receives the DB column name it expects (e.g. C_BPartner_ID, not businessPartner).
+      const apiSelectorEntry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
+      const selectorUrl = apiBaseUrl
+        ? (apiSelectorEntry?.url?.includes('?') ? apiSelectorEntry.url : `${apiBaseUrl}/${entity}/selectors/${f.column}`)
+        : null;
       const searchOnChange = (val, lbl, auxData) => {
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);

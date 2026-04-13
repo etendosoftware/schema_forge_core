@@ -473,6 +473,12 @@ export function DetailView({
       if (result.grossUnitPrice != null && !result.unitPrice) {
         result.unitPrice = result.grossUnitPrice;
       }
+      // SL_Invoice_Product / SL_Order_Product callouts reset quantity fields to 0 as a
+      // classic Etendo "clear-for-entry" signal. Discard any qty=0 update when the row
+      // already has a positive value so the user's default (or entered) quantity is kept.
+      for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
+        if (result[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete result[qtyKey];
+      }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
@@ -521,6 +527,10 @@ export function DetailView({
               for (const [k, combo] of Object.entries(cascadeData.combos)) {
                 if (combo.selected != null) cascadeResult[k] = combo.selected;
               }
+            }
+            // Same guard: don't let the cascade zero out a quantity the user already set.
+            for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
+              if (cascadeResult[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete cascadeResult[qtyKey];
             }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }

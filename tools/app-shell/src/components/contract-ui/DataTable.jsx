@@ -195,7 +195,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   const buildEmpty = useCallback(() => {
     const empty = {};
     for (const f of fields) {
-      empty[f.key] = f.key === 'lineNo' ? defaultLineNo : '';
+      if (f.key === 'lineNo') {
+        empty[f.key] = defaultLineNo;
+      } else {
+        empty[f.key] = f.defaultValue !== undefined ? f.defaultValue : '';
+      }
     }
     return empty;
   }, [fields, defaultLineNo]);

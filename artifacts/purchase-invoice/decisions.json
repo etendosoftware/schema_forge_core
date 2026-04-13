@@ -2,7 +2,14 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
-    "name": "Purchase Invoice"
+    "name": "Purchase Invoice",
+    "processOverrides": {},
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "Confirm"
+    }
   },
   "entities": {
     "header": {
@@ -70,7 +77,9 @@
         },
         "priceList": {
           "section": "collapsed",
-          "readOnlyLogic": null
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
           "section": "collapsed",

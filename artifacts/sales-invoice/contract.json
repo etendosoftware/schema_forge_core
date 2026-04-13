@@ -29,14 +29,7 @@
           "visibleWhenStatus": "CO"
         }
       ],
-      "processOverrides": {
-        "Complete": {
-          "add": true,
-          "label": "Confirm & Send",
-          "columnName": "DocAction",
-          "displayLogicRaw": "@documentStatus@='DR'"
-        }
-      },
+      "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
       "layoutType": "default"
@@ -860,14 +853,7 @@
           "visibleWhenStatus": "CO"
         }
       ],
-      "processOverrides": {
-        "Complete": {
-          "add": true,
-          "label": "Confirm & Send",
-          "columnName": "DocAction",
-          "displayLogicRaw": "@documentStatus@='DR'"
-        }
-      },
+      "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true
     },
@@ -3051,7 +3037,7 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+        "url": "/sws/neo/sales-invoice/header/selectors/M_PriceList_ID?isSOTrx=Y"
       },
       {
         "entity": "lines",

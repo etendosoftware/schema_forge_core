@@ -18,8 +18,12 @@
       { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
     ],
     "secondaryTabs": {},
-    "processOverrides": {
-      "Complete": { "add": true, "label": "Confirm & Send", "columnName": "DocAction", "displayLogicRaw": "@documentStatus@='DR'" }
+    "processOverrides": {},
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "Confirm"
     }
   },
   "entities": {

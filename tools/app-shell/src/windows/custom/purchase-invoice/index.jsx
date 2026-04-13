@@ -4,9 +4,7 @@ import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
 import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
-import TaxTable from '@generated/purchase-invoice/generated/web/purchase-invoice/TaxTable';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
-import PaymentDetailsPanelCustom from './PaymentDetailsPanelCustom.jsx';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
@@ -53,11 +51,6 @@ export default function PurchaseInvoiceWindow(props) {
   const breadcrumb = 'Purchases / Purchase Invoice';
   previewRowSetterRef = setPreviewRow;
 
-  const secondaryTabs = [
-    { key: 'tax', label: ui('tax'), Table: TaxTable },
-    { key: 'paymentDetails', label: ui('paymentDetails'), Panel: PaymentDetailsPanelCustom },
-  ];
-
   const summary = [
     { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: ui('totalNetAmount') },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: ui('totalGrossAmount') },
@@ -83,7 +76,7 @@ export default function PurchaseInvoiceWindow(props) {
       <HeaderPage
         {...props}
         DetailTable={InvoiceLineTableCustom}
-        secondaryTabs={secondaryTabs}
+        secondaryTabs={[]}
         summary={summary}
         extraBadges={[]}
         topbarRight={PurchaseInvoiceTopbar}

@@ -121,6 +121,11 @@
             "section": "collapsed",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_PriceList"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -6969,7 +6974,7 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
+        "url": "/sws/neo/purchase-invoice/header/selectors/M_PriceList_ID?isSOTrx=N"
       },
       {
         "entity": "header",
