@@ -34,7 +34,6 @@ import {
   LineChart,
   BarChart2,
   GripVertical,
-  Maximize2,
 } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
@@ -207,14 +206,6 @@ function useWidgetConfig() {
     update(config.map((c) => c.id === id ? { ...c, visible: !c.visible } : c));
   };
 
-  const resize = (id, size) => {
-    update(config.map((c) => c.id === id ? { ...c, size } : c));
-  };
-
-  const setHeight = (id, height) => {
-    update(config.map((c) => c.id === id ? { ...c, height } : c));
-  };
-
   const moveUp = (id) => {
     const idx = config.findIndex((c) => c.id === id);
     if (idx <= 0) return;
@@ -276,7 +267,7 @@ function useWidgetConfig() {
     update(next);
   };
 
-  return { config, toggle, moveUp, moveDown, resize, setHeight, reorder, reorderToIndex, swap, reset };
+  return { config, toggle, moveUp, moveDown, reorder, reorderToIndex, swap, reset };
 }
 
 /* ------------------------------------------------------------------
@@ -575,6 +566,9 @@ const BAR_PAD_X = 20;
 const BAR_PAD_Y = 10;
 const BAR_PAD_BOTTOM = 28;
 
+const WIDGET_HEADER_CLASS = 'pt-4 pb-2 flex-none';
+const WIDGET_TITLE_CLASS = 'text-xs font-medium text-muted-foreground';
+
 function useCollapsed(key) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(key) === 'true');
   const toggle = () => setCollapsed((c) => { const next = !c; localStorage.setItem(key, String(next)); return next; });
@@ -652,11 +646,11 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className={WIDGET_HEADER_CLASS}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer select-none" onClick={toggleCollapsed}>
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className={WIDGET_TITLE_CLASS}>
               {ui('revenueVsExpenses12m')}
             </CardTitle>
           </div>
@@ -875,10 +869,10 @@ function TopClients({ clients = [], currencyLabel = '' }) {
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">{ui('topClients12m')}</CardTitle>
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('topClients12m')}</CardTitle>
         </div>
       </CardHeader>
       {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
@@ -916,8 +910,8 @@ function QuickActions({ actions = [] }) {
   const tMenu = useMenuLabel();
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{ui('quickActions')}</CardTitle>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('quickActions')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="flex flex-wrap gap-2">
@@ -948,10 +942,10 @@ function PendingTasks({ tasks = [] }) {
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className="text-sm font-medium">{ui('pendingTasks')}</CardTitle>
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('pendingTasks')}</CardTitle>
         </div>
       </CardHeader>
       {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
@@ -1018,8 +1012,8 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 flex-none">
-        <CardTitle className="text-sm font-medium">{ui('collectionsPayments')}</CardTitle>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('collectionsPayments')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
         <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
@@ -1072,11 +1066,11 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-start gap-2">
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
           <div>
-            <CardTitle className="text-sm font-medium">{ui('recentInvoices')}</CardTitle>
+            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('recentInvoices')}</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">{ui('recentInvoicesSubtitle')}</p>
           </div>
         </div>
@@ -1135,11 +1129,11 @@ function BestProducts({ products = [], currencyLabel = '' }) {
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_products');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer select-none">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">{ui('bestProducts')}</CardTitle>
+            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestProducts')}</CardTitle>
           </div>
           <span className="text-xs text-muted-foreground">{ui('months12ByRevenue')}</span>
         </div>
@@ -1183,11 +1177,11 @@ function BestSellers({ sellers = [] }) {
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 cursor-pointer select-none flex-none" onClick={toggleCollapsed}>
+      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className="text-sm font-medium">{ui('bestSellers')}</CardTitle>
+            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers')}</CardTitle>
           </div>
           <span className="text-xs text-muted-foreground">{ui('months12ByQty')}</span>
         </div>
@@ -1295,16 +1289,10 @@ export default function DashboardPage() {
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
   const [dashDragOverId, setDashDragOverId] = useState(null);
-  const [resizingId, setResizingId] = useState(null);
-  const [resizePreviewSize, setResizePreviewSize] = useState(null);
-  const [resizingHeightId, setResizingHeightId] = useState(null);
-  const [resizeHeightPreview, setResizeHeightPreview] = useState(null);
   const gridRef = useRef(null);
-  const resizePreviewRef = useRef(null);
-  const resizeHeightRef = useRef(null);
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
-  const { config, toggle, resize, setHeight, reorder, reset } = useWidgetConfig();
+  const { config, toggle, reorder, reset } = useWidgetConfig();
   const dashboardCurrency = useDashboardCurrency(token, selectedOrg);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
@@ -1408,111 +1396,18 @@ export default function DashboardPage() {
       {loading ? <DashboardSkeleton /> : (
         <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto">
           {visibleItems.length > 0 && (() => {
-            // During resize, use the preview size for the widget being resized
-            const getSize = (item) =>
-              (resizingId === item.id && resizePreviewSize) ? resizePreviewSize
-              : item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
+            const getSize = (item) => item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
             const getColSpan = (item) => SIZE_COLS[getSize(item)] ?? 1;
             const getHeight = (item) => {
-              if (resizingHeightId === item.id && resizeHeightPreview != null) return resizeHeightPreview;
               if (item.height != null) return item.height;
               if (item.id === 'revenue-chart') return null;
               // pending-tasks and top-clients default to 4 rows, all others to 2
               return TALL_DEFAULT.has(item.id) ? ROW_STEP * 4 : ROW_STEP * MIN_ROWS;
             };
 
-            const SPAN_TO_SIZE = { 1: 'small', 2: 'medium', 3: 'wide', 4: 'large' };
-            const GAP = 24; // gap-6 = 1.5rem = 24px (default base font)
-            const COLS = 4;
-
-            const startHeightResize = (e, item) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const startY = e.clientY;
-              const wrapperEl = e.currentTarget.closest('[data-widget-id]');
-              const initialHeight = wrapperEl
-                ? snapToRows(wrapperEl.getBoundingClientRect().height)
-                : ROW_STEP * MIN_ROWS;
-              resizeHeightRef.current = initialHeight;
-              setResizingHeightId(item.id);
-              setResizeHeightPreview(initialHeight);
-              document.body.style.cursor = 'ns-resize';
-              document.body.style.userSelect = 'none';
-
-              const onMouseMove = (moveE) => {
-                const deltaY = moveE.clientY - startY;
-                // Bidirectional snap to nearest row step
-                const newH = snapToRows(initialHeight + deltaY);
-                if (newH !== resizeHeightRef.current) {
-                  resizeHeightRef.current = newH;
-                  setResizeHeightPreview(newH);
-                }
-              };
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-                setHeight(item.id, resizeHeightRef.current ?? initialHeight);
-                resizeHeightRef.current = null;
-                setResizingHeightId(null);
-                setResizeHeightPreview(null);
-              };
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            };
-
-            const startResize = (e, item) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const startX = e.clientX;
-              const initialSize = getSize(item);
-              const initialCols = SIZE_COLS[initialSize] ?? 1;
-              resizePreviewRef.current = initialSize;
-              setResizingId(item.id);
-              setResizePreviewSize(initialSize);
-              document.body.style.cursor = 'ew-resize';
-              document.body.style.userSelect = 'none';
-
-              const onMouseMove = (moveE) => {
-                const gridWidth = gridRef.current?.clientWidth ?? 800;
-                const colWidth = (gridWidth - (COLS - 1) * GAP) / COLS;
-                const deltaX = moveE.clientX - startX;
-                const newWidthPx = initialCols * colWidth + deltaX;
-                // Snap to nearest valid span (1, 2, 3, 4)
-                let nearest = 1;
-                let minDist = Infinity;
-                for (const span of [1, 2, 3, 4]) {
-                  const dist = Math.abs(span * colWidth - newWidthPx);
-                  if (dist < minDist) { minDist = dist; nearest = span; }
-                }
-                const newSize = SPAN_TO_SIZE[nearest] || 'medium';
-                if (newSize !== resizePreviewRef.current) {
-                  resizePreviewRef.current = newSize;
-                  setResizePreviewSize(newSize);
-                }
-              };
-
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-                resize(item.id, resizePreviewRef.current ?? initialSize);
-                resizePreviewRef.current = null;
-                setResizingId(null);
-                setResizePreviewSize(null);
-              };
-
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            };
-
             const makeDraggable = (item, children) => {
               const isDragging = dashDraggingId === item.id;
               const isTarget   = dashDragOverId === item.id && dashDraggingId && dashDraggingId !== item.id;
-              const isResizing = resizingId === item.id;
-              const isResizingH = resizingHeightId === item.id;
               const h = getHeight(item);
 
               return (
@@ -1521,7 +1416,7 @@ export default function DashboardPage() {
                   data-widget-id={item.id}
                   className={`relative group transition-all duration-150 ${isDragging ? 'opacity-40' : 'opacity-100'} ${h ? 'overflow-hidden [&>:last-child]:h-full [&>:last-child>*]:h-full' : ''}`}
                   style={h ? { height: h + 'px' } : undefined}
-                  draggable={!isResizing && !isResizingH}
+                  draggable
                   onDragStart={(e) => {
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', item.id);
@@ -1547,9 +1442,6 @@ export default function DashboardPage() {
                     <div className="absolute inset-0 rounded-xl border-2 border-dashed border-primary bg-primary/5 z-10 pointer-events-none" />
                   )}
                   {/* Resize outline while resizing width or height */}
-                  {(isResizing || isResizingH) && (
-                    <div className="absolute inset-0 rounded-xl border-2 border-primary ring-2 ring-primary/20 z-10 pointer-events-none" />
-                  )}
                   {/* Drag handle tooltip */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     <div className="flex items-center gap-1 bg-background border rounded-b-lg px-2 py-0.5 shadow-sm">
@@ -1557,34 +1449,6 @@ export default function DashboardPage() {
                       <span className="text-[10px] text-muted-foreground select-none">{ui('dragToReorder')}</span>
                     </div>
                   </div>
-                  {/* Width resize handle — bottom-right corner */}
-                  <div
-                    className="absolute bottom-1 right-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 cursor-ew-resize flex items-center justify-center rounded hover:bg-muted"
-                    title="Drag to resize width"
-                    onMouseDown={(e) => startResize(e, item)}
-                  >
-                    <Maximize2 className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                  {/* Row count badge — visible while resizing height */}
-                  {isResizingH && h && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-primary text-primary-foreground text-xs font-medium px-2 py-0.5 rounded-full shadow pointer-events-none">
-                      {Math.round(h / ROW_STEP)} rows
-                    </div>
-                  )}
-                  {/* Height resize handle — bottom-center (all widgets except revenue-chart) */}
-                  {item.id !== 'revenue-chart' && (
-                    <div
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-0.5 cursor-ns-resize flex items-center justify-center"
-                      title="Drag to resize height"
-                      onMouseDown={(e) => startHeightResize(e, item)}
-                    >
-                      <div className="flex gap-0.5">
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <div className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                      </div>
-                    </div>
-                  )}
                   <div className={dashDraggingId ? 'pointer-events-none' : ''}>{children}</div>
                 </div>
               );
