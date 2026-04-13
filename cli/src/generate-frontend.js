@@ -660,8 +660,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
   }).join('\n');
 
+  const secondaryTabsRequireSaved = windowConfig.secondaryTabs && Object.values(windowConfig.secondaryTabs).some(t => t.requireSavedRecord);
   const secondaryTabsProp = secondaryTabDefs.length > 0
-    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
+    ? secondaryTabsRequireSaved
+      ? `\n        secondaryTabs={recordId === 'new' ? [] : [\n${secondaryTabsPropEntries}\n        ]}`
+      : `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
   // Build optional DetailView props from window-level decisions config

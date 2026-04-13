@@ -16529,6 +16529,7 @@
     "validationFieldClient": "Client",
     "validationFieldBusinessPartnerCategory": "Business Partner Category",
     "validationFieldNifCountryKey": "Clave NIF País Residencia",
+    "lineAdded": "Line added",
     "recordCreated": "Record created",
     "Customer": "Customer",
     "Vendor": "Vendor",

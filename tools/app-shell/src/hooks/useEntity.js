@@ -488,7 +488,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       fetchChildren(selected.id);
       fetchById(selected.id);
       setSaveError(null);
-      toast.success('Line added');
+      toast.success(ui('lineAdded'));
       return data?.response?.data?.[0] ?? data ?? true;
     } catch (err) {
       const msg = err?.message || 'Network error';
