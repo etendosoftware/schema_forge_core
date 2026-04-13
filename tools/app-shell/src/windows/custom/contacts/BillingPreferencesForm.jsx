@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { EntityForm } from '@/components/contract-ui';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronDown, MapPin, Tag, Pencil, X as XIcon } from 'lucide-react';
 import { useUI } from '@/i18n';
 import LocationEditorModal from './LocationEditorModal';
@@ -159,6 +161,7 @@ export default function BillingPreferencesForm(props) {
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
   // { open, bplId: C_Location_ID|null, bplLinkId: C_BPartner_Location_ID|null }
   const [locationModal, setLocationModal] = useState({ open: false, bplId: null, bplLinkId: null });
+  const [deleteLocationId, setDeleteLocationId] = useState(null);
 
   // Sub-entity records (current BP's discount + addresses)
   const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
@@ -351,7 +354,7 @@ export default function BillingPreferencesForm(props) {
               records={addressRecords ?? []}
               loading={addressLoading}
               onEdit={openLocationModal}
-              onDelete={handleDeleteLocation}
+              onDelete={setDeleteLocationId}
               onAdd={() => openLocationModal(null, null)}
               ui={ui}
             />
@@ -401,6 +404,32 @@ export default function BillingPreferencesForm(props) {
         selectorContext={selectorContext}
       />
     )}
+
+    <Dialog open={Boolean(deleteLocationId)} onOpenChange={(open) => { if (!open) setDeleteLocationId(null); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
+          <DialogDescription>{ui('deleteConfirmMessage')}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="sm">{ui('cancel')}</Button>
+          </DialogClose>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={async () => {
+              const currentId = deleteLocationId;
+              setDeleteLocationId(null);
+              await handleDeleteLocation(currentId);
+            }}
+          >
+            {ui('delete')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     </>
   );
 }

@@ -177,8 +177,11 @@ export default function LocationEditorModal({
     const loadCountries = async () => {
       setCountriesLoading(true);
       const selectorBases = [
+        `${bpLocationBase}/bpLocation/selectors/C_Country_ID`,
+        `${contactsApiBase}/locationAddress/selectors/C_Country_ID`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/country`,
         `${bpLocationBase}/bpLocation/selectors/country`,
+        `${contactsApiBase}/locationAddress/selectors/country`,
         `${contactsApiBase}/bankAccount/selectors/country`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/C_Country_ID`,
         `${contactsApiBase}/bankAccount/selectors/C_Country_ID`,
