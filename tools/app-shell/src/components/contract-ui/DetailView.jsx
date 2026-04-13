@@ -1021,6 +1021,7 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           onClose={() => setShowMoreMenu(false)}
+                          onRefresh={() => hook.fetchById?.(data?.id || recordId)}
                         />;
                       })()}
                     </div>

@@ -493,9 +493,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     try {
       const body = {};
       // Include all fields from childData, skipping internal/companion keys.
-      // Send values as-is — backend coerceTypes handles String→BigDecimal conversion.
-      // Do NOT convert numeric strings to Number here: legacy FK IDs like "100" (uOM)
-      // or "102" (currency) must remain strings, not integers.
+      // Numeric fields (quantity, amount, decimal, integer) are coerced to JS numbers
+      // in DataTable.jsx onChange — they arrive here already typed correctly.
       for (const [key, val] of Object.entries(childData)) {
         // Skip internal/companion keys
         if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
