@@ -14,12 +14,24 @@
       "topbarRight": "InvoiceTopbarExtra"
     },
     "menuActions": [
-      { "key": "duplicate", "label": "Duplicate" },
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "duplicate",
+        "label": "Duplicate"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "secondaryTabs": {},
-    "processOverrides": {
-      "Complete": { "add": true, "label": "Confirm & Send", "columnName": "DocAction", "displayLogicRaw": "@documentStatus@='DR'" }
+    "processOverrides": {},
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "Confirm"
     }
   },
   "entities": {
@@ -43,16 +55,6 @@
         "accountingDate": {
           "visibility": "system"
         },
-        "paymentMethod": {
-          "reference": "PaymentMethod",
-          "section": "principal",
-          "seq": 40
-        },
-        "paymentTerms": {
-          "inputMode": "search",
-          "section": "principal",
-          "seq": 50
-        },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
@@ -61,10 +63,25 @@
             "filterKey": "C_BPartner_ID"
           },
           "section": "principal",
-          "seq": 60
+          "seq": 40
+        },
+        "paymentMethod": {
+          "reference": "PaymentMethod",
+          "section": "principal",
+          "seq": 50
+        },
+        "paymentTerms": {
+          "inputMode": "selector",
+          "section": "principal",
+          "seq": 60,
+          "reference": "PaymentTerm"
         },
         "priceList": {
-          "visibility": "system"
+          "visibility": "editable",
+          "section": "collapsed",
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "currency": {
           "visibility": "readOnly",
@@ -99,7 +116,9 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "discarded"
+          "visibility": "editable",
+          "section": "collapsed",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "active": {
           "visibility": "discarded",
@@ -227,6 +246,9 @@
         },
         "withholdingamount": {
           "visibility": "discarded"
+        },
+        "cashVAT": {
+          "visibility": "discarded"
         }
       }
     },
@@ -284,10 +306,14 @@
           "visibility": "discarded"
         },
         "grossUnitPrice": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossAmount": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossListPrice": {
           "visibility": "discarded"
@@ -391,15 +417,50 @@
       "exclude": true
     },
     "paymentPlan": {
-      "httpMethods": { "get": true, "post": false, "put": false, "delete": false },
+      "httpMethods": {
+        "get": true,
+        "post": false,
+        "put": false,
+        "delete": false
+      },
       "fields": {
-        "finPaymentScheduleID": { "visibility": "readOnly" },
-        "amount": { "visibility": "readOnly" },
-        "paidAmount": { "visibility": "readOnly" },
-        "outstandingAmount": { "visibility": "readOnly" },
-        "dueDate": { "visibility": "readOnly" },
-        "lastPaymentDate": { "visibility": "readOnly" }
+        "finPaymentScheduleID": {
+          "visibility": "readOnly"
+        },
+        "amount": {
+          "visibility": "readOnly"
+        },
+        "paidAmount": {
+          "visibility": "readOnly"
+        },
+        "outstandingAmount": {
+          "visibility": "readOnly"
+        },
+        "dueDate": {
+          "visibility": "readOnly"
+        },
+        "lastPaymentDate": {
+          "visibility": "readOnly"
+        }
       }
+    },
+    "verifactu": {
+      "exclude": true
+    },
+    "siiData": {
+      "exclude": true
+    },
+    "ticketbai": {
+      "exclude": true
+    },
+    "resultadoValidación": {
+      "exclude": true
+    },
+    "cashVat": {
+      "exclude": true
+    },
+    "intrastat": {
+      "exclude": true
     },
     "paymentDetails": {
       "exclude": true
@@ -464,6 +525,8 @@
       "description": "When price list changes, auto-fill currency from the selected price list"
     }
   },
-  "discardPatterns": [],
+  "discardPatterns": [
+    "EM_*"
+  ],
   "version": 2
 }

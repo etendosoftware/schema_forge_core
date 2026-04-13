@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
@@ -29,21 +30,23 @@ const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
-const processes = [
-  { name: 'Complete', label: 'Confirm & Send', style: 'positive', columnName: 'DocAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
-];
+const processes = [];
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = null;
+const draftMode = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'Confirm',
+};
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
@@ -109,7 +112,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/header/selectors/businessPartner"
+      "url": "/sws/neo/sales-invoice/header/selectors/C_BPartner_ID?isCustomer=Y"
     },
     {
       "entity": "header",
@@ -124,7 +127,7 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
     },
     {
@@ -142,6 +145,14 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
+    },
+    {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/M_PriceList_ID?isSOTrx=Y"
     },
     {
       "entity": "lines",
@@ -241,11 +252,59 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
-      "processId": "111",
-      "processType": "classic"
+      "field": "tBAIQRcode",
+      "column": "em_tbai_qrcode",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tBAIQRcode",
+      "processId": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "etvfacRectCreate",
+      "column": "EM_Etvfac_Rect_Create",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/etvfacRectCreate",
+      "processId": "E36A8BA259164E78AFDDC760172C18F5",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiXmlgenerator",
+      "column": "EM_Tbai_Xmlgenerator",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiXmlgenerator",
+      "processId": "BE2486102F2C41779B760609FD69A225",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "eTBLKCBulkcompletion",
+      "column": "EM_Etblkc_Bulkcompletion",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/eTBLKCBulkcompletion",
+      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiVoidxmlgenerator",
+      "column": "EM_Tbai_Voidxmlgenerator",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiVoidxmlgenerator",
+      "processId": "535A8BAE44A34759A7C8FF40D62A5070",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiSend",
+      "column": "EM_Aeatsii_Send",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiSend",
+      "processId": "2ECF46DAAEEB486EAF79D3594D50DE5F",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiModif",
+      "column": "EM_Aeatsii_Modif",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiModif",
+      "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -257,9 +316,33 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
+      "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
       "field": "createLinesFrom",
       "column": "CreateFrom",
       "url": "/sws/neo/sales-invoice/header/{id}/action/createLinesFrom"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDup",
+      "column": "EM_Aeatsii_Dup",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiDup",
+      "processId": "92C02F9A367140C085D1EE3BD27C4E96",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiUnsubscribe",
+      "column": "EM_Aeatsii_Unsubscribe",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/aeatsiiUnsubscribe",
+      "processId": "BE564945CB2D4892AC0EE51204C5DB7D",
+      "processType": "obuiapp"
     },
     {
       "entity": "lines",
@@ -319,6 +402,7 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
+  
   if (recordId) {
     return (
       <DetailView
@@ -331,6 +415,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
+        draftMode={draftMode}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
@@ -340,6 +425,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         hideDeleteWhenComplete
+        hidePrint
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         bottomSection={InvoiceBottomPanel}
@@ -362,6 +448,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
       {...props}
     />
   );

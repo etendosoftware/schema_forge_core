@@ -11,6 +11,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-15",
     "documentStatus": "DR",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -23,6 +24,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-16",
     "documentStatus": "CO",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -35,6 +37,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-17",
     "documentStatus": "VO",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -47,6 +50,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-18",
     "documentStatus": "IP",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -59,6 +63,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-19",
     "documentStatus": "DR",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -71,6 +76,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-20",
     "documentStatus": "CO",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -83,6 +89,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-21",
     "documentStatus": "VO",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -95,6 +102,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-22",
     "documentStatus": "IP",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -107,6 +115,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-23",
     "documentStatus": "DR",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -119,6 +128,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-24",
     "documentStatus": "CO",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -131,6 +141,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-25",
     "documentStatus": "VO",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   },
   {
@@ -143,6 +154,7 @@ export const goodsShipment = [
     "movementDate": "2026-01-26",
     "documentStatus": "IP",
     "invoiced": "Sample invoiced",
+    "eTBLKCBulkcompletion": "Sample eTBLKCBulkcompletion",
     "processed": "Sample processed"
   }
 ];
