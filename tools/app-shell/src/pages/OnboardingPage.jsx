@@ -298,6 +298,11 @@ export default function OnboardingPage() {
               }
             }
           }
+          // Clear all SW caches on login to guarantee fresh resources
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+          }
           window.location.href = '/dashboard';
           return;
         }

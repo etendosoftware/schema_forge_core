@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useUI, useMenuLabel } from '@/i18n';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
 import {
   ScanLine,
   Upload,
@@ -32,7 +31,6 @@ const STATUS_VARIANT = {
 // -- Component -----------------------------------------------------------------
 
 export default function SmartScanPage() {
-  const [showUserContext, setShowUserContext] = useState(false);
   const ui = useUI();
   const tMenu = useMenuLabel();
 
@@ -117,8 +115,6 @@ export default function SmartScanPage() {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
           </div>
         </div>
       </div>

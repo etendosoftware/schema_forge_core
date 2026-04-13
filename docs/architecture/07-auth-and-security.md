@@ -7,27 +7,26 @@ Authentication, authorization, session management, and security hardening for th
 ### Current Implementation
 
 ```
-User  -->  LoginPage.jsx  -->  POST /sws/login  { username, password }
-                                      |
-                                      v
-                               Etendo validates credentials
-                               Creates AD_Session record
-                               Returns { token: "..." }
-                                      |
-                                      v
-                          AuthContext stores token in state + localStorage
-                          All subsequent API calls include:
-                            Authorization: Bearer <token>
-                                      |
-                                      v
-                          RequestHandler validates token on each request
-                          401 response  -->  onUnauthorized()  -->  redirect to /login
+User  -->  OnboardingPage.jsx  -->  POST /sws/go/login  (environment selection)
+                                              |
+                                              v
+                                  NEO validates credentials
+                                  Returns { token, roleList, ... }
+                                              |
+                                              v
+                                  AuthContext stores token in state + localStorage
+                                  All subsequent API calls include:
+                                    Authorization: Bearer <token>
+                                              |
+                                              v
+                                  RequestHandler validates token on each request
+                                  401 response  -->  onUnauthorized()  -->  redirect to /onboarding
 ```
 
 **Key files:**
-- `src/auth/api.js` -- `login()` function, `createApiFetch()` with auto-401 handling, `buildHeaders()`
-- `src/auth/AuthContext.jsx` -- React context providing `token`, `username`, `isAuthenticated`, `login()`, `logout()`
-- `src/auth/LoginPage.jsx` -- Login form UI with error handling
+- `src/auth/api.js` -- `createApiFetch()` with auto-401 handling, `buildHeaders()`
+- `src/auth/AuthContext.jsx` -- React context providing `token`, `username`, `isAuthenticated`, `logout()`
+- `src/pages/OnboardingPage.jsx` -- Onboarding and environment login UI
 
 ### Base URL Detection
 
@@ -51,11 +50,11 @@ On mount, `AuthContext` reads the token from localStorage to restore the session
 
 ### Auth Guard
 
-`AuthGuard` wraps all protected routes. If `isAuthenticated` is false (no token), the user is redirected to `/login`. The login page redirects authenticated users to `/` (dashboard).
+`AuthGuard` wraps all protected routes. If `isAuthenticated` is false (no token), the user is redirected to `/onboarding`. The onboarding page redirects authenticated users to `/dashboard`.
 
 ```
-/login  -->  LoginPage (public)
-/*      -->  AuthGuard  -->  AppLayout  -->  Routes
+/onboarding  -->  OnboardingPage (public)
+/*           -->  AuthGuard  -->  AppLayout  -->  Routes
 ```
 
 ### API Call Authentication
@@ -100,7 +99,7 @@ Configured in Etendo properties (`Openbravo.properties`). Default timeout is typ
 
 ### Cache Clearing on Login
 
-`LoginPage.jsx` clears all service worker caches on successful login. This prevents stale cached resources from persisting across user sessions, which is especially important after deployments.
+`OnboardingPage.jsx` clears all service worker caches on successful environment login. This prevents stale cached resources from persisting across user sessions, which is especially important after deployments.
 
 ## Authorization Model
 
