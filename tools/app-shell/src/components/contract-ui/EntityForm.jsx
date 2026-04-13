@@ -668,10 +668,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               resolvedLabel={label}
               selectorUrl={(() => {
                 if (!apiBaseUrl) return null;
-                // Use api.selectors URL when it carries explicit context params (e.g. ?isSOTrx=Y).
-                // Otherwise compute from f.column so the backend gets the DB column name it expects.
+                // Always compute from apiBaseUrl so the full server path is included.
+                // Append query params from api.selectors entry if present (e.g. ?isSOTrx=Y).
                 const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
-                return entry?.url?.includes('?') ? entry.url : `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+                const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+                return entry?.url?.includes('?') ? `${base}?${entry.url.split('?')[1]}` : base;
               })()}
               selectorContext={effectiveSelectorContext}
               token={token}
@@ -694,12 +695,19 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         );
       }
       // Use the URL from api.selectors when it carries explicit context params (e.g. ?isSOTrx=Y).
-      // For standard selectors (no context params), always compute from f.column so the
-      // backend receives the DB column name it expects (e.g. C_BPartner_ID, not businessPartner).
+      // Always compute the selector URL from apiBaseUrl so it contains the full server path
+      // (e.g. https://server/etendo/sws/neo/...). When the api.selectors entry carries
+      // context filter params (e.g. ?isCustomer=Y, ?isVendor=Y), append them to the
+      // computed base URL instead of using the entry URL as-is (which would be a relative
+      // path that breaks on servers where the app context differs from the API context).
       const apiSelectorEntry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
-      const selectorUrl = apiBaseUrl
-        ? (apiSelectorEntry?.url?.includes('?') ? apiSelectorEntry.url : `${apiBaseUrl}/${entity}/selectors/${f.column}`)
-        : null;
+      const selectorUrl = apiBaseUrl ? (() => {
+        const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+        if (apiSelectorEntry?.url?.includes('?')) {
+          return `${base}?${apiSelectorEntry.url.split('?')[1]}`;
+        }
+        return base;
+      })() : null;
       const searchOnChange = (val, lbl, auxData) => {
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
