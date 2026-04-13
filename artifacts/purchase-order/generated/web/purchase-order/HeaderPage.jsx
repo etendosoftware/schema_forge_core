@@ -16,7 +16,6 @@ const breadcrumb = 'Purchases / Purchase Order';
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';

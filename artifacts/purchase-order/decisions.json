@@ -74,7 +74,7 @@
           "order": 1
         },
         "partnerAddress": {
-          "visibility": "readOnly",
+          "visibility": "editable",
           "form": true,
           "section": "principal",
           "order": 4,
@@ -101,7 +101,7 @@
           "section": "collapsed"
         },
         "paymentTerms": {
-          "form": true,
+          "form": false,
           "section": "collapsed"
         },
         "priceList": {
