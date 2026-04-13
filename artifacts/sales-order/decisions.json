@@ -25,12 +25,6 @@
       "topbarRight": "OrderCreateInvoice",
       "topbarExtra": "OrderDraftChips"
     },
-    "statusEnumLabels": {
-      "DR": "Draft",
-      "CO": "Completado",
-      "CL": "Cerrado",
-      "VO": "Anulado"
-    },
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto"
@@ -59,8 +53,7 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "documentAction": {
           "visibility": "system",
@@ -115,8 +108,7 @@
           "section": "principal"
         },
         "priceList": {
-          "section": "other",
-          "visibility": "system"
+          "section": "collapsed"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",

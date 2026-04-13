@@ -137,11 +137,10 @@ export default function OrderConfirmModal({
         });
 
       } else {
-        // Solo confirmar — no additional document
-        setCreatedDoc({
-          type: 'confirm',
-          documentNo,
-        });
+        // Solo confirmar — close and reload immediately, no intermediate success screen
+        onClose();
+        window.location.reload();
+        return;
       }
     } catch (err) {
       setError(err.message || ui('soErrorOccurred'));
