@@ -104,7 +104,15 @@ function mapFormFieldType(field) {
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  const gridFields = [...gridFieldsRaw].sort((a, b) => {
+    const aHas = a.gridOrder != null;
+    const bHas = b.gridOrder != null;
+    if (aHas && bHas) return a.gridOrder - b.gridOrder;
+    if (aHas) return -1;
+    if (bHas) return 1;
+    return 0;
+  });
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 

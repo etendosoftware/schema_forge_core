@@ -1186,5 +1186,18 @@
     ],
     "author": "pipeline",
     "date": "2026-04-10"
+  },
+  {
+    "from": "0.13.2",
+    "to": "0.14.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"businessPartner\" property \"gridOrder\" changed from \"undefined\" to \"1\" in frontend (additive)",
+      "Field \"documentNo\" property \"gridOrder\" changed from \"undefined\" to \"2\" in frontend (additive)",
+      "Field \"orderDate\" property \"gridOrder\" changed from \"undefined\" to \"3\" in frontend (additive)",
+      "Field \"documentStatus\" property \"gridOrder\" changed from \"undefined\" to \"4\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-13"
   }
 ]
