@@ -147,10 +147,10 @@ function inferPendingTaskKey(task) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
   if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
-    return 'pendingShipments';
+    return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
   if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
-    return 'purchaseOrdersToConfirm';
+    return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
