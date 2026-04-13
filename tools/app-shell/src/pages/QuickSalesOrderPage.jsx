@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Receipt, MoreVertical, TrendingUp, Loader2, ScanBarcode, Search, Mic, Sparkles, Plus, Bell } from 'lucide-react';
 
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import CustomerSelector from './quick-sales-order/CustomerSelector.jsx';
 import ProductSearchBar from './quick-sales-order/ProductSearchBar.jsx';
 import ProductGrid from './quick-sales-order/ProductGrid.jsx';
@@ -85,6 +86,7 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
   const [activeTab, setActiveTab] = useState('cart');
   const [showPriority, setShowPriority] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
+  const [showUserContext, setShowUserContext] = useState(false);
 
   // Refs
   const productSearchRef = useRef(null);
@@ -366,6 +368,7 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
+            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
           </div>
         </div>
       </div>
