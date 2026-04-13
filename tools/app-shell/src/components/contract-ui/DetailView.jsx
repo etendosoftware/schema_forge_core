@@ -251,33 +251,23 @@ export function DetailView({
     }
   }, [isNew, hook.editing, hook.handleNew]);
 
-  // Resolve $_identifier for default FK values and auto-select first option for
-  // mandatory combo selectors (inputMode: "selector") that have no value.
-  // This matches classic Etendo behavior: TableDir combos pre-select the first record
-  // when the field is mandatory, while search fields don't (they require user input).
+  // Resolve $_identifier for default FK values that came from the backend /defaults.
+  // Backend handles auto-picking the first option for MANDATORY FK combos
+  // (see NeoDefaultsService.tryInjectFirstFromLookup). The frontend no longer
+  // auto-selects first option — that was forcing non-mandatory FKs like uOMForWeight
+  // to get populated even when Classic leaves them blank.
   useEffect(() => {
     if (!isNew || !hook.editing || !catalogsLoaded || !api?.selectors) return;
     for (const sel of api.selectors) {
       const val = hook.editing[sel.field];
+      if (!val) continue;
+      // Value is set but no identifier — resolve it from loaded catalog
+      if (hook.editing[sel.field + '$_identifier']) continue;
       const options = getCatalogOptions(catalogs, sel.entity, sel);
       if (!Array.isArray(options) || options.length === 0) continue;
-
-      if (val) {
-        // Has a value — resolve its identifier if missing
-        if (!hook.editing[sel.field + '$_identifier']) {
-          const match = options.find(o => o.id === val);
-          if (match) {
-            hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
-          }
-        }
-      } else if (sel.inputMode === 'selector') {
-        // Combo/dropdown with no value — auto-select first option (Etendo TableDir behavior).
-        // Only for editable fields; search/dependent fields require explicit user selection.
-        const first = options[0];
-        if (first) {
-          hook.handleChange(sel.field, first.id);
-          hook.handleChange(sel.field + '$_identifier', first.label || first.name || first._identifier);
-        }
+      const match = options.find(o => o.id === val);
+      if (match) {
+        hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
       }
     }
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
@@ -900,7 +890,7 @@ export function DetailView({
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
             <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}`}>
-              <activeTab.Panel data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
+              <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
