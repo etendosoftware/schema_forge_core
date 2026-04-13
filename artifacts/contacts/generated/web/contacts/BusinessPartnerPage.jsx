@@ -16,7 +16,7 @@ const breadcrumb = 'Contact';
 
 // @sf-generated-start summary:businessPartner
 const summary = [
-  { key: 'creditLimit', column: 'SO_CreditLimit', type: 'amount' },
+
 ];
 
 const statusField = null;
