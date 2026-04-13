@@ -7,6 +7,7 @@ const USERNAME_KEY = 'sf_auth_user';
 const ROLELIST_KEY = 'sf_auth_rolelist';
 const SELECTED_ROLE_KEY = 'sf_auth_selected_role';
 const SELECTED_ORG_KEY = 'sf_auth_selected_org';
+const PLATFORM_TOKEN_KEY = 'sf_platform_token';
 
 function safeJsonParse(key) {
   try {
@@ -33,6 +34,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(ROLELIST_KEY);
     localStorage.removeItem(SELECTED_ROLE_KEY);
     localStorage.removeItem(SELECTED_ORG_KEY);
+    localStorage.removeItem(PLATFORM_TOKEN_KEY);
   }, []);
 
   const value = useMemo(() => ({
