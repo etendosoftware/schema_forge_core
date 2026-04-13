@@ -241,7 +241,7 @@ const SELECTOR_PAGE = 50;
  * Fetches options from the server with lazy pagination triggered by scrolling.
  * Falls back to catalog when no selectorUrl is provided.
  */
-function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, token }) {
+function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
   const catalogOptions = getCatalogOptions(catalogs, entityName, field);
   const [serverOptions, setServerOptions] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -252,7 +252,12 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
   const fetchPage = useCallback((offset) => {
     if (!selectorUrl || !token || loadingRef.current || !hasMoreRef.current) return;
     loadingRef.current = true;
-    fetch(buildUrlWithParams(selectorUrl, { limit: SELECTOR_PAGE, offset }), {
+    const url = buildUrlWithParams(selectorUrl, {
+      ...selectorContext,
+      limit: SELECTOR_PAGE,
+      offset,
+    });
+    fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(res => res.ok ? res.json() : null)
@@ -267,7 +272,7 @@ function SelectorInput({ entityName, field, value, displayValue, onChange, catal
         loadingRef.current = false;
       })
       .catch(() => { loadingRef.current = false; });
-  }, [selectorUrl, token]);
+  }, [selectorUrl, selectorContext, token]);
 
   // Load first page when selectorUrl/token available
   useEffect(() => {
@@ -369,8 +374,10 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
           }
         }
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(() => {
+        setLoading(false);
+        setDynamicOptions([]);
+      });
   }, [parentValue, selectorUrl, selectorContext, token, field.dependsOn?.filterKey]);
 
   // If the current value isn't in options (real data from existing record), add it
@@ -460,6 +467,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
 export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false }) {
   const t = useLabel();
   const { locale } = useLocaleSwitch();
+  const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
   let displayFields;
   if (section) {
     // When filtering by section, include all fields (editable + readOnly) for that section
@@ -586,7 +594,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               formData={data}
               resolvedLabel={label}
               selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
-              selectorContext={selectorContext}
+              selectorContext={effectiveSelectorContext}
               token={token}
             />
           </div>
@@ -641,6 +649,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
                 return entry?.url?.includes('?') ? entry.url : `${apiBaseUrl}/${entity}/selectors/${f.column}`;
               })()}
+              selectorContext={effectiveSelectorContext}
               token={token}
             />
           </div>
@@ -742,7 +751,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               catalogs={catalogs}
               resolvedLabel={label}
               selectorUrl={selectorUrl}
-              selectorContext={selectorContext}
+              selectorContext={effectiveSelectorContext}
               token={token}
             />
           </div>

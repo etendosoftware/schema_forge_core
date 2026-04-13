@@ -27,7 +27,7 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
   ];
 
   return (
-    <div className="space-y-4 pt-5 pb-6">
+    <div className="space-y-4 pb-6">
       <FieldGroup title={ui('creditTax')} description={ui('creditTaxDescription')}>
         <EntityForm
           fields={creditFields}
@@ -47,6 +47,7 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
       <FieldGroup title={ui('billingPreferences')} description={ui('billingPreferencesDesc')}>
         <BillingPreferencesForm
           data={data}
+          entity="businessPartner"
           api={api}
           token={token}
           catalogs={catalogs}

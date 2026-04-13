@@ -1,11 +1,33 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { EntityForm } from '@/components/contract-ui';
 import { ChevronDown, MapPin, Tag, Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 
+const PRE_SAVE_BILLING_PREF_FIELDS = [
+  'priceList',
+  'paymentMethod',
+  'paymentTerms',
+  'account',
+  'customerBlocking',
+  'purchasePricelist',
+  'pOPaymentMethod',
+  'pOPaymentTerms',
+  'pOFinancialAccount',
+  'vendorBlocking',
+];
+
+function resolveId(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'object') {
+    const id = value.id ?? value.value ?? null;
+    return id == null || id === '' ? null : String(id);
+  }
+  return String(value);
+}
+
 // ─── Address search dropdown ────────────────────────────────────────────────
 
-function AddressSearch({ value, onChange, apiBase, token }) {
+function AddressSearch({ value, onChange, apiBase, token, selectorContext }) {
   const ui = useUI();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -24,7 +46,10 @@ function AddressSearch({ value, onChange, apiBase, token }) {
     if (!query.trim() || query.length < 2) { setResults([]); return; }
     const controller = new AbortController();
     setLoading(true);
-    const url = `${apiBase}/locationAddress/selectors/C_Location_ID?_search=${encodeURIComponent(query)}&_startRow=0&_endRow=20`;
+    const params = new URLSearchParams({ q: query, limit: '20', offset: '0' });
+    if (selectorContext?.AD_Org_ID) params.set('AD_Org_ID', selectorContext.AD_Org_ID);
+    if (selectorContext?.AD_Client_ID) params.set('AD_Client_ID', selectorContext.AD_Client_ID);
+    const url = `${apiBase}/locationAddress/selectors/C_Location_ID?${params.toString()}`;
     fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
@@ -33,7 +58,7 @@ function AddressSearch({ value, onChange, apiBase, token }) {
       })
       .catch(() => setLoading(false));
     return () => controller.abort();
-  }, [query, apiBase, token]);
+  }, [query, apiBase, token, selectorContext]);
 
   const displayLabel = value?._identifier ?? '';
 
@@ -118,10 +143,21 @@ function DiscountSelect({ value, options, onChange, loading }) {
 
 export default function BillingPreferencesForm(props) {
   const ui = useUI();
-  const { data, api, token } = props;
+  const { data, api, token, onChange } = props;
   const bpId = data?.id;
+  const canEditBillingPreferences = Boolean(bpId);
   const apiBase = api?.baseUrl ?? '';
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const organizationId = resolveId(data?.organization ?? data?.adOrgId ?? data?.ad_org_id);
+  const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
+
+  const selectorContext = useMemo(() => {
+    const ctx = {};
+    if (organizationId) ctx.AD_Org_ID = organizationId;
+    if (clientId) ctx.AD_Client_ID = clientId;
+    if (bpId) ctx.parentId = bpId;
+    return ctx;
+  }, [organizationId, clientId, bpId]);
 
   // Sub-entity records (current BP's discount + address)
   const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
@@ -146,11 +182,48 @@ export default function BillingPreferencesForm(props) {
       .catch(() => setAddressRecord(null));
 
     // Fetch available discounts catalog
-    fetch(`${apiBase}/basicDiscount/selectors/C_Discount_ID?_startRow=0&_endRow=200`, { headers: { Authorization: `Bearer ${token}` } })
+    const discountParams = new URLSearchParams({ limit: '200', offset: '0' });
+    if (organizationId) discountParams.set('AD_Org_ID', organizationId);
+    if (clientId) discountParams.set('AD_Client_ID', clientId);
+    fetch(`${apiBase}/basicDiscount/selectors/C_Discount_ID?${discountParams.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => setDiscountOptions((d?.items ?? []).map(item => ({ id: item.id, _identifier: item.label || item.name || item.id }))))
-      .catch(() => setDiscountOptions([]));
-  }, [bpId, token, apiBase]);
+      .then(d => {
+        const seen = new Set();
+        const options = [];
+        (d?.items ?? []).forEach((item) => {
+          if (!item?.id || seen.has(item.id)) return;
+          seen.add(item.id);
+          options.push({ id: item.id, _identifier: item.label || item.name || item.id });
+        });
+        setDiscountOptions(options);
+      })
+      .catch(() => setDiscountOptions([]))
+      .finally(() => setDiscountRecord(prev => prev === undefined ? null : prev)); // Clear loading state on error
+  }, [bpId, token, apiBase, organizationId, clientId]);
+
+  // In Classic, billing preferences are set after the Business Partner exists.
+  // Keep the pre-save create payload clean by removing auto-defaulted billing values
+  // that can come from backend preferences in /defaults.
+  useEffect(() => {
+    if (canEditBillingPreferences || typeof onChange !== 'function') return;
+
+    const hasPrefilledBillingValues = PRE_SAVE_BILLING_PREF_FIELDS.some((key) => {
+      const value = data?.[key];
+      return value != null && value !== '';
+    });
+
+    if (!hasPrefilledBillingValues) return;
+
+    PRE_SAVE_BILLING_PREF_FIELDS.forEach((key) => {
+      if (data?.[key] != null && data[key] !== '') {
+        onChange(key, null);
+      }
+      const identifierKey = `${key}$_identifier`;
+      if (data?.[identifierKey] != null && data[identifierKey] !== '') {
+        onChange(identifierKey, null);
+      }
+    });
+  }, [canEditBillingPreferences, data, onChange]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -291,6 +364,7 @@ export default function BillingPreferencesForm(props) {
                     onChange={handleAddressChange}
                     apiBase={apiBase}
                     token={token}
+                    selectorContext={selectorContext}
                   />
                 )
               }
@@ -301,19 +375,27 @@ export default function BillingPreferencesForm(props) {
         </>
       )}
 
-      {/* ── Customer / Vendor billing ─────────────────────────────────── */}
-      <EntityForm fields={customerCheckboxField} {...props} />
-      {data?.customer && (
-        <div className="pl-4 border-l-2 border-border">
-          <EntityForm fields={customerBillingFields} {...props} />
+      {!canEditBillingPreferences ? (
+        <div className="rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
+          {ui('billingPreferencesAfterSave')}
         </div>
-      )}
+      ) : (
+        <>
+          {/* ── Customer / Vendor billing ─────────────────────────────────── */}
+          <EntityForm {...props} fields={customerCheckboxField} selectorContext={selectorContext} />
+          {data?.customer && (
+            <div className="pl-4 border-l-2 border-border">
+              <EntityForm {...props} fields={customerBillingFields} selectorContext={selectorContext} />
+            </div>
+          )}
 
-      <EntityForm fields={vendorCheckboxField} {...props} />
-      {data?.vendor && (
-        <div className="pl-4 border-l-2 border-border">
-          <EntityForm fields={vendorBillingFields} {...props} />
-        </div>
+          <EntityForm {...props} fields={vendorCheckboxField} selectorContext={selectorContext} />
+          {data?.vendor && (
+            <div className="pl-4 border-l-2 border-border">
+              <EntityForm {...props} fields={vendorBillingFields} selectorContext={selectorContext} />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
