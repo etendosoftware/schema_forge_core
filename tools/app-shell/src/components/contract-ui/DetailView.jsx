@@ -154,11 +154,18 @@ export function DetailView({
     const category = api?.window?.category;
     const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
 
+    // Derive isCustomer/isVendor from window category so the BusinessPartner selector
+    // shows only customers (sales) or vendors (purchases).
+    const isCustomer = category === 'sales' ? 'Y' : null;
+    const isVendor = category === 'purchases' ? 'Y' : null;
+
     const next = {};
-    // Primary entity (header): inject isSOTrx so the priceList selector filters by direction
+    // Primary entity (header): inject isSOTrx, isCustomer, isVendor
     if (entity) {
       next[entity] = {
         ...(isSOTrx ? { isSOTrx } : {}),
+        ...(isCustomer ? { isCustomer } : {}),
+        ...(isVendor ? { isVendor } : {}),
       };
     }
     if (!parentRecordId) return next;
