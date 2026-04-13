@@ -3,7 +3,7 @@ import { Building2, Shield } from 'lucide-react';
 
 // TODO ETP-3690: switchContext removed — revisit if Settings UI is resurrected
 export default function SettingsPage() {
-  const { username, roleList, selectedRole, selectedOrg } = useAuth();
+  const { username, selectedRole, selectedOrg } = useAuth();
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-6">
@@ -49,11 +49,6 @@ export default function SettingsPage() {
             <span className="text-muted-foreground">Organization:</span>
             <span className="font-medium">{selectedOrg?.name || selectedOrg?.id || '\u2014'}</span>
           </div>
-          {roleList.length > 1 && (
-            <p className="text-xs text-muted-foreground pt-2">
-              {roleList.length} roles available. Context switching coming soon.
-            </p>
-          )}
         </div>
       </div>
     </div>

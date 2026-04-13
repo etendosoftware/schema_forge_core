@@ -115,7 +115,6 @@ function AuthGuard({ children }) {
 }
 
 function AppRoutes({ menuGroups, windowMap }) {
-  const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   // Public routes render without waiting for menu data
@@ -136,6 +135,7 @@ function AppRoutes({ menuGroups, windowMap }) {
           </Suspense>
         }
       />
+      <Route path="/login" element={<Navigate to="/onboarding" replace />} />
       <Route
         element={
           <AuthGuard>

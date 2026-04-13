@@ -1293,7 +1293,6 @@ function DashboardSkeleton() {
 
 export default function DashboardPage() {
   const ui = useUI();
-  const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
   const [dashDragOverId, setDashDragOverId] = useState(null);
@@ -1395,7 +1394,7 @@ export default function DashboardPage() {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
+            <UserAvatarButton />
           </div>
         </div>
       </div>

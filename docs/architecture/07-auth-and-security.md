@@ -20,7 +20,8 @@ User  -->  OnboardingPage.jsx  -->  POST /sws/go/login  (environment selection)
                                               |
                                               v
                                   RequestHandler validates token on each request
-                                  401 response  -->  onUnauthorized()  -->  redirect to /onboarding
+                                  401 response  -->  onUnauthorized() clears auth state and throws
+                                                      Protected routes redirect to /onboarding on the next render
 ```
 
 **Key files:**
@@ -50,7 +51,7 @@ On mount, `AuthContext` reads the token from localStorage to restore the session
 
 ### Auth Guard
 
-`AuthGuard` wraps all protected routes. If `isAuthenticated` is false (no token), the user is redirected to `/onboarding`. The onboarding page redirects authenticated users to `/dashboard`.
+`AuthGuard` wraps all protected routes. If `isAuthenticated` is false (no token), the user is redirected to `/onboarding`. The `/onboarding` route itself is public and always renders `OnboardingPage`, which can resume the onboarding/environment-selection flow based on the current platform session.
 
 ```
 /onboarding  -->  OnboardingPage (public)

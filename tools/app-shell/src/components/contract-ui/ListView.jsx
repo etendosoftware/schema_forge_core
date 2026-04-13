@@ -47,7 +47,6 @@ export function ListView({
   const ui = useUI();
   const label = tMenu(entityLabel) || entityLabel || entity;
   const [selectedRows, setSelectedRows] = useState([]);
-  const [showUserContext, setShowUserContext] = useState(false);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);
@@ -156,7 +155,7 @@ export function ListView({
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
+            <UserAvatarButton />
           </div>
         </div>
       </div>

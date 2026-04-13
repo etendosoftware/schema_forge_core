@@ -86,7 +86,6 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
   const [activeTab, setActiveTab] = useState('cart');
   const [showPriority, setShowPriority] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
-  const [showUserContext, setShowUserContext] = useState(false);
 
   // Refs
   const productSearchRef = useRef(null);
@@ -368,7 +367,7 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
+            <UserAvatarButton />
           </div>
         </div>
       </div>

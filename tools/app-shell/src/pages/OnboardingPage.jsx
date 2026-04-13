@@ -300,8 +300,12 @@ export default function OnboardingPage() {
           }
           // Clear all SW caches on login to guarantee fresh resources
           if ('caches' in window) {
-            const names = await caches.keys();
-            await Promise.all(names.map((n) => caches.delete(n)));
+            try {
+              const names = await caches.keys();
+              await Promise.all(names.map((n) => caches.delete(n)));
+            } catch (err) {
+              console.warn('Failed to clear SW caches during login', err);
+            }
           }
           window.location.href = '/dashboard';
           return;
