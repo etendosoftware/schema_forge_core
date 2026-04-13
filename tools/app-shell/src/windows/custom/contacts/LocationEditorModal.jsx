@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { toast } from 'sonner';
 
 const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '' };
 const SELECTOR_PAGE_SIZE = 120;
@@ -537,6 +538,10 @@ export default function LocationEditorModal({
 
   async function handleSave() {
     if (saving || initialLoading) return;
+    if (!form.country) {
+      toast.error(ui('locationCountryRequired'));
+      return;
+    }
     setSaving(true);
     try {
       const name = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
