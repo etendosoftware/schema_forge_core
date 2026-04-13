@@ -101,8 +101,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "editable",
-          "form": false
+          "visibility": "discarded"
         },
         "createLinesFromOrder": {
           "visibility": "discarded"

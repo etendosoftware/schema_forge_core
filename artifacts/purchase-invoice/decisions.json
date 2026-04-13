@@ -216,7 +216,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "editable",
+          "visibility": "discarded",
           "form": false,
           "displayLogic": null
         },

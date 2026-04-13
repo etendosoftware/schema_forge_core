@@ -355,6 +355,28 @@
             "required": true,
             "grid": false,
             "form": false
+          },
+          {
+            "name": "priceList",
+            "apiKey": "priceList",
+            "column": "M_PriceList_ID",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "form": true,
+            "section": "collapsed",
+            "reference": "PriceList",
+            "inputMode": "selector"
+          },
+          {
+            "name": "orderReference",
+            "apiKey": "orderReference",
+            "column": "POReference",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "form": true,
+            "section": "collapsed"
           }
         ],
         "searchableFields": [
@@ -1028,7 +1050,7 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": true,
             "form": false
           },

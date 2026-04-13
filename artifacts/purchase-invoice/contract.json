@@ -3041,7 +3041,7 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": true,
             "form": false
           },
