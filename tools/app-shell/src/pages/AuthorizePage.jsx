@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { createApiFetch } from '@/auth/api.js';
@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle2, XCircle, Loader2, Plug } from 'lucide-react';
+import { useMenuLabel, useUI } from '@/i18n';
 
 function detectBaseUrl() {
   const path = window.location.pathname;
@@ -19,11 +20,11 @@ function detectMcpUrl() {
 }
 
 const SCOPE_LABELS = {
-  'neo:read': { label: 'Read data', description: 'View records, selectors, and schemas' },
-  'neo:write': { label: 'Write data', description: 'Create, update, and delete records' },
-  'neo:process': { label: 'Run processes', description: 'Execute business processes' },
-  'neo:report': { label: 'Generate reports', description: 'Generate and download reports' },
-  'neo:*': { label: 'Full access', description: 'All permissions (read, write, process, report)' },
+  'neo:read': { labelKey: 'oauthReadData', descriptionKey: 'oauthReadDataDesc' },
+  'neo:write': { labelKey: 'oauthWriteData', descriptionKey: 'oauthWriteDataDesc' },
+  'neo:process': { labelKey: 'oauthRunProcesses', descriptionKey: 'oauthRunProcessesDesc' },
+  'neo:report': { labelKey: 'oauthGenerateReports', descriptionKey: 'oauthGenerateReportsDesc' },
+  'neo:*': { labelKey: 'oauthFullAccess', descriptionKey: 'oauthFullAccessDesc' },
 };
 
 export default function AuthorizePage() {
@@ -31,6 +32,9 @@ export default function AuthorizePage() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('idle'); // idle | authorizing | success | error
   const [errorMessage, setErrorMessage] = useState('');
+  const tMenu = useMenuLabel();
+  const ui = useUI();
+  const isEmbedded = searchParams.get('embedded') === '1';
 
   const clientId = searchParams.get('client_id');
   const redirectUri = searchParams.get('redirect_uri');
@@ -96,11 +100,11 @@ export default function AuthorizePage() {
 
   // No OAuth params — show the connections landing page
   if (!isOAuthFlow) {
-    return <ConnectionsLanding />;
+    return <ConnectionsLanding isEmbedded={isEmbedded} tMenu={tMenu} ui={ui} />;
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-4">
+    <div className={isEmbedded ? 'flex min-h-screen items-center justify-center p-4' : 'flex min-h-[80vh] items-center justify-center p-4'}>
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center gap-4">
@@ -109,32 +113,34 @@ export default function AuthorizePage() {
             </div>
 
             <div className="text-center">
-              <h1 className="text-xl font-semibold">Authorize Connection</h1>
+              <h1 className="text-xl font-semibold">{ui('oauthAuthorizeConnection')}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                An application is requesting access to your Etendo account
+                {ui('oauthAuthorizeConnectionDesc')}
               </p>
             </div>
 
             <div className="w-full rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs font-medium text-muted-foreground">Application</div>
+              <div className="text-xs font-medium text-muted-foreground">{ui('oauthApplication')}</div>
               <div className="mt-0.5 font-mono text-sm">{clientId}</div>
             </div>
 
             <div className="w-full rounded-lg border bg-muted/30 p-3">
-              <div className="text-xs font-medium text-muted-foreground">Signed in as</div>
+              <div className="text-xs font-medium text-muted-foreground">{ui('oauthSignedInAs')}</div>
               <div className="mt-0.5 text-sm font-medium">{username}</div>
             </div>
 
             <div className="w-full">
               <div className="mb-2 text-xs font-medium text-muted-foreground">
-                Requested permissions
+                {ui('oauthRequestedPermissions')}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {scopes.map((s) => {
-                  const info = SCOPE_LABELS[s] || { label: s, description: '' };
+                  const info = SCOPE_LABELS[s];
+                  const label = info ? ui(info.labelKey) : s;
+                  const description = info ? ui(info.descriptionKey) : '';
                   return (
-                    <Badge key={s} variant="secondary" className="text-xs" title={info.description}>
-                      {info.label}
+                    <Badge key={s} variant="secondary" className="text-xs" title={description}>
+                      {label}
                     </Badge>
                   );
                 })}
@@ -151,7 +157,7 @@ export default function AuthorizePage() {
             {status === 'success' ? (
               <div className="flex w-full items-center gap-2 rounded-lg border border-green-500/30 bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/30 dark:text-green-400">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                Authorized! Redirecting...
+                {ui('oauthAuthorizedRedirecting')}
               </div>
             ) : (
               <div className="flex w-full gap-3 pt-2">
@@ -161,7 +167,7 @@ export default function AuthorizePage() {
                   onClick={handleDeny}
                   disabled={status === 'authorizing'}
                 >
-                  Deny
+                  {ui('oauthDeny')}
                 </Button>
                 <Button
                   className="flex-1"
@@ -169,16 +175,16 @@ export default function AuthorizePage() {
                   disabled={status === 'authorizing'}
                 >
                   {status === 'authorizing' ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Authorizing...</>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {ui('oauthAuthorizing')}</>
                   ) : (
-                    'Authorize'
+                    ui('oauthAuthorize')
                   )}
                 </Button>
               </div>
             )}
 
             <p className="text-center text-xs text-muted-foreground">
-              Redirect: <span className="font-mono">{redirectUri}</span>
+              {ui('oauthRedirect')}: <span className="font-mono">{redirectUri}</span>
             </p>
           </div>
         </CardContent>
@@ -187,9 +193,9 @@ export default function AuthorizePage() {
   );
 }
 
-function ConnectionsLanding() {
+function ConnectionsLanding({ isEmbedded, tMenu, ui }) {
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-4">
+    <div className={isEmbedded ? 'flex min-h-screen items-center justify-center p-4' : 'flex min-h-[80vh] items-center justify-center p-4'}>
       <Card className="w-full max-w-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center gap-6">
@@ -198,37 +204,36 @@ function ConnectionsLanding() {
             </div>
 
             <div className="text-center">
-              <h1 className="text-xl font-semibold">Connect con Claude</h1>
+              <h1 className="text-xl font-semibold">{tMenu('Connect with Claude')}</h1>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Connect Claude Desktop or any MCP-compatible client to your Etendo instance.
-                The client will be redirected here to request your permission.
+                {ui('oauthConnectLandingDesc')}
               </p>
             </div>
 
             <div className="w-full space-y-3">
-              <h2 className="text-sm font-medium">How it works</h2>
+              <h2 className="text-sm font-medium">{ui('oauthHowItWorks')}</h2>
               <ol className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">1</span>
-                  Add this Etendo server as an MCP remote in Claude Desktop
+                  {ui('oauthStep1')}
                 </li>
                 <li className="flex gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">2</span>
-                  Claude will open this page to request access
+                  {ui('oauthStep2')}
                 </li>
                 <li className="flex gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">3</span>
-                  Review the permissions and click Authorize
+                  {ui('oauthStep3')}
                 </li>
                 <li className="flex gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">4</span>
-                  Claude can now read and write data in Etendo on your behalf
+                  {ui('oauthStep4')}
                 </li>
               </ol>
             </div>
 
             <div className="w-full rounded-lg border bg-muted/30 p-4">
-              <div className="mb-2 text-xs font-medium text-muted-foreground">MCP Server URL</div>
+              <div className="mb-2 text-xs font-medium text-muted-foreground">{ui('oauthMcpServerUrl')}</div>
               <code className="block break-all text-sm">
                 {detectMcpUrl()}
               </code>
