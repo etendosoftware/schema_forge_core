@@ -11,7 +11,6 @@ const fields = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', label: 'Total Gross Amount', required: true, readOnly: true, section: 'summary' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', label: 'Total Net Amount', required: true, readOnly: true, section: 'summary' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed' },
-  { key: 'cashVAT', column: 'Iscashvat', type: 'checkbox', label: 'Cash VAT', required: true, section: 'principal', defaultValue: 'N', readOnlyLogic: (record) => record['processed'] === true },
 ];
 // @sf-generated-end fields:header
 

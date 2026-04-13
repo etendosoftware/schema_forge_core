@@ -156,6 +156,9 @@
         "ndDimension": {
           "visibility": "discarded"
         },
+        "cashVAT": {
+          "visibility": "discarded"
+        },
         "orderDate": {
           "grid": true,
           "searchable": true,
