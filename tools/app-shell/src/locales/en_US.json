@@ -16489,8 +16489,8 @@
     "filter": "Filter...",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
-    "statusComplete": "Complete",
-    "statusCompleted": "Completed",
+    "statusComplete": "Confirmed",
+    "statusCompleted": "Confirmed",
     "statusVoid": "Void",
     "statusInProcess": "In Process",
     "statusClosed": "Closed",
@@ -18090,7 +18090,7 @@
       "label": "Closed"
     },
     "CO": {
-      "label": "Right"
+      "label": "Confirmed"
     },
     "DR": {
       "label": "Draft"
