@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { EntityForm } from '@/components/contract-ui';
-import { ChevronDown, MapPin, Tag, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, MapPin, Tag } from 'lucide-react';
 import { useUI } from '@/i18n';
+import LocationEditorModal from './LocationEditorModal';
 
 const PRE_SAVE_BILLING_PREF_FIELDS = [
   'priceList',
@@ -23,95 +24,6 @@ function resolveId(value) {
     return id == null || id === '' ? null : String(id);
   }
   return String(value);
-}
-
-// ─── Address search dropdown ────────────────────────────────────────────────
-
-function AddressSearch({ value, onChange, apiBase, token, selectorContext }) {
-  const ui = useUI();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const ref = useRef(null);
-
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  useEffect(() => {
-    if (!query.trim() || query.length < 2) { setResults([]); return; }
-    const controller = new AbortController();
-    setLoading(true);
-    const params = new URLSearchParams({ q: query, limit: '20', offset: '0' });
-    if (selectorContext?.AD_Org_ID) params.set('AD_Org_ID', selectorContext.AD_Org_ID);
-    if (selectorContext?.AD_Client_ID) params.set('AD_Client_ID', selectorContext.AD_Client_ID);
-    const url = `${apiBase}/locationAddress/selectors/C_Location_ID?${params.toString()}`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        setResults((d?.items ?? []).map(item => ({ id: item.id, _identifier: item.label || item.name || item.id })));
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-    return () => controller.abort();
-  }, [query, apiBase, token, selectorContext]);
-
-  const displayLabel = value?._identifier ?? '';
-
-  return (
-    <div className="relative" ref={ref}>
-      <div
-        className="flex items-center gap-2 h-9 rounded-md border border-input bg-background px-3 text-sm cursor-pointer hover:border-ring transition-colors"
-        onClick={() => { setOpen(o => !o); setQuery(''); }}
-      >
-        <MapPin size={13} className="text-muted-foreground shrink-0" />
-        <span className={`flex-1 truncate ${displayLabel ? '' : 'text-muted-foreground'}`}>
-          {displayLabel || ui('searchAddress')}
-        </span>
-        <ChevronDown size={13} className="text-muted-foreground shrink-0" />
-      </div>
-
-      {open && (
-        <div className="absolute z-50 top-full mt-1 w-full rounded-md border border-border bg-popover shadow-md">
-          <div className="p-2 border-b border-border">
-            <input
-              autoFocus
-              className="w-full text-sm px-2 py-1 rounded border border-input bg-background outline-none"
-              placeholder={ui('typeToSearch')}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-          </div>
-          <div className="max-h-48 overflow-y-auto">
-            {loading && (
-              <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                <Loader2 size={13} className="animate-spin" /> {ui('searching')}
-              </div>
-            )}
-            {!loading && results.length === 0 && query.length >= 2 && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">{ui('noResults')}</div>
-            )}
-            {!loading && query.length < 2 && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">{ui('typeAtLeast2Characters')}</div>
-            )}
-            {results.map(r => (
-              <button
-                key={r.id}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors truncate"
-                onClick={() => { onChange({ id: r.id, _identifier: r._identifier }); setOpen(false); }}
-              >
-                {r._identifier}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ─── Discount select ────────────────────────────────────────────────────────
@@ -150,18 +62,20 @@ export default function BillingPreferencesForm(props) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const organizationId = resolveId(data?.organization ?? data?.adOrgId ?? data?.ad_org_id);
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+
+  // Sub-entity records (current BP's discount + address)
+  const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
+  const [addressRecord, setAddressRecord] = useState(undefined);
 
   const selectorContext = useMemo(() => {
     const ctx = {};
     if (organizationId) ctx.AD_Org_ID = organizationId;
     if (clientId) ctx.AD_Client_ID = clientId;
     if (bpId) ctx.parentId = bpId;
+    if (addressRecord?.locationAddress) ctx.locationId = addressRecord.locationAddress;
     return ctx;
-  }, [organizationId, clientId, bpId]);
-
-  // Sub-entity records (current BP's discount + address)
-  const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
-  const [addressRecord, setAddressRecord] = useState(undefined);
+  }, [organizationId, clientId, bpId, addressRecord?.locationAddress]);
   // Available discount catalog
   const [discountOptions, setDiscountOptions] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -227,6 +141,16 @@ export default function BillingPreferencesForm(props) {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
+  async function refreshAddressRecord() {
+    const d = await fetch(
+      `${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=1`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+      .then(r => (r.ok ? r.json() : null))
+      .catch(() => null);
+    setAddressRecord(d?.response?.data?.[0] ?? null);
+  }
+
   async function handleDiscountChange(newDiscountId) {
     if (saving) return;
     setSaving(true);
@@ -269,46 +193,16 @@ export default function BillingPreferencesForm(props) {
     }
   }
 
-  async function handleAddressChange(selected) {
-    if (saving) return;
-    setSaving(true);
-    try {
-      if (addressRecord?.id) {
-        const res = await fetch(`${apiBase}/locationAddress/${addressRecord.id}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ locationAddress: selected.id }),
-        });
-        if (res.ok) {
-          setAddressRecord(prev => ({ ...prev, locationAddress: selected.id, 'locationAddress$_identifier': selected._identifier }));
-        }
-      } else {
-        const res = await fetch(`${apiBase}/locationAddress?parentId=${bpId}`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            locationAddress: selected.id,
-            shipToAddress: 'Y',
-            invoiceToAddress: 'Y',
-          }),
-        });
-        if (res.ok) {
-          const d = await res.json();
-          setAddressRecord(d?.response?.data?.[0] ?? { locationAddress: selected.id, 'locationAddress$_identifier': selected._identifier });
-        }
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   const discountLoading = discountRecord === undefined;
   const addressLoading = addressRecord === undefined;
   const currentDiscountId = discountRecord?.discount ?? null;
+  let identifier = addressRecord?.['locationAddress$_identifier'] || addressRecord?.name || '';
+  if (identifier === '., ') identifier = ui('locationSelectorTitle');
+
   const currentAddress = addressRecord
-    ? { id: addressRecord.locationAddress, _identifier: addressRecord['locationAddress$_identifier'] ?? '' }
+    ? { id: addressRecord.locationAddress, _identifier: identifier }
     : null;
 
   const customerCheckboxField = [
@@ -336,6 +230,7 @@ export default function BillingPreferencesForm(props) {
   ];
 
   return (
+    <>
     <div className="flex flex-col gap-4">
 
       {/* ── Discount + Address inline fields ─────────────────────────── */}
@@ -359,13 +254,17 @@ export default function BillingPreferencesForm(props) {
               {addressLoading
                 ? <div className="h-9 rounded-md bg-muted animate-pulse" />
                 : (
-                  <AddressSearch
-                    value={currentAddress}
-                    onChange={handleAddressChange}
-                    apiBase={apiBase}
-                    token={token}
-                    selectorContext={selectorContext}
-                  />
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 h-9 rounded-md border border-input bg-background px-3 text-sm text-left hover:border-ring transition-colors"
+                    onClick={() => setLocationModalOpen(true)}
+                  >
+                    <MapPin size={13} className="text-muted-foreground shrink-0" />
+                    <span className={`flex-1 truncate ${currentAddress?._identifier ? '' : 'text-muted-foreground'}`}>
+                      {currentAddress?._identifier || ui('setLocation')}
+                    </span>
+                    <ChevronRight size={13} className="text-muted-foreground shrink-0" />
+                  </button>
                 )
               }
             </div>
@@ -398,5 +297,23 @@ export default function BillingPreferencesForm(props) {
         </>
       )}
     </div>
+
+    {bpId && (
+      <LocationEditorModal
+        open={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        onSaved={async () => {
+          await refreshAddressRecord();
+          setLocationModalOpen(false);
+        }}
+        bplId={addressRecord?.locationAddress ?? null}
+        bplLinkId={addressRecord?.id ?? null}
+        bpId={bpId}
+        contactsApiBase={apiBase}
+        token={token}
+        selectorContext={selectorContext}
+      />
+    )}
+    </>
   );
 }

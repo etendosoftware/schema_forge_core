@@ -16,7 +16,7 @@ const breadcrumb = 'Contact';
 
 // @sf-generated-start summary:businessPartner
 const summary = [
-  { key: 'creditLimit', column: 'SO_CreditLimit', type: 'amount' },
+
 ];
 
 const statusField = null;
@@ -627,7 +627,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={[
+        secondaryTabs={recordId === 'new' ? [] : [
           { key: 'contact', label: 'Contact Person', Table: ContactTable, Form: ContactForm, addLineFields: { entry: [
           { key: 'firstName', column: 'Firstname', type: 'text', label: 'First Name' },
           { key: 'lastName', column: 'Lastname', type: 'text', label: 'Last Name' },
@@ -637,7 +637,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           ], derived: [], hidden: [] } },
           { key: 'bankAccount', label: 'Contact Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
           { key: 'bankName', column: 'Bank_Name', type: 'text', label: 'Bank Name' },
-          { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
+          { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
           ], derived: [], hidden: [] } },

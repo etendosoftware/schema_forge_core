@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-04-10T00:54:05.323Z",
-  "checksum": "32296387f66409d6",
+  "version": "0.1.0",
+  "generatedAt": "2026-04-10T20:04:02.547Z",
+  "checksum": "5d27577c6eb577f1",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -32,7 +32,8 @@
             "email",
             "phone",
             "position"
-          ]
+          ],
+          "requireSavedRecord": true
         },
         "bankAccount": {
           "tabMode": "table-form",
@@ -43,7 +44,8 @@
             "bankFormat",
             "accountNo",
             "iBAN"
-          ]
+          ],
+          "requireSavedRecord": true
         }
       },
       "detailEntity": null,
@@ -210,7 +212,7 @@
             "name": "oBTIKTaxIDKey",
             "apiKey": "oBTIKTaxIDKey",
             "column": "EM_OBTIK_Tax_ID_Key",
-            "label": "Clave NIF País Residencia",
+            "label": "Clave NIF Pa\u00eds Residencia",
             "type": "enum",
             "tsType": "string",
             "visibility": "editable",
@@ -232,7 +234,7 @@
               },
               {
                 "value": "4",
-                "name": "Documento oficial de identificación expedido por el país"
+                "name": "Documento oficial de identificaci\u00f3n expedido por el pa\u00eds"
               },
               {
                 "value": "5",
@@ -351,7 +353,7 @@
             "label": "Credit Limit",
             "type": "amount",
             "tsType": "number",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": false,
             "form": true,
@@ -3603,7 +3605,7 @@
             "apiKey": "creditLimit",
             "column": "SO_CreditLimit",
             "type": "amount",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true
           },
           {

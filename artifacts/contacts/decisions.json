@@ -4,18 +4,33 @@
     "category": "contact",
     "name": "Contacts",
     "entityLabel": "Contact",
-
     "sidebarLayout": true,
     "breadcrumb": "Contact",
     "detailEntity": null,
     "primaryTabs": [
-      { "key": "general",   "label": "General"   },
-      { "key": "financial", "label": "Financial", "panel": "ContactsFinancialPanel" }
+      {
+        "key": "general",
+        "label": "General"
+      },
+      {
+        "key": "financial",
+        "label": "Financial",
+        "panel": "ContactsFinancialPanel"
+      }
     ],
     "quickFilters": [
-      { "label": "All",       "filter": null },
-      { "label": "Customers", "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D" },
-      { "label": "Vendors",   "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D" }
+      {
+        "label": "All",
+        "filter": null
+      },
+      {
+        "label": "Customers",
+        "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
+      },
+      {
+        "label": "Vendors",
+        "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
+      }
     ],
     "customComponents": {
       "headerTable": "ContactsTable"
@@ -23,7 +38,9 @@
     "hidePrint": true,
     "hideMoreMenu": true,
     "processOverrides": {
-      "setNewCurrency": { "exclude": true }
+      "setNewCurrency": {
+        "exclude": true
+      }
     },
     "listBaseFilter": "criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D",
     "listViewOptions": {
@@ -44,7 +61,8 @@
           "email",
           "phone",
           "position"
-        ]
+        ],
+        "requireSavedRecord": true
       },
       "bankAccount": {
         "tabMode": "table-form",
@@ -55,7 +73,8 @@
           "bankFormat",
           "accountNo",
           "iBAN"
-        ]
+        ],
+        "requireSavedRecord": true
       }
     }
   },
@@ -111,7 +130,7 @@
           "section": "principal"
         },
         "creditLimit": {
-          "visibility": "readOnly",
+          "visibility": "editable",
           "form": true,
           "label": "Credit Limit",
           "grid": false,
