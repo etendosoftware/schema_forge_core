@@ -63,11 +63,24 @@ const WIDGET_REGISTRY = [
   { id: 'revenue-chart',        labelKey: 'revenueVsExpenses',     defaultSize: 'medium', defaultVisible: true  },
   { id: 'pending-tasks',        labelKey: 'pendingTasks',          defaultSize: 'small',  defaultVisible: true  },
   { id: 'top-clients',          labelKey: 'topClients',            defaultSize: 'small',  defaultVisible: true  },
-  // Hidden by default
-  { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: false },
-  { id: 'recent-invoices',      labelKey: 'recentInvoices',        defaultSize: 'medium', defaultVisible: false },
-  { id: 'best-products',        labelKey: 'bestProducts',          defaultSize: 'medium', defaultVisible: false },
-  { id: 'best-sellers',         labelKey: 'bestSellers',           defaultSize: 'medium', defaultVisible: false },
+  { id: 'collections-payments', labelKey: 'collectionsPayments',   defaultSize: 'small',  defaultVisible: true  },
+  { id: 'recent-invoices',      labelKey: 'recentInvoices',        defaultSize: 'medium', defaultVisible: true  },
+  { id: 'best-products',        labelKey: 'bestProducts',          defaultSize: 'medium', defaultVisible: true  },
+  { id: 'best-sellers',         labelKey: 'bestSellers',           defaultSize: 'medium', defaultVisible: true  },
+];
+
+const DEFAULT_WIDGET_CONFIG = [
+  { id: 'kpi-revenue', visible: true, size: 'small' },
+  { id: 'kpi-expenses', visible: true, size: 'small' },
+  { id: 'kpi-profit', visible: true, size: 'small' },
+  { id: 'quick-actions', visible: true, size: 'small' },
+  { id: 'revenue-chart', visible: true, size: 'medium' },
+  { id: 'pending-tasks', visible: true, size: 'small' },
+  { id: 'top-clients', visible: true, size: 'small' },
+  { id: 'collections-payments', visible: true, size: 'medium', height: 240 },
+  { id: 'recent-invoices', visible: true, size: 'medium', height: 240 },
+  { id: 'best-products', visible: true, size: 'medium', height: 240 },
+  { id: 'best-sellers', visible: true, size: 'medium', height: 240 },
 ];
 
 function getWidgetMeta(id) {
@@ -180,37 +193,14 @@ function formatDashboardCompact(value, currencyLabel) {
  * ----------------------------------------------------------------*/
 
 function useWidgetConfig() {
-  const [config, setConfig] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dashboard_widget_config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const savedIds = parsed.map((c) => c.id);
-        const missing = WIDGET_REGISTRY
-          .filter((w) => !savedIds.includes(w.id))
-          .map((w) => ({ id: w.id, visible: w.defaultVisible, size: w.defaultSize }));
-        // Backfill size for items saved before size was tracked
-        const withSize = parsed.map((c) => ({
-          size: getWidgetMeta(c.id)?.defaultSize ?? 'medium',
-          ...c,
-        }));
-        // Migrate legacy size names to new ones
-        const LEGACY_SIZE_MAP = { full: 'large', wide: 'medium', half: 'medium', narrow: 'small' };
-        const migrated = withSize.map((c) => ({
-          ...c,
-          size: LEGACY_SIZE_MAP[c.size] || c.size,
-          // Normalize any previously saved arbitrary heights to nearest row step
-          ...(c.height != null ? { height: snapToRows(c.height) } : {}),
-        }));
-        return [...migrated, ...missing];
-      }
-    } catch {}
-    return WIDGET_REGISTRY.map((w) => ({ id: w.id, visible: w.defaultVisible, size: w.defaultSize }));
-  });
+  const [config, setConfig] = useState(() => DEFAULT_WIDGET_CONFIG);
+
+  useEffect(() => {
+    localStorage.removeItem('dashboard_widget_config');
+  }, []);
 
   const update = (newConfig) => {
     setConfig(newConfig);
-    localStorage.setItem('dashboard_widget_config', JSON.stringify(newConfig));
   };
 
   const toggle = (id) => {
@@ -272,7 +262,7 @@ function useWidgetConfig() {
   };
 
   const reset = () => {
-    const defaults = WIDGET_REGISTRY.map((w) => ({ id: w.id, visible: w.defaultVisible, size: w.defaultSize }));
+    const defaults = DEFAULT_WIDGET_CONFIG;
     update(defaults);
   };
 
@@ -1394,9 +1384,11 @@ export default function DashboardPage() {
               <Sparkles className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setWidgetManagerOpen(true)}
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-              title={ui('customizeDashboard')}
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground/40 cursor-not-allowed transition-colors"
+              title={`${ui('customizeDashboard')} (${ui('comingSoon')})`}
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
