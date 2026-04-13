@@ -8,7 +8,7 @@ import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
@@ -632,8 +632,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      const badgeProps = getStatusBadgeProps(raw);
-      return <Badge {...badgeProps}>{label}</Badge>;
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
@@ -647,11 +646,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      const badgeProps = getStatusBadgeProps(raw);
-      if (badgeProps.variant === 'outline' && !badgeProps.className) {
-        return <span className="text-sm text-muted-foreground">{label}</span>;
-      }
-      return <Badge {...badgeProps}>{label}</Badge>;
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
     }
     if (col.type === 'percent') {
       const val = Number(row[col.key]);

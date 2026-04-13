@@ -109,6 +109,14 @@ const api = {
     },
     {
       "entity": "quotation",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
+    },
+    {
+      "entity": "quotation",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
@@ -320,6 +328,9 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   },
   "labelOverrides": {
     "es_ES": {

@@ -145,11 +145,28 @@ export function DetailView({
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   const selectorContextByEntity = useMemo(() => {
-    if (!parentRecordId) return {};
+    const headerData = hook.editing || hook.selected;
+    const priceListId = headerData?.priceList ?? null;
+
+    // Derive isSOTrx from window category so NEO's validation filter resolves
+    // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
+    // purchase price lists depending on the document type.
+    const category = api?.window?.category;
+    const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
 
     const next = {};
+    // Primary entity (header): inject isSOTrx so the priceList selector filters by direction
+    if (entity) {
+      next[entity] = {
+        ...(isSOTrx ? { isSOTrx } : {}),
+      };
+    }
+    if (!parentRecordId) return next;
     if (detailEntity) {
-      next[detailEntity] = { parentId: parentRecordId };
+      next[detailEntity] = {
+        parentId: parentRecordId,
+        ...(priceListId ? { priceList: priceListId } : {}),
+      };
     }
     for (const tab of secondaryTabs) {
       if (tab?.key) {
@@ -157,7 +174,7 @@ export function DetailView({
       }
     }
     return next;
-  }, [detailEntity, parentRecordId, secondaryTabs]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabs, hook.editing, hook.selected, api]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
@@ -490,12 +507,43 @@ export function DetailView({
         const hint = rowValues[field + '_' + key];
         if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
       }
-      // Tax-included price lists: SL_Order_Product sets grossUnitPrice; SL_Order_Amt cascades
-      // to derive unitPrice (net). If unitPrice is still null or 0 after the cascade (e.g.,
-      // cascade ran with qty=0 and computed 0, or cascade did not run), fall back to showing
-      // grossUnitPrice so the user sees a price rather than nothing.
+      // Tax-included price lists: SL_Order_Product sets grossUnitPrice (price with tax) but
+      // omits netUnitPrice (net price). Fetch the real tax rate from the Etendo DAL REST API
+      // so the backend receives a valid netUnitPrice instead of null/0 at save time.
+      if (result.grossUnitPrice != null && result.netUnitPrice == null) {
+        const taxId = result.tax;
+        let taxRate = 0;
+        if (taxId) {
+          try {
+            // Derive Etendo context path from the current URL (same logic as detectBaseUrl in auth/api.js)
+            const path = window.location.pathname;
+            const webIdx = path.indexOf('/web/');
+            const etendoBase = webIdx !== -1
+              ? path.substring(0, webIdx)
+              : (import.meta.env.VITE_API_BASE || '');
+            const dalUrl = `${etendoBase}/openapi/dal/C_Tax/${taxId}?_selectedProperties=rate`;
+            const res = await fetch(dalUrl, {
+              credentials: 'include',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              taxRate = parseFloat(data.rate ?? 0);
+            }
+          } catch {
+            taxRate = 0;
+          }
+        }
+        const gross = Number(result.grossUnitPrice);
+        result.netUnitPrice = taxRate > 0
+          ? parseFloat((gross / (1 + taxRate / 100)).toFixed(6))
+          : gross;
+        console.log('[PRICE FIX] derived netUnitPrice from grossUnitPrice',
+          { gross, taxRate, net: result.netUnitPrice, taxId });
+      }
+      // Show the net price to the user; fall back to gross only if net is still unavailable.
       if (result.grossUnitPrice != null && !result.unitPrice) {
-        result.unitPrice = result.grossUnitPrice;
+        result.unitPrice = result.netUnitPrice ?? result.grossUnitPrice;
       }
       // SL_Invoice_Product / SL_Order_Product callouts reset quantity fields to 0 as a
       // classic Etendo "clear-for-entry" signal. Discard any qty=0 update when the row
@@ -962,6 +1010,7 @@ export function DetailView({
                   api={api}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
+                  selectorContext={selectorContextByEntity[entity]}
                 />
               </div>
 
@@ -981,6 +1030,7 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      selectorContext={selectorContextByEntity[entity]}
                     />
                   </div>
                 </CollapsibleSection>
@@ -1489,6 +1539,7 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      selectorContext={selectorContextByEntity[entity]}
                     />
                   </div>
                 )}

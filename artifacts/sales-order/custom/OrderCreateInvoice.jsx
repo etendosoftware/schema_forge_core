@@ -261,7 +261,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
 
       } else {
         onClose();
-        navigate(`/sales-order/${orderId}`, { replace: true });
+        window.location.reload();
       }
     } catch (e) {
       setError(e.message || ui('soErrorOccurred'));

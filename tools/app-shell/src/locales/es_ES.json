@@ -16731,8 +16731,8 @@
     "filter": "Filtrar...",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
-    "statusComplete": "Completado",
-    "statusCompleted": "Completado",
+    "statusComplete": "Confirmado",
+    "statusCompleted": "Confirmado",
     "statusVoid": "Anulado",
     "statusInProcess": "En proceso",
     "statusClosed": "Cerrado",
@@ -18386,7 +18386,7 @@
       "label": "Cerrado"
     },
     "CO": {
-      "label": "Completada"
+      "label": "Confirmado"
     },
     "DR": {
       "label": "Borrador"

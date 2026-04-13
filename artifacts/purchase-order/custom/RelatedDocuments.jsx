@@ -40,10 +40,10 @@ const RELATED_SPECS = [
 ];
 
 async function fetchPayments(orderId, token, apiBaseUrl) {
-  const plans = await fetchChild('purchase-order', 'Payment Plan', orderId, token, apiBaseUrl);
+  const plans = await fetchChild('purchase-order', 'paymentPlan', orderId, token, apiBaseUrl);
   if (plans.length === 0) return [];
   const detailResults = await Promise.all(
-    plans.map(plan => fetchChild('purchase-order', 'Payment Details', plan.id, token, apiBaseUrl))
+    plans.map(plan => fetchChild('purchase-order', 'paymentDetails', plan.id, token, apiBaseUrl))
   );
   const seen = new Set();
   const paymentIds = detailResults.flat()

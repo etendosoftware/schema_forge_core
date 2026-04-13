@@ -104,7 +104,16 @@ function mapFormFieldType(field) {
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  // gridOrder: absolute insertion position (1-based). Only the tagged fields move;
+  // all other fields stay in their original relative order.
+  const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
+  const unpinned = gridFieldsRaw.filter(f => f.gridOrder == null);
+  const gridFields = [...unpinned];
+  for (const f of pinned) {
+    const pos = Math.max(1, Math.min(f.gridOrder, gridFields.length + 1));
+    gridFields.splice(pos - 1, 0, f);
+  }
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 

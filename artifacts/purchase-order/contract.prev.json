@@ -1,7 +1,7 @@
 {
-  "version": "0.13.2",
-  "generatedAt": "2026-04-10T16:31:37.529Z",
-  "checksum": "83e043149f6baac8",
+  "version": "0.15.0",
+  "generatedAt": "2026-04-13T16:48:02.792Z",
+  "checksum": "5425467cb5d83dec",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -18,7 +18,8 @@
         "VO"
       ],
       "customComponents": {
-        "topbarRight": "PurchaseOrderActions"
+        "topbarRight": "PurchaseOrderActions",
+        "topbarExtra": "PurchaseOrderDraftChips"
       },
       "secondaryTabs": {},
       "labelOverrides": {
@@ -251,10 +252,10 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": false,
+            "form": true,
             "reference": "PriceList",
             "inputMode": "selector",
-            "section": "other",
+            "section": "collapsed",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_PriceList"
             },
@@ -911,7 +912,8 @@
               "source": "@#Date@"
             }
           }
-        ]
+        ],
+        "javaQualifier": "purchaseOrderHeaderHandler"
       },
       "lines": {
         "tableName": "C_OrderLine",
@@ -1879,7 +1881,8 @@
         "VO"
       ],
       "customComponents": {
-        "topbarRight": "PurchaseOrderActions"
+        "topbarRight": "PurchaseOrderActions",
+        "topbarExtra": "PurchaseOrderDraftChips"
       },
       "secondaryTabs": {},
       "labelOverrides": {
@@ -2706,7 +2709,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "purchaseOrderHeaderHandler"
       },
       "lines": {
         "tableName": "C_OrderLine",
@@ -4579,6 +4583,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "purchases"
     },
     "labelOverrides": {
       "es_ES": {

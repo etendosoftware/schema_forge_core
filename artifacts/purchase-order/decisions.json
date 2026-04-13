@@ -6,12 +6,6 @@
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
-    "statusEnumLabels": {
-      "DR": "Borrador",
-      "CO": "Confirmado",
-      "CL": "Cerrado",
-      "VO": "Anulado"
-    },
     "customComponents": {
       "topbarRight": "PurchaseOrderActions",
       "topbarExtra": "PurchaseOrderDraftChips"
@@ -33,6 +27,7 @@
   },
   "entities": {
     "header": {
+      "javaQualifier": "purchaseOrderHeaderHandler",
       "fields": {
         "transactionDocument": {
           "visibility": "editable",
@@ -53,7 +48,8 @@
         "documentStatus": {
           "grid": true,
           "form": false,
-          "searchable": true
+          "searchable": true,
+          "gridOrder": 4
         },
         "currency": {
           "form": false,
@@ -78,7 +74,7 @@
           "order": 1
         },
         "partnerAddress": {
-          "visibility": "readOnly",
+          "visibility": "editable",
           "form": true,
           "section": "principal",
           "order": 4,
@@ -105,13 +101,13 @@
           "section": "collapsed"
         },
         "paymentTerms": {
-          "form": true,
+          "form": false,
           "section": "collapsed"
         },
         "priceList": {
           "grid": true,
-          "section": "other",
-          "form": false
+          "section": "collapsed",
+          "form": true
         },
         "invoiceAddress": {
           "reference": "BusinessPartnerLocation",

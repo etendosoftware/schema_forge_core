@@ -218,6 +218,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
   if (fieldDecision.display) field.display = fieldDecision.display;
   if (fieldDecision.cellType) field.cellType = fieldDecision.cellType;
+  if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
 
   const isVisible = visibility !== 'system' && visibility !== 'discarded';
 

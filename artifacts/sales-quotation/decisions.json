@@ -100,7 +100,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "visibility": "system"
+          "section": "collapsed"
         },
         "currency": {
           "visibility": "readOnly",
@@ -133,8 +133,7 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "invoiceAddress": {
           "visibility": "discarded"

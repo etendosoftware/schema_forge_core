@@ -16,7 +16,6 @@ const breadcrumb = 'Purchases / Purchase Order';
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -586,6 +585,9 @@ const api = {
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
   },
+  "window": {
+    "category": "purchases"
+  },
   "labelOverrides": {
     "es_ES": {
       "C_BPartner_ID": "Contacto",
@@ -629,7 +631,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
-        statusEnumLabels={{"DR":"Borrador","CO":"Confirmado","CL":"Cerrado","VO":"Anulado"}}
         {...props}
       />
     );
