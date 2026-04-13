@@ -1296,11 +1296,21 @@ export default function DashboardPage() {
   const dashboardCurrency = useDashboardCurrency(token, selectedOrg);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
-  const quickActions = actions.map((a) => ({
-    label: resolveQuickActionLabel(ui, tMenu, { label: a.label, to: a.route }),
-    to: resolveQuickActionRoute(a.route),
-    icon: ICON_MAP[a.icon] || FileText,
-  }));
+  const quickActionOrder = ['/sales-order', '/sales-invoice', '/contacts'];
+  const quickActions = actions
+    .slice()
+    .sort((a, b) => {
+      const aIndex = quickActionOrder.indexOf(a.route);
+      const bIndex = quickActionOrder.indexOf(b.route);
+      const safeA = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+      const safeB = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+      return safeA - safeB;
+    })
+    .map((a) => ({
+      label: resolveQuickActionLabel(ui, tMenu, { label: a.label, to: a.route }),
+      to: resolveQuickActionRoute(a.route),
+      icon: ICON_MAP[a.icon] || FileText,
+    }));
 
   const visibleItems = config.filter((c) => c.visible && getWidgetMeta(c.id));
 
@@ -1319,6 +1329,7 @@ export default function DashboardPage() {
           previousValue={kpi.previousValue}
           icon={kpi.icon}
           kpiKey={kpi.key}
+          currencyLabel={dashboardCurrency}
         />
       );
     };
