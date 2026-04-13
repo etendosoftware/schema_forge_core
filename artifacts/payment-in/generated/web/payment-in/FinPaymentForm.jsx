@@ -8,7 +8,9 @@ const fields = [
 
 // @sf-generated-start component:FinPaymentForm
 export default function FinPaymentForm(props) {
+  // @sf-custom-slot hooks:FinPaymentForm
   return <EntityForm fields={fields} cols={3} {...props} />;
 }
-FinPaymentForm.hasCollapsedFields = false;
 // @sf-generated-end component:FinPaymentForm
+
+// @sf-custom-slot section:FinPaymentForm-custom

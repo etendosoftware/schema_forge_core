@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import FinPaymentTable from './FinPaymentTable';
@@ -21,6 +20,7 @@ const summary = [
 const statusField = 'status';
 // @sf-generated-end summary:finPayment
 
+// @sf-custom-slot extraBadges:finPayment
 // @sf-generated-start extraBadges:finPayment
 const extraBadges = [];
 // @sf-generated-end extraBadges:finPayment
@@ -155,14 +155,6 @@ const api = {
       "field": "aPRMReconcilePayment",
       "column": "EM_APRM_Reconcile_Payment",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReconcilePayment"
-    },
-    {
-      "entity": "finPayment",
-      "field": "aeatsiiSend",
-      "column": "EM_Aeatsii_Send",
-      "url": "/sws/neo/payment-in/finPayment/{id}/action/aeatsiiSend",
-      "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
-      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -182,6 +174,7 @@ const api = {
 
 // @sf-generated-start component:FinPaymentPage
 export default function FinPaymentPage({ windowName, recordId, ...props }) {
+  // @sf-custom-slot hooks:FinPaymentPage
   if (recordId === 'new') {
     return <NewPaymentModal token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
   }
@@ -202,7 +195,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       api={api}
         documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
         hideDeleteWhenComplete
-        noHeaderBorder
+        notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         bottomSection={PaymentBottomPanel}
         topbarRight={PaymentActivityToggle}
@@ -228,3 +221,5 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:FinPaymentPage
+
+// @sf-custom-slot section:FinPaymentPage-custom

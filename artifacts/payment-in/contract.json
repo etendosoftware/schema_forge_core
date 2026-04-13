@@ -1,13 +1,13 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-10T15:04:05.305Z",
-  "checksum": "56c4ca704f4dffda",
+  "version": "0.1.0",
+  "generatedAt": "2026-04-06T15:44:32.158Z",
+  "checksum": "dc6efc2bfe73d2b1",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
       "name": "Payment In",
       "primaryEntity": "finPayment",
-      "category": "finance",
+      "category": "sales",
       "documentPreview": {
         "titlePrefix": "Payment"
       },
@@ -52,7 +52,6 @@
       "detailEntity": null,
       "summaryFields": [],
       "salesTheme": true,
-      "noHeaderBorder": true,
       "layoutType": "default"
     },
     "entities": {
@@ -403,7 +402,7 @@
       "id": "E547CE89D4C04429B6340FFA44E70716",
       "name": "Payment In",
       "primaryEntity": "finPayment",
-      "category": "finance",
+      "category": "sales",
       "documentPreview": {
         "titlePrefix": "Payment"
       },
@@ -447,8 +446,7 @@
       },
       "detailEntity": null,
       "summaryFields": [],
-      "salesTheme": true,
-      "noHeaderBorder": true
+      "salesTheme": true
     },
     "entities": {
       "finPayment": {
@@ -769,30 +767,6 @@
             "required": true
           },
           {
-            "name": "aeatsiiEstado",
-            "apiKey": "aeatsiiEstado",
-            "column": "EM_Aeatsii_Estado",
-            "type": "enum",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "aeatsiiIssent",
-            "apiKey": "aeatsiiIssent",
-            "column": "EM_Aeatsii_Issent",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "aeatsiiSend",
-            "apiKey": "aeatsiiSend",
-            "column": "EM_Aeatsii_Send",
-            "type": "button",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "updated",
             "apiKey": "updated",
             "column": "Updated",
@@ -1064,14 +1038,6 @@
             "required": false
           },
           {
-            "name": "etvfacPaymentZero",
-            "apiKey": "etvfacPaymentZero",
-            "column": "EM_Etvfac_Payment_Zero",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "updated",
             "apiKey": "updated",
             "column": "Updated",
@@ -1326,14 +1292,6 @@
         "field": "aPRMReconcilePayment",
         "column": "EM_APRM_Reconcile_Payment",
         "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReconcilePayment"
-      },
-      {
-        "entity": "finPayment",
-        "field": "aeatsiiSend",
-        "column": "EM_Aeatsii_Send",
-        "url": "/sws/neo/payment-in/finPayment/{id}/action/aeatsiiSend",
-        "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
-        "processType": "obuiapp"
       }
     ],
     "queryParams": {
@@ -2010,36 +1968,12 @@
         "id": "t-83",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "aeatsiiEstado",
-        "runner": "node",
-        "description": "System field 'aeatsiiEstado' should exist in backend but not frontend for finPayment"
-      },
-      {
-        "id": "t-84",
-        "category": "system-field",
-        "entity": "finPayment",
-        "field": "aeatsiiIssent",
-        "runner": "node",
-        "description": "System field 'aeatsiiIssent' should exist in backend but not frontend for finPayment"
-      },
-      {
-        "id": "t-85",
-        "category": "system-field",
-        "entity": "finPayment",
-        "field": "aeatsiiSend",
-        "runner": "node",
-        "description": "System field 'aeatsiiSend' should exist in backend but not frontend for finPayment"
-      },
-      {
-        "id": "t-86",
-        "category": "system-field",
-        "entity": "finPayment",
         "field": "updated",
         "runner": "node",
         "description": "System field 'updated' should exist in backend but not frontend for finPayment"
       },
       {
-        "id": "t-87",
+        "id": "t-84",
         "category": "system-field",
         "entity": "finPayment",
         "field": "updatedBy",
@@ -2047,7 +1981,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for finPayment"
       },
       {
-        "id": "t-88",
+        "id": "t-85",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "invoiceAmount",
@@ -2055,7 +1989,7 @@
         "description": "System field 'invoiceAmount' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-89",
+        "id": "t-86",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "paymentDetails",
@@ -2063,7 +1997,7 @@
         "description": "System field 'paymentDetails' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-90",
+        "id": "t-87",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "expected",
@@ -2071,7 +2005,7 @@
         "description": "System field 'expected' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-91",
+        "id": "t-88",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "documentNo2",
@@ -2079,7 +2013,7 @@
         "description": "System field 'documentNo2' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-92",
+        "id": "t-89",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "active",
@@ -2087,7 +2021,7 @@
         "description": "System field 'active' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-93",
+        "id": "t-90",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "orderPaymentSchedule",
@@ -2095,7 +2029,7 @@
         "description": "System field 'orderPaymentSchedule' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-94",
+        "id": "t-91",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "writeoffAmount",
@@ -2103,7 +2037,7 @@
         "description": "System field 'writeoffAmount' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-95",
+        "id": "t-92",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "documentNo2",
@@ -2111,7 +2045,7 @@
         "description": "System field 'documentNo2' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-96",
+        "id": "t-93",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "gLItem",
@@ -2119,7 +2053,7 @@
         "description": "System field 'gLItem' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-97",
+        "id": "t-94",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "canceled",
@@ -2127,7 +2061,7 @@
         "description": "System field 'canceled' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-98",
+        "id": "t-95",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "doubtfulDebtAmount",
@@ -2135,7 +2069,7 @@
         "description": "System field 'doubtfulDebtAmount' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-99",
+        "id": "t-96",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "invoicePaid",
@@ -2143,7 +2077,7 @@
         "description": "System field 'invoicePaid' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-100",
+        "id": "t-97",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "businessPartner",
@@ -2151,7 +2085,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-101",
+        "id": "t-98",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "activity",
@@ -2159,7 +2093,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-102",
+        "id": "t-99",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "product",
@@ -2167,7 +2101,7 @@
         "description": "System field 'product' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-103",
+        "id": "t-100",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "salesCampaign",
@@ -2175,7 +2109,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-104",
+        "id": "t-101",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "project",
@@ -2183,7 +2117,7 @@
         "description": "System field 'project' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-105",
+        "id": "t-102",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "salesRegion",
@@ -2191,7 +2125,7 @@
         "description": "System field 'salesRegion' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-106",
+        "id": "t-103",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "costCenter",
@@ -2199,7 +2133,7 @@
         "description": "System field 'costCenter' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-107",
+        "id": "t-104",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "stDimension",
@@ -2207,7 +2141,7 @@
         "description": "System field 'stDimension' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-108",
+        "id": "t-105",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "ndDimension",
@@ -2215,7 +2149,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-109",
+        "id": "t-106",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "client",
@@ -2223,7 +2157,7 @@
         "description": "System field 'client' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-110",
+        "id": "t-107",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "organization",
@@ -2231,7 +2165,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-111",
+        "id": "t-108",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "fINPaymentScheduledetailID",
@@ -2239,7 +2173,7 @@
         "description": "System field 'fINPaymentScheduledetailID' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-112",
+        "id": "t-109",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "creationDate",
@@ -2247,7 +2181,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-113",
+        "id": "t-110",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "createdBy",
@@ -2255,7 +2189,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-114",
+        "id": "t-111",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "aPRMFinancialAccount",
@@ -2263,7 +2197,7 @@
         "description": "System field 'aPRMFinancialAccount' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-115",
+        "id": "t-112",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "aPRMPaymentMethod",
@@ -2271,15 +2205,7 @@
         "description": "System field 'aPRMPaymentMethod' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-116",
-        "category": "system-field",
-        "entity": "finPaymentScheduleDetail",
-        "field": "etvfacPaymentZero",
-        "runner": "node",
-        "description": "System field 'etvfacPaymentZero' should exist in backend but not frontend for finPaymentScheduleDetail"
-      },
-      {
-        "id": "t-117",
+        "id": "t-113",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "updated",
@@ -2287,7 +2213,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-118",
+        "id": "t-114",
         "category": "system-field",
         "entity": "finPaymentScheduleDetail",
         "field": "updatedBy",
@@ -2295,182 +2221,182 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for finPaymentScheduleDetail"
       },
       {
-        "id": "t-119",
+        "id": "t-115",
         "category": "rule-declared",
         "rule": "SE_Payment_FinAccount",
         "runner": "node",
         "description": "Rule 'SE_Payment_FinAccount' (undefined) should be declared"
       },
       {
-        "id": "t-120",
+        "id": "t-116",
         "category": "rule-declared",
         "rule": "SE_Payment_MultiCurrency",
         "runner": "node",
         "description": "Rule 'SE_Payment_MultiCurrency' (undefined) should be declared"
       },
       {
-        "id": "t-121",
+        "id": "t-117",
         "category": "rule-declared",
         "rule": "SE_Payment_BPartner",
         "runner": "node",
         "description": "Rule 'SE_Payment_BPartner' (undefined) should be declared"
       },
       {
-        "id": "t-122",
+        "id": "t-118",
         "category": "rule-declared",
         "rule": "SE_PaymentMethod_FinAccount",
         "runner": "node",
         "description": "Rule 'SE_PaymentMethod_FinAccount' (undefined) should be declared"
       },
       {
-        "id": "t-123",
+        "id": "t-119",
         "category": "rule-declared",
         "rule": "SL_AdvPayment_Document",
         "runner": "node",
         "description": "Rule 'SL_AdvPayment_Document' (undefined) should be declared"
       },
       {
-        "id": "t-124",
+        "id": "t-120",
         "category": "rule-declared",
         "rule": "SE_CalculateExchangeRate",
         "runner": "node",
         "description": "Rule 'SE_CalculateExchangeRate' (undefined) should be declared"
       },
       {
-        "id": "t-125",
+        "id": "t-121",
         "category": "rule-declared",
         "rule": "AD_Client Trx Security validation",
         "runner": "node",
         "description": "Rule 'AD_Client Trx Security validation' (validation) should be declared"
       },
       {
-        "id": "t-126",
+        "id": "t-122",
         "category": "rule-declared",
         "rule": "AD_Org Trx Security validation",
         "runner": "node",
         "description": "Rule 'AD_Org Trx Security validation' (validation) should be declared"
       },
       {
-        "id": "t-127",
+        "id": "t-123",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
         "runner": "node",
         "description": "Rule 'AD_Client Security validation' (validation) should be declared"
       },
       {
-        "id": "t-128",
+        "id": "t-124",
         "category": "rule-declared",
         "rule": "AD_Org Security validation",
         "runner": "node",
         "description": "Rule 'AD_Org Security validation' (validation) should be declared"
       },
       {
-        "id": "t-129",
+        "id": "t-125",
         "category": "rule-declared",
         "rule": "Fin_FinancialAccountofPaymentMethod",
         "runner": "node",
         "description": "Rule 'Fin_FinancialAccountofPaymentMethod' (validation) should be declared"
       },
       {
-        "id": "t-130",
+        "id": "t-126",
         "category": "rule-declared",
         "rule": "Currency of Financial Account",
         "runner": "node",
         "description": "Rule 'Currency of Financial Account' (validation) should be declared"
       },
       {
-        "id": "t-131",
+        "id": "t-127",
         "category": "rule-declared",
         "rule": "FIN_Payment Status validation",
         "runner": "node",
         "description": "Rule 'FIN_Payment Status validation' (validation) should be declared"
       },
       {
-        "id": "t-132",
+        "id": "t-128",
         "category": "rule-declared",
         "rule": "FIN_PaymentMethodsWithAccountIsReceiptControl",
         "runner": "node",
         "description": "Rule 'FIN_PaymentMethodsWithAccountIsReceiptControl' (validation) should be declared"
       },
       {
-        "id": "t-133",
+        "id": "t-129",
         "category": "rule-declared",
         "rule": "C_DocType - Receive/Make Payment",
         "runner": "node",
         "description": "Rule 'C_DocType - Receive/Make Payment' (validation) should be declared"
       },
       {
-        "id": "t-134",
+        "id": "t-130",
         "category": "rule-declared",
         "rule": "Document currency",
         "runner": "node",
         "description": "Rule 'Document currency' (validation) should be declared"
       },
       {
-        "id": "t-135",
+        "id": "t-131",
         "category": "rule-declared",
         "rule": "Accounting Schema currency",
         "runner": "node",
         "description": "Rule 'Accounting Schema currency' (validation) should be declared"
       },
       {
-        "id": "t-136",
+        "id": "t-132",
         "category": "rule-declared",
         "rule": "undefined",
         "runner": "node",
         "description": "Rule 'undefined' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-137",
+        "id": "t-133",
         "category": "rule-declared",
         "rule": "Execute Payment",
         "runner": "node",
         "description": "Rule 'Execute Payment' (process) should be declared"
       },
       {
-        "id": "t-138",
+        "id": "t-134",
         "category": "rule-declared",
         "rule": "Payment Process",
         "runner": "node",
         "description": "Rule 'Payment Process' (process) should be declared"
       },
       {
-        "id": "t-139",
+        "id": "t-135",
         "category": "rule-declared",
         "rule": "Reverse Payment",
         "runner": "node",
         "description": "Rule 'Reverse Payment' (process) should be declared"
       },
       {
-        "id": "t-140",
+        "id": "t-136",
         "category": "rule-declared",
         "rule": "EM_APRM_Reconcile_Payment",
         "runner": "node",
         "description": "Rule 'EM_APRM_Reconcile_Payment' (process) should be declared"
       },
       {
-        "id": "t-141",
+        "id": "t-137",
         "category": "rule-declared",
         "rule": "Posted",
         "runner": "node",
         "description": "Rule 'Posted' (process) should be declared"
       },
       {
-        "id": "t-142",
+        "id": "t-138",
         "category": "rule-declared",
         "rule": "Add Payment",
         "runner": "node",
         "description": "Rule 'Add Payment' (process) should be declared"
       },
       {
-        "id": "t-143",
+        "id": "t-139",
         "category": "rule-declared",
         "rule": "Print payments process",
         "runner": "node",
         "description": "Rule 'Print payments process' (process) should be declared"
       },
       {
-        "id": "t-144",
+        "id": "t-140",
         "category": "process-happy",
         "process": "Add Payment",
         "entity": "finPayment",
@@ -2478,7 +2404,7 @@
         "description": "Process 'Add Payment' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-145",
+        "id": "t-141",
         "category": "process-failure",
         "process": "Add Payment",
         "entity": "finPayment",
@@ -2486,7 +2412,7 @@
         "description": "Process 'Add Payment' should fail when preconditions are not met"
       },
       {
-        "id": "t-146",
+        "id": "t-142",
         "category": "process-happy",
         "process": "Payment Process",
         "entity": "finPayment",
@@ -2494,7 +2420,7 @@
         "description": "Process 'Payment Process' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-147",
+        "id": "t-143",
         "category": "process-failure",
         "process": "Payment Process",
         "entity": "finPayment",
@@ -2502,7 +2428,7 @@
         "description": "Process 'Payment Process' should fail when preconditions are not met"
       },
       {
-        "id": "t-148",
+        "id": "t-144",
         "category": "process-happy",
         "process": "Execute Payment",
         "entity": "finPayment",
@@ -2510,7 +2436,7 @@
         "description": "Process 'Execute Payment' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-149",
+        "id": "t-145",
         "category": "process-failure",
         "process": "Execute Payment",
         "entity": "finPayment",
@@ -2518,7 +2444,7 @@
         "description": "Process 'Execute Payment' should fail when preconditions are not met"
       },
       {
-        "id": "t-150",
+        "id": "t-146",
         "category": "process-happy",
         "process": "Reverse Payment",
         "entity": "finPayment",
@@ -2526,7 +2452,7 @@
         "description": "Process 'Reverse Payment' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-151",
+        "id": "t-147",
         "category": "process-failure",
         "process": "Reverse Payment",
         "entity": "finPayment",
@@ -2534,7 +2460,7 @@
         "description": "Process 'Reverse Payment' should fail when preconditions are not met"
       },
       {
-        "id": "t-152",
+        "id": "t-148",
         "category": "process-happy",
         "process": "Reconcile Payment",
         "entity": "finPayment",
@@ -2542,7 +2468,7 @@
         "description": "Process 'Reconcile Payment' should complete successfully with valid preconditions"
       },
       {
-        "id": "t-153",
+        "id": "t-149",
         "category": "process-failure",
         "process": "Reconcile Payment",
         "entity": "finPayment",
@@ -2550,21 +2476,21 @@
         "description": "Process 'Reconcile Payment' should fail when preconditions are not met"
       },
       {
-        "id": "t-154",
+        "id": "t-150",
         "category": "crud-flags",
         "entity": "finPayment",
         "runner": "node",
         "description": "CRUD flags for 'finPayment' should all be booleans"
       },
       {
-        "id": "t-155",
+        "id": "t-151",
         "category": "crud-flags",
         "entity": "finPaymentScheduleDetail",
         "runner": "node",
         "description": "CRUD flags for 'finPaymentScheduleDetail' should all be booleans"
       },
       {
-        "id": "t-156",
+        "id": "t-152",
         "category": "selector-endpoint",
         "entity": "finPayment",
         "field": "businessPartner",
@@ -2572,7 +2498,7 @@
         "description": "Selector endpoint for 'businessPartner' in finPayment should exist"
       },
       {
-        "id": "t-157",
+        "id": "t-153",
         "category": "selector-endpoint",
         "entity": "finPayment",
         "field": "paymentMethod",
@@ -2580,7 +2506,7 @@
         "description": "Selector endpoint for 'paymentMethod' in finPayment should exist"
       },
       {
-        "id": "t-158",
+        "id": "t-154",
         "category": "selector-endpoint",
         "entity": "finPayment",
         "field": "account",
@@ -2588,7 +2514,7 @@
         "description": "Selector endpoint for 'account' in finPayment should exist"
       },
       {
-        "id": "t-159",
+        "id": "t-155",
         "category": "selector-endpoint",
         "entity": "finPayment",
         "field": "currency",
@@ -2596,7 +2522,7 @@
         "description": "Selector endpoint for 'currency' in finPayment should exist"
       },
       {
-        "id": "t-160",
+        "id": "t-156",
         "category": "selector-endpoint",
         "entity": "finPaymentScheduleDetail",
         "field": "invoicePaymentSchedule",
@@ -2604,7 +2530,7 @@
         "description": "Selector endpoint for 'invoicePaymentSchedule' in finPaymentScheduleDetail should exist"
       },
       {
-        "id": "t-161",
+        "id": "t-157",
         "category": "action-endpoint",
         "entity": "finPayment",
         "field": "aPRMAddScheduledpayments",
@@ -2612,7 +2538,7 @@
         "description": "Action endpoint for 'aPRMAddScheduledpayments' in finPayment should exist"
       },
       {
-        "id": "t-162",
+        "id": "t-158",
         "category": "action-endpoint",
         "entity": "finPayment",
         "field": "posted",
@@ -2620,7 +2546,7 @@
         "description": "Action endpoint for 'posted' in finPayment should exist"
       },
       {
-        "id": "t-163",
+        "id": "t-159",
         "category": "action-endpoint",
         "entity": "finPayment",
         "field": "aPRMProcessPayment",
@@ -2628,7 +2554,7 @@
         "description": "Action endpoint for 'aPRMProcessPayment' in finPayment should exist"
       },
       {
-        "id": "t-164",
+        "id": "t-160",
         "category": "action-endpoint",
         "entity": "finPayment",
         "field": "aprmExecutepayment",
@@ -2636,7 +2562,7 @@
         "description": "Action endpoint for 'aprmExecutepayment' in finPayment should exist"
       },
       {
-        "id": "t-165",
+        "id": "t-161",
         "category": "action-endpoint",
         "entity": "finPayment",
         "field": "aPRMReversePayment",
@@ -2644,24 +2570,16 @@
         "description": "Action endpoint for 'aPRMReversePayment' in finPayment should exist"
       },
       {
-        "id": "t-166",
+        "id": "t-162",
         "category": "action-endpoint",
         "entity": "finPayment",
         "field": "aPRMReconcilePayment",
         "runner": "node",
         "description": "Action endpoint for 'aPRMReconcilePayment' in finPayment should exist"
-      },
-      {
-        "id": "t-167",
-        "category": "action-endpoint",
-        "entity": "finPayment",
-        "field": "aeatsiiSend",
-        "runner": "node",
-        "description": "Action endpoint for 'aeatsiiSend' in finPayment should exist"
       }
     ],
     "summary": {
-      "total": 167,
+      "total": 162,
       "byCategory": {
         "field-presence": 13,
         "field-type": 13,
@@ -2672,16 +2590,16 @@
         "displaylogic-evaluable": 2,
         "readonlylogic-evaluable": 7,
         "default-value-type": 4,
-        "system-field": 65,
+        "system-field": 61,
         "rule-declared": 25,
         "process-happy": 5,
         "process-failure": 5,
         "crud-flags": 2,
         "selector-endpoint": 5,
-        "action-endpoint": 7
+        "action-endpoint": 6
       },
       "byRunner": {
-        "node": 157,
+        "node": 152,
         "junit": 10
       }
     }

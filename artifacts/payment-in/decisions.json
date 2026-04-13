@@ -4,9 +4,7 @@
     "category": "finance",
     "name": "Payment In",
     "salesTheme": true,
-    "documentPreview": {
-      "titlePrefix": "Payment"
-    },
+    "documentPreview": { "titlePrefix": "Payment" },
     "relatedDocuments": true,
     "customComponents": {
       "bottomSection": "PaymentBottomPanel",
@@ -17,37 +15,15 @@
     "hideDeleteWhenComplete": true,
     "summaryFields": [],
     "menuActions": [
-      {
-        "key": "reverse",
-        "label": "Reverse Payment",
-        "destructive": true,
-        "visibleWhenStatus": [
-          "RPPC",
-          "RPR",
-          "RDNC"
-        ],
-        "columnName": "aPRMReversePayment"
-      }
+      { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
     ],
     "processOverrides": {
-      "aPRMProcessPayment": {
-        "label": "Process Payment",
-        "displayLogicRaw": "@status@='RPAP'"
-      },
-      "aPRMAddScheduledpayments": {
-        "exclude": true
-      },
-      "aprmExecutepayment": {
-        "exclude": true
-      },
-      "aPRMReversePayment": {
-        "exclude": true
-      },
-      "aPRMReconcilePayment": {
-        "exclude": true
-      }
-    },
-    "noHeaderBorder": true
+      "aPRMProcessPayment": { "label": "Process Payment", "displayLogicRaw": "@status@='RPAP'" },
+      "aPRMAddScheduledpayments": { "exclude": true },
+      "aprmExecutepayment": { "exclude": true },
+      "aPRMReversePayment": { "exclude": true },
+      "aPRMReconcilePayment": { "exclude": true }
+    }
   },
   "entities": {
     "header": {
@@ -139,7 +115,7 @@
         "processed": {
           "visibility": "system"
         },
-        "payment": {
+        "id": {
           "visibility": "system"
         },
         "active": {
@@ -221,7 +197,7 @@
         "client": {
           "visibility": "system"
         },
-        "fINPaymentScheduledetailID": {
+        "id": {
           "visibility": "system"
         },
         "writeoffAmount": {
