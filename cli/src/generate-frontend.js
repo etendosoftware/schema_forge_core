@@ -511,7 +511,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
-    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+    const rawDefault = String(f.defaultValue);
+    const parentColMatch = rawDefault.match(/^@(\w+)@$/);
+    if (parentColMatch) {
+      const colName = parentColMatch[1];
+      const headerField = allEntityFields.find(hf => hf.column === colName);
+      if (headerField) {
+        return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+      }
+    }
+    const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
     return `    { key: '${f.name}', value: '${defaultValue}' },`;
   }).join('\n');
 
@@ -533,8 +542,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
+  const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
@@ -668,10 +679,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+  // hideSaveStatuses prop (DetailView)
+  const hideSaveStatusesProp = hideSaveStatuses.length > 0
+    ? `\n        hideSaveStatuses={${JSON.stringify(hideSaveStatuses)}}`
+    : '';
   // hideMoreMenu prop (DetailView)
   const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
   // hideMoreDetails prop (DetailView)
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
+  // noHeaderBorder prop (DetailView)
+  const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
   // listViewOptions props
   const listViewOptionsProp = listViewOptions
     ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
@@ -927,7 +944,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
         {...props}${sidebarContentProp}
       />
     );

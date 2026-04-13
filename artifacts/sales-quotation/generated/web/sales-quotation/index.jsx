@@ -267,6 +267,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Contacto"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Contact"
+    }
   }
 };
 

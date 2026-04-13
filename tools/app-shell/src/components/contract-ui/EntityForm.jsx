@@ -454,7 +454,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
 export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false }) {
-  const t = useLabel();
+  const t = useLabel(api?.labelOverrides);
   const { locale } = useLocaleSwitch();
   const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
   let displayFields;

@@ -17,12 +17,12 @@ const breadcrumb = 'Sales / Goods Shipment';
 // @sf-generated-start summary:goodsShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:goodsShipment
 
-// @sf-custom-slot extraBadges:goodsShipment
 // @sf-generated-start extraBadges:goodsShipment
 const extraBadges = [];
 // @sf-generated-end extraBadges:goodsShipment
@@ -35,12 +35,7 @@ const processes = [
 // @sf-generated-end processes:goodsShipment
 
 // @sf-generated-start draftMode:goodsShipment
-const draftMode = {
-  "enabled": true,
-  "processField": "documentAction",
-  "processValue": "CO",
-  "label": "Confirmar"
-};
+const draftMode = null;
 // @sf-generated-end draftMode:goodsShipment
 
 // @sf-generated-start addLineFields:goodsShipmentLine
@@ -239,10 +234,6 @@ const api = {
 
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
-  // @sf-custom-start hooks:GoodsShipmentPage
-  const bulkActions = (ctx) => <BulkInvoiceFromShipment {...ctx} />;
-  props = { ...props, bulkActions };
-  // @sf-custom-end hooks:GoodsShipmentPage
   
   if (recordId) {
     return (
@@ -266,13 +257,13 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={GoodsShipmentActions}
         menuActions={({ status }) => [
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
-        draftMode={draftMode}
         salesTheme
         {...props}
       />
@@ -287,10 +278,10 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
+      hidePrint
       {...props}
     />
   );
 }
 // @sf-generated-end component:GoodsShipmentPage
-
-// @sf-custom-slot section:GoodsShipmentPage-custom

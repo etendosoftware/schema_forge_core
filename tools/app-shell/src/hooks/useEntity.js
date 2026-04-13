@@ -294,6 +294,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
               normalized[key] = `${yyyy}-${mm}-${dd}`;
             } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
               normalized[key] = val.slice(1, -1).replace(/''/g, "'");
+            } else if (typeof val === 'number' && Number.isInteger(val)) {
+              // Enum/list fields are stored as strings in the DB (e.g. priority: 5 → "5").
+              // The backend /defaults endpoint returns them as JSON integers, but the
+              // PATCH/POST API expects string values — otherwise OBDal throws a type error.
+              normalized[key] = String(val);
             }
           }
 
@@ -430,6 +435,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       // Include parentId in the body — the backend resolves it to the correct FK field name
       // and uses it to load parent record values for @FieldName@ defaults (generic, no hardcoding).
       body.parentId = selected.id;
+      console.log('[POST body]', JSON.stringify(body));
       const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
         method: 'POST',
         headers,
@@ -462,9 +468,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-    // Refetch header to update totals after line edit
-    if (selected?.id) fetchById(selected.id);
-  }, [selected, fetchById]);
+    // Refetch header and children — backend may recalculate totals or derived fields
+    if (selected?.id) {
+      fetchById(selected.id);
+      fetchChildren(selected.id);
+    }
+  }, [selected, fetchById, fetchChildren]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));

@@ -12,9 +12,6 @@ const filters = ['product'];
 
 // @sf-generated-start component:GoodsShipmentLineTable
 export default function GoodsShipmentLineTable(props) {
-  // @sf-custom-slot hooks:GoodsShipmentLineTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:GoodsShipmentLineTable
-
-// @sf-custom-slot section:GoodsShipmentLineTable-custom
