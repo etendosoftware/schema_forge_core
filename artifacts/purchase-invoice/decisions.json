@@ -65,15 +65,19 @@
           "readOnlyLogic": null
         },
         "paymentTerms": {
-          "section": "other",
-          "form": false,
+          "section": "principal",
           "grid": true,
+          "reference": "PaymentTerm",
+          "inputMode": "selector",
           "readOnlyLogic": null
         },
         "paymentMethod": {
-          "section": "collapsed",
+          "section": "principal",
           "reference": "PaymentMethod",
           "readOnlyLogic": null
+        },
+        "cashVAT": {
+          "visibility": "discarded"
         },
         "priceList": {
           "section": "collapsed",
@@ -212,7 +216,8 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded",
+          "visibility": "editable",
+          "form": false,
           "displayLogic": null
         },
         "createLinesFromOrder": {

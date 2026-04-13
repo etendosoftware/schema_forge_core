@@ -7,6 +7,7 @@ import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoi
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
+import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
 
 /* eslint-disable react/prop-types */
@@ -80,10 +81,12 @@ export default function PurchaseInvoiceWindow(props) {
         summary={summary}
         extraBadges={[]}
         topbarRight={PurchaseInvoiceTopbar}
+        bottomSection={PurchaseInvoiceBottomPanel}
         notesField="description"
         customTabs={customTabs}
-        onAfterSave={true}
         breadcrumb={breadcrumb}
+        onAfterSave={true}
+        addLineGuard={(d) => !!d?.businessPartner}
       />
     );
   }

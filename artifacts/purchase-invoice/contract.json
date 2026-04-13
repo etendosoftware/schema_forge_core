@@ -155,10 +155,10 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": false,
+            "form": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
-            "section": "other"
+            "section": "principal"
           },
           {
             "name": "paymentMethod",
@@ -173,7 +173,7 @@
             "form": true,
             "reference": "PaymentMethod",
             "inputMode": "selector",
-            "section": "collapsed",
+            "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
             }
@@ -431,10 +431,10 @@
             "label": "Cash VAT",
             "type": "boolean",
             "tsType": "boolean",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
@@ -3041,8 +3041,9 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "discarded",
-            "required": true
+            "visibility": "editable",
+            "required": true,
+            "form": false
           },
           {
             "name": "createLinesFromOrder",
@@ -3081,8 +3082,9 @@
             "apiKey": "cashVAT",
             "column": "Iscashvat",
             "type": "boolean",
-            "visibility": "editable",
-            "required": true
+            "visibility": "discarded",
+            "required": true,
+            "form": false
           },
           {
             "name": "etafInvoiceTraceability",

@@ -159,7 +159,7 @@
             "grid": false,
             "form": true,
             "reference": "PaymentTerm",
-            "inputMode": "search",
+            "inputMode": "selector",
             "section": "principal",
             "seq": 60,
             "readOnlyLogic": {
@@ -1028,8 +1028,9 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "discarded",
-            "required": true
+            "visibility": "editable",
+            "required": true,
+            "form": false
           },
           {
             "name": "outstandingAmount",

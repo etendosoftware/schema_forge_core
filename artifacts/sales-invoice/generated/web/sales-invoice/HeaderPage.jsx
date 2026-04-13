@@ -112,7 +112,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/header/selectors/businessPartner"
+      "url": "/sws/neo/sales-invoice/header/selectors/C_BPartner_ID?isCustomer=Y"
     },
     {
       "entity": "header",
@@ -127,7 +127,7 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
     },
     {

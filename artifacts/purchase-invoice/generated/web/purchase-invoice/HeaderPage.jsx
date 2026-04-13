@@ -219,7 +219,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/businessPartner"
+      "url": "/sws/neo/purchase-invoice/header/selectors/C_BPartner_ID?isVendor=Y"
     },
     {
       "entity": "header",

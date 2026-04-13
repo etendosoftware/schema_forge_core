@@ -52,11 +52,13 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}, selectorConte
 
     // Fetch all selectors in parallel
     const fetches = unique.map(async (sel) => {
-      // NEO expects column name in the URL: /{entity}/selectors/{columnName}
-      const url = buildUrlWithParams(
-        `${apiBaseUrl}/${sel.entity}/selectors/${sel.column}`,
-        selectorContext?.[sel.entity]
-      );
+      // Use sel.url when it carries explicit filter params (e.g. ?isSOTrx=Y, ?isCustomer=Y).
+      // Otherwise build from column name so the backend receives the DB column name it expects.
+      // This mirrors the same logic in EntityForm to ensure filters are preserved.
+      const selectorBaseUrl = sel.url?.includes('?')
+        ? sel.url
+        : `${apiBaseUrl}/${sel.entity}/selectors/${sel.column}`;
+      const url = buildUrlWithParams(selectorBaseUrl, selectorContext?.[sel.entity]);
       try {
         const res = await fetch(url, { headers });
         if (!res.ok) return null;

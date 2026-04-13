@@ -374,7 +374,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         setSelected(saved);
         setEditing({ ...saved });
         setSaveError(null);
-        toast.success(isNew ? ui('recordCreated') : 'Record saved');
+        toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
         refresh();
         return saved;
       } else {
@@ -446,7 +446,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       fetchChildren(selected.id);
       fetchById(selected.id);
       setSaveError(null);
-      toast.success('Line added');
+      toast.success(ui('lineAdded'));
       return data?.response?.data?.[0] ?? data ?? true;
     } catch (err) {
       const msg = err?.message || 'Network error';
@@ -477,7 +477,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     if (!saved?.id) return null;
 
     const { processField, processValue } = draftModeConfig;
-    const url = `${apiBaseUrl}/${entity}/${saved.id}/action`;
+    const url = `${apiBaseUrl}/${entity}/${saved.id}/action/${processField}`;
     const res = await fetch(url, {
       method: 'POST',
       headers,
@@ -486,10 +486,18 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     if (!res.ok) {
       const msg = await extractErrorMessage(res, ui);
       toast.error(msg);
-      return saved;
+      return null;
     }
-    toast.success('Record processed');
+    toast.success(ui('recordProcessed'));
     refresh();
+    // Fetch updated record so caller gets the post-process state (e.g. documentStatus: 'CO')
+    try {
+      const updatedRes = await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { method: 'GET', headers });
+      if (updatedRes.ok) {
+        const data = await updatedRes.json();
+        return data?.response?.data?.[0] ?? data;
+      }
+    } catch { /* ignore, fall back to saved */ }
     return saved;
   }, [handleSave, apiBaseUrl, entity, token, refresh, ui]);
 

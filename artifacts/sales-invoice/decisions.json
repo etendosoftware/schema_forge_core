@@ -14,8 +14,16 @@
       "topbarRight": "InvoiceTopbarExtra"
     },
     "menuActions": [
-      { "key": "duplicate", "label": "Duplicate" },
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "duplicate",
+        "label": "Duplicate"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "secondaryTabs": {},
     "processOverrides": {},
@@ -63,9 +71,10 @@
           "seq": 50
         },
         "paymentTerms": {
-          "inputMode": "search",
+          "inputMode": "selector",
           "section": "principal",
-          "seq": 60
+          "seq": 60,
+          "reference": "PaymentTerm"
         },
         "priceList": {
           "visibility": "editable",
@@ -92,7 +101,8 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded"
+          "visibility": "editable",
+          "form": false
         },
         "createLinesFromOrder": {
           "visibility": "discarded"
@@ -408,14 +418,31 @@
       "exclude": true
     },
     "paymentPlan": {
-      "httpMethods": { "get": true, "post": false, "put": false, "delete": false },
+      "httpMethods": {
+        "get": true,
+        "post": false,
+        "put": false,
+        "delete": false
+      },
       "fields": {
-        "finPaymentScheduleID": { "visibility": "readOnly" },
-        "amount": { "visibility": "readOnly" },
-        "paidAmount": { "visibility": "readOnly" },
-        "outstandingAmount": { "visibility": "readOnly" },
-        "dueDate": { "visibility": "readOnly" },
-        "lastPaymentDate": { "visibility": "readOnly" }
+        "finPaymentScheduleID": {
+          "visibility": "readOnly"
+        },
+        "amount": {
+          "visibility": "readOnly"
+        },
+        "paidAmount": {
+          "visibility": "readOnly"
+        },
+        "outstandingAmount": {
+          "visibility": "readOnly"
+        },
+        "dueDate": {
+          "visibility": "readOnly"
+        },
+        "lastPaymentDate": {
+          "visibility": "readOnly"
+        }
       }
     },
     "verifactu": {
@@ -499,6 +526,8 @@
       "description": "When price list changes, auto-fill currency from the selected price list"
     }
   },
-  "discardPatterns": ["EM_*"],
+  "discardPatterns": [
+    "EM_*"
+  ],
   "version": 2
 }
