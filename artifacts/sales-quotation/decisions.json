@@ -62,7 +62,8 @@
           "grid": true,
           "searchable": true,
           "inputMode": "text",
-          "section": "principal"
+          "section": "principal",
+          "seq": 2
         },
         "businessPartner": {
           "grid": true,
@@ -70,7 +71,8 @@
           "reference": "BusinessPartner",
           "inputMode": "search",
           "displayLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 1
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -85,7 +87,8 @@
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "section": "principal"
+          "section": "principal",
+          "seq": 3
         },
         "validUntil": {
           "grid": true,
