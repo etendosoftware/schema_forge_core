@@ -449,7 +449,6 @@ export function DetailView({
       });
       if (!res.ok) return;
       const calloutData = await res.json();
-      console.log('[CALLOUT RESPONSE]', field, JSON.stringify(calloutData, null, 2));
       const result = {};
       if (calloutData.updates) {
         for (const [k, entry] of Object.entries(calloutData.updates)) {
