@@ -167,6 +167,36 @@ const CONTACTS_PRECREATE_BILLING_FIELDS = new Set([
   'vendorBlocking',
 ]);
 
+function derivePersonName(firstName, lastName) {
+  const first = String(firstName ?? '').trim();
+  const last = String(lastName ?? '').trim();
+  return [first, last].filter(Boolean).join(' ').slice(0, 60);
+}
+
+function applyContactsRequiredFields(entity, payload, source = {}) {
+  if (!payload || typeof payload !== 'object') return payload;
+
+  if (entity === 'contact' || entity === 'adUser' || entity === 'user') {
+    if (!payload.name) {
+      const derivedName = derivePersonName(
+        payload.firstName ?? source.firstName,
+        payload.lastName ?? source.lastName
+      );
+      if (derivedName) payload.name = derivedName;
+    }
+    if (!payload.username && payload.name) {
+      payload.username = String(payload.name).slice(0, 60);
+    }
+  }
+
+  if (entity === 'businessPartner' || entity === 'bpartner') {
+    if (!payload.name && source.name) payload.name = source.name;
+    if (!payload.searchKey && source.searchKey) payload.searchKey = source.searchKey;
+  }
+
+  return payload;
+}
+
 /**
  * Resolve the backend sort key for a given column.
  * FK columns have a companion `col$_identifier` in the response — sorting by that
@@ -294,6 +324,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
               normalized[key] = `${yyyy}-${mm}-${dd}`;
             } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
               normalized[key] = val.slice(1, -1).replace(/''/g, "'");
+            } else if (typeof val === 'number' && Number.isInteger(val)) {
+              // Enum/list fields are stored as strings in the DB (e.g. priority: 5 → "5").
+              // The backend /defaults endpoint returns them as JSON integers, but the
+              // PATCH/POST API expects string values — otherwise OBDal throws a type error.
+              normalized[key] = String(val);
             }
           }
 
@@ -331,6 +366,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         if (value !== selected[key]) changes[key] = value;
       }
       payload = changes;
+      applyContactsRequiredFields(entity, payload, editing);
     } else {
       // For POST (create), strip empty strings — let backend injectMandatoryDefaults
       // resolve proper values for fields not explicitly set by the user or callouts.
@@ -363,6 +399,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
 
         payload[key] = value;
       }
+
+      applyContactsRequiredFields(entity, payload, editing);
     }
     // NEO Headless expects flat field values — NeoServlet handles wrapping for JsonDataService
     const body = JSON.stringify(payload);
@@ -427,9 +465,13 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         if (val === '' || val == null) continue;
         body[key] = val;
       }
+
+      applyContactsRequiredFields(childEntity, body, childData);
+
       // Include parentId in the body — the backend resolves it to the correct FK field name
       // and uses it to load parent record values for @FieldName@ defaults (generic, no hardcoding).
       body.parentId = selected.id;
+      console.log('[POST body]', JSON.stringify(body));
       const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
         method: 'POST',
         headers,
@@ -462,9 +504,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-    // Refetch header to update totals after line edit
-    if (selected?.id) fetchById(selected.id);
-  }, [selected, fetchById]);
+    // Refetch header and children — backend may recalculate totals or derived fields
+    if (selected?.id) {
+      fetchById(selected.id);
+      fetchChildren(selected.id);
+    }
+  }, [selected, fetchById, fetchChildren]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));

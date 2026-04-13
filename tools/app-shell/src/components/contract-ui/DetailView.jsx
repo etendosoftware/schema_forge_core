@@ -109,8 +109,10 @@ export function DetailView({
   menuActions = [],
   hideDeleteWhenComplete = false,
   hidePrint = false,
+  hideSaveStatuses = [],
   hideMoreMenu = false,
   hideMoreDetails = false,
+  noHeaderBorder = false,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -511,6 +513,7 @@ export function DetailView({
       const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
       // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
       const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
+      console.log('[CASCADE check]', { priceUpdated, amountNotComputed, lineNetAmount: result.lineNetAmount, unitPrice: result.unitPrice, grossUnitPrice: result.grossUnitPrice });
       if (priceUpdated && amountNotComputed) {
         try {
           const cascadePrice = result.unitPrice ?? result.grossUnitPrice;
@@ -861,7 +864,7 @@ export function DetailView({
                 );
               })}
 
-            {draftMode?.enabled ? (
+            {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                   const saved = await hook.handleSave(data);
@@ -902,7 +905,7 @@ export function DetailView({
                 <Check className="h-3.5 w-3.5" />
                 {ui('save')}
               </Button>
-            )}
+            ))}
           </div>
         </div>
         )}
@@ -946,7 +949,7 @@ export function DetailView({
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-3`}>
             {/* Principal + collapsed fields wrapped in a card */}
-            <div className={`rounded-2xl border border-gray-200/70 bg-white shadow-sm overflow-hidden${embedded ? ' pointer-events-none' : ''}`}>
+            <div className={`overflow-hidden${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className="p-6">
                 <Form
                   entity={entity}
@@ -1055,7 +1058,9 @@ export function DetailView({
                             // Also include hidden entry defaults (e.g., fields with predefined values).
                             for (const hiddenField of hiddenEntryDefaults) {
                               if (!(hiddenField.key in lineData)) {
-                                lineData[hiddenField.key] = hiddenField.value;
+                                lineData[hiddenField.key] = hiddenField.fromParent
+                                  ? _headerData?.[hiddenField.fromParent]
+                                  : hiddenField.value;
                               }
                             }
                             return hook.handleAddChild?.(lineData);
@@ -1195,14 +1200,15 @@ export function DetailView({
                                       const fieldValues = {};
                                       for (const [k, v] of Object.entries(lineEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
-                                        const colName = lineEditColumns[k] || k;
+                                        // NEO Headless PATCH expects camelCase API keys, not DB column names.
+                                        // Always use k (the API key) as the field name.
                                         // Convert numeric strings to numbers for BigDecimal compatibility.
                                         // Only strip when the value is already in standard format (no commas).
                                         // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
                                         if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                          fieldValues[colName] = parseFloat(v);
+                                          fieldValues[k] = parseFloat(v);
                                         } else {
-                                          fieldValues[colName] = v;
+                                          fieldValues[k] = v;
                                         }
                                       }
                                       const res = await fetch(childUrl, {
@@ -1382,14 +1388,15 @@ export function DetailView({
                                       const fieldValues = {};
                                       for (const [k, v] of Object.entries(secondaryLineEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
-                                        const colName = secondaryLineEditColumns[k] || k;
+                                        // NEO Headless PATCH expects camelCase API keys, not DB column names.
+                                        // Always use k (the API key) as the field name.
                                         // Convert numeric strings to numbers for BigDecimal compatibility.
                                         // Only strip when the value is already in standard format (no commas).
                                         // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
                                         if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                          fieldValues[colName] = parseFloat(v);
+                                          fieldValues[k] = parseFloat(v);
                                         } else {
-                                          fieldValues[colName] = v;
+                                          fieldValues[k] = v;
                                         }
                                       }
                                       const res = await fetch(secUrl, {

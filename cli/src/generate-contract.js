@@ -653,7 +653,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     return true;
   });
 
-  return {
+  const result = {
     specName,
     baseUrl,
     crud,
@@ -666,6 +666,13 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
       parentFilter: 'parentId={id} for child entities',
     },
   };
+
+  // Forward labelOverrides from the window config so generated components can apply per-window label overrides
+  if (schema.window.labelOverrides) {
+    result.labelOverrides = schema.window.labelOverrides;
+  }
+
+  return result;
 }
 
 /**
