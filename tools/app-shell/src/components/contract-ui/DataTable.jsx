@@ -841,8 +841,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
                       isChecked ? 'bg-primary/5' : '',
                       row.id === selectedId ? 'bg-primary/10' : '',
-                      isSelectedLine ? 'bg-zinc-700 text-white' : '',
-                      isSelectedLine ? 'hover:bg-zinc-600' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
+                      isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
+                      isSelectedLine ? 'hover:bg-slate-300/80' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
                     ].filter(Boolean).join(' ')}
                   >
                     {selectable && (() => {
