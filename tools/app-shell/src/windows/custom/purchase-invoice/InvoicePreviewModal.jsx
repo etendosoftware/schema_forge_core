@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2 } from 'lucide-react';
+import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
+import { useInvoicePdf } from '../shared/useInvoicePdf.js';
 
 const ACCEPTED_TYPES = {
   'application/pdf': 'pdf',
@@ -38,6 +39,14 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const ui = useUI();
   const tMenu = useMenuLabel();
   const [activeTab, setActiveTab] = useState('general');
+
+  // For sales-invoice: auto-render invoice PDF instead of the drop zone
+  const isSalesInvoice = specName === 'sales-invoice';
+  const { pdfUrl, loading: pdfLoading, error: pdfError } = useInvoicePdf(
+    isSalesInvoice ? invoice?.id : null,
+    isSalesInvoice ? apiBaseUrl : null,
+    token,
+  );
   const [installments, setInstallments] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
@@ -252,9 +261,35 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
           {/* ── Body — two panels ── */}
           <div className="flex flex-1 min-h-0">
-            {/* Left panel: 50% — document drop zone / preview */}
+            {/* Left panel: 50% — PDF preview (sales invoice) or document drop zone (purchase invoice) */}
             <div className="w-1/2 bg-gray-50 flex flex-col min-h-0 border-r border-gray-200">
-              {docFile ? (
+              {/* ── Sales Invoice: auto-rendered PDF ── */}
+              {isSalesInvoice ? (
+                <div className="flex flex-col h-full min-h-0">
+                  {pdfLoading && (
+                    <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm">{ui('invoicePdfGenerating')}</span>
+                    </div>
+                  )}
+                  {pdfError && !pdfLoading && (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+                      <AlertCircle className="h-8 w-8 text-amber-400" />
+                      <p className="text-sm text-muted-foreground">
+                        {ui('invoicePdfError')}
+                      </p>
+                      <p className="text-xs text-muted-foreground/60">{pdfError}</p>
+                    </div>
+                  )}
+                  {pdfUrl && !pdfLoading && (
+                    <iframe
+                      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                      className="w-full h-full border-0"
+                      title="Sales Invoice PDF"
+                    />
+                  )}
+                </div>
+              ) : docFile ? (
                 /* ── Document preview ── */
                 <div className="flex flex-col h-full min-h-0">
                   {/* Toolbar */}
@@ -341,7 +376,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   </div>
                 </div>
               )}
-            </div>
+              {/* End of purchase-invoice drop zone (ternary close) */}
+              </div>
+
 
             {/* Right panel: 50% — tab content */}
             <div className="w-1/2 overflow-y-auto">
