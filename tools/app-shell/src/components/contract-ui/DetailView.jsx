@@ -1661,7 +1661,7 @@ export function DetailView({
                               placeholder={ui('description')}
                               rows={3}
                               autoFocus
-                              className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+                              className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
                             />
                           ) : (
                             <div
@@ -1669,7 +1669,7 @@ export function DetailView({
                               role="textbox"
                               onClick={() => setNotesFocused(true)}
                               onFocus={() => setNotesFocused(true)}
-                              className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+                              className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
                             >
                               {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
                             </div>

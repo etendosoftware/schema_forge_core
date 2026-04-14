@@ -19,7 +19,8 @@
           "section": "principal",
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "seq": 20
         },
         "transactionDocument": {
           "visibility": "editable",
@@ -33,7 +34,8 @@
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "seq": 30
         },
         "businessPartner": {
           "grid": true,
@@ -41,7 +43,8 @@
           "section": "principal",
           "reference": "BusinessPartner",
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "seq": 10
         },
         "partnerAddress": {
           "section": "principal",
@@ -51,7 +54,8 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "seq": 40
         },
         "currency": {
           "visibility": "editable",
@@ -69,12 +73,14 @@
           "grid": true,
           "reference": "PaymentTerm",
           "inputMode": "selector",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "seq": 60
         },
         "paymentMethod": {
           "section": "principal",
           "reference": "PaymentMethod",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "seq": 50
         },
         "cashVAT": {
           "visibility": "discarded"
