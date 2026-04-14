@@ -18,7 +18,7 @@ function FieldGroup({ title, description, children }) {
   );
 }
 
-export default function ProductAdditionalInfoPanel({ data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
+export default function ProductAdditionalInfoPanel({ entity, data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
   const ui = useUI();
   return (
     <div className="space-y-4 pt-0 pb-6">
@@ -27,6 +27,7 @@ export default function ProductAdditionalInfoPanel({ data, token, apiBaseUrl, ca
         description={ui('commercialDescription')}
       >
         <EntityForm
+          entity={entity}
           fields={[
             { key: 'taxCategory', column: 'C_TaxCategory_ID', type: 'selector', label: 'Tax Category', required: true, section: 'other', reference: 'TaxCategory', inputMode: 'selector' },
             { key: 'sale', column: 'IsSold', type: 'checkbox', label: 'Sale', section: 'other', defaultValue: 'Y' },
@@ -48,6 +49,7 @@ export default function ProductAdditionalInfoPanel({ data, token, apiBaseUrl, ca
         description={ui('logisticsDescription')}
       >
         <EntityForm
+          entity={entity}
           fields={[
             { key: 'stocked', column: 'IsStocked', type: 'checkbox', label: 'Stocked', section: 'other', defaultValue: 'Y' },
             { key: 'returnable', column: 'Returnable', type: 'checkbox', label: 'Returnable', section: 'other', defaultValue: 'Y' },

@@ -9,41 +9,51 @@
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
     "menuActions": [
-      { "key": "duplicate", "label": "Duplicate" },
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "duplicate",
+        "label": "Duplicate"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "processOverrides": {},
     "customComponents": {
       "topbarRight": "OrderCreateInvoice",
       "topbarExtra": "OrderDraftChips"
     },
-    "statusEnumLabels": {
-      "DR": "Draft",
-      "CO": "Completado",
-      "CL": "Cerrado",
-      "VO": "Anulado"
-    }
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact"
+      }
+    },
+    "noHeaderBorder": true
   },
   "entities": {
     "header": {
       "javaQualifier": "salesOrderHeaderHandler",
       "draftMode": {
-        "enabled": true,
-        "label": "Confirmar"
+        "enabled": false
       },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 2
         },
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "documentAction": {
           "visibility": "system",
@@ -86,7 +96,8 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "displayLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 1
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -97,8 +108,7 @@
           "section": "principal"
         },
         "priceList": {
-          "section": "other",
-          "visibility": "system"
+          "section": "collapsed"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
@@ -138,10 +148,14 @@
         "ndDimension": {
           "visibility": "discarded"
         },
+        "cashVAT": {
+          "visibility": "discarded"
+        },
         "orderDate": {
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 3
         },
         "scheduledDeliveryDate": {
           "displayLogic": null,
@@ -460,8 +474,7 @@
         "product": {
           "grid": true
         },
-        "attributeSetValue": {
-        }
+        "attributeSetValue": {}
       },
       "exclude": true
     },

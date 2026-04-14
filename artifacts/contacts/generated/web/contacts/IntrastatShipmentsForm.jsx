@@ -12,10 +12,7 @@ const fields = [
 
 // @sf-generated-start component:IntrastatShipmentsForm
 export default function IntrastatShipmentsForm(props) {
-  // @sf-custom-slot hooks:IntrastatShipmentsForm
   return <EntityForm fields={fields} {...props} />;
 }
 IntrastatShipmentsForm.hasCollapsedFields = false;
 // @sf-generated-end component:IntrastatShipmentsForm
-
-// @sf-custom-slot section:IntrastatShipmentsForm-custom

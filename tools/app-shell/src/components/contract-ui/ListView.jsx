@@ -35,6 +35,8 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  onNew = null,
+  labelOverrides,
 }) {
   const [activeFilterIndex, setActiveFilterIndex] = useState(0);
   const effectiveFilter = quickFilters
@@ -343,7 +345,7 @@ export function ListView({
                 <Button
                   className="rounded-none rounded-l-lg gap-1.5 px-4"
                   data-testid="action-new"
-                  onClick={() => navigate(`/${windowName}/new`)}
+                  onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
                   {ui('newRecord')}
@@ -388,6 +390,7 @@ export function ListView({
                     data={hook.items}
                     onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
                     onSelectionChange={setSelectedRows}
+                    onDataMutated={hook.refresh}
                     isRowSelectable={isRowSelectable}
                     compact={false}
                     sortColumn={hook.sortColumn}
@@ -396,6 +399,7 @@ export function ListView({
                     api={api}
                     token={token}
                     apiBaseUrl={apiBaseUrl}
+                    labelOverrides={labelOverrides}
                   />
                 )
               }

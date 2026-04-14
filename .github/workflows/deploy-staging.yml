@@ -44,6 +44,9 @@ jobs:
           # to emit static RFC 9728 / RFC 8414 discovery docs at /.well-known/*
           # with absolute URLs per environment. See docs/ops/cloudfront-alb-routing.md.
           VITE_PUBLIC_ORIGIN: ${{ steps.target.outputs.public_origin }}
+          # VITE_BUILD_ID is unique per workflow run (even same commit) — ensures sw.js
+          # always differs between deploys so the service worker updates on every redeploy
+          VITE_BUILD_ID: ${{ github.run_id }}
         # .env.production (committed) provides VITE_MOCK=false and VITE_API_BASE=/etendo
 
       - name: Generate reports manifest

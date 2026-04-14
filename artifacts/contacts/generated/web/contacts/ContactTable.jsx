@@ -13,9 +13,6 @@ const filters = ['name', 'email'];
 
 // @sf-generated-start component:ContactTable
 export default function ContactTable(props) {
-  // @sf-custom-slot hooks:ContactTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:ContactTable
-
-// @sf-custom-slot section:ContactTable-custom

@@ -13,9 +13,6 @@ const filters = [];
 
 // @sf-generated-start component:ExecutionHistoryTable
 export default function ExecutionHistoryTable(props) {
-  // @sf-custom-slot hooks:ExecutionHistoryTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:ExecutionHistoryTable
-
-// @sf-custom-slot section:ExecutionHistoryTable-custom

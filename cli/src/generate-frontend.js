@@ -71,11 +71,11 @@ function mapFieldType(field) {
     }
     return 'status';
   }
+  if (field.enumValues?.length) return 'enum';
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
-  if (field.type === 'enum') return 'enum';
   return 'string';
 }
 
@@ -89,8 +89,8 @@ function mapFormFieldType(field) {
     if (field.inputMode === 'dependent') return 'dependent';
     return 'search';
   }
+  if (field.enumValues?.length) return 'select';
   if (field.type === 'boolean') return 'checkbox';
-  if (field.type === 'enum') return 'select';
   if (field.type === 'image') return 'image';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
@@ -104,7 +104,16 @@ function mapFormFieldType(field) {
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  // gridOrder: absolute insertion position (1-based). Only the tagged fields move;
+  // all other fields stay in their original relative order.
+  const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
+  const unpinned = gridFieldsRaw.filter(f => f.gridOrder == null);
+  const gridFields = [...unpinned];
+  for (const f of pinned) {
+    const pos = Math.max(1, Math.min(f.gridOrder, gridFields.length + 1));
+    gridFields.splice(pos - 1, 0, f);
+  }
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
@@ -118,12 +127,15 @@ export function generateTableComponent(entityName, contract) {
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const togglePart = f.inlineToggle ? ', toggle: true' : '';
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
+    const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
     const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart}${renderPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -241,7 +253,8 @@ export function generateFormComponent(entityName, contract) {
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -511,7 +524,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
-    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+    const rawDefault = String(f.defaultValue);
+    const parentColMatch = rawDefault.match(/^@(\w+)@$/);
+    if (parentColMatch) {
+      const colName = parentColMatch[1];
+      const headerField = allEntityFields.find(hf => hf.column === colName);
+      if (headerField) {
+        return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+      }
+    }
+    const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
     return `    { key: '${f.name}', value: '${defaultValue}' },`;
   }).join('\n');
 
@@ -533,8 +555,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
+  const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
@@ -573,10 +597,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
         }).filter(Boolean);
         return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries };
       });
@@ -648,8 +673,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
   }).join('\n');
 
+  const secondaryTabsRequireSaved = windowConfig.secondaryTabs && Object.values(windowConfig.secondaryTabs).some(t => t.requireSavedRecord);
   const secondaryTabsProp = secondaryTabDefs.length > 0
-    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
+    ? secondaryTabsRequireSaved
+      ? `\n        secondaryTabs={recordId === 'new' ? [] : [\n${secondaryTabsPropEntries}\n        ]}`
+      : `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
   // Build optional DetailView props from window-level decisions config
@@ -668,10 +696,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+  // hideSaveStatuses prop (DetailView)
+  const hideSaveStatusesProp = hideSaveStatuses.length > 0
+    ? `\n        hideSaveStatuses={${JSON.stringify(hideSaveStatuses)}}`
+    : '';
   // hideMoreMenu prop (DetailView)
   const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
   // hideMoreDetails prop (DetailView)
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
+  // noHeaderBorder prop (DetailView)
+  const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
   // listViewOptions props
   const listViewOptionsProp = listViewOptions
     ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
@@ -695,29 +729,29 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const customComponentImports = [];
   const customComponentProps = [];
   if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from '../../../custom/${customComponents.bottomSection}';`);
+    customComponentImports.push(`import ${customComponents.bottomSection} from '@/windows/custom/${specName}/${customComponents.bottomSection}';`);
     customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
   }
   if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
+    customComponentImports.push(`import ${customComponents.topbarRight} from '@/windows/custom/${specName}/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
   if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from '../../../custom/${customComponents.topbarExtra}';`);
+    customComponentImports.push(`import ${customComponents.topbarExtra} from '@/windows/custom/${specName}/${customComponents.topbarExtra}';`);
     customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
+    customComponentImports.push(`import ${customComponents.bulkActions} from '@/windows/custom/${specName}/${customComponents.bulkActions}';`);
   }
   if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
+    customComponentImports.push(`import ${customComponents.sidePanel} from '@/windows/custom/${specName}/${customComponents.sidePanel}';`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
     if (customComponents.sidePanelStyle) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
   if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -727,7 +761,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Custom headerTable override
   const customHeaderTable = customComponents.headerTable ?? null;
   const headerTableImport = customHeaderTable
-    ? `import ${headerName}Table from '../../../custom/${customHeaderTable}';`
+    ? `import ${headerName}Table from '@/windows/custom/${specName}/${customHeaderTable}';`
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
@@ -854,7 +888,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
     : '';
 
-  return `import { useEffect } from 'react';
+  // showDetailFooterTotals support
+  const showDetailFooterTotalsValue = windowConfig.showDetailFooterTotals;
+  const showDetailFooterTotalsProp = showDetailFooterTotalsValue !== undefined
+    ? `\n        showDetailFooterTotals={${showDetailFooterTotalsValue}}`
+    : '';
+
+  // labelOverrides support
+  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
+  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
+  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
+  const labelOverridesBlock = labelOverridesConfig
+    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
+    : '';
+
+  return `import { ${customComponents.newRecordComponent ? 'useState, ' : ''}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
@@ -866,7 +914,7 @@ import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${statusBarCode}
+${labelOverridesBlock}${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -905,10 +953,8 @@ ${hiddenDefaultsArray}
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, recordId, ...props }) {
-  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
-    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
-  }` : ''}
+export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
+  const [showNewModal, setShowNewModal] = useState(false);` : ''}
   if (recordId) {
     return (
       <DetailView
@@ -927,22 +973,26 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
         {...props}${sidebarContentProp}
       />
     );
   }
 
-  return (
+  return (${customComponents.newRecordComponent ? `
+    <>` : ''}
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
-      {...props}
-    />
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      {...props}${customComponents.newRecordComponent ? `
+      onNew={() => setShowNewModal(true)}` : ''}
+    />${customComponents.newRecordComponent ? `
+    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}
+    </>` : ''}
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
@@ -1010,6 +1060,12 @@ const CATALOG_DATA = {
     id: `wh-${String(i + 1).padStart(3, '0')}`,
     name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
   })),
+  Currency: [
+    { id: 'USD', name: 'US Dollar', symbol: '$' },
+    { id: 'EUR', name: 'Euro', symbol: 'EUR' },
+    { id: 'GBP', name: 'Pound Sterling', symbol: 'GBP' },
+    { id: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
+  ],
   PriceList: Array.from({ length: 4 }, (_, i) => ({
     id: `pl-${String(i + 1).padStart(3, '0')}`,
     name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],

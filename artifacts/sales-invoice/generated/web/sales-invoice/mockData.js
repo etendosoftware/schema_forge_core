@@ -225,7 +225,9 @@ export const lines = [
     "product": "Laptop Pro 15",
     "invoicedQuantity": 402,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 38907,
+    "grossAmount": 38907,
     "tax": "VAT 21%",
     "description": "Standard order for Q1 delivery",
     "headerId": "mock-header-001"
@@ -235,7 +237,9 @@ export const lines = [
     "product": "USB-C Cable",
     "invoicedQuantity": 54,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 9306,
+    "grossAmount": 9306,
     "tax": "VAT 10%",
     "description": "Rush order - priority shipping required",
     "headerId": "mock-header-002"
@@ -245,7 +249,9 @@ export const lines = [
     "product": "Wireless Mouse",
     "invoicedQuantity": 150,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 11544,
+    "grossAmount": 11544,
     "tax": "VAT 0%",
     "description": "Bulk purchase for warehouse restocking",
     "headerId": "mock-header-003"
@@ -255,7 +261,9 @@ export const lines = [
     "product": "Mechanical Keyboard",
     "invoicedQuantity": 97,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 11872,
+    "grossAmount": 11872,
     "tax": "Sales Tax 8.5%",
     "description": "Sample order for client evaluation",
     "headerId": "mock-header-004"
@@ -265,7 +273,9 @@ export const lines = [
     "product": "Monitor 27\"",
     "invoicedQuantity": 311,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 48460,
+    "grossAmount": 48460,
     "tax": "Exempt",
     "description": "Recurring monthly supply order",
     "headerId": "mock-header-005"
@@ -275,7 +285,9 @@ export const lines = [
     "product": "Webcam HD",
     "invoicedQuantity": 451,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 45418,
+    "grossAmount": 45418,
     "tax": "Reduced Rate 5%",
     "description": "Special pricing agreement applies",
     "headerId": "mock-header-006"
@@ -285,7 +297,9 @@ export const lines = [
     "product": "Headset Pro",
     "invoicedQuantity": 496,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 33840,
+    "grossAmount": 33840,
     "tax": "Standard Rate 20%",
     "description": "Consolidated order from multiple requests",
     "headerId": "mock-header-007"
@@ -295,7 +309,9 @@ export const lines = [
     "product": "Docking Station",
     "invoicedQuantity": 284,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 25716,
+    "grossAmount": 25716,
     "tax": "VAT 21%",
     "description": "Trial order for new product line",
     "headerId": "mock-header-008"
@@ -305,7 +321,9 @@ export const lines = [
     "product": "SSD 1TB",
     "invoicedQuantity": 225,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 44780,
+    "grossAmount": 44780,
     "tax": "VAT 10%",
     "description": "Replacement for damaged goods",
     "headerId": "mock-header-009"
@@ -315,7 +333,9 @@ export const lines = [
     "product": "RAM 16GB",
     "invoicedQuantity": 479,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 12483,
+    "grossAmount": 12483,
     "tax": "VAT 0%",
     "description": "Pre-season inventory build-up",
     "headerId": "mock-header-010"
@@ -325,7 +345,9 @@ export const lines = [
     "product": "Power Supply 750W",
     "invoicedQuantity": 123,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 46022,
+    "grossAmount": 46022,
     "tax": "Sales Tax 8.5%",
     "description": "Customer-specific configuration",
     "headerId": "mock-header-011"
@@ -335,7 +357,9 @@ export const lines = [
     "product": "Network Switch",
     "invoicedQuantity": 337,
     "unitPrice": "Sample unitPrice",
+    "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 38634,
+    "grossAmount": 38634,
     "tax": "Exempt",
     "description": "Government contract fulfillment",
     "headerId": "mock-header-012"

@@ -13,9 +13,6 @@ const filters = [];
 
 // @sf-generated-start component:ExchangeRatesTable
 export default function ExchangeRatesTable(props) {
-  // @sf-custom-slot hooks:ExchangeRatesTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:ExchangeRatesTable
-
-// @sf-custom-slot section:ExchangeRatesTable-custom
