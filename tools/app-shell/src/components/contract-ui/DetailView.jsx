@@ -994,7 +994,7 @@ export function DetailView({
         <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-3`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`overflow-hidden${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className="p-6">
@@ -1040,7 +1040,7 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
+              <div className={embedded ? 'pointer-events-none' : ''}>
                 {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
