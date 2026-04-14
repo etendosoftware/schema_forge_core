@@ -37,6 +37,17 @@ Use these repository instructions as the primary context for coding tasks.
 - Ensure every kept business rule has behavioral test coverage.
 - Ensure every process includes at least 3 edge cases.
 
+## Extending NEO Headless — NeoHandler Pattern
+
+Never add window-specific logic to `NeoSelectorService`, `NeoDefaultsService`, `NeoCrudHandler`, or `NeoServlet` in `com.etendoerp.go`. Use the `NeoHandler` CDI extension point:
+
+1. Set `Java_Qualifier` on the `ETGO_SF_ENTITY` record (e.g. `"internal-consumption-line"`).
+2. Implement `NeoHandler` with `@ApplicationScoped @Named("internal-consumption-line")`.
+3. `handle()` = pre-hook (return `null` to continue); `afterHandle()` = post-hook.
+4. Place under `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/handlers/`.
+
+Full reference: `docs/neo-headless-extensibility.md`
+
 ## References
 
 - `AGENTS.md`
