@@ -56,8 +56,9 @@ Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 │  ├── generate-frontend.js                                            │
 │  ├── generate-mock-data.js    Webhooks (legacy, still available)    │
 │  ├── run-contract-tests.js    ├── SFUpsertSpec / SFUpsertEntity     │
-│  └── pipeline.js              ├── SFUpsertField / SFPopulateSpec    │
-│                                └── SFListProcesses / SFListWindows  │
+│  ├── pr-review.js             ├── SFUpsertField / SFPopulateSpec    │
+│  ├── epic-rollup-report.js    └── SFListProcesses / SFListWindows   │
+│  └── pipeline.js                                                     │
 │                                                                      │
 │  Artifacts (per-window)        Documentation                         │
 │  ├── sales-order/              ├── PRD.md, TDD.md                   │
@@ -192,6 +193,8 @@ All tools are Node.js, zero-dependency. Located in `cli/src/`.
 | `generate-mock-data.js` | Contract | `mockData.js`, `mockCatalogs.js` for UI preview |
 | `run-contract-tests.js` | Contract | Test results (Node.js assertions) |
 | `resolve-menu.js` | AD_Menu_ID or menu name | Resolves menu entry type (W/P/R/X) and linked ID by ID or name. For forms (X), shows Java + HTML source paths instead of failing. |
+| `pr-review.js` | PR base SHA + head SHA | Deterministic review report for duplicate blocks, architecture violations, and merge-blocking PR findings |
+| `epic-rollup-report.js` | Epic-to-develop PR metadata + feature PR review outputs | Markdown rollout report summarizing included PRs and previously detected blockers/warnings |
 | `pipeline.js` | Window ID, process ID, report ID, menu ID, or menu name | Runs full pipeline: window, process, report, or auto-detect mode |
 
 ### Menu Entry Types (AD_Menu)
