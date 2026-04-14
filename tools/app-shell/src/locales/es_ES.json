@@ -16174,9 +16174,6 @@
     "Dashboard": {
       "label": "Panel"
     },
-    "Setup Wizard": {
-      "label": "Asistente de configuración"
-    },
     "Grouped Report": {
       "label": "Informe agrupado"
     },
@@ -16844,7 +16841,6 @@
     "statusWithdrawnNotCleared": "Retirado sin liquidar",
     "statusDepositedNotCleared": "Depositado sin liquidar",
     "dashboardTitle": "Panel",
-    "setupWizard": "Asistente de configuración",
     "smartScanTitle": "Escaneo inteligente",
     "smartScanSubtitle": "Procesa documentos entrantes automáticamente.",
     "smartScanUploadTitle": "Suelta documentos aquí o haz clic para subirlos",

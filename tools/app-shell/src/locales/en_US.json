@@ -16207,9 +16207,6 @@
     "Proof of Concept": {
       "label": "Proof of Concept"
     },
-    "Setup Wizard": {
-      "label": "Setup Wizard"
-    },
     "Shipments": {
       "label": "Shipments"
     },
@@ -16605,7 +16602,6 @@
     "statusWithdrawnNotCleared": "Withdrawn not Cleared",
     "statusDepositedNotCleared": "Deposited not Cleared",
     "dashboardTitle": "Dashboard",
-    "setupWizard": "Setup Wizard",
     "smartScanTitle": "Smart Scan",
     "smartScanSubtitle": "Process incoming documents automatically.",
     "smartScanUploadTitle": "Drop documents here or click to upload",

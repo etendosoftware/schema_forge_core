@@ -131,8 +131,10 @@ export function DetailView({
   contentBg = 'bg-white',
   lockWhenProcessed = true,
   addLineGuard = null,
+  showDetailFooterTotals = undefined,
   onAfterSave,
   onAfterCreate,
+  labelOverrides,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
@@ -1008,6 +1010,7 @@ export function DetailView({
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   selectorContext={selectorContextByEntity[entity]}
+                  labelOverrides={labelOverrides}
                 />
               </div>
 
@@ -1028,6 +1031,7 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
+                      labelOverrides={labelOverrides}
                     />
                   </div>
                 </CollapsibleSection>
@@ -1095,7 +1099,7 @@ export function DetailView({
                         apiBaseUrl={apiBaseUrl}
                         onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
                         selectedRowId={selectedLine?.id}
-                        showFooterTotals={!summary.some(f => f.type === 'amount')}
+                        showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                         addRow={{
                           active: addingLine,
                           fields: allEntryFields,
@@ -1227,12 +1231,13 @@ export function DetailView({
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
                           }}
-                          entity={detailEntity}
-                          catalogs={catalogs}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                          selectorContext={selectorContextByEntity[detailEntity]}
-                        />
+                                entity={detailEntity}
+                                catalogs={catalogs}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                selectorContext={selectorContextByEntity[detailEntity]}
+                                labelOverrides={labelOverrides}
+                              />
                         {hook.editing && (lineEdits || selectedLine?.id) && (
                           <div className="flex gap-2 mt-4">
                             {lineEdits && !isDocumentReadOnly && (
@@ -1359,6 +1364,7 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
+                          labelOverrides={labelOverrides}
                         />
                       </div>
                     ) : st.Panel ? (
@@ -1422,6 +1428,7 @@ export function DetailView({
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
                           excludeFields={st.key === 'contact' ? ['active'] : []}
+                          labelOverrides={labelOverrides}
                         />
                         {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
                           <div className="flex gap-2 mt-4">
@@ -1523,6 +1530,7 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
+                      labelOverrides={labelOverrides}
                     />
                   </div>
                 )}

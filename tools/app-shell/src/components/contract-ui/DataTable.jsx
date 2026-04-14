@@ -3,9 +3,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
-import { useLabel, useUI, useLocale } from '@/i18n';
+import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
@@ -124,6 +126,14 @@ function getDateDotColor(dateValue) {
   d.setHours(0, 0, 0, 0);
   if (d.getTime() === today.getTime()) return null;
   return d > today ? 'bg-emerald-500' : 'bg-red-500';
+}
+
+function isTruthyBoolean(value) {
+  return value === true || value === 'Y' || value === 'true';
+}
+
+function isFalsyBoolean(value) {
+  return value === false || value === 'N' || value === 'false';
 }
 
 /**
@@ -545,13 +555,22 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext }) {
-  const t = useLabel();
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides }) {
+  const t = useLabel(labelOverrides);
+  const tMenu = useMenuLabel();
   const ui = useUI();
   const dictionary = useLocale();
+  const { locale } = useLocaleSwitch();
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const [optimisticToggles, setOptimisticToggles] = useState({});
+  const [savingToggles, setSavingToggles] = useState({});
+
+  useEffect(() => {
+    setOptimisticToggles({});
+    setSavingToggles({});
+  }, [data]);
 
   // Report columns to parent (e.g., ListView sort popover)
   useEffect(() => {
@@ -601,9 +620,54 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     return sums;
   }, [filteredData, amountColumns]);
 
+  const handleInlineToggle = useCallback(async (row, col, checked) => {
+    const toggleKey = `${row.id}:${col.key}`;
+    if (!apiBaseUrl || !entity || !row?.id || !token) {
+      toast.error('Inline toggle is not available in this context');
+      return;
+    }
+
+    setOptimisticToggles(prev => ({ ...prev, [toggleKey]: checked }));
+    setSavingToggles(prev => ({ ...prev, [toggleKey]: true }));
+
+    try {
+      const res = await fetch(`${apiBaseUrl}/${entity}/${row.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ [col.key]: checked }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+
+      onDataMutated?.();
+    } catch (error) {
+      setOptimisticToggles(prev => {
+        const next = { ...prev };
+        delete next[toggleKey];
+        return next;
+      });
+      toast.error(error?.message || 'Failed to update record');
+    } finally {
+      setSavingToggles(prev => {
+        const next = { ...prev };
+        delete next[toggleKey];
+        return next;
+      });
+    }
+  }, [apiBaseUrl, entity, onDataMutated, token]);
+
   const renderCellValue = (row, col) => {
     // Custom render function takes priority
-    if (typeof col.render === 'function') return col.render(row);
+    if (typeof col.render === 'function') return col.render(row, { entity, token, apiBaseUrl });
+    const toggleKey = `${row.id}:${col.key}`;
+    const rawValue = Object.prototype.hasOwnProperty.call(optimisticToggles, toggleKey)
+      ? optimisticToggles[toggleKey]
+      : row[col.key];
     const display = resolveIdentifier(row, col.key);
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
@@ -621,8 +685,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'enum') {
-      const raw = row[col.key];
-      const label = col.enumLabels?.[raw] ?? raw;
+      const raw = rawValue;
+      const label = tMenu(col.enumLabels?.[raw] ?? raw);
       if (col.display === 'dot') {
         const dotColor = getStatusDotColor(raw);
         return (
@@ -663,23 +727,49 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'boolean') {
-      const val = row[col.key];
+      const val = rawValue;
+      if (col.toggle) {
+        const checked = isTruthyBoolean(val);
+        const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
+        return (
+          <div
+            className="flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <Switch
+              checked={checked}
+              disabled={disabled}
+              onCheckedChange={(nextChecked) => {
+                void handleInlineToggle(row, col, nextChecked);
+              }}
+              aria-label={col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key}
+            />
+          </div>
+        );
+      }
       if (col.badge) {
-        const trueLabel  = col.badgeLabels?.true  ?? ui('statusComplete');
-        const falseLabel = col.badgeLabels?.false ?? ui('statusInProcess');
-        if (val === true || val === 'Y') return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+        const resolveBadgeLabel = (raw, fallback) => {
+          if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
+          return raw ?? fallback;
+        };
+        const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
+        const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
+        const trueColor  = col.badgeColors?.true  ?? 'bg-emerald-100 text-emerald-800';
+        const falseColor = col.badgeColors?.false ?? 'bg-amber-100 text-amber-700';
+        if (isTruthyBoolean(val)) return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
             {trueLabel}
           </span>
         );
-        if (val === false || val === 'N') return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+        if (isFalsyBoolean(val)) return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
             {falseLabel}
           </span>
         );
       }
-      if (val === true || val === 'Y') return <span className="text-emerald-600">{ui('yes')}</span>;
-      if (val === false || val === 'N') return <span className="text-slate-400">{ui('no')}</span>;
+      if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
+      if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
       return <span className="text-slate-300">&mdash;</span>;
     }
     if (col.type === 'date') {
@@ -775,7 +865,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = t(col.column) ?? col.label ?? col.key;
+                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key;
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (

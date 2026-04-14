@@ -195,7 +195,7 @@ The app is usable offline only to the extent that previously cached UI renders. 
 
 ### Login Cache Clearing
 
-On successful login, `LoginPage.jsx` deletes all SW caches:
+On successful environment login, `OnboardingPage.jsx` deletes all SW caches:
 ```js
 const names = await caches.keys();
 await Promise.all(names.map((n) => caches.delete(n)));

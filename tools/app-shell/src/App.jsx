@@ -1,7 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
-import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
@@ -117,11 +116,10 @@ function AuthGuard({ children }) {
 }
 
 function AppRoutes({ menuGroups, windowMap }) {
-  const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   // Public routes render without waiting for menu data
-  const publicPaths = ['/login', '/onboarding'];
+  const publicPaths = ['/onboarding'];
   const isPublicRoute = publicPaths.some(p => location.pathname.startsWith(p));
 
   if (!isPublicRoute && menuGroups.length === 0) {
@@ -131,10 +129,6 @@ function AppRoutes({ menuGroups, windowMap }) {
   return (
     <Routes>
       <Route
-        path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
-      />
-      <Route
         path="/onboarding"
         element={
           <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
@@ -142,6 +136,7 @@ function AppRoutes({ menuGroups, windowMap }) {
           </Suspense>
         }
       />
+      <Route path="/login" element={<Navigate to="/onboarding" replace />} />
       <Route
         element={
           <AuthGuard>
@@ -217,7 +212,7 @@ export default function App() {
     <BrowserRouter basename={routerBase}>
       <ServiceWorkerManager />
       <LocaleProvider locale={locale} setLocale={setLocale}>
-        <AuthProvider baseUrl={apiBase}>
+        <AuthProvider>
           <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
         </AuthProvider>
       </LocaleProvider>

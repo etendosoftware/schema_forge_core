@@ -19,9 +19,11 @@ async function simulateRefresh(apiBaseUrl, entity, sortColumn, sortDirection, to
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
-  const url = `${apiBaseUrl}/${entity}?_sortBy=${sortColumn} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}`;
+  const buildUrl = (includeSort) => includeSort
+    ? `${apiBaseUrl}/${entity}?_sortBy=${sortColumn} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}`
+    : `${apiBaseUrl}/${entity}?_startRow=0&_endRow=${BATCH_SIZE - 1}`;
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(buildUrl(true), { headers });
     if (!res.ok) throw new Error(`${res.status}`);
     const data = await res.json();
     const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
@@ -31,6 +33,21 @@ async function simulateRefresh(apiBaseUrl, entity, sortColumn, sortDirection, to
       hasMore: rows.length >= BATCH_SIZE,
     };
   } catch {
+    if (sortColumn === 'creationDate') {
+      try {
+        const retryRes = await fetch(buildUrl(false), { headers });
+        if (!retryRes.ok) throw new Error(`${retryRes.status}`);
+        const retryData = await retryRes.json();
+        const retryRows = retryData?.response?.data ?? (Array.isArray(retryData) ? retryData : []);
+        return {
+          items: retryRows,
+          startRow: retryRows.length,
+          hasMore: retryRows.length >= BATCH_SIZE,
+        };
+      } catch {
+        // Fall through to empty result.
+      }
+    }
     return { items: [], startRow: 0, hasMore: false };
   }
 }
@@ -117,6 +134,28 @@ describe('useEntity pagination - refresh (first page)', () => {
     assert.equal(result.items.length, 30);
     assert.equal(result.hasMore, false);
     assert.equal(result.startRow, 30);
+  });
+
+  it('retries without sort when the default creationDate sort fails', async () => {
+    const calls = [];
+    globalThis.fetch = async (url) => {
+      calls.push(url);
+      if (url.includes('_sortBy=creationDate desc')) {
+        return { ok: false, status: 400, json: async () => ({ error: 'Bad sort' }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({ response: { data: [{ id: 'pl-1' }, { id: 'pl-2' }] } }),
+      };
+    };
+
+    const result = await simulateRefresh('/api', 'priceList', 'creationDate', 'desc', 'tok');
+
+    assert.equal(calls.length, 2);
+    assert.ok(calls[0].includes('_sortBy=creationDate desc'));
+    assert.ok(!calls[1].includes('_sortBy='));
+    assert.equal(result.items.length, 2);
+    assert.equal(result.hasMore, false);
   });
 
   it('handles 0 results (empty dataset)', async () => {
