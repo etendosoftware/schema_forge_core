@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import {
   DollarSign,
   CreditCard,
@@ -1256,7 +1256,6 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { token, selectedOrg } = useAuth();
-  const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const gridRef = useRef(null);
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
@@ -1366,8 +1365,7 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>
