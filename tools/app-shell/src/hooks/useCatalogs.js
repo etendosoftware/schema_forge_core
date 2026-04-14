@@ -52,12 +52,12 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}, selectorConte
 
     // Fetch all selectors in parallel
     const fetches = unique.map(async (sel) => {
-      // Use sel.url when it carries explicit filter params (e.g. ?isSOTrx=Y, ?isCustomer=Y).
-      // Otherwise build from column name so the backend receives the DB column name it expects.
-      // This mirrors the same logic in EntityForm to ensure filters are preserved.
+      // Always build from apiBaseUrl so the full server path is included.
+      // Append query params from sel.url if present (e.g. ?isSOTrx=Y, ?isCustomer=Y).
+      const base = `${apiBaseUrl}/${sel.entity}/selectors/${sel.column}`;
       const selectorBaseUrl = sel.url?.includes('?')
-        ? sel.url
-        : `${apiBaseUrl}/${sel.entity}/selectors/${sel.column}`;
+        ? `${base}?${sel.url.split('?')[1]}`
+        : base;
       const url = buildUrlWithParams(selectorBaseUrl, selectorContext?.[sel.entity]);
       try {
         const res = await fetch(url, { headers });
