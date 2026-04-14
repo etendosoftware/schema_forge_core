@@ -404,25 +404,17 @@
         "id": "t-4",
         "category": "field-presence",
         "entity": "priceList",
-        "field": "isDefault",
+        "field": "default",
         "runner": "node",
-        "description": "Field 'isDefault' should be present in priceList"
+        "description": "Field 'default' should be present in priceList"
       },
       {
         "id": "t-5",
         "category": "field-presence",
         "entity": "priceList",
-        "field": "isSalesPrice",
+        "field": "salesPriceList",
         "runner": "node",
-        "description": "Field 'isSalesPrice' should be present in priceList"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "isActive",
-        "runner": "node",
-        "description": "Field 'isActive' should be present in priceList"
+        "description": "Field 'salesPriceList' should be present in priceList"
       },
       {
         "id": "t-7",
@@ -452,25 +444,17 @@
         "id": "t-10",
         "category": "field-type",
         "entity": "priceList",
-        "field": "isDefault",
+        "field": "default",
         "runner": "node",
-        "description": "Field 'isDefault' should have type 'boolean' in priceList"
+        "description": "Field 'default' should have type 'boolean' in priceList"
       },
       {
         "id": "t-11",
         "category": "field-type",
         "entity": "priceList",
-        "field": "isSalesPrice",
+        "field": "salesPriceList",
         "runner": "node",
-        "description": "Field 'isSalesPrice' should have type 'boolean' in priceList"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "isActive",
-        "runner": "node",
-        "description": "Field 'isActive' should have type 'boolean' in priceList"
+        "description": "Field 'salesPriceList' should have type 'boolean' in priceList"
       },
       {
         "id": "t-13",
@@ -583,38 +567,6 @@
         "description": "Entity 'priceListLine' should only expose visible fields in frontend"
       },
       {
-        "id": "t-27",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "adClientId",
-        "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-28",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "adOrgId",
-        "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-29",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "created",
-        "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-30",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for priceList"
-      },
-      {
         "id": "t-31",
         "category": "system-field",
         "entity": "priceListLine",
@@ -656,16 +608,16 @@
       }
     ],
     "summary": {
-      "total": 35,
+      "total": 25,
       "byCategory": {
-        "field-presence": 11,
-        "field-type": 11,
+        "field-presence": 9,
+        "field-type": 9,
         "searchable-filters": 2,
         "visibility": 2,
-        "system-field": 9
+        "system-field": 5
       },
       "byRunner": {
-        "node": 35,
+        "node": 25,
         "junit": 0
       }
     }
