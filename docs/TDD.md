@@ -44,6 +44,7 @@ schema-forge/
 │       ├── generate-frontend.js          # React SPA generation (windows, processes, reports)
 │       ├── generate-mock-data.js         # Mock catalogs for UI preview
 │       ├── run-contract-tests.js         # Contract test runner
+│       ├── pr-review.js                  # Deterministic PR review report for duplicate blocks and architecture drift
 │       ├── resolve-menu.js               # AD_Menu resolver (auto-detect type from menu ID or name)
 │       └── pipeline.js                   # Full pipeline orchestrator (window/process/report/menu modes)
 │

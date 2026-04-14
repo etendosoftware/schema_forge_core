@@ -60,6 +60,13 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
 | [self-documentation-policy.md](self-documentation-policy.md) | Self-documentation policy: triggers, checklists, and phase responsibilities for keeping docs in sync with code |
 
+## Operations
+
+| File | Description |
+|------|-------------|
+| [ops/cloudfront-alb-routing.md](ops/cloudfront-alb-routing.md) | CloudFront + ALB routing for the SPA, same-origin `/etendo/*` forwarding, and deployment runbook |
+| [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
+
 ## Plans & Evaluations
 
 Plans follow a lifecycle: active in `plans/`, completed in `plans/completed/YYYY-MM-DD/`, discarded in `plans/discarded/`.
