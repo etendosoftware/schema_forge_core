@@ -5,7 +5,7 @@ import HeaderForm from './HeaderForm';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Configuracion / Payment Term';
+const breadcrumb = 'Settings / Payment Term';
 
 const labelOverrides = {
   "es_ES": {

@@ -5,6 +5,7 @@
     "category": "configuracion",
     "name": "Payment Term",
     "detailEntity": null,
+    "breadcrumb": "Settings / Payment Term",
     "hidePrint": true,
     "hideMoreMenu": true,
     "labelOverrides": {
