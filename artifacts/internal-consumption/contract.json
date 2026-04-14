@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-10T16:09:24.998Z",
-  "checksum": "faeb1e9a5b4f17b2",
+  "generatedAt": "2026-04-14T17:37:16.943Z",
+  "checksum": "4ccba30706d8b0c3",
   "frontendContract": {
     "window": {
       "id": "800076",
@@ -203,7 +203,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "internalConsumptionLineHandler"
       }
     }
   },
@@ -560,7 +561,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "internalConsumptionLineHandler"
       }
     },
     "endpoints": [
