@@ -196,7 +196,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
           // Normalize values from Etendo format:
           // - Dates: dd-MM-yyyy → yyyy-MM-dd (HTML date input)
           // - Booleans: "Y" → true, "N" → false (NEO defaults returns strings, not booleans)
-          const normalized = { ...data.defaults };
+          const { id: _discardId, ...rest } = data.defaults;
+          const normalized = { ...rest };
           for (const [key, val] of Object.entries(normalized)) {
             if (val === 'Y') {
               normalized[key] = true;
