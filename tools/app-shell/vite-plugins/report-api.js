@@ -238,11 +238,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   });
 
   try {
-    // Get client ID
-    const clientRes = await pool.query(
-      `SELECT ad_client_id FROM ad_client WHERE isactive = 'Y' AND ad_client_id != '0' ORDER BY name LIMIT 1`
-    );
-    const clientId = clientRes.rows[0]?.ad_client_id || '0';
+    const clientId = getClientIdFromRequest({ headers: { authorization: authToken ? `Bearer ${authToken}` : '' } }) || '0';
 
     // Parameterize query — support both Jasper-style hardcoded IDs and __PLACEHOLDER__ tokens
     sql = sql.replace(/__CLIENT_ID__/g, clientId);

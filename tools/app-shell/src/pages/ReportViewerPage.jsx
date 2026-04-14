@@ -1006,15 +1006,27 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
         defaults[p.name] = '';
       }
     }
+    if ('orgId' in defaults) {
+      defaults.orgId = selectedOrgId || '';
+    }
     return defaults;
-  }, [report]);
+  }, [report, selectedOrgId]);
 
   const [params, setParams] = useState(getDefaultParams);
+
+  useEffect(() => {
+    if (!(report.parameters || []).some(p => p.name === 'orgId')) return;
+    setParams(prev => {
+      const nextOrgId = selectedOrgId || '';
+      if ((prev.orgId || '') === nextOrgId) return prev;
+      return { ...prev, orgId: nextOrgId, _display_orgId: '' };
+    });
+  }, [report, selectedOrgId]);
 
   // Auto-load defaults for params marked with autoDefault: true.
   // Params with dependsOn are loaded in a second pass, after their dependency is resolved.
   useEffect(() => {
-    const autoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector);
+    const autoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector && p.name !== 'orgId');
     if (!autoParams.length) return;
     Promise.all(
       autoParams.map(p =>
