@@ -296,7 +296,7 @@
           "section": "principal"
         },
         "grossUnitPrice": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "lineNetAmount": {
           "grid": true,
@@ -363,7 +363,7 @@
           "visibility": "discarded"
         },
         "grossListPrice": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "uOM": {
           "visibility": "system"

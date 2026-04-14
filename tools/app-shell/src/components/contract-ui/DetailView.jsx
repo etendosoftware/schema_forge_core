@@ -174,6 +174,7 @@ export function DetailView({
     if (detailEntity) {
       next[detailEntity] = {
         parentId: parentRecordId,
+        ...(isSOTrx ? { isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
       };
     }
@@ -546,7 +547,6 @@ export function DetailView({
       for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
         if (result[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete result[qtyKey];
       }
-      console.log('[DBG] SL_Order_Product result:', JSON.stringify({ unitPrice: result.unitPrice, grossUnitPrice: result.grossUnitPrice, netUnitPrice: result.netUnitPrice, lineNetAmount: result.lineNetAmount, tax: result.tax }));
       if (Object.keys(result).length > 0) applyUpdates?.(result);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
@@ -571,7 +571,7 @@ export function DetailView({
           // The callout endpoint resolves by DB column name, not by the SFField API key.
           const grossUnitPriceColumn = (addLineFields?.entry ?? []).find(
             f => f.key === 'grossUnitPrice'
-          )?.column ?? 'Gross_Unit_Price';
+          )?.column ?? 'inpgrossUnitPrice';
           const unitPriceColumn = (addLineFields?.entry ?? []).find(
             f => f.key === 'unitPrice'
           )?.column ?? 'PriceActual';
@@ -580,19 +580,25 @@ export function DetailView({
           const cascadeValue = useGross
             ? result.grossUnitPrice
             : (result.netUnitPrice ?? result.unitPrice ?? result.grossUnitPrice);
-          console.log('[DBG] SL_Order_Amt cascade:', { cascadeField, cascadeValue, grossUnitPriceColumn, unitPriceColumn, useGross });
+          // SL_Order_Amt needs grossListPrice to compute lineNetAmount for tax-inclusive lists.
+          // If it's missing or 0, seed it with grossUnitPrice so the callout has a valid base.
+          if (useGross && (cascadeState.grossListPrice == null || Number(cascadeState.grossListPrice) === 0)) {
+            cascadeState.grossListPrice = result.grossUnitPrice;
+          }
+          const cascadePayload = {
+            field: cascadeField,
+            value: String(cascadeValue ?? ''),
+            formState: cascadeState,
+            ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+          };
           const cascadeRes = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              field: cascadeField,
-              value: String(cascadeValue ?? ''),
-              formState: cascadeState,
-              ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
-            }),
+            body: JSON.stringify(cascadePayload),
           });
           if (cascadeRes.ok) {
             const cascadeData = await cascadeRes.json();
+            console.log('[DBG] SL_Order_Amt raw response:', JSON.stringify(cascadeData));
             const cascadeResult = {};
             if (cascadeData.updates) {
               for (const [k, entry] of Object.entries(cascadeData.updates)) {

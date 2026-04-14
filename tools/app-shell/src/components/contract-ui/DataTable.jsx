@@ -234,6 +234,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   };
 
   const handleConfirm = async () => {
+    console.log('[DBG] POST line body:', JSON.stringify(values));
     const result = await onAdd(values);
     if (result === false || result == null) {
       return;
@@ -281,6 +282,15 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (topField === 'id' || topField === '_aux' || topField === 'label'
             || topField === 'name' || topField === 'searchKey'
             || typeof topVal === 'object' || topVal === null) continue;
+        // Gross price from price list — map directly to grossUnitPrice so the DB trigger
+        // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+        if (topField === 'standardPrice' && topVal != null) {
+          snapshot['grossUnitPrice'] = topVal;
+          handleChange('grossUnitPrice', topVal);
+          snapshot['grossListPrice'] = topVal;
+          handleChange('grossListPrice', topVal);
+          continue;
+        }
         const ctxKey = `${key}_${topField}`;
         if (!(ctxKey in snapshot)) {
           snapshot[ctxKey] = topVal;

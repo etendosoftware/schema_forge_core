@@ -717,7 +717,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         if (auxData) {
           for (const [suffix, auxVal] of Object.entries(auxData)) {
-            if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+            // Gross price from price list — map directly to grossUnitPrice so the DB trigger
+            // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+            if (suffix === 'standardPrice' && auxVal != null) {
+              onChange?.('grossUnitPrice', auxVal);
+            } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
                 onChange?.(f.key + auxSuffix, auxSuffixVal);
               }
