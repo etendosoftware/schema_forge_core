@@ -5,8 +5,7 @@
       "icon": "LayoutDashboard",
       "section": "General",
       "items": [
-        { "name": "dashboard", "label": "Dashboard" },
-        { "name": "onboarding", "label": "Setup Wizard" }
+        { "name": "dashboard", "label": "Dashboard" }
       ]
     },
     {
