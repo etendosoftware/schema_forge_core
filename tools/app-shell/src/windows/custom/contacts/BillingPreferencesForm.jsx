@@ -152,10 +152,10 @@ function LocationCard({ records, loading, onEdit, onDelete, onAdd, ui }) {
 
 export default function BillingPreferencesForm(props) {
   const ui = useUI();
-  const { data, api, token, onChange } = props;
+  const { data, api, token, onChange, apiBaseUrl } = props;
   const bpId = data?.id;
   const canEditBillingPreferences = Boolean(bpId);
-  const apiBase = api?.baseUrl ?? '';
+  const apiBase = apiBaseUrl ?? api?.baseUrl ?? '';
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const organizationId = resolveId(data?.organization ?? data?.adOrgId ?? data?.ad_org_id);
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
