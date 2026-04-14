@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
 
 function buildHeaders(token) {
@@ -210,6 +211,7 @@ function resolveSortKey(sortColumn, sampleRow) {
 }
 
 export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
+  const { logout } = useAuth();
   const ui = useUI();
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -233,6 +235,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
     fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
       .then(res => {
+        if (res.status === 401) {
+          logout();
+          throw new Error('401');
+        }
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
@@ -245,7 +251,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         setLoading(false);
       })
       .catch(() => { setItems([]); setHasMore(false); setLoading(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, logout]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return;
@@ -254,6 +260,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
     fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
       .then(res => {
+        if (res.status === 401) {
+          logout();
+          throw new Error('401');
+        }
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
@@ -265,7 +275,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         setLoadingMore(false);
       })
       .catch(() => { setLoadingMore(false); setHasMore(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, logout]);
 
   useEffect(() => { refresh(); }, [refresh]);
 

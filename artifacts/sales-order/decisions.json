@@ -97,7 +97,8 @@
           "reference": "BusinessPartner",
           "displayLogic": null,
           "section": "principal",
-          "seq": 1
+          "seq": 1,
+          "selectorFilter": "isCustomer=Y"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",

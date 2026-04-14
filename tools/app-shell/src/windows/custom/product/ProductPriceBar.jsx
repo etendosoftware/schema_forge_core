@@ -136,6 +136,7 @@ function resolveOptionId(options, candidate) {
 }
 
 function PriceTable({ title, rows, variant = 'neutral' }) {
+  const ui = useUI();
   const isEmpty = !rows || rows.length === 0;
   const tone = variant === 'sales'
     ? {
@@ -162,7 +163,7 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
           <span className="text-sm font-bold text-gray-800">{title}</span>
           {!isEmpty && (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone.badge}`}>
-              {rows.length} {rows.length === 1 ? 'list' : 'lists'}
+              {rows.length} {rows.length === 1 ? ui('priceSingleList') : ui('priceMultiList')}
             </span>
           )}
         </div>
@@ -170,7 +171,7 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
 
       {isEmpty ? (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-xs text-gray-400">
-          No price lists configured for this type.
+          {ui('priceNoLists')}
         </div>
       ) : (
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -182,9 +183,9 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
             </colgroup>
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Name</th>
-                <th className="w-36 text-right px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Unit Price</th>
-                <th className="w-36 text-right px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">List Price</th>
+                <th className="text-left px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{ui('name')}</th>
+                <th className="w-36 text-right px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{ui('priceColUnitPrice')}</th>
+                <th className="w-36 text-right px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{ui('priceColListPrice')}</th>
               </tr>
             </thead>
             <tbody>
@@ -211,6 +212,7 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
 
 
 function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSaved, selectorOptions = [], productId }) {
+  const ui = useUI();
   const [drafts, setDrafts] = useState({});
   const [saving, setSaving] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -396,7 +398,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
         }
       }
 
-      toast.success('Pricing updated successfully.');
+      toast.success(ui('pricingUpdated'));
       if (onSaved) await onSaved();
       setStagedAdds([]);
       setStagedDeletes([]);
@@ -454,7 +456,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
           <div className="flex items-center gap-2">
             <div className="text-sm font-bold text-gray-800">{title}</div>
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone.badge}`}>
-              {(rows.length + (pending ? 1 : 0))} {rows.length + (pending ? 1 : 0) === 1 ? 'list' : 'lists'}
+              {(rows.length + (pending ? 1 : 0))} {rows.length + (pending ? 1 : 0) === 1 ? ui('priceSingleList') : ui('priceMultiList')}
             </span>
           </div>
           {!pending && (
@@ -470,7 +472,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
 
         {!showTable && (
           <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-xs text-gray-400">
-            No price lists configured for this type.
+            {ui('priceNoLists')}
           </div>
         )}
 
@@ -610,15 +612,15 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
       <DialogContent className="max-w-5xl w-full">
         <div className="relative">
           <DialogHeader>
-            <DialogTitle className="text-lg">Manage Pricing</DialogTitle>
+            <DialogTitle className="text-lg">{ui('managePricing')}</DialogTitle>
             <DialogDescription className="mt-1">
-              View and edit prices for all price lists assigned to this product.
+              {ui('managePricingDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex gap-4 pt-2 max-h-[60vh] overflow-y-auto items-start">
-            {renderSection('Sales Price Lists', saleRows, pendingSale, setPendingSale, saleOptions, 'sales')}
-            {renderSection('Purchase Price Lists', purchaseRows, pendingPurchase, setPendingPurchase, purchaseOptions, 'purchase')}
+            {renderSection(ui('priceSalesLists'), saleRows, pendingSale, setPendingSale, saleOptions, 'sales')}
+            {renderSection(ui('pricePurchaseLists'), purchaseRows, pendingPurchase, setPendingPurchase, purchaseOptions, 'purchase')}
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 mt-1">
@@ -628,7 +630,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
               disabled={saving}
               className="text-xs px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              Cancel
+              {ui('cancel')}
             </button>
               <button
                 type="button"
@@ -637,16 +639,16 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                 className="text-xs px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-1.5 disabled:opacity-50"
               >
               {saving && <Loader2 size={11} className="animate-spin" />}
-              Save changes
+              {ui('saveChanges')}
             </button>
           </div>
 
           {showCloseConfirm && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/75 backdrop-blur-[2px]">
               <div className="bg-white rounded-xl border border-gray-200 shadow-xl p-5 max-w-xs w-full mx-4">
-                <div className="text-sm font-semibold text-gray-900 mb-1">Unsaved changes</div>
+                <div className="text-sm font-semibold text-gray-900 mb-1">{ui('unsavedChanges')}</div>
                 <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                  You have changes that haven't been saved yet. What would you like to do?
+                  {ui('unsavedChangesDesc')}
                 </p>
                 <div className="flex gap-2 justify-end">
                   <button
@@ -655,7 +657,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                     disabled={saving}
                     className="text-xs px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
                   >
-                    Discard changes
+                    {ui('discardChanges')}
                   </button>
                   <button
                     type="button"
@@ -664,7 +666,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                     className="text-xs px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {saving && <Loader2 size={11} className="animate-spin" />}
-                    Save changes
+                    {ui('saveChanges')}
                   </button>
                 </div>
               </div>
@@ -1068,8 +1070,8 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
-          <PriceTable title="Sales Price Lists" rows={displaySaleRows} variant="sales" />
-          <PriceTable title="Purchase Price Lists" rows={displayPurchaseRows} variant="purchase" />
+          <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="sales" />
+          <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="purchase" />
         </div>
       )}
 

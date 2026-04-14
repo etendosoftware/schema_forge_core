@@ -267,10 +267,10 @@ function StockChart({
             onClick={() => setInternalOpen(true)}
             className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 rounded-lg px-3 py-1"
           >
-            Expand
+            {ui('expand')}
           </button>
         </div>
-        <div className="text-xs text-gray-400 mb-2">Last 12 months.</div>
+        <div className="text-xs text-gray-400 mb-2">{ui('productLast12Months')}</div>
         <div style={{ height: 120 }}>
           <ChartSVG {...chart} W={340} H={100} PAD_X={36} PAD_Y={8} gradId="sbGrad" fontSize={10} />
         </div>
@@ -422,9 +422,9 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
         {/* Summary tab content */}
         {activeTab === 'summary' && (
           <div className="px-4 pb-4 flex flex-col gap-3">
-            <StatCard icon={Boxes} label="On Hand" value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
-            <StatCard icon={PackageCheck} label="Available" value={fmt(available)} subtitle={availablePct !== null ? `${availablePct}% free` : null} color={availableColor} />
-            <StatCard icon={Lock} label="Reserved" value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? 'units held' : null} color="amber" />
+            <StatCard icon={Boxes} label={ui('onHand')} value={fmt(onHand)} subtitle={onHandSubtitle} color={onHandColor} />
+            <StatCard icon={PackageCheck} label={ui('available')} value={fmt(available)} subtitle={availablePct !== null ? ui('productPctFree', { pct: availablePct }) : null} color={availableColor} />
+            <StatCard icon={Lock} label={ui('reserved')} value={fmt(reserved)} subtitle={reserved !== null && reserved > 0 ? ui('unitsHeld') : null} color="amber" />
           </div>
         )}
 
@@ -433,11 +433,11 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
           <div className="px-4 pb-4 flex flex-col gap-3">
             {/* Total on hand */}
             <div className="rounded-xl bg-blue-50/60 border-l-4 border-l-blue-400 px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-blue-500 mb-1">Total on hand</div>
+              <div className="text-xs font-semibold uppercase tracking-widest text-blue-500 mb-1">{ui('productTotalOnHand')}</div>
               <div className="text-3xl font-bold text-gray-900 leading-none tracking-tight">{fmt(onHand)}</div>
               {binCount > 0 && (
                 <div className="text-sm text-gray-500 mt-1.5">
-                  {binCount === 1 ? `In ${locationRows[0]?.binName}` : `Distributed in ${binCount} warehouses`}
+                  {binCount === 1 ? ui('productInWarehouse', { name: locationRows[0]?.binName }) : ui('productDistributedIn', { count: binCount })}
                 </div>
               )}
             </div>
@@ -456,9 +456,9 @@ export default function ProductSidebar({ recordId, data, token, apiBaseUrl }) {
                     <span className="text-sm font-semibold text-gray-700">{b.binName}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5">
-                    <MiniStat label="On Hand"  value={fmt(b.quantityOnHand)} color={b.quantityOnHand === 0 ? 'red' : 'blue'} />
-                    <MiniStat label="Available" value={fmt(wAvailable)}       color={wAvailableColor} />
-                    <MiniStat label="Reserved"  value={fmt(b.reservedQty)}    color="amber" />
+                    <MiniStat label={ui('onHand')}    value={fmt(b.quantityOnHand)} color={b.quantityOnHand === 0 ? 'red' : 'blue'} />
+                    <MiniStat label={ui('available')} value={fmt(wAvailable)}       color={wAvailableColor} />
+                    <MiniStat label={ui('reserved')}  value={fmt(b.reservedQty)}    color="amber" />
                   </div>
                 </div>
               );

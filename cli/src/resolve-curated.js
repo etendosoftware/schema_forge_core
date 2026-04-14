@@ -214,6 +214,8 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // Visual hints — badge (boolean pill), summable (numeric footer total), columnType override
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.badgeLabels) field.badgeLabels = fieldDecision.badgeLabels;
+  if (fieldDecision.badgeColors) field.badgeColors = fieldDecision.badgeColors;
+  if (fieldDecision.labels) field.labels = fieldDecision.labels;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
   if (fieldDecision.display) field.display = fieldDecision.display;

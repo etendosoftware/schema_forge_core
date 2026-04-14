@@ -22,9 +22,6 @@ tfoot tr td { font-weight: bold; border-top: 2px solid #333; }
   </div>
 
   <div class="report-info-grid">
-    {{#if meta.params._display_orgId}}
-    <div><span>Organization: </span><strong>{{meta.params._display_orgId}}</strong></div>
-    {{/if}}
     <div><span>As of Date: </span><strong>{{formatDateDisplay meta.params.currentDate}}</strong></div>
     {{#if meta.params._display_glId}}
     <div><span>General Ledger: </span><strong>{{meta.params._display_glId}}</strong></div>

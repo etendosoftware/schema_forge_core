@@ -12,9 +12,7 @@ const fields = [
 
 // @sf-generated-start component:PriceListLineForm
 export default function PriceListLineForm(props) {
-  // @sf-custom-slot hooks:PriceListLineForm
   return <EntityForm fields={fields} {...props} />;
 }
+PriceListLineForm.hasCollapsedFields = false;
 // @sf-generated-end component:PriceListLineForm
-
-// @sf-custom-slot section:PriceListLineForm-custom
