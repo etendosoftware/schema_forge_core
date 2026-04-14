@@ -35,6 +35,7 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  labelOverrides,
 }) {
   const [activeFilterIndex, setActiveFilterIndex] = useState(0);
   const effectiveFilter = quickFilters
@@ -390,6 +391,7 @@ export function ListView({
                     data={hook.items}
                     onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
                     onSelectionChange={setSelectedRows}
+                    onDataMutated={hook.refresh}
                     isRowSelectable={isRowSelectable}
                     compact={false}
                     sortColumn={hook.sortColumn}
@@ -398,6 +400,7 @@ export function ListView({
                     api={api}
                     token={token}
                     apiBaseUrl={apiBaseUrl}
+                    labelOverrides={labelOverrides}
                   />
                 )
               }
