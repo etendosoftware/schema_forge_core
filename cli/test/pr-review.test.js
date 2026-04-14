@@ -1,10 +1,15 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   detectDuplicatedBlocks,
   analyzeChangedFiles,
   summarizeReview,
   renderReviewBody,
+  reviewPullRequest,
 } from '../src/pr-review.js';
 
 function makeDiff(path, body) {
@@ -108,5 +113,70 @@ describe('summarizeReview', () => {
     assert.match(body, /Copilot PR Review/);
     assert.match(body, /Warnings/);
     assert.match(body, /Dependency added\./);
+  });
+});
+
+describe('reviewPullRequest', () => {
+  it('uses the merge base so only files introduced by the PR head are blocked', () => {
+    const originalCwd = process.cwd();
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-'));
+
+    try {
+      execFileSync('git', ['init', '-b', 'develop'], { cwd: repoDir });
+      execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
+
+      writeFileSync(join(repoDir, 'shared.txt'), 'base\n');
+      execFileSync('git', ['add', 'shared.txt'], { cwd: repoDir });
+      execFileSync('git', ['commit', '-m', 'base'], { cwd: repoDir });
+
+      execFileSync('git', ['checkout', '-b', 'epic/ETP-3504'], { cwd: repoDir });
+      writeFileSync(join(repoDir, 'base-only.txt'), 'changed on epic\n');
+      execFileSync('git', ['add', 'base-only.txt'], { cwd: repoDir });
+      execFileSync('git', ['commit', '-m', 'epic change'], { cwd: repoDir });
+
+      execFileSync('git', ['checkout', '-b', 'feature/ETP-3775'], { cwd: repoDir });
+      writeFileSync(join(repoDir, 'feature-only.txt'), 'changed on feature\n');
+      execFileSync('git', ['add', 'feature-only.txt'], { cwd: repoDir });
+      execFileSync('git', ['commit', '-m', 'feature change'], { cwd: repoDir });
+
+      execFileSync('git', ['checkout', 'epic/ETP-3504'], { cwd: repoDir });
+      writeFileSync(join(repoDir, 'epic-after-branch.txt'), 'changed on epic after feature branch\n');
+      execFileSync('git', ['add', 'epic-after-branch.txt'], { cwd: repoDir });
+      execFileSync('git', ['commit', '-m', 'later epic change'], { cwd: repoDir });
+
+      execFileSync('git', ['checkout', 'feature/ETP-3775'], { cwd: repoDir });
+
+      const baseSha = execFileSync('git', ['rev-parse', 'epic/ETP-3504'], { cwd: repoDir, encoding: 'utf8' }).trim();
+      const headSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoDir, encoding: 'utf8' }).trim();
+
+      process.chdir(repoDir);
+      const result = reviewPullRequest(baseSha, headSha);
+
+      assert.deepEqual(result.changedFiles, ['feature-only.txt']);
+    } finally {
+      process.chdir(originalCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('analyzeChangedFiles string-literal safety', () => {
+  it('does not block string literals that merely mention require or secret markers', () => {
+    const findings = analyzeChangedFiles({
+      changedFiles: ['cli/test/pr-review.test.js'],
+      newSourceFiles: [],
+      newTestFiles: ['cli/test/pr-review.test.js'],
+      fileContents: {
+        'cli/test/pr-review.test.js': "const fixture = 'module.exports = lib; SECRET_KEY=top-secret; const lib = require(\"lib\");';\n",
+      },
+      packageJsonChanges: [],
+      addedLineContents: {
+        'cli/test/pr-review.test.js': ["const fixture = 'module.exports = lib; SECRET_KEY=top-secret; const lib = require(\"lib\");';"],
+      },
+    });
+
+    assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
+    assert.ok(!findings.some((finding) => finding.code === 'POTENTIAL_SECRET'));
   });
 });

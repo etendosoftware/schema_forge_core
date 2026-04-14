@@ -44,6 +44,10 @@ function normalizeDuplicateLine(line) {
   return trimmed.replace(/\s+/g, ' ');
 }
 
+function stripStringLiterals(line) {
+  return line.replace(/(["'`])(?:\\.|(?!\1)[^\\])*\1/g, '');
+}
+
 function parseAddedRuns(diffText) {
   const runs = [];
   const sections = diffText.split(/^diff --git /m).filter(Boolean);
@@ -99,6 +103,26 @@ function parseAddedRuns(diffText) {
   }
 
   return runs;
+}
+
+function collectAddedLineContents(diffText) {
+  const addedLineContents = {};
+
+  for (const run of parseAddedRuns(diffText)) {
+    const bucket = addedLineContents[run.path] || [];
+    bucket.push(...run.lines.map((entry) => entry.text));
+    addedLineContents[run.path] = bucket;
+  }
+
+  return addedLineContents;
+}
+
+function getRelevantLines(path, addedLineContents, fileContents) {
+  if (addedLineContents[path]?.length) {
+    return addedLineContents[path];
+  }
+
+  return (fileContents[path] || '').split('\n');
 }
 
 export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINES } = {}) {
@@ -162,9 +186,14 @@ function analyzeDirectoryViolations(changedFiles) {
   return findings;
 }
 
-function analyzeCommonJsUsage(changedFiles, fileContents) {
-  const offenders = changedFiles.filter((path) => isSourceFile(path)
-    && /\b(require\s*\(|module\.exports\b|exports\.)/.test(fileContents[path] || ''));
+function analyzeCommonJsUsage(changedFiles, fileContents, addedLineContents) {
+  const commonJsPattern = /\b(require\s*\(|module\.exports\b|exports\.)/;
+  const offenders = changedFiles.filter((path) => {
+    if (!isSourceFile(path)) return false;
+    return getRelevantLines(path, addedLineContents, fileContents)
+      .map((line) => stripStringLiterals(line))
+      .some((line) => commonJsPattern.test(line));
+  });
 
   if (!offenders.length) {
     return [];
@@ -178,7 +207,7 @@ function analyzeCommonJsUsage(changedFiles, fileContents) {
   }];
 }
 
-function analyzeSecrets(changedFiles, fileContents) {
+function analyzeSecrets(changedFiles, fileContents, addedLineContents) {
   const findings = [];
   const envFiles = changedFiles.filter((path) => /(^|\/)\.env($|\.)/.test(path) && !path.endsWith('.example'));
 
@@ -191,11 +220,14 @@ function analyzeSecrets(changedFiles, fileContents) {
     });
   }
 
+  const secretPattern = /(API_KEY|SECRET_KEY|PRIVATE_KEY|PASSWORD|ACCESS_TOKEN|CLIENT_SECRET)\s*[=:]/;
   const secretMatches = [];
   for (const path of changedFiles) {
-    const content = fileContents[path] || '';
-    const matches = content.match(/(API_KEY|SECRET_KEY|PRIVATE_KEY|PASSWORD|ACCESS_TOKEN|CLIENT_SECRET)\s*[=:]/g);
-    if (matches?.length) {
+    const hasSecretMatch = getRelevantLines(path, addedLineContents, fileContents)
+      .map((line) => stripStringLiterals(line))
+      .some((line) => secretPattern.test(line));
+
+    if (hasSecretMatch) {
       secretMatches.push(`- \`${path}\``);
     }
   }
@@ -261,12 +293,13 @@ export function analyzeChangedFiles({
   newTestFiles,
   fileContents,
   packageJsonChanges,
+  addedLineContents = {},
 }) {
   return [
     ...analyzeMissingTests(newSourceFiles, newTestFiles),
     ...analyzeDirectoryViolations(changedFiles),
-    ...analyzeSecrets(changedFiles, fileContents),
-    ...analyzeCommonJsUsage(changedFiles, fileContents),
+    ...analyzeSecrets(changedFiles, fileContents, addedLineContents),
+    ...analyzeCommonJsUsage(changedFiles, fileContents, addedLineContents),
     ...analyzeLargeFiles(changedFiles),
     ...packageJsonChanges.flatMap((change) => change.dependencies.length
       ? [{
@@ -380,14 +413,15 @@ function readChangedFiles(changedFiles) {
 }
 
 export function reviewPullRequest(baseSha, headSha) {
-  const diffText = safeGit(['diff', '--find-renames', '--unified=0', baseSha, headSha], '');
-  const changedFiles = safeGit(['diff', '--name-only', baseSha, headSha], '')
+  const compareBase = safeGit(['merge-base', baseSha, headSha], '').trim() || baseSha;
+  const diffText = safeGit(['diff', '--find-renames', '--unified=0', compareBase, headSha], '');
+  const changedFiles = safeGit(['diff', '--name-only', compareBase, headSha], '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
 
   const addedFiles = new Set(
-    safeGit(['diff', '--name-only', '--diff-filter=A', baseSha, headSha], '')
+    safeGit(['diff', '--name-only', '--diff-filter=A', compareBase, headSha], '')
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean),
@@ -396,7 +430,8 @@ export function reviewPullRequest(baseSha, headSha) {
   const newSourceFiles = [...addedFiles].filter((path) => isSourceFile(path) && !isTestFile(path) && !isTestDirectory(path));
   const newTestFiles = [...addedFiles].filter((path) => isTestFile(path));
   const fileContents = readChangedFiles(changedFiles);
-  const packageJsonChanges = collectPackageJsonChanges(baseSha, headSha, changedFiles);
+  const addedLineContents = collectAddedLineContents(diffText);
+  const packageJsonChanges = collectPackageJsonChanges(compareBase, headSha, changedFiles);
 
   const findings = [
     ...detectDuplicatedBlocks(diffText),
@@ -406,12 +441,13 @@ export function reviewPullRequest(baseSha, headSha) {
       newTestFiles,
       fileContents,
       packageJsonChanges,
+      addedLineContents,
     }),
   ];
 
   const summary = summarizeReview(findings);
   return {
-    baseSha,
+    baseSha: compareBase,
     headSha,
     changedFiles,
     findings,
