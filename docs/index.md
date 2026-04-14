@@ -70,6 +70,8 @@ Plans follow a lifecycle: active in `plans/`, completed in `plans/completed/YYYY
 | [plans/neo-report-endpoint.md](plans/neo-report-endpoint.md) | NEO Headless Report Endpoint — **Implemented** (NeoReportService, binary responses, OpenAPI docs) |
 | [plans/2026-03-05-vertical-slice-design.md](plans/2026-03-05-vertical-slice-design.md) | Vertical slice design |
 | [plans/2026-03-05-vertical-slice-plan.md](plans/2026-03-05-vertical-slice-plan.md) | Vertical slice execution plan |
+| [plans/2026-04-14-schemaforge-onboarding-dataset-design.md](plans/2026-04-14-schemaforge-onboarding-dataset-design.md) | Curated onboarding dataset design: normalize `sampledata/GOClient`, exclude bootstrap rows, and import foundation seed per tenant |
+| [plans/2026-04-14-schemaforge-onboarding-dataset-plan.md](plans/2026-04-14-schemaforge-onboarding-dataset-plan.md) | Execution plan for the onboarding dataset normalizer, importer, onboarding hook, and repeatability tests |
 | [plans/evaluations/architecture-review.md](plans/evaluations/architecture-review.md) | Architecture review |
 | [plans/evaluations/day-1-decisions.md](plans/evaluations/day-1-decisions.md) | Day 1 decisions |
 | [plans/evaluations/decisions-resolved.md](plans/evaluations/decisions-resolved.md) | Resolved design decisions |
