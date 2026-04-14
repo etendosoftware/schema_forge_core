@@ -178,7 +178,12 @@ export async function pushToNeo(windowName, options = {}) {
   const contract = JSON.parse(contractRaw);
   const schemaRawData = JSON.parse(schemaRawJson);
 
-  const windowId = schemaRawData.window.id;
+  let windowId = schemaRawData.window.id;
+  if (options.overrideWindow) {
+    windowId = options.overrideWindow;
+  } else if (contract.backendContract?.window?.id) {
+    windowId = contract.backendContract.window.id;
+  }
   const windowDisplayName = schemaRawData.window.name;
   // Use the artifact slug (windowName) as spec name so it matches the frontend route
   const specName = windowName;
@@ -759,11 +764,13 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const isReport = args.includes('--type') && args[args.indexOf('--type') + 1] === 'report';
+  const overrideWindowArg = args.find(a => a.startsWith('--override-window='));
+  const overrideWindow = overrideWindowArg ? overrideWindowArg.split('=')[1] : null;
   const name = args.find(a => !a.startsWith('--') && a !== 'report');
 
   if (!name) {
     console.error('Usage:');
-    console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run]');
+    console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run] [--override-window=123]');
     console.error('  node cli/src/push-to-neo.js <reportName> --type report [--dry-run]');
     console.error('');
     console.error('Examples:');
@@ -778,7 +785,7 @@ async function main() {
     if (isReport) {
       result = await pushReportToNeo(name, { dryRun });
     } else {
-      result = await pushToNeo(name, { dryRun });
+      result = await pushToNeo(name, { dryRun, overrideWindow });
     }
     if (!dryRun) {
       console.log('\nResult:', JSON.stringify(result, null, 2));

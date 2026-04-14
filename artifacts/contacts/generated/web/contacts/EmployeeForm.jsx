@@ -11,10 +11,7 @@ const fields = [
 
 // @sf-generated-start component:EmployeeForm
 export default function EmployeeForm(props) {
-  // @sf-custom-slot hooks:EmployeeForm
   return <EntityForm fields={fields} {...props} />;
 }
 EmployeeForm.hasCollapsedFields = false;
 // @sf-generated-end component:EmployeeForm
-
-// @sf-custom-slot section:EmployeeForm-custom

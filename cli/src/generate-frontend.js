@@ -104,7 +104,16 @@ function mapFormFieldType(field) {
  */
 export function generateTableComponent(entityName, contract) {
   const entity = contract.frontendContract.entities[entityName];
-  const gridFields = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  const gridFieldsRaw = entity.fields.filter(f => f.grid && f.visibility !== 'discarded');
+  // gridOrder: absolute insertion position (1-based). Only the tagged fields move;
+  // all other fields stay in their original relative order.
+  const pinned = [...gridFieldsRaw].filter(f => f.gridOrder != null).sort((a, b) => a.gridOrder - b.gridOrder);
+  const unpinned = gridFieldsRaw.filter(f => f.gridOrder == null);
+  const gridFields = [...unpinned];
+  for (const f of pinned) {
+    const pos = Math.max(1, Math.min(f.gridOrder, gridFields.length + 1));
+    gridFields.splice(pos - 1, 0, f);
+  }
   const searchableFields = entity.searchableFields ?? [];
   const compName = `${capitalize(entityName)}Table`;
 
@@ -515,7 +524,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
-    const defaultValue = String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+    const rawDefault = String(f.defaultValue);
+    const parentColMatch = rawDefault.match(/^@(\w+)@$/);
+    if (parentColMatch) {
+      const colName = parentColMatch[1];
+      const headerField = allEntityFields.find(hf => hf.column === colName);
+      if (headerField) {
+        return `    { key: '${f.name}', fromParent: '${headerField.name}' },`;
+      }
+    }
+    const defaultValue = rawDefault.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
     return `    { key: '${f.name}', value: '${defaultValue}' },`;
   }).join('\n');
 
@@ -537,8 +555,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
+  const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
+  const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
@@ -577,10 +597,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
+          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${optionsPart} }`;
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
         }).filter(Boolean);
         return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries };
       });
@@ -652,8 +673,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
   }).join('\n');
 
+  const secondaryTabsRequireSaved = windowConfig.secondaryTabs && Object.values(windowConfig.secondaryTabs).some(t => t.requireSavedRecord);
   const secondaryTabsProp = secondaryTabDefs.length > 0
-    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
+    ? secondaryTabsRequireSaved
+      ? `\n        secondaryTabs={recordId === 'new' ? [] : [\n${secondaryTabsPropEntries}\n        ]}`
+      : `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
   // Build optional DetailView props from window-level decisions config
@@ -672,10 +696,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
+  // hideSaveStatuses prop (DetailView)
+  const hideSaveStatusesProp = hideSaveStatuses.length > 0
+    ? `\n        hideSaveStatuses={${JSON.stringify(hideSaveStatuses)}}`
+    : '';
   // hideMoreMenu prop (DetailView)
   const hideMoreMenuProp = hideMoreMenu ? '\n        hideMoreMenu' : '';
   // hideMoreDetails prop (DetailView)
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
+  // noHeaderBorder prop (DetailView)
+  const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
   // listViewOptions props
   const listViewOptionsProp = listViewOptions
     ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
@@ -849,11 +879,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const othersLabelValue = windowConfig.othersLabel ?? null;
   const othersLabelProp = othersLabelValue ? `\n        othersLabel="${othersLabelValue}"` : '';
 
-  // showDetailFooterTotals support (default is true in DetailView; false hides the totals row)
-  const showDetailFooterTotalsProp = windowConfig.showDetailFooterTotals === false
-    ? `\n        showDetailFooterTotals={false}`
-    : '';
-
   // disableProcessedLock support
   const disableProcessedLockProp = windowConfig.disableProcessedLock ? `\n        lockWhenProcessed={false}` : '';
 
@@ -862,14 +887,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const statusEnumLabelsProp = statusEnumLabelsConfig
     ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
     : '';
-
-  // labelOverrides support (per-window field label translations from decisions.json)
-  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
-  const labelOverridesConst = labelOverridesConfig
-    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
-    : '';
-  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
-  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
 
   return `import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
@@ -883,7 +900,7 @@ import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${labelOverridesConst}${statusBarCode}
+${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -944,7 +961,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideMoreMenuProp}${hideMoreDetailsProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -957,7 +974,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
       {...props}
     />
   );

@@ -1080,5 +1080,147 @@
     ],
     "author": "pipeline",
     "date": "2026-04-08"
+  },
+  {
+    "from": "0.9.0",
+    "to": "0.10.0",
+    "level": "breaking",
+    "reasons": [
+      "Entity \"tax\" removed from frontend",
+      "Entity \"basicDiscounts\" removed from frontend",
+      "Entity \"paymentPlan\" removed from frontend",
+      "Field \"warehouse\" property \"section\" changed from \"secondary\" to \"other\" in frontend (additive)",
+      "Field \"paymentMethod\" property \"section\" changed from \"secondary\" to \"other\" in frontend (additive)",
+      "Field \"paymentTerms\" property \"section\" changed from \"secondary\" to \"other\" in frontend (additive)",
+      "Field \"description\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"description\" property \"section\" changed from \"collapsed\" to \"undefined\" in frontend (additive)",
+      "Field \"orderReference\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"orderReference\" property \"section\" changed from \"collapsed\" to \"undefined\" in frontend (additive)",
+      "Field \"cashVAT\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Entity \"tax\" removed from backend",
+      "Entity \"basicDiscounts\" removed from backend",
+      "Entity \"paymentPlan\" removed from backend",
+      "Endpoint GET /tax removed",
+      "Endpoint GET /tax/:id removed",
+      "Endpoint POST /tax removed",
+      "Endpoint PUT /tax/:id removed",
+      "Endpoint DELETE /tax/:id removed",
+      "Endpoint GET /basicDiscounts removed",
+      "Endpoint GET /basicDiscounts/:id removed",
+      "Endpoint POST /basicDiscounts removed",
+      "Endpoint PUT /basicDiscounts/:id removed",
+      "Endpoint DELETE /basicDiscounts/:id removed",
+      "Endpoint GET /paymentPlan removed",
+      "Endpoint GET /paymentPlan/:id removed",
+      "Endpoint POST /paymentPlan removed",
+      "Endpoint PUT /paymentPlan/:id removed",
+      "Endpoint DELETE /paymentPlan/:id removed"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.10.0",
+    "to": "0.10.1",
+    "level": "patch",
+    "reasons": [
+      "Field \"lineNo\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.10.1",
+    "to": "0.11.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"warehouse\" property \"section\" changed from \"other\" to \"collapsed\" in frontend (additive)",
+      "Field \"paymentMethod\" property \"section\" changed from \"other\" to \"collapsed\" in frontend (additive)",
+      "Field \"paymentTerms\" property \"section\" changed from \"other\" to \"collapsed\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.11.0",
+    "to": "0.12.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"partnerAddress\" property \"visibility\" changed from \"editable\" to \"readOnly\" in frontend (patch)",
+      "Field \"partnerAddress\" property \"form\" changed from \"false\" to \"true\" in frontend (patch)",
+      "Field \"partnerAddress\" property \"section\" changed from \"undefined\" to \"principal\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"visibility\" changed from \"editable\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.12.0",
+    "to": "0.13.0",
+    "level": "breaking",
+    "reasons": [
+      "Field \"lineNo\" removed from entity \"lines\" in frontend",
+      "Field \"lineNo\" property \"visibility\" changed from \"editable\" to \"system\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.13.0",
+    "to": "0.13.1",
+    "level": "patch",
+    "reasons": [
+      "Field \"documentAction\" property \"visibility\" changed from \"discarded\" to \"system\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.13.1",
+    "to": "0.13.2",
+    "level": "patch",
+    "reasons": [
+      "Field \"rMReceiveMaterials\" property \"visibility\" changed from \"discarded\" to \"system\" in backend (patch)",
+      "Field \"rMCreateInvoice\" property \"visibility\" changed from \"discarded\" to \"system\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-10"
+  },
+  {
+    "from": "0.13.2",
+    "to": "0.14.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"businessPartner\" property \"gridOrder\" changed from \"undefined\" to \"1\" in frontend (additive)",
+      "Field \"documentNo\" property \"gridOrder\" changed from \"undefined\" to \"2\" in frontend (additive)",
+      "Field \"orderDate\" property \"gridOrder\" changed from \"undefined\" to \"3\" in frontend (additive)",
+      "Field \"documentStatus\" property \"gridOrder\" changed from \"undefined\" to \"4\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-13"
+  },
+  {
+    "from": "0.14.0",
+    "to": "0.15.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"businessPartner\" property \"gridOrder\" changed from \"1\" to \"undefined\" in frontend (additive)",
+      "Field \"documentNo\" property \"gridOrder\" changed from \"2\" to \"undefined\" in frontend (additive)",
+      "Field \"orderDate\" property \"gridOrder\" changed from \"3\" to \"undefined\" in frontend (additive)",
+      "Field \"documentStatus\" property \"gridOrder\" changed from \"4\" to \"undefined\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-13"
+  },
+  {
+    "from": "0.15.0",
+    "to": "0.16.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentStatus\" property \"gridOrder\" changed from \"undefined\" to \"4\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-04-13"
   }
 ]

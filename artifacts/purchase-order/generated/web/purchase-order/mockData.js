@@ -3,12 +3,12 @@
 export const header = [
   {
     "id": "mock-header-001",
-    "documentNo": "HE-00001",
     "businessPartner": "Acme Corp",
+    "documentNo": "HE-00001",
     "orderDate": "2026-01-15",
+    "partnerAddress": "Acme Corp",
     "scheduledDeliveryDate": "2026-01-15",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Acme Corp",
     "warehouse": "Main Warehouse",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -20,6 +20,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Standard order for Q1 delivery",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -42,12 +43,12 @@ export const header = [
   },
   {
     "id": "mock-header-002",
-    "documentNo": "HE-00002",
     "businessPartner": "TechFlow Inc",
+    "documentNo": "HE-00002",
     "orderDate": "2026-01-16",
+    "partnerAddress": "TechFlow Inc",
     "scheduledDeliveryDate": "2026-01-16",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "TechFlow Inc",
     "warehouse": "East Distribution Center",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -59,6 +60,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Rush order - priority shipping required",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -81,12 +83,12 @@ export const header = [
   },
   {
     "id": "mock-header-003",
-    "documentNo": "HE-00003",
     "businessPartner": "Global Trade Ltd",
+    "documentNo": "HE-00003",
     "orderDate": "2026-01-17",
+    "partnerAddress": "Global Trade Ltd",
     "scheduledDeliveryDate": "2026-01-17",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Global Trade Ltd",
     "warehouse": "West Hub",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -98,6 +100,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Bulk purchase for warehouse restocking",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -120,12 +123,12 @@ export const header = [
   },
   {
     "id": "mock-header-004",
-    "documentNo": "HE-00004",
     "businessPartner": "Summit Industries",
+    "documentNo": "HE-00004",
     "orderDate": "2026-01-18",
+    "partnerAddress": "Summit Industries",
     "scheduledDeliveryDate": "2026-01-18",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Summit Industries",
     "warehouse": "North Storage",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -137,6 +140,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Sample order for client evaluation",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -159,12 +163,12 @@ export const header = [
   },
   {
     "id": "mock-header-005",
-    "documentNo": "HE-00005",
     "businessPartner": "Pacific Partners",
+    "documentNo": "HE-00005",
     "orderDate": "2026-01-19",
+    "partnerAddress": "Pacific Partners",
     "scheduledDeliveryDate": "2026-01-19",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Pacific Partners",
     "warehouse": "South Logistics",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -176,6 +180,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Recurring monthly supply order",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -198,12 +203,12 @@ export const header = [
   },
   {
     "id": "mock-header-006",
-    "documentNo": "HE-00006",
     "businessPartner": "Alpine Solutions",
+    "documentNo": "HE-00006",
     "orderDate": "2026-01-20",
+    "partnerAddress": "Alpine Solutions",
     "scheduledDeliveryDate": "2026-01-20",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Alpine Solutions",
     "warehouse": "Central Depot",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -215,6 +220,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Special pricing agreement applies",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -237,12 +243,12 @@ export const header = [
   },
   {
     "id": "mock-header-007",
-    "documentNo": "HE-00007",
     "businessPartner": "Meridian Group",
+    "documentNo": "HE-00007",
     "orderDate": "2026-01-21",
+    "partnerAddress": "Meridian Group",
     "scheduledDeliveryDate": "2026-01-21",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Meridian Group",
     "warehouse": "Regional Warehouse A",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -254,6 +260,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Consolidated order from multiple requests",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -276,12 +283,12 @@ export const header = [
   },
   {
     "id": "mock-header-008",
-    "documentNo": "HE-00008",
     "businessPartner": "Vertex Systems",
+    "documentNo": "HE-00008",
     "orderDate": "2026-01-22",
+    "partnerAddress": "Vertex Systems",
     "scheduledDeliveryDate": "2026-01-22",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Vertex Systems",
     "warehouse": "Regional Warehouse B",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -293,6 +300,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Trial order for new product line",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -315,12 +323,12 @@ export const header = [
   },
   {
     "id": "mock-header-009",
-    "documentNo": "HE-00009",
     "businessPartner": "Atlas Manufacturing",
+    "documentNo": "HE-00009",
     "orderDate": "2026-01-23",
+    "partnerAddress": "Atlas Manufacturing",
     "scheduledDeliveryDate": "2026-01-23",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Atlas Manufacturing",
     "warehouse": "Main Warehouse",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -332,6 +340,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Replacement for damaged goods",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -354,12 +363,12 @@ export const header = [
   },
   {
     "id": "mock-header-010",
-    "documentNo": "HE-00010",
     "businessPartner": "Nova Enterprises",
+    "documentNo": "HE-00010",
     "orderDate": "2026-01-24",
+    "partnerAddress": "Nova Enterprises",
     "scheduledDeliveryDate": "2026-01-24",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Nova Enterprises",
     "warehouse": "East Distribution Center",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -371,6 +380,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Pre-season inventory build-up",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -393,12 +403,12 @@ export const header = [
   },
   {
     "id": "mock-header-011",
-    "documentNo": "HE-00011",
     "businessPartner": "Pinnacle Services",
+    "documentNo": "HE-00011",
     "orderDate": "2026-01-25",
+    "partnerAddress": "Pinnacle Services",
     "scheduledDeliveryDate": "2026-01-25",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Pinnacle Services",
     "warehouse": "West Hub",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -410,6 +420,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Customer-specific configuration",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -432,12 +443,12 @@ export const header = [
   },
   {
     "id": "mock-header-012",
-    "documentNo": "HE-00012",
     "businessPartner": "Horizon Labs",
+    "documentNo": "HE-00012",
     "orderDate": "2026-01-26",
+    "partnerAddress": "Horizon Labs",
     "scheduledDeliveryDate": "2026-01-26",
     "transactionDocument": "Sample transactionDocument",
-    "partnerAddress": "Horizon Labs",
     "warehouse": "North Storage",
     "paymentMethod": "Sample paymentMethod",
     "paymentTerms": "Sample paymentTerms",
@@ -449,6 +460,7 @@ export const header = [
     "deliveryNotes": "Sample deliveryNotes",
     "description": "Government contract fulfillment",
     "orderReference": "Sample orderReference",
+    "cashVAT": "Sample cashVAT",
     "companyAgent": "Sample companyAgent",
     "invoiceFrom": "Sample invoiceFrom",
     "incoterms": "Sample incoterms",
@@ -474,7 +486,6 @@ export const header = [
 export const lines = [
   {
     "id": "mock-lines-001",
-    "lineNo": 10,
     "product": "Laptop Pro 15",
     "operativeQuantity": 402,
     "operativeUOM": "Sample operativeUOM",
@@ -511,7 +522,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-002",
-    "lineNo": 20,
     "product": "USB-C Cable",
     "operativeQuantity": 54,
     "operativeUOM": "Sample operativeUOM",
@@ -548,7 +558,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-003",
-    "lineNo": 30,
     "product": "Wireless Mouse",
     "operativeQuantity": 150,
     "operativeUOM": "Sample operativeUOM",
@@ -585,7 +594,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-004",
-    "lineNo": 40,
     "product": "Mechanical Keyboard",
     "operativeQuantity": 97,
     "operativeUOM": "Sample operativeUOM",
@@ -622,7 +630,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-005",
-    "lineNo": 50,
     "product": "Monitor 27\"",
     "operativeQuantity": 311,
     "operativeUOM": "Sample operativeUOM",
@@ -659,7 +666,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-006",
-    "lineNo": 60,
     "product": "Webcam HD",
     "operativeQuantity": 451,
     "operativeUOM": "Sample operativeUOM",
@@ -696,7 +702,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-007",
-    "lineNo": 70,
     "product": "Headset Pro",
     "operativeQuantity": 496,
     "operativeUOM": "Sample operativeUOM",
@@ -733,7 +738,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-008",
-    "lineNo": 80,
     "product": "Docking Station",
     "operativeQuantity": 284,
     "operativeUOM": "Sample operativeUOM",
@@ -770,7 +774,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-009",
-    "lineNo": 90,
     "product": "SSD 1TB",
     "operativeQuantity": 225,
     "operativeUOM": "Sample operativeUOM",
@@ -807,7 +810,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-010",
-    "lineNo": 100,
     "product": "RAM 16GB",
     "operativeQuantity": 479,
     "operativeUOM": "Sample operativeUOM",
@@ -844,7 +846,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-011",
-    "lineNo": 110,
     "product": "Power Supply 750W",
     "operativeQuantity": 123,
     "operativeUOM": "Sample operativeUOM",
@@ -881,7 +882,6 @@ export const lines = [
   },
   {
     "id": "mock-lines-012",
-    "lineNo": 120,
     "product": "Network Switch",
     "operativeQuantity": 337,
     "operativeUOM": "Sample operativeUOM",
@@ -1148,351 +1148,6 @@ export const reservedStock = [
     "allocated": "Sample allocated",
     "quantity": 21,
     "released": 337,
-    "headerId": "mock-header-012"
-  }
-];
-
-export const tax = [
-  {
-    "id": "mock-tax-001",
-    "lineNo": 10,
-    "tax": "VAT 21%",
-    "taxAmount": "VAT 21%",
-    "taxableAmount": "VAT 21%",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-tax-002",
-    "lineNo": 20,
-    "tax": "VAT 10%",
-    "taxAmount": "VAT 10%",
-    "taxableAmount": "VAT 10%",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-tax-003",
-    "lineNo": 30,
-    "tax": "VAT 0%",
-    "taxAmount": "VAT 0%",
-    "taxableAmount": "VAT 0%",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-tax-004",
-    "lineNo": 40,
-    "tax": "Sales Tax 8.5%",
-    "taxAmount": "Sales Tax 8.5%",
-    "taxableAmount": "Sales Tax 8.5%",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-tax-005",
-    "lineNo": 50,
-    "tax": "Exempt",
-    "taxAmount": "Exempt",
-    "taxableAmount": "Exempt",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-tax-006",
-    "lineNo": 60,
-    "tax": "Reduced Rate 5%",
-    "taxAmount": "Reduced Rate 5%",
-    "taxableAmount": "Reduced Rate 5%",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-tax-007",
-    "lineNo": 70,
-    "tax": "Standard Rate 20%",
-    "taxAmount": "Standard Rate 20%",
-    "taxableAmount": "Standard Rate 20%",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-tax-008",
-    "lineNo": 80,
-    "tax": "VAT 21%",
-    "taxAmount": "VAT 21%",
-    "taxableAmount": "VAT 21%",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-tax-009",
-    "lineNo": 90,
-    "tax": "VAT 10%",
-    "taxAmount": "VAT 10%",
-    "taxableAmount": "VAT 10%",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-tax-010",
-    "lineNo": 100,
-    "tax": "VAT 0%",
-    "taxAmount": "VAT 0%",
-    "taxableAmount": "VAT 0%",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-tax-011",
-    "lineNo": 110,
-    "tax": "Sales Tax 8.5%",
-    "taxAmount": "Sales Tax 8.5%",
-    "taxableAmount": "Sales Tax 8.5%",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-tax-012",
-    "lineNo": 120,
-    "tax": "Exempt",
-    "taxAmount": "Exempt",
-    "taxableAmount": "Exempt",
-    "headerId": "mock-header-012"
-  }
-];
-
-export const basicDiscounts = [
-  {
-    "id": "mock-basicDiscounts-001",
-    "lineNo": 10,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-basicDiscounts-002",
-    "lineNo": 20,
-    "discount": 21,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-basicDiscounts-003",
-    "lineNo": 30,
-    "discount": 0,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-basicDiscounts-004",
-    "lineNo": 40,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-basicDiscounts-005",
-    "lineNo": 50,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-basicDiscounts-006",
-    "lineNo": 60,
-    "discount": 4,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-basicDiscounts-007",
-    "lineNo": 70,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-basicDiscounts-008",
-    "lineNo": 80,
-    "discount": 10,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-basicDiscounts-009",
-    "lineNo": 90,
-    "discount": 17,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-basicDiscounts-010",
-    "lineNo": 100,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-basicDiscounts-011",
-    "lineNo": 110,
-    "discount": 19,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-basicDiscounts-012",
-    "lineNo": 120,
-    "discount": 12,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-012"
-  }
-];
-
-export const paymentPlan = [
-  {
-    "id": "mock-paymentPlan-001",
-    "dueDate": "2026-01-15",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 38907,
-    "received": 38907,
-    "outstanding": 38907,
-    "lastPayment": "2026-01-15",
-    "numberOfPayments": 90,
-    "currency": "USD",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-paymentPlan-002",
-    "dueDate": "2026-01-16",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 9306,
-    "received": 9306,
-    "outstanding": 9306,
-    "lastPayment": "2026-01-16",
-    "numberOfPayments": 93,
-    "currency": "EUR",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-paymentPlan-003",
-    "dueDate": "2026-01-17",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 11544,
-    "received": 11544,
-    "outstanding": 11544,
-    "lastPayment": "2026-01-17",
-    "numberOfPayments": 8,
-    "currency": "GBP",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-paymentPlan-004",
-    "dueDate": "2026-01-18",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 11872,
-    "received": 11872,
-    "outstanding": 11872,
-    "lastPayment": "2026-01-18",
-    "numberOfPayments": 91,
-    "currency": "USD",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-paymentPlan-005",
-    "dueDate": "2026-01-19",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 48460,
-    "received": 48460,
-    "outstanding": 48460,
-    "lastPayment": "2026-01-19",
-    "numberOfPayments": 72,
-    "currency": "EUR",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-paymentPlan-006",
-    "dueDate": "2026-01-20",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 45418,
-    "received": 45418,
-    "outstanding": 45418,
-    "lastPayment": "2026-01-20",
-    "numberOfPayments": 78,
-    "currency": "GBP",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-paymentPlan-007",
-    "dueDate": "2026-01-21",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 33840,
-    "received": 33840,
-    "outstanding": 33840,
-    "lastPayment": "2026-01-21",
-    "numberOfPayments": 31,
-    "currency": "USD",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-paymentPlan-008",
-    "dueDate": "2026-01-22",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 25716,
-    "received": 25716,
-    "outstanding": 25716,
-    "lastPayment": "2026-01-22",
-    "numberOfPayments": 97,
-    "currency": "EUR",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-paymentPlan-009",
-    "dueDate": "2026-01-23",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 44780,
-    "received": 44780,
-    "outstanding": 44780,
-    "lastPayment": "2026-01-23",
-    "numberOfPayments": 70,
-    "currency": "GBP",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-paymentPlan-010",
-    "dueDate": "2026-01-24",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 12483,
-    "received": 12483,
-    "outstanding": 12483,
-    "lastPayment": "2026-01-24",
-    "numberOfPayments": 77,
-    "currency": "USD",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-paymentPlan-011",
-    "dueDate": "2026-01-25",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 46022,
-    "received": 46022,
-    "outstanding": 46022,
-    "lastPayment": "2026-01-25",
-    "numberOfPayments": 32,
-    "currency": "EUR",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-paymentPlan-012",
-    "dueDate": "2026-01-26",
-    "paymentMethod": "Sample paymentMethod",
-    "expected": 38634,
-    "received": 38634,
-    "outstanding": 38634,
-    "lastPayment": "2026-01-26",
-    "numberOfPayments": 26,
-    "currency": "GBP",
     "headerId": "mock-header-012"
   }
 ];

@@ -2,10 +2,32 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "purchases",
-    "name": "Purchase Order"
+    "name": "Purchase Order",
+    "notesField": "description",
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "customComponents": {
+      "topbarRight": "PurchaseOrderActions",
+      "topbarExtra": "PurchaseOrderDraftChips"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto",
+        "DatePromised": "Fecha de entrega esperada"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact",
+        "DatePromised": "Expected Delivery Date"
+      }
+    },
+    "secondaryTabs": {},
+    "noHeaderBorder": true,
+    "hidePrint": true,
+    "hideSaveStatuses": ["CO", "CL", "VO"]
   },
   "entities": {
     "header": {
+      "javaQualifier": "purchaseOrderHeaderHandler",
       "fields": {
         "transactionDocument": {
           "visibility": "editable",
@@ -19,13 +41,15 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
+          "form": true,
           "section": "principal",
-          "order": 1
+          "order": 2
         },
         "documentStatus": {
           "grid": true,
           "form": false,
-          "searchable": true
+          "searchable": true,
+          "gridOrder": 4
         },
         "currency": {
           "form": false,
@@ -37,6 +61,7 @@
           "grid": true,
           "searchable": true,
           "section": "principal",
+          "form": true,
           "order": 3
         },
         "businessPartner": {
@@ -45,38 +70,44 @@
           "reference": "BusinessPartner",
           "section": "principal",
           "displayLogic": null,
-          "order": 2
+          "form": true,
+          "order": 1
         },
         "partnerAddress": {
+          "visibility": "editable",
+          "form": true,
+          "section": "principal",
+          "order": 4,
           "reference": "BusinessPartnerLocation",
           "inputMode": "dependent",
           "dependsOn": {
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
-          },
-          "section": "principal"
+          }
         },
         "warehouse": {
           "grid": true,
+          "form": true,
           "section": "collapsed"
         },
         "scheduledDeliveryDate": {
           "section": "principal",
-          "form": false,
-          "order": 4
+          "form": true,
+          "order": 5
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
+          "form": true,
           "section": "collapsed"
         },
         "paymentTerms": {
-          "section": "other",
-          "form": false
+          "form": false,
+          "section": "collapsed"
         },
         "priceList": {
           "grid": true,
-          "section": "other",
-          "form": false
+          "section": "collapsed",
+          "form": true
         },
         "invoiceAddress": {
           "reference": "BusinessPartnerLocation",
@@ -90,7 +121,7 @@
           "name": "invoiceFrom"
         },
         "description": {
-          "section": "collapsed"
+          "form": false
         },
         "deliveryNotes": {
           "section": "other",
@@ -98,7 +129,7 @@
         },
         "orderReference": {
           "searchable": true,
-          "section": "collapsed"
+          "form": false
         },
         "grandTotalAmount": {
           "grid": true,
@@ -211,24 +242,36 @@
           "section": "other"
         },
         "documentAction": {
-          "visibility": "discarded",
+          "visibility": "system",
           "displayLogic": null
+        },
+        "rMReceiveMaterials": {
+          "visibility": "system"
+        },
+        "rMCreateInvoice": {
+          "visibility": "system"
         },
         "createPOLines": {
           "visibility": "discarded",
           "displayLogic": null
+        },
+        "cashVAT": {
+          "form": false
+        },
+        "organization": {
+          "visibility": "system",
+          "form": false
         }
       }
     },
     "lines": {
       "fields": {
         "lineNo": {
-          "grid": true,
-          "form": false,
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "product": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -245,17 +288,19 @@
         },
         "orderedQuantity": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "readOnlyLogic": null
         },
         "uOM": {
-          "grid": true,
+          "grid": false,
           "form": false,
           "inputMode": null,
           "readOnlyLogic": null
         },
         "unitPrice": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -266,6 +311,7 @@
         },
         "lineNetAmount": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -275,6 +321,7 @@
         },
         "tax": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "inputMode": "selector",
           "readOnlyLogic": null
@@ -291,6 +338,7 @@
         },
         "discount": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -394,7 +442,8 @@
           "displayLogic": null
         },
         "description": {
-          "section": "principal"
+          "form": false,
+          "displayLogic": null
         },
         "managePrereservation": {
           "visibility": "discarded",
@@ -463,84 +512,13 @@
       }
     },
     "basicDiscounts": {
-      "name": "basicDiscounts",
-      "fields": {
-        "lineNo": {
-          "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
-        },
-        "discount": {
-          "visibility": "readOnly",
-          "grid": true,
-          "inputMode": null,
-          "readOnlyLogic": null
-        },
-        "cascade": {
-          "visibility": "readOnly",
-          "grid": true,
-          "readOnlyLogic": null
-        },
-        "active": {
-          "visibility": "readOnly",
-          "readOnlyLogic": null
-        }
-      }
+      "exclude": true
     },
     "tax": {
-      "fields": {
-        "lineNo": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "tax": {
-          "grid": true,
-          "inputMode": null
-        },
-        "taxableAmount": {
-          "grid": true
-        },
-        "taxAmount": {
-          "grid": true
-        }
-      }
+      "exclude": true
     },
     "paymentPlan": {
-      "name": "paymentPlan",
-      "fields": {
-        "dueDate": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "paymentMethod": {
-          "visibility": "readOnly",
-          "grid": true,
-          "reference": "PaymentMethod",
-          "inputMode": null
-        },
-        "expected": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "received": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "outstanding": {
-          "visibility": "readOnly",
-          "grid": true
-        },
-        "lastPayment": {
-          "visibility": "readOnly"
-        },
-        "numberOfPayments": {
-          "visibility": "readOnly"
-        },
-        "currency": {
-          "visibility": "readOnly",
-          "inputMode": null
-        }
-      }
+      "exclude": true
     },
     "paymentDetails": {
       "name": "paymentDetails",

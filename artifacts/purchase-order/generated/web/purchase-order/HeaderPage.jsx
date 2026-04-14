@@ -4,14 +4,9 @@ import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
-import BasicDiscountsTable from './BasicDiscountsTable';
-import BasicDiscountsForm from './BasicDiscountsForm';
-import PaymentPlanTable from './PaymentPlanTable';
-import PaymentPlanForm from './PaymentPlanForm';
-import LineTaxTable from './LineTaxTable';
-import LineTaxForm from './LineTaxForm';
-import ReservedStockTable from './ReservedStockTable';
-import ReservedStockForm from './ReservedStockForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
+import PurchaseOrderActions from '../../../custom/PurchaseOrderActions';
+import PurchaseOrderDraftChips from '../../../custom/PurchaseOrderDraftChips';
 import catalogs from './mockCatalogs';
 
 
@@ -26,7 +21,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:header
 
-// @sf-custom-slot extraBadges:header
 // @sf-generated-start extraBadges:header
 const extraBadges = [];
 // @sf-generated-end extraBadges:header
@@ -38,12 +32,7 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = {
-  "enabled": true,
-  "processField": "documentAction",
-  "processValue": "CO",
-  "label": "Confirmar"
-};
+const draftMode = null;
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
@@ -54,15 +43,13 @@ const addLineFields = {
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
   ],
   hidden: [
-    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@' },
     { key: 'grossUnitPrice', value: '0' },
-    { key: 'scheduledDeliveryDate', value: '@DatePromised@' },
+    { key: 'scheduledDeliveryDate', fromParent: 'scheduledDeliveryDate' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -81,8 +68,8 @@ const api = {
       "listUrl": "/sws/neo/purchase-order/header",
       "detailUrl": "/sws/neo/purchase-order/header/{id}",
       "supportedFilters": [
-        "documentNo",
         "businessPartner",
+        "documentNo",
         "orderDate",
         "documentStatus",
         "orderReference"
@@ -121,39 +108,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-order/reservedStock/{id}",
       "supportedFilters": []
     },
-    "tax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/tax",
-      "detailUrl": "/sws/neo/purchase-order/tax/{id}",
-      "supportedFilters": []
-    },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/basicDiscounts",
-      "detailUrl": "/sws/neo/purchase-order/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
-    "paymentPlan": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/paymentPlan",
-      "detailUrl": "/sws/neo/purchase-order/paymentPlan/{id}",
-      "supportedFilters": []
-    },
     "paymentDetails": {
       "get": true,
       "getById": true,
@@ -177,18 +131,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "transactionDocument",
-      "column": "C_DocTypeTarget_ID",
-      "reference": "DocumentType",
-      "url": "/sws/neo/purchase-order/header/selectors/transactionDocument"
-    },
-    {
-      "entity": "header",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/purchase-order/header/selectors/partnerAddress"
+    },
+    {
+      "entity": "header",
+      "field": "transactionDocument",
+      "column": "C_DocTypeTarget_ID",
+      "reference": "DocumentType",
+      "url": "/sws/neo/purchase-order/header/selectors/transactionDocument"
     },
     {
       "entity": "header",
@@ -429,34 +383,6 @@ const api = {
       "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
     },
     {
-      "entity": "tax",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "url": "/sws/neo/purchase-order/tax/selectors/tax"
-    },
-    {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "url": "/sws/neo/purchase-order/basicDiscounts/selectors/discount"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "url": "/sws/neo/purchase-order/paymentPlan/selectors/paymentMethod"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "url": "/sws/neo/purchase-order/paymentPlan/selectors/currency"
-    },
-    {
       "entity": "paymentDetails",
       "field": "payment",
       "column": "FIN_Payment_ID",
@@ -644,14 +570,6 @@ const api = {
       "url": "/sws/neo/purchase-order/lines/{id}/action/selectOrderLine",
       "processId": "C4265E27C8134096B49DFBF69369DFC6",
       "processType": "obuiapp"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "updatePaymentPlan",
-      "column": "Update_Payment_Plan",
-      "url": "/sws/neo/purchase-order/paymentPlan/{id}/action/updatePaymentPlan",
-      "processId": "FB740AB61B0E42B198D2C88D3A0D0CE6",
-      "processType": "classic"
     }
   ],
   "queryParams": {
@@ -666,12 +584,24 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Contacto",
+      "DatePromised": "Fecha de entrega esperada"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Contact",
+      "DatePromised": "Expected Delivery Date"
+    }
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:HeaderPage
   
   if (recordId) {
     return (
@@ -693,13 +623,14 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={[
-          { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
-          { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
-          { key: 'lineTax', label: 'Line Tax', Table: LineTaxTable, Form: LineTaxForm },
-          { key: 'reservedStock', label: 'Prereserved Qty', Table: ReservedStockTable, Form: ReservedStockForm },
-        ]}
-        draftMode={draftMode}
+        hideDeleteWhenComplete
+        hidePrint
+        hideSaveStatuses={["CO","CL","VO"]}
+        noHeaderBorder
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        topbarRight={PurchaseOrderActions}
+        topbarExtra={PurchaseOrderDraftChips}
         {...props}
       />
     );
@@ -713,10 +644,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
       {...props}
     />
   );
 }
 // @sf-generated-end component:HeaderPage
-
-// @sf-custom-slot section:HeaderPage-custom

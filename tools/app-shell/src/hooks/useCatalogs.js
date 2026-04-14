@@ -52,11 +52,13 @@ export function useCatalogs(api, token, apiBaseUrl, fallback = {}, selectorConte
 
     // Fetch all selectors in parallel
     const fetches = unique.map(async (sel) => {
-      // NEO expects column name in the URL: /{entity}/selectors/{columnName}
-      const url = buildUrlWithParams(
-        `${apiBaseUrl}/${sel.entity}/selectors/${sel.column}`,
-        selectorContext?.[sel.entity]
-      );
+      // Always build from apiBaseUrl so the full server path is included.
+      // Append query params from sel.url if present (e.g. ?isSOTrx=Y, ?isCustomer=Y).
+      const base = `${apiBaseUrl}/${sel.entity}/selectors/${sel.column}`;
+      const selectorBaseUrl = sel.url?.includes('?')
+        ? `${base}?${sel.url.split('?')[1]}`
+        : base;
+      const url = buildUrlWithParams(selectorBaseUrl, selectorContext?.[sel.entity]);
       try {
         const res = await fetch(url, { headers });
         if (!res.ok) return null;

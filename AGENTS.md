@@ -66,6 +66,18 @@ Behavior-changing code updates must include corresponding documentation updates 
 
 Final deployment step is typically `make deploy` (or `make deploy MODULE_WEB={path}`).
 
+## Extending NEO Headless — NeoHandler Pattern
+
+Never add window-specific logic to `NeoSelectorService`, `NeoDefaultsService`, `NeoCrudHandler`, or `NeoServlet`.
+Use the `NeoHandler` CDI extension point in `com.etendoerp.go` instead:
+
+1. Set `Java_Qualifier` on the `ETGO_SF_ENTITY` record (e.g. `"internal-consumption-line"`).
+2. Create a CDI bean annotated `@ApplicationScoped @Named("internal-consumption-line")` implementing `NeoHandler`.
+3. `handle()` runs before default CRUD (return `null` to continue); `afterHandle()` runs after.
+4. Place under `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/handlers/`.
+
+Full reference: `docs/neo-headless-extensibility.md`
+
 ## Primary References
 
 - `docs/architecture-overview.md`

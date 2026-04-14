@@ -13,9 +13,6 @@ const filters = [];
 
 // @sf-generated-start component:BasicDiscountTable
 export default function BasicDiscountTable(props) {
-  // @sf-custom-slot hooks:BasicDiscountTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:BasicDiscountTable
-
-// @sf-custom-slot section:BasicDiscountTable-custom

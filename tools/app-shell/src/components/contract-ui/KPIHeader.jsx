@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useMenuLabel } from '@/i18n';
+import { formatAmount } from '@/lib/formatAmount.js';
 
 /**
  * Format a KPI value according to the specified format type.
@@ -13,17 +14,12 @@ import { useMenuLabel } from '@/i18n';
  * - 'number': locale-formatted integer/decimal (e.g. 1,234)
  * - default: raw value as-is
  */
-function formatValue(value, format) {
+function formatValue(value, format, currencyLabel) {
   if (value == null) return '-';
 
   switch (format) {
     case 'currency':
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }).format(value);
+      return formatAmount(value, currencyLabel);
 
     case 'percent':
       return `${Number(value).toFixed(1)}%`;
@@ -47,7 +43,7 @@ const DEFAULT_SCHEME = { bg: 'bg-primary/10', icon: 'text-primary' };
 /**
  * A single KPI metric card.
  */
-export function KPICard({ label, value, format, trend, previousValue, icon: Icon, kpiKey }) {
+export function KPICard({ label, value, format, trend, previousValue, icon: Icon, kpiKey, currencyLabel = '' }) {
   const tMenu = useMenuLabel();
   const hasTrend = trend != null && trend !== 0;
   const isPositive = trend > 0;
@@ -62,7 +58,7 @@ export function KPICard({ label, value, format, trend, previousValue, icon: Icon
               {label}
             </p>
             <p className="text-2xl font-bold tracking-tight mt-1">
-              {formatValue(value, format)}
+              {formatValue(value, format, currencyLabel)}
             </p>
           </div>
           {Icon && (
@@ -93,7 +89,7 @@ export function KPICard({ label, value, format, trend, previousValue, icon: Icon
 
         {previousValue != null && hasTrend && (
           <p className="text-xs text-muted-foreground mt-1">
-            vs {formatValue(previousValue, format)} {tMenu('prev. month')}
+            vs {formatValue(previousValue, format, currencyLabel)} {tMenu('prev. month')}
           </p>
         )}
       </CardContent>
@@ -108,7 +104,7 @@ export function KPICard({ label, value, format, trend, previousValue, icon: Icon
  * Each card displays a label, large formatted value, optional icon,
  * and optional trend indicator with directional arrow.
  */
-export function KPIHeader({ kpis = [] }) {
+export function KPIHeader({ kpis = [], currencyLabel = '' }) {
   if (kpis.length === 0) return null;
 
   return (
@@ -123,6 +119,7 @@ export function KPIHeader({ kpis = [] }) {
           trend={kpi.trend}
           previousValue={kpi.previousValue}
           icon={kpi.icon}
+          currencyLabel={currencyLabel}
         />
       ))}
     </div>
