@@ -66,6 +66,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 |------|-------------|
 | [ops/cloudfront-alb-routing.md](ops/cloudfront-alb-routing.md) | CloudFront + ALB routing for the SPA, same-origin `/etendo/*` forwarding, and deployment runbook |
 | [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
+| [ops/epic-rollup-report.md](ops/epic-rollup-report.md) | Develop-targeted epic rollout report: included feature PRs, prior review findings, and aggregated release-risk summary |
 
 ## Plans & Evaluations
 
