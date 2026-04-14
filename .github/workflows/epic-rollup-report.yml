@@ -30,6 +30,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const entryMarker = '<!-- epic-rollup-entry -->';
             const reviewMarker = '<!-- copilot-pr-review -->';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -68,31 +69,40 @@ jobs:
 
             const normalizedPullRequests = [];
             for (const pullRequest of [...includedPullRequests.values()].sort((left, right) => left.number - right.number)) {
-              const [comments, reviews] = await Promise.all([
-                github.paginate(github.rest.issues.listComments, {
-                  owner,
-                  repo,
-                  issue_number: pullRequest.number,
-                  per_page: 100,
-                }),
-                github.paginate(github.rest.pulls.listReviews, {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pullRequest.number,
+                per_page: 100,
+              });
+
+              const latestEntry = comments
+                .filter((comment) => comment.user?.login === 'github-actions[bot]' && comment.body?.includes(entryMarker))
+                .sort((left, right) => (left.created_at || '').localeCompare(right.created_at || ''))
+                .at(-1);
+
+              let latestReviewBody = '';
+              if (!latestEntry) {
+                const reviews = await github.paginate(github.rest.pulls.listReviews, {
                   owner,
                   repo,
                   pull_number: pullRequest.number,
                   per_page: 100,
-                }),
-              ]);
+                });
 
-              const latestReview = [
-                ...comments
-                  .filter((comment) => comment.user?.login === 'github-actions[bot]' && comment.body?.includes(reviewMarker))
-                  .map((comment) => ({ body: comment.body, timestamp: comment.created_at || '' })),
-                ...reviews
-                  .filter((review) => review.user?.login === 'github-actions[bot]' && review.body?.includes(reviewMarker))
-                  .map((review) => ({ body: review.body, timestamp: review.submitted_at || review.created_at || '' })),
-              ]
-                .sort((left, right) => left.timestamp.localeCompare(right.timestamp))
-                .at(-1);
+                const latestReview = [
+                  ...comments
+                    .filter((comment) => comment.user?.login === 'github-actions[bot]' && comment.body?.includes(reviewMarker))
+                    .map((comment) => ({ body: comment.body, timestamp: comment.created_at || '' })),
+                  ...reviews
+                    .filter((review) => review.user?.login === 'github-actions[bot]' && review.body?.includes(reviewMarker))
+                    .map((review) => ({ body: review.body, timestamp: review.submitted_at || review.created_at || '' })),
+                ]
+                  .sort((left, right) => left.timestamp.localeCompare(right.timestamp))
+                  .at(-1);
+
+                latestReviewBody = latestReview?.body || '';
+              }
 
               normalizedPullRequests.push({
                 number: pullRequest.number,
@@ -101,7 +111,8 @@ jobs:
                 author: pullRequest.user?.login || 'unknown',
                 mergedAt: pullRequest.merged_at,
                 body: pullRequest.body || '',
-                reviewReportBody: latestReview?.body || '',
+                rollupEntryBody: latestEntry?.body || '',
+                reviewReportBody: latestReviewBody,
               });
             }
 

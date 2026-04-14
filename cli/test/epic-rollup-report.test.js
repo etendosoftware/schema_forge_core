@@ -3,6 +3,8 @@ import { strict as assert } from 'node:assert';
 import {
   extractSummaryBullets,
   parseReviewReport,
+  parseRollupEntry,
+  renderEpicRollupEntry,
   renderEpicRollupReport,
 } from '../src/epic-rollup-report.js';
 
@@ -66,6 +68,36 @@ Justify it.
   });
 });
 
+describe('rollup entry round-trip', () => {
+  it('renders a stored entry comment and parses it back', () => {
+    const markdown = renderEpicRollupEntry({
+      number: 321,
+      title: 'Add Copilot PR review gate',
+      url: 'https://github.com/acme/repo/pull/321',
+      author: 'sebastianbarrozo',
+      mergedAt: '2026-04-14T20:18:29Z',
+      summaryBullets: [
+        'add deterministic PR review automation',
+        'document the Copilot review gate',
+      ],
+      reviewReport: {
+        outcome: 'Request changes',
+        blockers: ['Duplicated added block'],
+        warnings: ['New npm dependency added'],
+      },
+    });
+
+    const entry = parseRollupEntry(markdown);
+    assert.equal(entry.number, 321);
+    assert.deepEqual(entry.summaryBullets, [
+      'add deterministic PR review automation',
+      'document the Copilot review gate',
+    ]);
+    assert.deepEqual(entry.reviewReport.blockers, ['Duplicated added block']);
+    assert.deepEqual(entry.reviewReport.warnings, ['New npm dependency added']);
+  });
+});
+
 describe('renderEpicRollupReport', () => {
   it('renders included PR summaries and review findings', () => {
     const markdown = renderEpicRollupReport({
@@ -78,20 +110,22 @@ describe('renderEpicRollupReport', () => {
       },
       includedPullRequests: [
         {
-          number: 321,
-          title: 'Add Copilot PR review gate',
-          url: 'https://github.com/acme/repo/pull/321',
-          author: 'sebastianbarrozo',
-          mergedAt: '2026-04-14T20:18:29Z',
-          summaryBullets: [
-            'add deterministic PR review automation',
-            'document the Copilot review gate',
-          ],
-          reviewReport: {
-            outcome: 'Request changes',
-            blockers: ['Duplicated added block'],
-            warnings: ['New npm dependency added'],
-          },
+          rollupEntryBody: renderEpicRollupEntry({
+            number: 321,
+            title: 'Add Copilot PR review gate',
+            url: 'https://github.com/acme/repo/pull/321',
+            author: 'sebastianbarrozo',
+            mergedAt: '2026-04-14T20:18:29Z',
+            summaryBullets: [
+              'add deterministic PR review automation',
+              'document the Copilot review gate',
+            ],
+            reviewReport: {
+              outcome: 'Request changes',
+              blockers: ['Duplicated added block'],
+              warnings: ['New npm dependency added'],
+            },
+          }),
         },
         {
           number: 322,
