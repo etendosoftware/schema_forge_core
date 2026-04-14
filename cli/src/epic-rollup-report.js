@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export const EPIC_ROLLUP_MARKER = '<!-- epic-rollup-report -->';
+export const EPIC_ROLLUP_ENTRY_MARKER = '<!-- epic-rollup-entry -->';
 const REVIEW_MARKER = '<!-- copilot-pr-review -->';
 
 function getArg(args, name) {
@@ -112,12 +113,70 @@ function renderReviewFindings(reviewReport) {
   return sections.join('\n');
 }
 
-export function renderEpicRollupReport({ epicPullRequest, includedPullRequests }) {
-  const sortedPullRequests = [...includedPullRequests].sort((left, right) => left.number - right.number);
-  const blockerCount = sortedPullRequests.filter((pullRequest) => pullRequest.reviewReport.blockers.length).length;
-  const warningCount = sortedPullRequests.filter((pullRequest) => pullRequest.reviewReport.warnings.length).length;
+function normalizeRollupEntry(source) {
+  const mergedSource = source.pullRequest ? { ...source.pullRequest, ...source } : source;
+  return {
+    number: mergedSource.number,
+    title: mergedSource.title,
+    url: mergedSource.url,
+    author: mergedSource.author || 'unknown',
+    mergedAt: mergedSource.mergedAt || null,
+    summaryBullets: mergedSource.summaryBullets || extractSummaryBullets(mergedSource.body || ''),
+    reviewReport: mergedSource.reviewReport || parseReviewReport(mergedSource.reviewReportBody || ''),
+  };
+}
 
-  const reportSections = sortedPullRequests.map((pullRequest) => [
+export function renderEpicRollupEntry(source) {
+  const entry = normalizeRollupEntry(source);
+  return [
+    EPIC_ROLLUP_ENTRY_MARKER,
+    '## Epic rollout entry',
+    '',
+    `Feature PR: [#${entry.number} ${entry.title}](${entry.url})`,
+    `Merged into epic: ${formatDate(entry.mergedAt)}`,
+    '',
+    '```json',
+    JSON.stringify(entry, null, 2),
+    '```',
+  ].join('\n');
+}
+
+export function parseRollupEntry(body) {
+  if (!body?.includes(EPIC_ROLLUP_ENTRY_MARKER)) {
+    return null;
+  }
+
+  const match = body.match(/```json\n([\s\S]*?)\n```/);
+  if (!match) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(match[1]);
+    return normalizeRollupEntry(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeReportPullRequest(pullRequest) {
+  const parsedEntry = parseRollupEntry(pullRequest.rollupEntryBody || '');
+  if (parsedEntry) {
+    return parsedEntry;
+  }
+
+  return normalizeRollupEntry(pullRequest);
+}
+
+export function renderEpicRollupReport({ epicPullRequest, includedPullRequests }) {
+  const normalizedPullRequests = [...includedPullRequests]
+    .map((pullRequest) => normalizeReportPullRequest(pullRequest))
+    .sort((left, right) => left.number - right.number);
+
+  const blockerCount = normalizedPullRequests.filter((pullRequest) => pullRequest.reviewReport.blockers.length).length;
+  const warningCount = normalizedPullRequests.filter((pullRequest) => pullRequest.reviewReport.warnings.length).length;
+
+  const reportSections = normalizedPullRequests.map((pullRequest) => [
     `### PR #${pullRequest.number}: [${pullRequest.title}](${pullRequest.url})`,
     `- Author: @${pullRequest.author}`,
     `- Merged into epic: ${formatDate(pullRequest.mergedAt)}`,
@@ -136,7 +195,7 @@ export function renderEpicRollupReport({ epicPullRequest, includedPullRequests }
     '',
     '## Overview',
     '',
-    `- Included PRs (${sortedPullRequests.length})`,
+    `- Included PRs (${normalizedPullRequests.length})`,
     `- PRs with blocking findings: ${blockerCount}`,
     `- PRs with warnings: ${warningCount}`,
     '',
@@ -150,23 +209,22 @@ const isCli = process.argv[1] && fileURLToPath(import.meta.url) === process.argv
 
 if (isCli) {
   const args = process.argv.slice(2);
+  const mode = getArg(args, 'mode') || 'report';
   const inputPath = getArg(args, 'input');
   const outputPath = getArg(args, 'out');
 
   if (!inputPath || !outputPath) {
-    console.error('Usage: node cli/src/epic-rollup-report.js --input <path> --out <path>');
+    console.error('Usage: node cli/src/epic-rollup-report.js --mode <entry|report> --input <path> --out <path>');
     process.exit(1);
   }
 
   const input = readJson(inputPath);
-  const normalizedInput = {
-    epicPullRequest: input.epicPullRequest,
-    includedPullRequests: (input.includedPullRequests || []).map((pullRequest) => ({
-      ...pullRequest,
-      summaryBullets: pullRequest.summaryBullets || extractSummaryBullets(pullRequest.body || ''),
-      reviewReport: pullRequest.reviewReport || parseReviewReport(pullRequest.reviewReportBody || ''),
-    })),
-  };
+  const output = mode === 'entry'
+    ? renderEpicRollupEntry(input)
+    : renderEpicRollupReport({
+      epicPullRequest: input.epicPullRequest,
+      includedPullRequests: input.includedPullRequests || [],
+    });
 
-  writeFileSync(outputPath, renderEpicRollupReport(normalizedInput));
+  writeFileSync(outputPath, output);
 }

@@ -14,16 +14,15 @@ Reviewing that information PR-by-PR is noisy and slow.
 
 ## Decision
 
-We add a second reporting layer on top of the existing PR review gate:
+We add a two-step reporting flow on top of the existing PR review gate:
 
 1. Feature PRs targeting `epic/ETP-3504` continue to receive the `architecture-check` review comment and status check.
-2. A dedicated workflow, `.github/workflows/epic-rollup-report.yml`, runs only when a PR targets `develop` and its head branch is `epic/ETP-3504`.
-3. The workflow collects the feature PRs included in that epic promotion, extracts their latest `<!-- copilot-pr-review -->` result, and renders a single markdown report.
-4. The report is posted back to the `epic -> develop` PR and uploaded as a workflow artifact.
-
+2. A dedicated workflow, `.github/workflows/epic-rollup-entry.yml`, runs when a feature PR is merged into `epic/ETP-3504`. It converts that PR into a compact stored rollout entry comment.
+3. The existing `.github/workflows/epic-rollup-report.yml` workflow still runs on `epic/ETP-3504 -> develop`, but it now prefers those stored entry comments instead of recomputing everything from raw PR data.
+4. The final report is posted back to the `epic -> develop` PR and uploaded as a workflow artifact.
 ## What the report shows
 
-For each included feature PR, the report includes:
+For each included feature PR, the final report includes data captured at epic-merge time:
 
 - PR number, title, author, and merge date into the epic
 - the `## Summary` bullets from the feature PR body, when present
@@ -38,13 +37,15 @@ The top of the report also includes an overview count:
 
 ## Implementation notes
 
-- `cli/src/epic-rollup-report.js` is zero-dependency and only renders/parses markdown and JSON.
-- The workflow gathers GitHub API data with `actions/github-script` because commit-to-PR association and comment retrieval are GitHub-specific concerns.
-- Included feature PRs are discovered from merge commits already present in the `epic -> develop` PR commit list. This avoids maintaining a separate ledger.
-- The report comment uses its own marker, `<!-- epic-rollup-report -->`, so reruns update the same comment instead of posting duplicates.
+- `cli/src/epic-rollup-report.js` is zero-dependency and now handles both stored-entry rendering/parsing and final report rendering.
+- `.github/workflows/epic-rollup-entry.yml` creates one bot-managed `<!-- epic-rollup-entry -->` comment per merged feature PR.
+- `.github/workflows/epic-rollup-report.yml` aggregates those stored entries for `epic -> develop`, with a live fallback for older PRs that do not yet have an entry comment.
+- Included feature PRs are still discovered from merge commits already present in the `epic -> develop` PR commit list, which matches the repository policy of preserving merge commits.
+- The final report comment uses its own marker, `<!-- epic-rollup-report -->`, so reruns update the same comment instead of posting duplicates.
 
 ## Files involved
 
+- `.github/workflows/epic-rollup-entry.yml`
 - `.github/workflows/epic-rollup-report.yml`
 - `cli/src/epic-rollup-report.js`
 - `cli/test/epic-rollup-report.test.js`
