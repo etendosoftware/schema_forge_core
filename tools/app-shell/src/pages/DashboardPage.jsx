@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import {
   DollarSign,
   CreditCard,
@@ -1293,7 +1293,6 @@ function DashboardSkeleton() {
 
 export default function DashboardPage() {
   const ui = useUI();
-  const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const [dashDraggingId, setDashDraggingId] = useState(null);
   const [dashDragOverId, setDashDragOverId] = useState(null);
@@ -1395,8 +1394,7 @@ export default function DashboardPage() {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>
