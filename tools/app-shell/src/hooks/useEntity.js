@@ -210,6 +210,30 @@ function resolveSortKey(sortColumn, sampleRow) {
   return sortColumn;
 }
 
+function deriveRecordId(record, entityName) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return null;
+  if (record.id != null && record.id !== '') return record.id;
+  if (typeof record.$ref === 'string') {
+    const refId = record.$ref.split('/').filter(Boolean).at(-1);
+    if (refId) return refId;
+  }
+  if (entityName && record[entityName] != null && record[entityName] !== '') {
+    return record[entityName];
+  }
+  return null;
+}
+
+function normalizeRecord(record, entityName) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return record;
+  const id = deriveRecordId(record, entityName);
+  if (id == null || record.id === id) return record;
+  return { ...record, id };
+}
+
+function normalizeRows(rows, entityName) {
+  return Array.isArray(rows) ? rows.map(row => normalizeRecord(row, entityName)) : [];
+}
+
 export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
   const { logout } = useAuth();
   const ui = useUI();
@@ -243,7 +267,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), entity);
         if (rows.length > 0) sampleRowRef.current = rows[0];
         setItems(rows);
         startRowRef.current = rows.length;
@@ -268,7 +292,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), entity);
         setItems(prev => [...prev, ...rows]);
         startRowRef.current = start + rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
@@ -288,7 +312,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), childEntity);
         setChildren(rows);
       })
       .catch(() => setChildren([]));
@@ -303,7 +327,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const row = data?.response?.data?.[0] ?? data;
+        const row = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
         setSelected(row);
         setEditing({ ...row });
         fetchChildren(row?.id);
@@ -421,7 +445,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       const res = await fetch(url, { method, headers, body });
       if (res.ok) {
         const data = await res.json();
-        const saved = data?.response?.data?.[0] ?? data;
+        const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
         setSelected(saved);
         setEditing({ ...saved });
         setSaveError(null);
@@ -502,7 +526,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       fetchById(selected.id);
       setSaveError(null);
       toast.success(ui('lineAdded'));
-      return data?.response?.data?.[0] ?? data ?? true;
+      return normalizeRecord(data?.response?.data?.[0] ?? data, childEntity) ?? true;
     } catch (err) {
       const msg = err?.message || 'Network error';
       setSaveError(msg);
@@ -553,7 +577,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       const updatedRes = await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { method: 'GET', headers });
       if (updatedRes.ok) {
         const data = await updatedRes.json();
-        return data?.response?.data?.[0] ?? data;
+        return normalizeRecord(data?.response?.data?.[0] ?? data, entity);
       }
     } catch { /* ignore, fall back to saved */ }
     return saved;

@@ -323,15 +323,21 @@ export function DetailView({
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
 
   useEffect(() => {
-    if (isNew) return;
+    setDirectFetched(false);
+  }, [recordId]);
+
+  useEffect(() => {
+    if (isNew || !recordId) return;
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
       setDirectFetched(false);
-    } else if (!currentItem && !hook.loading && recordId && !directFetched) {
+      return;
+    }
+    if (!currentItem && !hook.loading && !directFetched) {
       setDirectFetched(true);
       hook.fetchById(recordId);
     }
-  }, [currentItem, recordId, hook.selected, hook.handleSelect]);
+  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
