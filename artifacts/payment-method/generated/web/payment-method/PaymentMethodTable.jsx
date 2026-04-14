@@ -3,9 +3,7 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:paymentMethod
 const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
-  { key: 'active', column: 'Isactive', type: 'boolean', label: 'Active' },
-  { key: 'payinAllow', column: 'Payin_Allow', type: 'boolean', label: 'Payment In Allowed' },
-  { key: 'payoutAllow', column: 'Payout_Allow', type: 'boolean', label: 'Payment Out Allowed' },
+  { key: 'description', column: 'Description', type: 'string', label: 'Description' },
 ];
 // @sf-generated-end columns:paymentMethod
 

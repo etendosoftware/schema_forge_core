@@ -729,29 +729,29 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const customComponentImports = [];
   const customComponentProps = [];
   if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from '../../../custom/${customComponents.bottomSection}';`);
+    customComponentImports.push(`import ${customComponents.bottomSection} from '@/windows/custom/${specName}/${customComponents.bottomSection}';`);
     customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
   }
   if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
+    customComponentImports.push(`import ${customComponents.topbarRight} from '@/windows/custom/${specName}/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
   if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from '../../../custom/${customComponents.topbarExtra}';`);
+    customComponentImports.push(`import ${customComponents.topbarExtra} from '@/windows/custom/${specName}/${customComponents.topbarExtra}';`);
     customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
+    customComponentImports.push(`import ${customComponents.bulkActions} from '@/windows/custom/${specName}/${customComponents.bulkActions}';`);
   }
   if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
+    customComponentImports.push(`import ${customComponents.sidePanel} from '@/windows/custom/${specName}/${customComponents.sidePanel}';`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
     if (customComponents.sidePanelStyle) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
   if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -761,7 +761,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Custom headerTable override
   const customHeaderTable = customComponents.headerTable ?? null;
   const headerTableImport = customHeaderTable
-    ? `import ${headerName}Table from '../../../custom/${customHeaderTable}';`
+    ? `import ${headerName}Table from '@/windows/custom/${specName}/${customHeaderTable}';`
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
