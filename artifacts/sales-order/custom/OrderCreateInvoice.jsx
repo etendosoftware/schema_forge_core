@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
+import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
   const navigate = useNavigate();
   const ui = useUI();
   const [showConfirm,  setShowConfirm]  = useState(false);
+  const [showSend,     setShowSend]     = useState(false);
   const [showActions,  setShowActions]  = useState(false);
   const [actionsScroll, setActionsScroll] = useState(null); // 'shipment'|'invoice'|null
   const [fetched,      setFetched]      = useState(null);
@@ -92,6 +94,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
         <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
           {ui('soConfirmBtn')}
         </button>
+        <SendDocumentButton onClick={() => setShowSend(true)} />
         {showConfirm && createPortal(
           <ConfirmModal
             orderId={recordId}
@@ -99,6 +102,19 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
             apiBaseUrl={apiBaseUrl}
             headers={headers}
             onClose={() => setShowConfirm(false)}
+          />,
+          document.body,
+        )}
+        {showSend && createPortal(
+          <SendDocumentModal
+            documentType="SalesOrder"
+            documentNo={data?.documentNo}
+            bpName={data?.['businessPartner$_identifier']}
+            bpEmail={data?.['userContact$_identifier']}
+            documentId={recordId}
+            windowName="sales-order"
+            token={token}
+            onClose={() => setShowSend(false)}
           />,
           document.body,
         )}
@@ -210,7 +226,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
     try {
       const processRes = await fetch(
         `${apiBaseUrl}/header/${orderId}/action/documentAction`,
-        { method: 'POST', headers, body: JSON.stringify({ action: 'CO' }) },
+        { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
       );
       if (!processRes.ok) {
         const e = await processRes.json().catch(() => null);
@@ -245,7 +261,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose }) {
 
       } else {
         onClose();
-        navigate(`/sales-order/${orderId}`, { replace: true });
+        window.location.reload();
       }
     } catch (e) {
       setError(e.message || ui('soErrorOccurred'));

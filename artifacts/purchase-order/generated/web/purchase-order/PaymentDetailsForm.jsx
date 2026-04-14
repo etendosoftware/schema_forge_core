@@ -20,9 +20,7 @@ const fields = [
 
 // @sf-generated-start component:PaymentDetailsForm
 export default function PaymentDetailsForm(props) {
-  // @sf-custom-slot hooks:PaymentDetailsForm
   return <EntityForm fields={fields} {...props} />;
 }
+PaymentDetailsForm.hasCollapsedFields = false;
 // @sf-generated-end component:PaymentDetailsForm
-
-// @sf-custom-slot section:PaymentDetailsForm-custom

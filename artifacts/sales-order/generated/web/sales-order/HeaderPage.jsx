@@ -35,12 +35,7 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = {
-  "enabled": true,
-  "processField": "documentAction",
-  "processValue": "CO",
-  "label": "Confirmar"
-};
+const draftMode = null;
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
@@ -112,6 +107,14 @@ const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/sales-order/header/selectors/partnerAddress"
+    },
+    {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/priceList"
     },
     {
       "entity": "header",
@@ -251,14 +254,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
-      "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
@@ -271,6 +266,14 @@ const api = {
       "column": "Processing",
       "url": "/sws/neo/sales-order/header/{id}/action/processNow",
       "processId": "104",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
+      "processId": "800022",
       "processType": "classic"
     },
     {
@@ -334,6 +337,17 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Contacto"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Contact"
+    }
   }
 };
 
@@ -362,6 +376,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={OrderCreateInvoice}
@@ -370,9 +385,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
-        draftMode={draftMode}
         salesTheme
-        statusEnumLabels={{"DR":"Draft","CO":"Completado","CL":"Cerrado","VO":"Anulado"}}
         {...props}
       />
     );
@@ -386,6 +399,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
       {...props}
     />
   );

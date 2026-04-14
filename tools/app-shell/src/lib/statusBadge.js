@@ -49,12 +49,25 @@ export function getStatusPillClass(status) {
   if (s === 'true' || s === 'processed') return 'bg-emerald-50 text-emerald-800';
   if (s === 'false' || s === 'not processed') return 'bg-gray-100 text-gray-700';
   if (s === 'draft' || s === 'dr') return 'bg-gray-100 text-gray-700';
-  if (s === 'completed' || s === 'complete' || s === 'booked' || s === 'co' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc') return 'bg-emerald-50 text-emerald-800';
+  if (s === 'completed' || s === 'complete' || s === 'confirmed' || s === 'booked' || s === 'co' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc') return 'bg-emerald-50 text-emerald-800';
   if (s === 'closed' || s === 'cl' || s === 'paid' || s === 'pa') return 'bg-blue-50 text-blue-800';
   if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo' || s === 'ca' || s === 'rpvoid') return 'bg-red-50 text-red-800';
   if (s === 'in process' || s === 'ip' || s === 'rpae' || s === 'rpap' || s === 'rpr') return 'bg-amber-50 text-amber-800';
   if (s === 'under evaluation' || s === 'ue') return 'bg-purple-50 text-purple-800';
   return 'bg-gray-100 text-gray-700';
+}
+
+export function getStatusGridPillClass(status) {
+  const s = String(status ?? '').toLowerCase();
+  if (s === 'true' || s === 'processed') return 'bg-emerald-500 text-white';
+  if (s === 'false' || s === 'not processed') return 'bg-gray-200 text-gray-700';
+  if (s === 'draft' || s === 'dr') return 'bg-gray-100 text-gray-600 border border-gray-300';
+  if (s === 'completed' || s === 'complete' || s === 'confirmed' || s === 'booked' || s === 'co' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc') return 'bg-emerald-500 text-white';
+  if (s === 'closed' || s === 'cl' || s === 'paid' || s === 'pa') return 'bg-slate-500 text-white';
+  if (s === 'voided' || s === 'cancelled' || s === 'void' || s === 'vo' || s === 'ca' || s === 'rpvoid') return 'bg-red-500 text-white';
+  if (s === 'in process' || s === 'ip' || s === 'rpae' || s === 'rpap' || s === 'rpr') return 'bg-amber-500 text-white';
+  if (s === 'under evaluation' || s === 'ue') return 'bg-purple-500 text-white';
+  return 'bg-gray-100 text-gray-600 border border-gray-300';
 }
 
 export function statusLabel(status, dictionary) {

@@ -17,17 +17,39 @@ export function formatAmount(value, isoCode) {
   if (value == null) return '\u2014';
   const num = Number(value);
   if (isNaN(num)) return String(value);
+  const numberLocale = 'en-US';
   if (isoCode) {
     try {
-      return new Intl.NumberFormat(undefined, {
+      const currencyFormatter = new Intl.NumberFormat(numberLocale, {
         style: 'currency',
         currency: isoCode,
+        currencyDisplay: 'narrowSymbol',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(num);
+      });
+      const amountFormatter = new Intl.NumberFormat(numberLocale, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      const currencySymbol = currencyFormatter
+        .formatToParts(0)
+        .find((part) => part.type === 'currency')?.value;
+
+      if (!currencySymbol) {
+        return currencyFormatter.format(num);
+      }
+
+      const absFormatted = amountFormatter.format(Math.abs(num));
+      const sign = num < 0 ? '-' : '';
+
+      if (isoCode === 'EUR') {
+        return `${sign}${absFormatted} ${currencySymbol}`;
+      }
+
+      return `${sign}${currencySymbol}${absFormatted}`;
     } catch {
       // Unknown ISO code — fall through to plain format
     }
   }
-  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString(numberLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

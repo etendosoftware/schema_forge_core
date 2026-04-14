@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import DocumentStatusPill from '@/components/contract-ui/DocumentStatusPill.jsx';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
 import { useUI } from '@/i18n';
 
@@ -34,8 +33,6 @@ export default function PurchaseInvoiceTopbar({ data, token, apiBaseUrl, onRefre
 
   return (
     <>
-      <DocumentStatusPill data={data} />
-
       {/* Payment Status pill — only show for completed invoices */}
       {isCompleted && (
         isFullyPaid ? (

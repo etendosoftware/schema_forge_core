@@ -10,10 +10,7 @@ const fields = [
 
 // @sf-generated-start component:CustomerAccountingForm
 export default function CustomerAccountingForm(props) {
-  // @sf-custom-slot hooks:CustomerAccountingForm
   return <EntityForm fields={fields} {...props} />;
 }
 CustomerAccountingForm.hasCollapsedFields = false;
 // @sf-generated-end component:CustomerAccountingForm
-
-// @sf-custom-slot section:CustomerAccountingForm-custom
