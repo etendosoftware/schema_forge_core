@@ -70,6 +70,7 @@ export default function ProductSearchDrawer({
   imageEntityUrl,
   keepOpenOnSelect = false,
   selectedIds = [],
+  selectorContext = {},
 }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -85,8 +86,12 @@ export default function ProductSearchDrawer({
   const activeItemRef = useRef(null);
   const fetchTimer = useRef(null);
   const abortRef = useRef(null);
+  const selectorContextRef = useRef(selectorContext);
   // Tracks the raw server-side offset (total rows consumed), independent of dedup count.
   const rawOffsetRef = useRef(0);
+
+  // Keep selectorContextRef in sync without affecting doFetch's deps
+  useEffect(() => { selectorContextRef.current = selectorContext; }, [selectorContext]);
 
   // Fetch all product image IDs once when modal opens, keyed by searchKey
   const neoBaseUrl = selectorUrl ? selectorUrl.replace(/\/[^/]+\/[^/]+\/selectors\/.*$/, '') : '';
@@ -126,7 +131,7 @@ export default function ProductSearchDrawer({
     fetchTimer.current = setTimeout(() => {
       const controller = new AbortController();
       if (!append) abortRef.current = controller;
-      const params = { limit: PAGE_SIZE, offset };
+      const params = { ...selectorContextRef.current, limit: PAGE_SIZE, offset };
       if (q) params.q = q.trim();
       fetch(buildUrlWithParams(selectorUrl, params), {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

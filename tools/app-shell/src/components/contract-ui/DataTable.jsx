@@ -352,6 +352,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 value={displayLabel}
                 placeholder={t(field.column) ?? field.label ?? field.key}
                 selectorUrl={selectorUrl}
+                selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
                 onSelect={(item) => {
@@ -464,7 +465,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDown, inputRef, title }) {
+function LookupField({ value, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -497,6 +498,7 @@ function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDo
         onClose={() => setOpen(false)}
         onSelect={(item) => { onSelect(item); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={title ? `Search ${title}` : undefined}
       />
@@ -507,7 +509,7 @@ function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDo
 /**
  * Small button that opens the ProductSearchDrawer for lookup-enabled fields.
  */
-function LookupButton({ selectorUrl, token, onSelect, title }) {
+function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -524,6 +526,7 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
         onClose={() => setOpen(false)}
         onSelect={(item) => { onSelect(item); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={title ? `Search ${title}` : undefined}
       />
