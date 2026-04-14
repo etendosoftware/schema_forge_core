@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
-import { login as apiLogin } from './api.js';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -8,6 +7,7 @@ const USERNAME_KEY = 'sf_auth_user';
 const ROLELIST_KEY = 'sf_auth_rolelist';
 const SELECTED_ROLE_KEY = 'sf_auth_selected_role';
 const SELECTED_ORG_KEY = 'sf_auth_selected_org';
+const PLATFORM_TOKEN_KEY = 'sf_platform_token';
 
 function safeJsonParse(key) {
   try {
@@ -16,71 +16,12 @@ function safeJsonParse(key) {
   } catch { return null; }
 }
 
-export function AuthProvider({ children, baseUrl }) {
+export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [username, setUsername] = useState(() => localStorage.getItem(USERNAME_KEY));
   const [roleList, setRoleList] = useState(() => safeJsonParse(ROLELIST_KEY) || []);
   const [selectedRole, setSelectedRole] = useState(() => safeJsonParse(SELECTED_ROLE_KEY));
   const [selectedOrg, setSelectedOrg] = useState(() => safeJsonParse(SELECTED_ORG_KEY));
-  const passwordRef = useRef(null);
-
-  const login = useCallback(async (user, password, roleId, orgId) => {
-    const data = await apiLogin(baseUrl, user, password, roleId, orgId);
-    const jwt = data.token;
-    setToken(jwt);
-    setUsername(user);
-    passwordRef.current = password;
-    localStorage.setItem(STORAGE_KEY, jwt);
-    localStorage.setItem(USERNAME_KEY, user);
-
-    if (data.roleList) {
-      setRoleList(data.roleList);
-      localStorage.setItem(ROLELIST_KEY, JSON.stringify(data.roleList));
-
-      const role = roleId
-        ? data.roleList.find(r => r.id === roleId)
-        : data.roleList[0];
-      if (role) {
-        setSelectedRole(role);
-        localStorage.setItem(SELECTED_ROLE_KEY, JSON.stringify(role));
-        const org = orgId
-          ? role.orgList?.find(o => o.id === orgId)
-          : role.orgList?.[0];
-        if (org) {
-          setSelectedOrg(org);
-          localStorage.setItem(SELECTED_ORG_KEY, JSON.stringify(org));
-        }
-      }
-    }
-
-    return jwt;
-  }, [baseUrl]);
-
-  const switchContext = useCallback(async (roleId, orgId, password) => {
-    const user = localStorage.getItem(USERNAME_KEY);
-    const pass = password || passwordRef.current;
-    if (!user || !pass) throw new Error('SESSION_EXPIRED');
-    if (password) passwordRef.current = password;
-
-    const data = await apiLogin(baseUrl, user, pass, roleId, orgId);
-    const jwt = data.token;
-    setToken(jwt);
-    localStorage.setItem(STORAGE_KEY, jwt);
-
-    const role = roleList.find(r => r.id === roleId);
-    if (role) {
-      setSelectedRole(role);
-      localStorage.setItem(SELECTED_ROLE_KEY, JSON.stringify(role));
-      const org = orgId
-        ? role.orgList?.find(o => o.id === orgId)
-        : role.orgList?.[0];
-      if (org) {
-        setSelectedOrg(org);
-        localStorage.setItem(SELECTED_ORG_KEY, JSON.stringify(org));
-      }
-    }
-    return jwt;
-  }, [baseUrl, roleList]);
 
   const logout = useCallback(() => {
     setToken(null);
@@ -88,12 +29,12 @@ export function AuthProvider({ children, baseUrl }) {
     setRoleList([]);
     setSelectedRole(null);
     setSelectedOrg(null);
-    passwordRef.current = null;
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(USERNAME_KEY);
     localStorage.removeItem(ROLELIST_KEY);
     localStorage.removeItem(SELECTED_ROLE_KEY);
     localStorage.removeItem(SELECTED_ORG_KEY);
+    localStorage.removeItem(PLATFORM_TOKEN_KEY);
   }, []);
 
   const value = useMemo(() => ({
@@ -103,10 +44,8 @@ export function AuthProvider({ children, baseUrl }) {
     roleList,
     selectedRole,
     selectedOrg,
-    login,
     logout,
-    switchContext,
-  }), [token, username, roleList, selectedRole, selectedOrg, login, logout, switchContext]);
+  }), [token, username, roleList, selectedRole, selectedOrg, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

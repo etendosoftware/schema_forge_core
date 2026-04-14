@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
-import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
+import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -489,8 +489,9 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null }) {
-  const t = useLabel(api?.labelOverrides);
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null, labelOverrides }) {
+  const t = useLabel(labelOverrides ?? api?.labelOverrides);
+  const tMenu = useMenuLabel();
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
@@ -796,6 +797,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       );
     }
     if (f.type === 'select' && f.options?.length) {
+      const selectValue = f.valueType === 'boolean'
+        ? (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true'
+          ? 'true'
+          : (data?.[f.key] === false || data?.[f.key] === 'N' || data?.[f.key] === 'false'
+            ? 'false'
+            : ''))
+        : (data?.[f.key] ?? '');
       return (
         <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
           <div className="space-y-1.5">
@@ -803,8 +811,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
             </Label>
             <Select
-              value={(data?.[f.key] ?? '') || '__empty__'}
-              onValueChange={(val) => onChange?.(f.key, val === '__empty__' ? '' : val, f.column)}
+              value={selectValue || '__empty__'}
+              onValueChange={(val) => {
+                if (val === '__empty__') {
+                  onChange?.(f.key, '', f.column);
+                  return;
+                }
+                onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
+              }}
               disabled={isReadOnly}
               required={f.required}
             >
@@ -814,7 +828,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               <SelectContent>
                 {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
                 {f.options.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

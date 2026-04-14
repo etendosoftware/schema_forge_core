@@ -124,7 +124,7 @@ function resolveQuickActionRoute(route) {
   }
 }
 
-function useDashboardCurrency(token, selectedOrg) {
+function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
   const [currencyLabel, setCurrencyLabel] = useState('');
 
   useEffect(() => {
@@ -137,10 +137,11 @@ function useDashboardCurrency(token, selectedOrg) {
       }
       try {
         const headers = { Authorization: `Bearer ${token}` };
+        const base = apiBaseUrl || '/sws/neo';
         const endpoints = [
-          '/sws/neo/sales-invoice/header/defaults',
-          '/sws/neo/sales-order/header/defaults',
-          '/sws/neo/purchase-invoice/header/defaults',
+          `${base}/sales-invoice/header/defaults`,
+          `${base}/sales-order/header/defaults`,
+          `${base}/purchase-invoice/header/defaults`,
         ];
 
         for (const endpoint of endpoints) {
@@ -168,7 +169,7 @@ function useDashboardCurrency(token, selectedOrg) {
     return () => {
       cancelled = true;
     };
-  }, [token, selectedOrg?.id]);
+  }, [token, selectedOrg?.id, apiBaseUrl]);
 
   return currencyLabel;
 }
@@ -612,13 +613,16 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
   const expPoints = hasExpenses ? normalizedExpenseValues.map((v, i) => toPoint(v, i, normalizedExpenseValues.length)) : [];
 
   const toPolyline = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
-  const toFillPath = (pts) => [
-    `M ${pts[0].x},${pts[0].y}`,
-    ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
-    `L ${pts[pts.length - 1].x},${PAD_Y + plotH}`,
-    `L ${pts[0].x},${PAD_Y + plotH}`,
-    'Z',
-  ].join(' ');
+  const toFillPath = (pts) => {
+    if (pts.length === 0) return '';
+    return [
+      `M ${pts[0].x},${pts[0].y}`,
+      ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
+      `L ${pts[pts.length - 1].x},${PAD_Y + plotH}`,
+      `L ${pts[0].x},${PAD_Y + plotH}`,
+      'Z',
+    ].join(' ');
+  };
 
   // Bar chart metrics — uses PAD_X for the left offset so bars align with the Y-axis labels
   const barPlotW = CHART_W - PAD_X - BAR_PAD_X;
@@ -1248,7 +1252,7 @@ function DashboardSkeleton() {
  * Dashboard Page
  * ----------------------------------------------------------------*/
 
-export default function DashboardPage() {
+export default function DashboardPage({ apiBaseUrl = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { token, selectedOrg } = useAuth();
@@ -1258,7 +1262,7 @@ export default function DashboardPage() {
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
   const { config, toggle, reorder, reset } = useWidgetConfig();
-  const dashboardCurrency = useDashboardCurrency(token, selectedOrg);
+  const dashboardCurrency = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActionOrder = ['/sales-order', '/sales-invoice', '/contacts'];

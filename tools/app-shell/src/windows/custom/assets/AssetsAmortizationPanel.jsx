@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useUI } from '@/i18n';
 
 function fmt(v) {
   if (v == null || v === '') return '—';
@@ -7,13 +8,13 @@ function fmt(v) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function StatusBadge({ isProcessed }) {
+function StatusBadge({ isProcessed, ui }) {
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
         ${isProcessed ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}
     >
-      {isProcessed ? 'Processed' : 'Planned'}
+      {isProcessed ? ui('assetsStatusProcessed') : ui('assetsStatusPlanned')}
     </span>
   );
 }
@@ -29,6 +30,7 @@ function getLineStatuses(lines, depreciatedValue) {
 }
 
 export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
+  const ui = useUI();
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const recordId = data?.id;
@@ -51,44 +53,58 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
     fetchLines();
   }, [fetchLines]);
 
+  useEffect(() => {
+    if (!recordId) return undefined;
+
+    function handleProcessSuccess(event) {
+      const detail = event?.detail ?? {};
+      if (detail.entity !== 'assets') return;
+      if (String(detail.recordId) !== String(recordId)) return;
+      fetchLines();
+    }
+
+    window.addEventListener('neo:processSuccess', handleProcessSuccess);
+    return () => window.removeEventListener('neo:processSuccess', handleProcessSuccess);
+  }, [recordId, fetchLines]);
+
   const depreciatedValue = Number(data?.depreciatedValue ?? 0);
   const lineStatuses = getLineStatuses(lines, depreciatedValue);
   const plannedCount = [...lineStatuses.values()].filter(v => !v).length;
   const totalAmount = lines.reduce((sum, l) => sum + Number(l.amortizationAmount ?? 0), 0);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 mt-4">
+    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="text-sm font-semibold text-gray-800">Amortization Plan</div>
+          <div className="text-sm font-semibold text-gray-800">{ui('assetsAmortizationPlan')}</div>
           <div className="text-xs text-gray-400 mt-0.5">
-            This should be visible on first load because it answers what will happen to the asset over time.
+            {ui('assetsAmortizationPlanDesc')}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {plannedCount > 0 && (
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-              {plannedCount} planned {plannedCount === 1 ? 'line' : 'lines'}
+              {plannedCount} {ui(plannedCount === 1 ? 'assetsPlannedLine' : 'assetsPlannedLines')}
             </span>
           )}
         </div>
       </div>
 
       {loading ? (
-        <div className="text-xs text-gray-400 py-4 text-center">Loading...</div>
+        <div className="text-xs text-gray-400 py-4 text-center">{ui('assetsLoading')}</div>
       ) : lines.length === 0 ? (
         <div className="text-xs text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">
-          No amortization lines yet. Use &quot;Create Amortization&quot; to generate the plan.
+          {ui('assetsNoAmortizationLines')}
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">Period</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">Percentage</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">Amount</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2">Status</th>
+                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('assetsPeriod')}</th>
+                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('assetsPercentage')}</th>
+                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2 pr-4">{ui('amount')}</th>
+                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-2">{ui('assetsStatus')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -102,7 +118,7 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
                   </td>
                   <td className="py-2.5 pr-4 text-gray-700">€ {fmt(line.amortizationAmount)}</td>
                   <td className="py-2.5">
-                    <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} />
+                    <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} ui={ui} />
                   </td>
                 </tr>
               ))}
@@ -112,7 +128,7 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
                 <tr className="border-t border-gray-200">
                   <td colSpan={2} />
                   <td colSpan={2} className="py-2.5 text-right text-xs font-semibold text-gray-700 pr-4">
-                    Total planned: € {fmt(totalAmount)}
+                    {ui('assetsTotalPlanned')} € {fmt(totalAmount)}
                   </td>
                 </tr>
               </tfoot>

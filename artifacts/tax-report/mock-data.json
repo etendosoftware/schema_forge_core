@@ -1,0 +1,185 @@
+{
+  "purchase": {
+    "detail": [
+      {
+        "taxName": "Adquisiciones IVA 16%", "taxId": "T001",
+        "taxBaseAmt": 4650.00, "taxAmt": 744.00, "totalAmt": 9242.00,
+        "bpGroups": [
+          {
+            "bPartner": "Proveedor Nacional 1", "bPartnerId": "BP001",
+            "taxBaseAmt": 150.00, "taxAmt": 24.00, "totalAmt": 812.00,
+            "docs": [
+              { "invoiceId": "INV001", "docNo": "10000047", "docType": "AP Invoice", "docDate": "2024-05-06", "acctDate": "2024-05-10", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 150.00, "taxAmt": 24.00, "totalAmt": 812.00 }
+            ]
+          },
+          {
+            "bPartner": "Proveedor Nacional A", "bPartnerId": "BP002",
+            "taxBaseAmt": 3000.00, "taxAmt": 480.00, "totalAmt": 3480.00,
+            "docs": [
+              { "invoiceId": "INV002", "docNo": "10000063", "docType": "AP Invoice", "docDate": "2024-01-10", "acctDate": "2024-01-10", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 3000.00, "taxAmt": 480.00, "totalAmt": 3480.00 }
+            ]
+          },
+          {
+            "bPartner": "Proveedor Nacional B", "bPartnerId": "BP003",
+            "taxBaseAmt": 1500.00, "taxAmt": 240.00, "totalAmt": 4950.00,
+            "docs": [
+              { "invoiceId": "INV003", "docNo": "10000094", "docType": "AP Invoice", "docDate": "2024-10-02", "acctDate": "2024-05-11", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 1500.00, "taxAmt": 240.00, "totalAmt": 4950.00 }
+            ]
+          }
+        ],
+        "docs": [
+          { "invoiceId": "INV001", "docNo": "10000047", "docType": "AP Invoice", "docDate": "2024-05-06", "acctDate": "2024-05-10", "bPartner": "Proveedor Nacional 1", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 150.00, "taxAmt": 24.00, "totalAmt": 812.00 },
+          { "invoiceId": "INV002", "docNo": "10000063", "docType": "AP Invoice", "docDate": "2024-01-10", "acctDate": "2024-01-10", "bPartner": "Proveedor Nacional A", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 3000.00, "taxAmt": 480.00, "totalAmt": 3480.00 },
+          { "invoiceId": "INV003", "docNo": "10000094", "docType": "AP Invoice", "docDate": "2024-10-02", "acctDate": "2024-05-11", "bPartner": "Proveedor Nacional B", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 1500.00, "taxAmt": 240.00, "totalAmt": 4950.00 }
+        ]
+      },
+      {
+        "taxName": "Adquisiciones IVA 7%", "taxId": "T002",
+        "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00,
+        "bpGroups": [
+          {
+            "bPartner": "Proveedor Nacional B", "bPartnerId": "BP003",
+            "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00,
+            "docs": [
+              { "invoiceId": "INV003", "docNo": "10000094", "docType": "AP Invoice", "docDate": "2024-10-02", "acctDate": "2024-05-11", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00 }
+            ]
+          }
+        ],
+        "docs": [
+          { "invoiceId": "INV003", "docNo": "10000094", "docType": "AP Invoice", "docDate": "2024-10-02", "acctDate": "2024-05-11", "bPartner": "Proveedor Nacional B", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00 }
+        ]
+      }
+    ],
+    "summaryByCategory": [
+      {
+        "taxCategoryName": "IVA 16%",
+        "taxes": [
+          { "taxName": "Adquisiciones IVA 16%", "rate": 16.00, "taxBaseAmt": 4650.00, "taxAmt": 744.00, "totalAmt": 9242.00, "bpCount": 3 }
+        ]
+      },
+      {
+        "taxCategoryName": "IVA 7%",
+        "taxes": [
+          { "taxName": "Adquisiciones IVA 7%", "rate": 7.00, "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00, "bpCount": 1 }
+        ]
+      }
+    ],
+    "summaryByRate": [
+      {
+        "rate": 7.00,
+        "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00, "bpCount": 1,
+        "bpGroups": [
+          { "bPartnerId": "BP003", "bPartner": "Proveedor Nacional B", "bpTaxId": "B12345678",
+            "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00,
+            "taxes": [{ "taxName": "Adquisiciones IVA 7%", "rate": 7.00, "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00 }] }
+        ],
+        "taxes": [
+          { "taxName": "Adquisiciones IVA 7%", "rate": 7.00, "taxBaseAmt": 3000.00, "taxAmt": 210.00, "totalAmt": 4950.00, "bpCount": 1 }
+        ]
+      },
+      {
+        "rate": 16.00,
+        "taxBaseAmt": 4650.00, "taxAmt": 744.00, "totalAmt": 9242.00, "bpCount": 3,
+        "bpGroups": [
+          { "bPartnerId": "BP001", "bPartner": "Proveedor Nacional 1", "bpTaxId": "A11111111",
+            "taxBaseAmt": 150.00, "taxAmt": 24.00, "totalAmt": 812.00,
+            "taxes": [{ "taxName": "Adquisiciones IVA 16%", "rate": 16.00, "taxBaseAmt": 150.00, "taxAmt": 24.00, "totalAmt": 812.00 }] },
+          { "bPartnerId": "BP002", "bPartner": "Proveedor Nacional A", "bpTaxId": "B22222222",
+            "taxBaseAmt": 3000.00, "taxAmt": 480.00, "totalAmt": 3480.00,
+            "taxes": [{ "taxName": "Adquisiciones IVA 16%", "rate": 16.00, "taxBaseAmt": 3000.00, "taxAmt": 480.00, "totalAmt": 3480.00 }] },
+          { "bPartnerId": "BP003", "bPartner": "Proveedor Nacional B", "bpTaxId": "B12345678",
+            "taxBaseAmt": 1500.00, "taxAmt": 240.00, "totalAmt": 4950.00,
+            "taxes": [{ "taxName": "Adquisiciones IVA 16%", "rate": 16.00, "taxBaseAmt": 1500.00, "taxAmt": 240.00, "totalAmt": 4950.00 }] }
+        ],
+        "taxes": [
+          { "taxName": "Adquisiciones IVA 16%", "rate": 16.00, "taxBaseAmt": 4650.00, "taxAmt": 744.00, "totalAmt": 9242.00, "bpCount": 3 }
+        ]
+      }
+    ]
+  },
+  "sales": {
+    "detail": [
+      {
+        "taxName": "Entregas IVA 16%", "taxId": "T003",
+        "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00,
+        "bpGroups": [
+          {
+            "bPartner": "Cliente Nacional X", "bPartnerId": "BP010",
+            "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00,
+            "docs": [
+              { "invoiceId": "INV010", "docNo": "20000012", "docType": "AR Invoice", "docDate": "2024-03-15", "acctDate": "2024-03-15", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00 }
+            ]
+          }
+        ],
+        "docs": [
+          { "invoiceId": "INV010", "docNo": "20000012", "docType": "AR Invoice", "docDate": "2024-03-15", "acctDate": "2024-03-15", "bPartner": "Cliente Nacional X", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00 }
+        ]
+      },
+      {
+        "taxName": "Entregas IVA 7%", "taxId": "T004",
+        "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00,
+        "bpGroups": [
+          {
+            "bPartner": "Cliente Nacional Y", "bPartnerId": "BP011",
+            "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00,
+            "docs": [
+              { "invoiceId": "INV011", "docNo": "20000021", "docType": "AR Invoice", "docDate": "2024-04-20", "acctDate": "2024-04-20", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00 }
+            ]
+          }
+        ],
+        "docs": [
+          { "invoiceId": "INV011", "docNo": "20000021", "docType": "AR Invoice", "docDate": "2024-04-20", "acctDate": "2024-04-20", "bPartner": "Cliente Nacional Y", "bpCountry": "Spain", "bpRegion": "", "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00 }
+        ]
+      }
+    ],
+    "summaryByCategory": [
+      {
+        "taxCategoryName": "IVA 16%",
+        "taxes": [
+          { "taxName": "Entregas IVA 16%", "rate": 16.00, "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00, "bpCount": 1 }
+        ]
+      },
+      {
+        "taxCategoryName": "IVA 7%",
+        "taxes": [
+          { "taxName": "Entregas IVA 7%", "rate": 7.00, "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00, "bpCount": 1 }
+        ]
+      }
+    ],
+    "summaryByRate": [
+      {
+        "rate": 7.00,
+        "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00, "bpCount": 1,
+        "bpGroups": [
+          { "bPartnerId": "BP011", "bPartner": "Cliente Nacional Y", "bpTaxId": "G99999999",
+            "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00,
+            "taxes": [{ "taxName": "Entregas IVA 7%", "rate": 7.00, "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00 }] }
+        ],
+        "taxes": [
+          { "taxName": "Entregas IVA 7%", "rate": 7.00, "taxBaseAmt": 4500.00, "taxAmt": 315.00, "totalAmt": 7019.00, "bpCount": 1 }
+        ]
+      },
+      {
+        "rate": 16.00,
+        "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00, "bpCount": 1,
+        "bpGroups": [
+          { "bPartnerId": "BP010", "bPartner": "Cliente Nacional X", "bpTaxId": "G11111111",
+            "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00,
+            "taxes": [{ "taxName": "Entregas IVA 16%", "rate": 16.00, "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00 }] }
+        ],
+        "taxes": [
+          { "taxName": "Entregas IVA 16%", "rate": 16.00, "taxBaseAmt": 5000.00, "taxAmt": 800.00, "totalAmt": 5800.00, "bpCount": 1 }
+        ]
+      }
+    ]
+  },
+  "_meta": {
+    "showDetails": true,
+    "groupByBp": true,
+    "transactionType": "B",
+    "currencySymbol": "€",
+    "dateFrom": "2024-01-01",
+    "dateTo": "2024-12-31",
+    "dateType": "acct"
+  }
+}

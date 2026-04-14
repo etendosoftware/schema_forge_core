@@ -7,7 +7,7 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -656,6 +656,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   const handleSubmit = () => {
     const newErrors = {};
     for (const p of report.parameters || []) {
+      if (p.hidden) continue;
       if (p.required && !params[p.name]) newErrors[p.name] = true;
     }
     setErrors(newErrors);
@@ -774,7 +775,10 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             onChange={e => handleChange(p.name, e.target.value)}
             className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}
           >
-            {resolvedOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {resolvedOptions.map(o => {
+              const optLabel = o.label && typeof o.label === 'object' ? (o.label[locale] || o.label.en_US) : o.label;
+              return <option key={o.value} value={o.value}>{optLabel}</option>;
+            })}
           </select>
         </div>
       );
@@ -969,7 +973,6 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
   const [drillDownBp, setDrillDownBp] = useState(null);
   const [drillDownAccount, setDrillDownAccount] = useState(null);
   const [invoicePopup, setInvoicePopup] = useState(null);
-  const [showUserContext, setShowUserContext] = useState(false);
   const { locale } = useLocaleSwitch();
   const localeLangKey = locale === 'es_ES' ? 'es' : 'en';
   const tMenu = useMenuLabel();
@@ -1017,7 +1020,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
       autoParams.map(p =>
         fetch(`/api/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
           .then(r => r.json())
-          .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
+          .then(data => { const rows = Array.isArray(data) ? data : (data.items || []); return rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null; })
           .catch(() => null)
       )
     ).then(results => {
@@ -1153,8 +1156,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
                 <Bell className="h-4 w-4" />
               </button>
               <LocaleSwitcher />
-              <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-              {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+              <UserAvatarButton />
             </div>
           </div>
         </div>
@@ -1311,7 +1313,6 @@ export default function ReportViewerPage() {
   const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showUserContext, setShowUserContext] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const tMenu = useMenuLabel();
@@ -1426,8 +1427,7 @@ export default function ReportViewerPage() {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>

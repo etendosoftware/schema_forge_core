@@ -131,8 +131,10 @@ export function DetailView({
   contentBg = 'bg-white',
   lockWhenProcessed = true,
   addLineGuard = null,
+  showDetailFooterTotals = undefined,
   onAfterSave,
   onAfterCreate,
+  labelOverrides,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
@@ -286,7 +288,7 @@ export function DetailView({
     setAddingLine(true);
     setEditingChild(null);
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state?.openAddLine, isNew, hook.editing]);
+  }, [location.state?.openAddLine, isNew, hook.editing, navigate]);
 
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
@@ -300,33 +302,22 @@ export function DetailView({
     setEditingChild(null);
   }, [isNew, hook.handleSave, navigate, windowName]);
 
-  // Resolve $_identifier for default FK values and auto-select first option for
-  // mandatory combo selectors (inputMode: "selector") that have no value.
-  // This matches classic Etendo behavior: TableDir combos pre-select the first record
-  // when the field is mandatory, while search fields don't (they require user input).
+  // Resolve $_identifier for default FK values.
+  // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
+  // The frontend only ensures that if a value exists (from a default or callout),
+  // we resolve its $_identifier from the catalogs so it displays correctly.
   useEffect(() => {
     if (!isNew || !hook.editing || !catalogsLoaded || !api?.selectors) return;
     for (const sel of api.selectors) {
       const val = hook.editing[sel.field];
+      if (!val) continue;
+      // Value is set but no identifier — resolve it from loaded catalog
+      if (hook.editing[sel.field + '$_identifier']) continue;
       const options = getCatalogOptions(catalogs, sel.entity, sel);
       if (!Array.isArray(options) || options.length === 0) continue;
-
-      if (val) {
-        // Has a value — resolve its identifier if missing
-        if (!hook.editing[sel.field + '$_identifier']) {
-          const match = options.find(o => o.id === val);
-          if (match) {
-            hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
-          }
-        }
-      } else if (sel.inputMode === 'selector') {
-        // Combo/dropdown with no value — auto-select first option (Etendo TableDir behavior).
-        // Only for editable fields; search/dependent fields require explicit user selection.
-        const first = options[0];
-        if (first) {
-          hook.handleChange(sel.field, first.id);
-          hook.handleChange(sel.field + '$_identifier', first.label || first.name || first._identifier);
-        }
+      const match = options.find(o => o.id === val);
+      if (match) {
+        hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
       }
     }
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
@@ -1007,12 +998,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-1.5' : 'px-6'}`}>
-              <activeTab.Panel data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}`}>
+              <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-1.5' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-3`}>
@@ -1031,6 +1022,7 @@ export function DetailView({
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   selectorContext={selectorContextByEntity[entity]}
+                  labelOverrides={labelOverrides}
                 />
               </div>
 
@@ -1051,6 +1043,7 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
+                      labelOverrides={labelOverrides}
                     />
                   </div>
                 </CollapsibleSection>
@@ -1118,7 +1111,7 @@ export function DetailView({
                         apiBaseUrl={apiBaseUrl}
                         onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
                         selectedRowId={selectedLine?.id}
-                        showFooterTotals={!summary.some(f => f.type === 'amount')}
+                        showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                         selectorContext={selectorContextByEntity[detailEntity]}
                         addRow={{
                           active: addingLine,
@@ -1251,12 +1244,13 @@ export function DetailView({
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
                           }}
-                          entity={detailEntity}
-                          catalogs={catalogs}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                          selectorContext={selectorContextByEntity[detailEntity]}
-                        />
+                                entity={detailEntity}
+                                catalogs={catalogs}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                selectorContext={selectorContextByEntity[detailEntity]}
+                                labelOverrides={labelOverrides}
+                              />
                         {hook.editing && (lineEdits || selectedLine?.id) && (
                           <div className="flex gap-2 mt-4">
                             {lineEdits && !isDocumentReadOnly && (
@@ -1383,6 +1377,7 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
+                          labelOverrides={labelOverrides}
                         />
                       </div>
                     ) : st.Panel ? (
@@ -1446,6 +1441,7 @@ export function DetailView({
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
                           excludeFields={st.key === 'contact' ? ['active'] : []}
+                          labelOverrides={labelOverrides}
                         />
                         {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
                           <div className="flex gap-2 mt-4">
@@ -1547,6 +1543,7 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
+                      labelOverrides={labelOverrides}
                     />
                   </div>
                 )}
@@ -1708,7 +1705,7 @@ export function DetailView({
           </div>
         </div>
         {sidebarContent && (
-          <div className="w-96 shrink-0 overflow-y-auto pl-1.5 pr-4 pb-5">
+          <div className="w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5">
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}
