@@ -210,6 +210,30 @@ function resolveSortKey(sortColumn, sampleRow) {
   return sortColumn;
 }
 
+function deriveRecordId(record, entityName) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return null;
+  if (record.id != null && record.id !== '') return record.id;
+  if (typeof record.$ref === 'string') {
+    const refId = record.$ref.split('/').filter(Boolean).at(-1);
+    if (refId) return refId;
+  }
+  if (entityName && record[entityName] != null && record[entityName] !== '') {
+    return record[entityName];
+  }
+  return null;
+}
+
+function normalizeRecord(record, entityName) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return record;
+  const id = deriveRecordId(record, entityName);
+  if (id == null || record.id === id) return record;
+  return { ...record, id };
+}
+
+function normalizeRows(rows, entityName) {
+  return Array.isArray(rows) ? rows.map(row => normalizeRecord(row, entityName)) : [];
+}
+
 export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
   const { logout } = useAuth();
   const ui = useUI();
@@ -217,6 +241,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
   const [children, setChildren] = useState([]);
+  const [childrenLoading, setChildrenLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -243,7 +268,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), entity);
         if (rows.length > 0) sampleRowRef.current = rows[0];
         setItems(rows);
         startRowRef.current = rows.length;
@@ -268,7 +293,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), entity);
         setItems(prev => [...prev, ...rows]);
         startRowRef.current = start + rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
@@ -280,7 +305,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   useEffect(() => { refresh(); }, [refresh]);
 
   const fetchChildren = useCallback((parentId) => {
-    if (!childEntity || !parentId) { setChildren([]); return; }
+    if (!childEntity || !parentId) { setChildren([]); setChildrenLoading(false); return; }
+    setChildrenLoading(true);
     // NEO Headless uses ?parentId= to filter child entity records
     fetch(`${apiBaseUrl}/${childEntity}?parentId=${parentId}${childSortBy ? `&_sortBy=${childSortBy}` : ''}`, { headers })
       .then(res => {
@@ -288,10 +314,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const rows = data?.response?.data ?? (Array.isArray(data) ? data : []);
+        const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), childEntity);
         setChildren(rows);
       })
-      .catch(() => setChildren([]));
+      .catch(() => setChildren([]))
+      .finally(() => setChildrenLoading(false));
   }, [apiBaseUrl, childEntity, token, childSortBy]);
 
   const fetchById = useCallback((id) => {
@@ -303,7 +330,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         return res.json();
       })
       .then(data => {
-        const row = data?.response?.data?.[0] ?? data;
+        const row = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
         setSelected(row);
         setEditing({ ...row });
         fetchChildren(row?.id);
@@ -326,8 +353,11 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       if (res.ok) {
         const data = await res.json();
         if (data.defaults) {
-          // Normalize date values from Etendo format (dd-MM-yyyy) to HTML date input (yyyy-MM-dd)
-          const normalized = { ...data.defaults };
+          // Normalize values from Etendo format:
+          // - Dates: dd-MM-yyyy → yyyy-MM-dd (HTML date input)
+          // - Booleans: "Y" → true, "N" → false (NEO defaults returns strings, not booleans)
+          const { id: _discardId, ...rest } = data.defaults;
+          const normalized = { ...rest };
           for (const [key, val] of Object.entries(normalized)) {
             if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
               const [dd, mm, yyyy] = val.split('-');
@@ -418,7 +448,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       const res = await fetch(url, { method, headers, body });
       if (res.ok) {
         const data = await res.json();
-        const saved = data?.response?.data?.[0] ?? data;
+        const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
         setSelected(saved);
         setEditing({ ...saved });
         setSaveError(null);
@@ -499,7 +529,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       fetchById(selected.id);
       setSaveError(null);
       toast.success(ui('lineAdded'));
-      return data?.response?.data?.[0] ?? data ?? true;
+      return normalizeRecord(data?.response?.data?.[0] ?? data, childEntity) ?? true;
     } catch (err) {
       const msg = err?.message || 'Network error';
       setSaveError(msg);
@@ -550,7 +580,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       const updatedRes = await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { method: 'GET', headers });
       if (updatedRes.ok) {
         const data = await updatedRes.json();
-        return data?.response?.data?.[0] ?? data;
+        return normalizeRecord(data?.response?.data?.[0] ?? data, entity);
       }
     } catch { /* ignore, fall back to saved */ }
     return saved;
@@ -586,7 +616,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   }, [selected, entity, apiBaseUrl, token, refresh, fetchById, ui]);
 
   return {
-    items, selected, editing, children, loading, loadingMore, hasMore, saveError,
+    items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild,
     refresh, fetchById, fetchChildren, loadMore,

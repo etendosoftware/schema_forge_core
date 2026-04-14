@@ -3,6 +3,8 @@
   "window": {
     "category": "purchases",
     "name": "Purchase Invoice",
+    "relatedDocuments": true,
+    "notesField": "description",
     "processOverrides": {},
     "draftMode": {
       "enabled": true,

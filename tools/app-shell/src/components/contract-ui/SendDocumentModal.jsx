@@ -14,20 +14,34 @@ import { toast } from 'sonner';
  * - token: auth token
  * - onClose: callback to close modal
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, documentId, windowName, token, onClose }) {
+/**
+ * pdfBlobUrl — optional blob URL from jsreport (e.g. from useInvoicePdf).
+ * When provided, the preview uses it directly and download triggers on the blob,
+ * bypassing the /api/reports render endpoint entirely.
+ */
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, documentId, windowName, token, onClose, pdfBlobUrl, isClosing = false }) {
   const hasEmail = bpEmail && bpEmail.includes('@');
   const [to, setTo] = useState(hasEmail ? bpEmail : '');
   const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(!pdfBlobUrl);
   const [pdfError, setPdfError] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
   const reportId = `print-${windowName}`;
 
   const iframeRef = useCallback(node => {
-    if (!node || !documentId || !token) return;
+    if (!node) return;
+
+    // If a pre-rendered blob URL is provided, use it directly
+    if (pdfBlobUrl) {
+      node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+      setPdfLoading(false);
+      return;
+    }
+
+    if (!documentId || !token) return;
     (async () => {
       setPdfLoading(true);
       setPdfError(null);
@@ -49,10 +63,22 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       }
       setPdfLoading(false);
     })();
-  }, [documentId, token, reportId]);
+  }, [documentId, token, reportId, pdfBlobUrl]);
 
   const handleDownload = async () => {
     if (downloading) return;
+
+    // If a blob URL is already available, download it directly
+    if (pdfBlobUrl) {
+      const a = document.createElement('a');
+      a.href = pdfBlobUrl;
+      a.download = `${windowName || 'invoice'}-${documentNo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
     setDownloading(true);
     try {
       const res = await fetch(`/api/reports/${reportId}/render`, {
@@ -91,19 +117,23 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB' }}>
-
-        <div style={{ padding: '12px 16px', background: '#F5F5F5', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Send {documentType} #{documentNo}</span>
+    <>
+      <style>{`
+        @keyframes sfSlideDownIn { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes sfSlideUpOut  { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
+      `}</style>
+      <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB', animation: isClosing ? 'sfSlideUpOut 280ms ease-in forwards' : 'sfSlideDownIn 280ms ease-out' }}>
+          <div style={{ padding: '12px 16px', background: '#F5F5F5', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+              <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Send {documentType} #{documentNo}</span>
+            </div>
+            <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
           </div>
-          <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
-        </div>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           <div style={{ width: '60%', display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #E5E7EB' }}>
@@ -184,6 +214,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
         </div>
       </div>
     </div>
+    </>
   );
 }
 

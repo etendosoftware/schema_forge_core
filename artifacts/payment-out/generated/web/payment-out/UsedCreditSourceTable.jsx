@@ -12,9 +12,6 @@ const filters = [];
 
 // @sf-generated-start component:UsedCreditSourceTable
 export default function UsedCreditSourceTable(props) {
-  // @sf-custom-slot hooks:UsedCreditSourceTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:UsedCreditSourceTable
-
-// @sf-custom-slot section:UsedCreditSourceTable-custom

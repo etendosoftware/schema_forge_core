@@ -6,6 +6,7 @@ const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
 const REPO_ROOT = resolve(ARTIFACTS_DIR, '..');
 const CONTRACT_GENERATOR = resolve(import.meta.dirname, '../../../cli/src/generate-contract.js');
 const FRONTEND_GENERATOR = resolve(import.meta.dirname, '../../../cli/src/generate-frontend.js');
+const RESOLVE_CURATED = resolve(import.meta.dirname, '../../../cli/src/resolve-curated.js');
 
 const SAFE_WINDOW_RE = /^[a-z0-9-]+$/;
 const SAFE_REF_RE = /^[a-f0-9]{7,40}$/;
@@ -16,7 +17,7 @@ const ALLOWED_ARTIFACT_FILES = ['schema-raw.json', 'schema-curated.json', 'contr
  * and the Artifact Viewer.
  *
  * Schema Inspector:
- *   GET  /api/schema/:window           — read schema-curated.json
+ *   GET  /api/schema/:window           — read schema-curated.json (legacy) or resolve from decisions.json + schema-raw.json
  *   GET  /api/schema-raw/:window       — read schema-raw.json
  *   POST /api/schema/:window           — write schema, regenerate contract + frontend
  *
@@ -112,7 +113,7 @@ export default function schemaApiPlugin() {
           if (!SAFE_WINDOW_RE.test(windowName)) {
             return sendError(res, 400, 'Invalid window name');
           }
-          return serveJson(res, windowName, 'schema-curated.json');
+          return serveCurated(res, windowName);
         }
 
         // POST /api/schema/:window
@@ -202,6 +203,40 @@ function handleArtifactFile(res, windowName, fileName, ref) {
     } else {
       sendError(res, 500, err.message);
     }
+  }
+}
+
+/**
+ * Serve the curated schema for a window.
+ * Prefers schema-curated.json (legacy) if it exists; otherwise resolves
+ * decisions.json + schema-raw.json in memory via resolve-curated.js.
+ */
+async function serveCurated(res, windowName) {
+  const windowDir = join(ARTIFACTS_DIR, windowName);
+  const curatedPath = join(windowDir, 'schema-curated.json');
+
+  if (existsSync(curatedPath)) {
+    return serveJson(res, windowName, 'schema-curated.json');
+  }
+
+  const rawPath = join(windowDir, 'schema-raw.json');
+  const rulesPath = join(windowDir, 'rules-raw.json');
+  const decisionsPath = join(windowDir, 'decisions.json');
+
+  if (!existsSync(rawPath) || !existsSync(decisionsPath)) {
+    return sendError(res, 404, `No schema found for '${windowName}'. Missing schema-raw.json or decisions.json.`);
+  }
+
+  try {
+    const { resolveCurated } = await import(RESOLVE_CURATED);
+    const schemaRaw = JSON.parse(readFileSync(rawPath, 'utf-8'));
+    const rulesRaw = existsSync(rulesPath) ? JSON.parse(readFileSync(rulesPath, 'utf-8')) : { rules: [] };
+    const decisions = JSON.parse(readFileSync(decisionsPath, 'utf-8'));
+    const { schema } = await resolveCurated(schemaRaw, rulesRaw, decisions);
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(schema, null, 2));
+  } catch (err) {
+    sendError(res, 500, err.message);
   }
 }
 

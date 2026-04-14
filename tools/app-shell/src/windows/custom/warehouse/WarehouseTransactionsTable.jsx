@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useWarehouseStock } from './useWarehouseStock';
 
@@ -93,7 +93,14 @@ export default function WarehouseTransactionsTable({ parentId, token, apiBaseUrl
     });
   }, [filtered, sortKey, sortDir]);
 
-  if (loading) return <div className="text-sm text-muted-foreground p-6">{ui('warehouseLoadingTransactions')}</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground p-6">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {ui('warehouseLoadingTransactions')}
+      </div>
+    );
+  }
   if (error) return <div className="text-sm text-destructive p-6">{ui('warehouseTransactionsError', { error })}</div>;
 
   return (

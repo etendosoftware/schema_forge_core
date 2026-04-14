@@ -35,6 +35,7 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  onNew = null,
   labelOverrides,
 }) {
   const [activeFilterIndex, setActiveFilterIndex] = useState(0);
@@ -344,7 +345,7 @@ export function ListView({
                 <Button
                   className="rounded-none rounded-l-lg gap-1.5 px-4"
                   data-testid="action-new"
-                  onClick={() => navigate(`/${windowName}/new`)}
+                  onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
                   {ui('newRecord')}
