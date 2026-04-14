@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import { clearServiceWorkerStateAndReload } from '@/hooks/useServiceWorker.js';
 import { useUI } from '@/i18n';
 import {
   Shield,
@@ -58,6 +59,8 @@ export function UserContextSwitcher({ onClose, positionClassName }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  const [refreshingApp, setRefreshingApp] = useState(false);
+
   const pendingRole = roleList.find(r => r.id === pendingRoleId);
   const orgOptions = pendingRole?.orgList || [];
 
@@ -94,6 +97,12 @@ export function UserContextSwitcher({ onClose, positionClassName }) {
       setSwitching(false);
     }
   };
+
+  const handleForceRefresh = async () => {
+    setRefreshingApp(true);
+    await clearServiceWorkerStateAndReload();
+  };
+
 
   return createPortal(
     <>
@@ -183,8 +192,16 @@ export function UserContextSwitcher({ onClose, positionClassName }) {
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
 
-      {/* Logout */}
-      <div className="border-t px-4 py-2">
+      {/* Recovery + logout */}
+      <div className="border-t px-4 py-2 space-y-2">
+        <button
+          onClick={handleForceRefresh}
+          disabled={refreshingApp}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshingApp ? 'animate-spin' : ''}`} />
+          {ui('forceAppRefresh')}
+        </button>
         <button
           onClick={logout}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
