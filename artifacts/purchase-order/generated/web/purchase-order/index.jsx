@@ -16,8 +16,8 @@ const api = {
       "listUrl": "/sws/neo/purchase-order/header",
       "detailUrl": "/sws/neo/purchase-order/header/{id}",
       "supportedFilters": [
-        "documentNo",
         "businessPartner",
+        "documentNo",
         "orderDate",
         "documentStatus",
         "orderReference"
@@ -56,39 +56,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-order/reservedStock/{id}",
       "supportedFilters": []
     },
-    "tax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/tax",
-      "detailUrl": "/sws/neo/purchase-order/tax/{id}",
-      "supportedFilters": []
-    },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/basicDiscounts",
-      "detailUrl": "/sws/neo/purchase-order/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
-    "paymentPlan": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-order/paymentPlan",
-      "detailUrl": "/sws/neo/purchase-order/paymentPlan/{id}",
-      "supportedFilters": []
-    },
     "paymentDetails": {
       "get": true,
       "getById": true,
@@ -112,18 +79,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "transactionDocument",
-      "column": "C_DocTypeTarget_ID",
-      "reference": "DocumentType",
-      "url": "/sws/neo/purchase-order/header/selectors/transactionDocument"
-    },
-    {
-      "entity": "header",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/purchase-order/header/selectors/partnerAddress"
+    },
+    {
+      "entity": "header",
+      "field": "transactionDocument",
+      "column": "C_DocTypeTarget_ID",
+      "reference": "DocumentType",
+      "url": "/sws/neo/purchase-order/header/selectors/transactionDocument"
     },
     {
       "entity": "header",
@@ -364,34 +331,6 @@ const api = {
       "url": "/sws/neo/purchase-order/reservedStock/selectors/storageBin"
     },
     {
-      "entity": "tax",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "url": "/sws/neo/purchase-order/tax/selectors/tax"
-    },
-    {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "url": "/sws/neo/purchase-order/basicDiscounts/selectors/discount"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "PaymentMethod",
-      "url": "/sws/neo/purchase-order/paymentPlan/selectors/paymentMethod"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "url": "/sws/neo/purchase-order/paymentPlan/selectors/currency"
-    },
-    {
       "entity": "paymentDetails",
       "field": "payment",
       "column": "FIN_Payment_ID",
@@ -579,14 +518,6 @@ const api = {
       "url": "/sws/neo/purchase-order/lines/{id}/action/selectOrderLine",
       "processId": "C4265E27C8134096B49DFBF69369DFC6",
       "processType": "obuiapp"
-    },
-    {
-      "entity": "paymentPlan",
-      "field": "updatePaymentPlan",
-      "column": "Update_Payment_Plan",
-      "url": "/sws/neo/purchase-order/paymentPlan/{id}/action/updatePaymentPlan",
-      "processId": "FB740AB61B0E42B198D2C88D3A0D0CE6",
-      "processType": "classic"
     }
   ],
   "queryParams": {
@@ -601,14 +532,24 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Contacto",
+      "DatePromised": "Fecha de entrega esperada"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Contact",
+      "DatePromised": "Expected Delivery Date"
+    }
   }
 };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
   return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
-
-// @sf-custom-slot section:App-custom

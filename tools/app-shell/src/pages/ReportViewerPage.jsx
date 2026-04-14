@@ -7,7 +7,7 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -973,7 +973,6 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
   const [drillDownBp, setDrillDownBp] = useState(null);
   const [drillDownAccount, setDrillDownAccount] = useState(null);
   const [invoicePopup, setInvoicePopup] = useState(null);
-  const [showUserContext, setShowUserContext] = useState(false);
   const { locale } = useLocaleSwitch();
   const localeLangKey = locale === 'es_ES' ? 'es' : 'en';
   const tMenu = useMenuLabel();
@@ -1157,8 +1156,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
                 <Bell className="h-4 w-4" />
               </button>
               <LocaleSwitcher />
-              <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-              {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+              <UserAvatarButton />
             </div>
           </div>
         </div>
@@ -1315,7 +1313,6 @@ export default function ReportViewerPage() {
   const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showUserContext, setShowUserContext] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const tMenu = useMenuLabel();
@@ -1430,8 +1427,7 @@ export default function ReportViewerPage() {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>

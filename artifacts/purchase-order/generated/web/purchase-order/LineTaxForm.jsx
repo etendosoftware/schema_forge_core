@@ -11,9 +11,7 @@ const fields = [
 
 // @sf-generated-start component:LineTaxForm
 export default function LineTaxForm(props) {
-  // @sf-custom-slot hooks:LineTaxForm
   return <EntityForm fields={fields} {...props} />;
 }
+LineTaxForm.hasCollapsedFields = false;
 // @sf-generated-end component:LineTaxForm
-
-// @sf-custom-slot section:LineTaxForm-custom

@@ -178,7 +178,12 @@ export async function pushToNeo(windowName, options = {}) {
   const contract = JSON.parse(contractRaw);
   const schemaRawData = JSON.parse(schemaRawJson);
 
-  const windowId = schemaRawData.window.id;
+  let windowId = schemaRawData.window.id;
+  if (options.overrideWindow) {
+    windowId = options.overrideWindow;
+  } else if (contract.backendContract?.window?.id) {
+    windowId = contract.backendContract.window.id;
+  }
   const windowDisplayName = schemaRawData.window.name;
   // Use the artifact slug (windowName) as spec name so it matches the frontend route
   const specName = windowName;
@@ -327,16 +332,38 @@ export async function pushToNeo(windowName, options = {}) {
     // Uses tabName (AD tab display name) as the primary key — unique within a window
     // and handles tabs that share the same DB table correctly.
     // Read entity names from the backend contract which reflects the resolved curated schema.
-    const contractEntities = contract.backendContract
-      ? Object.entries(contract.backendContract.entities).map(([name, data]) => ({
+    const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
+      name: ent.name,
+      tabName: ent.tabName,
+      tableName: ent.tableName,
+      javaQualifier: ent.entityFullClass ?? null,
+    }));
+    const desiredEntities = new Map(
+      schemaEntities
+        .filter((ent) => ent.tabName || ent.tableName)
+        .map((ent) => [ent.tabName || ent.tableName, ent]),
+    );
+
+    if (contract.backendContract?.entities) {
+      for (const [name, data] of Object.entries(contract.backendContract.entities)) {
+        const schemaFallback = schemaEntities.find((ent) =>
+          ent.name === name
+          || (data.tabName && ent.tabName === data.tabName)
+          || (data.tableName && ent.tableName === data.tableName)
+        );
+        const tabOrTableKey = data.tabName || schemaFallback?.tabName || data.tableName || schemaFallback?.tableName;
+        if (!tabOrTableKey) continue;
+        desiredEntities.set(tabOrTableKey, {
           name,
-          tabName: data.tabName,
-          tableName: data.tableName,
-          javaQualifier: data.javaQualifier,
-        }))
-      : (schemaRawData.entities || []);
-    if (contractEntities.length > 0) {
-      for (const ent of contractEntities) {
+          tabName: data.tabName || schemaFallback?.tabName || null,
+          tableName: data.tableName || schemaFallback?.tableName || null,
+          javaQualifier: data.javaQualifier ?? schemaFallback?.javaQualifier ?? null,
+        });
+      }
+    }
+
+    if (desiredEntities.size > 0) {
+      for (const ent of desiredEntities.values()) {
         const entityId = (ent.tabName && entityMapByName[ent.tabName])
           || (ent.tableName && entityMapByTableName[ent.tableName]);
         if (entityId) {
@@ -344,6 +371,7 @@ export async function pushToNeo(windowName, options = {}) {
             'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
             [ent.name, ent.javaQualifier ?? null, entityId],
           );
+          entityMapByName[ent.name] = entityId;
         }
       }
       console.log('       Entity names updated to contract names');
@@ -736,11 +764,13 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const isReport = args.includes('--type') && args[args.indexOf('--type') + 1] === 'report';
+  const overrideWindowArg = args.find(a => a.startsWith('--override-window='));
+  const overrideWindow = overrideWindowArg ? overrideWindowArg.split('=')[1] : null;
   const name = args.find(a => !a.startsWith('--') && a !== 'report');
 
   if (!name) {
     console.error('Usage:');
-    console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run]');
+    console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run] [--override-window=123]');
     console.error('  node cli/src/push-to-neo.js <reportName> --type report [--dry-run]');
     console.error('');
     console.error('Examples:');
@@ -755,7 +785,7 @@ async function main() {
     if (isReport) {
       result = await pushReportToNeo(name, { dryRun });
     } else {
-      result = await pushToNeo(name, { dryRun });
+      result = await pushToNeo(name, { dryRun, overrideWindow });
     }
     if (!dryRun) {
       console.log('\nResult:', JSON.stringify(result, null, 2));

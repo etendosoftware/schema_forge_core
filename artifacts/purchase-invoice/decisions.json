@@ -4,7 +4,14 @@
     "category": "purchases",
     "name": "Purchase Invoice",
     "relatedDocuments": true,
-    "notesField": "description"
+    "notesField": "description",
+    "processOverrides": {},
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "Confirm"
+    }
   },
   "entities": {
     "header": {
@@ -60,19 +67,25 @@
           "readOnlyLogic": null
         },
         "paymentTerms": {
-          "section": "other",
-          "form": false,
+          "section": "principal",
           "grid": true,
+          "reference": "PaymentTerm",
+          "inputMode": "selector",
           "readOnlyLogic": null
         },
         "paymentMethod": {
-          "section": "collapsed",
+          "section": "principal",
           "reference": "PaymentMethod",
           "readOnlyLogic": null
         },
+        "cashVAT": {
+          "visibility": "discarded"
+        },
         "priceList": {
           "section": "collapsed",
-          "readOnlyLogic": null
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
           "section": "collapsed",
@@ -206,6 +219,7 @@
         },
         "documentAction": {
           "visibility": "discarded",
+          "form": false,
           "displayLogic": null
         },
         "createLinesFromOrder": {
@@ -262,9 +276,7 @@
     "lines": {
       "fields": {
         "lineNo": {
-          "grid": true,
-          "form": false,
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "product": {
           "grid": true,
@@ -292,10 +304,7 @@
           "displayLogic": null
         },
         "operativeUOM": {
-          "form": false,
-          "inputMode": "selector",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "discarded"
         },
         "invoicedQuantity": {
           "grid": true,
@@ -303,8 +312,7 @@
           "readOnlyLogic": null
         },
         "uOM": {
-          "form": false,
-          "readOnlyLogic": null
+          "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
@@ -373,13 +381,14 @@
           "displayLogic": null
         },
         "grossUnitPrice": {
-          "visibility": "discarded",
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossAmount": {
-          "visibility": "discarded",
-          "displayLogic": null
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false
         },
         "grossListPrice": {
           "visibility": "discarded",

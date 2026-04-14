@@ -34,12 +34,7 @@ const processes = [
 // @sf-generated-end processes:quotation
 
 // @sf-generated-start draftMode:quotation
-const draftMode = {
-  "enabled": true,
-  "processField": "documentAction",
-  "processValue": "CO",
-  "label": "Confirmar"
-};
+const draftMode = null;
 // @sf-generated-end draftMode:quotation
 
 // @sf-generated-start addLineFields:quotationLine
@@ -111,6 +106,14 @@ const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/sales-quotation/quotation/selectors/partnerAddress"
+    },
+    {
+      "entity": "quotation",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
     },
     {
       "entity": "quotation",
@@ -325,6 +328,17 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "C_BPartner_ID": "Contacto"
+    },
+    "en_US": {
+      "C_BPartner_ID": "Contact"
+    }
   }
 };
 
@@ -353,6 +367,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
@@ -360,7 +375,6 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
-        draftMode={draftMode}
         salesTheme
         {...props}
       />
@@ -375,6 +389,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
       {...props}
     />
   );

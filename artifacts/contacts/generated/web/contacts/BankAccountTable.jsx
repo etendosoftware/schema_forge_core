@@ -13,9 +13,6 @@ const filters = [];
 
 // @sf-generated-start component:BankAccountTable
 export default function BankAccountTable(props) {
-  // @sf-custom-slot hooks:BankAccountTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:BankAccountTable
-
-// @sf-custom-slot section:BankAccountTable-custom

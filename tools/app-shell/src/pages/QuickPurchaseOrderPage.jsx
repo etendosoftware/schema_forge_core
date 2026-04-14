@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { ClipboardList, MoreVertical, TrendingUp, Loader2, ScanBarcode, Search, Mic, Sparkles, Plus, Bell } from 'lucide-react';
 
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import SupplierSelector from './quick-purchase-order/SupplierSelector.jsx';
 import ProductSearchBar from './quick-sales-order/ProductSearchBar.jsx';
 import ProductGrid from './quick-sales-order/ProductGrid.jsx';
@@ -85,7 +85,6 @@ export default function QuickPurchaseOrderPage({ apiBaseUrl }) {
   const [activeTab, setActiveTab] = useState('cart');
   const [showPriority, setShowPriority] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
-  const [showUserContext, setShowUserContext] = useState(false);
 
   // Refs
   const productSearchRef = useRef(null);
@@ -354,8 +353,7 @@ export default function QuickPurchaseOrderPage({ apiBaseUrl }) {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>

@@ -21,6 +21,18 @@ Default value overrides     Cross-entity side effects
 Selector filtering (HQL)    Audit logging
 ```
 
+## Golden Rule
+
+**Never add window-specific logic to generic services.**
+
+`NeoSelectorService`, `NeoDefaultsService`, `NeoCrudHandler`, and `NeoServlet` are shared by every window. Do NOT add `if (entity.equals("..."))` guards there. Any logic specific to one window belongs in a `NeoHandler` bean or a custom UI component.
+
+| Wrong | Right |
+|-------|-------|
+| `if (entity.equals("internalConsumptionLine"))` inside `NeoSelectorService` | `InternalConsumptionLineHandler implements NeoHandler` |
+| Patching `artifacts/*/generated/` files directly | Fix the generator (`cli/src/generate-frontend.js`) |
+| Window-specific JSX in `tools/app-shell/src/components/` | Custom component in `tools/app-shell/src/windows/custom/{window}/` |
+
 ---
 
 ## 1. Configuration-Only Extension Points
@@ -107,10 +119,11 @@ public interface NeoHandler {
 
 ### 2.2 Registration
 
-1. Annotate your class with `@Named("qualifierName")`
-2. Set `JAVA_QUALIFIER = 'qualifierName'` on the ETGO_SF_Entity record
+1. Annotate your class with `@ApplicationScoped` and `@Named("qualifierName")`.
+2. Set `JAVA_QUALIFIER = 'qualifierName'` on the ETGO_SF_Entity record.
 
 ```java
+@ApplicationScoped
 @Named("purchaseOrderHandler")
 public class PurchaseOrderHandler implements NeoHandler { ... }
 ```
@@ -119,7 +132,15 @@ public class PurchaseOrderHandler implements NeoHandler { ... }
 SFUpsertEntity?SpecID=...&TabID=...&JavaQualifier=purchaseOrderHandler
 ```
 
-CDI discovers the handler automatically — no servlet restart needed (just compile + deploy).
+Or in `src-db/database/sourcedata/ETGO_SF_ENTITY.xml`:
+```xml
+<JAVA_QUALIFIER><![CDATA[purchaseOrderHandler]]></JAVA_QUALIFIER>
+```
+
+Discovery: `NeoServlet.lookupHandler()` calls `WeldUtils.getInstances(NeoHandler.class)` and
+matches by `@Named` value — no servlet restart needed (just compile + deploy).
+
+Place handlers in: `src/com/etendoerp/go/schemaforge/handlers/` (one class per window/entity).
 
 ### 2.3 Hook Dispatch Flow
 
@@ -161,6 +182,9 @@ Final response written to client
 | `sfEntity` | SFEntity | The ETGO_SF_Entity config record |
 | `obContext` | OBContext | Current user/role/org/client |
 | `previousResult` | NeoResponse | Set before afterHandle() is called |
+
+| `token` | String | Auth Bearer token |
+| `apiBaseUrl` | String | Base URL for outbound API calls |
 
 **Note:** For sub-endpoints (selector, callout, etc.), `requestBody`, `recordId`, and `queryParams` are not populated in the hook context. The handler receives `endpointType` and `fieldName` for routing; the underlying service handles request parsing.
 

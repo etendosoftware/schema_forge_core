@@ -296,3 +296,28 @@ Legacy override: `make deploy LEGACY_DEPLOY=1 MODULE_WEB={path}`. No Tomcat rest
 
 Project knowledge → this CLAUDE.md or `docs/`. Bugs/issues → `feedback.md`. Per-window → `artifacts/`.
 Auto-memory (NOT committed) only for: GitHub usernames, local paths, personal prefs.
+
+## Extending NEO Headless — NeoHandler Pattern (com.etendoerp.go)
+
+**Never add window-specific logic to generic Java services** (`NeoSelectorService`, `NeoDefaultsService`, `NeoCrudHandler`, `NeoServlet`). Any custom behavior for a specific window must live in a dedicated `NeoHandler` CDI bean.
+
+**How it works:**
+1. Set `Java_Qualifier` on the `ETGO_SF_ENTITY` record (e.g. `"internal-consumption-line"`).
+2. `NeoServlet` reads it and routes through `handleWithHooks(qualifier, context)`.
+3. Discovers handlers via `WeldUtils.getInstances(NeoHandler.class)`, matched by `@Named(qualifier)`.
+
+**Minimal implementation:**
+```java
+@ApplicationScoped
+@Named("internal-consumption-line")   // matches ETGO_SF_ENTITY.Java_Qualifier
+public class InternalConsumptionLineHandler implements NeoHandler {
+    @Override public NeoResponse handle(NeoContext context) { return null; }      // pre-hook
+    @Override public NeoResponse afterHandle(NeoContext context) { return null; } // post-hook
+}
+```
+
+- `handle()` → `null` continues to default CRUD; `NeoResponse` short-circuits.
+- `afterHandle()` → `null` keeps default result; `NeoResponse` replaces it.
+- Place handlers in: `{etendo_root}/modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/handlers/`
+
+Full reference: `docs/neo-headless-extensibility.md`

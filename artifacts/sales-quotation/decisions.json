@@ -11,27 +11,59 @@
     "customComponents": {
       "topbarRight": "QuotationTopbarActions"
     },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact"
+      }
+    },
     "menuActions": [
-      { "key": "duplicate", "label": "Duplicate" },
-      { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" }
+      {
+        "key": "duplicate",
+        "label": "Duplicate"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      }
     ],
     "processOverrides": {
-      "Complete": { "exclude": true },
-      "Convert to Order": { "exclude": true },
-      "Void": { "label": "Void", "style": "destructive", "displayLogicRaw": "@documentStatus@='CO'" },
-      "Reactivate": { "label": "Reactivate", "displayLogicRaw": "@documentStatus@='VO'" }
-    }
+      "Complete": {
+        "exclude": true
+      },
+      "Convert to Order": {
+        "exclude": true
+      },
+      "Void": {
+        "label": "Void",
+        "style": "destructive",
+        "displayLogicRaw": "@documentStatus@='CO'"
+      },
+      "Reactivate": {
+        "label": "Reactivate",
+        "displayLogicRaw": "@documentStatus@='VO'"
+      }
+    },
+    "noHeaderBorder": true
   },
   "entities": {
     "header": {
       "name": "quotation",
+      "draftMode": {
+        "enabled": false
+      },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
           "inputMode": "text",
-          "section": "principal"
+          "section": "principal",
+          "seq": 2
         },
         "businessPartner": {
           "grid": true,
@@ -39,7 +71,8 @@
           "reference": "BusinessPartner",
           "inputMode": "search",
           "displayLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 1
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -54,7 +87,8 @@
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "section": "principal"
+          "section": "principal",
+          "seq": 3
         },
         "validUntil": {
           "grid": true,
@@ -66,7 +100,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "visibility": "system"
+          "section": "collapsed"
         },
         "currency": {
           "visibility": "readOnly",
@@ -99,8 +133,7 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "invoiceAddress": {
           "visibility": "discarded"

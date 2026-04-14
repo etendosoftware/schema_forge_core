@@ -43,9 +43,9 @@ describe('PWA configuration', () => {
     assert.ok(content.includes('duration: Infinity'), 'toast should be persistent');
   });
 
-  it('LoginPage clears caches on login', () => {
-    const loginPath = resolve(APP_SHELL, 'src/auth/LoginPage.jsx');
-    const content = readFileSync(loginPath, 'utf8');
+  it('OnboardingPage clears SW caches on environment login', () => {
+    const onboardingPath = resolve(APP_SHELL, 'src/pages/OnboardingPage.jsx');
+    const content = readFileSync(onboardingPath, 'utf8');
     assert.ok(content.includes('caches.keys()'), 'should enumerate caches');
     assert.ok(content.includes('caches.delete'), 'should delete caches');
   });
