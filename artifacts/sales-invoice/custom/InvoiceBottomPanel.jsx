@@ -39,7 +39,7 @@ export default function InvoiceBottomPanel({
       <div className="flex-1 min-w-0 py-4 px-1 bg-muted/30 rounded-bl-lg">
         {/* DOCS */}
         <div className="flex items-start gap-3 px-3 pb-3">
-          <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-0.5" style={{ letterSpacing: '0.04em' }}>
+          <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-0.5" style={{ letterSpacing: '0.04em' }}>
             {ui('docs')}
           </span>
           <div className="flex-1">
@@ -57,7 +57,7 @@ export default function InvoiceBottomPanel({
         {/* NOTES */}
         {notesField && (
           <div className="flex items-start gap-3 px-3 mt-3 pt-3 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
-            <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-1.5" style={{ letterSpacing: '0.04em' }}>
+            <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-1.5" style={{ letterSpacing: '0.04em' }}>
               {ui('notes')}
             </span>
             <div className="flex-1">

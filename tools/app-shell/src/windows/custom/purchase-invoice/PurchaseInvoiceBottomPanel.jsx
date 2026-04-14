@@ -46,7 +46,7 @@ export default function PurchaseInvoiceBottomPanel({
           {/* DOCS */}
           <div className="flex items-start gap-3 px-3 pb-3">
             <span
-              className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-0.5"
+              className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-0.5"
               style={{ letterSpacing: '0.04em' }}
             >
               {ui('docs')}
@@ -70,7 +70,7 @@ export default function PurchaseInvoiceBottomPanel({
               style={{ borderTopWidth: '0.5px' }}
             >
               <span
-                className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-1.5"
+                className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-1.5"
                 style={{ letterSpacing: '0.04em' }}
               >
                 {ui('notes')}
