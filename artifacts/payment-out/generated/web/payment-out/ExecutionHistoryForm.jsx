@@ -14,9 +14,7 @@ const fields = [
 
 // @sf-generated-start component:ExecutionHistoryForm
 export default function ExecutionHistoryForm(props) {
-  // @sf-custom-slot hooks:ExecutionHistoryForm
   return <EntityForm fields={fields} {...props} />;
 }
+ExecutionHistoryForm.hasCollapsedFields = false;
 // @sf-generated-end component:ExecutionHistoryForm
-
-// @sf-custom-slot section:ExecutionHistoryForm-custom

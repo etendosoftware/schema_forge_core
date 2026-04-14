@@ -1,10 +1,16 @@
+import { Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 
 export default function RelatedDocumentsShell({ loading, children }) {
   const ui = useUI();
 
   if (loading) {
-    return <span className="text-xs text-muted-foreground">{ui('loading')}</span>;
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        {ui('loading')}
+      </span>
+    );
   }
 
   const hasChildren = Array.isArray(children)
