@@ -12,15 +12,21 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
   const [search, setSearch] = useState('');
   const [lineQuantities, setLineQuantities] = useState({});
   const [alreadyImported, setAlreadyImported] = useState({ shipmentLines: new Set(), orderLines: new Set() });
+  const [invoiceHeader, setInvoiceHeader] = useState({});
+  // Map of productId → { product_PSTD, product_PLIST, product_UOM, ... } — auxiliary price
+  // data returned by the product selector. Mirrors what InlineAddRow passes to the callout.
+  const [productAuxMap, setProductAuxMap] = useState({});
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        // Fetch shipments and existing invoice lines in parallel
-        const [shipRes, invLinesRes] = await Promise.all([
+        // Fetch shipments, existing invoice lines, invoice header, and product price aux in parallel
+        const [shipRes, invLinesRes, headerRes, selectorRes] = await Promise.all([
           fetch(`${base}/goods-shipment/goodsShipment?_startRow=0&_endRow=500`, { headers }),
           fetch(`${base}/sales-invoice/lines?parentId=${invoiceId}&_startRow=0&_endRow=200`, { headers }),
+          fetch(`${base}/sales-invoice/header/${invoiceId}`, { headers }),
+          fetch(`${base}/sales-invoice/lines/selectors/M_Product_ID?limit=500&offset=0`, { headers }),
         ]);
 
         // Get IDs of shipment lines and order lines already in this invoice
@@ -29,9 +35,33 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
         if (invLinesRes.ok && !cancelled) {
           const invLines = (await invLinesRes.json())?.response?.data || [];
           invLines.forEach(il => {
-            if (il.goodsShipmentLine) alreadyImportedShipmentLines.add(il.goodsShipmentLine);
-            if (il.salesOrderLine) alreadyImportedOrderLines.add(il.salesOrderLine);
+            if (il.mInoutlineId) alreadyImportedShipmentLines.add(il.mInoutlineId);
+            if (il.cOrderlineId) alreadyImportedOrderLines.add(il.cOrderlineId);
           });
+        }
+
+        if (headerRes.ok && !cancelled) {
+          const hData = (await headerRes.json())?.response?.data?.[0] || {};
+          setInvoiceHeader(hData);
+        }
+
+        // Build product → aux map from selector response.
+        // The selector returns { items: [{ id, label, _aux: { _PSTD, _PLIST, _UOM, _CURR, _PLIM } }] }
+        // These become product_PSTD, product_PLIST, etc. in the callout formState — same as
+        // what InlineAddRow injects from selectedItem._aux when a product is picked manually.
+        if (selectorRes.ok && !cancelled) {
+          const selData = await selectorRes.json();
+          const auxMap = {};
+          for (const item of (selData?.items || [])) {
+            if (item.id && item._aux) {
+              const aux = {};
+              for (const [suffix, val] of Object.entries(item._aux)) {
+                aux[`product${suffix}`] = val; // "_PSTD" → "product_PSTD"
+              }
+              auxMap[item.id] = aux;
+            }
+          }
+          setProductAuxMap(auxMap);
         }
 
         if (shipRes.ok && !cancelled) {
@@ -39,7 +69,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
           setShipments(all.filter(s =>
             s.documentStatus === 'CO'
             && s.businessPartner === bpId
-            && s.completelyInvoiced !== true
+            && s.invoiced !== true
           ));
           setAlreadyImported({ shipmentLines: alreadyImportedShipmentLines, orderLines: alreadyImportedOrderLines });
         }
@@ -57,6 +87,89 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
     return shipments.filter(s => (s.documentNo || '').toLowerCase().includes(q));
   }, [shipments, search]);
 
+  /**
+   * Resolves unitPrice, tax, uOM, and lineNetAmount for a product via the same
+   * callout mechanism used by manual line entry (SL_Invoice_Product + SL_Invoice_Amt cascade).
+   *
+   * auxData: product_PSTD, product_PLIST, etc. from the product selector — required so the
+   * callout can look up the price. Without these, grossUnitPrice returns 0.
+   */
+  const resolveLinePrice = async (productId, qty, currentHeader, auxData = {}) => {
+    const formState = {
+      ...currentHeader,
+      ...auxData,        // product_PSTD, product_PLIST, product_UOM, product_CURR, product_PLIM
+      product: productId,
+      invoicedQuantity: qty || 1,
+    };
+    try {
+      // Extract auxiliaryValues (e.g. product_PSTD, product_UOM) — DetailView.jsx passes these
+      // as a separate top-level field in the callout payload, which the backend uses specifically
+      // to resolve the price. Without this the callout returns grossUnitPrice=0.
+      const auxiliaryValues = {};
+      for (const [k, v] of Object.entries(formState)) {
+        if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(k) && v != null && v !== '') {
+          auxiliaryValues[k] = String(v);
+        }
+      }
+
+      // First callout: "product" field → SL_Invoice_Product (resolves grossUnitPrice/unitPrice, tax, uOM).
+      // Field must be "product" (API key), not "M_Product_ID" — same as what InlineAddRow sends.
+      const res = await fetch(`${base}/sales-invoice/lines/callout`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          field: 'product', value: productId, formState,
+          ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+        }),
+      });
+      if (!res.ok) return {};
+      const data = await res.json();
+      const result = {};
+      if (data.updates) {
+        for (const [k, entry] of Object.entries(data.updates)) result[k] = entry.value;
+      }
+      if (data.combos) {
+        for (const [k, combo] of Object.entries(data.combos)) {
+          if (combo.selected != null) result[k] = combo.selected;
+        }
+      }
+
+      // Mirror DetailView.jsx: grossUnitPrice is the gross price for tax-included price lists;
+      // unitPrice starts as 0 and is derived by the cascade. Fall back to grossUnitPrice when
+      // unitPrice is 0 so the cascade has a non-zero value to work with.
+      let unitPrice = Number(result.unitPrice) || Number(result.grossUnitPrice) || 0;
+      if (unitPrice) result.unitPrice = unitPrice;
+
+      // Cascade: PriceActual → SL_Invoice_Amt (computes lineNetAmount = unitPrice * qty)
+      if (unitPrice) {
+        // Use the actual import qty so lineNetAmount is calculated for the right quantity.
+        // result may contain invoicedQuantity:0 from the first callout — override it.
+        const cascadeState = { ...formState, ...result, invoicedQuantity: qty || 1 };
+        const cascadeRes = await fetch(`${base}/sales-invoice/lines/callout`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ field: 'PriceActual', value: String(unitPrice), formState: cascadeState }),
+        });
+        if (cascadeRes.ok) {
+          const cascadeData = await cascadeRes.json();
+          if (cascadeData.updates) {
+            for (const [k, entry] of Object.entries(cascadeData.updates)) {
+              result[k] = entry.value;
+            }
+          }
+          if (cascadeData.combos) {
+            for (const [k, combo] of Object.entries(cascadeData.combos)) {
+              if (combo.selected != null && !(k in result)) result[k] = combo.selected;
+            }
+          }
+        }
+      }
+      return result;
+    } catch {
+      return {};
+    }
+  };
+
   const fetchLines = async (shipmentId) => {
     if (shipmentLines[shipmentId] || loadingLines.has(shipmentId)) return;
     setLoadingLines(prev => { const n = new Set(prev); n.add(shipmentId); return n; });
@@ -66,25 +179,22 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
         const json = await res.json();
         const lines = json?.response?.data || [];
 
-        const shipment = shipments.find(s => s.id === shipmentId);
-        const orderId = shipment?.salesOrder;
-        let orderLineMap = {};
-        if (orderId) {
-          try {
-            const olRes = await fetch(`${base}/sales-order/lines?parentId=${orderId}&_startRow=0&_endRow=200`, { headers });
-            if (olRes.ok) {
-              const olJson = await olRes.json();
-              const orderLines = olJson?.response?.data || [];
-              orderLines.forEach(ol => { orderLineMap[ol.id] = ol; });
-            }
-          } catch { /* silent */ }
-        }
-
-        const enrichedLines = lines.map(l => {
-          const ol = orderLineMap[l.salesOrderLine] || {};
-          const imported = (alreadyImported.shipmentLines || alreadyImported).has?.(l.id) || (alreadyImported.orderLines?.has(l.salesOrderLine));
-          return { ...l, _unitPrice: Number(ol.unitPrice ?? ol.priceActual ?? 0), _lineNetAmount: Number(ol.lineNetAmount ?? 0), _alreadyImported: !!imported };
-        });
+        // Resolve price for each line via callout (same mechanism as manual line entry)
+        const currentHeader = invoiceHeader;
+        const currentAuxMap = productAuxMap;
+        const enrichedLines = await Promise.all(lines.map(async (l) => {
+          const imported = alreadyImported.shipmentLines?.has(l.id) || alreadyImported.orderLines?.has(l.salesOrderLine); // l.id = goodsShipmentLine id; l.salesOrderLine from goods-shipment contract (apiKey: "salesOrderLine")
+          const qty = Number(l.movementQuantity) || 1;
+          const priceData = l.product ? await resolveLinePrice(l.product, qty, currentHeader, currentAuxMap[l.product] || {}) : {};
+          return {
+            ...l,
+            _unitPrice: Number(priceData.unitPrice) || Number(priceData.grossUnitPrice) || 0,
+            _lineNetAmount: Number(priceData.lineNetAmount ?? 0),
+            _tax: priceData.tax || null,
+            _uOM: priceData.uOM || l.uOM || null,
+            _alreadyImported: !!imported,
+          };
+        }));
 
         setShipmentLines(prev => ({ ...prev, [shipmentId]: enrichedLines }));
         const qtyDefaults = {};
@@ -139,39 +249,44 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
     try {
       let lineNo = 10;
       let errors = 0;
+      const currentHeader = invoiceHeader;
+
       for (const shipment of shipments) {
         const lines = (shipmentLines[shipment.id] || []).filter(l => selected.has(l.id));
         if (lines.length === 0) continue;
 
-        // Fetch order line prices for this shipment
-        const orderLineMap = {};
-        if (shipment.salesOrder) {
-          try {
-            const olRes = await fetch(`${base}/sales-order/lines?parentId=${shipment.salesOrder}&_startRow=0&_endRow=200`, { headers });
-            if (olRes.ok) {
-              ((await olRes.json())?.response?.data || []).forEach(ol => { orderLineMap[ol.id] = ol; });
-            }
-          } catch { /* silent */ }
-        }
-
         for (const line of lines) {
-          const ol = orderLineMap[line.salesOrderLine] || {};
           const qty = lineQuantities[line.id] ?? (Number(line.movementQuantity) || 0);
+
+          // Resolve price via callout with the actual quantity being imported.
+          // This mirrors what happens when a line is added manually: SL_Invoice_Product
+          // sets the unit price from the price list, and SL_Invoice_Amt computes lineNetAmount.
+          const priceData = await resolveLinePrice(line.product, qty, currentHeader, productAuxMap[line.product] || {});
+          const grossUnitPrice = Number(priceData.grossUnitPrice) || 0;
+          const unitPrice = Number(priceData.unitPrice) || grossUnitPrice || Number(line._unitPrice) || 0;
+          const lineNetAmount = Number(priceData.lineNetAmount) || qty * unitPrice;
+          const tax = priceData.tax || line._tax || null;
+          const uOM = priceData.uOM || line._uOM || line.uOM || null;
+
           const lineBody = {
             parentId: invoiceId,
             product: line.product,
             invoicedQuantity: qty,
-            unitPrice: Number(ol.unitPrice) || 0,
-            tax: ol.tax || null,
-            uOM: line.uOM || ol.uOM || null,
+            unitPrice,
+            // For tax-included price lists (GROSSPRICE='Y'), the server derives unitPrice and
+            // lineNetAmount from grossUnitPrice. Sending it ensures correct calculation even when
+            // the server's own callout would otherwise reset unitPrice to 0.
+            ...(grossUnitPrice ? { grossUnitPrice } : {}),
+            lineNetAmount,
+            tax,
+            uOM,
             lineNo,
-            goodsShipmentLine: line.id,
-            salesOrderLine: line.salesOrderLine || null,
+            mInoutlineId: line.id,         // sales-invoice lines contract: apiKey "mInoutlineId" (M_InOutLine_ID)
+            cOrderlineId: line.salesOrderLine || null, // sales-invoice lines contract: apiKey "cOrderlineId"; value from goods-shipment line field "salesOrderLine"
           };
           const res = await fetch(`${base}/sales-invoice/lines`, {
             method: 'POST', headers, body: JSON.stringify(lineBody),
           });
-          const resJson = await res.json().catch(() => null);
           if (!res.ok) errors++;
           lineNo += 10;
         }
@@ -322,10 +437,10 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
                                   />
                                 </span>
                                 <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
-                                  {unitPrice != null ? fmtNum(unitPrice) : '-'}
+                                  {unitPrice ? fmtNum(unitPrice) : '-'}
                                 </span>
                                 <span style={{ width: 80, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
-                                  {lineTotal != null ? fmtNum(lineTotal) : '-'}
+                                  {lineTotal ? fmtNum(lineTotal) : '-'}
                                 </span>
                               </div>
                             );

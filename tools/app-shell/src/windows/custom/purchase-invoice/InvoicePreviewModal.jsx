@@ -191,7 +191,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
             {/* Left: title + doc actions */}
             <div className="flex items-center gap-3">
               <span className="font-semibold text-gray-900 text-base">
-                {tMenu('Purchase Invoice')} {invoice.documentNo}
+                {tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')} {invoice.documentNo}
               </span>
               <button
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

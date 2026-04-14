@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
@@ -109,8 +109,10 @@ export function DetailView({
   menuActions = [],
   hideDeleteWhenComplete = false,
   hidePrint = false,
+  hideSaveStatuses = [],
   hideMoreMenu = false,
   hideMoreDetails = false,
+  noHeaderBorder = false,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -128,6 +130,7 @@ export function DetailView({
   primaryTabs = null,
   contentBg = 'bg-white',
   lockWhenProcessed = true,
+  addLineGuard = null,
   onAfterSave,
   onAfterCreate,
 }) {
@@ -142,11 +145,35 @@ export function DetailView({
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
   const selectorContextByEntity = useMemo(() => {
-    if (!parentRecordId) return {};
+    const headerData = hook.editing || hook.selected;
+    const priceListId = headerData?.priceList ?? null;
+
+    // Derive isSOTrx from window category so NEO's validation filter resolves
+    // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
+    // purchase price lists depending on the document type.
+    const category = api?.window?.category;
+    const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
+
+    // Derive isCustomer/isVendor from window category so the BusinessPartner selector
+    // shows only customers (sales) or vendors (purchases).
+    const isCustomer = category === 'sales' ? 'Y' : null;
+    const isVendor = category === 'purchases' ? 'Y' : null;
 
     const next = {};
+    // Primary entity (header): inject isSOTrx, isCustomer, isVendor
+    if (entity) {
+      next[entity] = {
+        ...(isSOTrx ? { isSOTrx } : {}),
+        ...(isCustomer ? { isCustomer } : {}),
+        ...(isVendor ? { isVendor } : {}),
+      };
+    }
+    if (!parentRecordId) return next;
     if (detailEntity) {
-      next[detailEntity] = { parentId: parentRecordId };
+      next[detailEntity] = {
+        parentId: parentRecordId,
+        ...(priceListId ? { priceList: priceListId } : {}),
+      };
     }
     for (const tab of secondaryTabs) {
       if (tab?.key) {
@@ -154,11 +181,12 @@ export function DetailView({
       }
     }
     return next;
-  }, [detailEntity, parentRecordId, secondaryTabs]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabs, hook.editing, hook.selected, api]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
@@ -212,6 +240,7 @@ export function DetailView({
   const [secondaryLineEditColumns, setSecondaryLineEditColumns] = useState({});
   const [savingSecondaryLine, setSavingSecondaryLine] = useState(false);
   const [isClosingSecondaryLine, setIsClosingSecondaryLine] = useState(false);
+  const [secondaryDeleteConfirm, setSecondaryDeleteConfirm] = useState(null);
 
   const extractErrorMessage = useCallback(async (res) => {
     try {
@@ -251,11 +280,30 @@ export function DetailView({
     }
   }, [isNew, hook.editing, hook.handleNew]);
 
-  // Resolve $_identifier for default FK values that came from the backend /defaults.
-  // Backend handles auto-picking the first option for MANDATORY FK combos
-  // (see NeoDefaultsService.tryInjectFirstFromLookup). The frontend no longer
-  // auto-selects first option — that was forcing non-mandatory FKs like uOMForWeight
-  // to get populated even when Classic leaves them blank.
+  // Auto-open add-line form after header auto-save navigation (openAddLine flag in route state).
+  useEffect(() => {
+    if (!location.state?.openAddLine || isNew || !hook.editing) return;
+    setAddingLine(true);
+    setEditingChild(null);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openAddLine, isNew, hook.editing, navigate]);
+
+  // Save header first (if new), then open add-line form.
+  const handleAddLineClick = useCallback(async () => {
+    if (isNew) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return;
+      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { openAddLine: true } });
+      return;
+    }
+    setAddingLine(prev => !prev);
+    setEditingChild(null);
+  }, [isNew, hook.handleSave, navigate, windowName]);
+
+  // Resolve $_identifier for default FK values.
+  // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
+  // The frontend only ensures that if a value exists (from a default or callout),
+  // we resolve its $_identifier from the catalogs so it displays correctly.
   useEffect(() => {
     if (!isNew || !hook.editing || !catalogsLoaded || !api?.selectors) return;
     for (const sel of api.selectors) {
@@ -456,12 +504,49 @@ export function DetailView({
         const hint = rowValues[field + '_' + key];
         if (hint && typeof hint === 'string') result[key + '$_identifier'] = hint;
       }
-      // Tax-included price lists: SL_Order_Product sets grossUnitPrice; SL_Order_Amt cascades
-      // to derive unitPrice (net). If unitPrice is still null or 0 after the cascade (e.g.,
-      // cascade ran with qty=0 and computed 0, or cascade did not run), fall back to showing
-      // grossUnitPrice so the user sees a price rather than nothing.
+      // Tax-included price lists: SL_Order_Product sets grossUnitPrice (price with tax) but
+      // omits netUnitPrice (net price). Fetch the real tax rate from the Etendo DAL REST API
+      // so the backend receives a valid netUnitPrice instead of null/0 at save time.
+      if (result.grossUnitPrice != null && result.netUnitPrice == null) {
+        const taxId = result.tax;
+        let taxRate = 0;
+        if (taxId) {
+          try {
+            // Derive Etendo context path from the current URL (same logic as detectBaseUrl in auth/api.js)
+            const path = window.location.pathname;
+            const webIdx = path.indexOf('/web/');
+            const etendoBase = webIdx !== -1
+              ? path.substring(0, webIdx)
+              : (import.meta.env.VITE_API_BASE || '');
+            const dalUrl = `${etendoBase}/openapi/dal/C_Tax/${taxId}?_selectedProperties=rate`;
+            const res = await fetch(dalUrl, {
+              credentials: 'include',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              taxRate = parseFloat(data.rate ?? 0);
+            }
+          } catch {
+            taxRate = 0;
+          }
+        }
+        const gross = Number(result.grossUnitPrice);
+        result.netUnitPrice = taxRate > 0
+          ? parseFloat((gross / (1 + taxRate / 100)).toFixed(6))
+          : gross;
+        console.log('[PRICE FIX] derived netUnitPrice from grossUnitPrice',
+          { gross, taxRate, net: result.netUnitPrice, taxId });
+      }
+      // Show the net price to the user; fall back to gross only if net is still unavailable.
       if (result.grossUnitPrice != null && !result.unitPrice) {
-        result.unitPrice = result.grossUnitPrice;
+        result.unitPrice = result.netUnitPrice ?? result.grossUnitPrice;
+      }
+      // SL_Invoice_Product / SL_Order_Product callouts reset quantity fields to 0 as a
+      // classic Etendo "clear-for-entry" signal. Discard any qty=0 update when the row
+      // already has a positive value so the user's default (or entered) quantity is kept.
+      for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
+        if (result[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete result[qtyKey];
       }
       if (Object.keys(result).length > 0) applyUpdates?.(result);
 
@@ -473,6 +558,7 @@ export function DetailView({
       const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
       // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
       const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
+      console.log('[CASCADE check]', { priceUpdated, amountNotComputed, lineNetAmount: result.lineNetAmount, unitPrice: result.unitPrice, grossUnitPrice: result.grossUnitPrice });
       if (priceUpdated && amountNotComputed) {
         try {
           const cascadePrice = result.unitPrice ?? result.grossUnitPrice;
@@ -512,6 +598,10 @@ export function DetailView({
                 if (combo.selected != null) cascadeResult[k] = combo.selected;
               }
             }
+            // Same guard: don't let the cascade zero out a quantity the user already set.
+            for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
+              if (cascadeResult[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete cascadeResult[qtyKey];
+            }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }
         } catch {
@@ -524,6 +614,9 @@ export function DetailView({
   }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields]);
 
   const data = hook.editing || currentItem || {};
+  // Guard that controls whether "+ Add Lines" is shown.
+  // When addLineGuard is provided, it receives the current record data and must return true to allow.
+  const canAddLines = addLineGuard ? addLineGuard(data) : true;
   const title = isNew
     ? ui('newRecord')
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
@@ -816,7 +909,7 @@ export function DetailView({
                 );
               })}
 
-            {draftMode?.enabled ? (
+            {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                   const saved = await hook.handleSave(data);
@@ -825,6 +918,7 @@ export function DetailView({
                   <Save className="h-3.5 w-3.5" />
                   {ui('saveDraft')}
                 </Button>
+                {!isProcessed && hook.children.length > 0 && (
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved) {
@@ -837,8 +931,9 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  {ui('save')} &amp; {draftMode.label || ui('process')}
+                  {ui('saveAndProcess', { action: tMenu(draftMode.label) || ui('process') })}
                 </Button>
+                )}
               </>
             ) : (
               <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
@@ -855,7 +950,7 @@ export function DetailView({
                 <Check className="h-3.5 w-3.5" />
                 {ui('save')}
               </Button>
-            )}
+            ))}
           </div>
         </div>
         )}
@@ -868,10 +963,10 @@ export function DetailView({
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
                   activePrimaryTab === tab.key
-                    ? 'bg-white border border-gray-200 shadow-sm text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
+                    ? 'bg-white border-gray-200 shadow-sm text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
                 {tMenu(tab.label)}
@@ -899,7 +994,7 @@ export function DetailView({
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-3`}>
             {/* Principal + collapsed fields wrapped in a card */}
-            <div className={`rounded-2xl border border-gray-200/70 bg-white shadow-sm overflow-hidden${embedded ? ' pointer-events-none' : ''}`}>
+            <div className={`overflow-hidden${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className="p-6">
                 <Form
                   entity={entity}
@@ -912,6 +1007,7 @@ export function DetailView({
                   api={api}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
+                  selectorContext={selectorContextByEntity[entity]}
                 />
               </div>
 
@@ -931,6 +1027,7 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      selectorContext={selectorContextByEntity[entity]}
                     />
                   </div>
                 </CollapsibleSection>
@@ -939,8 +1036,8 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className={embedded ? 'pointer-events-none' : ''}>
-                {React.createElement(formFooter, { data, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
+              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
+                {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
 
@@ -980,7 +1077,8 @@ export function DetailView({
                   hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
                     <LinesEmptyState
                       data={data}
-                      onAddLine={() => { setAddingLine(true); setEditingChild(null); }}
+                      onAddLine={handleAddLineClick}
+                      canAddLine={canAddLines}
                       recordId={data?.id || recordId}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
@@ -1007,7 +1105,9 @@ export function DetailView({
                             // Also include hidden entry defaults (e.g., fields with predefined values).
                             for (const hiddenField of hiddenEntryDefaults) {
                               if (!(hiddenField.key in lineData)) {
-                                lineData[hiddenField.key] = hiddenField.value;
+                                lineData[hiddenField.key] = hiddenField.fromParent
+                                  ? _headerData?.[hiddenField.fromParent]
+                                  : hiddenField.value;
                               }
                             }
                             return hook.handleAddChild?.(lineData);
@@ -1091,11 +1191,11 @@ export function DetailView({
                         </div>
                       )}
 
-                      {hook.editing && !isDocumentReadOnly && ((!isNew && allEntryFields.length > 0) || DetailExtraActions) && (
+                      {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
-                          {allEntryFields.length > 0 && !isNew && (
+                          {allEntryFields.length > 0 && (
                             <button
-                              onClick={() => { setAddingLine(!addingLine); setEditingChild(null); }}
+                              onClick={handleAddLineClick}
                               style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
                             >
                               {ui('addEntity', { label: tMenu(detailLabel || 'Lines') })}
@@ -1105,9 +1205,6 @@ export function DetailView({
                             <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
                           )}
                         </div>
-                      )}
-                      {allEntryFields.length > 0 && isNew && (
-                        <p className="text-xs text-muted-foreground mt-3">{ui('saveHeaderFirst')}</p>
                       )}
                     </div>
 
@@ -1150,14 +1247,15 @@ export function DetailView({
                                       const fieldValues = {};
                                       for (const [k, v] of Object.entries(lineEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
-                                        const colName = lineEditColumns[k] || k;
+                                        // NEO Headless PATCH expects camelCase API keys, not DB column names.
+                                        // Always use k (the API key) as the field name.
                                         // Convert numeric strings to numbers for BigDecimal compatibility.
                                         // Only strip when the value is already in standard format (no commas).
                                         // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
                                         if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                          fieldValues[colName] = parseFloat(v);
+                                          fieldValues[k] = parseFloat(v);
                                         } else {
-                                          fieldValues[colName] = v;
+                                          fieldValues[k] = v;
                                         }
                                       }
                                       const res = await fetch(childUrl, {
@@ -1323,6 +1421,7 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
+                          excludeFields={st.key === 'contact' ? ['active'] : []}
                         />
                         {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
                           <div className="flex gap-2 mt-4">
@@ -1337,14 +1436,15 @@ export function DetailView({
                                       const fieldValues = {};
                                       for (const [k, v] of Object.entries(secondaryLineEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
-                                        const colName = secondaryLineEditColumns[k] || k;
+                                        // NEO Headless PATCH expects camelCase API keys, not DB column names.
+                                        // Always use k (the API key) as the field name.
                                         // Convert numeric strings to numbers for BigDecimal compatibility.
                                         // Only strip when the value is already in standard format (no commas).
                                         // Comma removal is skipped to avoid locale corruption (e.g. Spanish "10,50" = 10.5).
                                         if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) {
-                                          fieldValues[colName] = parseFloat(v);
+                                          fieldValues[k] = parseFloat(v);
                                         } else {
-                                          fieldValues[colName] = v;
+                                          fieldValues[k] = v;
                                         }
                                       }
                                       const res = await fetch(secUrl, {
@@ -1379,26 +1479,11 @@ export function DetailView({
                             {(api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
                               <button
                                 disabled={savingSecondaryLine}
-                                onClick={async () => {
-                                  if (!window.confirm(ui('deleteConfirmMessage'))) return;
-                                  setSavingSecondaryLine(true);
-                                  try {
-                                    const secUrl = `${apiBaseUrl}/${st.key}/${selectedSecondaryLine.id}`;
-                                    const res = await fetch(secUrl, {
-                                      method: 'DELETE',
-                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                    });
-                                    if (res.ok) {
-                                      secondaryHooks[stIdx]?.handleDeleteChild(selectedSecondaryLine.id);
-                                      toast.success('Record deleted');
-                                      closeSecondaryLine();
-                                    } else {
-                                      toast.error(await extractErrorMessage(res));
-                                    }
-                                  } catch (err) {
-                                    toast.error(err.message || 'Network error');
-                                  } finally { setSavingSecondaryLine(false); }
-                                }}
+                                onClick={() => setSecondaryDeleteConfirm({
+                                  tabKey: st.key,
+                                  tabIndex: stIdx,
+                                  id: selectedSecondaryLine.id,
+                                })}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 ml-auto"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -1437,6 +1522,7 @@ export function DetailView({
                       api={api}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
+                      selectorContext={selectorContextByEntity[entity]}
                     />
                   </div>
                 )}
@@ -1631,6 +1717,50 @@ export function DetailView({
                 setShowDeleteConfirm(false);
                 await hook.handleDelete();
                 navigate(`/${windowName}`);
+              }}
+            >
+              {ui('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={Boolean(secondaryDeleteConfirm)} onOpenChange={(open) => { if (!open) setSecondaryDeleteConfirm(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription>
+              {ui('deleteConfirmMessage')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" size="sm">{ui('cancel')}</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={async () => {
+                if (!secondaryDeleteConfirm) return;
+                setSavingSecondaryLine(true);
+                try {
+                  const secUrl = `${apiBaseUrl}/${secondaryDeleteConfirm.tabKey}/${secondaryDeleteConfirm.id}`;
+                  const res = await fetch(secUrl, {
+                    method: 'DELETE',
+                    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                  });
+                  if (res.ok) {
+                    secondaryHooks[secondaryDeleteConfirm.tabIndex]?.handleDeleteChild(secondaryDeleteConfirm.id);
+                    toast.success('Record deleted');
+                    setSecondaryDeleteConfirm(null);
+                    closeSecondaryLine();
+                  } else {
+                    toast.error(await extractErrorMessage(res));
+                  }
+                } catch (err) {
+                  toast.error(err.message || 'Network error');
+                } finally {
+                  setSavingSecondaryLine(false);
+                }
               }}
             >
               {ui('delete')}

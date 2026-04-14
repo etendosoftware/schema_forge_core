@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUI } from '@/i18n';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -78,6 +79,7 @@ export function PaymentRegisterForm({
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const ui = useUI();
 
   useEffect(() => {
     (async () => {
@@ -141,29 +143,29 @@ export function PaymentRegisterForm({
     <div style={{ marginTop: 4, marginBottom: 4, border: '0.5px solid #E5E7EB', borderRadius: 8, padding: 12, background: '#FAFBFC' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
-          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Date</label>
+          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentDate')}</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
             style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Amount ({currency})</label>
+          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentAmount')} ({currency})</label>
           <input type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(Number(e.target.value))} className="text-sm tabular-nums"
             style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#92400e', marginTop: 6 }}>
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-        Outstanding: {fmt(outstanding, currency)}
+        {ui('outstandingLabel')}: {fmt(outstanding, currency)}
       </div>
-      {amountExceeded && <div style={{ fontSize: 10, color: '#dc2626', marginTop: 3 }}>Amount exceeds outstanding</div>}
+      {amountExceeded && <div style={{ fontSize: 10, color: '#dc2626', marginTop: 3 }}>{ui('amountExceedsOutstanding')}</div>}
       <div style={{ marginTop: 8 }}>
-        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Account</label>
+        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentAccount')}</label>
         {loadingAccounts ? (
-          <div style={{ fontSize: 12, color: '#9ca3af', padding: '6px 10px' }}>Loading...</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', padding: '6px 10px' }}>{ui('loading')}</div>
         ) : (
           <Select value={accountId} onValueChange={setAccountId} required>
             <SelectTrigger className="focus:ring-2 focus:ring-primary" style={{ height: 32, fontSize: 13 }}>
-              <SelectValue placeholder="Select account..." />
+              <SelectValue placeholder={ui('selectAccount')} />
             </SelectTrigger>
             <SelectContent>
               {accounts.map(acc => (<SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>))}
@@ -175,11 +177,11 @@ export function PaymentRegisterForm({
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
         <button type="button" onClick={onCancel}
           style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>
-          Cancel
+          {ui('cancel')}
         </button>
         <button type="button" onClick={handleSubmit} disabled={saving || amountExceeded}
           style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded) ? 'not-allowed' : 'pointer', opacity: (saving || amountExceeded) ? 0.4 : 1 }}>
-          {saving ? 'Processing...' : 'Confirm payment'}
+          {saving ? ui('processing') : ui('confirmPayment')}
         </button>
       </div>
     </div>
@@ -210,6 +212,7 @@ export default function InvoicePaymentModal({
   apiBaseUrl,
   onClose,
 }) {
+  const ui = useUI();
   // Strip the spec name suffix to get the API root (e.g. http://host/sws/neo)
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
 
@@ -278,8 +281,7 @@ export default function InvoicePaymentModal({
 
   const navToPayment = (id) => {
     const prefix = paymentPrefix(specName);
-    const bp = window.location.pathname.replace(new RegExp(`\\/${specName}\\/.*$`), '');
-    window.location.href = `${bp}/${prefix}/${id}`;
+    window.location.href = `/${prefix}/${id}`;
   };
 
   const handlePaymentSuccess = (paymentData, accountName, scheduleId) => {
@@ -318,8 +320,8 @@ export default function InvoicePaymentModal({
         <div style={{ padding: '12px 14px', borderBottom: '1px solid #E5E7EB' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>Invoice #{docNo}</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>Payments</div>
+              <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{ui('invoiceNumber')}{docNo}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{ui('payments')}</div>
             </div>
             <button
               type="button"
@@ -337,10 +339,10 @@ export default function InvoicePaymentModal({
             {fmt(localTotal || grandTotal, currency)}
           </div>
           <div style={{ fontSize: 12, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ color: '#10b981' }}>Paid {fmt(localPaid, currency)}</span>
+            <span style={{ color: '#10b981' }}>{ui('paidAmount')} {fmt(localPaid, currency)}</span>
             <span style={{ color: '#9ca3af' }}>&middot;</span>
             <span style={{ color: localOutstanding > 0 ? '#f59e0b' : '#9ca3af' }}>
-              Outstanding {fmt(localOutstanding, currency)}
+              {ui('outstandingLabel')} {fmt(localOutstanding, currency)}
             </span>
           </div>
         </div>
@@ -348,7 +350,7 @@ export default function InvoicePaymentModal({
         {/* Scrollable content — per installment */}
         <div className="flex-1 overflow-y-auto" style={{ padding: '12px 12px 16px' }}>
           {isLoading ? (
-            <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '24px 0' }}>Loading...</div>
+            <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '24px 0' }}>{ui('loading')}</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {sorted.map((inst, idx) => {
@@ -367,7 +369,7 @@ export default function InvoicePaymentModal({
                     {/* Card header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: '#F8F9FA', flexWrap: 'wrap', gap: 4 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>Installment {idx + 1}</span>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('installment')} {idx + 1}</span>
                         <span style={{ color: '#d1d5db' }}>&middot;</span>
                         <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
                         <span style={{ fontSize: 11, color: '#9ca3af' }}>
@@ -401,7 +403,7 @@ export default function InvoicePaymentModal({
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <span className="tabular-nums" style={{ fontSize: 13, fontWeight: 500 }}>{fmt(p.amount, currency)}</span>
                                     <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: pBadge.bg, color: pBadge.color }}>
-                                      {isPaid ? 'Paid' : 'Pending'}
+                                      {isPaid ? ui('statusPaid') : ui('statusPending')}
                                     </span>
                                     <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(p.paymentDate)}</span>
                                   </div>
@@ -427,7 +429,7 @@ export default function InvoicePaymentModal({
                             onClick={() => setActiveFormScheduleId(scheduleId)}
                             style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}
                           >
-                            + Register payment &middot; {fmt(instOutstanding, currency)} outstanding
+                            + {ui('registerPayment')} &middot; {fmt(instOutstanding, currency)} {ui('outstandingLabel').toLowerCase()}
                           </button>
                         </div>
                       )}
@@ -452,7 +454,7 @@ export default function InvoicePaymentModal({
 
                       {/* Empty state for paid installments with no payment data */}
                       {instPayments.length === 0 && instOutstanding <= 0 && (
-                        <div style={{ padding: '10px 14px', fontSize: 12, color: '#9ca3af' }}>Fully paid</div>
+                        <div style={{ padding: '10px 14px', fontSize: 12, color: '#9ca3af' }}>{ui('fullyPaid')}</div>
                       )}
                     </div>
                   </div>
@@ -470,7 +472,7 @@ export default function InvoicePaymentModal({
                 </svg>
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
-                {fullyPaid ? 'Invoice fully paid' : 'Payment registered'}
+                {fullyPaid ? ui('invoiceFullyPaid') : ui('paymentRegistered')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
                 <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>
@@ -495,12 +497,12 @@ export default function InvoicePaymentModal({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: confirmation ? 'space-between' : 'flex-end', background: '#fff', borderTop: '0.5px solid #d1d5db', padding: '10px 14px' }}>
           <button type="button" onClick={onClose}
             style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>
-            Close
+            {ui('close')}
           </button>
           {confirmation && (
             <button type="button" onClick={() => navToPayment(confirmation.id)}
               style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: 'pointer' }}>
-              View payment &rarr;
+              {ui('viewArrow')}
             </button>
           )}
         </div>

@@ -8,7 +8,7 @@ import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { getStatusBadgeProps, getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
@@ -195,7 +195,13 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   const buildEmpty = useCallback(() => {
     const empty = {};
     for (const f of fields) {
-      empty[f.key] = f.key === 'lineNo' ? defaultLineNo : '';
+      if (f.key === 'lineNo') {
+        empty[f.key] = defaultLineNo;
+      } else if (f.defaultValue !== undefined) {
+        empty[f.key] = f.defaultValue;
+      } else {
+        empty[f.key] = '';
+      }
     }
     return empty;
   }, [fields, defaultLineNo]);
@@ -227,7 +233,13 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     const nextLineNo = Math.max(...nums) + 10;
     const next = {};
     for (const f of fields) {
-      next[f.key] = f.key === 'lineNo' ? nextLineNo : '';
+      if (f.key === 'lineNo') {
+        next[f.key] = nextLineNo;
+      } else if (f.defaultValue !== undefined) {
+        next[f.key] = f.defaultValue;
+      } else {
+        next[f.key] = '';
+      }
     }
     // Clear any $_identifier companion values
     for (const key of Object.keys(values)) {
@@ -268,10 +280,19 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
     onFieldChange?.(key, val, snapshot, (updates) => {
-      // Callback to apply callout results to the inline row
-      for (const [field, value] of Object.entries(updates)) {
-        handleChange(field, value);
-      }
+      // Apply callout updates only for fields the user hasn't manually changed
+      // since the callout was triggered. Compares against the snapshot captured
+      // at trigger time — if the current value diverged, the user edited it and
+      // the callout result must not overwrite it (race condition guard).
+      setValues(prev => {
+        const next = { ...prev };
+        for (const [field, value] of Object.entries(updates)) {
+          if (!(field in snapshot) || prev[field] === snapshot[field]) {
+            next[field] = value;
+          }
+        }
+        return next;
+      });
     });
   }, [handleChange, onFieldChange, values]);
 
@@ -611,8 +632,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      const badgeProps = getStatusBadgeProps(raw);
-      return <Badge {...badgeProps}>{label}</Badge>;
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
@@ -626,11 +646,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      const badgeProps = getStatusBadgeProps(raw);
-      if (badgeProps.variant === 'outline' && !badgeProps.className) {
-        return <span className="text-sm text-muted-foreground">{label}</span>;
-      }
-      return <Badge {...badgeProps}>{label}</Badge>;
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
     }
     if (col.type === 'percent') {
       const val = Number(row[col.key]);
@@ -829,8 +845,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
                       isChecked ? 'bg-primary/5' : '',
                       row.id === selectedId ? 'bg-primary/10' : '',
-                      isSelectedLine ? 'bg-zinc-700 text-white' : '',
-                      isSelectedLine ? 'hover:bg-zinc-600' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
+                      isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
+                      isSelectedLine ? 'hover:bg-slate-300/80' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
                     ].filter(Boolean).join(' ')}
                   >
                     {selectable && (() => {

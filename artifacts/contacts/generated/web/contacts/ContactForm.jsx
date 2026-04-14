@@ -2,9 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:contact
 const fields = [
-  // @sf-custom-slot callout:SL_User_Name
   { key: 'firstName', column: 'Firstname', type: 'text', label: 'First Name', section: 'principal' },
-  // @sf-custom-slot callout:SL_User_Name
   { key: 'lastName', column: 'Lastname', type: 'text', label: 'Last Name', section: 'principal' },
   { key: 'email', column: 'Email', type: 'text', label: 'Email', section: 'principal' },
   { key: 'phone', column: 'Phone', type: 'text', label: 'Phone', section: 'principal' },
@@ -16,10 +14,7 @@ const fields = [
 
 // @sf-generated-start component:ContactForm
 export default function ContactForm(props) {
-  // @sf-custom-slot hooks:ContactForm
   return <EntityForm fields={fields} {...props} />;
 }
 ContactForm.hasCollapsedFields = false;
 // @sf-generated-end component:ContactForm
-
-// @sf-custom-slot section:ContactForm-custom

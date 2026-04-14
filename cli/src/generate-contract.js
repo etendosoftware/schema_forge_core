@@ -172,6 +172,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.summable) mapped.summable = true;
       if (f.display) mapped.display = f.display;
       if (f.cellType) mapped.cellType = f.cellType;
+      if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
 
       // Behavioral metadata: callout
       if (f.callout) {
@@ -653,7 +654,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     return true;
   });
 
-  return {
+  const result = {
     specName,
     baseUrl,
     crud,
@@ -666,6 +667,18 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
       parentFilter: 'parentId={id} for child entities',
     },
   };
+
+  // Forward window.category so components can derive isSOTrx for selector filtering
+  if (schema.window.category) {
+    result.window = { category: schema.window.category };
+  }
+
+  // Forward labelOverrides from the window config so generated components can apply per-window label overrides
+  if (schema.window.labelOverrides) {
+    result.labelOverrides = schema.window.labelOverrides;
+  }
+
+  return result;
 }
 
 /**
