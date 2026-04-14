@@ -492,14 +492,15 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
+  const visibleBaseFields = fields.filter(f => !excludeFields.includes(f.key));
   let displayFields;
   if (section) {
     // When filtering by section, include all fields (editable + readOnly) for that section
-    displayFields = fields.filter(f => f.section === section && !excludeFields.includes(f.key));
+    displayFields = visibleBaseFields.filter(f => f.section === section);
   } else if (layout === 'horizontal') {
-    displayFields = fields.filter(f => !f.readOnly);
+    displayFields = visibleBaseFields.filter(f => !f.readOnly);
   } else {
-    displayFields = fields;
+    displayFields = visibleBaseFields;
   }
 
   // Apply visibility from evaluate-display (hide fields where visibility === false).
