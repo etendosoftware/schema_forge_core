@@ -37,7 +37,11 @@ jobs:
 
       - name: Build app-shell
         run: npm run build --workspace=tools/app-shell
+        env:
+          VITE_BUILD_ID: ${{ github.run_id }}
         # .env.production (committed) provides VITE_MOCK=false and VITE_API_BASE=/etendo
+        # VITE_BUILD_ID is unique per workflow run (even same commit) — ensures sw.js
+        # always differs between deploys so the service worker updates on every redeploy
 
       - name: Generate reports manifest
         run: node cli/src/generate-reports-manifest.js
