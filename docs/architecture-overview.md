@@ -58,7 +58,7 @@ Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 │  ├── run-contract-tests.js    ├── SFUpsertSpec / SFUpsertEntity     │
 │  ├── pr-review.js             ├── SFUpsertField / SFPopulateSpec    │
 │  ├── epic-rollup-report.js    └── SFListProcesses / SFListWindows   │
-│  └── pipeline.js                                                 │
+│  └── pipeline.js                                                     │
 │                                                                      │
 │  Artifacts (per-window)        Documentation                         │
 │  ├── sales-order/              ├── PRD.md, TDD.md                   │

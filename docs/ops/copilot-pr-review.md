@@ -53,10 +53,10 @@ When a later push fixes all blockers, the workflow dismisses prior bot change re
 
 `cli/src/pr-review.js` is intentionally deterministic and zero-dependency. It inspects the diff between the PR base SHA and head SHA and looks for:
 
-- duplicated added code blocks (normalized sliding windows over added lines)
+- duplicated added code blocks (normalized contiguous added-line runs)
 - new npm dependencies in `package.json`
 - committed `.env` files or obvious credential markers
-- files in the wrong directories according to `.github/copilot-review-instructions.md`
+- the currently enforced directory-placement rules: test-file placement and artifact JSON files that must live under `artifacts/`
 - new source files without corresponding test files
 - CommonJS patterns (`require`, `module.exports`) in changed JS/TS files
 - changed files larger than the repository threshold
