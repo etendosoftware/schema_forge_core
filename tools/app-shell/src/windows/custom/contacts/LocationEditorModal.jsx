@@ -644,7 +644,7 @@ export default function LocationEditorModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/30 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
 
         {/* Header */}
@@ -767,7 +767,7 @@ export default function LocationEditorModal({
 
         {countryPickerOpen && (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/30 p-4"
             onMouseDown={() => setCountryPickerOpen(false)}
           >
             <div
@@ -835,7 +835,7 @@ export default function LocationEditorModal({
 
         {regionPickerOpen && (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/30 p-4"
             onMouseDown={() => setRegionPickerOpen(false)}
           >
             <div

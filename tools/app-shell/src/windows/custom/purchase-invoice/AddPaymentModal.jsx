@@ -40,7 +40,7 @@ export default function AddPaymentModal({ invoice, outstanding, onClose, onSave 
   const docNo = invoice?.documentNo || '';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/30 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-1">
