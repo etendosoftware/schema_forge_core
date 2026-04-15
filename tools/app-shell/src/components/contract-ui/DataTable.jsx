@@ -292,7 +292,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity, selectorContext }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -628,6 +628,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           </TableCell>
         );
       })}
+      {hasDeleteColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 }
@@ -1199,6 +1200,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
                   selectable={selectable}
+                  hasDeleteColumn={!!onDeleteRow}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -1217,6 +1219,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       : ''}
                   </TableCell>
                 ))}
+                {onDeleteRow && <TableCell />}
               </TableRow>
             </TableFooter>
           )}
