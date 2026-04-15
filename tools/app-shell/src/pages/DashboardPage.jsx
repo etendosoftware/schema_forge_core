@@ -22,7 +22,6 @@ import {
   AlertTriangle,
   Info,
   ChevronRight,
-  ChevronDown,
   ChevronUp,
   Clock,
   Search,
@@ -565,17 +564,10 @@ const BAR_PAD_BOTTOM = 28;
 const WIDGET_HEADER_CLASS = 'pt-4 pb-2 flex-none';
 const WIDGET_TITLE_CLASS = 'text-xs font-medium text-muted-foreground';
 
-function useCollapsed(key) {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(key) === 'true');
-  const toggle = () => setCollapsed((c) => { const next = !c; localStorage.setItem(key, String(next)); return next; });
-  return [collapsed, toggle];
-}
-
 function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { locale } = useLocaleSwitch();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
   const [tooltip, setTooltip] = useState(null);
 
@@ -647,49 +639,43 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
     <Card>
       <CardHeader className={WIDGET_HEADER_CLASS}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer select-none" onClick={toggleCollapsed}>
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className={WIDGET_TITLE_CLASS}>
-              {ui('revenueVsExpenses12m')}
-            </CardTitle>
-          </div>
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              {hasExpenses && (
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    {tMenu('Revenue')}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-                    {tMenu('Expenses')}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center border rounded-md overflow-hidden">
-                <button
-                  onClick={() => switchChartType('line')}
-                  className={`p-1 transition-colors ${chartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-                  title="Line chart"
-                >
-                  <LineChart className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => switchChartType('bar')}
-                  className={`p-1 transition-colors ${chartType === 'bar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-                  title="Bar chart"
-                >
-                  <BarChart2 className="h-3.5 w-3.5" />
-                </button>
+          <CardTitle className={WIDGET_TITLE_CLASS}>
+            {ui('revenueVsExpenses12m')}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {hasExpenses && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  {tMenu('Revenue')}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
+                  {tMenu('Expenses')}
+                </span>
               </div>
+            )}
+            <div className="flex items-center border rounded-md overflow-hidden">
+              <button
+                onClick={() => switchChartType('line')}
+                className={`p-1 transition-colors ${chartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                title="Line chart"
+              >
+                <LineChart className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => switchChartType('bar')}
+                className={`p-1 transition-colors ${chartType === 'bar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                title="Bar chart"
+              >
+                <BarChart2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-4 pt-0">
-          {chartType === 'line' ? (
+      <CardContent className="p-4 pt-0">
+        {chartType === 'line' ? (
             <svg
               viewBox={`0 0 ${CHART_W} ${CHART_H}`}
               className="w-full h-auto"
@@ -853,8 +839,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
               })()}
             </svg>
           )}
-        </CardContent>
-      )}
+      </CardContent>
     </Card>
   );
 }
@@ -902,7 +887,6 @@ async function findTopClientRoute({ client, token, apiBaseUrl }) {
 function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl = '' }) {
   const ui = useUI();
   const navigate = useNavigate();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
 
   const handleClientClick = async (client) => {
     const route = await findTopClientRoute({ client, token, apiBaseUrl });
@@ -911,13 +895,10 @@ function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl =
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-center gap-2">
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('topClients12m')}</CardTitle>
-        </div>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('topClients12m')}</CardTitle>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+      <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
         {clients.length === 0 ? (
             <p className="text-sm text-muted-foreground">{ui('noDataAvailable')}</p>
         ) : (
@@ -943,7 +924,7 @@ function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl =
             ))}
           </div>
         )}
-      </CardContent>}
+      </CardContent>
     </Card>
   );
 }
@@ -986,16 +967,12 @@ function QuickActions({ actions = [] }) {
 function PendingTasks({ tasks = [] }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-center gap-2">
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('pendingTasks')}</CardTitle>
-        </div>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('pendingTasks')}</CardTitle>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+      <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
         {tasks.length === 0 && (
           <p className="text-sm text-muted-foreground">{tMenu('No pending tasks')}</p>
         )}
@@ -1045,7 +1022,7 @@ function PendingTasks({ tasks = [] }) {
             );
           })}
         </div>
-      </CardContent>}
+      </CardContent>
     </Card>
   );
 }
@@ -1126,51 +1103,45 @@ function fmtDate(str, locale = 'en-US') {
 function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-start gap-2">
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <div>
-            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('recentInvoices')}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">{ui('recentInvoicesSubtitle')}</p>
-          </div>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <div className="space-y-0.5">
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('recentInvoices')}</CardTitle>
+          <p className="text-xs text-muted-foreground">{ui('recentInvoicesSubtitle')}</p>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
-          {invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{ui('noInvoicesFound')}</p>
-          ) : (
-            <div className="space-y-0">
-              {invoices.map((inv, i) => {
-                const target = resolveDashboardTarget({
-                  navigation: inv.navigation,
-                  link: inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice',
-                  fallback: '/sales-invoice',
-                });
-                return (
-                  <React.Fragment key={inv.id || i}>
-                    {i > 0 && <Separator />}
-                    <Link to={target} className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="min-w-0">
-                          <p className="text-sm truncate">{inv.client}</p>
-                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date, locale)}</p>
-                        </div>
+      <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+        {invoices.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{ui('noInvoicesFound')}</p>
+        ) : (
+          <div className="space-y-0">
+            {invoices.map((inv, i) => {
+              const target = resolveDashboardTarget({
+                navigation: inv.navigation,
+                link: inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice',
+                fallback: '/sales-invoice',
+              });
+              return (
+                <React.Fragment key={inv.id || i}>
+                  {i > 0 && <Separator />}
+                  <Link to={target} className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="min-w-0">
+                        <p className="text-sm truncate">{inv.client}</p>
+                        <p className="text-xs text-muted-foreground">{fmtDate(inv.date, locale)}</p>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel)}</span>
-                      </div>
-                    </Link>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel)}</span>
+                    </div>
+                  </Link>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }
@@ -1194,18 +1165,14 @@ function fmtCompact(n, currencyLabel = '') {
 function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
   const [viewMode, setViewMode] = useState('quantity');
   const rows = viewMode === 'quantity' ? sellers : products;
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers')}</CardTitle>
-          </div>
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers12m')}</CardTitle>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -1228,38 +1195,28 @@ function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
           </div>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-4">{ui('noDataAvailable')}</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Product Name')}</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">
-                    {viewMode === 'quantity' ? tMenu('Qty') : tMenu('Revenue')}
-                  </th>
+      <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground p-4">{ui('noDataAvailable')}</p>
+        ) : (
+          <table className="w-full text-sm">
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={`${viewMode}-${row.name}`} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
+                  <td className="px-4 py-2 truncate max-w-0" style={{ maxWidth: '1px', width: '60%' }}>
+                    <span className="block truncate">{row.name}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right font-medium tabular-nums">
+                    {viewMode === 'quantity'
+                      ? fmtCompact(row.qty)
+                      : formatDashboardAmount(row.amount, currencyLabel)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={`${viewMode}-${row.name}`} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
-                    <td className="px-4 py-2 truncate max-w-0" style={{ maxWidth: '1px', width: '60%' }}>
-                      <span className="block truncate">{row.name}</span>
-                    </td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">
-                      {viewMode === 'quantity'
-                        ? fmtCompact(row.qty)
-                        : formatDashboardAmount(row.amount, currencyLabel)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </CardContent>
-      )}
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
     </Card>
   );
 }
