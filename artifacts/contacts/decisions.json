@@ -122,6 +122,7 @@
         },
         "description": {
           "visibility": "editable",
+          "form": false,
           "grid": false,
           "section": "principal"
         },
