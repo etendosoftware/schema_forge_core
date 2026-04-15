@@ -953,7 +953,7 @@ export function DetailView({
                     if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                   }}>
                     <Save className="h-3.5 w-3.5" />
-                    {ui('saveDraft')}
+                    {ui('save')}
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                     const saved = await hook.handleSaveAndProcess(draftMode);
@@ -967,7 +967,7 @@ export function DetailView({
                     }
                   }}>
                     <Check className="h-3.5 w-3.5" />
-                    {ui('save')} &amp; {draftMode.label || ui('process')}
+                    {draftMode.label || ui('process')}
                   </Button>
                 </>
               ) : isNew ? (<>
