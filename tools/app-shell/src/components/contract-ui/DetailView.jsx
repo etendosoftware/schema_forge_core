@@ -808,134 +808,6 @@ export function DetailView({
             })()}
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Topbar right slot (e.g. payment status badge) */}
-            {topbarRight && (() => {
-              const TopbarRightComponent = topbarRight;
-              return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
-            })()}
-            {/* Send / Print document — uses DocumentPrintDrawer */}
-            {documentPreview && !isNew && recordId && (
-              <button
-                onClick={() => setShowPrint(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-                title={ui('sendPreview')}
-                data-testid="action-document-preview"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            )}
-            {/* Print document — shown when documentPreview is not provided */}
-            {!documentPreview && !hidePrint && !isNew && recordId && (
-              <button
-                onClick={() => setShowPrint(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-                title={ui('print')}
-              >
-                <Printer className="h-4 w-4" />
-              </button>
-            )}
-            {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-            {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                title={ui('delete')}
-                data-testid="action-delete"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-            {/* More actions */}
-            {!hideMoreMenu && <div className="relative" ref={moreMenuRef}>
-              <button
-                onClick={() => setShowMoreMenu(v => !v)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </button>
-              {showMoreMenu && (() => {
-                const resolvedActions = typeof menuActions === 'function'
-                  ? menuActions({ data, status: data?.[statusField] })
-                  : menuActions;
-                const visibleActions = resolvedActions.filter(a => a.visible !== false);
-                if (visibleActions.length === 0) return null;
-                return (
-                  <div
-                    className="absolute right-0 top-full mt-1 z-50 bg-white py-1 min-w-[160px]"
-                    style={{ border: '0.5px solid hsl(var(--border))', borderRadius: '8px' }}
-                  >
-                    {visibleActions.map((action, i) => (
-                      <button
-                        key={action.key || i}
-                        type="button"
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          if (action.columnName) {
-                            hook.handleProcess?.({ columnName: action.columnName, name: action.key });
-                          } else if (action.onClick) {
-                            action.onClick();
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
-                          action.destructive
-                            ? 'text-red-600 hover:bg-red-50'
-                            : 'text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>}
-            {/* Extra action buttons from page */}
-            {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
-              action.visible !== false && (
-                <Button
-                  key={action.key || i}
-                  variant="outline"
-                  size="sm"
-                  className={action.className || ''}
-                  onClick={action.onClick}
-                >
-                  {action.label}
-                </Button>
-              )
-            ))}
-            {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
-            {!isNew && processes
-              .filter(p => p.displayLogicRaw
-                ? evalDisplayLogicRaw(p.displayLogicRaw, data)
-                : displayLogic?.visibility?.[p.name] !== false)
-              .filter(p => !p.requiresLines || hook.children.length > 0)
-              .map(p => {
-                const isPrimary = p.style === 'positive';
-                const btnClass = salesTheme
-                  ? (p.style === 'destructive'
-                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                    : isPrimary
-                      ? 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium'
-                      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')
-                  : (p.style === 'destructive'
-                    ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20'
-                    : isPrimary
-                      ? ''
-                      : '');
-                return (
-                  <Button
-                    key={p.name}
-                    variant={isPrimary ? 'default' : 'outline'}
-                    size="sm"
-                    className={btnClass}
-                    onClick={() => hook.handleProcess?.(p)}
-                  >
-                    {tMenu(p.label)}
-                  </Button>
-                );
-              })}
-
             <div className="flex items-center gap-2">
               {/* Topbar right slot (e.g. payment status badge) */}
               {topbarRight && (() => {
@@ -1098,7 +970,7 @@ export function DetailView({
                     {ui('save')} &amp; {draftMode.label || ui('process')}
                   </Button>
                 </>
-              ) : (
+              ) : isNew ? (<>
                 <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
                   const saved = await hook.handleSave(data);
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
