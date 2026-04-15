@@ -164,7 +164,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                           className={cn(
                             'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
                             isItemActive || isGroupActive
-                              ? 'bg-foreground text-white shadow-sm'
+                              ? 'bg-[#FFD500] text-foreground shadow-sm'
                               : 'text-muted-foreground hover:bg-white hover:text-foreground'
                           )}
                         >
@@ -186,7 +186,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                         className={cn(
                           'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
                           isGroupActive
-                            ? 'bg-foreground text-white shadow-sm'
+                            ? 'bg-[#FFD500] text-foreground shadow-sm'
                             : 'text-muted-foreground hover:bg-white hover:text-foreground'
                         )}
                       >
@@ -213,7 +213,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                             className={cn(
                               'block px-2 py-1.5 text-sm rounded-md transition-colors',
                               isItemActive
-                                ? 'text-foreground bg-muted font-medium'
+                                ? 'text-foreground bg-[#FFD500] font-medium'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                             )}
                           >
@@ -246,10 +246,9 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                     className={cn(
                       'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors',
                       isItemActive || isGroupActive
-                        ? 'text-foreground'
+                        ? 'bg-[#FFD500] text-foreground font-medium'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     )}
-                    style={isItemActive || isGroupActive ? { borderLeft: `3px solid ${color.accent}` } : undefined}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1 text-left truncate">{tMenu(singleItem.label)}</span>
@@ -270,11 +269,12 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                   onClick={() => toggleGroup(g.group)}
                   className={cn(
                     'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors',
-                    isGroupActive
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    isGroupActive && !isOpen
+                      ? 'bg-[#FFD500] text-foreground font-medium'
+                      : isGroupActive
+                        ? 'text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
-                  style={isGroupActive ? { borderLeft: `3px solid ${color.accent}` } : undefined}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 text-left truncate">{tMenu(g.group)}</span>
@@ -296,9 +296,9 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                           key={item.name}
                           to={`/${itemPath}`}
                           className={cn(
-                            'block px-3 py-1.5 text-sm rounded-md transition-colors',
+                            'block px-3 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'text-foreground font-semibold'
+                              ? 'bg-[#FFD500] text-foreground font-semibold'
                               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           )}
                         >
