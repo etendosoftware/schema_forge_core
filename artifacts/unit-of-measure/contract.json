@@ -27,8 +27,8 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
-            "form": true,
+            "grid": false,
+            "form": false,
             "section": "principal",
             "seq": 1
           },
@@ -56,7 +56,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "principal",
             "seq": 5
           },
@@ -70,7 +70,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "principal",
             "seq": 6
           },
@@ -125,6 +125,20 @@
             "seq": 4
           },
           {
+            "name": "isActive",
+            "apiKey": "isActive",
+            "column": "IsActive",
+            "label": "Active",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "section": "principal",
+            "seq": 7
+          },
+          {
             "name": "default",
             "apiKey": "default",
             "column": "IsDefault",
@@ -134,9 +148,9 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "principal",
-            "seq": 7
+            "seq": 8
           },
           {
             "name": "description",
@@ -148,9 +162,9 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
-            "seq": 8
+            "seq": 9
           },
           {
             "name": "breakdown",
@@ -162,9 +176,9 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "other",
-            "seq": 9
+            "seq": 10
           },
           {
             "name": "useinproduction",
@@ -176,10 +190,10 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "defaultValue": "N",
             "section": "other",
-            "seq": 10
+            "seq": 11
           }
         ],
         "searchableFields": [
@@ -331,11 +345,11 @@
             "required": false
           },
           {
-            "name": "active",
-            "apiKey": "active",
+            "name": "isActive",
+            "apiKey": "isActive",
             "column": "IsActive",
             "type": "boolean",
-            "visibility": "system",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -916,11 +930,19 @@
       },
       {
         "id": "t-34",
-        "category": "system-field",
+        "category": "field-presence",
         "entity": "unitOfMeasure",
-        "field": "active",
+        "field": "isActive",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for unitOfMeasure"
+        "description": "Field 'isActive' should be present in unitOfMeasure"
+      },
+      {
+        "id": "t-34b",
+        "category": "field-type",
+        "entity": "unitOfMeasure",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should have type 'boolean' in unitOfMeasure"
       },
       {
         "id": "t-35",
@@ -1094,20 +1116,20 @@
       }
     ],
     "summary": {
-      "total": 56,
+      "total": 57,
       "byCategory": {
-        "field-presence": 13,
-        "field-type": 13,
+        "field-presence": 14,
+        "field-type": 14,
         "searchable-filters": 3,
         "visibility": 2,
         "default-value-type": 1,
-        "system-field": 17,
+        "system-field": 16,
         "rule-declared": 4,
         "crud-flags": 2,
         "selector-endpoint": 1
       },
       "byRunner": {
-        "node": 56,
+        "node": 57,
         "junit": 0
       }
     }

@@ -7,7 +7,7 @@ import ConversionForm from './ConversionForm';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Configuracion / Unit of Measure';
+const breadcrumb = 'Settings / Unit of Measure';
 
 
 // @sf-generated-start summary:unitOfMeasure
@@ -123,12 +123,14 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
-        entityLabel="Unit Of Measure"
+        entityLabel="Unit of Measure"
         detailLabel="Conversion"
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-      api={api}
+        api={api}
+        hidePrint
+        hideMoreMenu
         {...props}
       />
     );
