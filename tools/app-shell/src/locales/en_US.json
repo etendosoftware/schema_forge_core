@@ -11793,11 +11793,11 @@
       "description": "Send invoices only if the amount exceeds the limit"
     },
     "QtyBook": {
-      "label": "Book Quantity",
+      "label": "System Count",
       "description": "Book Quantity"
     },
     "QtyCount": {
-      "label": "Quantity count",
+      "label": "User Count",
       "description": "Counted Quantity"
     },
     "voidcheck": {
@@ -16274,6 +16274,7 @@
     "saveAndProcess": "Save & {action}",
     "process": "Process",
     "cancel": "Cancel",
+    "optional": "optional",
     "delete": "Delete",
     "deleteRecord": "Delete record",
     "deleteConfirmTitle": "Delete record",
@@ -16844,6 +16845,21 @@
     "warehouseTransactionsError": "Could not load transactions: {error}",
     "warehouseNoTransactions": "No transactions found for this warehouse.",
     "warehouseNoFilterResults": "No results match your filter.",
+    "warehouseMoveTitle": "Transfer Stock",
+    "warehouseMoveDestinationLabel": "Destination Warehouse",
+    "warehouseMoveQtyLabel": "Quantity to Transfer",
+    "warehouseMoveConfirm": "Transfer",
+    "warehouseMoveLoadingWarehouses": "Loading warehouses…",
+    "warehouseMoveNoWarehouses": "No other warehouses available",
+    "warehouseMoveActionTooltip": "Transfer to another warehouse",
+    "warehouseMoveComingSoon": "Transfer process coming soon",
+    "warehouseMoveTransferring": "Transferring…",
+    "warehouseMoveSuccess": "Stock transferred successfully",
+    "warehouseMoveError": "Transfer failed: {error}",
+    "internalConsumptionProcess": "Process",
+    "internalConsumptionProcessing": "Processing…",
+    "internalConsumptionProcessed": "Internal consumption processed successfully",
+    "internalConsumptionProcessError": "Could not process: {error}",
     "movTypeVendorReceipt": "Vendor Receipt",
     "movTypeInventoryIn": "Inventory In",
     "movTypeInventoryOut": "Inventory Out",
@@ -17132,7 +17148,24 @@
     "poCreating": "Creating...",
     "poAllReceived": "Received",
     "poAllInvoiced": "Invoiced",
-    "poNReceipts": "{count} receipts"
+    "poNReceipts": "{count} receipts",
+    "createInventoryCountList": "Create Inventory Count List",
+    "productSearchKey": "Product Search Key",
+    "productCategory": "Product Category",
+    "allCategories": "All categories",
+    "inventoryQuantity": "Inventory Quantity",
+    "qtyNotZero": "not 0",
+    "qtyZero": "0",
+    "qtyLessZero": "< 0",
+    "qtyGreaterZero": "> 0",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "inventoryListGenerated": "Inventory count list generated",
+    "errorGeneratingList": "Failed to generate inventory list",
+    "updateListSystemCount": "Update List System Count",
+    "updating": "Updating...",
+    "quantitiesUpdated": "System quantities updated",
+    "errorUpdatingQuantities": "Failed to update system quantities"
   },
   "menus": {
     "Currency": {

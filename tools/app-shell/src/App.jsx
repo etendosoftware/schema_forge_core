@@ -73,6 +73,7 @@ async function loadAllMockData() {
     import('@generated/return-to-vendor/generated/web/return-to-vendor/mockData.js'),
     import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/mockData.js'),
     import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),
+    import('@generated/internal-consumption/generated/web/internal-consumption/mockData.js'),
     import('@generated/goods-movements/generated/web/goods-movements/mockData.js'),
     import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/mockData.js'),
     import('@generated/sales-quotation/custom/mockData.js'),

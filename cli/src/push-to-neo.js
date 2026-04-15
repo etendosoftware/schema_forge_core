@@ -188,6 +188,24 @@ export async function pushToNeo(windowName, options = {}) {
   // Use the artifact slug (windowName) as spec name so it matches the frontend route
   const specName = windowName;
 
+  // Load decisions.json for per-field overrides (e.g. defaultExpr)
+  let decisionsData = {};
+  try {
+    const decisionsRaw = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8');
+    decisionsData = JSON.parse(decisionsRaw);
+  } catch { /* optional — not all windows have decisions.json */ }
+
+  // Build map: "entityName.fieldName" -> defaultExpr (from decisions.json)
+  const fieldDefaultExprs = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
+      if (fieldConf.defaultExpr != null) {
+        fieldDefaultExprs[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+      }
+    }
+  }
+
   // Extract all fields from backend contract
   const allFields = extractFieldsFromContract(contract.backendContract);
 
@@ -417,7 +435,8 @@ export async function pushToNeo(windowName, options = {}) {
       }
 
       const fieldId = colLookup.rows[0].etgo_sf_field_id;
-      await writerUpsertField(client, {
+      const defaultExprKey = `${f.entityName}.${f.fieldName}`;
+      const fieldParams = {
         entityId,
         fieldId,
         moduleId,
@@ -425,7 +444,11 @@ export async function pushToNeo(windowName, options = {}) {
         isReadOnly: vis.isReadOnly,
         javaQualifier: f.fieldName,
         audit: auditOpts,
-      });
+      };
+      if (defaultExprKey in fieldDefaultExprs) {
+        fieldParams.defaultValue = fieldDefaultExprs[defaultExprKey] || null;
+      }
+      await writerUpsertField(client, fieldParams);
       fieldResults.push({ column: f.column, entityName: f.entityName, success: true });
       successCount++;
     }
