@@ -15033,7 +15033,7 @@
       "label": "Operarios"
     },
     "Bank Account": {
-      "label": "Cuenta"
+      "label": "Cuenta Bancaria"
     },
     "Bank": {
       "label": "Banco"
@@ -16902,8 +16902,9 @@
     "bpExpenses": "Gastos",
     "General": "General",
     "Financial": "Financiero",
-    "Contact Person": "Persona de contacto",
-    "Contact Bank Account": "Cuenta bancaria del contacto",
+    "Contact Person": "Persona",
+    "Contact Bank Account": "Cuenta Bancaria",
+    "Person": "Persona",
     "statusUnderEvaluation": "En evaluación",
     "statusCancelled": "Cancelado",
     "statusPaymentReceived": "Pago recibido",

@@ -25,7 +25,7 @@
         "contact": {
           "tabMode": "table-form",
           "tabOrder": 1,
-          "label": "Contact Person",
+          "label": "Person",
           "addLineFields": [
             "firstName",
             "lastName",
@@ -38,7 +38,7 @@
         "bankAccount": {
           "tabMode": "table-form",
           "tabOrder": 2,
-          "label": "Contact Bank Account",
+          "label": "Bank Account",
           "addLineFields": [
             "bankName",
             "bankFormat",
@@ -3298,7 +3298,7 @@
         "contact": {
           "tabMode": "table-form",
           "tabOrder": 1,
-          "label": "Contact Person",
+          "label": "Person",
           "addLineFields": [
             "firstName",
             "lastName",
@@ -3310,7 +3310,7 @@
         "bankAccount": {
           "tabMode": "table-form",
           "tabOrder": 2,
-          "label": "Contact Bank Account",
+          "label": "Bank Account",
           "addLineFields": [
             "bankName",
             "bankFormat",

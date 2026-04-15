@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import BusinessPartnerTable from '../../../custom/ContactsTable';
+import BusinessPartnerTable from '@/windows/custom/contacts/ContactsTable';
 import BusinessPartnerForm from './BusinessPartnerForm';
 import ContactTable from './ContactTable';
 import ContactForm from './ContactForm';
@@ -611,7 +611,6 @@ const api = {
 
 // @sf-generated-start component:BusinessPartnerPage
 export default function BusinessPartnerPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -628,14 +627,14 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         breadcrumb={breadcrumb}
       api={api}
         secondaryTabs={recordId === 'new' ? [] : [
-          { key: 'contact', label: 'Contact Person', Table: ContactTable, Form: ContactForm, addLineFields: { entry: [
+          { key: 'contact', label: 'Person', Table: ContactTable, Form: ContactForm, addLineFields: { entry: [
           { key: 'firstName', column: 'Firstname', type: 'text', label: 'First Name' },
           { key: 'lastName', column: 'Lastname', type: 'text', label: 'Last Name' },
           { key: 'email', column: 'Email', type: 'text', label: 'Email' },
           { key: 'phone', column: 'Phone', type: 'text', label: 'Phone' },
           { key: 'position', column: 'Title', type: 'text', label: 'Position' },
           ], derived: [], hidden: [] } },
-          { key: 'bankAccount', label: 'Contact Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
+          { key: 'bankAccount', label: 'Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
           { key: 'bankName', column: 'Bank_Name', type: 'text', label: 'Bank Name' },
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
