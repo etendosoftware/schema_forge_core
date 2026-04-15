@@ -1267,6 +1267,86 @@ describe('generateFormComponent - UI hints', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// generatePageComponent - newRecordComponent (state-based modal)
+// ---------------------------------------------------------------------------
+
+const newRecordContract = {
+  frontendContract: {
+    window: {
+      id: '900',
+      name: 'Payment In',
+      primaryEntity: 'finPayment',
+      category: 'finance',
+      customComponents: { newRecordComponent: 'NewPaymentModal' },
+    },
+    entities: {
+      finPayment: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'status', column: 'Status', type: 'string', tsType: 'string', visibility: 'readOnly', required: false, grid: true, form: true },
+        ],
+        tabName: 'Fin Payment',
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent - newRecordComponent', () => {
+  it('imports useState when newRecordComponent is configured', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes("import { useState, useEffect } from 'react'"), 'should import useState');
+  });
+
+  it('declares showNewModal state hook', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes('const [showNewModal, setShowNewModal] = useState(false)'), 'should declare showNewModal state');
+  });
+
+  it('uses plain if (recordId) without new check', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(!code.includes("recordId !== 'new'"), 'should not check for new in recordId condition');
+    assert.ok(code.includes('if (recordId)'), 'should have plain recordId check');
+  });
+
+  it('passes onNew prop to ListView', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes('onNew={() => setShowNewModal(true)}'), 'should pass onNew to ListView');
+  });
+
+  it('renders modal based on showNewModal state, not recordId', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes('{showNewModal && <NewPaymentModal'), 'should render modal based on showNewModal state');
+    assert.ok(!code.includes("recordId === 'new'"), 'should not reference recordId for modal rendering');
+  });
+
+  it('passes onClose prop to the modal component', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes('onClose={() => setShowNewModal(false)}'), 'should pass onClose to close the modal');
+  });
+
+  it('passes token, apiBaseUrl, and windowName to modal', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes('token={props.token}'), 'should pass token');
+    assert.ok(code.includes('apiBaseUrl={props.apiBaseUrl}'), 'should pass apiBaseUrl');
+    assert.ok(code.includes('windowName={windowName}'), 'should pass windowName');
+  });
+
+  it('wraps ListView and modal in Fragment', () => {
+    const code = generatePageComponent('finPayment', null, newRecordContract);
+    assert.ok(code.includes('<>'), 'should open Fragment');
+    assert.ok(code.includes('</>'), 'should close Fragment');
+  });
+
+  it('does NOT add useState or onNew when newRecordComponent is absent', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('useState'), 'should not import useState');
+    assert.ok(!code.includes('onNew'), 'should not pass onNew');
+    assert.ok(!code.includes('showNewModal'), 'should not have showNewModal state');
+  });
+});
+
 describe('generateTableComponent - isSelectionColumn hint', () => {
   it('field with isSelectionColumn emits isSelectionColumn in grid columns', () => {
     const code = generateTableComponent('order', uiHintsContract);

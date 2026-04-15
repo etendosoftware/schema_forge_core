@@ -2,10 +2,24 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import PaymentMethodTable from './PaymentMethodTable';
 import PaymentMethodForm from './PaymentMethodForm';
+import PaymentGroupsSection from '@/windows/custom/payment-method/PaymentGroupsSection';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Configuracion / Payment Method';
+const breadcrumb = 'Settings / Payment Method';
+
+const labelOverrides = {
+  "es_ES": {
+    "Name": "Nombre",
+    "Description": "Descripción",
+    "Payin_Allow": "Cobro permitido",
+    "Automatic_Receipt": "Cobro automático",
+    "Automatic_Deposit": "Depósito automático",
+    "Payout_Allow": "Pago permitido",
+    "Automatic_Payment": "Pago automático",
+    "Automatic_Withdrawn": "Retiro automático"
+  }
+};
 
 
 // @sf-generated-start summary:paymentMethod
@@ -50,24 +64,7 @@ const api = {
       ]
     }
   },
-  "selectors": [
-    {
-      "entity": "paymentMethod",
-      "field": "payinExecutionProcessID",
-      "column": "Payin_Execution_Process_ID",
-      "reference": "Pay_Exec_Process",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-method/paymentMethod/selectors/payinExecutionProcessID"
-    },
-    {
-      "entity": "paymentMethod",
-      "field": "payoutExecutionProcessID",
-      "column": "Payout_Execution_Process_ID",
-      "reference": "Pay_Exec_Process",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-method/paymentMethod/selectors/payoutExecutionProcessID"
-    }
-  ],
+  "selectors": [],
   "actions": [],
   "queryParams": {
     "pagination": {
@@ -77,7 +74,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=payment-methodDate"
+      "example": "_sortBy=name"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -102,6 +99,10 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hidePrint
+        hideMoreMenu
+        bottomSection={PaymentGroupsSection}
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -115,6 +116,9 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      hidePrint
+      hideMoreMenu
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

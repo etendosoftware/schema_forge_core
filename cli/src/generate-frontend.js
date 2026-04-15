@@ -729,29 +729,33 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const customComponentImports = [];
   const customComponentProps = [];
   if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from '../../../custom/${customComponents.bottomSection}';`);
+    customComponentImports.push(`import ${customComponents.bottomSection} from '@/windows/custom/${specName}/${customComponents.bottomSection}';`);
     customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
   }
   if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
+    customComponentImports.push(`import ${customComponents.topbarRight} from '@/windows/custom/${specName}/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
   if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from '../../../custom/${customComponents.topbarExtra}';`);
+    customComponentImports.push(`import ${customComponents.topbarExtra} from '@/windows/custom/${specName}/${customComponents.topbarExtra}';`);
     customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
+    customComponentImports.push(`import ${customComponents.bulkActions} from '@/windows/custom/${specName}/${customComponents.bulkActions}';`);
   }
   if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
+    customComponentImports.push(`import ${customComponents.sidePanel} from '@/windows/custom/${specName}/${customComponents.sidePanel}';`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
     if (customComponents.sidePanelStyle) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
+  if (customComponents.moreMenuContent) {
+    customComponentImports.push(`import ${customComponents.moreMenuContent} from '../../../custom/${customComponents.moreMenuContent}';`);
+    customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
+  }
   if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -761,7 +765,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Custom headerTable override
   const customHeaderTable = customComponents.headerTable ?? null;
   const headerTableImport = customHeaderTable
-    ? `import ${headerName}Table from '../../../custom/${customHeaderTable}';`
+    ? `import ${headerName}Table from '@/windows/custom/${specName}/${customHeaderTable}';`
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
@@ -888,7 +892,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
     : '';
 
-  return `import { useEffect } from 'react';
+  // showDetailFooterTotals support
+  const showDetailFooterTotalsValue = windowConfig.showDetailFooterTotals;
+  const showDetailFooterTotalsProp = showDetailFooterTotalsValue !== undefined
+    ? `\n        showDetailFooterTotals={${showDetailFooterTotalsValue}}`
+    : '';
+
+  // labelOverrides support
+  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
+  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
+  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
+  const labelOverridesBlock = labelOverridesConfig
+    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
+    : '';
+
+  return `import { ${customComponents.newRecordComponent ? 'useState, ' : ''}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
@@ -900,7 +918,7 @@ import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${statusBarCode}
+${labelOverridesBlock}${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -939,10 +957,8 @@ ${hiddenDefaultsArray}
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, recordId, ...props }) {
-  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
-    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
-  }` : ''}
+export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
+  const [showNewModal, setShowNewModal] = useState(false);` : ''}
   if (recordId) {
     return (
       <DetailView
@@ -967,16 +983,20 @@ export default function ${compName}({ windowName, recordId, ...props }) {
     );
   }
 
-  return (
+  return (${customComponents.newRecordComponent ? `
+    <>` : ''}
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
-      {...props}
-    />
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      {...props}${customComponents.newRecordComponent ? `
+      onNew={() => setShowNewModal(true)}` : ''}
+    />${customComponents.newRecordComponent ? `
+    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}
+    </>` : ''}
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
