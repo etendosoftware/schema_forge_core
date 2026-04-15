@@ -81,6 +81,7 @@ To verify chain integrity, grep each file for the new key name.
 | `tools/app-shell/src/windows/custom/` | Per-window hand-written components (never overwritten by pipeline) |
 | `docs/decisions-reference.md` | **Must be updated for every new decisions.json option** |
 | `docs/ui-customization.md` | Extension points guide — update if adding a new slot |
+| `docs/ui-design-guidelines.md` | **Z-index scale, overlay/modal/drawer patterns, column alignment rules — follow before writing any UI component** |
 
 ## Section markers
 

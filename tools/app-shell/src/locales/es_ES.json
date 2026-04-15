@@ -16754,6 +16754,19 @@
     "pdfPreviewPlaceholder": "El PDF aparecerá aquí cuando se configuren las plantillas de documentos",
     "downloadPdf": "Descargar PDF",
     "downloading": "Descargando...",
+    "download": "Descargar",
+    "documentPreview": "Vista previa del documento",
+    "comingSoon": "Próximamente",
+    "report": "Informe",
+    "records": "registros",
+    "loadingAllRecords": "Cargando todos los registros...",
+    "fetchingAllRecords": "Obteniendo todos los registros...",
+    "renderingReport": "Generando informe...",
+    "jsreportNotAvailable": "jsreport no disponible",
+    "jsreportNotAvailableBanner": "jsreport no disponible — exportaciones PDF, Excel y CSV deshabilitadas. Inícialo con:",
+    "excel": "Excel",
+    "csv": "CSV",
+    "pdf": "PDF",
     "noEmailFound": "No se encontró email para este contacto",
     "addNote": "Agregar una nota...",
     "addMessage": "Agregar un mensaje personal...",
@@ -17425,7 +17438,12 @@
     "updateListSystemCount": "Actualizar cantidad del sistema",
     "updating": "Actualizando...",
     "quantitiesUpdated": "Cantidades del sistema actualizadas",
-    "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema"
+    "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema",
+    "deleteRowTooltip": "Eliminar",
+    "recordDeleted": "Registro eliminado",
+    "recordsDeleted": "{count} registro(s) eliminado(s)",
+    "recordsCouldNotBeDeleted": "{count} registro(s) no pudieron ser eliminados",
+    "networkError": "Error de red"
   },
   "menus": {
     "Tax": {

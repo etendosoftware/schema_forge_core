@@ -215,7 +215,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         )}
       </div>
       {open && filtered.length > 0 && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -230,12 +230,12 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         </div>
       )}
       {open && query.length > 0 && fetching && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
           <div className="px-3 py-2 text-xs text-muted-foreground">{ui('searching')}</div>
         </div>
       )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           <div className="px-3 py-2 text-xs text-muted-foreground">
             {ui('noResultsFor')} "{query}"
           </div>

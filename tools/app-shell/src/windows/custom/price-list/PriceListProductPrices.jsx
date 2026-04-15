@@ -6,7 +6,7 @@ import { Trash2, X } from 'lucide-react';
 function ConfirmDeleteModal({ onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/20" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
       <div className="relative bg-white rounded-xl shadow-lg border border-border/60 w-[22rem] p-6">
         <button onClick={onCancel} className="absolute top-3 right-3 h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground">
           <X className="h-3.5 w-3.5" />

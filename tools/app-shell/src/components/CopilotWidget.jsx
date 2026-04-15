@@ -118,7 +118,7 @@ export function CopilotWidget() {
       {/* Chat panel */}
       <div
         className={cn(
-          'fixed bottom-20 left-6 z-50 w-full max-w-sm translate-x-[var(--copilot-shift)] transition-[transform,opacity] duration-300 ease-out',
+          'fixed bottom-20 left-6 z-70 w-full max-w-sm translate-x-[var(--copilot-shift)] transition-[transform,opacity] duration-300 ease-out',
           open
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : 'translate-y-4 opacity-0 pointer-events-none'
@@ -239,7 +239,7 @@ export function CopilotWidget() {
         onClick={toggle}
         size="icon"
         className={cn(
-          'fixed bottom-6 left-6 z-50 h-12 w-12 rounded-full shadow-lg translate-x-[var(--copilot-shift)] transition-transform duration-300 ease-out',
+          'fixed bottom-6 left-6 z-70 h-12 w-12 rounded-full shadow-lg translate-x-[var(--copilot-shift)] transition-transform duration-300 ease-out',
           !open && 'animate-pulse shadow-primary/25 shadow-xl'
         )}
         style={{ '--copilot-shift': dockShift }}
