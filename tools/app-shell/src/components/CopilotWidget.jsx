@@ -1,240 +1,281 @@
 import * as React from 'react';
-import { Button } from '@/components/ui/button.jsx';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.jsx';
-import { Input } from '@/components/ui/input.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
-import { Separator } from '@/components/ui/separator.jsx';
-import { cn } from '@/lib/utils';
-import { Bot, X, Send, Sparkles } from 'lucide-react';
+import { ArrowLeft, Bot, History, Maximize2, Minimize2, Sparkles, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useCopilot } from './CopilotContext';
+import { Button } from '@/components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
+import { Separator } from '@/components/ui/separator.jsx';
+import { cn } from '@/lib/utils';
 import { useUI } from '@/i18n';
+import { AssistantSelector } from './copilot/AssistantSelector.jsx';
+import { ConversationSidebar } from './copilot/ConversationSidebar.jsx';
+import { ChatView } from './copilot/ChatView.jsx';
 
 const LEFT_SIDE_ROUTES = ['/quick-sales-order', '/quick-purchase-order'];
 
-function getResponse(text, responses) {
-  const lower = text.toLowerCase();
-  for (const key of Object.keys(responses)) {
-    if (key !== 'default' && lower.includes(key)) {
-      return responses[key];
-    }
-  }
-  return responses.default;
-}
-
 export function CopilotWidget() {
-  const { isOpen: open, close: closePanel, toggle } = useCopilot();
+  const { isOpen: open, close: closePanel, toggle, state, actions } = useCopilot();
   const location = useLocation();
   const ui = useUI();
   const isLeftSide = LEFT_SIDE_ROUTES.includes(location.pathname);
   const dockShift = isLeftSide ? '0px' : 'calc(100vw - 100% - 3rem)';
 
-  const mockResponses = React.useMemo(() => ({
-    invoice: ui('copilotInvoiceResponse'),
-    stock: ui('copilotStockResponse'),
-    order: ui('copilotOrderResponse'),
-    contact: ui('copilotContactResponse'),
-    default: ui('copilotDefaultResponse'),
-  }), [ui]);
-  const suggestionChips = React.useMemo(() => ([
-    ui('createInvoice'),
-    ui('checkStockLevels'),
-    ui('showPendingOrders'),
-    ui('findContact'),
-  ]), [ui]);
-  const welcomeMessage = ui('copilotWelcome');
-  const [messages, setMessages] = React.useState([
-    {
-      role: 'copilot',
-      text: welcomeMessage,
-    },
-  ]);
-  const [input, setInput] = React.useState('');
-  const [isTyping, setIsTyping] = React.useState(false);
-  const messagesEndRef = React.useRef(null);
-  const inputRef = React.useRef(null);
+  const [showSidebar, setShowSidebar] = React.useState(false);
+  const [maximized, setMaximized] = React.useState(false);
 
-  const scrollToBottom = React.useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  // Stable ref for actions — avoids re-render loops in effects.
+  const actionsRef = React.useRef(actions);
+  actionsRef.current = actions;
 
-  React.useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+  const welcomeMessage = state.labels.ETCOP_Welcome_Message || ui('copilotWelcome');
+  const inputPlaceholder = state.labels.ETCOP_Message_Placeholder || ui('askSomething');
 
+  // Bootstrap data when panel opens
   React.useEffect(() => {
     if (open) {
-      inputRef.current?.focus();
+      actionsRef.current.loadBootstrap();
     }
   }, [open]);
 
+  // Load conversations when maximized + assistant selected (sidebar always visible)
+  // Also reload when conversationId changes (new conv created mid-chat).
+  const assistantAppId = state.selectedAssistant?.app_id;
+  const conversationId = state.conversationId;
   React.useEffect(() => {
-    setMessages((prev) => (
-      prev.length === 1 && prev[0]?.role === 'copilot'
-        ? [{ role: 'copilot', text: welcomeMessage }]
-        : prev
-    ));
-  }, [welcomeMessage]);
+    if (maximized && assistantAppId) {
+      actionsRef.current.loadConversations();
+      actionsRef.current.loadArchivedConversations();
+    }
+  }, [maximized, assistantAppId, conversationId]);
 
+  // Escape key: un-maximize first, then close
   React.useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === 'Escape' && open) {
-        closePanel();
+    function handleKeyDown(event) {
+      if (event.key === 'Escape' && open) {
+        if (maximized) {
+          setMaximized(false);
+        } else {
+          closePanel();
+        }
       }
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open]);
+  }, [closePanel, open, maximized]);
 
-  const sendMessage = React.useCallback(
-    (text) => {
-      if (!text.trim()) return;
-      const userMsg = { role: 'user', text: text.trim() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput('');
-      setIsTyping(true);
+  const handleSelectAssistant = React.useCallback((assistant) => {
+    actions.selectAssistant(assistant);
+    actions.setFilter('');
+    setShowSidebar(false);
+  }, [actions]);
 
-      setTimeout(() => {
-        const response = getResponse(text, mockResponses);
-        setMessages((prev) => [...prev, { role: 'copilot', text: response }]);
-        setIsTyping(false);
-      }, 800);
-    },
-    [mockResponses]
-  );
+  const handleBackToSelection = React.useCallback(() => {
+    actions.selectAssistant(null);
+    actions.resetConversation();
+    actions.setFilter('');
+    setShowSidebar(false);
+  }, [actions]);
 
-  const handleSubmit = React.useCallback(
-    (e) => {
-      e.preventDefault();
-      sendMessage(input);
-    },
-    [input, sendMessage]
-  );
+  const handleSendMessage = React.useCallback(() => {
+    actions.sendMessage(state.input);
+  }, [actions, state.input]);
 
-  const showChips = messages.length === 1 && messages[0].role === 'copilot';
+  const handleFileChange = React.useCallback(async (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    for (const file of selectedFiles) {
+      await actions.uploadFile(file);
+    }
+    event.target.value = '';
+  }, [actions]);
+
+  const handleSelectConversation = React.useCallback((conv) => {
+    actions.selectConversation(conv);
+    actions.setInput('');
+    setShowSidebar(false);
+  }, [actions]);
+
+  const handleNewConversation = React.useCallback(() => {
+    actions.startNewConversation();
+    actions.setInput('');
+    setShowSidebar(false);
+  }, [actions]);
+
+  const toggleSidebar = React.useCallback(() => {
+    if (!showSidebar) {
+      actions.loadConversations();
+      actions.loadArchivedConversations();
+    }
+    setShowSidebar(prev => !prev);
+  }, [showSidebar, actions]);
+
+  const toggleMaximize = React.useCallback(() => {
+    setMaximized(prev => {
+      if (!prev && state.selectedAssistant) {
+        // Entering maximized: sidebar is always visible, hide the toggle view
+        setShowSidebar(false);
+      }
+      return !prev;
+    });
+  }, [state.selectedAssistant]);
+
+  // --- Shared sub-component props ---
+
+  const sidebarProps = {
+    conversations: state.conversations,
+    archivedConversations: state.archivedConversations,
+    activeConversationId: state.conversationId,
+    onSelect: handleSelectConversation,
+    onNew: handleNewConversation,
+    onDelete: actions.deleteConversation,
+    onRestore: actions.restoreConversation,
+    onPermanentDelete: actions.permanentDelete,
+    onRename: actions.renameConversation,
+    isLoading: state.isLoadingConversations,
+    isLoadingArchived: state.isLoadingConversations,
+  };
+
+  const chatProps = {
+    messages: state.messages,
+    input: state.input,
+    onInputChange: actions.setInput,
+    onSubmit: handleSendMessage,
+    onFileChange: handleFileChange,
+    onRemoveFile: actions.removeFile,
+    files: state.files,
+    isSending: state.isSending,
+    welcomeMessage,
+    inputPlaceholder,
+  };
+
+  // --- Render body based on mode ---
+
+  function renderBody() {
+    // Assistant selector (same in both modes)
+    if (!state.selectedAssistant) {
+      return (
+        <AssistantSelector
+          assistants={state.assistants}
+          filter={state.filter}
+          onFilterChange={actions.setFilter}
+          onSelect={handleSelectAssistant}
+          isLoading={state.isLoadingAssistants}
+          welcomeMessage={welcomeMessage}
+          error={state.error}
+        />
+      );
+    }
+
+    // Maximized: sidebar always visible on the left, chat on the right
+    if (maximized) {
+      return (
+        <div className="flex flex-1 min-h-0">
+          <div className="w-64 shrink-0 border-r border-border overflow-y-auto">
+            <ConversationSidebar {...sidebarProps} />
+          </div>
+          <div className="flex flex-1 flex-col min-w-0">
+            <ChatView {...chatProps} />
+          </div>
+        </div>
+      );
+    }
+
+    // Compact: toggle between sidebar view and chat view
+    if (showSidebar) {
+      return <ConversationSidebar {...sidebarProps} />;
+    }
+
+    return <ChatView {...chatProps} />;
+  }
 
   return (
     <>
-      {/* Chat panel */}
+      {/* Panel */}
       <div
         className={cn(
-          'fixed bottom-20 left-6 z-50 w-full max-w-sm translate-x-[var(--copilot-shift)] transition-[transform,opacity] duration-300 ease-out',
+          'fixed z-50 transition-all duration-300 ease-out',
+          maximized
+            ? 'inset-4'
+            : 'bottom-20 left-6 w-full max-w-md translate-x-[var(--copilot-shift)]',
           open
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : 'translate-y-4 opacity-0 pointer-events-none'
         )}
-        style={{ '--copilot-shift': dockShift }}
+        style={maximized ? undefined : { '--copilot-shift': dockShift }}
       >
-        <Card className="flex flex-col shadow-2xl border-border/50">
+        <Card className={cn(
+          'flex flex-col overflow-hidden border-border/50 shadow-2xl',
+          maximized && 'h-full',
+        )}>
+          {/* Header */}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              <CardTitle className="text-base">{ui('copilot')}</CardTitle>
+            <div className="flex min-w-0 items-center gap-2">
+              {state.selectedAssistant ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handleBackToSelection}
+                  aria-label={ui('copilotBackToProfiles')}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Sparkles className="h-4 w-4 shrink-0 text-primary animate-pulse" />
+              )}
+              <CardTitle className="truncate text-base">
+                {state.selectedAssistant ? state.selectedAssistant.name : ui('copilot')}
+              </CardTitle>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => closePanel()}
-              aria-label={ui('closeCopilot')}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {state.selectedAssistant && !maximized && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={toggleSidebar}
+                  aria-label={ui('copilotConversations')}
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={toggleMaximize}
+                aria-label={maximized ? ui('copilotMinimize') : ui('copilotMaximize')}
+              >
+                {maximized ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={closePanel}
+                aria-label={ui('closeCopilot')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
 
           <Separator />
 
-          <CardContent className="p-0">
-            {/* Messages area */}
-            <div className="flex flex-col gap-3 p-4 overflow-y-auto max-h-80 min-h-[200px]">
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'flex gap-2 max-w-[85%]',
-                    msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
-                  )}
-                >
-                  {msg.role === 'copilot' && (
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <Bot className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      'rounded-lg px-3 py-2 text-sm whitespace-pre-line',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
-                    )}
-                  >
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-
-              {/* Suggestion chips */}
-              {showChips && (
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {suggestionChips.map((chip) => (
-                    <Badge
-                      key={chip}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-accent transition-colors"
-                      onClick={() => sendMessage(chip)}
-                    >
-                      {chip}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Typing indicator */}
-              {isTyping && (
-                <div className="flex gap-2 mr-auto">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <Bot className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="rounded-lg px-3 py-2 text-sm bg-muted text-muted-foreground">
-                    <span className="inline-flex gap-1">
-                      <span className="animate-bounce [animation-delay:0ms]">.</span>
-                      <span className="animate-bounce [animation-delay:150ms]">.</span>
-                      <span className="animate-bounce [animation-delay:300ms]">.</span>
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            <Separator />
-
-            {/* Input area */}
-            <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3">
-              <Input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={ui('askSomething')}
-                className="flex-1 h-9"
-                disabled={isTyping}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                disabled={!input.trim() || isTyping}
-                aria-label={ui('send')}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+          {/* Body */}
+          <CardContent className={cn(
+            'flex flex-col p-0',
+            maximized ? 'flex-1 min-h-0' : 'min-h-[30rem]',
+          )}>
+            {renderBody()}
           </CardContent>
         </Card>
       </div>
 
-      {/* Floating trigger button */}
+      {/* FAB button */}
       <Button
         onClick={toggle}
         size="icon"
