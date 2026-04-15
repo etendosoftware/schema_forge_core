@@ -61,6 +61,26 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
+            "form": false
+          },
+          {
+            "name": "docTaxAmount",
+            "column": "DocTaxAmount",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "baseAmount",
+            "column": "BaseAmount",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
             "form": true
           },
           {
