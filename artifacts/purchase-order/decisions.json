@@ -270,6 +270,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "orderLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"

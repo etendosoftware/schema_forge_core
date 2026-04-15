@@ -70,6 +70,7 @@
         { "name": "product-category", "label": "Product Category" },
         { "name": "physical-inventory", "label": "Physical Inventory" },
         { "name": "goods-movements", "label": "Goods Movement" },
+        { "name": "internal-consumption", "label": "Internal Consumption" },
         { "name": "warehouse", "label": "Warehouse" },
         { "name": "report-viewer-inventory", "label": "Reports", "path": "report-viewer?category=inventory" },
         { "name": "warehouse-storage-bins", "label": "Storage Bin", "hidden": true }

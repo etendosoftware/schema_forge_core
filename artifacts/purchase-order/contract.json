@@ -32,7 +32,6 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-
       "noHeaderBorder": true,
       "layoutType": "default"
     },
@@ -1891,7 +1890,6 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-
       "noHeaderBorder": true
     },
     "entities": {
@@ -3300,7 +3298,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "orderLineHandler"
       },
       "lineTax": {
         "tableName": "C_OrderLineTax",

@@ -321,8 +321,9 @@ export default function reportApiPlugin() {
         const url = new URL(req.url, 'http://localhost');
         const path = url.pathname;
 
-        // GET /api/report-selectors/:type?q=search — search BP, Product, Org for report filters
-        const selectorMatch = path.match(/^\/api\/report-selectors\/([\w-]+)$/);
+        // GET /sws/report-selectors/:type?q=search — search BP, Product, Org for report filters
+        // Also matches legacy /api/report-selectors/ path used in older builds.
+        const selectorMatch = path.match(/^\/(?:sws|api)\/report-selectors\/([\w-]+)$/);
         if (req.method === 'GET' && selectorMatch) {
           const type = selectorMatch[1];
           const q = (url.searchParams.get('q') || '').trim();

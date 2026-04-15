@@ -23,7 +23,7 @@ function buildSearchPlaceholder(ui, label) {
 /**
  * Button that opens the ProductSearchDrawer popup for fields with popup: true.
  */
-function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, token }) {
+function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, selectorContext, token }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
   const displayText = displayValue || (value ? value : '');
@@ -47,6 +47,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         onClose={() => setOpen(false)}
         onSelect={(item) => { onChange(item.id, item.label || item.name); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={label}
       />
@@ -442,7 +443,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 /**
  * Form field that opens a ProductSearchDrawer for lookup-enabled search fields.
  */
-function LookupFormField({ field, value, displayValue, selectorUrl, token, resolvedLabel, onChange }) {
+function LookupFormField({ field, value, displayValue, selectorUrl, selectorContext, token, resolvedLabel, onChange }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
   const display = displayValue || value || '';
@@ -469,6 +470,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
           setOpen(false);
         }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={resolvedLabel}
       />
@@ -715,7 +717,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         if (auxData) {
           for (const [suffix, auxVal] of Object.entries(auxData)) {
-            if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+            // Gross price from price list — map directly to grossUnitPrice so the DB trigger
+            // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+            if (suffix === 'standardPrice' && auxVal != null) {
+              onChange?.('grossUnitPrice', auxVal);
+            } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
                 onChange?.(f.key + auxSuffix, auxSuffixVal);
               }
@@ -743,6 +749,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 }}
                 label={label}
                 selectorUrl={selectorUrl}
+                selectorContext={effectiveSelectorContext}
                 token={token}
               />
             </div>
@@ -762,6 +769,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 value={data?.[f.key] ?? ''}
                 displayValue={data?.[f.key + '$_identifier']}
                 selectorUrl={selectorUrl}
+                selectorContext={effectiveSelectorContext}
                 token={token}
                 resolvedLabel={label}
                 onChange={searchOnChange}

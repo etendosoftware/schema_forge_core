@@ -13,9 +13,7 @@ const fields = [
 
 // @sf-generated-start component:InventoryForm
 export default function InventoryForm(props) {
-  // @sf-custom-slot hooks:InventoryForm
   return <EntityForm fields={fields} {...props} />;
 }
+InventoryForm.hasCollapsedFields = false;
 // @sf-generated-end component:InventoryForm
-
-// @sf-custom-slot section:InventoryForm-custom
