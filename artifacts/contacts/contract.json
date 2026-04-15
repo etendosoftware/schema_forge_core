@@ -118,19 +118,6 @@
             "section": "principal"
           },
           {
-            "name": "taxID",
-            "apiKey": "taxID",
-            "column": "TaxID",
-            "label": "Tax ID",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "section": "principal"
-          },
-          {
             "name": "businessPartnerCategory",
             "apiKey": "businessPartnerCategory",
             "column": "C_BP_Group_ID",
@@ -249,7 +236,21 @@
                 "name": "No Censado"
               }
             ],
-            "defaultValue": "'1'"
+            "defaultValue": "'1'",
+            "section": "principal"
+          },
+          {
+            "name": "taxID",
+            "apiKey": "taxID",
+            "column": "TaxID",
+            "label": "Tax ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "active",
