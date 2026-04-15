@@ -16519,6 +16519,19 @@
     "pdfPreviewPlaceholder": "The PDF will appear here once document templates are configured",
     "downloadPdf": "Download PDF",
     "downloading": "Downloading...",
+    "download": "Download",
+    "documentPreview": "Document preview",
+    "comingSoon": "Coming soon",
+    "report": "Report",
+    "records": "records",
+    "loadingAllRecords": "Loading all records...",
+    "fetchingAllRecords": "Fetching all records...",
+    "renderingReport": "Rendering report...",
+    "jsreportNotAvailable": "jsreport not available",
+    "jsreportNotAvailableBanner": "jsreport not available — PDF, Excel, CSV exports disabled. Start it with:",
+    "excel": "Excel",
+    "csv": "CSV",
+    "pdf": "PDF",
     "noEmailFound": "No email found for this contact",
     "addNote": "Add a note...",
     "addMessage": "Add a personal message...",
@@ -17165,7 +17178,12 @@
     "updateListSystemCount": "Update List System Count",
     "updating": "Updating...",
     "quantitiesUpdated": "System quantities updated",
-    "errorUpdatingQuantities": "Failed to update system quantities"
+    "errorUpdatingQuantities": "Failed to update system quantities",
+    "deleteRowTooltip": "Delete",
+    "recordDeleted": "Record deleted",
+    "recordsDeleted": "{count} record(s) deleted",
+    "recordsCouldNotBeDeleted": "{count} record(s) could not be deleted",
+    "networkError": "Network error"
   },
   "menus": {
     "Currency": {
