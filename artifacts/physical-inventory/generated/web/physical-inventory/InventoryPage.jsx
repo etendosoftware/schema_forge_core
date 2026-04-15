@@ -4,6 +4,7 @@ import InventoryTable from './InventoryTable';
 import InventoryForm from './InventoryForm';
 import InventoryLineTable from './InventoryLineTable';
 import InventoryLineForm from './InventoryLineForm';
+import InventoryMenuContent from '../../../custom/InventoryMenuContent';
 import catalogs from './mockCatalogs';
 
 
@@ -18,7 +19,6 @@ const summary = [
 const statusField = 'processed';
 // @sf-generated-end summary:inventory
 
-// @sf-custom-slot extraBadges:inventory
 // @sf-generated-start extraBadges:inventory
 const extraBadges = [];
 // @sf-generated-end extraBadges:inventory
@@ -173,7 +173,6 @@ const api = {
 
 // @sf-generated-start component:InventoryPage
 export default function InventoryPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:InventoryPage
   
   if (recordId) {
     return (
@@ -195,6 +194,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customMenuContent={InventoryMenuContent}
         {...props}
       />
     );
@@ -213,5 +213,3 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:InventoryPage
-
-// @sf-custom-slot section:InventoryPage-custom
