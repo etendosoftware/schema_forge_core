@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { kpisConfig, actions } from '@generated/dashboard/generated/config';
 import { useAuth } from '@/auth/AuthContext';
+import { createDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
 /* ------------------------------------------------------------------
  * Constants
@@ -113,7 +114,7 @@ function mapTrends(handlerData) {
 
 /**
  * Map pending tasks handler response.
- * Handler returns: [{type, text, link, amount?, detail?}]
+ * Handler returns: [{type, text, navigation?, link?, amount?, detail?}]
  */
 function mapPendingTasks(handlerData) {
   if (!handlerData || handlerData.length === 0) return [];
@@ -123,6 +124,7 @@ function mapPendingTasks(handlerData) {
       type: task.type || 'info',
       text: task.text || '',
       link: task.link || '',
+      navigation: task.navigation || null,
     };
     if (task.amount) mapped.amount = task.amount;
     if (task.detail) mapped.detail = task.detail;
@@ -135,8 +137,8 @@ function mapPendingTasks(handlerData) {
       mapped.taskKey = inferPendingTaskKey(mapped);
     }
 
-    // Ensure navigation links include pre-configured filters
-    if (mapped.taskKey && !mapped.link.includes('?')) {
+    // Backward-compatible link fallback while handlers migrate to navigation
+    if (!mapped.navigation && mapped.taskKey && !mapped.link.includes('?')) {
       const FILTER_LINKS = {
         overdueInvoices: '/sales-invoice?filter=overdue',
         overdueInvoices_plural: '/sales-invoice?filter=overdue',
@@ -227,6 +229,11 @@ function mapRecentInvoices(handlerData) {
       date: inv.date || '',
       amount: inv.amount || 0,
       status: inv.status || '',
+      navigation: inv.navigation || createDashboardNavigation({
+        type: 'record',
+        window: 'sales-invoice',
+        recordId: inv.id || '',
+      }),
     }));
 }
 
@@ -266,6 +273,13 @@ function mapTopClients(handlerData) {
     id: c.id || c.businessPartnerId || '',
     name: c.name || '',
     total: c.total || 0,
+    navigation: c.navigation || ((c.id || c.businessPartnerId)
+      ? createDashboardNavigation({
+          type: 'record',
+          window: 'contacts',
+          recordId: c.id || c.businessPartnerId || '',
+        })
+      : null),
   }));
 }
 
@@ -283,10 +297,20 @@ function mapPendingAmounts(handlerData) {
     toCollect: {
       count: obj.toCollect?.count ?? 0,
       amount: obj.toCollect?.amount ?? 0,
+      navigation: obj.toCollect?.navigation || createDashboardNavigation({
+        type: 'list',
+        window: 'sales-invoice',
+        filter: 'overdue',
+      }),
     },
     toPay: {
       count: obj.toPay?.count ?? 0,
       amount: obj.toPay?.amount ?? 0,
+      navigation: obj.toPay?.navigation || createDashboardNavigation({
+        type: 'list',
+        window: 'purchase-invoice',
+        filter: 'overdue',
+      }),
     },
   };
 }

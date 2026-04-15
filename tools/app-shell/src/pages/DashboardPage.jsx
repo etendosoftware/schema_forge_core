@@ -41,6 +41,7 @@ import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { formatAmount } from '@/lib/formatAmount';
+import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -86,15 +87,18 @@ function getWidgetMeta(id) {
 
 function resolvePendingTaskKey(task) {
   const text = String(task?.text ?? '').toLowerCase();
+  const windowName = task?.navigation?.window;
+  const filter = task?.navigation?.filter;
+  const docStatus = task?.navigation?.params?.DocStatus;
 
   if (task?.taskKey) return task.taskKey;
-  if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
+  if ((windowName === 'sales-invoice' && filter === 'overdue') || task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
-  if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
+  if ((windowName === 'goods-shipment' && docStatus === 'DR') || task?.link === '/goods-shipment' || text.includes('pending shipment')) {
     return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
-  if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
+  if ((windowName === 'purchase-order' && docStatus === 'DR') || task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
     return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
@@ -122,6 +126,10 @@ function resolveQuickActionRoute(route) {
     default:
       return route;
   }
+}
+
+function resolveDashboardTarget({ navigation, link, fallback = '/dashboard' }) {
+  return resolveDashboardNavigation(navigation) || link || fallback;
 }
 
 function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
@@ -856,6 +864,8 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
  * ----------------------------------------------------------------*/
 
 async function findTopClientRoute({ client, token, apiBaseUrl }) {
+  const directRoute = resolveDashboardNavigation(client?.navigation);
+  if (directRoute) return directRoute;
   if (client?.id) return `/contacts/${client.id}`;
 
   const name = String(client?.name ?? '').trim();
@@ -993,11 +1003,12 @@ function PendingTasks({ tasks = [] }) {
           {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
             const taskKey = resolvePendingTaskKey(task);
+            const target = resolveDashboardTarget({ navigation: task.navigation, link: task.link, fallback: '/dashboard' });
             return (
               <React.Fragment key={i}>
                 {i > 0 && <Separator />}
                 <Link
-                  to={task.link}
+                  to={target}
                   className="flex items-center gap-3 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group"
                 >
                   {isWarning ? (
@@ -1047,13 +1058,25 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
+  const fallbackToCollectNavigation = createDashboardNavigation({ type: 'list', window: 'sales-invoice', filter: 'overdue' });
+  const fallbackToPayNavigation = createDashboardNavigation({ type: 'list', window: 'purchase-invoice', filter: 'overdue' });
+  const toCollectTarget = resolveDashboardTarget({
+    navigation: toCollect.navigation || fallbackToCollectNavigation,
+    link: '/sales-invoice?filter=overdue',
+    fallback: '/sales-invoice',
+  });
+  const toPayTarget = resolveDashboardTarget({
+    navigation: toPay.navigation || fallbackToPayNavigation,
+    link: '/purchase-invoice?filter=overdue',
+    fallback: '/purchase-invoice',
+  });
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className={WIDGET_HEADER_CLASS}>
         <CardTitle className={WIDGET_TITLE_CLASS}>{ui('collectionsPayments')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
-        <Link to="/sales-invoice?filter=overdue" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
+        <Link to={toCollectTarget} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
             <div>
@@ -1067,7 +1090,7 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
           </div>
         </Link>
         <Separator />
-        <Link to="/purchase-invoice?filter=overdue" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
+        <Link to={toPayTarget} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
             <div>
@@ -1119,10 +1142,15 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
           ) : (
             <div className="space-y-0">
               {invoices.map((inv, i) => {
+                const target = resolveDashboardTarget({
+                  navigation: inv.navigation,
+                  link: inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice',
+                  fallback: '/sales-invoice',
+                });
                 return (
                   <React.Fragment key={inv.id || i}>
                     {i > 0 && <Separator />}
-                    <Link to={inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice'} className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
+                    <Link to={target} className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="min-w-0">
                           <p className="text-sm truncate">{inv.client}</p>
