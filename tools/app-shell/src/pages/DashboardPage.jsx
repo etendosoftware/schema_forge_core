@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { KPIHeader, KPICard } from '@/components/contract-ui/KPIHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -855,9 +855,50 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
  * Top Clients
  * ----------------------------------------------------------------*/
 
-function TopClients({ clients = [], currencyLabel = '' }) {
+async function findTopClientRoute({ client, token, apiBaseUrl }) {
+  if (client?.id) return `/contacts/${client.id}`;
+
+  const name = String(client?.name ?? '').trim();
+  if (!token || !apiBaseUrl || !name) return '/contacts';
+
+  const criteria = encodeURIComponent(JSON.stringify({
+    operator: 'and',
+    criteria: [
+      { fieldName: 'name', operator: 'equals', value: name },
+    ],
+  }));
+
+  try {
+    const res = await fetch(
+      `${apiBaseUrl}/contacts/businessPartner?_sortBy=name asc&_startRow=0&_endRow=10&criteria=${criteria}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    if (!res.ok) return '/contacts';
+
+    const json = await res.json();
+    const rows = json?.response?.data ?? [];
+    const exact = rows.find((row) => String(row?.name ?? '').trim() === name) ?? rows[0] ?? null;
+    return exact?.id ? `/contacts/${exact.id}` : '/contacts';
+  } catch {
+    return '/contacts';
+  }
+}
+
+function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl = '' }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
+
+  const handleClientClick = async (client) => {
+    const route = await findTopClientRoute({ client, token, apiBaseUrl });
+    navigate(route);
+  };
+
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
@@ -874,15 +915,20 @@ function TopClients({ clients = [], currencyLabel = '' }) {
             {clients.map((c, i) => (
               <React.Fragment key={c.name}>
                 {i > 0 && <Separator />}
-                <div className="flex items-center justify-between py-2 px-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}</span>
-                    <span className="text-sm truncate">{c.name}</span>
-                  </div>
-                  <span className="text-sm font-medium shrink-0 ml-2">
-                    {formatDashboardAmount(c.total, currencyLabel)}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleClientClick(c)}
+                  className="flex w-full items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group text-left"
+                >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}</span>
+                      <span className="text-sm truncate">{c.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-sm font-medium">{formatDashboardAmount(c.total, currencyLabel)}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                </button>
               </React.Fragment>
             ))}
           </div>
@@ -1306,7 +1352,7 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
       case 'kpi-expenses':         return kpiWidget('expensesThisMonth');
       case 'kpi-profit':           return kpiWidget('netProfit');
       case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} currencyLabel={dashboardCurrency} />;
-      case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} />;
+      case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} token={token} apiBaseUrl={apiBaseUrl} />;
       case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} />;
       case 'quick-actions':        return <QuickActions key={id} actions={quickActions} />;
       case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />;

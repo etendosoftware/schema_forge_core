@@ -258,11 +258,12 @@ function mapBestSellers(handlerData) {
 
 /**
  * Map top clients handler response.
- * Handler returns: [{name, total}]
+ * Handler returns: [{id?, businessPartnerId?, name, total}]
  */
 function mapTopClients(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   return handlerData.map((c) => ({
+    id: c.id || c.businessPartnerId || '',
     name: c.name || '',
     total: c.total || 0,
   }));
