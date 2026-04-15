@@ -465,7 +465,7 @@ function ConfirmOrderModal({
     const isConfirmOnly = createdDoc.type === 'confirm';
 
     return (
-      <div style={overlayStyle}>
+      <div className={overlayClass}>
         <div onClick={(e) => e.stopPropagation()} style={{ ...cardStyle, width: 400 }}>
           <div style={{ padding: '28px 24px', textAlign: 'center' }}>
             <div style={{
@@ -529,7 +529,7 @@ function ConfirmOrderModal({
 
   // ── Selection state ────────────────────────────────────────
   return (
-    <div onClick={handleClose} style={overlayStyle}>
+    <div onClick={handleClose} className={overlayClass}>
       <div onClick={(e) => e.stopPropagation()} style={cardStyle}>
 
         {/* Header — blue card */}
@@ -688,11 +688,7 @@ function OptionCard({ selected, onClick, icon, title, badge, subtitle }) {
 
 /* ── Shared styles ─────────────────────────────────────────────── */
 
-const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: 'rgba(0,0,0,0.3)',
-};
+const overlayClass = 'fixed inset-0 z-50 flex items-center justify-center bg-black/30';
 
 const cardStyle = {
   width: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column',

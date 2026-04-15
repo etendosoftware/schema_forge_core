@@ -26,7 +26,7 @@ Use this scale for all z-index decisions. Do not use arbitrary values outside th
 3. **Do not use raw `zIndex` in inline styles** unless you are outside Tailwind's scale (e.g., `zIndex: 1000` in DataTable inline combo — must be refactored to `z-[1000]` and documented).
 4. **Global tools must always float above everything.** Toasts, the command palette, and the Copilot widget must stay one level above the highest modal tier (`z-60` + 1 = `z-70`). Use `z-70`. Never use arbitrary large values like `9999`.
 5. **Never use arbitrary z-index values (`9999`, `1000`, etc.).** Always pick the next step in the scale. If nothing needs to be above it, `z-50` is enough. If a dropdown needs to sit above a modal, use `z-60`. If a global tool needs to sit above everything, use `z-70`.
-5. **Never reuse `z-50` for navigation.** Navigation elements that should be permanently visible must stay at `z-40` or below so they can be covered by blocking overlays.
+6. **Never reuse `z-50` for navigation.** Navigation elements that should be permanently visible must stay at `z-40` or below so they can be covered by blocking overlays.
 
 ---
 
