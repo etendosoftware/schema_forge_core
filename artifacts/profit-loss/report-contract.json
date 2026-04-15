@@ -18,7 +18,7 @@
   ],
   "parameters": [
     { "name": "acctSchemaId",     "label": { "en_US": "General Ledger",                "es_ES": "Libro Mayor" },             "type": "search",  "selector": "acctschema", "inputStyle": "popup-single", "required": true, "section": "primary" },
-    { "name": "orgId",            "label": { "en_US": "Organization",                  "es_ES": "Organización" },            "type": "search",  "selector": "org",        "inputStyle": "popup-single", "required": true, "section": "primary" },
+    { "name": "orgId",            "label": { "en_US": "Organization",                  "es_ES": "Organización" },            "type": "search",  "selector": "org",        "inputStyle": "popup-single", "required": true, "hidden": true },
     { "name": "yearId",           "label": { "en_US": "Year",                          "es_ES": "Año" },                     "type": "search",  "selector": "year", "inputStyle": "popup-single", "required": true, "dependsOn": "orgId", "section": "primary" }
   ],
   "defaultSort": { "field": "account", "direction": "asc" },

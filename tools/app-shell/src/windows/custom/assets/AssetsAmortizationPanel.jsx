@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 
 function fmt(v) {
@@ -91,7 +92,10 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
       </div>
 
       {loading ? (
-        <div className="text-xs text-gray-400 py-4 text-center">{ui('assetsLoading')}</div>
+        <div className="text-xs text-gray-400 py-4 text-center inline-flex items-center gap-1.5 justify-center w-full">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          {ui('assetsLoading')}
+        </div>
       ) : lines.length === 0 ? (
         <div className="text-xs text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">
           {ui('assetsNoAmortizationLines')}

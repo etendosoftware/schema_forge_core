@@ -585,7 +585,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               )}
             </button>
             <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+              {label}
             </Label>
           </div>
         </FieldHighlight>

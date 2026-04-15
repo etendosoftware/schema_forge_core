@@ -15,9 +15,7 @@ const fields = [
 
 // @sf-generated-start component:ReturnMaterialLineForm
 export default function ReturnMaterialLineForm(props) {
-  // @sf-custom-slot hooks:ReturnMaterialLineForm
   return <EntityForm fields={fields} {...props} />;
 }
+ReturnMaterialLineForm.hasCollapsedFields = false;
 // @sf-generated-end component:ReturnMaterialLineForm
-
-// @sf-custom-slot section:ReturnMaterialLineForm-custom

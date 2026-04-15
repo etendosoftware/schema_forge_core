@@ -28,7 +28,7 @@
   "parameters": [
     { "name": "dateFrom", "label": { "en_US": "From Date", "es_ES": "Desde" }, "type": "date", "default": "__FIRST_OF_PREV_MONTH__", "required": true, "section": "primary" },
     { "name": "dateTo", "label": { "en_US": "To Date", "es_ES": "Hasta" }, "type": "date", "default": "__TODAY__", "required": true, "section": "primary" },
-    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "popup-single", "required": true, "section": "primary" },
+    { "name": "orgId", "label": { "en_US": "Organization", "es_ES": "Organización" }, "type": "search", "selector": "org", "inputStyle": "popup-single", "required": true, "hidden": true },
     { "name": "acctSchemaId", "label": { "en_US": "General Ledger", "es_ES": "Libro Mayor" }, "type": "search", "selector": "acctschema", "inputStyle": "popup-single", "required": true, "section": "primary" },
     { "name": "bPartnerId", "label": { "en_US": "Contacts", "es_ES": "Contactos" }, "type": "search", "selector": "bpartner", "multi": true, "inputStyle": "popup", "section": "dimensions", "groupByValue": "bpartner", "groupByField": "bpname" },
     { "name": "productId", "label": { "en_US": "Product", "es_ES": "Producto" }, "type": "search", "selector": "product", "multi": true, "inputStyle": "popup", "section": "dimensions", "groupByValue": "product", "groupByField": "productname" },
