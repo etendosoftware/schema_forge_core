@@ -10,10 +10,6 @@
     "hidePrint": true,
     "menuActions": [
       {
-        "key": "duplicate",
-        "label": "Duplicate"
-      },
-      {
         "key": "cancel",
         "label": "Cancel",
         "destructive": true,

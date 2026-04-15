@@ -124,8 +124,8 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           </svg>
         </button>
 
-        <button type="button" aria-label={ui('cloneOrderBtn')} style={iconBtnStyle} onClick={() => setShowClone(true)}>
-          <CopyIcon />
+        <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
+          <CopyIcon />{ui('cloneOrderBtn')}
         </button>
 
         <SendDocumentButton onClick={() => setShowSend(true)} />
@@ -216,8 +216,8 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           </button>
         )}
 
-        <button type="button" aria-label={ui('cloneOrderBtn')} style={iconBtnStyle} onClick={() => setShowClone(true)}>
-          <CopyIcon />
+        <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
+          <CopyIcon />{ui('cloneOrderBtn')}
         </button>
 
         <SendDocumentButton onClick={() => setShowSend(true)} />
@@ -266,8 +266,8 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
   return (
     <>
-      <button type="button" aria-label={ui('cloneOrderBtn')} style={iconBtnStyle} onClick={() => setShowClone(true)}>
-        <CopyIcon />
+      <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
+        <CopyIcon />{ui('cloneOrderBtn')}
       </button>
       {showClone && createPortal(
         <CloneModal
@@ -798,9 +798,35 @@ function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
   const ui = useUI();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
+  const [lines,   setLines]   = useState(null); // null = loading
 
   const documentNo = data?.documentNo || '';
   const bpName     = data?.['businessPartner$_identifier'] || '';
+  const status     = data?.documentStatus;
+  const currency   = data?.['currency$_identifier'] || '';
+  const total      = Number(data?.grandTotalAmount) || 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (!cancelled) setLines(json?.response?.data ?? []); })
+      .catch(() => { if (!cancelled) setLines([]); });
+    return () => { cancelled = true; };
+  }, [orderId, apiBaseUrl, headers]);
+
+  const statusMap = {
+    DR: { label: ui('orderStatusDraft'),     bg: '#FEF3C7', color: '#D97706' },
+    CO: { label: ui('orderStatusCompleted'), bg: '#DCFCE7', color: '#16A34A' },
+    CL: { label: ui('orderStatusClosed'),    bg: '#F3F4F6', color: '#6B7280' },
+    VO: { label: ui('orderStatusVoided'),    bg: '#FEE2E2', color: '#DC2626' },
+  };
+  const badge = statusMap[status] || { label: status, bg: '#F3F4F6', color: '#6B7280' };
+
+  const lineCount   = lines?.length ?? null;
+  const productLine = lineCount === null
+    ? '…'
+    : `${lineCount === 1 ? ui('soLine') : ui('soLines', { count: lineCount })}  ·  ${currency} ${fmtNum(total)}`;
 
   const handleClone = async () => {
     setLoading(true);
@@ -824,18 +850,47 @@ function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
 
   return (
     <div style={overlayStyle}>
-      <div style={{ ...cardStyle, width: 420 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 12px' }}>
-          <span style={{ fontWeight: 600, fontSize: 15 }}>{ui('cloneOrderConfirmTitle')}</span>
+      <div style={{ ...cardStyle, width: 440 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0' }}>
+          <span style={{ fontWeight: 600, fontSize: 15, color: '#111827' }}>{ui('cloneOrderConfirmTitle')}</span>
           <button type="button" onClick={onClose} style={closeBtn}>×</button>
         </div>
-        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '12px 14px' }}>
-            <div style={{ fontWeight: 500, fontSize: 14 }}>{bpName}</div>
-            {documentNo && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{documentNo}</div>}
+
+        <div style={{ padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Summary card */}
+          <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+            {/* Row 1: contact · docNo · badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F9FAFB' }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#111827', flex: 1,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {bpName}
+              </span>
+              {documentNo && (
+                <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {documentNo}
+                </span>
+              )}
+              {status && (
+                <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 999,
+                  background: badge.bg, color: badge.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {badge.label}
+                </span>
+              )}
+            </div>
+            {/* Row 2: products + total */}
+            <div style={{ padding: '6px 14px 9px', background: '#F9FAFB', borderTop: '1px solid #F3F4F6' }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>{productLine}</span>
+            </div>
           </div>
-          <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>{ui('cloneOrderConfirmBody')}</p>
+
+          {/* Explanatory text — same horizontal inset as card content */}
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0, padding: '0 2px' }}>{ui('cloneOrderConfirmBody')}</p>
+
           {error && <div style={{ color: '#ef4444', fontSize: 12 }}>{error}</div>}
+
+          {/* Buttons */}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" onClick={onClose} disabled={loading} style={btnSecondary}>
               {ui('cancel')}
@@ -875,6 +930,12 @@ const btnPrimaryStyle = {
 const btnSecondary = {
   fontSize: 12, padding: '7px 14px', borderRadius: 6,
   border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280', cursor: 'pointer',
+};
+
+const btnCloneStyle = {
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  padding: '5px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+  border: '1px solid #D1D5DB', background: 'transparent', color: '#374151', cursor: 'pointer',
 };
 
 const iconBtnStyle = {
