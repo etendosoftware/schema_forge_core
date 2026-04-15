@@ -67,7 +67,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
   const fetchPage = useCallback((q, off, append) => {
     const extra = Object.entries(extraParams).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
     const params = `q=${encodeURIComponent(q)}&limit=${SELECTOR_PAGE_SIZE}&offset=${off}${extra ? '&' + extra : ''}`;
-    return fetch(`/api/report-selectors/${selector}?${params}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+    return fetch(`/sws/report-selectors/${selector}?${params}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
       .then(data => {
         const items = Array.isArray(data) ? data : (data?.items ?? []);
@@ -178,7 +178,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
-    return `/api/report-selectors/${selector}?q=${encodeURIComponent(q)}${extra ? '&' + extra : ''}`;
+    return `/sws/report-selectors/${selector}?q=${encodeURIComponent(q)}${extra ? '&' + extra : ''}`;
   }, [selector]); // selector-only dep: extraParams read from ref at call time
 
   const useDrawerSearch = selector === 'product';
@@ -197,7 +197,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
       if (selectedOrgId) params.set('selectedOrgId', selectedOrgId);
       if (roleOrgIds && roleOrgIds.length > 0) params.set('roleOrgIds', roleOrgIds.join(','));
     }
-    fetch(`/api/report-selectors/${selector}?${params.toString()}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+    fetch(`/sws/report-selectors/${selector}?${params.toString()}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
       .then(data => { setOptions(normalizeOptions(data)); setOpen(true); })
       .catch(() => setOptions([]));
@@ -266,8 +266,8 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
     if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
     if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
     const productSelectorUrl = productSelectorParams.toString()
-      ? `/api/report-selectors/product?${productSelectorParams.toString()}`
-      : '/api/report-selectors/product';
+      ? `/sws/report-selectors/product?${productSelectorParams.toString()}`
+      : '/sws/report-selectors/product';
 
     const selectedItems = multi
       ? selected
@@ -406,7 +406,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
   useEffect(() => {
     if (!open) return;
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+      fetch(`/sws/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
         .then(data => setOptions(Array.isArray(data) ? data : (data?.items ?? [])))
         .catch(() => setOptions([]));
@@ -550,7 +550,7 @@ function SingleSelectModal({ selector, label, value, displayValue, onChange, has
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
-    const url = `/api/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`;
+    const url = `/sws/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`;
     const t = setTimeout(() => {
       fetch(url).then(r => r.json()).then(setOptions).catch(() => setOptions([]));
     }, query ? 300 : 0);
@@ -1030,7 +1030,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
     if (!autoParams.length) return;
     Promise.all(
       autoParams.map(p =>
-        fetch(`/api/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+        fetch(`/sws/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
           .then(r => r.json())
           .then(data => { const rows = Array.isArray(data) ? data : (data.items || []); return rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null; })
           .catch(() => null)
