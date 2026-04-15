@@ -2,15 +2,18 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { X, Printer, FileDown, FileSpreadsheet, FileText, Loader2, Eye } from 'lucide-react';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { statusLabel } from '@/lib/statusBadge.js';
+import { useAnimatedOpen } from '@/lib/useAnimatedOpen.js';
+import { useUI } from '@/i18n';
 
 // ---------------------------------------------------------------------------
 // jsreport recipe ↔ format mapping
+// Labels are resolved at render time via useUI() (see FORMATS usage below).
 // ---------------------------------------------------------------------------
 const FORMATS = [
-  { id: 'preview', label: 'Preview', icon: Eye, recipe: 'html' },
-  { id: 'pdf', label: 'PDF', icon: FileDown, recipe: 'chrome-pdf', ext: 'pdf', mime: 'application/pdf' },
-  { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet, recipe: 'html-to-xlsx', ext: 'xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
-  { id: 'csv', label: 'CSV', icon: FileText, recipe: 'text', ext: 'csv', mime: 'text/csv' },
+  { id: 'preview', labelKey: 'preview', icon: Eye, recipe: 'html' },
+  { id: 'pdf', labelKey: 'pdf', icon: FileDown, recipe: 'chrome-pdf', ext: 'pdf', mime: 'application/pdf' },
+  { id: 'xlsx', labelKey: 'excel', icon: FileSpreadsheet, recipe: 'html-to-xlsx', ext: 'xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  { id: 'csv', labelKey: 'csv', icon: FileText, recipe: 'text', ext: 'csv', mime: 'text/csv' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -202,6 +205,8 @@ export default function ReportDrawer({
   apiBaseUrl, entity, token, sortColumn, sortDirection,
   activeFilters,
 }) {
+  const ui = useUI();
+  const { shouldRender, isClosing } = useAnimatedOpen(open, 250);
   const iframeRef = useRef(null);
   const [activeFormat, setActiveFormat] = useState('preview');
   const [loading, setLoading] = useState(false);
@@ -353,27 +358,27 @@ export default function ReportDrawer({
     }
   }, [handleExport]);
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   const dataReady = !fetchingData && reportRows && reportRows.length > 0;
 
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/30 z-40 transition-opacity" onClick={onClose} />
+      <div className={`fixed inset-0 bg-black/30 z-50 ${isClosing ? 'scrim-fade-out' : 'scrim-fade-in'}`} onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 w-[70%] max-w-5xl bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
+      <div className={`fixed right-0 top-0 bottom-0 w-[70%] max-w-5xl bg-white shadow-2xl z-50 flex flex-col ${isClosing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold text-foreground">{title || windowName || 'Report'}</h2>
+            <h2 className="text-sm font-semibold text-foreground">{title || windowName || ui('report')}</h2>
             {fetchingData ? (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" /> Loading all records...
+                <Loader2 className="h-3 w-3 animate-spin" /> {ui('loadingAllRecords')}
               </span>
             ) : reportRows ? (
-              <span className="text-xs text-muted-foreground">{reportRows.length} records</span>
+              <span className="text-xs text-muted-foreground">{reportRows.length} {ui('records')}</span>
             ) : null}
           </div>
 
@@ -383,12 +388,13 @@ export default function ReportDrawer({
               const Icon = fmt.icon;
               const isActive = activeFormat === fmt.id;
               const disabled = !dataReady || loading || (fmt.id !== 'preview' && !jsreportAvailable);
+              const label = ui(fmt.labelKey);
               return (
                 <button
                   key={fmt.id}
                   onClick={() => handleFormatClick(fmt.id)}
                   disabled={disabled}
-                  title={!jsreportAvailable && fmt.id !== 'preview' ? 'jsreport not available' : fmt.label}
+                  title={!jsreportAvailable && fmt.id !== 'preview' ? ui('jsreportNotAvailable') : label}
                   className={[
                     'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors',
                     isActive
@@ -398,7 +404,7 @@ export default function ReportDrawer({
                   ].join(' ')}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {fmt.label}
+                  {label}
                 </button>
               );
             })}
@@ -412,7 +418,7 @@ export default function ReportDrawer({
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               <Printer className="h-3.5 w-3.5" />
-              Print
+              {ui('print')}
             </button>
 
             <button
@@ -427,7 +433,7 @@ export default function ReportDrawer({
         {/* jsreport status bar */}
         {jsreportAvailable === false && (
           <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-700">
-            jsreport not available — PDF, Excel, CSV exports disabled. Start it with: <code className="bg-amber-100 px-1 rounded">docker compose -f docker/jsreport/docker-compose.yml up -d</code>
+            {ui('jsreportNotAvailableBanner')} <code className="bg-amber-100 px-1 rounded">docker compose -f docker/jsreport/docker-compose.yml up -d</code>
           </div>
         )}
 
@@ -437,7 +443,7 @@ export default function ReportDrawer({
             {(fetchingData || loading) && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>{fetchingData ? 'Fetching all records...' : 'Rendering report...'}</span>
+                <span>{fetchingData ? ui('fetchingAllRecords') : ui('renderingReport')}</span>
               </div>
             )}
             {error && (

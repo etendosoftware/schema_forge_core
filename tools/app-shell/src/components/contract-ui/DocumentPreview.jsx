@@ -33,7 +33,7 @@ export function DocumentPreview({ open, onClose, title = 'Document Preview', pdf
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-50 transition-opacity"
+        className="fixed inset-0 bg-black/30 z-50 transition-opacity"
         onClick={onClose}
       />
 
