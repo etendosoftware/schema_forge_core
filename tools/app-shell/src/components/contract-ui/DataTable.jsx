@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
@@ -730,7 +730,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
@@ -1030,7 +1030,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     });
   };
 
-  const colSpan = columns.length + (selectable ? 1 : 0);
+  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0);
 
   return (
     <div className="space-y-0">
@@ -1120,6 +1120,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                   </TableHead>
                 );
               })}
+              {onDeleteRow && <TableHead className="w-10 px-2" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1143,7 +1144,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       else onRowSelect?.(row);
                     }}
                     className={[
-                      'transition-colors h-12',
+                      'transition-colors h-12 group/row',
                       (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
                       isChecked ? 'bg-primary/5' : '',
                       selectedId != null && row.id === selectedId ? 'bg-primary/10' : '',
@@ -1172,6 +1173,17 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}
+                    {onDeleteRow && (
+                      <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onDeleteRow(row)}
+                          className="opacity-0 group-hover/row:opacity-100 h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
