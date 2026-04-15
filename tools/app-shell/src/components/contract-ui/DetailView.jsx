@@ -955,7 +955,7 @@ export function DetailView({
                     if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                   }}>
                     <Save className="h-3.5 w-3.5" />
-                    {ui('saveDraft')}
+                    {ui('save')}
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                     const saved = await hook.handleSaveAndProcess(draftMode);
@@ -969,7 +969,7 @@ export function DetailView({
                     }
                   }}>
                     <Check className="h-3.5 w-3.5" />
-                    {ui('save')} &amp; {draftMode.label || ui('process')}
+                    {draftMode.label || ui('process')}
                   </Button>
                 </>
               ) : isNew ? (<>
@@ -978,7 +978,7 @@ export function DetailView({
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                 }}>
                   <Save className="h-3.5 w-3.5" />
-                  {ui('saveDraft')}
+                  {ui('save')}
                 </Button>
                 {!isProcessed && hook.children.length > 0 && (
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
@@ -993,7 +993,7 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  {ui('saveAndProcess', { action: tMenu(draftMode.label) || ui('process') })}
+                  {tMenu(draftMode.label) || ui('process')}
                 </Button>
                 )}
               </>
@@ -1782,7 +1782,7 @@ export function DetailView({
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                     {customTabs.length > 0 && (
                       <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">{ui('docs')}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-24">{ui('docs')}</span>
                         <div className="flex-1">
                           {customTabs.map(ct => {
                             const TabComponent = ct.Component;
@@ -1803,7 +1803,7 @@ export function DetailView({
                     )}
                     {notesField && (
                       <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">{ui('notes')}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
                         <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
                             <textarea
@@ -1813,7 +1813,7 @@ export function DetailView({
                               placeholder={ui('description')}
                               rows={3}
                               autoFocus
-                              className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+                              className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
                             />
                           ) : (
                             <div
@@ -1821,7 +1821,7 @@ export function DetailView({
                               role="textbox"
                               onClick={() => setNotesFocused(true)}
                               onFocus={() => setNotesFocused(true)}
-                              className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+                              className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
                             >
                               {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
                             </div>
