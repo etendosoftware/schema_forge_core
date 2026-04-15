@@ -174,6 +174,7 @@ export function DetailView({
     if (detailEntity) {
       next[detailEntity] = {
         parentId: parentRecordId,
+        ...(isSOTrx ? { isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
       };
     }
@@ -543,13 +544,9 @@ export function DetailView({
         result.netUnitPrice = taxRate > 0
           ? parseFloat((gross / (1 + taxRate / 100)).toFixed(6))
           : gross;
-        console.log('[PRICE FIX] derived netUnitPrice from grossUnitPrice',
-          { gross, taxRate, net: result.netUnitPrice, taxId });
       }
-      // Show the net price to the user; fall back to gross only if net is still unavailable.
-      if (result.grossUnitPrice != null && !result.unitPrice) {
-        result.unitPrice = result.netUnitPrice ?? result.grossUnitPrice;
-      }
+      // netUnitPrice is kept as a fallback for the cascade guard below.
+      // PriceActual will be derived by SL_Order_Amt from Gross_Unit_Price, not set here.
       // SL_Invoice_Product / SL_Order_Product callouts reset quantity fields to 0 as a
       // classic Etendo "clear-for-entry" signal. Discard any qty=0 update when the row
       // already has a positive value so the user's default (or entered) quantity is kept.
@@ -566,34 +563,48 @@ export function DetailView({
       const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
       // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
       const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
-      console.log('[CASCADE check]', { priceUpdated, amountNotComputed, lineNetAmount: result.lineNetAmount, unitPrice: result.unitPrice, grossUnitPrice: result.grossUnitPrice });
       if (priceUpdated && amountNotComputed) {
         try {
-          const cascadePrice = result.unitPrice ?? result.grossUnitPrice;
           // Merge first callout result into the form state so SL_Order_Amt sees the
-          // freshly set tax, grossUnitPrice, gROSSPRICE, etc.
+          // freshly set tax, grossUnitPrice, etc.
           const cascadeState = { ...formStateForCallout };
           for (const [k, v] of Object.entries(result)) {
             if (!k.includes('$_identifier')) cascadeState[k] = v;
           }
-          // The callout endpoint resolves by DB column name (e.g. 'PriceActual'), not by
-          // the SFField API key ('unitPrice'). Look up the column from addLineFields so
-          // NeoCalloutService.resolveCallout can find SL_Order_Amt via equalsIgnoreCase.
+          // For tax-inclusive price lists: trigger SL_Order_Amt via Gross_Unit_Price so
+          // it derives PriceActual (net) and lineNetAmount correctly.
+          // For regular price lists: trigger via PriceActual as usual.
+          // The callout endpoint resolves by DB column name, not by the SFField API key.
+          const grossUnitPriceColumn = (addLineFields?.entry ?? []).find(
+            f => f.key === 'grossUnitPrice'
+          )?.column ?? 'inpgrossUnitPrice';
           const unitPriceColumn = (addLineFields?.entry ?? []).find(
             f => f.key === 'unitPrice'
           )?.column ?? 'PriceActual';
+          const useGross = result.grossUnitPrice != null;
+          const cascadeField = useGross ? grossUnitPriceColumn : unitPriceColumn;
+          const cascadeValue = useGross
+            ? result.grossUnitPrice
+            : (result.netUnitPrice ?? result.unitPrice ?? result.grossUnitPrice);
+          // SL_Order_Amt needs grossListPrice to compute lineNetAmount for tax-inclusive lists.
+          // If it's missing or 0, seed it with grossUnitPrice so the callout has a valid base.
+          if (useGross && (cascadeState.grossListPrice == null || Number(cascadeState.grossListPrice) === 0)) {
+            cascadeState.grossListPrice = result.grossUnitPrice;
+          }
+          const cascadePayload = {
+            field: cascadeField,
+            value: String(cascadeValue ?? ''),
+            formState: cascadeState,
+            ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+          };
           const cascadeRes = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              field: unitPriceColumn,
-              value: String(cascadePrice ?? ''),
-              formState: cascadeState,
-              ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
-            }),
+            body: JSON.stringify(cascadePayload),
           });
           if (cascadeRes.ok) {
             const cascadeData = await cascadeRes.json();
+            console.log('[DBG] SL_Order_Amt raw response:', JSON.stringify(cascadeData));
             const cascadeResult = {};
             if (cascadeData.updates) {
               for (const [k, entry] of Object.entries(cascadeData.updates)) {
@@ -609,6 +620,13 @@ export function DetailView({
             // Same guard: don't let the cascade zero out a quantity the user already set.
             for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
               if (cascadeResult[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete cascadeResult[qtyKey];
+            }
+            // Ensure unitPrice = net after cascade for tax-included price lists.
+            // If SL_Order_Amt did not echo back unitPrice, apply it explicitly so
+            // PriceActual is saved as the correct net value (not the gross selector price).
+            if (result.grossUnitPrice != null && result.netUnitPrice != null
+                && cascadeResult.unitPrice == null) {
+              cascadeResult.unitPrice = result.netUnitPrice;
             }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }
@@ -1110,6 +1128,7 @@ export function DetailView({
                         onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
                         selectedRowId={selectedLine?.id}
                         showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
+                        selectorContext={selectorContextByEntity[detailEntity]}
                         addRow={{
                           active: addingLine,
                           fields: allEntryFields,

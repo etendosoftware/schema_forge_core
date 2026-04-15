@@ -234,6 +234,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   };
 
   const handleConfirm = async () => {
+    console.log('[DBG] POST line body:', JSON.stringify(values));
     const result = await onAdd(values);
     if (result === false || result == null) {
       return;
@@ -281,6 +282,15 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (topField === 'id' || topField === '_aux' || topField === 'label'
             || topField === 'name' || topField === 'searchKey'
             || typeof topVal === 'object' || topVal === null) continue;
+        // Gross price from price list — map directly to grossUnitPrice so the DB trigger
+        // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+        if (topField === 'standardPrice' && topVal != null) {
+          snapshot['grossUnitPrice'] = topVal;
+          handleChange('grossUnitPrice', topVal);
+          snapshot['grossListPrice'] = topVal;
+          handleChange('grossListPrice', topVal);
+          continue;
+        }
         const ctxKey = `${key}_${topField}`;
         if (!(ctxKey in snapshot)) {
           snapshot[ctxKey] = topVal;
@@ -362,6 +372,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 value={displayLabel}
                 placeholder={t(field.column) ?? field.label ?? field.key}
                 selectorUrl={selectorUrl}
+                selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
                 onSelect={(item) => {
@@ -474,7 +485,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDown, inputRef, title }) {
+function LookupField({ value, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -507,6 +518,7 @@ function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDo
         onClose={() => setOpen(false)}
         onSelect={(item) => { onSelect(item); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={title ? `Search ${title}` : undefined}
       />
@@ -517,7 +529,7 @@ function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDo
 /**
  * Small button that opens the ProductSearchDrawer for lookup-enabled fields.
  */
-function LookupButton({ selectorUrl, token, onSelect, title }) {
+function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -534,6 +546,7 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
         onClose={() => setOpen(false)}
         onSelect={(item) => { onSelect(item); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={title ? `Search ${title}` : undefined}
       />
