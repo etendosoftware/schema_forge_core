@@ -1160,7 +1160,7 @@ export function DetailView({
                       {(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0 && (
                         <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                           <span className="text-sm font-medium text-foreground">
-                            {ui('selected').replace('{count}', selectedChildRows.length)}
+                            {ui('selected', { count: selectedChildRows.length })}
                           </span>
                           <div className="flex items-center gap-2">
                             <button
@@ -1188,11 +1188,11 @@ export function DetailView({
                                     }
                                   }
                                   setSelectedChildRows([]);
-                                  if (deleted > 0) toast.success(`${deleted} record${deleted > 1 ? 's' : ''} deleted`);
+                                  if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
                                   const failed = results.length - deleted;
-                                  if (failed > 0) toast.error(`${failed} record${failed > 1 ? 's' : ''} could not be deleted`);
+                                  if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
                                 } catch (err) {
-                                  toast.error(err.message || 'Network error');
+                                  toast.error(err.message || ui('networkError'));
                                 } finally {
                                   setDeletingChildren(false);
                                 }
@@ -1233,12 +1233,12 @@ export function DetailView({
                             if (res.ok) {
                               hook.handleDeleteChild(row.id);
                               if (selectedLine?.id === row.id) setSelectedLine(null);
-                              toast.success('Record deleted');
+                              toast.success(ui('recordDeleted'));
                             } else {
                               toast.error(await extractErrorMessage(res));
                             }
                           } catch (err) {
-                            toast.error(err.message || 'Network error');
+                            toast.error(err.message || ui('networkError'));
                           }
                         } : undefined}
                         addRow={{

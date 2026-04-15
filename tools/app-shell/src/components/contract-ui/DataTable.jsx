@@ -1176,9 +1176,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                     {onDeleteRow && (
                       <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                         <button
+                          type="button"
                           onClick={() => onDeleteRow(row)}
                           className="opacity-0 group-hover/row:opacity-100 h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                          title="Eliminar"
+                          title={ui('deleteRowTooltip')}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

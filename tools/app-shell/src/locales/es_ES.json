@@ -17417,7 +17417,12 @@
     "updateListSystemCount": "Actualizar cantidad del sistema",
     "updating": "Actualizando...",
     "quantitiesUpdated": "Cantidades del sistema actualizadas",
-    "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema"
+    "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema",
+    "deleteRowTooltip": "Eliminar",
+    "recordDeleted": "Registro eliminado",
+    "recordsDeleted": "{count} registro(s) eliminado(s)",
+    "recordsCouldNotBeDeleted": "{count} registro(s) no pudieron ser eliminados",
+    "networkError": "Error de red"
   },
   "menus": {
     "Tax": {

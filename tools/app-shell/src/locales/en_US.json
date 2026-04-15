@@ -17178,7 +17178,12 @@
     "updateListSystemCount": "Update List System Count",
     "updating": "Updating...",
     "quantitiesUpdated": "System quantities updated",
-    "errorUpdatingQuantities": "Failed to update system quantities"
+    "errorUpdatingQuantities": "Failed to update system quantities",
+    "deleteRowTooltip": "Delete",
+    "recordDeleted": "Record deleted",
+    "recordsDeleted": "{count} record(s) deleted",
+    "recordsCouldNotBeDeleted": "{count} record(s) could not be deleted",
+    "networkError": "Network error"
   },
   "menus": {
     "Currency": {
