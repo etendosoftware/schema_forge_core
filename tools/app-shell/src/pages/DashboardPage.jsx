@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import UserAvatarButton from '@/components/UserAvatarButton.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import {
   DollarSign,
   CreditCard,
