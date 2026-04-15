@@ -1,0 +1,1363 @@
+{
+  "version": "0.2.0",
+  "generatedAt": "2026-04-14T17:37:16.943Z",
+  "checksum": "4ccba30706d8b0c3",
+  "frontendContract": {
+    "window": {
+      "id": "800076",
+      "name": "Internal Consumption",
+      "primaryEntity": "internalConsumption",
+      "category": "inventory",
+      "breadcrumb": "Inventory / Internal Consumption",
+      "customComponents": {
+        "moreMenuContent": "InternalConsumptionActions"
+      },
+      "statusField": "status",
+      "layoutType": "default"
+    },
+    "entities": {
+      "internalConsumption": {
+        "tableName": "M_Internal_Consumption",
+        "tabId": "800202",
+        "tabName": "Header",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "movementDate",
+            "apiKey": "movementDate",
+            "column": "MovementDate",
+            "label": "Movement Date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
+          },
+          {
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "label": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "label": "Description",
+            "type": "text",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "section": "other"
+          },
+          {
+            "name": "status",
+            "apiKey": "status",
+            "column": "Status",
+            "label": "Status",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": false,
+            "columnType": "status",
+            "enumValues": [
+              {
+                "value": "DR",
+                "name": "Draft"
+              },
+              {
+                "value": "CO",
+                "name": "Completed"
+              },
+              {
+                "value": "VO",
+                "name": "Voided"
+              }
+            ],
+            "defaultValue": "DR"
+          }
+        ],
+        "searchableFields": [
+          "name"
+        ],
+        "computedFields": [
+          {
+            "name": "status",
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            }
+          }
+        ]
+      },
+      "internalConsumptionLine": {
+        "tableName": "M_Internal_ConsumptionLine",
+        "tabId": "800203",
+        "tabName": "Lines",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "label": "Line No.",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@"
+          },
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "label": "Product",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Product",
+            "inputMode": "search",
+            "lookup": true,
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SL_Internal_Consumption_Product"
+            }
+          },
+          {
+            "name": "movementQuantity",
+            "apiKey": "movementQuantity",
+            "column": "MovementQty",
+            "label": "Movement Quantity",
+            "type": "quantity",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "label": "UOM",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "reference": "UOM",
+            "inputMode": "selector"
+          },
+          {
+            "name": "storageBin",
+            "apiKey": "storageBin",
+            "column": "M_Locator_ID",
+            "label": "Warehouse",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "reference": "Locator",
+            "inputMode": "search"
+          }
+        ],
+        "searchableFields": [
+          "product"
+        ],
+        "computedFields": [
+          {
+            "name": "lineNo",
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@"
+            }
+          },
+          {
+            "name": "movementQuantity",
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            }
+          }
+        ],
+        "javaQualifier": "internalConsumptionLineHandler"
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "800076",
+      "name": "Internal Consumption",
+      "primaryEntity": "internalConsumption",
+      "category": "inventory",
+      "breadcrumb": "Inventory / Internal Consumption",
+      "customComponents": {
+        "moreMenuContent": "InternalConsumptionActions"
+      },
+      "statusField": "status"
+    },
+    "entities": {
+      "internalConsumption": {
+        "tableName": "M_Internal_Consumption",
+        "tabId": "800202",
+        "tabName": "Header",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "movementDate",
+            "apiKey": "movementDate",
+            "column": "MovementDate",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "trxOrganization",
+            "apiKey": "trxOrganization",
+            "column": "AD_Orgtrx_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "salesCampaign",
+            "apiKey": "salesCampaign",
+            "column": "C_Campaign_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "activity",
+            "apiKey": "activity",
+            "column": "C_Activity_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "stDimension",
+            "apiKey": "stDimension",
+            "column": "User1_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "apiKey": "ndDimension",
+            "column": "User2_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "costCenter",
+            "apiKey": "costCenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "status",
+            "apiKey": "status",
+            "column": "Status",
+            "type": "enum",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_Internal_Consumption_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "internalConsumptionLine": {
+        "tableName": "M_Internal_ConsumptionLine",
+        "tabId": "800203",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "attributeSetValue",
+            "apiKey": "attributeSetValue",
+            "column": "M_AttributeSetInstance_ID",
+            "type": "productAttribute",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "movementQuantity",
+            "apiKey": "movementQuantity",
+            "column": "MovementQty",
+            "type": "quantity",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "text",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "storageBin",
+            "apiKey": "storageBin",
+            "column": "M_Locator_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "orderQuantity",
+            "apiKey": "orderQuantity",
+            "column": "QuantityOrder",
+            "type": "quantity",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "orderUOM",
+            "apiKey": "orderUOM",
+            "column": "M_Product_Uom_Id",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "voidedInternalConsumptionLine",
+            "apiKey": "voidedInternalConsumptionLine",
+            "column": "Void_Intconsumption_Line_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "internalConsumption",
+            "apiKey": "internalConsumption",
+            "column": "M_Internal_Consumption_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "internalConsumptionLine",
+            "apiKey": "internalConsumptionLine",
+            "column": "M_Internal_Consumptionline_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ],
+        "javaQualifier": "internalConsumptionLineHandler"
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internalConsumption",
+        "entity": "internalConsumption",
+        "supportedFilters": [
+          "name"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/internalConsumption/:id",
+        "entity": "internalConsumption",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/internalConsumption",
+        "entity": "internalConsumption",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/internalConsumption/:id",
+        "entity": "internalConsumption",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/internalConsumption/:id",
+        "entity": "internalConsumption",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/internalConsumptionLine",
+        "entity": "internalConsumptionLine",
+        "supportedFilters": [
+          "product"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/internalConsumptionLine/:id",
+        "entity": "internalConsumptionLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/internalConsumptionLine",
+        "entity": "internalConsumptionLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/internalConsumptionLine/:id",
+        "entity": "internalConsumptionLine",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/internalConsumptionLine/:id",
+        "entity": "internalConsumptionLine",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "internal-consumption",
+    "baseUrl": "/sws/neo/internal-consumption",
+    "crud": {
+      "internalConsumption": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/internal-consumption/internalConsumption",
+        "detailUrl": "/sws/neo/internal-consumption/internalConsumption/{id}",
+        "supportedFilters": [
+          "name"
+        ]
+      },
+      "internalConsumptionLine": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/internal-consumption/internalConsumptionLine",
+        "detailUrl": "/sws/neo/internal-consumption/internalConsumptionLine/{id}",
+        "supportedFilters": [
+          "product"
+        ]
+      }
+    },
+    "selectors": [
+      {
+        "entity": "internalConsumptionLine",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "inputMode": "search",
+        "url": "/sws/neo/internal-consumption/internalConsumptionLine/selectors/product"
+      },
+      {
+        "entity": "internalConsumptionLine",
+        "field": "uOM",
+        "column": "C_UOM_ID",
+        "reference": "UOM",
+        "inputMode": "selector",
+        "url": "/sws/neo/internal-consumption/internalConsumptionLine/selectors/uOM"
+      },
+      {
+        "entity": "internalConsumptionLine",
+        "field": "storageBin",
+        "column": "M_Locator_ID",
+        "reference": "Locator",
+        "inputMode": "search",
+        "url": "/sws/neo/internal-consumption/internalConsumptionLine/selectors/storageBin"
+      }
+    ],
+    "actions": [
+      {
+        "entity": "internalConsumption",
+        "field": "processNow",
+        "column": "Processing",
+        "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/processNow",
+        "processId": "800131",
+        "processType": "classic"
+      },
+      {
+        "entity": "internalConsumption",
+        "field": "posted",
+        "column": "Posted",
+        "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted"
+      }
+    ],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=internal-consumptionDate"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    }
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "internalConsumption",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be present in internalConsumption"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "internalConsumption",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in internalConsumption"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "internalConsumption",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in internalConsumption"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "internalConsumption",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should be present in internalConsumption"
+      },
+      {
+        "id": "t-5",
+        "category": "field-type",
+        "entity": "internalConsumption",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should have type 'string' in internalConsumption"
+      },
+      {
+        "id": "t-6",
+        "category": "field-type",
+        "entity": "internalConsumption",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in internalConsumption"
+      },
+      {
+        "id": "t-7",
+        "category": "field-type",
+        "entity": "internalConsumption",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in internalConsumption"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "internalConsumption",
+        "field": "status",
+        "runner": "node",
+        "description": "Field 'status' should have type 'string' in internalConsumption"
+      },
+      {
+        "id": "t-9",
+        "category": "searchable-filters",
+        "entity": "internalConsumption",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for internalConsumption"
+      },
+      {
+        "id": "t-10",
+        "category": "visibility",
+        "entity": "internalConsumption",
+        "runner": "node",
+        "description": "Entity 'internalConsumption' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-11",
+        "category": "readonlylogic-valid",
+        "entity": "internalConsumption",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in internalConsumption should be valid JS"
+      },
+      {
+        "id": "t-12",
+        "category": "readonlylogic-evaluable",
+        "entity": "internalConsumption",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in internalConsumption should have evaluable flag"
+      },
+      {
+        "id": "t-13",
+        "category": "default-value-type",
+        "entity": "internalConsumption",
+        "field": "status",
+        "runner": "node",
+        "description": "Default value for 'status' in internalConsumption should be a string"
+      },
+      {
+        "id": "t-14",
+        "category": "field-presence",
+        "entity": "internalConsumptionLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in internalConsumptionLine"
+      },
+      {
+        "id": "t-15",
+        "category": "field-presence",
+        "entity": "internalConsumptionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in internalConsumptionLine"
+      },
+      {
+        "id": "t-16",
+        "category": "field-presence",
+        "entity": "internalConsumptionLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should be present in internalConsumptionLine"
+      },
+      {
+        "id": "t-17",
+        "category": "field-presence",
+        "entity": "internalConsumptionLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should be present in internalConsumptionLine"
+      },
+      {
+        "id": "t-18",
+        "category": "field-presence",
+        "entity": "internalConsumptionLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should be present in internalConsumptionLine"
+      },
+      {
+        "id": "t-19",
+        "category": "field-type",
+        "entity": "internalConsumptionLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in internalConsumptionLine"
+      },
+      {
+        "id": "t-20",
+        "category": "field-type",
+        "entity": "internalConsumptionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in internalConsumptionLine"
+      },
+      {
+        "id": "t-21",
+        "category": "field-type",
+        "entity": "internalConsumptionLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should have type 'number' in internalConsumptionLine"
+      },
+      {
+        "id": "t-22",
+        "category": "field-type",
+        "entity": "internalConsumptionLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should have type 'string' in internalConsumptionLine"
+      },
+      {
+        "id": "t-23",
+        "category": "field-type",
+        "entity": "internalConsumptionLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should have type 'string' in internalConsumptionLine"
+      },
+      {
+        "id": "t-24",
+        "category": "searchable-filters",
+        "entity": "internalConsumptionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for internalConsumptionLine"
+      },
+      {
+        "id": "t-25",
+        "category": "visibility",
+        "entity": "internalConsumptionLine",
+        "runner": "node",
+        "description": "Entity 'internalConsumptionLine' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-26",
+        "category": "default-value-type",
+        "entity": "internalConsumptionLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Default value for 'lineNo' in internalConsumptionLine should be a string"
+      },
+      {
+        "id": "t-27",
+        "category": "default-value-type",
+        "entity": "internalConsumptionLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Default value for 'movementQuantity' in internalConsumptionLine should be a string"
+      },
+      {
+        "id": "t-28",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-29",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-30",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-31",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-32",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-33",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-34",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-35",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-36",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "costCenter",
+        "runner": "node",
+        "description": "System field 'costCenter' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-37",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-38",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-39",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-40",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-41",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-42",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-43",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-44",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-45",
+        "category": "system-field",
+        "entity": "internalConsumption",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for internalConsumption"
+      },
+      {
+        "id": "t-46",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "System field 'attributeSetValue' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-47",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "description",
+        "runner": "node",
+        "description": "System field 'description' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-48",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "System field 'orderQuantity' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-49",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "orderUOM",
+        "runner": "node",
+        "description": "System field 'orderUOM' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-50",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "voidedInternalConsumptionLine",
+        "runner": "node",
+        "description": "System field 'voidedInternalConsumptionLine' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-51",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-52",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "internalConsumption",
+        "runner": "node",
+        "description": "System field 'internalConsumption' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-53",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-54",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "internalConsumptionLine",
+        "runner": "node",
+        "description": "System field 'internalConsumptionLine' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-55",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-56",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-57",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-58",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-59",
+        "category": "system-field",
+        "entity": "internalConsumptionLine",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for internalConsumptionLine"
+      },
+      {
+        "id": "t-60",
+        "category": "rule-declared",
+        "rule": "SL_Internal_Consumption_Product",
+        "runner": "node",
+        "description": "Rule 'SL_Internal_Consumption_Product' (callout) should be declared"
+      },
+      {
+        "id": "t-61",
+        "category": "rule-declared",
+        "rule": "SL_Internal_Consumption_Conversion_UOM",
+        "runner": "node",
+        "description": "Rule 'SL_Internal_Consumption_Conversion_UOM' (callout) should be declared"
+      },
+      {
+        "id": "t-62",
+        "category": "rule-declared",
+        "rule": "SL_Internal_Consumption_Conversion_Qty",
+        "runner": "node",
+        "description": "Rule 'SL_Internal_Consumption_Conversion_Qty' (callout) should be declared"
+      },
+      {
+        "id": "t-63",
+        "category": "rule-declared",
+        "rule": "READONLY_MovementDate_Processed",
+        "runner": "node",
+        "description": "Rule 'READONLY_MovementDate_Processed' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-64",
+        "category": "rule-declared",
+        "rule": "DISPLAY_ProcessButton_NotVoided",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_ProcessButton_NotVoided' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-65",
+        "category": "rule-declared",
+        "rule": "DISPLAY_Posted",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_Posted' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-66",
+        "category": "rule-declared",
+        "rule": "DISPLAY_AccountingDimensions",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_AccountingDimensions' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-67",
+        "category": "rule-declared",
+        "rule": "DISPLAY_AttributeSetValue",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_AttributeSetValue' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-68",
+        "category": "rule-declared",
+        "rule": "DISPLAY_OrderUOM_OrderQty",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_OrderUOM_OrderQty' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-69",
+        "category": "rule-declared",
+        "rule": "DISPLAY_VoidedLine",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_VoidedLine' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-70",
+        "category": "rule-declared",
+        "rule": "READONLY_Project_Posted",
+        "runner": "node",
+        "description": "Rule 'READONLY_Project_Posted' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-71",
+        "category": "rule-declared",
+        "rule": "PROCESS_ProcessInternalConsumption",
+        "runner": "node",
+        "description": "Rule 'PROCESS_ProcessInternalConsumption' (process) should be declared"
+      },
+      {
+        "id": "t-72",
+        "category": "rule-declared",
+        "rule": "PROCESS_Posted",
+        "runner": "node",
+        "description": "Rule 'PROCESS_Posted' (process) should be declared"
+      },
+      {
+        "id": "t-73",
+        "category": "crud-flags",
+        "entity": "internalConsumption",
+        "runner": "node",
+        "description": "CRUD flags for 'internalConsumption' should all be booleans"
+      },
+      {
+        "id": "t-74",
+        "category": "crud-flags",
+        "entity": "internalConsumptionLine",
+        "runner": "node",
+        "description": "CRUD flags for 'internalConsumptionLine' should all be booleans"
+      },
+      {
+        "id": "t-75",
+        "category": "selector-endpoint",
+        "entity": "internalConsumptionLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in internalConsumptionLine should exist"
+      },
+      {
+        "id": "t-76",
+        "category": "selector-endpoint",
+        "entity": "internalConsumptionLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'uOM' in internalConsumptionLine should exist"
+      },
+      {
+        "id": "t-77",
+        "category": "selector-endpoint",
+        "entity": "internalConsumptionLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Selector endpoint for 'storageBin' in internalConsumptionLine should exist"
+      },
+      {
+        "id": "t-78",
+        "category": "action-endpoint",
+        "entity": "internalConsumption",
+        "field": "processNow",
+        "runner": "node",
+        "description": "Action endpoint for 'processNow' in internalConsumption should exist"
+      },
+      {
+        "id": "t-79",
+        "category": "action-endpoint",
+        "entity": "internalConsumption",
+        "field": "posted",
+        "runner": "node",
+        "description": "Action endpoint for 'posted' in internalConsumption should exist"
+      }
+    ],
+    "summary": {
+      "total": 79,
+      "byCategory": {
+        "field-presence": 9,
+        "field-type": 9,
+        "searchable-filters": 2,
+        "visibility": 2,
+        "readonlylogic-valid": 1,
+        "readonlylogic-evaluable": 1,
+        "default-value-type": 3,
+        "system-field": 32,
+        "rule-declared": 13,
+        "crud-flags": 2,
+        "selector-endpoint": 3,
+        "action-endpoint": 2
+      },
+      "byRunner": {
+        "node": 79,
+        "junit": 0
+      }
+    }
+  }
+}
