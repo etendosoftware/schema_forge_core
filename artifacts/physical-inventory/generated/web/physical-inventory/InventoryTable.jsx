@@ -14,9 +14,6 @@ const filters = ['movementDate', 'warehouse', 'inventoryType'];
 
 // @sf-generated-start component:InventoryTable
 export default function InventoryTable(props) {
-  // @sf-custom-slot hooks:InventoryTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:InventoryTable
-
-// @sf-custom-slot section:InventoryTable-custom

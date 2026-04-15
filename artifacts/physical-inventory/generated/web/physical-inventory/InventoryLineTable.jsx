@@ -14,9 +14,6 @@ const filters = [];
 
 // @sf-generated-start component:InventoryLineTable
 export default function InventoryLineTable(props) {
-  // @sf-custom-slot hooks:InventoryLineTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:InventoryLineTable
-
-// @sf-custom-slot section:InventoryLineTable-custom

@@ -27,6 +27,7 @@ const windowLoaders = {
   'return-to-vendor-shipment': () => import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/index.jsx'),
   'physical-inventory': () => import('@generated/physical-inventory/generated/web/physical-inventory/index.jsx'),
   'goods-movements': () => import('@generated/goods-movements/generated/web/goods-movements/index.jsx'),
+  'internal-consumption': () => import('@generated/internal-consumption/generated/web/internal-consumption/index.jsx'),
   'warehouse-storage-bins': () => import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/index.jsx'),
   'sales-quotation': () => import('@generated/sales-quotation/generated/web/sales-quotation/index.jsx'),
   'goods-shipment': () => import('@generated/goods-shipment/generated/web/goods-shipment/index.jsx'),

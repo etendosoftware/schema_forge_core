@@ -1,13 +1,16 @@
 {
-  "version": "0.16.0",
-  "generatedAt": "2026-04-06T18:44:12.236Z",
-  "checksum": "c29a907f9de7a2c7",
+  "version": "0.16.2",
+  "generatedAt": "2026-04-10T14:29:52.932Z",
+  "checksum": "caaafe7cc1438395",
   "frontendContract": {
     "window": {
       "id": "168",
       "name": "Physical Inventory",
       "primaryEntity": "inventory",
-      "category": "warehouse",
+      "category": "inventory",
+      "customComponents": {
+        "moreMenuContent": "InventoryMenuContent"
+      },
       "processOverrides": {
         "processNow": {
           "requiresLines": true
@@ -379,7 +382,10 @@
       "id": "168",
       "name": "Physical Inventory",
       "primaryEntity": "inventory",
-      "category": "warehouse",
+      "category": "inventory",
+      "customComponents": {
+        "moreMenuContent": "InventoryMenuContent"
+      },
       "processOverrides": {
         "processNow": {
           "requiresLines": true
@@ -438,7 +444,7 @@
             "apiKey": "generateList",
             "column": "GenerateList",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": false
           },
           {
@@ -446,7 +452,7 @@
             "apiKey": "updateQuantities",
             "column": "UpdateQty",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": false
           },
           {
