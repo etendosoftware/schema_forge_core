@@ -100,6 +100,24 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
       )
     : null;
 
+  const cloneButton = (
+    <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
+      <CopyIcon />{ui('cloneOrderBtn')}
+    </button>
+  );
+
+  const clonePortal = showClone ? createPortal(
+    <CloneModal
+      orderId={recordId}
+      data={data}
+      apiBaseUrl={apiBaseUrl}
+      headers={headers}
+      onClose={() => setShowClone(false)}
+      onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
+    />,
+    document.body,
+  ) : null;
+
   // ── DRAFT ──────────────────────────────────────────────────────────────────
   if (isDraft) {
     return (
@@ -124,23 +142,11 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           </svg>
         </button>
 
-        <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-          <CopyIcon />{ui('cloneOrderBtn')}
-        </button>
+        {cloneButton}
 
         <SendDocumentButton onClick={() => setShowSend(true)} />
 
-        {showClone && createPortal(
-          <CloneModal
-            orderId={recordId}
-            data={data}
-            apiBaseUrl={apiBaseUrl}
-            headers={headers}
-            onClose={() => setShowClone(false)}
-            onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
-          />,
-          document.body,
-        )}
+        {clonePortal}
         {showConfirm && createPortal(
           <ConfirmModal
             orderId={recordId}
@@ -216,23 +222,11 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           </button>
         )}
 
-        <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-          <CopyIcon />{ui('cloneOrderBtn')}
-        </button>
+        {cloneButton}
 
         <SendDocumentButton onClick={() => setShowSend(true)} />
 
-        {showClone && createPortal(
-          <CloneModal
-            orderId={recordId}
-            data={data}
-            apiBaseUrl={apiBaseUrl}
-            headers={headers}
-            onClose={() => setShowClone(false)}
-            onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
-          />,
-          document.body,
-        )}
+        {clonePortal}
         {showActions && createPortal(
           <CreateDocsModal
             orderId={recordId}
@@ -266,20 +260,8 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
   return (
     <>
-      <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-        <CopyIcon />{ui('cloneOrderBtn')}
-      </button>
-      {showClone && createPortal(
-        <CloneModal
-          orderId={recordId}
-          data={data}
-          apiBaseUrl={apiBaseUrl}
-          headers={headers}
-          onClose={() => setShowClone(false)}
-          onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
-        />,
-        document.body,
-      )}
+      {cloneButton}
+      {clonePortal}
       {confirmedPanel}
     </>
   );
