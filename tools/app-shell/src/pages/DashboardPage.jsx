@@ -1076,7 +1076,7 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
                 return (
                   <React.Fragment key={inv.id || i}>
                     {i > 0 && <Separator />}
-                    <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
+                    <Link to={inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice'} className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="min-w-0">
                           <p className="text-sm truncate">{inv.client}</p>
