@@ -118,70 +118,16 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     document.body,
   ) : null;
 
-  // ── DRAFT ──────────────────────────────────────────────────────────────────
-  if (isDraft) {
-    return (
-      <>
-        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-          {ui('poConfirmBtn')}
-        </button>
-
-        {/* Delete icon */}
-        <button
-          type="button"
-          aria-label={ui('delete')}
-          style={{ ...iconBtnStyle, color: '#ef4444', borderColor: '#fecaca' }}
-          onClick={() => onProcess?.('delete')}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6l-1 14H6L5 6" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M9 6V4h6v2" />
-          </svg>
-        </button>
-
-        {cloneButton}
-
-        <SendDocumentButton onClick={() => setShowSend(true)} />
-
-        {clonePortal}
-        {showConfirm && createPortal(
-          <ConfirmModal
-            orderId={recordId}
-            data={data}
-            apiBaseUrl={apiBaseUrl}
-            headers={headers}
-            onClose={() => setShowConfirm(false)}
-            onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
-          />,
-          document.body,
-        )}
-        {showSend && createPortal(
-          <SendDocumentModal
-            documentType="PurchaseOrder"
-            documentNo={data?.documentNo}
-            bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
-            documentId={recordId}
-            windowName="purchase-order"
-            token={token}
-            onClose={() => setShowSend(false)}
-          />,
-          document.body,
-        )}
-        {confirmedPanel}
-      </>
-    );
+  // ── COMPLETED (loading) ────────────────────────────────────────────────────
+  if (isCompleted && !fetched) {
+    return <>{confirmedPanel}<span style={{ fontSize: 12, color: '#9CA3AF', padding: '4px 8px' }}>…</span></>;
   }
 
-  // ── COMPLETED ──────────────────────────────────────────────────────────────
+  // ── COMPLETED — compute derived values ─────────────────────────────────────
+  let buttonLabel = null;
+  let derived = null;
+  let currency = '';
   if (isCompleted) {
-    if (!fetched) {
-      return <>{confirmedPanel}<span style={{ fontSize: 12, color: '#9CA3AF', padding: '4px 8px' }}>…</span></>;
-    }
-
     const { receipts, invoices, orderLines } = fetched;
 
     const receiptsDraft    = receipts.filter(r => r.documentStatus === 'DR');
@@ -197,71 +143,92 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
     const totalPending  = Math.max(0, totalOrder - totalInvoiced);
 
-    const currency = data?.['currency$_identifier'] || '';
+    currency = data?.['currency$_identifier'] || '';
 
     const needsReceipt = qtyPending > 0 && receiptsDraft.length === 0;
     const needsInvoice = totalPending > 0 && !invoiceDraft;
 
-    let buttonLabel = null;
     if      (needsReceipt && needsInvoice) buttonLabel = ui('poManageReceiptAndInvoice');
     else if (needsReceipt)                 buttonLabel = ui('poManageReceipt');
     else if (needsInvoice)                 buttonLabel = ui('poManageInvoice');
 
-    const derived = {
+    derived = {
       receiptsComplete, invoicesComplete,
       qtyOrdered, qtyDelivered, qtyPending,
       totalOrder, totalInvoiced, totalPending,
       needsReceipt, needsInvoice,
     };
-
-    return (
-      <>
-        {buttonLabel && (
-          <button type="button" onClick={() => setShowActions(true)} style={btnPrimaryStyle}>
-            {buttonLabel}
-          </button>
-        )}
-
-        {cloneButton}
-
-        <SendDocumentButton onClick={() => setShowSend(true)} />
-
-        {clonePortal}
-        {showActions && createPortal(
-          <CreateDocsModal
-            orderId={recordId}
-            data={data}
-            base={base}
-            headers={headers}
-            currency={currency}
-            derived={derived}
-            onClose={() => setShowActions(false)}
-            onCreated={(docs) => { setShowActions(false); setConfirmedTitle(ui('soDocsCreatedTitle')); setConfirmedDocs(docs); }}
-          />,
-          document.body,
-        )}
-        {showSend && createPortal(
-          <SendDocumentModal
-            documentType="PurchaseOrder"
-            documentNo={data?.documentNo}
-            bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
-            documentId={recordId}
-            windowName="purchase-order"
-            token={token}
-            onClose={() => setShowSend(false)}
-          />,
-          document.body,
-        )}
-        {confirmedPanel}
-      </>
-    );
   }
 
   return (
     <>
+      {isDraft && (
+        <>
+          <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
+            {ui('poConfirmBtn')}
+          </button>
+          {/* Delete icon */}
+          <button
+            type="button"
+            aria-label={ui('delete')}
+            style={{ ...iconBtnStyle, color: '#ef4444', borderColor: '#fecaca' }}
+            onClick={() => onProcess?.('delete')}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14H6L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4h6v2" />
+            </svg>
+          </button>
+        </>
+      )}
+      {isCompleted && buttonLabel && (
+        <button type="button" onClick={() => setShowActions(true)} style={btnPrimaryStyle}>
+          {buttonLabel}
+        </button>
+      )}
       {cloneButton}
+      {(isDraft || isCompleted) && <SendDocumentButton onClick={() => setShowSend(true)} />}
       {clonePortal}
+      {isDraft && showConfirm && createPortal(
+        <ConfirmModal
+          orderId={recordId}
+          data={data}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setShowConfirm(false)}
+          onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
+        />,
+        document.body,
+      )}
+      {isCompleted && showActions && createPortal(
+        <CreateDocsModal
+          orderId={recordId}
+          data={data}
+          base={base}
+          headers={headers}
+          currency={currency}
+          derived={derived}
+          onClose={() => setShowActions(false)}
+          onCreated={(docs) => { setShowActions(false); setConfirmedTitle(ui('soDocsCreatedTitle')); setConfirmedDocs(docs); }}
+        />,
+        document.body,
+      )}
+      {(isDraft || isCompleted) && showSend && createPortal(
+        <SendDocumentModal
+          documentType="PurchaseOrder"
+          documentNo={data?.documentNo}
+          bpName={data?.['businessPartner$_identifier']}
+          bpEmail={data?.['userContact$_identifier']}
+          documentId={recordId}
+          windowName="purchase-order"
+          token={token}
+          onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
       {confirmedPanel}
     </>
   );

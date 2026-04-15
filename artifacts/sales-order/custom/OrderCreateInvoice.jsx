@@ -123,51 +123,21 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     document.body,
   ) : null;
 
-  // ── DRAFT ──────────────────────────────────────────────────────────────────
-  if (isDraft) {
-    return (
-      <>
-        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-          {ui('soConfirmBtn')}
-        </button>
-        {cloneButton}
-        <SendDocumentButton onClick={() => setShowSend(true)} />
-        {clonePortal}
-        {showConfirm && createPortal(
-          <ConfirmModal
-            orderId={recordId}
-            data={data}
-            apiBaseUrl={apiBaseUrl}
-            headers={headers}
-            onClose={() => setShowConfirm(false)}
-            onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
-          />,
-          document.body,
-        )}
-        {showSend && createPortal(
-          <SendDocumentModal
-            documentType="SalesOrder"
-            documentNo={data?.documentNo}
-            bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
-            documentId={recordId}
-            windowName="sales-order"
-            token={token}
-            onClose={() => setShowSend(false)}
-          />,
-          document.body,
-        )}
-        {confirmedPanel}
-      </>
-    );
+  // ── COMPLETED (loading) ────────────────────────────────────────────────────
+  if (isCompleted && !fetched) {
+    return <>{confirmedPanel}<span style={{ fontSize: 12, color: '#9CA3AF', padding: '4px 8px' }}>…</span></>;
   }
 
-  // ── COMPLETED ──────────────────────────────────────────────────────────────
-  if (isCompleted) {
-    if (!fetched) {
-      return <>{confirmedPanel}<span style={{ fontSize: 12, color: '#9CA3AF', padding: '4px 8px' }}>…</span></>;
-    }
+  // ── COMPLETED — compute derived values ─────────────────────────────────────
+  const openModal = (scrollTo = null) => {
+    setActionsScroll(scrollTo);
+    setShowActions(true);
+  };
 
+  let buttonLabel = null;
+  let derived = null;
+  let currency = '';
+  if (isCompleted) {
     const { shipments, invoices, orderLines } = fetched;
 
     const shipmentsDraft    = shipments.filter(s => s.documentStatus === 'DR');
@@ -185,63 +155,78 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
     const totalPending  = Math.max(0, totalOrder - totalInvoiced);
 
-    const currency = data?.['currency$_identifier'] || '';
+    currency = data?.['currency$_identifier'] || '';
 
     // Acción pendiente = hay qty/importe pendiente Y no hay borrador cubriendo esa acción
     // (si hay borrador, el chip en topbar ya lo cubre — el botón Gestionar no la incluye)
     const needsShip    = qtyPending > 0 && shipmentsDraft.length === 0;
     const needsInvoice = totalPending > 0 && !invoiceDraft;
 
-    let buttonLabel = null;
     if      (needsShip && needsInvoice) buttonLabel = ui('soManageShipmentAndInvoice');
     else if (needsShip)                 buttonLabel = ui('soManageShipment');
     else if (needsInvoice)              buttonLabel = ui('soManageInvoice');
 
-    const openModal = (scrollTo = null) => {
-      setActionsScroll(scrollTo);
-      setShowActions(true);
-    };
-
-    const derived = {
+    derived = {
       shipmentsComplete, invoicesComplete,
       qtyOrdered, qtyDelivered, qtyPending,
       totalOrder, totalInvoiced, totalPending,
       needsShip, needsInvoice,
     };
-
-    return (
-      <>
-        {/* Main action button — only shown when action is still pending */}
-        {buttonLabel && (
-          <button type="button" onClick={() => openModal(null)} style={btnPrimaryStyle}>
-            {buttonLabel}
-          </button>
-        )}
-        {cloneButton}
-        {clonePortal}
-
-        {showActions && createPortal(
-          <CreateDocsModal
-            orderId={recordId}
-            data={data}
-            base={base}
-            headers={headers}
-            currency={currency}
-            derived={derived}
-            onClose={() => setShowActions(false)}
-            onCreated={(docs) => { setShowActions(false); setConfirmedTitle(ui('soDocsCreatedTitle')); setConfirmedDocs(docs); }}
-          />,
-          document.body,
-        )}
-        {confirmedPanel}
-      </>
-    );
   }
 
   return (
     <>
+      {isDraft && (
+        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
+          {ui('soConfirmBtn')}
+        </button>
+      )}
+      {/* Main action button — only shown when action is still pending */}
+      {isCompleted && buttonLabel && (
+        <button type="button" onClick={() => openModal(null)} style={btnPrimaryStyle}>
+          {buttonLabel}
+        </button>
+      )}
       {cloneButton}
+      {isDraft && <SendDocumentButton onClick={() => setShowSend(true)} />}
       {clonePortal}
+      {isDraft && showConfirm && createPortal(
+        <ConfirmModal
+          orderId={recordId}
+          data={data}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setShowConfirm(false)}
+          onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
+        />,
+        document.body,
+      )}
+      {isCompleted && showActions && createPortal(
+        <CreateDocsModal
+          orderId={recordId}
+          data={data}
+          base={base}
+          headers={headers}
+          currency={currency}
+          derived={derived}
+          onClose={() => setShowActions(false)}
+          onCreated={(docs) => { setShowActions(false); setConfirmedTitle(ui('soDocsCreatedTitle')); setConfirmedDocs(docs); }}
+        />,
+        document.body,
+      )}
+      {isDraft && showSend && createPortal(
+        <SendDocumentModal
+          documentType="SalesOrder"
+          documentNo={data?.documentNo}
+          bpName={data?.['businessPartner$_identifier']}
+          bpEmail={data?.['userContact$_identifier']}
+          documentId={recordId}
+          windowName="sales-order"
+          token={token}
+          onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
       {confirmedPanel}
     </>
   );
