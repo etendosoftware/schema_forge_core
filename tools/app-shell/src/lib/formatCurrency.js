@@ -1,6 +1,14 @@
 const DEFAULT_LOCALE = 'en-US';
 
 /**
+ * Currencies that place the symbol AFTER the amount with a space: "1,234.56 €"
+ * All other currencies place the symbol before: "$1,234.56"
+ *
+ * Add codes here when a new currency needs symbol-after formatting.
+ */
+const SYMBOL_AFTER_CURRENCIES = new Set(['EUR', 'SEK', 'NOK', 'DKK', 'CZK', 'HUF', 'PLN']);
+
+/**
  * Format a numeric value as a currency string using an ISO 4217 currency code.
  *
  * This is the canonical shared currency formatting utility for the app shell.
@@ -8,7 +16,7 @@ const DEFAULT_LOCALE = 'en-US';
  * base for future locale-aware formatting without requiring call site changes.
  *
  * Symbol placement rules:
- *   - EUR → symbol after amount with a space: "1,234.56 €"
+ *   - Currencies in SYMBOL_AFTER_CURRENCIES → symbol after amount with a space: "1,234.56 €"
  *   - All other currencies → symbol before amount: "$1,234.56"
  *
  * @param {string} currencyCode - ISO 4217 currency code (e.g. "USD", "EUR", "ARS").
@@ -36,9 +44,9 @@ export function formatCurrency(currencyCode, value) {
       maximumFractionDigits: 2,
     });
 
-    // EUR convention: amount first, then symbol with a space ("1,234.56 €")
-    if (currencyCode === 'EUR') {
-      const symbol = formatter.formatToParts(0).find((p) => p.type === 'currency')?.value ?? '€';
+    // Symbol-after convention: amount first, then symbol with a space ("1,234.56 €")
+    if (SYMBOL_AFTER_CURRENCIES.has(currencyCode)) {
+      const symbol = formatter.formatToParts(0).find((p) => p.type === 'currency')?.value ?? currencyCode;
       const numFormatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,

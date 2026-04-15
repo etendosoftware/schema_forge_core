@@ -47,6 +47,16 @@ describe('formatCurrency', () => {
     });
   });
 
+  describe('symbol-after currencies — SEK, NOK, DKK, CZK, HUF, PLN', () => {
+    it('formats SEK with symbol after amount', () => {
+      assert.match(formatCurrency('SEK', 1234.56), /1,234\.56\s+kr/);
+    });
+
+    it('formats NOK with symbol after amount', () => {
+      assert.match(formatCurrency('NOK', 500), /500\.00\s+kr/);
+    });
+  });
+
   describe('other currencies — symbol before amount (same as USD)', () => {
     it('formats ARS with symbol before amount', () => {
       const result = formatCurrency('ARS', 500);
