@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2 } from 'lucide-react';
+import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2, Loader2, AlertCircle, Send, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
+import { useInvoicePdf } from '../shared/useInvoicePdf.js';
+import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 
 const ACCEPTED_TYPES = {
   'application/pdf': 'pdf',
@@ -38,10 +40,23 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const ui = useUI();
   const tMenu = useMenuLabel();
   const [activeTab, setActiveTab] = useState('general');
+
+  // For sales-invoice: auto-render invoice PDF instead of the drop zone
+  const isSalesInvoice = specName === 'sales-invoice';
+  const { pdfUrl, loading: pdfLoading, error: pdfError } = useInvoicePdf(
+    isSalesInvoice ? invoice?.id : null,
+    isSalesInvoice ? apiBaseUrl : null,
+    token,
+  );
   const [installments, setInstallments] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendModalClosing, setSendModalClosing] = useState(false);
+  const displayInvoice = invoice;
+  const previewLoading = pdfLoading;
+  const previewError = pdfError;
 
   // Animation state: 'opening' → 'open' → 'closing' → 'closingUp'
   const [animState, setAnimState] = useState('opening');
@@ -99,16 +114,32 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     return () => cancelAnimationFrame(t);
   }, []);
 
-  // Close with exit animation (downward)
+  // Close with exit animation (slide right)
   function handleClose() {
     setAnimState('closing');
     setTimeout(onClose, 280);
   }
 
+  // Open the email modal: slide InvoicePreviewModal out to the right first, then show email modal
+  function openEmailModal() {
+    setAnimState('sliding-out-right');
+    setTimeout(() => setShowSendModal(true), 280);
+  }
+
+  // Close the email modal: animate it out (slide up); InvoicePreviewModal stays closed
+  function closeEmailModal() {
+    setSendModalClosing(true);
+    setTimeout(() => {
+      setSendModalClosing(false);
+      setShowSendModal(false);
+      onClose();
+    }, 280);
+  }
+
   // Close with upward animation, then navigate to edit view
   function handleEdit() {
     setAnimState('closingUp');
-    setTimeout(() => onEdit?.(invoice.id), 280);
+    setTimeout(() => onEdit?.(displayInvoice.id), 280);
   }
 
   // Parallel fetch: installment schedules (paymentPlan) + registered payments (invoicePayments)
@@ -140,14 +171,14 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
   if (!invoice) return null;
 
-  const status = invoice.documentStatus;
+  const status = displayInvoice.documentStatus;
   const badgeProps = getStatusBadgeProps(status);
   const label = statusLabel(status);
-  const partnerName = invoice.businessPartner$_identifier || invoice.businessPartner || '—';
+  const partnerName = displayInvoice.businessPartner$_identifier || displayInvoice.businessPartner || '—';
 
   // paymentDetails records use `amount` (applied amount)
   // Derive totals from installment schedule data (more accurate than paymentDetails sum)
-  const grandTotal = Number(invoice.grandTotalAmount ?? 0);
+  const grandTotal = Number(displayInvoice.grandTotalAmount ?? 0);
   const totalOutstanding = installments.length > 0
     ? installments.reduce((s, i) => s + Math.max(0, Number(i.outstandingAmount ?? 0)), 0)
     : grandTotal;
@@ -161,100 +192,75 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   // Animation classes
   const backdropClass = animState === 'opening'
     ? 'opacity-0'
-    : animState === 'closing'
+    : (animState === 'closing' || animState === 'sliding-out-right')
       ? 'opacity-0 transition-opacity duration-[280ms]'
       : 'opacity-100 transition-opacity duration-[280ms]';
 
   const cardClass = animState === 'opening'
     ? 'translate-x-full'
-    : animState === 'closing'
+    : (animState === 'closing' || animState === 'sliding-out-right')
       ? 'translate-x-full transition-transform duration-[280ms]'
       : animState === 'closingUp'
         ? 'opacity-0 translate-x-full transition-all duration-[280ms]'
         : 'translate-x-0 transition-transform duration-[280ms]';
 
+  // Download the generated PDF blob
+  function handleDownloadPdf() {
+    if (!pdfUrl) return;
+    const a = document.createElement('a');
+    a.href = pdfUrl;
+    a.download = `invoice-${displayInvoice.documentNo || 'document'}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — hidden when SendDocumentModal is open to avoid overlap,
+          but kept mounted so the pdfUrl blob remains alive */}
       <div
         className={`fixed inset-0 z-50 bg-black/30 ${backdropClass}`}
+        style={showSendModal ? { display: 'none' } : undefined}
         onClick={handleClose}
       >
-        {/* Side panel — slides in from the right, preserving all original content */}
+        {/* Side panel — slides in from the right (wider for better PDF view) */}
         <div
-          className={`absolute right-0 top-0 bottom-0 bg-white shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
-          style={{ width: '80vw', maxWidth: '1100px' }}
+          className={`absolute right-0 bottom-0 bg-white shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
+          style={{ top: 8, width: '56vw', height: 'calc(100% - 8px)', borderTopLeftRadius: 12 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* ── Top bar ── */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
-            {/* Left: title + doc actions */}
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-gray-900 text-base">
-                {tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')} {invoice.documentNo}
-              </span>
-              <button
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                disabled
-              >
-                <FileText size={13} />
-                {ui('invoicePreviewPdf')}
-              </button>
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-300 rounded-lg transition-colors" disabled>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              </button>
-            </div>
-
-            {/* Center: primary actions */}
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!canAddPayment}
-                onClick={canAddPayment ? () => setShowPaymentModal(true) : undefined}
-              >
-                <Plus size={13} />
-                {ui('invoicePreviewAddPayment')}
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={handleEdit}>
-                <Edit2 size={13} />
-                {ui('invoicePreviewEdit')}
-              </Button>
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-              </button>
-            </div>
-
-            {/* Right: tab switcher + close */}
-            <div className="flex items-center gap-1">
-              {topTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    activeTab === tab.key
-                      ? 'bg-blue-50 text-blue-600 font-medium'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-              <button
-                onClick={handleClose}
-                className="ml-2 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
-                aria-label={ui('invoicePreviewClose')}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* ── Body — two panels ── */}
+          {/* ── Body — two panels (no top bar) ── */}
           <div className="flex flex-1 min-h-0">
-            {/* Left panel: 50% — document drop zone / preview */}
-            <div className="w-1/2 bg-gray-50 flex flex-col min-h-0 border-r border-gray-200">
-              {docFile ? (
+            {/* Left panel: flex-1 — PDF preview (sales invoice) or document drop zone (purchase invoice) */}
+            <div className="flex-1 bg-gray-50 flex flex-col min-h-0 border-r border-gray-200">
+              {/* ── Sales Invoice: auto-rendered PDF ── */}
+              {isSalesInvoice ? (
+                <div className="flex flex-col h-full min-h-0">
+                  {previewLoading && (
+                    <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm">{ui('invoicePdfGenerating')}</span>
+                    </div>
+                  )}
+                  {previewError && !previewLoading && (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+                      <AlertCircle className="h-8 w-8 text-amber-400" />
+                      <p className="text-sm text-muted-foreground">
+                        {ui('invoicePdfError')}
+                      </p>
+                      <p className="text-xs text-muted-foreground/60">{previewError}</p>
+                    </div>
+                  )}
+                  {pdfUrl && !previewLoading && (
+                    <iframe
+                      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                      className="w-full h-full border-0"
+                      title="Sales Invoice PDF"
+                    />
+                  )}
+                </div>
+              ) : docFile ? (
                 /* ── Document preview ── */
                 <div className="flex flex-col h-full min-h-0">
                   {/* Toolbar */}
@@ -341,33 +347,122 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   </div>
                 </div>
               )}
-            </div>
+              {/* End of purchase-invoice drop zone (ternary close) */}
+              </div>
 
-            {/* Right panel: 50% — tab content */}
-            <div className="w-1/2 overflow-y-auto">
-              {activeTab === 'general' && (
-                <StatsPanel
-                  invoice={invoice}
-                  partnerName={partnerName}
-                  badgeProps={badgeProps}
-                  statusLabel={label}
-                  installments={installments}
-                  payments={payments}
-                  loadingPayments={loadingPayments}
-                  totalOutstanding={totalOutstanding}
-                  canAddPayment={canAddPayment}
-                  isDraft={isDraft}
-                  isFullyPaid={isFullyPaid}
-                  specName={specName}
-                  onAddPayment={() => setShowPaymentModal(true)}
-                />
-              )}
-              {activeTab === 'messages' && (
-                <EmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />
-              )}
-              {activeTab === 'history' && (
-                <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />
-              )}
+
+            {/* Right panel: fixed width — header + tabs + content */}
+            <div className="w-[380px] shrink-0 flex flex-col relative">
+              {/* ── Close button (top-right) ── */}
+              <button
+                onClick={handleClose}
+                className="absolute top-3 right-3 z-10 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label={ui('invoicePreviewClose')}
+              >
+                <X size={16} />
+              </button>
+
+              {/* ── Header section: title + action buttons ── */}
+              <div className="px-4 pt-4 pb-3 border-b border-gray-200 shrink-0">
+                {/* Title + client row */}
+                <div className="pr-8 mb-3">
+                  <span className="font-semibold text-gray-900 text-base leading-tight block">
+                    {tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')} {displayInvoice.documentNo}
+                  </span>
+                </div>
+
+                {/* Action buttons row */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Enviar — sales invoice only */}
+                  {isSalesInvoice && (
+                    <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={openEmailModal}>
+                      <Send size={12} />
+                      {ui('invoicePreviewSend')}
+                    </Button>
+                  )}
+
+                  {/* Add Payment */}
+                  <Button
+                    size="sm"
+                    className="gap-1.5 text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!canAddPayment}
+                    onClick={canAddPayment ? () => setShowPaymentModal(true) : undefined}
+                  >
+                    <Plus size={12} />
+                    {ui('invoicePreviewAddPayment')}
+                  </Button>
+
+                  {/* Descargar PDF — sales invoice only */}
+                  {isSalesInvoice && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 text-xs h-8"
+                      onClick={handleDownloadPdf}
+                      disabled={!pdfUrl}
+                    >
+                      <Download size={12} />
+                      {ui('invoicePreviewDownloadPdf')}
+                    </Button>
+                  )}
+
+                  {/* Edit */}
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handleEdit}>
+                    <Edit2 size={12} />
+                    {ui('invoicePreviewEdit')}
+                  </Button>
+
+                  {/* More options */}
+                  <button className="p-1.5 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Tab switcher ── */}
+              <div className="flex items-center gap-1 px-4 py-2 border-b border-gray-100 shrink-0">
+                {topTabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      activeTab === tab.key
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Tab content ── */}
+              <div className="flex-1 overflow-y-auto">
+                {activeTab === 'general' && (
+                  <StatsPanel
+                    invoice={displayInvoice}
+                    partnerName={partnerName}
+                    badgeProps={badgeProps}
+                    statusLabel={label}
+                    installments={installments}
+                    payments={payments}
+                    loadingPayments={loadingPayments}
+                    totalOutstanding={totalOutstanding}
+                    canAddPayment={canAddPayment}
+                    isDraft={isDraft}
+                    isFullyPaid={isFullyPaid}
+                    specName={specName}
+                    onAddPayment={() => setShowPaymentModal(true)}
+                    onSend={openEmailModal}
+                  />
+                )}
+                {activeTab === 'messages' && (
+                  <EmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />
+                )}
+                {activeTab === 'history' && (
+                  <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -376,8 +471,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       {/* Payment modal */}
       {showPaymentModal && (
         <InvoicePaymentModal
-          invoiceId={invoice.id}
-          invoiceData={invoice}
+          invoiceId={displayInvoice.id}
+          invoiceData={displayInvoice}
           specName={specName}
           token={token}
           apiBaseUrl={apiBaseUrl}
@@ -385,6 +480,23 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
             setShowPaymentModal(false);
             fetchPayments();
           }}
+        />
+      )}
+
+      {/* Send email modal — rendered on top to preserve pdfUrl blob.
+          Appears with slide-down animation; closes with slide-up via closeEmailModal. */}
+      {showSendModal && (
+        <SendDocumentModal
+          documentType={tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')}
+          documentNo={displayInvoice.documentNo}
+          bpName={partnerName}
+          bpEmail={displayInvoice.bpEmail || displayInvoice.partnerEmail || ''}
+          documentId={displayInvoice.id}
+          windowName={specName}
+          token={token}
+          pdfBlobUrl={pdfUrl}
+          isClosing={sendModalClosing}
+          onClose={closeEmailModal}
         />
       )}
     </>
@@ -426,7 +538,7 @@ function fmtPayDate(raw) {
 
 const PAID_STATUSES = new Set(['RPR', 'RPPC', 'RDNC', 'PPM']);
 
-function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isDraft, isFullyPaid, specName, onAddPayment }) {
+function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isDraft, isFullyPaid, specName, onAddPayment, onSend }) {
   const ui = useUI();
   const invoiceDate = invoice.invoiceDate
     ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB')
@@ -518,14 +630,24 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
         )}
       </SectionCard>
 
-      {/* Files */}
-      <SectionCard title={ui('invoicePreviewFiles')}>
-        <button
-          disabled
-          className="w-full py-2 text-sm text-gray-400 border border-dashed border-gray-300 rounded-lg cursor-default"
+      {/* Emails */}
+      <SectionCard
+        title={ui('invoicePreviewEmails')}
+        titleRight={
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+        }
+      >
+        <Button
+          type="button"
+          onClick={onSend}
+          className="w-full gap-1.5 text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white"
         >
-          {ui('invoicePreviewAddAttachment')}
-        </button>
+          <Send size={12} />
+          {ui('invoicePreviewSendEmail')}
+        </Button>
       </SectionCard>
     </div>
   );

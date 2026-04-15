@@ -270,7 +270,7 @@ export default function NewPaymentModal({ token, apiBaseUrl, windowName, onClose
               ) : (
                 <Select value={customerId} onValueChange={v => { setCustomerId(v); setInvoiceId(''); }} required>
                   <SelectTrigger style={{ height: 34, fontSize: 13 }}><SelectValue placeholder={ui('selectCustomer')} /></SelectTrigger>
-                  <SelectContent style={{ zIndex: 200 }}>
+                  <SelectContent style={{ zIndex: 60 }}>
                     {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -290,7 +290,7 @@ export default function NewPaymentModal({ token, apiBaseUrl, windowName, onClose
                 ) : (
                   <Select value={invoiceId} onValueChange={setInvoiceId} required>
                     <SelectTrigger style={{ height: 34, fontSize: 13 }}><SelectValue placeholder={ui('selectInvoice')} /></SelectTrigger>
-                    <SelectContent style={{ zIndex: 200 }}>
+                    <SelectContent style={{ zIndex: 60 }}>
                       {invoices.map(inv => (
                         <SelectItem key={inv.id} value={inv.id}>
                           #{inv.documentNo} &middot; {fmt(inv.grandTotalAmount, inv['currency$_identifier'])} &middot; {ui('pending')} {fmt(inv.outstandingAmount, inv['currency$_identifier'])}
@@ -324,7 +324,7 @@ export default function NewPaymentModal({ token, apiBaseUrl, windowName, onClose
               ) : (
                 <Select value={paymentMethodId} onValueChange={v => { setPaymentMethodId(v); }}>
                   <SelectTrigger style={{ height: 34, fontSize: 13 }}><SelectValue placeholder={ui('selectPaymentMethod')} /></SelectTrigger>
-                  <SelectContent style={{ zIndex: 200 }}>
+                  <SelectContent style={{ zIndex: 60 }}>
                     {paymentMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -339,7 +339,7 @@ export default function NewPaymentModal({ token, apiBaseUrl, windowName, onClose
               ) : (
                 <Select value={accountId} onValueChange={setAccountId} required>
                   <SelectTrigger style={{ height: 34, fontSize: 13 }}><SelectValue placeholder={ui('selectAccount')} /></SelectTrigger>
-                  <SelectContent style={{ zIndex: 200 }}>
+                  <SelectContent style={{ zIndex: 60 }}>
                     {accounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

@@ -43,7 +43,7 @@ function IconBtn({ label, onClick, disabled, children }) {
           transform: 'translateX(-50%)',
           background: '#1f2937', color: '#fff',
           fontSize: 12, padding: '4px 8px', borderRadius: 4,
-          whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 9999,
+          whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 50,
         }}>
           {label}
         </div>,

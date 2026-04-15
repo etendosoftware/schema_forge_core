@@ -1112,17 +1112,20 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
  * Recent Invoices Widget
  * ----------------------------------------------------------------*/
 
-function fmtDate(str) {
+function fmtDate(str, locale = 'en-US') {
   if (!str) return '';
   // Support dd-MM-yyyy and yyyy-MM-dd
   const iso = /^\d{4}-\d{2}-\d{2}/.test(str) ? str : (() => { const m = str.match(/^(\d{2})-(\d{2})-(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : str; })();
   const d = new Date(iso);
   if (isNaN(d)) return str;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Normalize locale: es_ES → es-ES (BCP 47)
+  const bcp47 = (locale || 'en-US').replace('_', '-');
+  return d.toLocaleDateString(bcp47, { month: 'short', day: 'numeric' });
 }
 
 function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
     <Card className="flex flex-col h-full">
@@ -1154,7 +1157,7 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="min-w-0">
                           <p className="text-sm truncate">{inv.client}</p>
-                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date)}</p>
+                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date, locale)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">

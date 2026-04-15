@@ -226,6 +226,13 @@ Comment when:
 
 Full reference: `docs/i18n-guide.md`
 
+### When Writing Custom Components
+
+**Also consult `docs/ui-design-guidelines.md`** before writing any JSX. It defines:
+- Z-index scale (sidebar=`z-40`, modals=`z-50`, dropdowns-inside-modals=`z-60`)
+- Overlay/modal/drawer patterns (scrim + panel structure, click-outside-to-close)
+- Column alignment rules (headers always left-aligned; only cells follow data type)
+
 ### Quick Reference
 
 | What | Hook | Example |
