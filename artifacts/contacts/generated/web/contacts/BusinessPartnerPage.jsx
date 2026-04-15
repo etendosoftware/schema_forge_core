@@ -626,20 +626,20 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
-        secondaryTabs={recordId === 'new' ? [] : [
+        secondaryTabs={[
           { key: 'contact', label: 'Person', Table: ContactTable, Form: ContactForm, addLineFields: { entry: [
           { key: 'firstName', column: 'Firstname', type: 'text', label: 'First Name' },
           { key: 'lastName', column: 'Lastname', type: 'text', label: 'Last Name' },
           { key: 'email', column: 'Email', type: 'text', label: 'Email' },
           { key: 'phone', column: 'Phone', type: 'text', label: 'Phone' },
           { key: 'position', column: 'Title', type: 'text', label: 'Position' },
-          ], derived: [], hidden: [] } },
+          ], derived: [], hidden: [] }, requireSavedRecord: true },
           { key: 'bankAccount', label: 'Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
           { key: 'bankName', column: 'Bank_Name', type: 'text', label: 'Bank Name' },
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
-          ], derived: [], hidden: [] } },
+          ], derived: [], hidden: [] }, requireSavedRecord: true },
         ]}
         primaryTabs={[
           { key: 'general', label: 'General' },
