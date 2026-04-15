@@ -247,6 +247,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "orderLineHandler",
       "fields": {
         "priceStd": {
           "name": "baseNetUnitPrice",

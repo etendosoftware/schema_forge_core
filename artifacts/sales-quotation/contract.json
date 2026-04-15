@@ -53,7 +53,6 @@
           "C_BPartner_ID": "Contact"
         }
       },
-
       "noHeaderBorder": true,
       "layoutType": "default"
     },
@@ -624,7 +623,6 @@
           "C_BPartner_ID": "Contact"
         }
       },
-
       "noHeaderBorder": true
     },
     "entities": {
@@ -2032,7 +2030,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "orderLineHandler"
       }
     },
     "endpoints": [
