@@ -730,6 +730,9 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *  - compact: boolean (reserved for narrower layout)
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
+ *  - onDeleteRow: (row) => void — when provided, renders a per-row delete button (trash icon)
+ *      that appears on row hover and on keyboard focus. Invoked with the row object; click
+ *      propagation is stopped so it does not trigger row selection or navigation.
  */
 export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow }) {
   const t = useLabel(labelOverrides);
@@ -1179,10 +1182,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                         <button
                           type="button"
                           onClick={() => onDeleteRow(row)}
-                          className="opacity-0 group-hover/row:opacity-100 h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                           title={ui('deleteRowTooltip')}
+                          aria-label={ui('deleteRowTooltip')}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                       </TableCell>
                     )}

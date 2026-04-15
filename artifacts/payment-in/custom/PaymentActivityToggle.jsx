@@ -61,7 +61,7 @@ export default function PaymentActivityToggle({ data, recordId, token, apiBaseUr
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0,0,0,0.15)',
-            zIndex: 40,
+            zIndex: 50,
             transition: 'opacity 200ms ease',
           }}
         />
