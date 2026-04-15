@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
 import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
@@ -45,6 +45,7 @@ export default function SalesInvoiceWindow(props) {
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const ui = useUI();
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
@@ -77,6 +78,14 @@ export default function SalesInvoiceWindow(props) {
     );
   }
 
+  const filterParam = searchParams.get('filter');
+
+  const INVOICE_QUICK_FILTERS = [
+    { label: 'all' },
+    { label: 'overdueOnly', rowFilter: (row) => Number(row.outstandingAmount ?? 0) > 0 },
+  ];
+  const initialQuickFilterIndex = filterParam === 'overdue' ? 1 : 0;
+
   return (
     <>
       <ListView
@@ -85,6 +94,8 @@ export default function SalesInvoiceWindow(props) {
         Table={SalesInvoiceTable}
         entityLabel="Sales Invoice"
         breadcrumb={breadcrumb}
+        quickFilters={INVOICE_QUICK_FILTERS}
+        initialQuickFilterIndex={initialQuickFilterIndex}
       />
       {(previewRow || effectiveRecord) && (
         <InvoicePreviewModal

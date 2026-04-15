@@ -16784,6 +16784,8 @@
     "reportReadyHint": "Selecciona los filtros y haz clic en Ejecutar Informe",
     "resetToDefaults": "Restablecer valores predeterminados",
     "filter": "Filtrar...",
+    "all": "Todos",
+    "overdueOnly": "Solo vencidas",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
     "statusComplete": "Confirmado",

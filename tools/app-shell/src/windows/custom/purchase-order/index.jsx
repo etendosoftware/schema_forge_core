@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
@@ -34,6 +35,7 @@ function CustomLinesTable(props) {
 
 export default function PurchaseOrderWindow(props) {
   const { recordId, windowName } = props;
+  const [searchParams] = useSearchParams();
 
   if (recordId) {
     return (
@@ -44,6 +46,9 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
   return (
     <ListView
       entity="header"
@@ -52,6 +57,7 @@ export default function PurchaseOrderWindow(props) {
       windowName={windowName}
       breadcrumb="Purchases / Purchase Order"
       {...props}
+      initialColumnFilters={initialColumnFilters}
     />
   );
 }

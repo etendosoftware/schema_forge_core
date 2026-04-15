@@ -135,6 +135,21 @@ function mapPendingTasks(handlerData) {
       mapped.taskKey = inferPendingTaskKey(mapped);
     }
 
+    // Ensure navigation links include pre-configured filters
+    if (mapped.taskKey && !mapped.link.includes('?')) {
+      const FILTER_LINKS = {
+        overdueInvoices: '/sales-invoice?filter=overdue',
+        overdueInvoices_plural: '/sales-invoice?filter=overdue',
+        pendingShipments: '/goods-shipment?DocStatus=DR',
+        pendingShipments_plural: '/goods-shipment?DocStatus=DR',
+        purchaseOrdersToConfirm: '/purchase-order?DocStatus=DR',
+        purchaseOrdersToConfirm_plural: '/purchase-order?DocStatus=DR',
+      };
+      if (FILTER_LINKS[mapped.taskKey]) {
+        mapped.link = FILTER_LINKS[mapped.taskKey];
+      }
+    }
+
     return mapped;
   });
 }
@@ -146,10 +161,10 @@ function inferPendingTaskKey(task) {
   if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
-  if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
+  if (task?.link?.startsWith('/goods-shipment') || text.includes('pending shipment')) {
     return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
-  if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
+  if (task?.link?.startsWith('/purchase-order') || text.includes('purchase orders to confirm')) {
     return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {

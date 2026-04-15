@@ -730,14 +730,14 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, initialColumnFilters, rowFilter }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const [searchQuery, setSearchQuery] = useState('');
-  const [columnFilters, setColumnFilters] = useState({});
+  const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
@@ -778,8 +778,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         return String(val ?? '').toLowerCase().includes(q);
       });
     }
+    // Row-level predicate filter (e.g. numeric conditions like outstandingAmount > 0)
+    if (rowFilter) result = result.filter(rowFilter);
     return result;
-  }, [data, filters, searchQuery, columnFilters]);
+  }, [data, filters, searchQuery, columnFilters, rowFilter]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),

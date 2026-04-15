@@ -16549,6 +16549,8 @@
     "reportReadyHint": "Choose your filters and hit Run Report",
     "resetToDefaults": "Reset to defaults",
     "filter": "Filter...",
+    "all": "All",
+    "overdueOnly": "Overdue only",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
     "statusComplete": "Confirmed",
