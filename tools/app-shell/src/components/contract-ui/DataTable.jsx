@@ -555,7 +555,7 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
@@ -869,16 +869,31 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (
-                  <TableHead key={col.key} className={`align-top ${isRight ? 'text-right' : ''}`}>
-                    <div className={`flex flex-col gap-1.5 pb-2 ${isRight ? 'items-end' : ''}`}>
-                      <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
-                        <FieldHighlight entityName={entity} fieldName={col.key}>
-                          {colLabel}
-                          {isSorted && (
-                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                          )}
-                        </FieldHighlight>
-                      </span>
+                  <TableHead key={col.key} className="align-top">
+                    <div className="flex flex-col gap-1.5 pb-2">
+                      {onSort ? (
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-muted-foreground/70 tracking-wide cursor-pointer select-none hover:text-foreground transition-colors bg-transparent border-0 p-0 text-left"
+                          onClick={() => onSort(col.key)}
+                        >
+                          <FieldHighlight entityName={entity} fieldName={col.key}>
+                            {colLabel}
+                            {isSorted && (
+                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                            )}
+                          </FieldHighlight>
+                        </button>
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
+                          <FieldHighlight entityName={entity} fieldName={col.key}>
+                            {colLabel}
+                            {isSorted && (
+                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                            )}
+                          </FieldHighlight>
+                        </span>
+                      )}
                       <div className="relative w-full">
                         <input
                           type="text"
