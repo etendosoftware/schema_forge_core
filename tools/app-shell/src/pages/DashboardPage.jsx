@@ -1007,7 +1007,7 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
         <CardTitle className={WIDGET_TITLE_CLASS}>{ui('collectionsPayments')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
-        <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
+        <Link to="/sales-invoice?filter=overdue" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
             <div>
@@ -1021,7 +1021,7 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
           </div>
         </Link>
         <Separator />
-        <Link to="/purchase-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
+        <Link to="/purchase-invoice?filter=overdue" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
             <div>
