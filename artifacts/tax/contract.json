@@ -4,10 +4,10 @@
   "checksum": "342fcd959903067f",
   "frontendContract": {
     "window": {
-      "id": "207",
-      "name": "Tax",
+      "id": "137",
+      "name": "Tax Rate",
       "primaryEntity": "tax",
-      "category": "reference"
+      "category": "configuracion"
     },
     "entities": {
       "tax": {
@@ -33,14 +33,15 @@
             "form": true
           },
           {
-            "name": "description",
-            "column": "Description",
+            "name": "applicableTo",
+            "column": "SOPOType",
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "enumValues": ["B", "S", "P"]
           },
           {
             "name": "validFrom",
@@ -57,10 +58,20 @@
             "column": "IsActive",
             "type": "boolean",
             "tsType": "boolean",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": true,
             "form": true
+          },
+          {
+            "name": "description",
+            "column": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -72,13 +83,15 @@
   },
   "backendContract": {
     "window": {
-      "id": "207",
-      "name": "Tax",
+      "id": "137",
+      "name": "Tax Rate",
       "primaryEntity": "tax",
-      "category": "reference"
+      "category": "configuracion"
     },
     "entities": {
       "tax": {
+        "tabName": "Tax",
+        "tableName": "FinancialMgmtTaxRate",
         "fields": [
           {
             "name": "name",
@@ -93,6 +106,13 @@
             "type": "number",
             "visibility": "editable",
             "required": true
+          },
+          {
+            "name": "applicableTo",
+            "column": "SOPOType",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
           },
           {
             "name": "description",
@@ -112,7 +132,21 @@
             "name": "isActive",
             "column": "IsActive",
             "type": "boolean",
-            "visibility": "readOnly",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "docTaxAmount",
+            "column": "DocTaxAmount",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "baseAmount",
+            "column": "BaseAmount",
+            "type": "string",
+            "visibility": "editable",
             "required": true
           },
           {
@@ -204,9 +238,9 @@
         "id": "t-3",
         "category": "field-presence",
         "entity": "tax",
-        "field": "description",
+        "field": "applicableTo",
         "runner": "node",
-        "description": "Field 'description' should be present in tax"
+        "description": "Field 'applicableTo' should be present in tax"
       },
       {
         "id": "t-4",
@@ -244,9 +278,9 @@
         "id": "t-8",
         "category": "field-type",
         "entity": "tax",
-        "field": "description",
+        "field": "applicableTo",
         "runner": "node",
-        "description": "Field 'description' should have type 'string' in tax"
+        "description": "Field 'applicableTo' should have type 'string' in tax"
       },
       {
         "id": "t-9",
@@ -281,6 +315,22 @@
       },
       {
         "id": "t-13",
+        "category": "visibility",
+        "entity": "tax",
+        "field": "isActive",
+        "runner": "node",
+        "description": "Field 'isActive' should be editable (not readOnly) in tax"
+      },
+      {
+        "id": "t-14",
+        "category": "visibility",
+        "entity": "tax",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should not appear in grid or form in tax"
+      },
+      {
+        "id": "t-15",
         "category": "system-field",
         "entity": "tax",
         "field": "adClientId",
@@ -288,7 +338,7 @@
         "description": "System field 'adClientId' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-14",
+        "id": "t-16",
         "category": "system-field",
         "entity": "tax",
         "field": "adOrgId",
@@ -296,7 +346,7 @@
         "description": "System field 'adOrgId' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-15",
+        "id": "t-17",
         "category": "system-field",
         "entity": "tax",
         "field": "created",
@@ -304,7 +354,7 @@
         "description": "System field 'created' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-16",
+        "id": "t-18",
         "category": "system-field",
         "entity": "tax",
         "field": "updated",
@@ -313,16 +363,16 @@
       }
     ],
     "summary": {
-      "total": 16,
+      "total": 18,
       "byCategory": {
         "field-presence": 5,
         "field-type": 5,
         "searchable-filters": 1,
-        "visibility": 1,
+        "visibility": 3,
         "system-field": 4
       },
       "byRunner": {
-        "node": 16,
+        "node": 18,
         "junit": 0
       }
     }
