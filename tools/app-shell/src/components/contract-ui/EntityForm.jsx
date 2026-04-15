@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
-import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
+import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -23,7 +23,7 @@ function buildSearchPlaceholder(ui, label) {
 /**
  * Button that opens the ProductSearchDrawer popup for fields with popup: true.
  */
-function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, token }) {
+function PopupSearchInput({ field, value, displayValue, onChange, label, selectorUrl, selectorContext, token }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
   const displayText = displayValue || (value ? value : '');
@@ -47,6 +47,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         onClose={() => setOpen(false)}
         onSelect={(item) => { onChange(item.id, item.label || item.name); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={label}
       />
@@ -214,7 +215,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         )}
       </div>
       {open && filtered.length > 0 && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -229,12 +230,12 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         </div>
       )}
       {open && query.length > 0 && fetching && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
           <div className="px-3 py-2 text-xs text-muted-foreground">{ui('searching')}</div>
         </div>
       )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           <div className="px-3 py-2 text-xs text-muted-foreground">
             {ui('noResultsFor')} "{query}"
           </div>
@@ -442,7 +443,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 /**
  * Form field that opens a ProductSearchDrawer for lookup-enabled search fields.
  */
-function LookupFormField({ field, value, displayValue, selectorUrl, token, resolvedLabel, onChange }) {
+function LookupFormField({ field, value, displayValue, selectorUrl, selectorContext, token, resolvedLabel, onChange }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
   const display = displayValue || value || '';
@@ -469,6 +470,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
           setOpen(false);
         }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={resolvedLabel}
       />
@@ -487,8 +489,9 @@ function LookupFormField({ field, value, displayValue, selectorUrl, token, resol
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null }) {
-  const t = useLabel(api?.labelOverrides);
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null, labelOverrides }) {
+  const t = useLabel(labelOverrides ?? api?.labelOverrides);
+  const tMenu = useMenuLabel();
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const effectiveSelectorContext = useMemo(() => selectorContext ?? {}, [selectorContext]);
@@ -582,7 +585,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               )}
             </button>
             <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+              {label}
             </Label>
           </div>
         </FieldHighlight>
@@ -714,7 +717,11 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         if (auxData) {
           for (const [suffix, auxVal] of Object.entries(auxData)) {
-            if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+            // Gross price from price list — map directly to grossUnitPrice so the DB trigger
+            // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+            if (suffix === 'standardPrice' && auxVal != null) {
+              onChange?.('grossUnitPrice', auxVal);
+            } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
                 onChange?.(f.key + auxSuffix, auxSuffixVal);
               }
@@ -742,6 +749,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 }}
                 label={label}
                 selectorUrl={selectorUrl}
+                selectorContext={effectiveSelectorContext}
                 token={token}
               />
             </div>
@@ -761,6 +769,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
                 value={data?.[f.key] ?? ''}
                 displayValue={data?.[f.key + '$_identifier']}
                 selectorUrl={selectorUrl}
+                selectorContext={effectiveSelectorContext}
                 token={token}
                 resolvedLabel={label}
                 onChange={searchOnChange}
@@ -792,6 +801,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       );
     }
     if (f.type === 'select' && f.options?.length) {
+      const selectValue = f.valueType === 'boolean'
+        ? (data?.[f.key] === true || data?.[f.key] === 'Y' || data?.[f.key] === 'true'
+          ? 'true'
+          : (data?.[f.key] === false || data?.[f.key] === 'N' || data?.[f.key] === 'false'
+            ? 'false'
+            : ''))
+        : (data?.[f.key] ?? '');
       return (
         <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
           <div className="space-y-1.5">
@@ -799,8 +815,14 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
             </Label>
             <Select
-              value={(data?.[f.key] ?? '') || '__empty__'}
-              onValueChange={(val) => onChange?.(f.key, val === '__empty__' ? '' : val, f.column)}
+              value={selectValue || '__empty__'}
+              onValueChange={(val) => {
+                if (val === '__empty__') {
+                  onChange?.(f.key, '', f.column);
+                  return;
+                }
+                onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
+              }}
               disabled={isReadOnly}
               required={f.required}
             >
@@ -810,7 +832,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               <SelectContent>
                 {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
                 {f.options.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

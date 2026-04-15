@@ -97,7 +97,8 @@
           "reference": "BusinessPartner",
           "displayLogic": null,
           "section": "principal",
-          "seq": 1
+          "seq": 1,
+          "selectorFilter": "isCustomer=Y"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -247,6 +248,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "orderLineHandler",
       "fields": {
         "priceStd": {
           "name": "baseNetUnitPrice",
@@ -296,7 +298,7 @@
           "section": "principal"
         },
         "grossUnitPrice": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "lineNetAmount": {
           "grid": true,
@@ -363,7 +365,7 @@
           "visibility": "discarded"
         },
         "grossListPrice": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "uOM": {
           "visibility": "system"

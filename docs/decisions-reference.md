@@ -77,6 +77,7 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `hideDeleteWhenComplete` | boolean | `false` | — | Hides the delete button in the detail view when the document status is not Draft. Prevents accidental deletion of completed/processed records. |
 | `customComponents` | object | `null` | See below | Override generated components with custom ones from `artifacts/{window}/custom/`. The generator emits the correct imports and props automatically. |
 | `menuActions` | array | `[]` | See below | Additional actions in the detail view's "more" menu (triple dot). Each action can have visibility conditions based on document status. |
+| `newActions` | array | `[]` | See below | Additional actions in the split "New" button dropdown in the list view. Each action can optionally open a custom modal component. |
 | `processOverrides` | object | `{}` | See below | Override presentation and behavior of process buttons in the detail view. Keys are process names or column names. See Process Overrides subsection. |
 | `detailSortBy` | string | `null` | Any valid sort expression | Default sort order for the detail entity tab (e.g., `"sEQNoAsset asc"`). Passed directly to DetailView as the `detailSortBy` prop. |
 | `statusBar` | object | `null` | See below | Generates a summary status bar above the detail form showing key numeric fields and an optional progress indicator. |
@@ -169,6 +170,27 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
 | `destructive` | boolean | If `true`, renders in red as a destructive action. |
 | `visibleWhenStatus` | string or string[] | Only show the action when document status matches. Omit to always show. |
 | `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted, generates an empty `onClick` placeholder. |
+
+### New Actions (`window.newActions`)
+
+Additional actions shown in the dropdown of the split "New" button in the list view. The `ChevronDown` caret is only visible when at least one action is declared.
+
+```json
+{
+  "newActions": [
+    { "key": "import-csv", "label": "Import from CSV", "component": "ImportCsvModal" },
+    { "key": "duplicate", "label": "Duplicate last" }
+  ]
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `key` | string | Unique identifier for the action. Also used as `data-testid="action-new-{key}"`. |
+| `label` | string | Display label in the dropdown menu. |
+| `component` | string | Optional. Name of a custom component in `tools/app-shell/src/windows/custom/{window}/`. When set, the generator imports it, creates a `show{Key}Modal` state, and passes `onClick: () => setShow{Key}Modal(true)`. If omitted, generates an empty `onClick` placeholder. |
+
+The component receives: `token`, `apiBaseUrl`, `windowName`, `onClose`.
 
 ### Process Overrides (`window.processOverrides`)
 

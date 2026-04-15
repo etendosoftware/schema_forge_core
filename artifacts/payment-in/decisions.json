@@ -6,6 +6,7 @@
     "salesTheme": true,
     "documentPreview": { "titlePrefix": "Payment" },
     "relatedDocuments": true,
+    "notesField": "description",
     "customComponents": {
       "bottomSection": "PaymentBottomPanel",
       "topbarRight": "PaymentActivityToggle",
@@ -18,7 +19,7 @@
       { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
     ],
     "processOverrides": {
-      "aPRMProcessPayment": { "label": "Process Payment", "displayLogicRaw": "@status@='RPAP'" },
+      "aPRMProcessPayment": { "add": true, "label": "Process Payment", "style": "positive", "columnName": "aPRMProcessPayment", "displayLogicRaw": "@status@='RPAP'" },
       "aPRMAddScheduledpayments": { "exclude": true },
       "aprmExecutepayment": { "exclude": true },
       "aPRMReversePayment": { "exclude": true },

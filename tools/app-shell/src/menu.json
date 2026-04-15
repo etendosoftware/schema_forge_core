@@ -5,8 +5,7 @@
       "icon": "LayoutDashboard",
       "section": "General",
       "items": [
-        { "name": "dashboard", "label": "Dashboard" },
-        { "name": "onboarding", "label": "Setup Wizard" }
+        { "name": "dashboard", "label": "Dashboard" }
       ]
     },
     {
@@ -71,6 +70,7 @@
         { "name": "product-category", "label": "Product Category" },
         { "name": "physical-inventory", "label": "Physical Inventory" },
         { "name": "goods-movements", "label": "Goods Movement" },
+        { "name": "internal-consumption", "label": "Internal Consumption" },
         { "name": "warehouse", "label": "Warehouse" },
         { "name": "report-viewer-inventory", "label": "Reports", "path": "report-viewer?category=inventory" },
         { "name": "warehouse-storage-bins", "label": "Storage Bin", "hidden": true }
@@ -87,6 +87,13 @@
       ]
     },
     {
+      "group": "Connections",
+      "icon": "Plug",
+      "items": [
+        { "name": "authorize", "label": "Connect with Claude" }
+      ]
+    },
+    {
       "group": "Settings",
       "icon": "Settings",
       "items": [
@@ -96,7 +103,16 @@
         { "name": "tax", "label": "Tax" },
         { "name": "unit-of-measure", "label": "Unit of Measure" },
         { "name": "user", "label": "User" },
-        { "name": "smart-scan", "label": "Smart Scan" }
+        { "name": "smart-scan", "label": "Smart Scan" },
+        { "name": "oauth2-clients", "label": "OAuth2 Clients", "icon": "Shield" }
+      ]
+    },
+    {
+      "group": "Proof of Concept",
+      "icon": "FlaskConical",
+      "items": [
+        { "name": "quick-sales-order", "label": "Quick Sales Order" },
+        { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
       ]
     }
   ]

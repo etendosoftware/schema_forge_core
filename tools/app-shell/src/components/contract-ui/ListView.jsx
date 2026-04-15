@@ -4,11 +4,17 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw } from 'lucide-react';
+import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw, Eye } from 'lucide-react';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -35,6 +41,9 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  onNew = null,
+  newActions = [],
+  labelOverrides,
 }) {
   const [activeFilterIndex, setActiveFilterIndex] = useState(0);
   const effectiveFilter = quickFilters
@@ -47,7 +56,6 @@ export function ListView({
   const ui = useUI();
   const label = tMenu(entityLabel) || entityLabel || entity;
   const [selectedRows, setSelectedRows] = useState([]);
-  const [showUserContext, setShowUserContext] = useState(false);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);
@@ -88,6 +96,19 @@ export function ListView({
     }
     setShowSortPopover(false);
   }, [hook.sortColumn, hook.setSortColumn, hook.setSortDirection]);
+
+  // Header click: none → asc → desc → clear
+  const handleColumnSort = useCallback((colKey) => {
+    if (hook.sortColumn !== colKey) {
+      hook.setSortColumn(colKey);
+      hook.setSortDirection('asc');
+    } else if (hook.sortDirection === 'asc') {
+      hook.setSortDirection('desc');
+    } else {
+      hook.setSortColumn('creationDate');
+      hook.setSortDirection('desc');
+    }
+  }, [hook.sortColumn, hook.sortDirection, hook.setSortColumn, hook.setSortDirection]);
 
   const handleClearSort = useCallback(() => {
     hook.setSortColumn('creationDate');
@@ -156,8 +177,7 @@ export function ListView({
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>
@@ -233,9 +253,6 @@ export function ListView({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <Search className="h-4 w-4" />
-              </button>
               {!(listViewOptions?.hideLink ?? hideLink) && (
                 <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                   <Link2 className="h-4 w-4" />
@@ -299,18 +316,6 @@ export function ListView({
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
-              {!(listViewOptions?.hideEye ?? hideEyeCount) && (
-                <div className="flex items-center gap-1.5 ml-1">
-                  <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  {!(listViewOptions?.hideCounter ?? hideEyeCount) && !hook.loading && (
-                    <span className="text-sm text-muted-foreground tabular-nums">
-                      {hook.items.length}
-                    </span>
-                  )}
-                </div>
-              )}
               {!(listViewOptions?.hidePrint ?? hidePrint) && (
                 <Button
                   variant="outline"
@@ -345,17 +350,34 @@ export function ListView({
                 <Button
                   className="rounded-none rounded-l-lg gap-1.5 px-4"
                   data-testid="action-new"
-                  onClick={() => navigate(`/${windowName}/new`)}
+                  onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
                   {ui('newRecord')}
                 </Button>
-                <div className="w-px bg-primary-foreground/20" />
-                <Button
-                  className="rounded-none rounded-r-lg px-2"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
+                {newActions.length > 0 && (
+                  <>
+                    <div className="w-px bg-primary-foreground/20" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button className="rounded-none rounded-r-lg px-2" data-testid="action-new-more">
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {newActions.map((action) => (
+                          <DropdownMenuItem
+                            key={action.key}
+                            onClick={action.onClick}
+                            data-testid={`action-new-${action.key}`}
+                          >
+                            {action.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
               )}
             </div>
@@ -390,14 +412,17 @@ export function ListView({
                     data={hook.items}
                     onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
                     onSelectionChange={setSelectedRows}
+                    onDataMutated={hook.refresh}
                     isRowSelectable={isRowSelectable}
                     compact={false}
                     sortColumn={hook.sortColumn}
                     sortDirection={hook.sortDirection}
+                    onSort={handleColumnSort}
                     onColumnsReady={setTableColumns}
                     api={api}
                     token={token}
                     apiBaseUrl={apiBaseUrl}
+                    labelOverrides={labelOverrides}
                   />
                 )
               }

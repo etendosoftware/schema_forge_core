@@ -1,11 +1,12 @@
 import { EntityForm } from '@/components/contract-ui';
+import { useUI } from '@/i18n';
 
 function SectionCard({ title, description, children }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="mb-4">
-        <div className="text-sm font-semibold text-gray-800">{title}</div>
-        {description && <div className="text-xs text-gray-400 mt-0.5">{description}</div>}
+        {title && <div className="text-sm font-semibold text-gray-800">{title}</div>}
+        {description && <div className={`text-xs text-gray-400${title ? ' mt-0.5' : ''}`}>{description}</div>}
       </div>
       {children}
     </div>
@@ -53,14 +54,6 @@ const currencyFields = [
   { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', section: 'other', reference: 'Currency', inputMode: 'selector', defaultValue: '@C_Currency_ID@', readOnlyLogic: (record) => Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0 },
 ];
 
-const deprecFields = [
-  { key: 'depreciationType', column: 'Amortizationtype', type: 'select', label: 'Depreciation Type', required: true, section: 'other', options: [{ value: 'LI', label: 'Linear' }] },
-  { key: 'calculateType', column: 'Amortizationcalctype', type: 'select', label: 'Calculate Type', required: true, section: 'other', options: [{ value: 'PE', label: 'Percentage' }, { value: 'TI', label: 'Time' }] },
-  { key: 'annualDepreciation', column: 'Amortizationpercentage', type: 'number', label: 'Annual Depreciation %', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType !== 'TI' },
-  { key: 'amortize', column: 'Assetschedule', type: 'select', label: 'Amortize', required: true, section: 'other', options: [{ value: 'MO', label: 'Monthly' }, { value: 'YE', label: 'Yearly' }], displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' },
-  { key: 'usableLifeYears', column: 'UseLifeYears', type: 'number', label: 'Useful Life - Years', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' && record.amortize === 'YE' },
-  { key: 'usableLifeMonths', column: 'UseLifeMonths', type: 'number', label: 'Useful Life - Months', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' && record.amortize !== 'YE' },
-];
 
 const dateFields = [
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date', section: 'other' },
@@ -77,8 +70,18 @@ const amtFields = [
 ];
 
 export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
+  const ui = useUI();
   const d = data ?? {};
   const depreciate = isDepreciate(d);
+
+  const deprecFields = [
+    { key: 'depreciationType', column: 'Amortizationtype', type: 'select', label: ui('assetsOptLinear'), required: true, section: 'other', options: [{ value: 'LI', label: ui('assetsOptLinear') }] },
+    { key: 'calculateType', column: 'Amortizationcalctype', type: 'select', required: true, section: 'other', options: [{ value: 'PE', label: ui('assetsOptPercentage') }, { value: 'TI', label: ui('assetsOptTime') }] },
+    { key: 'annualDepreciation', column: 'Amortizationpercentage', type: 'number', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType !== 'TI' },
+    { key: 'amortize', column: 'Assetschedule', type: 'select', required: true, section: 'other', options: [{ value: 'MO', label: ui('assetsOptMonthly') }, { value: 'YE', label: ui('assetsOptYearly') }], displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' },
+    { key: 'usableLifeYears', column: 'UseLifeYears', type: 'number', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' && record.amortize === 'YE' },
+    { key: 'usableLifeMonths', column: 'UseLifeMonths', type: 'number', section: 'other', displayLogic: (record) => isDepreciate(record) && record.calculateType === 'TI' && record.amortize !== 'YE' },
+  ];
 
   function makeDisplayLogic(fields) {
     const readOnly = {};
@@ -96,10 +99,10 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
   const common = { data: d, onChange, catalogs, api, token, apiBaseUrl, entity: 'assets', layout: 'horizontal' };
 
   return (
-    <div className="space-y-4 pt-5 pb-6">
+    <div className="space-y-4 pb-6">
       <SectionCard
-        title="Depreciation Setup"
-        description="Keep the accounting setup in one structured view instead of mixing it with the amortization table."
+        title={null}
+        description={ui('assetsConfigDesc')}
       >
         <div className="space-y-4">
           <EntityForm
@@ -109,8 +112,8 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
           />
           <div className="grid grid-cols-2 gap-4">
             <ToggleCard
-              label="Depreciate"
-              description="Enable depreciation for this asset."
+              label={ui('assetsDepreciateLabel')}
+              description={ui('assetsDepreciateDesc')}
               fieldKey="depreciate"
               value={d.depreciate}
               onChange={onChange}
@@ -118,8 +121,8 @@ export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, a
             />
             {depreciate && d.calculateType === 'TI' && (
               <ToggleCard
-                label="Every month is 30 days"
-                description="Use 30-day months for depreciation calculation."
+                label={ui('assets30DaysLabel')}
+                description={ui('assets30DaysDesc')}
                 fieldKey="everyMonthIs30Days"
                 value={d.everyMonthIs30Days}
                 onChange={onChange}

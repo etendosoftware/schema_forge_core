@@ -19,29 +19,9 @@ const api = {
         "searchKey",
         "name"
       ]
-    },
-    "lines": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/payment-term/lines",
-      "detailUrl": "/sws/neo/payment-term/lines/{id}",
-      "supportedFilters": []
     }
   },
-  "selectors": [
-    {
-      "entity": "lines",
-      "field": "paymentMethod",
-      "column": "FIN_Paymentmethod_ID",
-      "reference": "Paymentmethod",
-      "inputMode": "selector",
-      "url": "/sws/neo/payment-term/lines/selectors/paymentMethod"
-    }
-  ],
+  "selectors": [],
   "actions": [],
   "queryParams": {
     "pagination": {
@@ -51,7 +31,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=payment-termDate"
+      "example": "_sortBy=name"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"

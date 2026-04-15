@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { useUI } from '@/i18n';
 
 /**
  * ImageField — shows a product image and allows upload.
@@ -16,6 +17,7 @@ import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
  *  - fieldKey: string (for data-testid)
  */
 export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = false, fieldKey = 'image' }) {
+  const ui = useUI();
   const [blobUrl, setBlobUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -114,7 +116,7 @@ export function ImageField({ imageId, onChange, token, apiBaseUrl, readOnly = fa
             ].join(' ')}
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {uploading ? 'Uploading…' : 'Upload image'}
+            {uploading ? ui('uploadingImage') : ui('uploadImage')}
           </button>
 
           {/* Hidden file input — NOT aria-hidden so browser allows programmatic .click() */}

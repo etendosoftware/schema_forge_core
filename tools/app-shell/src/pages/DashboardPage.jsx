@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import {
   DollarSign,
   CreditCard,
@@ -613,13 +613,16 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
   const expPoints = hasExpenses ? normalizedExpenseValues.map((v, i) => toPoint(v, i, normalizedExpenseValues.length)) : [];
 
   const toPolyline = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
-  const toFillPath = (pts) => [
-    `M ${pts[0].x},${pts[0].y}`,
-    ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
-    `L ${pts[pts.length - 1].x},${PAD_Y + plotH}`,
-    `L ${pts[0].x},${PAD_Y + plotH}`,
-    'Z',
-  ].join(' ');
+  const toFillPath = (pts) => {
+    if (pts.length === 0) return '';
+    return [
+      `M ${pts[0].x},${pts[0].y}`,
+      ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
+      `L ${pts[pts.length - 1].x},${PAD_Y + plotH}`,
+      `L ${pts[0].x},${PAD_Y + plotH}`,
+      'Z',
+    ].join(' ');
+  };
 
   // Bar chart metrics — uses PAD_X for the left offset so bars align with the Y-axis labels
   const barPlotW = CHART_W - PAD_X - BAR_PAD_X;
@@ -1040,17 +1043,20 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
  * Recent Invoices Widget
  * ----------------------------------------------------------------*/
 
-function fmtDate(str) {
+function fmtDate(str, locale = 'en-US') {
   if (!str) return '';
   // Support dd-MM-yyyy and yyyy-MM-dd
   const iso = /^\d{4}-\d{2}-\d{2}/.test(str) ? str : (() => { const m = str.match(/^(\d{2})-(\d{2})-(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : str; })();
   const d = new Date(iso);
   if (isNaN(d)) return str;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Normalize locale: es_ES → es-ES (BCP 47)
+  const bcp47 = (locale || 'en-US').replace('_', '-');
+  return d.toLocaleDateString(bcp47, { month: 'short', day: 'numeric' });
 }
 
 function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
   return (
     <Card className="flex flex-col h-full">
@@ -1077,7 +1083,7 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="min-w-0">
                           <p className="text-sm truncate">{inv.client}</p>
-                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date)}</p>
+                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date, locale)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -1253,7 +1259,6 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { token, selectedOrg } = useAuth();
-  const [showUserContext, setShowUserContext] = useState(false);
   const [widgetManagerOpen, setWidgetManagerOpen] = useState(false);
   const gridRef = useRef(null);
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
@@ -1363,8 +1368,7 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>

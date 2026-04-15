@@ -1,35 +1,47 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Inbox, X, ChevronDown, Check } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Search, Inbox, X, ChevronDown, Check, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
-import { useLabel, useUI, useLocale } from '@/i18n';
+import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
+import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
  * Text input with filtered dropdown — lightweight alternative to full SearchInput.
  */
-function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token }) {
+function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token, displayLabel }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState(null);
   const [serverResults, setServerResults] = useState(null);
+  const rootRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const displayLabelRef = useRef(displayLabel);
+  displayLabelRef.current = displayLabel;
   const displayValue = options.find(o => o.id === value);
 
   // Server-side search with debounce
   const fetchTimer = useRef(null);
   const fetchServerResults = useCallback((q) => {
-    if (!selectorUrl || !token || !q.trim()) { setServerResults(null); return; }
+    if (!selectorUrl || !token) { setServerResults(null); return; }
     clearTimeout(fetchTimer.current);
+    const trimmed = (q || '').trim();
+    const queryParams = trimmed ? { ...selectorContext, q: trimmed } : { ...selectorContext };
     fetchTimer.current = setTimeout(() => {
-      fetch(buildUrlWithParams(selectorUrl, { ...selectorContext, q: q.trim() }), {
+      fetch(buildUrlWithParams(selectorUrl, queryParams), {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       })
         .then(r => r.ok ? r.json() : null)
@@ -57,15 +69,81 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
     setServerResults(null);
   };
 
-  // Sync display when value is set externally
+  // Sync display when value is set externally.
+  // If the value is found in static options, use that label.
+  // Otherwise fall back to displayLabel (e.g. locator/warehouse name set by auto-fill).
   useEffect(() => {
-    if (displayValue && !query) {
+    if (displayValue) {
       setQuery(displayValue.name || displayValue.label || displayValue._identifier || '');
+    } else if (displayLabelRef.current) {
+      setQuery(displayLabelRef.current);
     }
   }, [value]);
 
+  const updateDropdownDirection = useCallback(() => {
+    if (!rootRef.current || typeof window === 'undefined') {
+      return;
+    }
+    const rect = rootRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setOpenUp(spaceBelow < 220 && spaceAbove > spaceBelow);
+
+    const shouldOpenUp = spaceBelow < 220 && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(120, (shouldOpenUp ? spaceAbove : spaceBelow) - 12);
+    const style = shouldOpenUp
+      ? {
+          position: 'fixed',
+          left: rect.left,
+          width: rect.width,
+          bottom: window.innerHeight - rect.top + 4,
+          maxHeight,
+          zIndex: 1000,
+        }
+      : {
+          position: 'fixed',
+          left: rect.left,
+          width: rect.width,
+          top: rect.bottom + 4,
+          maxHeight,
+          zIndex: 1000,
+        };
+    setDropdownStyle(style);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updateDropdownDirection();
+    const onReflow = () => updateDropdownDirection();
+    window.addEventListener('resize', onReflow);
+    window.addEventListener('scroll', onReflow, true);
+    return () => {
+      window.removeEventListener('resize', onReflow);
+      window.removeEventListener('scroll', onReflow, true);
+    };
+  }, [open, updateDropdownDirection]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointerDown = (event) => {
+      const target = event.target;
+      if (rootRef.current?.contains(target) || dropdownRef.current?.contains(target)) {
+        return;
+      }
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
+  }, [open]);
+
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <input
         ref={inputRef}
         type="text"
@@ -78,7 +156,11 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
           // Clear ID when typing (user is searching, not committed yet)
           if (value) onChange('', '');
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          updateDropdownDirection();
+          setOpen(true);
+          fetchServerResults(query);
+        }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={(e) => {
           // Let Enter/Escape propagate to the row handler only if dropdown is closed
@@ -93,9 +175,31 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
         placeholder={placeholder}
         className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 pr-6 focus:ring-2 focus:ring-primary focus:outline-none"
       />
-      <ChevronDown className="absolute right-1.5 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-50 bottom-full left-0 mb-0.5 bg-white border rounded-md shadow-lg max-h-40 overflow-auto min-w-[200px] w-max">
+      <button
+        type="button"
+        className="absolute right-1 top-1.5 h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          const nextOpen = !open;
+          if (nextOpen) {
+            updateDropdownDirection();
+          }
+          setOpen(nextOpen);
+          if (nextOpen) {
+            fetchServerResults(query);
+          }
+        }}
+        aria-label={`Toggle ${placeholder} options`}
+      >
+        <ChevronDown className="h-4 w-4" />
+      </button>
+      {open && filtered.length > 0 && dropdownStyle && createPortal(
+        <div
+          ref={dropdownRef}
+          className="bg-white border rounded-md shadow-lg overflow-auto"
+          style={dropdownStyle}
+          data-open-up={openUp ? 'true' : 'false'}
+        >
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -106,7 +210,8 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
               {opt.name || opt.label || opt._identifier || opt.id}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -124,6 +229,14 @@ function getDateDotColor(dateValue) {
   d.setHours(0, 0, 0, 0);
   if (d.getTime() === today.getTime()) return null;
   return d > today ? 'bg-emerald-500' : 'bg-red-500';
+}
+
+function isTruthyBoolean(value) {
+  return value === true || value === 'Y' || value === 'true';
+}
+
+function isFalsyBoolean(value) {
+  return value === false || value === 'N' || value === 'false';
 }
 
 /**
@@ -173,11 +286,13 @@ function EmptyState({ hasFilter, totalCount }) {
   );
 }
 
+const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, token, apiBaseUrl, entity, selectorContext }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -208,10 +323,12 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 
   const [values, setValues] = useState(buildEmpty);
   const firstInputRef = useRef(null);
+  const touchedFieldsRef = useRef(new Set());
 
   // Reset values when fields or data change
   useEffect(() => {
     setValues(buildEmpty());
+    touchedFieldsRef.current = new Set();
   }, [buildEmpty]);
 
   // Auto-focus first input when row appears
@@ -224,7 +341,18 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   };
 
   const handleConfirm = async () => {
-    const result = await onAdd(values);
+    // Coerce numeric field values to JS numbers right before submission.
+    // This catches race conditions where async callouts may have overwritten
+    // user-typed values with strings.
+    const coercedValues = { ...values };
+    for (const f of fields) {
+      if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
+        const raw = String(coercedValues[f.key]);
+        const parsed = f.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
+        if (!isNaN(parsed)) coercedValues[f.key] = parsed;
+      }
+    }
+    const result = await onAdd(coercedValues);
     if (result === false || result == null) {
       return;
     }
@@ -248,12 +376,14 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       }
     }
     setValues(next);
+    touchedFieldsRef.current = new Set();
     // Re-focus first input for rapid entry
     setTimeout(() => firstInputRef.current?.focus(), 0);
   };
 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
+    touchedFieldsRef.current.add(key);
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
@@ -271,25 +401,35 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (topField === 'id' || topField === '_aux' || topField === 'label'
             || topField === 'name' || topField === 'searchKey'
             || typeof topVal === 'object' || topVal === null) continue;
+        // Gross price from price list — map directly to grossUnitPrice so the DB trigger
+        // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+        if (topField === 'standardPrice' && topVal != null) {
+          snapshot['grossUnitPrice'] = topVal;
+          handleChange('grossUnitPrice', topVal);
+          snapshot['grossListPrice'] = topVal;
+          handleChange('grossListPrice', topVal);
+          continue;
+        }
         const ctxKey = `${key}_${topField}`;
         if (!(ctxKey in snapshot)) {
+          // Keep display hints only in the callout snapshot.
+          // Persisting these transient keys in row state can leak them into POST payloads.
           snapshot[ctxKey] = topVal;
-          handleChange(ctxKey, topVal);
         }
       }
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
     onFieldChange?.(key, val, snapshot, (updates) => {
-      // Apply callout updates only for fields the user hasn't manually changed
-      // since the callout was triggered. Compares against the snapshot captured
-      // at trigger time — if the current value diverged, the user edited it and
-      // the callout result must not overwrite it (race condition guard).
-      setValues(prev => {
+      // Callback to apply callout results to the inline row.
+      // Never overwrite fields manually set by the user in this add-row session.
+      setValues((prev) => {
         const next = { ...prev };
         for (const [field, value] of Object.entries(updates)) {
-          if (!(field in snapshot) || prev[field] === snapshot[field]) {
-            next[field] = value;
-          }
+          const isTouched = touchedFieldsRef.current.has(field);
+          const hasUserValue = prev[field] !== '' && prev[field] != null;
+          if (field !== key && isTouched && hasUserValue) continue;
+          if ((value === '' || value == null) && hasUserValue) continue;
+          next[field] = value;
         }
         return next;
       });
@@ -327,6 +467,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       )}
       {columns.map(col => {
         const field = fieldMap[col.key];
+        const fieldLabel = field ? (field.label ?? t(field.column) ?? field.key) : (col.label ?? t(col.column) ?? col.key);
         if (!field) {
           // Show callout-derived values if available, otherwise dash.
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
@@ -346,20 +487,37 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (field.type === 'search' && field.lookup) {
           const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
           const displayLabel = values[field.key + '$_identifier'] || '';
+          const isInternalConsumptionProduct = entity === 'internalConsumptionLine' && field.key === 'product';
           return (
             <TableCell key={col.key} className="py-1 px-2">
               <LookupField
                 value={displayLabel}
-                placeholder={t(field.column) ?? field.label ?? field.key}
+                placeholder={fieldLabel}
                 selectorUrl={selectorUrl}
+                selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
                 onSelect={(item) => {
+                  touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
                   handleFieldChange(field.key, item.id, item);
+
+                  if (isInternalConsumptionProduct) {
+                    // _aux._LOC holds the M_Locator_ID UUID (from storageBin.id out-field).
+                    // item.warehouse holds the warehouse name (from storageBin.warehouse grid field).
+                    const locatorId = item._aux?._LOC;
+                    const locatorLabel = item.warehouse || item['warehouse$_identifier'] || item.storageBin;
+                    if (locatorId) {
+                      handleChange('storageBin$_identifier', locatorLabel || locatorId);
+                      // Internal Consumption auto-fill should not trigger a second line callout,
+                      // otherwise backend-side locator callouts may override user-entered quantity.
+                      handleChange('storageBin', locatorId);
+                    }
+                  }
                 }}
                 onKeyDown={handleKeyDown}
-                title={t(field.column) ?? field.label ?? field.key}
+                title={isInternalConsumptionProduct ? 'Product + Warehouse' : fieldLabel}
+                useInternalConsumptionDrawer={isInternalConsumptionProduct}
               />
             </TableCell>
           );
@@ -374,10 +532,12 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
               <InlineSearchCombo
                 field={field}
                 value={values[field.key] ?? ''}
+                displayLabel={values[field.key + '$_identifier'] || ''}
                 options={options}
                 inputRef={isFirst ? firstInputRef : undefined}
-                placeholder={t(field.column) ?? field.label ?? field.key}
+                placeholder={fieldLabel}
                 onChange={(id, label, selectedItem) => {
+                  touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', label);
                   handleFieldChange(field.key, id, selectedItem);
                 }}
@@ -424,6 +584,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 onChange={(e) => {
                   const selectedId = e.target.value;
                   const opt = options.find(o => o.id === selectedId);
+                  touchedFieldsRef.current.add(field.key);
                   if (opt) {
                     handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
                   }
@@ -432,7 +593,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
                 onKeyDown={handleKeyDown}
                 className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="" disabled hidden>{t(field.column) ?? field.label ?? field.key}</option>
+                <option value="" disabled hidden>{fieldLabel}</option>
                 {options.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</option>
                 ))}
@@ -445,18 +606,29 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           <TableCell key={col.key} className="py-1 px-2">
             <input
               ref={isFirst ? firstInputRef : undefined}
-              type={field.type === 'number' ? 'number' : 'text'}
+              type={NUMERIC_FIELD_TYPES.has(field.type) ? 'number' : 'text'}
               inputMode={field.inputMode}
               value={values[field.key] ?? ''}
-              onChange={(e) => handleChange(field.key, e.target.value)}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const isNumericType = NUMERIC_FIELD_TYPES.has(field.type);
+                touchedFieldsRef.current.add(field.key);
+                if (isNumericType && raw !== '' && raw !== '-') {
+                  const parsed = field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
+                  handleChange(field.key, isNaN(parsed) ? raw : parsed);
+                } else {
+                  handleChange(field.key, raw);
+                }
+              }}
               onKeyDown={handleKeyDown}
-              placeholder={t(field.column) ?? field.label ?? field.key}
+              placeholder={fieldLabel}
               required={field.required}
               className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
             />
           </TableCell>
         );
       })}
+      {hasDeleteColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 }
@@ -464,7 +636,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDown, inputRef, title }) {
+function LookupField({ value, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, useInternalConsumptionDrawer = false }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -492,14 +664,27 @@ function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDo
           <span className="truncate text-muted-foreground">{placeholder}</span>
         )}
       </button>
-      <ProductSearchDrawer
-        open={open}
-        onClose={() => setOpen(false)}
-        onSelect={(item) => { onSelect(item); setOpen(false); }}
-        selectorUrl={selectorUrl}
-        token={token}
-        title={title ? `Search ${title}` : undefined}
-      />
+      {useInternalConsumptionDrawer ? (
+        <InternalConsumptionProductSearchDrawer
+          open={open}
+          onClose={() => setOpen(false)}
+          onSelect={(item) => { onSelect(item); setOpen(false); }}
+          selectorUrl={selectorUrl}
+          selectorContext={selectorContext}
+          token={token}
+          title={title ? `Search ${title}` : undefined}
+        />
+      ) : (
+        <ProductSearchDrawer
+          open={open}
+          onClose={() => setOpen(false)}
+          onSelect={(item) => { onSelect(item); setOpen(false); }}
+          selectorUrl={selectorUrl}
+          selectorContext={selectorContext}
+          token={token}
+          title={title ? `Search ${title}` : undefined}
+        />
+      )}
     </>
   );
 }
@@ -507,7 +692,7 @@ function LookupField({ value, placeholder, selectorUrl, token, onSelect, onKeyDo
 /**
  * Small button that opens the ProductSearchDrawer for lookup-enabled fields.
  */
-function LookupButton({ selectorUrl, token, onSelect, title }) {
+function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -524,6 +709,7 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
         onClose={() => setOpen(false)}
         onSelect={(item) => { onSelect(item); setOpen(false); }}
         selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
         token={token}
         title={title ? `Search ${title}` : undefined}
       />
@@ -544,14 +730,26 @@ function LookupButton({ selectorUrl, token, onSelect, title }) {
  *  - compact: boolean (reserved for narrower layout)
  *  - loading: boolean (shows skeleton when true)
  *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
+ *  - onDeleteRow: (row) => void — when provided, renders a per-row delete button (trash icon)
+ *      that appears on row hover and on keyboard focus. Invoked with the row object; click
+ *      propagation is stopped so it does not trigger row selection or navigation.
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext }) {
-  const t = useLabel();
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow }) {
+  const t = useLabel(labelOverrides);
+  const tMenu = useMenuLabel();
   const ui = useUI();
   const dictionary = useLocale();
+  const { locale } = useLocaleSwitch();
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const [optimisticToggles, setOptimisticToggles] = useState({});
+  const [savingToggles, setSavingToggles] = useState({});
+
+  useEffect(() => {
+    setOptimisticToggles({});
+    setSavingToggles({});
+  }, [data]);
 
   // Report columns to parent (e.g., ListView sort popover)
   useEffect(() => {
@@ -592,6 +790,21 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     [columns]
   );
 
+  const internalConsumptionWarehouseByLocator = useMemo(() => {
+    if (entity !== 'internalConsumptionLine') return new Map();
+    const fields = addRow?.fields || [];
+    const catalogs = addRow?.catalogs;
+    const storageBinField = fields.find(f => f.key === 'storageBin');
+    if (!storageBinField || !catalogs) return new Map();
+    const options = getCatalogOptions(catalogs, entity, storageBinField);
+    const map = new Map();
+    for (const opt of options) {
+      if (!opt?.id) continue;
+      map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
+    }
+    return map;
+  }, [entity, addRow?.fields, addRow?.catalogs]);
+
   const totals = useMemo(() => {
     if (amountColumns.length === 0) return null;
     const sums = {};
@@ -601,10 +814,62 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     return sums;
   }, [filteredData, amountColumns]);
 
+  const handleInlineToggle = useCallback(async (row, col, checked) => {
+    const toggleKey = `${row.id}:${col.key}`;
+    if (!apiBaseUrl || !entity || !row?.id || !token) {
+      toast.error('Inline toggle is not available in this context');
+      return;
+    }
+
+    setOptimisticToggles(prev => ({ ...prev, [toggleKey]: checked }));
+    setSavingToggles(prev => ({ ...prev, [toggleKey]: true }));
+
+    try {
+      const res = await fetch(`${apiBaseUrl}/${entity}/${row.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ [col.key]: checked }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+
+      onDataMutated?.();
+    } catch (error) {
+      setOptimisticToggles(prev => {
+        const next = { ...prev };
+        delete next[toggleKey];
+        return next;
+      });
+      toast.error(error?.message || 'Failed to update record');
+    } finally {
+      setSavingToggles(prev => {
+        const next = { ...prev };
+        delete next[toggleKey];
+        return next;
+      });
+    }
+  }, [apiBaseUrl, entity, onDataMutated, token]);
+
   const renderCellValue = (row, col) => {
     // Custom render function takes priority
-    if (typeof col.render === 'function') return col.render(row);
-    const display = resolveIdentifier(row, col.key);
+    if (typeof col.render === 'function') return col.render(row, { entity, token, apiBaseUrl });
+    const toggleKey = `${row.id}:${col.key}`;
+    const rawValue = Object.prototype.hasOwnProperty.call(optimisticToggles, toggleKey)
+      ? optimisticToggles[toggleKey]
+      : row[col.key];
+    let display = resolveIdentifier(row, col.key);
+    if (entity === 'internalConsumptionLine' && col.key === 'storageBin') {
+      const locatorId = row?.storageBin;
+      if (locatorId != null) {
+        const warehouseLabel = internalConsumptionWarehouseByLocator.get(String(locatorId));
+        if (warehouseLabel) display = warehouseLabel;
+      }
+    }
     // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
       const pill = col.pill;
@@ -621,8 +886,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'enum') {
-      const raw = row[col.key];
-      const label = col.enumLabels?.[raw] ?? raw;
+      const raw = rawValue;
+      const label = tMenu(col.enumLabels?.[raw] ?? raw);
       if (col.display === 'dot') {
         const dotColor = getStatusDotColor(raw);
         return (
@@ -663,23 +928,49 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       );
     }
     if (col.type === 'boolean') {
-      const val = row[col.key];
+      const val = rawValue;
+      if (col.toggle) {
+        const checked = isTruthyBoolean(val);
+        const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
+        return (
+          <div
+            className="flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <Switch
+              checked={checked}
+              disabled={disabled}
+              onCheckedChange={(nextChecked) => {
+                void handleInlineToggle(row, col, nextChecked);
+              }}
+              aria-label={col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key}
+            />
+          </div>
+        );
+      }
       if (col.badge) {
-        const trueLabel  = col.badgeLabels?.true  ?? ui('statusComplete');
-        const falseLabel = col.badgeLabels?.false ?? ui('statusInProcess');
-        if (val === true || val === 'Y') return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+        const resolveBadgeLabel = (raw, fallback) => {
+          if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
+          return raw ?? fallback;
+        };
+        const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
+        const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
+        const trueColor  = col.badgeColors?.true  ?? 'bg-emerald-100 text-emerald-800';
+        const falseColor = col.badgeColors?.false ?? 'bg-amber-100 text-amber-700';
+        if (isTruthyBoolean(val)) return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
             {trueLabel}
           </span>
         );
-        if (val === false || val === 'N') return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+        if (isFalsyBoolean(val)) return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
             {falseLabel}
           </span>
         );
       }
-      if (val === true || val === 'Y') return <span className="text-emerald-600">{ui('yes')}</span>;
-      if (val === false || val === 'N') return <span className="text-slate-400">{ui('no')}</span>;
+      if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
+      if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
       return <span className="text-slate-300">&mdash;</span>;
     }
     if (col.type === 'date') {
@@ -743,11 +1034,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     });
   };
 
-  const colSpan = columns.length + (selectable ? 1 : 0);
+  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0);
 
   return (
     <div className="space-y-0">
-      <div className="overflow-hidden">
+      <div className="overflow-x-auto overflow-y-visible">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border/40 bg-muted/30">
@@ -775,20 +1066,35 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = t(col.column) ?? col.label ?? col.key;
+                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? col.label ?? t(col.column) ?? col.key;
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (
-                  <TableHead key={col.key} className={`align-top ${isRight ? 'text-right' : ''}`}>
-                    <div className={`flex flex-col gap-1.5 pb-2 ${isRight ? 'items-end' : ''}`}>
-                      <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
-                        <FieldHighlight entityName={entity} fieldName={col.key}>
-                          {colLabel}
-                          {isSorted && (
-                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                          )}
-                        </FieldHighlight>
-                      </span>
+                  <TableHead key={col.key} className="align-top">
+                    <div className="flex flex-col gap-1.5 pb-2">
+                      {onSort ? (
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-muted-foreground/70 tracking-wide cursor-pointer select-none hover:text-foreground transition-colors bg-transparent border-0 p-0 text-left"
+                          onClick={() => onSort(col.key)}
+                        >
+                          <FieldHighlight entityName={entity} fieldName={col.key}>
+                            {colLabel}
+                            {isSorted && (
+                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                            )}
+                          </FieldHighlight>
+                        </button>
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
+                          <FieldHighlight entityName={entity} fieldName={col.key}>
+                            {colLabel}
+                            {isSorted && (
+                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                            )}
+                          </FieldHighlight>
+                        </span>
+                      )}
                       <div className="relative w-full">
                         <input
                           type="text"
@@ -818,6 +1124,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                   </TableHead>
                 );
               })}
+              {onDeleteRow && <TableHead className="w-10 px-2" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -830,7 +1137,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
             ) : (
               filteredData.map((row, idx) => {
                 const isChecked = selectedRows.has(row.id);
-                const isSelectedLine = row.id === selectedRowId;
+                const isSelectedLine = selectedRowId != null && row.id === selectedRowId;
                 return (
                   <TableRow
                     key={row.id ?? idx}
@@ -841,10 +1148,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       else onRowSelect?.(row);
                     }}
                     className={[
-                      'transition-colors h-12',
+                      'transition-colors h-12 group/row',
                       (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
                       isChecked ? 'bg-primary/5' : '',
-                      row.id === selectedId ? 'bg-primary/10' : '',
+                      selectedId != null && row.id === selectedId ? 'bg-primary/10' : '',
                       isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
                       isSelectedLine ? 'hover:bg-slate-300/80' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
                     ].filter(Boolean).join(' ')}
@@ -870,6 +1177,19 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}
+                    {onDeleteRow && (
+                      <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteRow(row)}
+                          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          title={ui('deleteRowTooltip')}
+                          aria-label={ui('deleteRowTooltip')}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -884,6 +1204,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
                   selectable={selectable}
+                  hasDeleteColumn={!!onDeleteRow}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -902,6 +1223,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       : ''}
                   </TableCell>
                 ))}
+                {onDeleteRow && <TableCell />}
               </TableRow>
             </TableFooter>
           )}

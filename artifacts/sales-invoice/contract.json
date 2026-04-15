@@ -53,7 +53,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
-            "seq": 10,
+            "seq": 20,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -73,7 +73,7 @@
             "form": true,
             "defaultValue": "@#Date@",
             "section": "principal",
-            "seq": 20,
+            "seq": 30,
             "callout": {
               "className": "com.etendoerp.sif.general.callouts.SifInvoiceOperationDateCallout"
             },
@@ -97,7 +97,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
-            "seq": 30,
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
             },
@@ -907,7 +907,8 @@
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
-            "required": true
+            "required": true,
+            "seq": 20
           },
           {
             "name": "invoiceDate",
@@ -915,7 +916,8 @@
             "column": "DateInvoiced",
             "type": "date",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 30
           },
           {
             "name": "businessPartner",
@@ -923,7 +925,8 @@
             "column": "C_BPartner_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 10
           },
           {
             "name": "partnerAddress",
@@ -931,7 +934,8 @@
             "column": "C_BPartner_Location_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 40
           },
           {
             "name": "description",
@@ -947,7 +951,8 @@
             "column": "C_PaymentTerm_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 60
           },
           {
             "name": "paymentMethod",
@@ -955,7 +960,8 @@
             "column": "FIN_Paymentmethod_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 50
           },
           {
             "name": "documentStatus",

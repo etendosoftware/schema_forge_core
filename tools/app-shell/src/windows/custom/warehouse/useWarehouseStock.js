@@ -34,7 +34,7 @@ export { aggregateProducts } from './warehouseUtils';
  * across all bins in parallel. Also resolves UoM names from C_UOM_TRL via the selector.
  * Returns { loading, error, products, transactions }.
  */
-export function useWarehouseStock(warehouseId, token, apiBaseUrl) {
+export function useWarehouseStock(warehouseId, token, apiBaseUrl, refreshKey = 0) {
   const [state, setState] = useState({ loading: true, error: null, products: [], transactions: [] });
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export function useWarehouseStock(warehouseId, token, apiBaseUrl) {
     })();
 
     return () => { cancelled = true; };
-  }, [warehouseId, token, apiBaseUrl]);
+  }, [warehouseId, token, apiBaseUrl, refreshKey]);
 
   return state;
 }

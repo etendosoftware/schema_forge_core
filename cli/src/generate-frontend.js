@@ -71,11 +71,11 @@ function mapFieldType(field) {
     }
     return 'status';
   }
+  if (field.enumValues?.length) return 'enum';
   if (field.type === 'boolean') return 'boolean';
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
-  if (field.type === 'enum') return 'enum';
   return 'string';
 }
 
@@ -89,8 +89,8 @@ function mapFormFieldType(field) {
     if (field.inputMode === 'dependent') return 'dependent';
     return 'search';
   }
+  if (field.enumValues?.length) return 'select';
   if (field.type === 'boolean') return 'checkbox';
-  if (field.type === 'enum') return 'select';
   if (field.type === 'image') return 'image';
   if (field.tsType === 'number') return 'number';
   if (field.type === 'date') return 'date';
@@ -127,12 +127,15 @@ export function generateTableComponent(entityName, contract) {
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
+    const togglePart = f.inlineToggle ? ', toggle: true' : '';
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
+    const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
     const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${enumLabelsPart}${selectionPart}${badgePart}${badgeLabelsPart}${summablePart}${displayPart}${renderPart} },`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -250,7 +253,8 @@ export function generateFormComponent(entityName, contract) {
       ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
       : '';
     const formLabelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
-    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
+    const valueTypePart = (type === 'select' && f.tsType === 'boolean') ? `, valueType: 'boolean'` : '';
+    const fieldLine = `  { key: '${f.name}', column: '${f.column}', type: '${type}'${formLabelPart}${requiredPart}${lookupPart}${popupPart}${readOnlyPart}${sectionPart}${referencePart}${inputModePart}${dependsOnPart}${optionsPart}${valueTypePart}${defaultValuePart}${helpPart}${fieldGroupPart}${precisionPart}${displayLogicPart}${readOnlyLogicPart} },`;
     return [...slotLines, fieldLine].join('\n');
   }).join('\n');
 
@@ -564,6 +568,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideEyeCount = windowConfig.hideEyeCount ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
+  const newActionsConfig = windowConfig.newActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
@@ -725,29 +730,38 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const customComponentImports = [];
   const customComponentProps = [];
   if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from '../../../custom/${customComponents.bottomSection}';`);
+    customComponentImports.push(`import ${customComponents.bottomSection} from '@/windows/custom/${specName}/${customComponents.bottomSection}';`);
     customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
   }
   if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from '../../../custom/${customComponents.topbarRight}';`);
+    customComponentImports.push(`import ${customComponents.topbarRight} from '@/windows/custom/${specName}/${customComponents.topbarRight}';`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
   if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from '../../../custom/${customComponents.topbarExtra}';`);
+    customComponentImports.push(`import ${customComponents.topbarExtra} from '@/windows/custom/${specName}/${customComponents.topbarExtra}';`);
     customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from '../../../custom/${customComponents.bulkActions}';`);
+    customComponentImports.push(`import ${customComponents.bulkActions} from '@/windows/custom/${specName}/${customComponents.bulkActions}';`);
   }
   if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from '../../../custom/${customComponents.sidePanel}';`);
+    customComponentImports.push(`import ${customComponents.sidePanel} from '@/windows/custom/${specName}/${customComponents.sidePanel}';`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
     if (customComponents.sidePanelStyle) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
+  if (customComponents.moreMenuContent) {
+    customComponentImports.push(`import ${customComponents.moreMenuContent} from '../../../custom/${customComponents.moreMenuContent}';`);
+    customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
+  }
   if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from '../../../custom/${customComponents.newRecordComponent}';`);
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
+  }
+  // newActions — import component modals if declared
+  const newActionsWithComponents = newActionsConfig.filter(a => a.component);
+  for (const action of newActionsWithComponents) {
+    customComponentImports.push(`import ${action.component} from '@/windows/custom/${specName}/${action.component}';`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -757,7 +771,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Custom headerTable override
   const customHeaderTable = customComponents.headerTable ?? null;
   const headerTableImport = customHeaderTable
-    ? `import ${headerName}Table from '../../../custom/${customHeaderTable}';`
+    ? `import ${headerName}Table from '@/windows/custom/${specName}/${customHeaderTable}';`
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
@@ -884,7 +898,48 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\n        statusEnumLabels={${JSON.stringify(statusEnumLabelsConfig)}}`
     : '';
 
-  return `import { useEffect } from 'react';
+  // showDetailFooterTotals support
+  const showDetailFooterTotalsValue = windowConfig.showDetailFooterTotals;
+  const showDetailFooterTotalsProp = showDetailFooterTotalsValue !== undefined
+    ? `\n        showDetailFooterTotals={${showDetailFooterTotalsValue}}`
+    : '';
+
+  // labelOverrides support
+  const labelOverridesConfig = windowConfig.labelOverrides ?? null;
+  const labelOverridesProp = labelOverridesConfig ? '\n        labelOverrides={labelOverrides}' : '';
+  const labelOverridesListProp = labelOverridesConfig ? '\n      labelOverrides={labelOverrides}' : '';
+  const labelOverridesBlock = labelOverridesConfig
+    ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
+    : '';
+
+  // newActions support — split button dropdown on the list view
+  const hasNewActions = newActionsConfig.length > 0;
+  const newActionsStatements = newActionsWithComponents.map(a => {
+    const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
+    return `  const [${stateName}, set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal] = useState(false);`;
+  }).join('\n');
+  const newActionsPropValue = hasNewActions
+    ? `\n      newActions={[${newActionsConfig.map(a => {
+        const hasComp = !!a.component;
+        const stateSetter = hasComp
+          ? `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`
+          : null;
+        const onClick = hasComp
+          ? `() => ${stateSetter}(true)`
+          : `() => {}`;
+        return `\n        { key: '${a.key}', label: '${a.label}', onClick: ${onClick} }`;
+      }).join(',')}\n      ]}`
+    : '';
+  const newActionsModals = newActionsWithComponents.map(a => {
+    const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
+    const setterName = `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
+    return `    {${stateName} && <${a.component} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => ${setterName}(false)} />}`;
+  }).join('\n');
+
+  const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
+  const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
+
+  return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
@@ -896,7 +951,7 @@ import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}
 import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
-${statusBarCode}
+${labelOverridesBlock}${statusBarCode}
 
 ${MARKERS.GENERATED_START(`summary:${headerEntity}`)}
 const summary = [
@@ -935,10 +990,8 @@ ${hiddenDefaultsArray}
 ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}({ windowName, recordId, ...props }) {
-  ${customComponents.newRecordComponent ? `if (recordId === 'new') {
-    return <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} />;
-  }` : ''}
+export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
+  const [showNewModal, setShowNewModal] = useState(false);` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsStatements}` : ''}
   if (recordId) {
     return (
       <DetailView
@@ -957,22 +1010,26 @@ export default function ${compName}({ windowName, recordId, ...props }) {
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
         {...props}${sidebarContentProp}
       />
     );
   }
 
-  return (
+  return (${needsFragment ? `
+    <>` : ''}
     <ListView
       entity="${headerEntity}"
       Table={${headerName}Table}
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}
-      {...props}
-    />
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      {...props}${customComponents.newRecordComponent ? `
+      onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
+    />${customComponents.newRecordComponent ? `
+    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsModals}` : ''}${needsFragment ? `
+    </>` : ''}
   );
 }
 ${MARKERS.GENERATED_END(`component:${compName}`)}
@@ -1040,6 +1097,12 @@ const CATALOG_DATA = {
     id: `wh-${String(i + 1).padStart(3, '0')}`,
     name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
   })),
+  Currency: [
+    { id: 'USD', name: 'US Dollar', symbol: '$' },
+    { id: 'EUR', name: 'Euro', symbol: 'EUR' },
+    { id: 'GBP', name: 'Pound Sterling', symbol: 'GBP' },
+    { id: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
+  ],
   PriceList: Array.from({ length: 4 }, (_, i) => ({
     id: `pl-${String(i + 1).padStart(3, '0')}`,
     name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],

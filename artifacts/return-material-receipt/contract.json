@@ -8,7 +8,9 @@
       "name": "Return Material Receipt",
       "primaryEntity": "returnMaterialReceipt",
       "category": "sales",
-      "layoutType": "default"
+      "layoutType": "default",
+      "relatedDocuments": true,
+      "notesField": "description"
     },
     "entities": {
       "returnMaterialReceipt": {

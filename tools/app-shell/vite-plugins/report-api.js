@@ -100,7 +100,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
       const mockPath = join(ARTIFACTS_DIR, reportId, contract.mockDataFile);
       if (existsSync(mockPath)) {
         let rows = JSON.parse(readFileSync(mockPath, 'utf8'));
-        if (limit) rows = rows.slice(0, parseInt(limit, 10));
+        if (limit && Array.isArray(rows)) rows = rows.slice(0, parseInt(limit, 10));
         return { rows, contract };
       }
     }
@@ -135,8 +135,8 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
         rows = rows?.[key];
       }
     }
-    if (!Array.isArray(rows)) throw new Error('NEO response did not contain rows array');
-    if (limit) rows = rows.slice(0, parseInt(limit, 10));
+    if (!Array.isArray(rows) && typeof rows !== 'object') throw new Error('NEO response did not contain valid data');
+    if (limit && Array.isArray(rows)) rows = rows.slice(0, parseInt(limit, 10));
 
     // Extract backend meta (sibling of the data array in the response path)
     let neoMeta = {};
@@ -238,11 +238,7 @@ async function fetchReportData(reportId, { limit, authToken, params = {} } = {})
   });
 
   try {
-    // Get client ID
-    const clientRes = await pool.query(
-      `SELECT ad_client_id FROM ad_client WHERE isactive = 'Y' AND ad_client_id != '0' ORDER BY name LIMIT 1`
-    );
-    const clientId = clientRes.rows[0]?.ad_client_id || '0';
+    const clientId = getClientIdFromRequest({ headers: { authorization: authToken ? `Bearer ${authToken}` : '' } }) || '0';
 
     // Parameterize query — support both Jasper-style hardcoded IDs and __PLACEHOLDER__ tokens
     sql = sql.replace(/__CLIENT_ID__/g, clientId);
@@ -325,8 +321,9 @@ export default function reportApiPlugin() {
         const url = new URL(req.url, 'http://localhost');
         const path = url.pathname;
 
-        // GET /api/report-selectors/:type?q=search — search BP, Product, Org for report filters
-        const selectorMatch = path.match(/^\/api\/report-selectors\/([\w-]+)$/);
+        // GET /sws/report-selectors/:type?q=search — search BP, Product, Org for report filters
+        // Also matches legacy /api/report-selectors/ path used in older builds.
+        const selectorMatch = path.match(/^\/(?:sws|api)\/report-selectors\/([\w-]+)$/);
         if (req.method === 'GET' && selectorMatch) {
           const type = selectorMatch[1];
           const q = (url.searchParams.get('q') || '').trim();
@@ -396,6 +393,18 @@ export default function reportApiPlugin() {
                   fromWhere: `FROM c_year y JOIN c_calendar c ON c.c_calendar_id = y.c_calendar_id WHERE y.isactive='Y' ${byClient('y.ad_client_id')} AND (y.year || ' (' || c.name || ')') ILIKE $1`,
                   orderBy: 'ORDER BY y.year DESC',
                   select: `SELECT y.c_year_id AS id, y.year || ' (' || c.name || ')' AS name, y.year || ' (' || c.name || ')' AS label`
+                },
+                'currency': {
+                  fromWhere: `FROM c_currency WHERE isactive='Y' AND (iso_code ILIKE $1 OR description ILIKE $1)`,
+                  orderBy: clientId
+                    ? `ORDER BY (CASE WHEN c_currency_id = (SELECT c_currency_id FROM ad_client WHERE ad_client_id = '${clientId}') THEN 0 ELSE 1 END), iso_code`
+                    : 'ORDER BY iso_code',
+                  select: `SELECT c_currency_id AS id, iso_code AS name, iso_code || ' - ' || description AS label`
+                },
+                'tax': {
+                  fromWhere: `FROM c_tax WHERE isactive='Y' ${byClient('ad_client_id')} AND name ILIKE $1`,
+                  orderBy: 'ORDER BY name',
+                  select: `SELECT c_tax_id AS id, name, name AS label`
                 },
               };
               const queryCfg = queries[type];
@@ -575,14 +584,15 @@ export default function reportApiPlugin() {
             // Listing type: flat rows
             const amountCols = (contract.columns || []).filter(c => c.type === 'amount');
             const totals = {};
-            if (!documentData && amountCols.length) {
+            if (!documentData && amountCols.length && Array.isArray(rows)) {
               for (const col of amountCols) {
                 totals[col.field] = rows.reduce((sum, r) => sum + (Number(r[col.field]) || 0), 0);
               }
             }
+            const recordCount = Array.isArray(rows) ? rows.length : undefined;
             const templateData = documentData
               ? { css, meta: { title, generatedAt: new Date().toISOString(), filters: activeFilters, params }, header: documentData.header, lines: documentData.lines, taxes: documentData.taxes }
-              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount: rows.length, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
+              : { css, meta: { title, generatedAt: new Date().toISOString(), recordCount, filters: activeFilters, params, totals, groupLabel, descriptionLabel, ...neoMeta }, rows };
 
             // Direct HTML render — no jsreport needed for preview
             if (format === 'html') {

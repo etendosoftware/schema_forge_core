@@ -46,7 +46,8 @@
             "required": true,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "seq": 20
           },
           {
             "name": "invoiceDate",
@@ -63,7 +64,8 @@
             "section": "principal",
             "callout": {
               "className": "com.etendoerp.sif.general.callouts.SifInvoiceOperationDateCallout"
-            }
+            },
+            "seq": 30
           },
           {
             "name": "businessPartner",
@@ -81,7 +83,8 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
-            }
+            },
+            "seq": 10
           },
           {
             "name": "partnerAddress",
@@ -103,7 +106,8 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartnerLocation"
-            }
+            },
+            "seq": 40
           },
           {
             "name": "priceList",
@@ -158,7 +162,8 @@
             "form": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
-            "section": "principal"
+            "section": "principal",
+            "seq": 60
           },
           {
             "name": "paymentMethod",
@@ -176,7 +181,8 @@
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
-            }
+            },
+            "seq": 50
           },
           {
             "name": "description",
@@ -2714,7 +2720,8 @@
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
-            "required": true
+            "required": true,
+            "seq": 20
           },
           {
             "name": "invoiceDate",
@@ -2722,7 +2729,8 @@
             "column": "DateInvoiced",
             "type": "date",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 30
           },
           {
             "name": "businessPartner",
@@ -2730,7 +2738,8 @@
             "column": "C_BPartner_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 10
           },
           {
             "name": "partnerAddress",
@@ -2738,7 +2747,8 @@
             "column": "C_BPartner_Location_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 40
           },
           {
             "name": "priceList",
@@ -2762,7 +2772,8 @@
             "column": "C_PaymentTerm_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 60
           },
           {
             "name": "paymentMethod",
@@ -2770,7 +2781,8 @@
             "column": "FIN_Paymentmethod_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": true
+            "required": true,
+            "seq": 50
           },
           {
             "name": "description",

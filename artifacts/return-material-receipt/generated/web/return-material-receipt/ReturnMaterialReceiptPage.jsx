@@ -1,11 +1,15 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import ReturnMaterialReceiptTable from './ReturnMaterialReceiptTable';
 import ReturnMaterialReceiptForm from './ReturnMaterialReceiptForm';
 import ReturnMaterialReceiptLineTable from './ReturnMaterialReceiptLineTable';
 import ReturnMaterialReceiptLineForm from './ReturnMaterialReceiptLineForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
+
 const breadcrumb = 'Sales / Return Material Receipt';
+
 
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
@@ -16,23 +20,29 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:returnMaterialReceipt
 
-// @sf-custom-slot extraBadges:returnMaterialReceipt
 // @sf-generated-start extraBadges:returnMaterialReceipt
 const extraBadges = [];
 // @sf-generated-end extraBadges:returnMaterialReceipt
 
 // @sf-generated-start processes:returnMaterialReceipt
 const processes = [
-  { name: 'Process Receipt', label: 'Process  Receipt', style: 'positive' },
+  { name: 'Process Receipt', label: 'Process  Receipt', style: 'positive', columnName: 'documentAction' },
 ];
 // @sf-generated-end processes:returnMaterialReceipt
+
+// @sf-generated-start draftMode:returnMaterialReceipt
+const draftMode = null;
+// @sf-generated-end draftMode:returnMaterialReceipt
 
 // @sf-generated-start addLineFields:returnMaterialReceiptLine
 const addLineFields = {
   entry: [
-    { key: 'description', column: 'Description', type: 'textarea', lookup: true },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
+
+  ],
+  hidden: [
 
   ],
 };
@@ -221,7 +231,7 @@ const api = {
 
 // @sf-generated-start component:ReturnMaterialReceiptPage
 export default function ReturnMaterialReceiptPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:ReturnMaterialReceiptPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -242,6 +252,8 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );
@@ -251,7 +263,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
     <ListView
       entity="returnMaterialReceipt"
       Table={ReturnMaterialReceiptTable}
-      entityLabel="Return Material Receipts"
+      entityLabel="Return Material Receipt"
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
@@ -260,5 +272,3 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
   );
 }
 // @sf-generated-end component:ReturnMaterialReceiptPage
-
-// @sf-custom-slot section:ReturnMaterialReceiptPage-custom
