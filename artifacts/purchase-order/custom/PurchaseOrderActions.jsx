@@ -38,6 +38,7 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
   const [fetched,       setFetched]       = useState(null);
   const [confirmedDocs,  setConfirmedDocs]  = useState(null);
   const [confirmedTitle, setConfirmedTitle] = useState(null); // null = "PO confirmed", string = custom title
+  const [showClone,      setShowClone]      = useState(false);
 
   const status      = data?.documentStatus;
   const isDraft     = status === 'DR';
@@ -123,8 +124,23 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           </svg>
         </button>
 
+        <button type="button" aria-label={ui('cloneOrderBtn')} style={iconBtnStyle} onClick={() => setShowClone(true)}>
+          <CopyIcon />
+        </button>
+
         <SendDocumentButton onClick={() => setShowSend(true)} />
 
+        {showClone && createPortal(
+          <CloneModal
+            orderId={recordId}
+            data={data}
+            apiBaseUrl={apiBaseUrl}
+            headers={headers}
+            onClose={() => setShowClone(false)}
+            onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
+          />,
+          document.body,
+        )}
         {showConfirm && createPortal(
           <ConfirmModal
             orderId={recordId}
@@ -200,8 +216,23 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
           </button>
         )}
 
+        <button type="button" aria-label={ui('cloneOrderBtn')} style={iconBtnStyle} onClick={() => setShowClone(true)}>
+          <CopyIcon />
+        </button>
+
         <SendDocumentButton onClick={() => setShowSend(true)} />
 
+        {showClone && createPortal(
+          <CloneModal
+            orderId={recordId}
+            data={data}
+            apiBaseUrl={apiBaseUrl}
+            headers={headers}
+            onClose={() => setShowClone(false)}
+            onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
+          />,
+          document.body,
+        )}
         {showActions && createPortal(
           <CreateDocsModal
             orderId={recordId}
@@ -233,7 +264,25 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     );
   }
 
-  return confirmedPanel;
+  return (
+    <>
+      <button type="button" aria-label={ui('cloneOrderBtn')} style={iconBtnStyle} onClick={() => setShowClone(true)}>
+        <CopyIcon />
+      </button>
+      {showClone && createPortal(
+        <CloneModal
+          orderId={recordId}
+          data={data}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setShowClone(false)}
+          onCloned={(newId) => navigate(`/purchase-order/${newId}`)}
+        />,
+        document.body,
+      )}
+      {confirmedPanel}
+    </>
+  );
 }
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
@@ -728,6 +777,77 @@ function PoResultDocCard({ icon, label, amount, currency, color, ui, onClick }) 
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" style={{ flexShrink: 0 }}>
         <path d="M9 18l6-6-6-6" />
       </svg>
+    </div>
+  );
+}
+
+// ── CopyIcon ───────────────────────────────────────────────────────────────────
+
+function CopyIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+// ── CloneModal ─────────────────────────────────────────────────────────────────
+
+function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
+  const ui = useUI();
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState(null);
+
+  const documentNo = data?.documentNo || '';
+  const bpName     = data?.['businessPartner$_identifier'] || '';
+
+  const handleClone = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneOrder`, { method: 'POST', headers });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json?.response?.error?.message || ui('cloneOrderError'));
+        return;
+      }
+      const newId = json?.response?.data?.id;
+      onClose();
+      onCloned(newId);
+    } catch {
+      setError(ui('cloneOrderError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={overlayStyle}>
+      <div style={{ ...cardStyle, width: 420 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 12px' }}>
+          <span style={{ fontWeight: 600, fontSize: 15 }}>{ui('cloneOrderConfirmTitle')}</span>
+          <button type="button" onClick={onClose} style={closeBtn}>×</button>
+        </div>
+        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '12px 14px' }}>
+            <div style={{ fontWeight: 500, fontSize: 14 }}>{bpName}</div>
+            {documentNo && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{documentNo}</div>}
+          </div>
+          <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>{ui('cloneOrderConfirmBody')}</p>
+          {error && <div style={{ color: '#ef4444', fontSize: 12 }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} disabled={loading} style={btnSecondary}>
+              {ui('cancel')}
+            </button>
+            <button type="button" onClick={handleClone} disabled={loading}
+              style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
+              {loading && <Spinner />}
+              {loading ? ui('poProcessing') : ui('cloneOrderAction')}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
