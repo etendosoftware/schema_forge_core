@@ -1,11 +1,11 @@
 // Auto-generated mock data - do not edit manually
 
-export const finPayment = [
+export const header = [
   {
-    "id": "mock-finPayment-001",
+    "id": "mock-header-001",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00001",
-    "referenceNo": "FI-00001",
+    "documentNo": "HE-00001",
+    "referenceNo": "HE-00001",
     "paymentDate": "2026-01-15",
     "businessPartner": "Acme Corp",
     "description": "Standard order for Q1 delivery",
@@ -29,10 +29,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-002",
+    "id": "mock-header-002",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00002",
-    "referenceNo": "FI-00002",
+    "documentNo": "HE-00002",
+    "referenceNo": "HE-00002",
     "paymentDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
     "description": "Rush order - priority shipping required",
@@ -56,10 +56,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-003",
+    "id": "mock-header-003",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00003",
-    "referenceNo": "FI-00003",
+    "documentNo": "HE-00003",
+    "referenceNo": "HE-00003",
     "paymentDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
     "description": "Bulk purchase for warehouse restocking",
@@ -83,10 +83,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-004",
+    "id": "mock-header-004",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00004",
-    "referenceNo": "FI-00004",
+    "documentNo": "HE-00004",
+    "referenceNo": "HE-00004",
     "paymentDate": "2026-01-18",
     "businessPartner": "Summit Industries",
     "description": "Sample order for client evaluation",
@@ -110,10 +110,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-005",
+    "id": "mock-header-005",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00005",
-    "referenceNo": "FI-00005",
+    "documentNo": "HE-00005",
+    "referenceNo": "HE-00005",
     "paymentDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
     "description": "Recurring monthly supply order",
@@ -137,10 +137,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-006",
+    "id": "mock-header-006",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00006",
-    "referenceNo": "FI-00006",
+    "documentNo": "HE-00006",
+    "referenceNo": "HE-00006",
     "paymentDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
     "description": "Special pricing agreement applies",
@@ -164,10 +164,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-007",
+    "id": "mock-header-007",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00007",
-    "referenceNo": "FI-00007",
+    "documentNo": "HE-00007",
+    "referenceNo": "HE-00007",
     "paymentDate": "2026-01-21",
     "businessPartner": "Meridian Group",
     "description": "Consolidated order from multiple requests",
@@ -191,10 +191,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-008",
+    "id": "mock-header-008",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00008",
-    "referenceNo": "FI-00008",
+    "documentNo": "HE-00008",
+    "referenceNo": "HE-00008",
     "paymentDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
     "description": "Trial order for new product line",
@@ -218,10 +218,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-009",
+    "id": "mock-header-009",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00009",
-    "referenceNo": "FI-00009",
+    "documentNo": "HE-00009",
+    "referenceNo": "HE-00009",
     "paymentDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
     "description": "Replacement for damaged goods",
@@ -245,10 +245,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-010",
+    "id": "mock-header-010",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00010",
-    "referenceNo": "FI-00010",
+    "documentNo": "HE-00010",
+    "referenceNo": "HE-00010",
     "paymentDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
     "description": "Pre-season inventory build-up",
@@ -272,10 +272,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-011",
+    "id": "mock-header-011",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00011",
-    "referenceNo": "FI-00011",
+    "documentNo": "HE-00011",
+    "referenceNo": "HE-00011",
     "paymentDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
     "description": "Customer-specific configuration",
@@ -299,10 +299,10 @@ export const finPayment = [
     "ndDimension": "Sample ndDimension"
   },
   {
-    "id": "mock-finPayment-012",
+    "id": "mock-header-012",
     "documentType": "Sample documentType",
-    "documentNo": "FI-00012",
-    "referenceNo": "FI-00012",
+    "documentNo": "HE-00012",
+    "referenceNo": "HE-00012",
     "paymentDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
     "description": "Government contract fulfillment",
@@ -349,7 +349,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-lines-002",
@@ -372,7 +372,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-lines-003",
@@ -395,7 +395,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-lines-004",
@@ -418,7 +418,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-lines-005",
@@ -441,7 +441,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-lines-006",
@@ -464,7 +464,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-lines-007",
@@ -487,7 +487,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-lines-008",
@@ -510,7 +510,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-lines-009",
@@ -533,7 +533,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-lines-010",
@@ -556,7 +556,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-lines-011",
@@ -579,7 +579,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-lines-012",
@@ -602,7 +602,7 @@ export const lines = [
     "costCenter": "Sample costCenter",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -616,7 +616,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-executionHistory-002",
@@ -627,7 +627,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-executionHistory-003",
@@ -638,7 +638,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-executionHistory-004",
@@ -649,7 +649,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-executionHistory-005",
@@ -660,7 +660,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-executionHistory-006",
@@ -671,7 +671,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-executionHistory-007",
@@ -682,7 +682,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-executionHistory-008",
@@ -693,7 +693,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-executionHistory-009",
@@ -704,7 +704,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-executionHistory-010",
@@ -715,7 +715,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-executionHistory-011",
@@ -726,7 +726,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-executionHistory-012",
@@ -737,7 +737,7 @@ export const executionHistory = [
     "sourceOfTheExecution": "Sample sourceOfTheExecution",
     "paymentExecutionResult": "Sample paymentExecutionResult",
     "paymentExecutionMessage": "Sample paymentExecutionMessage",
-    "finPaymentId": "mock-finPayment-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -749,7 +749,7 @@ export const exchangeRates = [
     "toCurrency": "USD",
     "rate": "Sample rate",
     "foreignAmount": 38907,
-    "finPaymentId": "mock-finPayment-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-exchangeRates-002",
@@ -758,7 +758,7 @@ export const exchangeRates = [
     "toCurrency": "EUR",
     "rate": "Sample rate",
     "foreignAmount": 9306,
-    "finPaymentId": "mock-finPayment-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-exchangeRates-003",
@@ -767,7 +767,7 @@ export const exchangeRates = [
     "toCurrency": "GBP",
     "rate": "Sample rate",
     "foreignAmount": 11544,
-    "finPaymentId": "mock-finPayment-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-exchangeRates-004",
@@ -776,7 +776,7 @@ export const exchangeRates = [
     "toCurrency": "USD",
     "rate": "Sample rate",
     "foreignAmount": 11872,
-    "finPaymentId": "mock-finPayment-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-exchangeRates-005",
@@ -785,7 +785,7 @@ export const exchangeRates = [
     "toCurrency": "EUR",
     "rate": "Sample rate",
     "foreignAmount": 48460,
-    "finPaymentId": "mock-finPayment-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-exchangeRates-006",
@@ -794,7 +794,7 @@ export const exchangeRates = [
     "toCurrency": "GBP",
     "rate": "Sample rate",
     "foreignAmount": 45418,
-    "finPaymentId": "mock-finPayment-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-exchangeRates-007",
@@ -803,7 +803,7 @@ export const exchangeRates = [
     "toCurrency": "USD",
     "rate": "Sample rate",
     "foreignAmount": 33840,
-    "finPaymentId": "mock-finPayment-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-exchangeRates-008",
@@ -812,7 +812,7 @@ export const exchangeRates = [
     "toCurrency": "EUR",
     "rate": "Sample rate",
     "foreignAmount": 25716,
-    "finPaymentId": "mock-finPayment-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-exchangeRates-009",
@@ -821,7 +821,7 @@ export const exchangeRates = [
     "toCurrency": "GBP",
     "rate": "Sample rate",
     "foreignAmount": 44780,
-    "finPaymentId": "mock-finPayment-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-exchangeRates-010",
@@ -830,7 +830,7 @@ export const exchangeRates = [
     "toCurrency": "USD",
     "rate": "Sample rate",
     "foreignAmount": 12483,
-    "finPaymentId": "mock-finPayment-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-exchangeRates-011",
@@ -839,7 +839,7 @@ export const exchangeRates = [
     "toCurrency": "EUR",
     "rate": "Sample rate",
     "foreignAmount": 46022,
-    "finPaymentId": "mock-finPayment-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-exchangeRates-012",
@@ -848,7 +848,7 @@ export const exchangeRates = [
     "toCurrency": "GBP",
     "rate": "Sample rate",
     "foreignAmount": 38634,
-    "finPaymentId": "mock-finPayment-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -856,86 +856,86 @@ export const usedCreditSource = [
   {
     "id": "mock-usedCreditSource-001",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 99.44,
     "currency": "USD",
-    "finPaymentId": "mock-finPayment-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-usedCreditSource-002",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 96.94,
     "currency": "EUR",
-    "finPaymentId": "mock-finPayment-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-usedCreditSource-003",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 12.48,
     "currency": "GBP",
-    "finPaymentId": "mock-finPayment-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-usedCreditSource-004",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 96.31,
     "currency": "USD",
-    "finPaymentId": "mock-finPayment-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-usedCreditSource-005",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 31.27,
     "currency": "EUR",
-    "finPaymentId": "mock-finPayment-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-usedCreditSource-006",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 76.52,
     "currency": "GBP",
-    "finPaymentId": "mock-finPayment-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-usedCreditSource-007",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 2.66,
     "currency": "USD",
-    "finPaymentId": "mock-finPayment-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-usedCreditSource-008",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 10.03,
     "currency": "EUR",
-    "finPaymentId": "mock-finPayment-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-usedCreditSource-009",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 93.97,
     "currency": "GBP",
-    "finPaymentId": "mock-finPayment-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-usedCreditSource-010",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 1.1,
     "currency": "USD",
-    "finPaymentId": "mock-finPayment-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-usedCreditSource-011",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 79.99,
     "currency": "EUR",
-    "finPaymentId": "mock-finPayment-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-usedCreditSource-012",
     "creditPaymentUsed": "Sample creditPaymentUsed",
-    "amount": "Sample amount",
+    "amount": 53.61,
     "currency": "GBP",
-    "finPaymentId": "mock-finPayment-012"
+    "headerId": "mock-header-012"
   }
 ];
 
@@ -957,7 +957,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-001"
+    "headerId": "mock-header-001"
   },
   {
     "id": "mock-accounting-002",
@@ -976,7 +976,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-002"
+    "headerId": "mock-header-002"
   },
   {
     "id": "mock-accounting-003",
@@ -995,7 +995,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-003"
+    "headerId": "mock-header-003"
   },
   {
     "id": "mock-accounting-004",
@@ -1014,7 +1014,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-004"
+    "headerId": "mock-header-004"
   },
   {
     "id": "mock-accounting-005",
@@ -1033,7 +1033,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-005"
+    "headerId": "mock-header-005"
   },
   {
     "id": "mock-accounting-006",
@@ -1052,7 +1052,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-006"
+    "headerId": "mock-header-006"
   },
   {
     "id": "mock-accounting-007",
@@ -1071,7 +1071,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-007"
+    "headerId": "mock-header-007"
   },
   {
     "id": "mock-accounting-008",
@@ -1090,7 +1090,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-008"
+    "headerId": "mock-header-008"
   },
   {
     "id": "mock-accounting-009",
@@ -1109,7 +1109,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-009"
+    "headerId": "mock-header-009"
   },
   {
     "id": "mock-accounting-010",
@@ -1128,7 +1128,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-010"
+    "headerId": "mock-header-010"
   },
   {
     "id": "mock-accounting-011",
@@ -1147,7 +1147,7 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-011"
+    "headerId": "mock-header-011"
   },
   {
     "id": "mock-accounting-012",
@@ -1166,6 +1166,6 @@ export const accounting = [
     "asset": "Sample asset",
     "stDimension": "Sample stDimension",
     "ndDimension": "Sample ndDimension",
-    "finPaymentId": "mock-finPayment-012"
+    "headerId": "mock-header-012"
   }
 ];

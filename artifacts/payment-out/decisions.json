@@ -1,11 +1,13 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "finance",
-    "name": "Payment Out"
+    "name": "Payment Out",
+    "relatedDocuments": true,
+    "notesField": "description"
   },
   "entities": {
-    "finPayment": {
+    "header": {
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
@@ -154,7 +156,7 @@
         }
       }
     },
-    "finPaymentScheduleDetail": {
+    "lines": {
       "name": "lines",
       "fields": {
         "dueDate": {
@@ -251,7 +253,7 @@
         }
       }
     },
-    "finPaymentExecHistoryV": {
+    "executionHistory": {
       "name": "executionHistory",
       "fields": {
         "executionDate": {
@@ -281,7 +283,7 @@
         }
       }
     },
-    "cConversionRateDocument": {
+    "exchangeRates": {
       "name": "exchangeRates",
       "fields": {
         "currency": {
@@ -305,7 +307,7 @@
         }
       }
     },
-    "finPaymentCredit": {
+    "usedCreditSource": {
       "name": "usedCreditSource",
       "fields": {
         "creditPaymentUsed": {
@@ -322,7 +324,7 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "name": "accounting",
       "fields": {
         "accountingDate": {
@@ -383,5 +385,6 @@
     "EM_APRM_ReversePayment",
     "EM_APRM_Reconcile_Payment",
     "CreatedByAlgorithm"
-  ]
+  ],
+  "version": 2
 }

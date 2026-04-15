@@ -2,69 +2,6 @@
 
 const catalogs = {};
 
-catalogs['BusinessPartner'] = [
-  {
-    "id": "bp-001",
-    "name": "Acme Corp"
-  },
-  {
-    "id": "bp-002",
-    "name": "TechFlow Inc"
-  },
-  {
-    "id": "bp-003",
-    "name": "Global Trade Ltd"
-  },
-  {
-    "id": "bp-004",
-    "name": "Summit Industries"
-  },
-  {
-    "id": "bp-005",
-    "name": "Pacific Partners"
-  },
-  {
-    "id": "bp-006",
-    "name": "Alpine Solutions"
-  },
-  {
-    "id": "bp-007",
-    "name": "Meridian Group"
-  },
-  {
-    "id": "bp-008",
-    "name": "Vertex Systems"
-  },
-  {
-    "id": "bp-009",
-    "name": "Atlas Manufacturing"
-  },
-  {
-    "id": "bp-010",
-    "name": "Nova Enterprises"
-  },
-  {
-    "id": "bp-011",
-    "name": "Pinnacle Services"
-  },
-  {
-    "id": "bp-012",
-    "name": "Horizon Labs"
-  },
-  {
-    "id": "bp-013",
-    "name": "Cedar Holdings"
-  },
-  {
-    "id": "bp-014",
-    "name": "Sterling & Co"
-  },
-  {
-    "id": "bp-015",
-    "name": "Quantum Logistics"
-  }
-];
-
 catalogs['Warehouse'] = [
   {
     "id": "wh-001",
@@ -88,38 +25,45 @@ catalogs['Warehouse'] = [
   }
 ];
 
-catalogs['User'] = [
+catalogs['PaymentTerm'] = [
   {
-    "id": "user-001",
-    "name": "Alice Johnson"
+    "id": "pt-001",
+    "name": "Immediate"
   },
   {
-    "id": "user-002",
-    "name": "Bob Smith"
+    "id": "pt-002",
+    "name": "Net 15"
   },
   {
-    "id": "user-003",
-    "name": "Carol Williams"
+    "id": "pt-003",
+    "name": "Net 30"
   },
   {
-    "id": "user-004",
-    "name": "David Brown"
+    "id": "pt-004",
+    "name": "Net 60"
   },
   {
-    "id": "user-005",
-    "name": "Eva Martinez"
+    "id": "pt-005",
+    "name": "2/10 Net 30"
+  }
+];
+
+catalogs['PriceList'] = [
+  {
+    "id": "pl-001",
+    "name": "Standard Price List"
   },
   {
-    "id": "user-006",
-    "name": "Frank Lee"
+    "id": "pl-002",
+    "name": "Wholesale Prices"
   },
   {
-    "id": "user-007",
-    "name": "Grace Kim"
+    "id": "pl-003",
+    "name": "Retail Prices"
   },
   {
-    "id": "user-008",
-    "name": "Henry Davis"
+    "id": "pl-004",
+    "name": "VIP Pricing"
   }
 ];
 

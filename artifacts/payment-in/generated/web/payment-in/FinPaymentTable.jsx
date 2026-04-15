@@ -14,9 +14,6 @@ const filters = ['documentNo', 'paymentDate', 'businessPartner'];
 
 // @sf-generated-start component:FinPaymentTable
 export default function FinPaymentTable(props) {
-  // @sf-custom-slot hooks:FinPaymentTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:FinPaymentTable
-
-// @sf-custom-slot section:FinPaymentTable-custom

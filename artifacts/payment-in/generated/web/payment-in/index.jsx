@@ -119,6 +119,14 @@ const api = {
       "field": "aPRMReconcilePayment",
       "column": "EM_APRM_Reconcile_Payment",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReconcilePayment"
+    },
+    {
+      "entity": "finPayment",
+      "field": "aeatsiiSend",
+      "column": "EM_Aeatsii_Send",
+      "url": "/sws/neo/payment-in/finPayment/{id}/action/aeatsiiSend",
+      "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -138,9 +146,6 @@ const api = {
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
   return <FinPaymentPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
-
-// @sf-custom-slot section:App-custom

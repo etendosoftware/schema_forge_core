@@ -1,0 +1,114 @@
+# NEO dedupe plan
+
+- Entity groups: 1
+- Field groups: 31
+- Prune (NULL ad_column_id, no qualifier): 105
+- Manual-review fields: 0
+
+## Entity actions
+- **sales-invoice** tab=F6C2283A21314407BBBB23FF14B85ED4
+  - winner: `0D5FAC6A352140EABD483FF77539FAEA` "Payment Details" (9/23 fields included)
+  - drop: `C5E2F3A4B1D047889A3C0F7E2B684519` "paymentDetails" (0/0 fields)
+
+## Field actions
+- **purchase-order/header** column=2198
+  - winner: `1EE57F5585BC4522AD54C23F358F4453` (included=Y)
+  - drop: `9976071CB5B44510B2833F9B724809CB` (included=Y)
+- **purchase-order/header** column=2172
+  - winner: `A9E247E0B25B4034857AE2BA76C72F21` (included=Y)
+  - drop: `1756A85F256F4F56914DE86960AC7FAC` (included=Y)
+- **purchase-order/header** column=2161
+  - winner: `953EA460F7384C3DB4359F8A74F564A8` (included=Y)
+  - drop: `69B26E63ADBC4A8E867477A76B0F3DF4` (included=Y)
+- **purchase-order/header** column=2183
+  - winner: `42EB64E99B104425B7C61F95DE7CC6B8` (included=Y)
+  - drop: `BF5CE07A1B0E483CAE607A63B21C6BF0` (included=Y)
+- **purchase-order/header** column=2762
+  - winner: `2BDFF79219124786A997EA1A50EB5AF3` (included=Y)
+  - drop: `924799D1FACC499387B377890AF97674` (included=Y)
+- **purchase-order/header** column=AF2B81F2F6CECDB5E040007F01006F02
+  - winner: `C9830B68C89746EB9F77012DC4166CAB` (included=Y)
+  - drop: `0D6CF24486F145DFAB392B8C79CD6B87` (included=N)
+- **purchase-order/header** column=2170
+  - winner: `1CC1A562D06443B19CAC2A06DBC7DE6B` (included=Y)
+  - drop: `89EA30B14D8645B59D8C0B2436B96220` (included=Y)
+- **purchase-order/header** column=8765
+  - winner: `474BDB10EDAD4D8AA8AD8C9EEFFE740C` (included=Y)
+  - drop: `0D0969DE7506400F95A26C82C852FA36` (included=N)
+- **sales-quotation/Tax** column=803239
+  - winner: `3A463CCB9BB941418CE8959B3ED77F40` (included=Y)
+  - drop: `4766D633639D4AED84ECFB786B340036` (included=Y)
+- **purchase-order/paymentPlan** column=802DBB308D07C960E040007F01001D1B
+  - winner: `750CE06E02C1413C90806F9F81A55DF9` (included=Y)
+  - drop: `938A95D00F7443E58409054BBB693E38` (included=Y)
+- **purchase-order/paymentPlan** column=802DBB308CFEC960E040007F01001D1B
+  - winner: `CFF54E9485C5456B97600F690789FB77` (included=Y)
+  - drop: `3688D45B0C55458EA408FB51EEAD4B3B` (included=Y)
+- **purchase-order/header** column=9B350DD4248848A7ACC12061D151E92D
+  - winner: `444AF9FD7AFC4713BF63FE5A9097263C` (included=Y)
+  - drop: `996181300C4D4BF09A12CA34658A5145` (included=Y)
+- **purchase-order/header** column=3047
+  - winner: `B0F5494AC5054BDE99681E145B4B7DB0` (included=Y)
+  - drop: `EC3481C44CBC485EBB439EADA2E0B818` (included=Y)
+- **purchase-order/header** column=4019
+  - winner: `B54CB0AC47454B87A0B5AAE9F81069EC` (included=Y)
+  - drop: `642EFBE1A8C748B18252ED10F0A06336` (included=Y)
+- **sales-order/header** column=AF2B81F2F6CECDB5E040007F01006F02
+  - winner: `2FC0D6A0D18A40279349385A8BD5FC50` (included=Y)
+  - drop: `4EE30567D60C4763B087190C55D05CF9` (included=N)
+- **purchase-order/header** column=2196
+  - winner: `042F53393F13429BB2E4A3C5F9B4D8F9` (included=Y)
+  - drop: `B1A9BD7D5EC64BACBF72A51F7A63A869` (included=Y)
+- **purchase-order/header** column=F8F6A13C5682DC4DE040007F01000363
+  - winner: `61477DDC5E6149078BA92CCFEE450E24` (included=Y)
+  - drop: `ABFA6BC5633F463FB8F2A9CBE500CD1C` (included=N)
+- **purchase-order/header** column=CCB0DDDAF34E4415B9DBEB51B4C36A33
+  - winner: `E45C8FAB528C4D62B0FB70EDD7D28CC3` (included=Y)
+  - drop: `E4372C522239423E9D351936582BE0ED` (included=N)
+- **purchase-order/header** column=1E2AD60A472147B38A1C52F8CE473F19
+  - winner: `1E8E87B7FAEF494D93D2809BB8B416C4` (included=Y)
+  - drop: `EE3B68E3F4D44263954CED723B8EA5D7` (included=N)
+- **purchase-order/header** column=8832
+  - winner: `E839F583488145459A863A00F3737A0F` (included=Y)
+  - drop: `ED909108D65C4ED9914F3FC66BC760AF` (included=Y)
+- **purchase-order/header** column=8764
+  - winner: `F70FE454AC8045EDB6E1DD5FBA27B003` (included=Y)
+  - drop: `8EF1554DB7544FEB965578E1B6B1C5FC` (included=Y)
+- **purchase-order/header** column=129F2530A63B4C7CA9AF17996732E6A4
+  - winner: `24315F2C5FE2405AB5B4C7EBB10EE1A9` (included=Y)
+  - drop: `A6984C7EDBCF4AEABB899684CF2AEC08` (included=Y)
+- **purchase-order/header** column=9E82E728716246B393C40D2CDCA0133A
+  - winner: `682B427374594FFEA80456C016831524` (included=Y)
+  - drop: `BDC624A0AE5542A8BEA2D7144A65ABC7` (included=Y)
+- **purchase-order/header** column=F54BEAEAA4C04BDD9DC1448954589ED0
+  - winner: `80E5A2F3C1F34A52845EB12C8EFCBFA1` (included=Y)
+  - drop: `64FBCA62F2154E6DAE59AC1C7C888089` (included=Y)
+- **purchase-invoice/Line Tax** column=7E595A11D613446FE040007F010052E9
+  - winner: `EAF048FEF9B64CA39B03AC7315C5B931` (included=Y)
+  - drop: `BB76295A97814A2DA5F767670C9672E6` (included=Y)
+- **purchase-invoice/Line Tax** column=7E595A11D620446FE040007F010052E9
+  - winner: `C78D1A5D20D2428D9998CC8247AC3B67` (included=Y)
+  - drop: `96D29501EDB14BD5BA4A22B40EC09482` (included=Y)
+- **purchase-order/header** column=2191
+  - winner: `BAF882F262BF492C896DD63396D09DFC` (included=Y)
+  - drop: `7E090686F9344F18A8EE60C9F620C320` (included=Y)
+- **purchase-order/header** column=4298
+  - winner: `192DA26F61F842148019D5E7EA053E02` (included=Y)
+  - drop: `728084CFEFDB4EC4B21029DF7EE97002` (included=Y)
+- **sales-quotation/Tax** column=3767
+  - winner: `BD355195BE1A4ADBAA339A57533082BD` (included=N)
+  - drop: `4313E34AD7E34556A95FF5A6F77F6169` (included=N)
+- **purchase-order/header** column=C66674DA045E47D1A50B3C5805326AB9
+  - winner: `0ACD073BE33F4B799BCD2F201D91EC68` (included=Y)
+  - drop: `E41E42AEBADA477497CAFF445BD53BD0` (included=N)
+- **purchase-order/header** column=CB3A64CFC2B8471E91DBBF12A663D0FB
+  - winner: `E8854EFD397D405B9460F117DE1F474F` (included=Y)
+  - drop: `E532C6A44AA24B909CD626E09A4ED8FD` (included=Y)
+
+## Prune actions (NULL ad_column_id, no qualifier — unreachable from runtime)
+- purchase-invoice/basicDiscounts: 4 field(s) to delete
+- purchase-invoice/lines: 39 field(s) to delete
+- sales-order/lines: 16 field(s) to delete
+- sales-order/header: 40 field(s) to delete
+- purchase-invoice/tax: 6 field(s) to delete
+

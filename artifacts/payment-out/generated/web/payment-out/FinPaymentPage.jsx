@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
@@ -7,10 +8,11 @@ import AccountingTable from './AccountingTable';
 import AccountingForm from './AccountingForm';
 import ExecutionHistoryTable from './ExecutionHistoryTable';
 import ExecutionHistoryForm from './ExecutionHistoryForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Finance / Payment Out';
+const breadcrumb = 'Purchases / Payment Out';
 
 
 // @sf-generated-start summary:finPayment
@@ -21,7 +23,6 @@ const summary = [
 const statusField = 'status';
 // @sf-generated-end summary:finPayment
 
-// @sf-custom-slot extraBadges:finPayment
 // @sf-generated-start extraBadges:finPayment
 const extraBadges = [];
 // @sf-generated-end extraBadges:finPayment
@@ -489,7 +490,7 @@ const api = {
 
 // @sf-generated-start component:FinPaymentPage
 export default function FinPaymentPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:FinPaymentPage
+  
   if (recordId) {
     return (
       <DetailView
@@ -514,6 +515,8 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
           { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
         ]}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );
@@ -532,5 +535,3 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
   );
 }
 // @sf-generated-end component:FinPaymentPage
-
-// @sf-custom-slot section:FinPaymentPage-custom

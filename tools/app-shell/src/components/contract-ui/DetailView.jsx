@@ -324,15 +324,21 @@ export function DetailView({
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
 
   useEffect(() => {
-    if (isNew) return;
+    setDirectFetched(false);
+  }, [recordId]);
+
+  useEffect(() => {
+    if (isNew || !recordId) return;
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
       setDirectFetched(false);
-    } else if (!currentItem && !hook.loading && recordId && !directFetched) {
+      return;
+    }
+    if (!currentItem && !hook.loading && !directFetched) {
       setDirectFetched(true);
       hook.fetchById(recordId);
     }
-  }, [currentItem, recordId, hook.selected, hook.handleSelect]);
+  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
@@ -1012,7 +1018,7 @@ export function DetailView({
         <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-3`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`overflow-hidden${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className="p-6">
@@ -1058,7 +1064,7 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
+              <div className={embedded ? 'pointer-events-none' : ''}>
                 {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
@@ -1096,7 +1102,11 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                  hook.childrenLoading ? (
+                    <div className="flex items-center justify-center py-10 text-muted-foreground">
+                      <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    </div>
+                  ) : hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
                     <LinesEmptyState
                       data={data}
                       onAddLine={handleAddLineClick}
