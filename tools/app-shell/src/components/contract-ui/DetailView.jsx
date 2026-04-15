@@ -1337,6 +1337,20 @@ export function DetailView({
                                         setLineEdits(null);
                                         setLineEditColumns({});
                                         toast.success('Record saved');
+                                        // Re-fetch the line to pick up trigger-computed fields
+                                        // (e.g. lineNetAmount after a price change on tax-included price lists).
+                                        try {
+                                          const freshRes = await fetch(childUrl, {
+                                            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                          });
+                                          if (freshRes.ok) {
+                                            const freshJson = await freshRes.json();
+                                            const freshLine = freshJson?.response?.data?.[0] ?? freshJson;
+                                            if (freshLine?.id) {
+                                              setSelectedLine(prev => ({ ...prev, ...freshLine }));
+                                            }
+                                          }
+                                        } catch (_) { /* ignore — lineEdits values already shown */ }
                                       } else {
                                         toast.error(await extractErrorMessage(res));
                                       }

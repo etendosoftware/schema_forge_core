@@ -240,6 +240,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "orderLineHandler",
       "name": "quotationLine",
       "fields": {
         "lineNo": {
