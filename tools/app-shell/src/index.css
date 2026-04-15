@@ -47,6 +47,62 @@
   animation: slide-out-to-right 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+@keyframes scrim-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.scrim-fade-in {
+  animation: scrim-fade-in 0.2s ease-out;
+}
+
+@keyframes scrim-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.scrim-fade-out {
+  animation: scrim-fade-out 0.2s ease-out forwards;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-enter {
+  animation: modal-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modal-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.modal-exit {
+  animation: modal-exit 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 .content-bg {
   background-image:
     radial-gradient(var(--section-accent, hsl(213 83% 48%)) 0.5px, transparent 0.5px);

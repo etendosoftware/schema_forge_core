@@ -44,7 +44,7 @@ export default function AppLayout({ menuGroups }) {
             key={location.pathname}
             className="relative flex-1 flex flex-col overflow-hidden page-transition"
           >
-            <div className="relative z-10 flex-1 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col min-h-0">
               <Outlet />
             </div>
           </div>

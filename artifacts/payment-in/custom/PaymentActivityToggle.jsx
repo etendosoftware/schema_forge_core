@@ -61,7 +61,7 @@ export default function PaymentActivityToggle({ data, recordId, token, apiBaseUr
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0,0,0,0.15)',
-            zIndex: 998,
+            zIndex: 40,
             transition: 'opacity 200ms ease',
           }}
         />
@@ -81,7 +81,7 @@ export default function PaymentActivityToggle({ data, recordId, token, apiBaseUr
           boxShadow: open ? '-4px 0 24px rgba(0,0,0,0.08)' : 'none',
           transform: open ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 250ms ease',
-          zIndex: 999,
+          zIndex: 50,
           display: 'flex',
           flexDirection: 'column',
         }}

@@ -233,7 +233,7 @@ function BulkInvoiceModal({ shipments, bpName, token, apiBaseUrl, onClose, onSuc
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+    <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div onClick={e => e.stopPropagation()} style={{ width: 600, minWidth: 560, maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB' }}>
 
         {/* Header — fixed */}

@@ -87,7 +87,7 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   return (
     <TooltipProvider>
       <nav
-        className="fixed inset-y-0 left-0 z-50 flex flex-col bg-background transition-[width] duration-200 ease-in-out overflow-hidden border-l-[3px] border-l-blue-500"
+        className="fixed inset-y-0 left-0 z-40 flex flex-col bg-background transition-[width] duration-200 ease-in-out overflow-hidden border-l-[3px] border-l-blue-500"
         style={{ width }}
       >
         {/* Header: logo + toggle */}

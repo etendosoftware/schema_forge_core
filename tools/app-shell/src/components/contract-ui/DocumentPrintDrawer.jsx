@@ -1,11 +1,15 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Loader2, Send, Download } from 'lucide-react';
+import { useUI } from '@/i18n';
+import { useAnimatedOpen } from '@/lib/useAnimatedOpen.js';
 
 /**
  * Preview drawer: shows document preview one at a time with < > navigation.
  * Report ID convention: print-{windowName} (e.g., print-purchase-order)
  */
 export default function DocumentPrintDrawer({ open, onClose, windowName, documentIds = [], token }) {
+  const ui = useUI();
+  const { shouldRender, isClosing } = useAnimatedOpen(open, 200);
   const iframeRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -80,16 +84,16 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
     setDownloading(false);
   };
 
-  if (!open || !reportId) return null;
+  if (!shouldRender || !reportId) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-      <div className="fixed top-[10%] left-[20%] right-[20%] bottom-[10%] z-50 flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden">
+      <div className={`fixed inset-0 bg-black/30 z-50 ${isClosing ? 'scrim-fade-out' : 'scrim-fade-in'}`} onClick={onClose} />
+      <div className={`fixed top-[10%] left-[20%] right-[20%] bottom-[10%] z-50 flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden ${isClosing ? 'modal-exit' : 'modal-enter'}`}>
         {/* Header bar */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-foreground">Document preview</span>
+            <span className="text-sm font-semibold text-foreground">{ui('documentPreview')}</span>
             {total > 1 && (
               <div className="flex items-center gap-1 ml-2">
                 <button onClick={() => setCurrentIndex(i => Math.max(0, i - 1))} disabled={currentIndex === 0} className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30">
@@ -110,15 +114,15 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
               className="h-8 px-3 flex items-center gap-1.5 rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 bg-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              {downloading ? 'Generating...' : 'Download'}
+              {downloading ? ui('generating') : ui('download')}
             </button>
             <button
               disabled
-              title="Coming soon"
+              title={ui('comingSoon')}
               className="h-8 px-3 flex items-center gap-1.5 rounded-md bg-blue-600/50 text-white text-xs font-medium cursor-not-allowed"
             >
               <Send className="h-3.5 w-3.5" />
-              Send by email
+              {ui('sendByEmail')}
             </button>
             <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 ml-1">
               <X className="h-4 w-4" />
@@ -128,7 +132,7 @@ export default function DocumentPrintDrawer({ open, onClose, windowName, documen
         {/* Document area */}
         <div className="flex-1 overflow-hidden bg-slate-100 p-6 flex justify-center">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-[850px] overflow-hidden relative">
-            {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /><span>Generating...</span></div>}
+            {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /><span>{ui('generating')}</span></div>}
             {error && <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10 text-destructive text-sm px-8 text-center">{error}</div>}
             <iframe ref={iframeRef} title="Document Print" className="w-full h-full border-0" />
           </div>

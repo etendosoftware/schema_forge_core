@@ -30,6 +30,21 @@ Use this scale for all z-index decisions. Do not use arbitrary values outside th
 
 ---
 
+## Scrim Opacity Scale
+
+All full-screen blocking overlays darken the background with a `bg-black/XX` scrim. Only two values are allowed:
+
+| Class | Alpha | Purpose | Examples |
+|-------|-------|---------|----------|
+| **`bg-black/30`** | 30% | Default scrim for drawers and modals | `DocumentPrintDrawer`, `ProductSearchDrawer`, `ReportDrawer`, `SendDocumentModal`, `NewPaymentModal`, shadcn `dialog`/`sheet` |
+| **`bg-black/40`** | 40% | Destructive / critical confirmations only | Delete confirmation modals (`PriceListProductPrices`) |
+
+Do not introduce new opacity values (`bg-black/20`, `/50`, `/60`, `/70`, `/80`). If you need more emphasis than `/30`, it is a destructive action — use `/40` and keep the panel copy explicit ("This action cannot be undone").
+
+**Exception:** `bg-black/50` and `bg-black/70` are allowed **only** for button overlays rendered on top of an image (e.g., the close button on a thumbnail in `ImageField`). They are not scrims and are not subject to this rule.
+
+---
+
 ## Overlay / Modal Pattern
 
 All full-screen blocking overlays must follow this structure:
@@ -45,7 +60,7 @@ All full-screen blocking overlays must follow this structure:
 ```
 
 - **`fixed inset-0`** — covers the entire viewport.
-- **`bg-black/30`** — standard scrim opacity. Use `bg-black/40` for higher-priority modals (e.g., destructive confirmations).
+- **`bg-black/30`** — standard scrim opacity. Use `bg-black/40` for destructive confirmations (see Scrim Opacity Scale above).
 - **`onClick={onClose}` on the scrim** — always allow click-outside-to-close.
 - **`e.stopPropagation()` on the panel** — prevents the scrim click handler from firing.
 
@@ -57,7 +72,7 @@ Drawers use the same z-level as modals — scrim and panel both at `z-50`:
 
 ```jsx
 {/* Scrim */}
-<div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
+<div className="fixed inset-0 z-50 bg-black/30" onClick={onClose} />
 {/* Panel */}
 <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
   <div className="bg-white rounded-xl ..." onClick={e => e.stopPropagation()}>
