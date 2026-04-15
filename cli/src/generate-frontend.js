@@ -568,6 +568,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideEyeCount = windowConfig.hideEyeCount ?? false;
   const customComponents = windowConfig.customComponents ?? {};
   const menuActionsConfig = windowConfig.menuActions ?? [];
+  const newActionsConfig = windowConfig.newActions ?? [];
   const statusBar = windowConfig.statusBar ?? null;
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
@@ -757,6 +758,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   if (customComponents.newRecordComponent) {
     customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
   }
+  // newActions — import component modals if declared
+  const newActionsWithComponents = newActionsConfig.filter(a => a.component);
+  for (const action of newActionsWithComponents) {
+    customComponentImports.push(`import ${action.component} from '@/windows/custom/${specName}/${action.component}';`);
+  }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
     : '';
@@ -906,7 +912,34 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
     : '';
 
-  return `import { ${customComponents.newRecordComponent ? 'useState, ' : ''}useEffect } from 'react';
+  // newActions support — split button dropdown on the list view
+  const hasNewActions = newActionsConfig.length > 0;
+  const newActionsStatements = newActionsWithComponents.map(a => {
+    const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
+    return `  const [${stateName}, set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal] = useState(false);`;
+  }).join('\n');
+  const newActionsPropValue = hasNewActions
+    ? `\n      newActions={[${newActionsConfig.map(a => {
+        const hasComp = !!a.component;
+        const stateSetter = hasComp
+          ? `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`
+          : null;
+        const onClick = hasComp
+          ? `() => ${stateSetter}(true)`
+          : `() => {}`;
+        return `\n        { key: '${a.key}', label: '${a.label}', onClick: ${onClick} }`;
+      }).join(',')}\n      ]}`
+    : '';
+  const newActionsModals = newActionsWithComponents.map(a => {
+    const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
+    const setterName = `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
+    return `    {${stateName} && <${a.component} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => ${setterName}(false)} />}`;
+  }).join('\n');
+
+  const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
+  const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
+
+  return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
@@ -958,7 +991,7 @@ ${MARKERS.GENERATED_END(`addLineFields:${detailEntity}`)}` : ''}
 ${apiBlock}
 ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}({ windowName, recordId, ...props }) {${customComponents.newRecordComponent ? `
-  const [showNewModal, setShowNewModal] = useState(false);` : ''}
+  const [showNewModal, setShowNewModal] = useState(false);` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsStatements}` : ''}
   if (recordId) {
     return (
       <DetailView
@@ -983,7 +1016,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
     );
   }
 
-  return (${customComponents.newRecordComponent ? `
+  return (${needsFragment ? `
     <>` : ''}
     <ListView
       entity="${headerEntity}"
@@ -993,9 +1026,9 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
       galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
       {...props}${customComponents.newRecordComponent ? `
-      onNew={() => setShowNewModal(true)}` : ''}
+      onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
-    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}
+    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsModals}` : ''}${needsFragment ? `
     </>` : ''}
   );
 }
