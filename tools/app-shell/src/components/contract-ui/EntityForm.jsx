@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
-import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -550,152 +549,140 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
     if (f.type === 'checkbox') {
       return (
-        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-          <div className="flex items-center gap-2 pt-6">
-            <button
-              type="button"
-              role="checkbox"
-              aria-checked={!!data?.[f.key]}
-              disabled={isReadOnly}
-              id={f.key}
-              data-testid={`field-${f.key}`}
-              onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key], f.column)}
-              className={[
-                'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
-                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                !!data?.[f.key]
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-transparent',
-              ].join(' ')}
-            >
-              {!!data?.[f.key] && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </button>
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
-              {label}
-            </Label>
-          </div>
-        </FieldHighlight>
+        <div key={f.key} className="flex items-center gap-2 pt-6">
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={!!data?.[f.key]}
+            disabled={isReadOnly}
+            id={f.key}
+            data-testid={`field-${f.key}`}
+            onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key], f.column)}
+            className={[
+              'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
+              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              !!data?.[f.key]
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-transparent',
+            ].join(' ')}
+          >
+            {!!data?.[f.key] && (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </button>
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium cursor-pointer">
+            {label}
+          </Label>
+        </div>
       );
     }
     if (f.type === 'dependent') {
       if (isReadOnly) {
         return (
-          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-            <div className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-                {label}
-              </Label>
-              <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-            </div>
-          </FieldHighlight>
+          <div key={f.key} className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+              {label}
+            </Label>
+            <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+          </div>
         );
       }
       return (
-        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-          <div className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-            </Label>
-            <DependentSelect
-              field={f}
-              value={data?.[f.key] ?? ''}
-              displayValue={data?.[f.key + '$_identifier']}
-              onChange={(val, label) => {
-                onChange?.(f.key, val, f.column);
-                if (label) onChange?.(f.key + '$_identifier', label);
-              }}
-              catalogs={catalogs}
-              formData={data}
-              resolvedLabel={label}
-              selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
-              selectorContext={effectiveSelectorContext}
-              token={token}
-            />
-          </div>
-        </FieldHighlight>
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <DependentSelect
+            field={f}
+            value={data?.[f.key] ?? ''}
+            displayValue={data?.[f.key + '$_identifier']}
+            onChange={(val, label) => {
+              onChange?.(f.key, val, f.column);
+              if (label) onChange?.(f.key + '$_identifier', label);
+            }}
+            catalogs={catalogs}
+            formData={data}
+            resolvedLabel={label}
+            selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
+            selectorContext={effectiveSelectorContext}
+            token={token}
+          />
+        </div>
       );
     }
     if (f.type === 'selector') {
       if (isReadOnly) {
         return (
-          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-            <div className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-                {label}
-              </Label>
-              <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-            </div>
-          </FieldHighlight>
+          <div key={f.key} className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+              {label}
+            </Label>
+            <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+          </div>
         );
       }
       return (
-        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-          <div className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-            </Label>
-            <SelectorInput
-              entityName={entity}
-              field={f}
-              value={data?.[f.key] ?? ''}
-              displayValue={resolveIdentifier(data, f.key)}
-              onChange={(val, label, auxData) => {
-                onChange?.(f.key, val, f.column);
-                if (label) onChange?.(f.key + '$_identifier', label);
-                if (auxData) {
-                  for (const [suffix, auxVal] of Object.entries(auxData)) {
-                    if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
-                      for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
-                        onChange?.(f.key + auxSuffix, auxSuffixVal);
-                      }
-                    } else {
-                      onChange?.(f.key + suffix, auxVal);
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <SelectorInput
+            entityName={entity}
+            field={f}
+            value={data?.[f.key] ?? ''}
+            displayValue={resolveIdentifier(data, f.key)}
+            onChange={(val, label, auxData) => {
+              onChange?.(f.key, val, f.column);
+              if (label) onChange?.(f.key + '$_identifier', label);
+              if (auxData) {
+                for (const [suffix, auxVal] of Object.entries(auxData)) {
+                  if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
+                    for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
+                      onChange?.(f.key + auxSuffix, auxSuffixVal);
                     }
+                  } else {
+                    onChange?.(f.key + suffix, auxVal);
                   }
                 }
-              }}
-              catalogs={catalogs}
-              resolvedLabel={label}
-              selectorUrl={(() => {
-                if (!apiBaseUrl) return null;
-                // Always compute from apiBaseUrl so the full server path is included.
-                // Append query params from api.selectors entry if present (e.g. ?isSOTrx=Y).
-                const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
-                const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
-                return entry?.url?.includes('?') ? `${base}?${entry.url.split('?')[1]}` : base;
-              })()}
-              selectorContext={effectiveSelectorContext}
-              token={token}
-            />
-          </div>
-        </FieldHighlight>
+              }
+            }}
+            catalogs={catalogs}
+            resolvedLabel={label}
+            selectorUrl={(() => {
+              if (!apiBaseUrl) return null;
+              // Always compute from apiBaseUrl so the full server path is included.
+              // Append query params from api.selectors entry if present (e.g. ?isSOTrx=Y).
+              const entry = api?.selectors?.find(s => s.entity === entity && s.field === f.key);
+              const base = `${apiBaseUrl}/${entity}/selectors/${f.column}`;
+              return entry?.url?.includes('?') ? `${base}?${entry.url.split('?')[1]}` : base;
+            })()}
+            selectorContext={effectiveSelectorContext}
+            token={token}
+          />
+        </div>
       );
     }
     if (f.type === 'search') {
       if (isReadOnly) {
         return (
-          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-            <div className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-                {label}
-              </Label>
-              <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-            </div>
-          </FieldHighlight>
+          <div key={f.key} className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+              {label}
+            </Label>
+            <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+          </div>
         );
       }
       // Use the URL from api.selectors when it carries explicit context params (e.g. ?isSOTrx=Y).
@@ -734,70 +721,64 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       // Popup fields open a full ProductSearchDrawer instead of inline dropdown
       if (f.popup) {
         return (
-          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-            <div className="space-y-1.5">
-              <Label className="text-sm text-foreground font-medium">
-                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-              </Label>
-              <PopupSearchInput
-                field={f}
-                value={data?.[f.key] ?? ''}
-                displayValue={data?.[f.key + '$_identifier']}
-                onChange={(val, lbl) => {
-                  onChange?.(f.key, val, f.column);
-                  if (lbl) onChange?.(f.key + '$_identifier', lbl);
-                }}
-                label={label}
-                selectorUrl={selectorUrl}
-                selectorContext={effectiveSelectorContext}
-                token={token}
-              />
-            </div>
-          </FieldHighlight>
-        );
-      }
-      // Lookup fields open a full ProductSearchDrawer instead of inline dropdown
-      if (f.lookup) {
-        return (
-          <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-            <div className="space-y-1.5">
-              <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-                {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
-              </Label>
-              <LookupFormField
-                field={f}
-                value={data?.[f.key] ?? ''}
-                displayValue={data?.[f.key + '$_identifier']}
-                selectorUrl={selectorUrl}
-                selectorContext={effectiveSelectorContext}
-                token={token}
-                resolvedLabel={label}
-                onChange={searchOnChange}
-              />
-            </div>
-          </FieldHighlight>
-        );
-      }
-      return (
-        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-          <div className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          <div key={f.key} className="space-y-1.5">
+            <Label className="text-sm text-foreground font-medium">
               {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
             </Label>
-            <SearchInput
-              entityName={entity}
+            <PopupSearchInput
               field={f}
               value={data?.[f.key] ?? ''}
               displayValue={data?.[f.key + '$_identifier']}
-              onChange={searchOnChange}
-              catalogs={catalogs}
-              resolvedLabel={label}
+              onChange={(val, lbl) => {
+                onChange?.(f.key, val, f.column);
+                if (lbl) onChange?.(f.key + '$_identifier', lbl);
+              }}
+              label={label}
               selectorUrl={selectorUrl}
               selectorContext={effectiveSelectorContext}
               token={token}
             />
           </div>
-        </FieldHighlight>
+        );
+      }
+      // Lookup fields open a full ProductSearchDrawer instead of inline dropdown
+      if (f.lookup) {
+        return (
+          <div key={f.key} className="space-y-1.5">
+            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+              {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+            </Label>
+            <LookupFormField
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              selectorUrl={selectorUrl}
+              selectorContext={effectiveSelectorContext}
+              token={token}
+              resolvedLabel={label}
+              onChange={searchOnChange}
+            />
+          </div>
+        );
+      }
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <SearchInput
+            entityName={entity}
+            field={f}
+            value={data?.[f.key] ?? ''}
+            displayValue={data?.[f.key + '$_identifier']}
+            onChange={searchOnChange}
+            catalogs={catalogs}
+            resolvedLabel={label}
+            selectorUrl={selectorUrl}
+            selectorContext={effectiveSelectorContext}
+            token={token}
+          />
+        </div>
       );
     }
     if (f.type === 'select' && f.options?.length) {
@@ -809,85 +790,79 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             : ''))
         : (data?.[f.key] ?? '');
       return (
-        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-          <div className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
-            </Label>
-            <Select
-              value={selectValue || '__empty__'}
-              onValueChange={(val) => {
-                if (val === '__empty__') {
-                  onChange?.(f.key, '', f.column);
-                  return;
-                }
-                onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
-              }}
-              disabled={isReadOnly}
-              required={f.required}
-            >
-              <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
-                <SelectValue placeholder={buildSelectPlaceholder(ui, label)} />
-              </SelectTrigger>
-              <SelectContent>
-                {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
-                {f.options.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </FieldHighlight>
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <Select
+            value={selectValue || '__empty__'}
+            onValueChange={(val) => {
+              if (val === '__empty__') {
+                onChange?.(f.key, '', f.column);
+                return;
+              }
+              onChange?.(f.key, f.valueType === 'boolean' ? val === 'true' : val, f.column);
+            }}
+            disabled={isReadOnly}
+            required={f.required}
+          >
+            <SelectTrigger id={f.key} data-testid={`field-${f.key}`} className="focus:ring-2 focus:ring-primary">
+              <SelectValue placeholder={buildSelectPlaceholder(ui, label)} />
+            </SelectTrigger>
+            <SelectContent>
+              {!f.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+              {f.options.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{tMenu(opt.label)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       );
     }
     if (f.type === 'textarea') {
       return (
-        <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-          <div className="space-y-1.5 h-full flex flex-col">
-            <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-              {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
-            </Label>
-            <textarea
-              id={f.key}
-              name={f.key}
-              data-testid={`field-${f.key}`}
-              rows={4}
-              value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
-              onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
-              onBlur={() => onFieldBlur?.(f.key)}
-              disabled={isReadOnly}
-              className={[
-                'flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm',
-                'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
-                'focus:outline-none focus:ring-2 focus:ring-primary',
-                isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',
-              ].join(' ')}
-            />
-          </div>
-        </FieldHighlight>
+        <div key={f.key} className="space-y-1.5 h-full flex flex-col">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <textarea
+            id={f.key}
+            name={f.key}
+            data-testid={`field-${f.key}`}
+            rows={4}
+            value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
+            onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+            onBlur={() => onFieldBlur?.(f.key)}
+            disabled={isReadOnly}
+            className={[
+              'flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm',
+              'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
+              'focus:outline-none focus:ring-2 focus:ring-primary',
+              isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',
+            ].join(' ')}
+          />
+        </div>
       );
     }
     const inputType = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
     return (
-      <FieldHighlight key={f.key} entityName={entity} fieldName={f.key}>
-        <div className="space-y-1.5">
-          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
-            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
-          </Label>
-          <Input
-            id={f.key}
-            name={f.key}
-            data-testid={`field-${f.key}`}
-            type={inputType}
-            value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
-            onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
-            onBlur={() => onFieldBlur?.(f.key)}
-            className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
-            required={f.required && !isReadOnly}
-            disabled={isReadOnly || savingField === f.key}
-          />
-        </div>
-      </FieldHighlight>
+      <div key={f.key} className="space-y-1.5">
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+          {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+        </Label>
+        <Input
+          id={f.key}
+          name={f.key}
+          data-testid={`field-${f.key}`}
+          type={inputType}
+          value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
+          onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
+          onBlur={() => onFieldBlur?.(f.key)}
+          className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
+          required={f.required && !isReadOnly}
+          disabled={isReadOnly || savingField === f.key}
+        />
+      </div>
     );
   };
 
