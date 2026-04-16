@@ -212,6 +212,12 @@ Folders (`isSummary='Y'`) are grouping nodes — the pipeline reports them as no
 
 When a form is detected, the pipeline does not fail. Instead, it resolves the `AD_Form.ClassName` to show the developer the exact source file paths (Java class and HTML template) so they know where to build the form manually.
 
+### Pipeline Completeness Validator
+
+`cli/src/validate-pipeline.js` acts as a guard layer that checks git-tracked artifact files for pipeline consistency without connecting to the database. It classifies each `artifacts/<name>/` folder as a window, report, aggregate, or aggregate-section, then applies the appropriate rules (F1–F10). Rules F1 and F2 (hash-based staleness checks) are currently emitted as `skipped` until P2 generator patches land; all other rules (F3–F10) are fully enforced.
+
+Run via `make validate-pipeline` or `node cli/src/validate-pipeline.js [--staged] [--strict] [--format=json]`. Exit code 1 means one or more BLOCK violations exist. For the full rule table, CLI flags, artifact classification logic, and troubleshooting examples, see [`docs/pipeline-validator-reference.md`](pipeline-validator-reference.md).
+
 ### Decision UIs
 
 Three React web apps (Vite + Tailwind):
