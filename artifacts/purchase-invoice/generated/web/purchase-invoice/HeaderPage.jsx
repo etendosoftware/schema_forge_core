@@ -118,17 +118,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
-      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
     "cashVat": {
       "get": true,
       "getById": true,
@@ -138,6 +127,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/cashVat",
       "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
+      "supportedFilters": []
+    },
+    "basicDiscounts": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
+      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -433,20 +433,20 @@ const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
-    },
-    {
       "entity": "cashVat",
       "field": "payment",
       "column": "FIN_Payment_ID",
       "reference": "Payment",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
+    },
+    {
+      "entity": "basicDiscounts",
+      "field": "discount",
+      "column": "C_Discount_ID",
+      "reference": "Discount",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
     },
     {
       "entity": "paymentPlan",
@@ -668,14 +668,6 @@ const api = {
       "column": "EM_Aeatsii_Modif",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiModif",
       "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
       "processType": "obuiapp"
     },
     {
