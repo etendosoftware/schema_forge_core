@@ -142,10 +142,16 @@ function mapPendingTasks(handlerData) {
       const FILTER_LINKS = {
         overdueInvoices: '/sales-invoice?filter=overdue',
         overdueInvoices_plural: '/sales-invoice?filter=overdue',
+        salesOrdersToConfirm: '/sales-order?DocStatus=DR',
+        salesOrdersToConfirm_plural: '/sales-order?DocStatus=DR',
+        salesInvoicesToConfirm: '/sales-invoice?DocStatus=DR',
+        salesInvoicesToConfirm_plural: '/sales-invoice?DocStatus=DR',
         pendingShipments: '/goods-shipment?DocStatus=DR',
         pendingShipments_plural: '/goods-shipment?DocStatus=DR',
         purchaseOrdersToConfirm: '/purchase-order?DocStatus=DR',
         purchaseOrdersToConfirm_plural: '/purchase-order?DocStatus=DR',
+        purchaseInvoicesToConfirm: '/purchase-invoice?DocStatus=DR',
+        purchaseInvoicesToConfirm_plural: '/purchase-invoice?DocStatus=DR',
       };
       if (FILTER_LINKS[mapped.taskKey]) {
         mapped.link = FILTER_LINKS[mapped.taskKey];
@@ -163,11 +169,20 @@ function inferPendingTaskKey(task) {
   if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
+  if (task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
+  }
+  if (task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
+  }
   if (task?.link?.startsWith('/goods-shipment') || text.includes('pending shipment')) {
     return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
   if (task?.link?.startsWith('/purchase-order') || text.includes('purchase orders to confirm')) {
     return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
+  }
+  if (task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';

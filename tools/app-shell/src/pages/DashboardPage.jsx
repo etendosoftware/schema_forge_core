@@ -100,11 +100,20 @@ function resolvePendingTaskKey(task) {
   if ((windowName === 'sales-invoice' && filter === 'overdue') || task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
+  if ((windowName === 'sales-order' && docStatus === 'DR') || task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
+  }
+  if ((windowName === 'sales-invoice' && docStatus === 'DR') || task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
+  }
   if ((windowName === 'goods-shipment' && docStatus === 'DR') || task?.link === '/goods-shipment' || text.includes('pending shipment')) {
     return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
   if ((windowName === 'purchase-order' && docStatus === 'DR') || task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
     return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
+  }
+  if ((windowName === 'purchase-invoice' && docStatus === 'DR') || task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -995,13 +1004,13 @@ function PendingTasks({ tasks = [], currencyLabel = '' }) {
                     <Info className="h-4 w-4 shrink-0 text-blue-500" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">
+                    <p className="text-sm leading-snug break-words whitespace-normal">
                       {task.labelKey && task.count != null
                         ? `${task.count} ${tMenu(task.labelKey)}`
                         : taskKey ? ui(taskKey, { count: task.count }) : task.text}
                     </p>
                     {detailText && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground leading-snug break-words whitespace-normal">
                         {detailText}
                       </p>
                     )}

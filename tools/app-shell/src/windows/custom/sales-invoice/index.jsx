@@ -79,6 +79,8 @@ export default function SalesInvoiceWindow(props) {
   }
 
   const filterParam = searchParams.get('filter');
+  const docStatus = searchParams.get('DocStatus');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const INVOICE_QUICK_FILTERS = [
     { label: 'all' },
@@ -94,6 +96,7 @@ export default function SalesInvoiceWindow(props) {
         Table={SalesInvoiceTable}
         entityLabel="Sales Invoice"
         breadcrumb={breadcrumb}
+        initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
       />
