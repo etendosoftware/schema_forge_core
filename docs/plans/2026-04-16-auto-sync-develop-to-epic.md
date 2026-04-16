@@ -209,3 +209,10 @@ If we ever decide that "PR fatigue" is too high, we can graduate to Option A
 3. Implement `.github/workflows/sync-develop-to-epic.yml` in this repo.
 4. Mirror the workflow in `com.etendoerp.go`.
 5. Validate with a manual `workflow_dispatch` run before relying on the `push` trigger.
+
+## Validation log
+
+- **2026-04-16** — End-to-end smoke test. After landing the workflow on
+  `develop`, the rerun on the merge commit (run `24525016090`, attempt 2) opened
+  the rolling sync PR `#340` (`develop -> epic/ETP-3504`) with the expected
+  label, assignee, and auto-merge armed (`MERGE`, no squash).
