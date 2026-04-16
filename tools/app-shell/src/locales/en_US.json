@@ -12121,7 +12121,7 @@
       "description": ""
     },
     "EM_OBTIK_Tax_ID_Key": {
-      "label": "Clave NIF País Residencia",
+      "label": "Residence Country Tax ID Key",
       "description": ""
     },
     "Iscreated": {
@@ -16608,7 +16608,7 @@
     "validationFieldOrganization": "Organization",
     "validationFieldClient": "Client",
     "validationFieldBusinessPartnerCategory": "Business Partner Category",
-    "validationFieldNifCountryKey": "Clave NIF País Residencia",
+    "validationFieldNifCountryKey": "Residence Country Tax ID Key",
     "lineAdded": "Line added",
     "recordCreated": "Record created",
     "recordSaved": "Record saved",
@@ -16663,8 +16663,9 @@
     "bpRevenue": "Revenue",
     "bpExpenses": "Expenses",
     "Financial": "Financial",
-    "Contact Person": "Contact Person",
-    "Contact Bank Account": "Contact Bank Account",
+    "Contact Person": "Person",
+    "Contact Bank Account": "Bank Account",
+    "Person": "Person",
     "statusUnderEvaluation": "Under Evaluation",
     "statusCancelled": "Cancelled",
     "statusPaymentReceived": "Payment Received",
@@ -16995,8 +16996,8 @@
     "noRole": "No role",
     "noOrg": "No org",
     "vendor": "Vendor",
-    "creditTax": "Credit & Tax",
-    "creditTaxDescription": "Credit limits and tax identification for this contact.",
+    "creditTax": "Credit",
+    "creditTaxDescription": "Credit line limit for this contact.",
     "searchAddress": "Search address…",
     "typeToSearch": "Type to search…",
     "searching": "Searching…",
