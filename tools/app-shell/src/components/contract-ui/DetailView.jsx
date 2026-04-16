@@ -107,6 +107,7 @@ export function DetailView({
   notesField,
   extraActions = [],
   menuActions = [],
+  customMenuContent = null,
   hideDeleteWhenComplete = false,
   hidePrint = false,
   hideSaveStatuses = [],
@@ -131,8 +132,10 @@ export function DetailView({
   contentBg = 'bg-white',
   lockWhenProcessed = true,
   addLineGuard = null,
+  showDetailFooterTotals = undefined,
   onAfterSave,
   onAfterCreate,
+  labelOverrides,
 }) {
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
   const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
@@ -172,6 +175,7 @@ export function DetailView({
     if (detailEntity) {
       next[detailEntity] = {
         parentId: parentRecordId,
+        ...(isSOTrx ? { isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
       };
     }
@@ -205,6 +209,8 @@ export function DetailView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
+  const handledOpenAddLineRef = useRef(false);
+  const handledOpenSecondaryLineRef = useRef(false);
 
   useEffect(() => {
     if (!showMoreMenu) return;
@@ -218,6 +224,8 @@ export function DetailView({
   }, [showMoreMenu]);
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
+  const [selectedChildRows, setSelectedChildRows] = useState([]);
+  const [deletingChildren, setDeletingChildren] = useState(false);
   const [lineEdits, setLineEdits] = useState(null);
   const [lineEditColumns, setLineEditColumns] = useState({});
   const [savingLine, setSavingLine] = useState(false);
@@ -282,11 +290,16 @@ export function DetailView({
 
   // Auto-open add-line form after header auto-save navigation (openAddLine flag in route state).
   useEffect(() => {
-    if (!location.state?.openAddLine || isNew || !hook.editing) return;
+    if (!location.state?.openAddLine || isNew || !hook.editing) {
+      handledOpenAddLineRef.current = false;
+      return;
+    }
+    if (handledOpenAddLineRef.current) return;
+    handledOpenAddLineRef.current = true;
     setAddingLine(true);
     setEditingChild(null);
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state?.openAddLine, isNew, hook.editing]);
+  }, [location.state?.openAddLine, isNew, hook.editing, navigate, location.pathname]);
 
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
@@ -300,47 +313,58 @@ export function DetailView({
     setEditingChild(null);
   }, [isNew, hook.handleSave, navigate, windowName]);
 
-  // Resolve $_identifier for default FK values and auto-select first option for
-  // mandatory combo selectors (inputMode: "selector") that have no value.
-  // This matches classic Etendo behavior: TableDir combos pre-select the first record
-  // when the field is mandatory, while search fields don't (they require user input).
+  const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
+    const targetTab = secondaryTabs.find(st => st.key === tabKey);
+    if (!targetTab) return;
+    if (isNew && targetTab.requireSavedRecord) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return;
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openSecondaryTab: tabKey, openAddSecondaryLine: true },
+      });
+      return;
+    }
+    setAddingSecondaryLine(prev => ({ ...prev, [tabKey]: !prev[tabKey] }));
+    setSelectedSecondaryLine(null);
+  }, [secondaryTabs, isNew, hook.handleSave, navigate, windowName]);
+
+  // Resolve $_identifier for default FK values.
+  // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
+  // The frontend only ensures that if a value exists (from a default or callout),
+  // we resolve its $_identifier from the catalogs so it displays correctly.
   useEffect(() => {
     if (!isNew || !hook.editing || !catalogsLoaded || !api?.selectors) return;
     for (const sel of api.selectors) {
       const val = hook.editing[sel.field];
+      if (!val) continue;
+      // Value is set but no identifier — resolve it from loaded catalog
+      if (hook.editing[sel.field + '$_identifier']) continue;
       const options = getCatalogOptions(catalogs, sel.entity, sel);
       if (!Array.isArray(options) || options.length === 0) continue;
-
-      if (val) {
-        // Has a value — resolve its identifier if missing
-        if (!hook.editing[sel.field + '$_identifier']) {
-          const match = options.find(o => o.id === val);
-          if (match) {
-            hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
-          }
-        }
-      } else if (sel.inputMode === 'selector') {
-        // Combo/dropdown with no value — auto-select first option (Etendo TableDir behavior).
-        // Only for editable fields; search/dependent fields require explicit user selection.
-        const first = options[0];
-        if (first) {
-          hook.handleChange(sel.field, first.id);
-          hook.handleChange(sel.field + '$_identifier', first.label || first.name || first._identifier);
-        }
+      const match = options.find(o => o.id === val);
+      if (match) {
+        hook.handleChange(sel.field + '$_identifier', match.label || match.name || match._identifier);
       }
     }
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
 
   useEffect(() => {
-    if (isNew) return;
+    setDirectFetched(false);
+  }, [recordId]);
+
+  useEffect(() => {
+    if (isNew || !recordId) return;
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
       setDirectFetched(false);
-    } else if (!currentItem && !hook.loading && recordId && !directFetched) {
+      return;
+    }
+    if (!currentItem && !hook.loading && !directFetched) {
       setDirectFetched(true);
       hook.fetchById(recordId);
     }
-  }, [currentItem, recordId, hook.selected, hook.handleSelect]);
+  }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
   useEffect(() => {
@@ -546,13 +570,9 @@ export function DetailView({
         result.netUnitPrice = taxRate > 0
           ? parseFloat((gross / (1 + taxRate / 100)).toFixed(6))
           : gross;
-        console.log('[PRICE FIX] derived netUnitPrice from grossUnitPrice',
-          { gross, taxRate, net: result.netUnitPrice, taxId });
       }
-      // Show the net price to the user; fall back to gross only if net is still unavailable.
-      if (result.grossUnitPrice != null && !result.unitPrice) {
-        result.unitPrice = result.netUnitPrice ?? result.grossUnitPrice;
-      }
+      // netUnitPrice is kept as a fallback for the cascade guard below.
+      // PriceActual will be derived by SL_Order_Amt from Gross_Unit_Price, not set here.
       // SL_Invoice_Product / SL_Order_Product callouts reset quantity fields to 0 as a
       // classic Etendo "clear-for-entry" signal. Discard any qty=0 update when the row
       // already has a positive value so the user's default (or entered) quantity is kept.
@@ -569,34 +589,48 @@ export function DetailView({
       const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
       // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
       const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
-      console.log('[CASCADE check]', { priceUpdated, amountNotComputed, lineNetAmount: result.lineNetAmount, unitPrice: result.unitPrice, grossUnitPrice: result.grossUnitPrice });
       if (priceUpdated && amountNotComputed) {
         try {
-          const cascadePrice = result.unitPrice ?? result.grossUnitPrice;
           // Merge first callout result into the form state so SL_Order_Amt sees the
-          // freshly set tax, grossUnitPrice, gROSSPRICE, etc.
+          // freshly set tax, grossUnitPrice, etc.
           const cascadeState = { ...formStateForCallout };
           for (const [k, v] of Object.entries(result)) {
             if (!k.includes('$_identifier')) cascadeState[k] = v;
           }
-          // The callout endpoint resolves by DB column name (e.g. 'PriceActual'), not by
-          // the SFField API key ('unitPrice'). Look up the column from addLineFields so
-          // NeoCalloutService.resolveCallout can find SL_Order_Amt via equalsIgnoreCase.
+          // For tax-inclusive price lists: trigger SL_Order_Amt via Gross_Unit_Price so
+          // it derives PriceActual (net) and lineNetAmount correctly.
+          // For regular price lists: trigger via PriceActual as usual.
+          // The callout endpoint resolves by DB column name, not by the SFField API key.
+          const grossUnitPriceColumn = (addLineFields?.entry ?? []).find(
+            f => f.key === 'grossUnitPrice'
+          )?.column ?? 'inpgrossUnitPrice';
           const unitPriceColumn = (addLineFields?.entry ?? []).find(
             f => f.key === 'unitPrice'
           )?.column ?? 'PriceActual';
+          const useGross = result.grossUnitPrice != null;
+          const cascadeField = useGross ? grossUnitPriceColumn : unitPriceColumn;
+          const cascadeValue = useGross
+            ? result.grossUnitPrice
+            : (result.netUnitPrice ?? result.unitPrice ?? result.grossUnitPrice);
+          // SL_Order_Amt needs grossListPrice to compute lineNetAmount for tax-inclusive lists.
+          // If it's missing or 0, seed it with grossUnitPrice so the callout has a valid base.
+          if (useGross && (cascadeState.grossListPrice == null || Number(cascadeState.grossListPrice) === 0)) {
+            cascadeState.grossListPrice = result.grossUnitPrice;
+          }
+          const cascadePayload = {
+            field: cascadeField,
+            value: String(cascadeValue ?? ''),
+            formState: cascadeState,
+            ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+          };
           const cascadeRes = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              field: unitPriceColumn,
-              value: String(cascadePrice ?? ''),
-              formState: cascadeState,
-              ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
-            }),
+            body: JSON.stringify(cascadePayload),
           });
           if (cascadeRes.ok) {
             const cascadeData = await cascadeRes.json();
+            console.log('[DBG] SL_Order_Amt raw response:', JSON.stringify(cascadeData));
             const cascadeResult = {};
             if (cascadeData.updates) {
               for (const [k, entry] of Object.entries(cascadeData.updates)) {
@@ -612,6 +646,13 @@ export function DetailView({
             // Same guard: don't let the cascade zero out a quantity the user already set.
             for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
               if (cascadeResult[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete cascadeResult[qtyKey];
+            }
+            // Ensure unitPrice = net after cascade for tax-included price lists.
+            // If SL_Order_Amt did not echo back unitPrice, apply it explicitly so
+            // PriceActual is saved as the correct net value (not the gross selector price).
+            if (result.grossUnitPrice != null && result.netUnitPrice != null
+                && cascadeResult.unitPrice == null) {
+              cascadeResult.unitPrice = result.netUnitPrice;
             }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }
@@ -672,6 +713,25 @@ export function DetailView({
   if (showOthers === true) {
     tabs.push({ key: 'others', label: othersLabel || ui('others') });
   }
+
+  useEffect(() => {
+    const targetTabKey = location.state?.openSecondaryTab;
+    if (!targetTabKey || isNew || !hook.editing) {
+      handledOpenSecondaryLineRef.current = false;
+      return;
+    }
+    if (handledOpenSecondaryLineRef.current) return;
+    handledOpenSecondaryLineRef.current = true;
+    const nextTabIndex = tabs.findIndex(tab => tab.key === targetTabKey);
+    if (nextTabIndex >= 0) {
+      setActiveTab(nextTabIndex);
+    }
+    if (location.state?.openAddSecondaryLine) {
+      setAddingSecondaryLine(prev => ({ ...prev, [targetTabKey]: true }));
+      setSelectedSecondaryLine(null);
+    }
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openSecondaryTab, location.state?.openAddSecondaryLine, isNew, hook.editing, navigate, location.pathname, tabs]);
 
   if (hook.loading) {
     return (
@@ -792,142 +852,175 @@ export function DetailView({
             })()}
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Topbar right slot (e.g. payment status badge) */}
-            {topbarRight && (() => {
-              const TopbarRightComponent = topbarRight;
-              return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
-            })()}
-            {/* Send / Print document — uses DocumentPrintDrawer */}
-            {documentPreview && !isNew && recordId && (
-              <button
-                onClick={() => setShowPrint(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-                title={ui('sendPreview')}
-                data-testid="action-document-preview"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            )}
-            {/* Print document — shown when documentPreview is not provided */}
-            {!documentPreview && !hidePrint && !isNew && recordId && (
-              <button
-                onClick={() => setShowPrint(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-                title={ui('print')}
-              >
-                <Printer className="h-4 w-4" />
-              </button>
-            )}
-            {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-            {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                title={ui('delete')}
-                data-testid="action-delete"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-            {/* More actions */}
-            {!hideMoreMenu && <div className="relative" ref={moreMenuRef}>
-              <button
-                onClick={() => setShowMoreMenu(v => !v)}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </button>
-              {showMoreMenu && (() => {
-                const resolvedActions = typeof menuActions === 'function'
-                  ? menuActions({ data, status: data?.[statusField] })
-                  : menuActions;
-                const visibleActions = resolvedActions.filter(a => a.visible !== false);
-                if (visibleActions.length === 0) return null;
-                return (
-                  <div
-                    className="absolute right-0 top-full mt-1 z-50 bg-white py-1 min-w-[160px]"
-                    style={{ border: '0.5px solid hsl(var(--border))', borderRadius: '8px' }}
-                  >
-                    {visibleActions.map((action, i) => (
-                      <button
-                        key={action.key || i}
-                        type="button"
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          if (action.columnName) {
-                            hook.handleProcess?.({ columnName: action.columnName, name: action.key });
-                          } else if (action.onClick) {
-                            action.onClick();
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
-                          action.destructive
-                            ? 'text-red-600 hover:bg-red-50'
-                            : 'text-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
-                );
+            <div className="flex items-center gap-2">
+              {/* Topbar right slot (e.g. payment status badge) */}
+              {topbarRight && (() => {
+                const TopbarRightComponent = topbarRight;
+                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
               })()}
-            </div>}
-            {/* Extra action buttons from page */}
-            {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
-              action.visible !== false && (
-                <Button
-                  key={action.key || i}
-                  variant="outline"
-                  size="sm"
-                  className={action.className || ''}
-                  onClick={action.onClick}
+              {/* Send / Print document — uses DocumentPrintDrawer */}
+              {documentPreview && !isNew && recordId && (
+                <button
+                  onClick={() => setShowPrint(true)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  title={ui('sendPreview')}
+                  data-testid="action-document-preview"
                 >
-                  {action.label}
-                </Button>
-              )
-            ))}
-            {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
-            {!isNew && processes
-              .filter(p => p.displayLogicRaw
-                ? evalDisplayLogicRaw(p.displayLogicRaw, data)
-                : displayLogic?.visibility?.[p.name] !== false)
-              .filter(p => !p.requiresLines || hook.children.length > 0)
-              .map(p => {
-                const isPrimary = p.style === 'positive';
-                const btnClass = salesTheme
-                  ? (p.style === 'destructive'
-                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                    : isPrimary
-                      ? 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium'
-                      : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')
-                  : (p.style === 'destructive'
-                    ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20'
-                    : isPrimary
-                      ? ''
-                      : '');
-                return (
+                  <Send className="h-4 w-4" />
+                </button>
+              )}
+              {/* Print document — shown when documentPreview is not provided */}
+              {!documentPreview && !hidePrint && !isNew && recordId && (
+                <button
+                  onClick={() => setShowPrint(true)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  title={ui('print')}
+                >
+                  <Printer className="h-4 w-4" />
+                </button>
+              )}
+              {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
+              {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  title={ui('delete')}
+                  data-testid="action-delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+              {/* More actions */}
+              {!hideMoreMenu && <div className="relative" ref={moreMenuRef}>
+                <button
+                  onClick={() => setShowMoreMenu(v => !v)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+                {showMoreMenu && (() => {
+                  const resolvedActions = typeof menuActions === 'function'
+                    ? menuActions({ data, status: data?.[statusField] })
+                    : menuActions;
+                  const visibleActions = resolvedActions.filter(a => a.visible !== false);
+                  if (visibleActions.length === 0 && !customMenuContent) return null;
+                  return (
+                    <div
+                      className="absolute right-0 top-full mt-1 z-50 bg-white py-1 min-w-[160px]"
+                      style={{ border: '0.5px solid hsl(var(--border))', borderRadius: '8px' }}
+                    >
+                      {visibleActions.map((action, i) => (
+                        <button
+                          key={action.key || i}
+                          type="button"
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            if (action.columnName) {
+                              hook.handleProcess?.({ columnName: action.columnName, name: action.key });
+                            } else if (action.onClick) {
+                              action.onClick();
+                            }
+                          }}
+                          className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${action.destructive
+                              ? 'text-red-600 hover:bg-red-50'
+                              : 'text-foreground hover:bg-secondary'
+                            }`}
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                      {customMenuContent && (() => {
+                        const CustomMenuContent = customMenuContent;
+                        return <CustomMenuContent
+                          data={data}
+                          recordId={data?.id || recordId}
+                          token={token}
+                          apiBaseUrl={apiBaseUrl}
+                          onClose={() => setShowMoreMenu(false)}
+                          onRefresh={() => hook.fetchById?.(data?.id || recordId)}
+                        />;
+                      })()}
+                    </div>
+                  );
+                })()}
+              </div>}
+              {/* Extra action buttons from page */}
+              {(typeof extraActions === 'function' ? extraActions({ data, children: hook.children }) : extraActions).map((action, i) => (
+                action.visible !== false && (
                   <Button
-                    key={p.name}
-                    variant={isPrimary ? 'default' : 'outline'}
+                    key={action.key || i}
+                    variant="outline"
                     size="sm"
-                    className={btnClass}
-                    onClick={() => hook.handleProcess?.(p)}
+                    className={action.className || ''}
+                    onClick={action.onClick}
                   >
-                    {tMenu(p.label)}
+                    {action.label}
                   </Button>
-                );
-              })}
+                )
+              ))}
+              {/* Process buttons — only shown for existing records, evaluated locally or by server visibility */}
+              {!isNew && processes
+                .filter(p => p.displayLogicRaw
+                  ? evalDisplayLogicRaw(p.displayLogicRaw, data)
+                  : displayLogic?.visibility?.[p.name] !== false)
+                .filter(p => !p.requiresLines || hook.children.length > 0)
+                .map(p => {
+                  const isPrimary = p.style === 'positive';
+                  const btnClass = salesTheme
+                    ? (p.style === 'destructive'
+                      ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      : isPrimary
+                        ? 'bg-amber-400 text-black hover:bg-amber-500 border-transparent font-medium'
+                        : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')
+                    : (p.style === 'destructive'
+                      ? 'border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20'
+                      : isPrimary
+                        ? ''
+                        : '');
+                  return (
+                    <Button
+                      key={p.name}
+                      variant={isPrimary ? 'default' : 'outline'}
+                      size="sm"
+                      className={btnClass}
+                      onClick={() => hook.handleProcess?.(p)}
+                    >
+                      {tMenu(p.label)}
+                    </Button>
+                  );
+                })}
 
-            {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
-              <>
-                <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
+                <>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
+                    const saved = await hook.handleSave(data);
+                    if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  }}>
+                    <Save className="h-3.5 w-3.5" />
+                    {ui('save')}
+                  </Button>
+                  <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                    const saved = await hook.handleSaveAndProcess(draftMode);
+                    if (saved) {
+                      if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+                      if (onAfterSave) {
+                        navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                      } else if (saved.id && isNew) {
+                        navigate(`/${windowName}/${saved.id}`, { replace: true });
+                      }
+                    }
+                  }}>
+                    <Check className="h-3.5 w-3.5" />
+                    {draftMode.label || ui('process')}
+                  </Button>
+                </>
+              ) : isNew ? (<>
+                <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
                   const saved = await hook.handleSave(data);
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                 }}>
                   <Save className="h-3.5 w-3.5" />
-                  {ui('saveDraft')}
+                  {ui('save')}
                 </Button>
                 {!isProcessed && hook.children.length > 0 && (
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
@@ -942,7 +1035,7 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  {ui('saveAndProcess', { action: tMenu(draftMode.label) || ui('process') })}
+                  {tMenu(draftMode.label) || ui('process')}
                 </Button>
                 )}
               </>
@@ -995,17 +1088,17 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-1.5' : 'px-6'}`}>
-              <activeTab.Panel data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}`}>
+              <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-1.5' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-3`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
             {/* Principal + collapsed fields wrapped in a card */}
-            <div className={`overflow-hidden${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
+            <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className="p-6">
                 <Form
                   entity={entity}
@@ -1019,6 +1112,7 @@ export function DetailView({
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   selectorContext={selectorContextByEntity[entity]}
+                  labelOverrides={labelOverrides}
                 />
               </div>
 
@@ -1039,6 +1133,7 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
+                      labelOverrides={labelOverrides}
                     />
                   </div>
                 </CollapsibleSection>
@@ -1047,7 +1142,7 @@ export function DetailView({
 
             {/* Form footer: inline content below form, above tabs (e.g. BillingPreferencesForm) */}
             {formFooter && (
-              <div className={`pt-2${embedded ? ' pointer-events-none' : ''}`}>
+              <div className={embedded ? 'pointer-events-none' : ''}>
                 {React.createElement(formFooter, { data, entity, onChange: handleChangeWithCallout, catalogs, api, token, apiBaseUrl })}
               </div>
             )}
@@ -1085,7 +1180,11 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
+                  hook.childrenLoading ? (
+                    <div className="flex items-center justify-center py-10 text-muted-foreground">
+                      <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    </div>
+                  ) : hook.children.length === 0 && !addingLine && LinesEmptyState && hook.editing && !isDocumentReadOnly ? (
                     <LinesEmptyState
                       data={data}
                       onAddLine={handleAddLineClick}
@@ -1099,6 +1198,61 @@ export function DetailView({
                   <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {/* Table + add button */}
                     <div className="flex-1 min-w-0">
+                      {/* Bulk delete bar */}
+                      {(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0 && (
+                        <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
+                          <span className="text-sm font-medium text-foreground">
+                            {ui('selected', { count: selectedChildRows.length })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              disabled={deletingChildren}
+                              onClick={async () => {
+                                if (!window.confirm(ui('deleteConfirmMessage'))) return;
+                                setDeletingChildren(true);
+                                try {
+                                  const results = await Promise.allSettled(
+                                    selectedChildRows.map(row => {
+                                      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+                                        || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+                                      return fetch(childUrl, {
+                                        method: 'DELETE',
+                                        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                      }).then(res => ({ res, row }));
+                                    })
+                                  );
+                                  let deleted = 0;
+                                  for (const result of results) {
+                                    if (result.status === 'fulfilled' && result.value.res.ok) {
+                                      hook.handleDeleteChild(result.value.row.id);
+                                      if (selectedLine?.id === result.value.row.id) setSelectedLine(null);
+                                      deleted++;
+                                    }
+                                  }
+                                  setSelectedChildRows([]);
+                                  if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
+                                  const failed = results.length - deleted;
+                                  if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
+                                } catch (err) {
+                                  toast.error(err.message || ui('networkError'));
+                                } finally {
+                                  setDeletingChildren(false);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-destructive text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {deletingChildren ? ui('loading') : ui('delete')}
+                            </button>
+                            <button
+                              onClick={() => setSelectedChildRows([])}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent transition-colors text-muted-foreground"
+                            >
+                              {ui('clear')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <DetailTable
                         data={hook.children}
                         entity={detailEntity}
@@ -1106,7 +1260,29 @@ export function DetailView({
                         apiBaseUrl={apiBaseUrl}
                         onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
                         selectedRowId={selectedLine?.id}
-                        showFooterTotals={!summary.some(f => f.type === 'amount')}
+                        onSelectionChange={setSelectedChildRows}
+                        showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
+                        selectorContext={selectorContextByEntity[detailEntity]}
+                        onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
+                          if (!window.confirm(ui('deleteConfirmMessage'))) return;
+                          try {
+                            const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+                              || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+                            const res = await fetch(childUrl, {
+                              method: 'DELETE',
+                              headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                            });
+                            if (res.ok) {
+                              hook.handleDeleteChild(row.id);
+                              if (selectedLine?.id === row.id) setSelectedLine(null);
+                              toast.success(ui('recordDeleted'));
+                            } else {
+                              toast.error(await extractErrorMessage(res));
+                            }
+                          } catch (err) {
+                            toast.error(err.message || ui('networkError'));
+                          }
+                        } : undefined}
                         addRow={{
                           active: addingLine,
                           fields: allEntryFields,
@@ -1238,12 +1414,13 @@ export function DetailView({
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
                           }}
-                          entity={detailEntity}
-                          catalogs={catalogs}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                          selectorContext={selectorContextByEntity[detailEntity]}
-                        />
+                                entity={detailEntity}
+                                catalogs={catalogs}
+                                token={token}
+                                apiBaseUrl={apiBaseUrl}
+                                selectorContext={selectorContextByEntity[detailEntity]}
+                                labelOverrides={labelOverrides}
+                              />
                         {hook.editing && (lineEdits || selectedLine?.id) && (
                           <div className="flex gap-2 mt-4">
                             {lineEdits && !isDocumentReadOnly && (
@@ -1280,6 +1457,20 @@ export function DetailView({
                                         setLineEdits(null);
                                         setLineEditColumns({});
                                         toast.success('Record saved');
+                                        // Re-fetch the line to pick up trigger-computed fields
+                                        // (e.g. lineNetAmount after a price change on tax-included price lists).
+                                        try {
+                                          const freshRes = await fetch(childUrl, {
+                                            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                          });
+                                          if (freshRes.ok) {
+                                            const freshJson = await freshRes.json();
+                                            const freshLine = freshJson?.response?.data?.[0] ?? freshJson;
+                                            if (freshLine?.id) {
+                                              setSelectedLine(prev => ({ ...prev, ...freshLine }));
+                                            }
+                                          }
+                                        } catch (_) { /* ignore — lineEdits values already shown */ }
                                       } else {
                                         toast.error(await extractErrorMessage(res));
                                       }
@@ -1370,6 +1561,7 @@ export function DetailView({
                           token={token}
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
+                          labelOverrides={labelOverrides}
                         />
                       </div>
                     ) : st.Panel ? (
@@ -1433,6 +1625,7 @@ export function DetailView({
                           apiBaseUrl={apiBaseUrl}
                           selectorContext={selectorContextByEntity[st.key]}
                           excludeFields={st.key === 'contact' ? ['active'] : []}
+                          labelOverrides={labelOverrides}
                         />
                         {hook.editing && (secondaryLineEdits || selectedSecondaryLine?.id) && (
                           <div className="flex gap-2 mt-4">
@@ -1508,7 +1701,7 @@ export function DetailView({
                     </div>
                     {st.addLineFields?.entry?.length > 0 && hook.editing && (
                       <button
-                        onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                        onClick={() => { void handleSecondaryAddLineToggle(st.key); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
                         {ui('addEntity', { label: tMenu(st.label) })}
@@ -1534,6 +1727,7 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
+                      labelOverrides={labelOverrides}
                     />
                   </div>
                 )}
@@ -1630,7 +1824,7 @@ export function DetailView({
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                     {customTabs.length > 0 && (
                       <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">{ui('docs')}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-24">{ui('docs')}</span>
                         <div className="flex-1">
                           {customTabs.map(ct => {
                             const TabComponent = ct.Component;
@@ -1651,7 +1845,7 @@ export function DetailView({
                     )}
                     {notesField && (
                       <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">{ui('notes')}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
                         <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
                             <textarea
@@ -1661,7 +1855,7 @@ export function DetailView({
                               placeholder={ui('description')}
                               rows={3}
                               autoFocus
-                              className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+                              className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
                             />
                           ) : (
                             <div
@@ -1669,7 +1863,7 @@ export function DetailView({
                               role="textbox"
                               onClick={() => setNotesFocused(true)}
                               onFocus={() => setNotesFocused(true)}
-                              className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+                              className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
                             >
                               {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
                             </div>
@@ -1695,7 +1889,7 @@ export function DetailView({
           </div>
         </div>
         {sidebarContent && (
-          <div className="w-96 shrink-0 overflow-y-auto pl-1.5 pr-4 pb-5">
+          <div className="w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5">
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}

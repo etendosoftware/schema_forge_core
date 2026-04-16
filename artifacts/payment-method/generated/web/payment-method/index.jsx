@@ -20,24 +20,7 @@ const api = {
       ]
     }
   },
-  "selectors": [
-    {
-      "entity": "paymentMethod",
-      "field": "payinExecutionProcessID",
-      "column": "Payin_Execution_Process_ID",
-      "reference": "Pay_Exec_Process",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-method/paymentMethod/selectors/payinExecutionProcessID"
-    },
-    {
-      "entity": "paymentMethod",
-      "field": "payoutExecutionProcessID",
-      "column": "Payout_Execution_Process_ID",
-      "reference": "Pay_Exec_Process",
-      "inputMode": "search",
-      "url": "/sws/neo/payment-method/paymentMethod/selectors/payoutExecutionProcessID"
-    }
-  ],
+  "selectors": [],
   "actions": [],
   "queryParams": {
     "pagination": {
@@ -47,7 +30,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=payment-methodDate"
+      "example": "_sortBy=name"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"

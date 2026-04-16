@@ -1,4 +1,8 @@
+import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
@@ -33,7 +37,15 @@ function CustomLinesTable(props) {
 }
 
 export default function PurchaseOrderWindow(props) {
-  const { recordId, windowName } = props;
+  const { recordId, windowName, token, apiBaseUrl } = props;
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [cloneTarget, setCloneTarget] = useState(null);
+
+  const headers = useMemo(() => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }), [token]);
 
   if (recordId) {
     return (
@@ -44,14 +56,35 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
   return (
-    <ListView
-      entity="header"
-      Table={CustomHeaderTable}
-      entityLabel="Purchase Order"
-      windowName={windowName}
-      breadcrumb="Purchases / Purchase Order"
-      {...props}
-    />
+    <>
+      <ListView
+        entity="header"
+        Table={CustomHeaderTable}
+        entityLabel="Purchase Order"
+        windowName={windowName}
+        breadcrumb="Purchases / Purchase Order"
+        onCloneRow={(row) => setCloneTarget(row)}
+        initialColumnFilters={initialColumnFilters}
+        {...props}
+      />
+      {cloneTarget && createPortal(
+        <CloneOrderModal
+          orderId={cloneTarget.id}
+          data={cloneTarget}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setCloneTarget(null)}
+          onCloned={(newId) => {
+            setCloneTarget(null);
+            navigate(`/purchase-order/${newId}`);
+          }}
+        />,
+        document.body,
+      )}
+    </>
   );
 }

@@ -3,7 +3,6 @@ import { EntityForm } from '@/components/contract-ui';
 // @sf-generated-start fields:inventoryLine
 const fields = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', section: 'principal', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InventoryLine WHERE M_Inventory_ID=@M_Inventory_ID@' },
-  // @sf-custom-slot callout:SL_Inventory_Product
   { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', required: true, lookup: true, section: 'principal', reference: 'Product', inputMode: 'search' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'quantityOrderBook', column: 'QuantityOrderBook', type: 'number', label: 'Quantity order book', readOnly: true, section: 'other', defaultValue: '0' },
@@ -16,9 +15,7 @@ const fields = [
 
 // @sf-generated-start component:InventoryLineForm
 export default function InventoryLineForm(props) {
-  // @sf-custom-slot hooks:InventoryLineForm
   return <EntityForm fields={fields} {...props} />;
 }
+InventoryLineForm.hasCollapsedFields = false;
 // @sf-generated-end component:InventoryLineForm
-
-// @sf-custom-slot section:InventoryLineForm-custom

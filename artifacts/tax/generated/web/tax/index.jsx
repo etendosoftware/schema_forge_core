@@ -3,8 +3,7 @@ import TaxTable from './TaxTable';
 import TaxForm from './TaxForm';
 import catalogs from './mockCatalogs';
 
-const windowMeta = { category: 'reference', name: 'Tax' };
-const breadcrumb = 'Settings / Tax';
+const windowMeta = { category: 'configuracion', name: 'Tax Rate' };
 
 export default function App({ windowName, recordId, ...props }) {
   if (recordId) {
@@ -16,8 +15,10 @@ export default function App({ windowName, recordId, ...props }) {
         entityLabel="Tax"
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}
+        breadcrumb="Settings / Tax"
         window={windowMeta}
+        hidePrint
+        hideMoreMenu
         {...props}
       />
     );
@@ -29,7 +30,7 @@ export default function App({ windowName, recordId, ...props }) {
       Table={TaxTable}
       entityLabel="Tax"
       windowName={windowName}
-      breadcrumb={breadcrumb}
+      breadcrumb="Settings / Tax"
       window={windowMeta}
       {...props}
     />

@@ -52,7 +52,8 @@ const addLineFields = {
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
+    { key: 'priceList', fromParent: 'priceList' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -98,7 +99,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-order/header/selectors/businessPartner"
+      "url": "/sws/neo/sales-order/header/selectors/businessPartner?isCustomer=Y"
     },
     {
       "entity": "header",

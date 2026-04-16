@@ -3,7 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useMenuLabel } from '@/i18n';
-import { formatAmount } from '@/lib/formatAmount.js';
+import { useLocaleSwitch } from '@/i18n';
+import { formatDashboardAmount, formatDashboardNumber, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 
 /**
  * Format a KPI value according to the specified format type.
@@ -14,18 +15,18 @@ import { formatAmount } from '@/lib/formatAmount.js';
  * - 'number': locale-formatted integer/decimal (e.g. 1,234)
  * - default: raw value as-is
  */
-function formatValue(value, format, currencyLabel) {
+function formatValue(value, format, currencyLabel, locale) {
   if (value == null) return '-';
 
   switch (format) {
     case 'currency':
-      return formatAmount(value, currencyLabel);
+      return formatDashboardAmount(value, currencyLabel, locale);
 
     case 'percent':
       return `${Number(value).toFixed(1)}%`;
 
     case 'number':
-      return new Intl.NumberFormat('en-US').format(value);
+      return formatDashboardNumber(value, locale);
 
     default:
       return String(value);
@@ -45,6 +46,8 @@ const DEFAULT_SCHEME = { bg: 'bg-primary/10', icon: 'text-primary' };
  */
 export function KPICard({ label, value, format, trend, previousValue, icon: Icon, kpiKey, currencyLabel = '' }) {
   const tMenu = useMenuLabel();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   const hasTrend = trend != null && trend !== 0;
   const isPositive = trend > 0;
   const scheme = KPI_SCHEMES[kpiKey] || DEFAULT_SCHEME;
@@ -58,7 +61,7 @@ export function KPICard({ label, value, format, trend, previousValue, icon: Icon
               {label}
             </p>
             <p className="text-2xl font-bold tracking-tight mt-1">
-              {formatValue(value, format, currencyLabel)}
+              {formatValue(value, format, currencyLabel, numberLocale)}
             </p>
           </div>
           {Icon && (
@@ -89,7 +92,7 @@ export function KPICard({ label, value, format, trend, previousValue, icon: Icon
 
         {previousValue != null && hasTrend && (
           <p className="text-xs text-muted-foreground mt-1">
-            vs {formatValue(previousValue, format, currencyLabel)} {tMenu('prev. month')}
+            vs {formatValue(previousValue, format, currencyLabel, numberLocale)} {tMenu('prev. month')}
           </p>
         )}
       </CardContent>

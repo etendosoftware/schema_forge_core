@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { kpisConfig, actions } from '@generated/dashboard/generated/config';
 import { useAuth } from '@/auth/AuthContext';
+import { createDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
 /* ------------------------------------------------------------------
  * Constants
@@ -113,7 +114,7 @@ function mapTrends(handlerData) {
 
 /**
  * Map pending tasks handler response.
- * Handler returns: [{type, text, link, amount?, detail?}]
+ * Handler returns: [{type, text, navigation?, link?, amount?, detail?}]
  */
 function mapPendingTasks(handlerData) {
   if (!handlerData || handlerData.length === 0) return [];
@@ -123,16 +124,38 @@ function mapPendingTasks(handlerData) {
       type: task.type || 'info',
       text: task.text || '',
       link: task.link || '',
+      navigation: task.navigation || null,
     };
-    if (task.amount) mapped.amount = task.amount;
+    if (task.amount != null) mapped.amount = task.amount;
     if (task.detail) mapped.detail = task.detail;
-    if (task.count) mapped.count = task.count;
+    if (task.count != null) mapped.count = task.count;
     if (task.labelKey) mapped.labelKey = task.labelKey;
     if (task.taskKey) mapped.taskKey = task.taskKey;
 
     // Only infer taskKey if not provided by handler
     if (!mapped.taskKey) {
       mapped.taskKey = inferPendingTaskKey(mapped);
+    }
+
+    // Backward-compatible link fallback while handlers migrate to navigation
+    if (!mapped.navigation && mapped.taskKey && !mapped.link.includes('?')) {
+      const FILTER_LINKS = {
+        overdueInvoices: '/sales-invoice?filter=overdue',
+        overdueInvoices_plural: '/sales-invoice?filter=overdue',
+        salesOrdersToConfirm: '/sales-order?DocStatus=DR',
+        salesOrdersToConfirm_plural: '/sales-order?DocStatus=DR',
+        salesInvoicesToConfirm: '/sales-invoice?DocStatus=DR',
+        salesInvoicesToConfirm_plural: '/sales-invoice?DocStatus=DR',
+        pendingShipments: '/goods-shipment?DocStatus=DR',
+        pendingShipments_plural: '/goods-shipment?DocStatus=DR',
+        purchaseOrdersToConfirm: '/purchase-order?DocStatus=DR',
+        purchaseOrdersToConfirm_plural: '/purchase-order?DocStatus=DR',
+        purchaseInvoicesToConfirm: '/purchase-invoice?DocStatus=DR',
+        purchaseInvoicesToConfirm_plural: '/purchase-invoice?DocStatus=DR',
+      };
+      if (FILTER_LINKS[mapped.taskKey]) {
+        mapped.link = FILTER_LINKS[mapped.taskKey];
+      }
     }
 
     return mapped;
@@ -146,11 +169,20 @@ function inferPendingTaskKey(task) {
   if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
-  if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
+  if (task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
+  }
+  if (task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
+  }
+  if (task?.link?.startsWith('/goods-shipment') || text.includes('pending shipment')) {
     return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
-  if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
+  if (task?.link?.startsWith('/purchase-order') || text.includes('purchase orders to confirm')) {
     return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
+  }
+  if (task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -212,6 +244,11 @@ function mapRecentInvoices(handlerData) {
       date: inv.date || '',
       amount: inv.amount || 0,
       status: inv.status || '',
+      navigation: inv.navigation || createDashboardNavigation({
+        type: 'record',
+        window: 'sales-invoice',
+        recordId: inv.id || '',
+      }),
     }));
 }
 
@@ -243,13 +280,21 @@ function mapBestSellers(handlerData) {
 
 /**
  * Map top clients handler response.
- * Handler returns: [{name, total}]
+ * Handler returns: [{id?, businessPartnerId?, name, total}]
  */
 function mapTopClients(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   return handlerData.map((c) => ({
+    id: c.id || c.businessPartnerId || '',
     name: c.name || '',
     total: c.total || 0,
+    navigation: c.navigation || ((c.id || c.businessPartnerId)
+      ? createDashboardNavigation({
+          type: 'record',
+          window: 'contacts',
+          recordId: c.id || c.businessPartnerId || '',
+        })
+      : null),
   }));
 }
 
@@ -267,10 +312,20 @@ function mapPendingAmounts(handlerData) {
     toCollect: {
       count: obj.toCollect?.count ?? 0,
       amount: obj.toCollect?.amount ?? 0,
+      navigation: obj.toCollect?.navigation || createDashboardNavigation({
+        type: 'list',
+        window: 'sales-invoice',
+        filter: 'overdue',
+      }),
     },
     toPay: {
       count: obj.toPay?.count ?? 0,
       amount: obj.toPay?.amount ?? 0,
+      navigation: obj.toPay?.navigation || createDashboardNavigation({
+        type: 'list',
+        window: 'purchase-invoice',
+        filter: 'overdue',
+      }),
     },
   };
 }

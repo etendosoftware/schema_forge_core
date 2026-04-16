@@ -7,6 +7,9 @@
 | [architecture-overview.md](architecture-overview.md) | System architecture: Schema Forge (tooling) + Etendo Go (runtime), data flow, component inventory |
 | [NEO Headless API Reference](../modules/com.etendoerp.go/docs/neo-headless.md) | Full API reference for the runtime module (NeoServlet, selectors, processes, webhooks) |
 | [NEO Headless Extensibility Guide](neo-headless-extensibility.md) | How to extend/customize NEO Headless: NeoHandler hooks, configuration, patterns |
+| [NEO Entity Naming Investigation](neo-entity-naming-investigation.md) | Investigation report on `push-to-neo` naming, duplicate entities/fields, runtime endpoint resolution, and unification rule |
+| [NEO Constraints](neo-pending-constraints.md) | UNIQUE constraints applied to ETGO_SF_* tables (2026-04-13) — regression guard against duplicate inserts |
+| [NEO Duplicates Report 2026-04-13](neo-duplicates-report-2026-04-13.md) | Snapshot of spec/entity/field duplicates found on 2026-04-13 (pre-dedupe), plus the 54 AD-label naming cases |
 | [Widget Endpoints Guide](widget-endpoints.md) | How to create widget endpoints: handler pattern, XML registration, frontend `useWidget` hook, response contracts |
 | [Architecture Radar (sf-radar)](architecture-radar.md) | Guide for the sf-radar CLI tool — query and update architecture decisions (optional repo) |
 
@@ -59,6 +62,14 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [developer-tools.md](developer-tools.md) | CLI tools used by the team: RTK (token optimization) and GWS (Google Workspace CLI) |
 | [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
 | [self-documentation-policy.md](self-documentation-policy.md) | Self-documentation policy: triggers, checklists, and phase responsibilities for keeping docs in sync with code |
+
+## Operations
+
+| File | Description |
+|------|-------------|
+| [ops/cloudfront-alb-routing.md](ops/cloudfront-alb-routing.md) | CloudFront + ALB routing for the SPA, same-origin `/etendo/*` forwarding, and deployment runbook |
+| [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
+| [ops/epic-rollup-report.md](ops/epic-rollup-report.md) | Develop-targeted epic rollout report: included feature PRs, prior review findings, and aggregated release-risk summary |
 
 ## Plans & Evaluations
 

@@ -1,4 +1,4 @@
-import FinPaymentPage from './FinPaymentPage';
+import HeaderPage from './HeaderPage';
 
 const windowMeta = { category: 'finance', name: 'Payment Out' };
 
@@ -6,15 +6,15 @@ const api = {
   "specName": "payment-out",
   "baseUrl": "/sws/neo/payment-out",
   "crud": {
-    "finPayment": {
+    "header": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/payment-out/finPayment",
-      "detailUrl": "/sws/neo/payment-out/finPayment/{id}",
+      "listUrl": "/sws/neo/payment-out/header",
+      "detailUrl": "/sws/neo/payment-out/header/{id}",
       "supportedFilters": [
         "documentNo",
         "referenceNo",
@@ -81,84 +81,84 @@ const api = {
   },
   "selectors": [
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "documentType",
       "column": "C_DocType_ID",
       "reference": "DocumentType",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/documentType"
+      "url": "/sws/neo/payment-out/header/selectors/documentType"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_Bpartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/payment-out/finPayment/selectors/businessPartner"
+      "url": "/sws/neo/payment-out/header/selectors/businessPartner"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "paymentMethod",
       "column": "Fin_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/paymentMethod"
+      "url": "/sws/neo/payment-out/header/selectors/paymentMethod"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "account",
       "column": "Fin_Financial_Account_ID",
       "reference": "FinancialAccount",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/account"
+      "url": "/sws/neo/payment-out/header/selectors/account"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/currency"
+      "url": "/sws/neo/payment-out/header/selectors/currency"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "reversedPayment",
       "column": "FIN_Rev_Payment_ID",
       "reference": "Payment",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/reversedPayment"
+      "url": "/sws/neo/payment-out/header/selectors/reversedPayment"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/payment-out/finPayment/selectors/project"
+      "url": "/sws/neo/payment-out/header/selectors/project"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "costCenter",
       "column": "C_Costcenter_ID",
       "reference": "CostCenter",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/costCenter"
+      "url": "/sws/neo/payment-out/header/selectors/costCenter"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "stDimension",
       "column": "User1_ID",
       "reference": "UserDimension1",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/stDimension"
+      "url": "/sws/neo/payment-out/header/selectors/stDimension"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "ndDimension",
       "column": "User2_ID",
       "reference": "UserDimension2",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/finPayment/selectors/ndDimension"
+      "url": "/sws/neo/payment-out/header/selectors/ndDimension"
     },
     {
       "entity": "lines",
@@ -387,40 +387,56 @@ const api = {
   ],
   "actions": [
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "aPRMAddScheduledpayments",
       "column": "EM_Aprm_Add_Scheduledpayments",
-      "url": "/sws/neo/payment-out/finPayment/{id}/action/aPRMAddScheduledpayments"
+      "url": "/sws/neo/payment-out/header/{id}/action/aPRMAddScheduledpayments",
+      "processId": "9BED7889E1034FE68BD85D5D16857320",
+      "processType": "obuiapp"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/payment-out/finPayment/{id}/action/posted"
+      "url": "/sws/neo/payment-out/header/{id}/action/posted"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "aPRMProcessPayment",
       "column": "EM_APRM_Process_Payment",
-      "url": "/sws/neo/payment-out/finPayment/{id}/action/aPRMProcessPayment"
+      "url": "/sws/neo/payment-out/header/{id}/action/aPRMProcessPayment",
+      "processId": "6255BE488882480599C81284B70CD9B3",
+      "processType": "classic"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "aprmExecutepayment",
       "column": "EM_Aprm_Executepayment",
-      "url": "/sws/neo/payment-out/finPayment/{id}/action/aprmExecutepayment"
+      "url": "/sws/neo/payment-out/header/{id}/action/aprmExecutepayment",
+      "processId": "E011F492B0814A74B63CD1F3B9FF0526",
+      "processType": "classic"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "aPRMReversePayment",
       "column": "EM_APRM_ReversePayment",
-      "url": "/sws/neo/payment-out/finPayment/{id}/action/aPRMReversePayment"
+      "url": "/sws/neo/payment-out/header/{id}/action/aPRMReversePayment",
+      "processId": "29D17F515727436DBCE32BC6CA28382B",
+      "processType": "classic"
     },
     {
-      "entity": "finPayment",
+      "entity": "header",
       "field": "aPRMReconcilePayment",
       "column": "EM_APRM_Reconcile_Payment",
-      "url": "/sws/neo/payment-out/finPayment/{id}/action/aPRMReconcilePayment"
+      "url": "/sws/neo/payment-out/header/{id}/action/aPRMReconcilePayment"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiSend",
+      "column": "EM_Aeatsii_Send",
+      "url": "/sws/neo/payment-out/header/{id}/action/aeatsiiSend",
+      "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -440,9 +456,6 @@ const api = {
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <FinPaymentPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
+  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
-
-// @sf-custom-slot section:App-custom

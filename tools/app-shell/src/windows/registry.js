@@ -27,9 +27,10 @@ const windowLoaders = {
   'return-to-vendor-shipment': () => import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/index.jsx'),
   'physical-inventory': () => import('@generated/physical-inventory/generated/web/physical-inventory/index.jsx'),
   'goods-movements': () => import('@generated/goods-movements/generated/web/goods-movements/index.jsx'),
+  'internal-consumption': () => import('@generated/internal-consumption/generated/web/internal-consumption/index.jsx'),
   'warehouse-storage-bins': () => import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/index.jsx'),
   'sales-quotation': () => import('@generated/sales-quotation/generated/web/sales-quotation/index.jsx'),
-  'goods-shipment': () => import('@generated/goods-shipment/generated/web/goods-shipment/index.jsx'),
+  'goods-shipment': () => import('@/windows/custom/goods-shipment/index.jsx'),
   'return-from-customer': () => import('@generated/return-from-customer/generated/web/return-from-customer/index.jsx'),
   'return-material-receipt': () => import('@generated/return-material-receipt/generated/web/return-material-receipt/index.jsx'),
   'sales-invoice': () => import('@generated/sales-invoice/generated/web/sales-invoice/index.jsx'),
@@ -77,10 +78,13 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'sales-order': () => import('./custom/sales-order/index.jsx'),
+  'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
   'purchase-order': () => import('./custom/purchase-order/index.jsx'),
   'goods-receipt': () => import('./custom/goods-receipt/index.jsx'),
   'payment-out': () => import('./custom/payment-out/index.jsx'),
+  'sales-order': () => import('./custom/sales-order/index.jsx'),
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
 };

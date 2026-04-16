@@ -8,6 +8,9 @@
       "processNow": {
         "requiresLines": true
       }
+    },
+    "customComponents": {
+      "moreMenuContent": "InventoryMenuContent"
     }
   },
   "entities": {
@@ -50,10 +53,10 @@
           "visibility": "editable"
         },
         "generateList": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "updateQuantities": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "asset": {
           "visibility": "discarded"
@@ -175,16 +178,16 @@
     "PROCESS_CreateInventoryCountList": {
       "type": "process",
       "entity": "inventory",
-      "decision": "Omit",
-      "description": "Create Inventory Count List classic button (GenerateList). Generates count lines from stock — not applicable.",
+      "decision": "Keep",
+      "description": "Create Inventory Count List — exposed via custom topbar button (InventoryTopbarActions) with simplified params: Product Search Key, Product Category, Inventory Quantity.",
       "impactIfOmitted": "Lines added manually or through a separate flow."
     },
     "PROCESS_UpdateQuantity": {
       "type": "process",
       "entity": "inventory",
-      "decision": "Omit",
-      "description": "Update Quantity classic button. Not applicable to simplified UI.",
-      "impactIfOmitted": "Quantity update handled through backend."
+      "decision": "Keep",
+      "description": "Update List System Quantity — exposed via custom topbar button (InventoryTopbarActions). No parameters; updates book quantities from current stock.",
+      "impactIfOmitted": "Users cannot refresh system counts from the UI."
     },
     "PROCESS_Posted": {
       "type": "process",

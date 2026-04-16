@@ -7,7 +7,7 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton, UserContextSwitcher } from '@/components/UserContextSwitcher.jsx';
+import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -15,6 +15,16 @@ const FORMATS = [
   { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet },
   { id: 'csv', label: 'CSV', icon: FileText },
 ];
+
+// Etendo context path prefix (e.g. "/etendo" in production, "" in local dev where
+// Vite proxies /sws/* directly). Same logic as auth/api.js detectBaseUrl().
+function getEtendoBase() {
+  const path = window.location.pathname;
+  const webIdx = path.indexOf('/web/');
+  if (webIdx !== -1) return path.substring(0, webIdx);
+  return import.meta.env.VITE_API_BASE || '';
+}
+const ETENDO_BASE = getEtendoBase();
 
 function ReportCard({ report, onRun }) {
   const ui = useUI();
@@ -67,7 +77,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
   const fetchPage = useCallback((q, off, append) => {
     const extra = Object.entries(extraParams).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
     const params = `q=${encodeURIComponent(q)}&limit=${SELECTOR_PAGE_SIZE}&offset=${off}${extra ? '&' + extra : ''}`;
-    return fetch(`/api/report-selectors/${selector}?${params}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+    return fetch(`${ETENDO_BASE}/sws/report-selectors/${selector}?${params}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
       .then(data => {
         const items = Array.isArray(data) ? data : (data?.items ?? []);
@@ -118,7 +128,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-96 max-h-[480px] flex flex-col" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <span className="text-sm font-semibold">{title}</span>
@@ -178,7 +188,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
-    return `/api/report-selectors/${selector}?q=${encodeURIComponent(q)}${extra ? '&' + extra : ''}`;
+    return `${ETENDO_BASE}/sws/report-selectors/${selector}?q=${encodeURIComponent(q)}${extra ? '&' + extra : ''}`;
   }, [selector]); // selector-only dep: extraParams read from ref at call time
 
   const useDrawerSearch = selector === 'product';
@@ -197,7 +207,7 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
       if (selectedOrgId) params.set('selectedOrgId', selectedOrgId);
       if (roleOrgIds && roleOrgIds.length > 0) params.set('roleOrgIds', roleOrgIds.join(','));
     }
-    fetch(`/api/report-selectors/${selector}?${params.toString()}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+    fetch(`${ETENDO_BASE}/sws/report-selectors/${selector}?${params.toString()}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
       .then(r => r.json())
       .then(data => { setOptions(normalizeOptions(data)); setOpen(true); })
       .catch(() => setOptions([]));
@@ -266,8 +276,8 @@ function SearchInput({ selector, value, displayValue, onChange, multi, minLength
     if (roleOrgIds && roleOrgIds.length > 0) productSelectorParams.set('roleOrgIds', roleOrgIds.join(','));
     if (selectedWarehouseId) productSelectorParams.set('warehouseIds', selectedWarehouseId);
     const productSelectorUrl = productSelectorParams.toString()
-      ? `/api/report-selectors/product?${productSelectorParams.toString()}`
-      : '/api/report-selectors/product';
+      ? `${ETENDO_BASE}/sws/report-selectors/product?${productSelectorParams.toString()}`
+      : `${ETENDO_BASE}/sws/report-selectors/product`;
 
     const selectedItems = multi
       ? selected
@@ -406,7 +416,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
   useEffect(() => {
     if (!open) return;
     const t = setTimeout(() => {
-      fetch(`/api/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+      fetch(`${ETENDO_BASE}/sws/report-selectors/${selector}?q=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
         .then(r => r.json())
         .then(data => setOptions(Array.isArray(data) ? data : (data?.items ?? [])))
         .catch(() => setOptions([]));
@@ -482,7 +492,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="bg-white rounded-xl shadow-2xl w-[480px] max-h-[560px] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
               <h3 className="text-sm font-semibold">Select {label}</h3>
@@ -550,7 +560,7 @@ function SingleSelectModal({ selector, label, value, displayValue, onChange, has
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
-    const url = `/api/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`;
+    const url = `${ETENDO_BASE}/sws/report-selectors/${selector}?q=${encodeURIComponent(query)}${extra ? '&' + extra : ''}`;
     const t = setTimeout(() => {
       fetch(url).then(r => r.json()).then(setOptions).catch(() => setOptions([]));
     }, query ? 300 : 0);
@@ -590,7 +600,7 @@ function SingleSelectModal({ selector, label, value, displayValue, onChange, has
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="bg-white rounded-xl shadow-2xl w-[420px] max-h-[500px] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
               <h3 className="text-sm font-semibold">{label}</h3>
@@ -656,6 +666,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
   const handleSubmit = () => {
     const newErrors = {};
     for (const p of report.parameters || []) {
+      if (p.hidden) continue;
       if (p.required && !params[p.name]) newErrors[p.name] = true;
     }
     setErrors(newErrors);
@@ -774,7 +785,10 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             onChange={e => handleChange(p.name, e.target.value)}
             className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}
           >
-            {resolvedOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {resolvedOptions.map(o => {
+              const optLabel = o.label && typeof o.label === 'object' ? (o.label[locale] || o.label.en_US) : o.label;
+              return <option key={o.value} value={o.value}>{optLabel}</option>;
+            })}
           </select>
         </div>
       );
@@ -969,7 +983,6 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
   const [drillDownBp, setDrillDownBp] = useState(null);
   const [drillDownAccount, setDrillDownAccount] = useState(null);
   const [invoicePopup, setInvoicePopup] = useState(null);
-  const [showUserContext, setShowUserContext] = useState(false);
   const { locale } = useLocaleSwitch();
   const localeLangKey = locale === 'es_ES' ? 'es' : 'en';
   const tMenu = useMenuLabel();
@@ -1003,21 +1016,33 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
         defaults[p.name] = '';
       }
     }
+    if ('orgId' in defaults) {
+      defaults.orgId = selectedOrgId || '';
+    }
     return defaults;
-  }, [report]);
+  }, [report, selectedOrgId]);
 
   const [params, setParams] = useState(getDefaultParams);
+
+  useEffect(() => {
+    if (!(report.parameters || []).some(p => p.name === 'orgId')) return;
+    setParams(prev => {
+      const nextOrgId = selectedOrgId || '';
+      if ((prev.orgId || '') === nextOrgId) return prev;
+      return { ...prev, orgId: nextOrgId, _display_orgId: '' };
+    });
+  }, [report, selectedOrgId]);
 
   // Auto-load defaults for params marked with autoDefault: true.
   // Params with dependsOn are loaded in a second pass, after their dependency is resolved.
   useEffect(() => {
-    const autoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector);
+    const autoParams = (report.parameters || []).filter(p => p.autoDefault && p.selector && p.name !== 'orgId');
     if (!autoParams.length) return;
     Promise.all(
       autoParams.map(p =>
-        fetch(`/api/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
+        fetch(`${ETENDO_BASE}/sws/report-selectors/${p.selector}?q=`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('sf_auth_token') || ''}` } })
           .then(r => r.json())
-          .then(rows => (rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null))
+          .then(data => { const rows = Array.isArray(data) ? data : (data.items || []); return rows[0] ? { name: p.name, id: rows[0].id, display: rows[0].name } : null; })
           .catch(() => null)
       )
     ).then(results => {
@@ -1153,8 +1178,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
                 <Bell className="h-4 w-4" />
               </button>
               <LocaleSwitcher />
-              <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-              {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+              <UserAvatarButton />
             </div>
           </div>
         </div>
@@ -1311,7 +1335,6 @@ export default function ReportViewerPage() {
   const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showUserContext, setShowUserContext] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const tMenu = useMenuLabel();
@@ -1426,8 +1449,7 @@ export default function ReportViewerPage() {
               <Bell className="h-4 w-4" />
             </button>
             <LocaleSwitcher />
-            <UserAvatarButton isOpen={showUserContext} onClick={() => setShowUserContext(v => !v)} />
-            {showUserContext && <UserContextSwitcher onClose={() => setShowUserContext(false)} />}
+            <UserAvatarButton />
           </div>
         </div>
       </div>

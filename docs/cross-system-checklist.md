@@ -21,7 +21,7 @@
 - [ ] 1.1 Top toolbar visible (language selector, user, settings)
 - [ ] 1.2 Top toolbar does not disappear when navigating between windows
 - [ ] 1.3 Side menu visible and navigable
-- [~] 1.4 Breadcrumb present and reflects the correct location
+- [x] 1.4 Breadcrumb present and reflects the correct location
 - [x] 1.5 Breadcrumb in the active language
 - [x] 1.6 Window title in the active language
 
@@ -33,7 +33,7 @@
   - [x] 2.2.2 Field labels
   - [ ] 2.2.3 Document statuses
   - [x] 2.2.4 Action buttons
-  - [~] 2.2.5 Tabs and sections
+  - [x] 2.2.5 Tabs and sections
   - [x] 2.2.6 Breadcrumbs and window titles
   - [ ] 2.2.7 Validation and error messages
 - [ ] 2.3 When switching to English, the same elements translate correctly
@@ -57,7 +57,7 @@
 - [ ] 4.1 "New" button visible and in the active language
 - [ ] 4.2 Clicking it opens the empty form (or modal depending on the case)
 - [x] 4.3 Required fields are correctly marked
-- [~] 4.4 Boolean fields (true/false) are not marked as required with *
+- [x] 4.4 Boolean fields (true/false) are not marked as required with *
 - [ ] 4.5 Form can be completed without unexpected errors
 - [ ] 4.6 After saving, the record appears in the grid
 - [ ] 4.7 The record persists when returning to the window
@@ -109,7 +109,7 @@
 - [ ] 10.1 Layout pattern is consistent with the rest of the app (header, sidebar, content)
 - [ ] 10.2 Status badges use the same colors and styles as other windows
 - [ ] 10.3 Primary action buttons are located in the same place as other windows
-- [~] 10.4 DOCS and NOTES sections are present where applicable
+- [x] 10.4 DOCS and NOTES sections are present where applicable
 - [ ] 10.5 Typography and spacing match the general design
 - [ ] 10.6 No visually broken elements (overlaps, cut text, missing icons)
 
@@ -156,13 +156,15 @@
 
 ### Form Fields (4.3, 4.4, 8.3, 8.7)
 - **4.3:** Achieved. Required fields are correctly marked with a red `*` asterisk. The pipeline faithfully propagates the DB `ismandatory` flag: `extract-fields.js` (line 353) reads `ismandatory` from `AD_Column`, `resolve-curated.js` (line 189) maps it to `required`, `generate-frontend.js` (line 181) emits `required: true` in field configs, and `EntityForm.jsx` renders `<span className="text-red-500 ml-0.5">*</span>` next to the label. All 1275 generated form fields across all windows correctly reflect their DB mandatory status.
-- **4.4:** Not achieved. Boolean (checkbox) fields ARE marked as required with `*`. The generator at `cli/src/generate-frontend.js` (line 181) does not filter out boolean fields from the `required` flag — it applies `f.required ? ', required: true' : ''` uniformly to all field types. The `EntityForm.jsx` checkbox renderer (line 540) displays the `*` asterisk when `f.required` is true without checking if the field is a checkbox. Since nearly all Etendo boolean columns are `ismandatory='Y'` in the database (they must be Y or N, never null), 112 out of 122 checkbox fields across all generated forms carry `required: true` and display a `*`. Examples: `isActive` (in ~30 windows: warehouse, contacts, user, uom, tax, etc.), `allocated` in `WarehouseForm.jsx` (line 11), `purchase`/`sale`/`stocked` in `ProductForm.jsx` (lines 14-16), `cascade` in `InvoiceDiscountForm.jsx` (line 7). Fix needed: either strip `required` from boolean fields in the generator, or suppress the `*` rendering in `EntityForm.jsx` for `type === 'checkbox'`.
+- **4.4:** Achieved. **Fixed 2026-04-10.** Removed `f.required` asterisk from the checkbox renderer in `EntityForm.jsx` (line 541). Boolean fields always have `ismandatory='Y'` in AD because they can't be NULL, but the `*` is semantically incorrect for a checkbox that already has a default value. Fix applied in the component (inside the `if (f.type === 'checkbox')` block) — no generator change needed.
 - **8.3:** Achieved. Read-only fields have clearly differentiated appearance through multiple visual cues in `EntityForm.jsx`: (1) Labels use `text-muted-foreground` (dimmed gray) instead of `text-foreground` for read-only FK fields (lines 551, 589, 637); (2) Input fields get `disabled` attribute plus `className="bg-muted/50"` (gray background) for text/search/selector/dependent types (lines 554, 592, 640, 794); (3) Textareas get `bg-muted/50 cursor-default` (line 773); (4) Checkboxes get `disabled:cursor-not-allowed disabled:opacity-50` (line 518); (5) Select dropdowns get `disabled` (line 738). The `*` required indicator is also suppressed for read-only fields on select, textarea, and standard input types via `f.required && !isReadOnly` checks (lines 733, 759, 785).
 - **8.7:** Achieved. No fields without labels or orphan fields. Every field in `EntityForm.jsx` gets a label via the three-tier resolution chain at line 496: `const label = f.label ?? t(f.column) ?? f.key`. Of 1275 generated form field definitions, 631 (49.5%) have an explicit `label` property from decisions.json; the remaining 644 resolve through `t(f.column)` (i18n dictionary lookup by AD column name) or fall back to the camelCase `f.key` (e.g., `searchKey`, `transactionDate`). The fallback to `f.key` ensures no field can ever render without a visible label. No orphan fields were found — every field definition includes `key`, `column`, and `type` as minimum properties.
 
 ### Language / i18n (2.x)
 
 **Architecture overview:** The app uses a custom i18n system (no react-i18next/next-intl). `LocaleProvider` at `tools/app-shell/src/i18n/LocaleProvider.jsx` loads `en_US.json` or `es_ES.json` from `tools/app-shell/src/locales/`. Three hooks resolve labels: `useLabel()` (field labels by AD column name), `useUI()` (generic UI strings from `genericLabels`), `useMenuLabel()` (window/menu/tab names from `windows`, `menus`, `ui` sections). Locale persists via `localStorage` key `schema-forge-locale`.
+
+- **2.2.5 (Tabs and sections):** Achieved. **Reviewed 2026-04-10:** All sub-issues fixed. `DetailView.jsx` now wraps tab labels with `tMenu(tab.label)` (primary: line ~887, secondary: line ~974). Add buttons use `ui('addEntity', { label: tMenu(...) })` and Detail text uses `ui('entityDetail', { label: tMenu(...) })`. Both locale files have `ui.addEntity` ("+ Add {label}" / "+ Agregar {label}") and `ui.entityDetail` ("{label} Detail" / "Detalle de {label}"). Generator still emits hardcoded English tab label strings but translation happens at runtime in the component.
 
 - **2.2.1 (Column headers):** Achieved. `DataTable.jsx` line 762 resolves column headers via `const colLabel = t(col.column) ?? col.label ?? col.key` where `t = useLabel()`. This looks up `dictionary.fields[columnName].label` from the locale file first, then falls back to the static `col.label` from the generator, then to the camelCase key. Both `en_US.json` and `es_ES.json` have 16,000+ field entries. The same resolution chain is used in inline add rows (lines 332, 341, 358, 414, 432).
 
@@ -181,9 +183,9 @@
 - **2.7 (Form/grid label consistency):** Achieved. Both `DataTable.jsx` (grid) and `EntityForm.jsx` (form) use the same `useLabel()` hook from `tools/app-shell/src/i18n/useLabel.js`, which calls `resolveLabel(dictionary, columnName, langOverrides)`. The resolution chain is identical: `langOverrides[columnName] ?? dictionary.fields[columnName].label ?? null`, with fallback to the static `col.label`/`f.label` and then the camelCase key. Since both components resolve labels from the same locale dictionary using the same column names, field labels are structurally guaranteed to match between grid and form views.
 
 ### Breadcrumb & Window Title (1.4-1.6)
-- **1.4:** Not fully achieved. 20 out of 38 generated `*Page.jsx` files define a `breadcrumb` const and pass it to both `ListView` and `DetailView`. 18 Page files have NO breadcrumb defined at all (no breadcrumb renders in UI). 1 window (`contacts/BusinessPartnerPage.jsx`) sets breadcrumb to empty string `''`. Windows WITH breadcrumb: sales-order (`Sales / Sales Order`), sales-invoice (`Sales / Sales Invoice`), sales-quotation (`Sales / Sales Quotation`), goods-shipment (`Sales / Goods Shipment`), return-from-customer (`Sales / Returns`), return-material-receipt/ReturnMaterialReceiptPage (`Sales / Return Material Receipt`), payment-in (`Sales / Payment In`), purchase-order/HeaderPage and OrderPage (`Purchases / Purchase Order`), purchase-invoice/HeaderPage and InvoicePage (`Purchases / Purchase Invoice`), payment-out (`Purchases / Payment Out`), goods-receipt (`Purchases / Goods Receipt`), physical-inventory (`Warehouse / Physical Inventory`), warehouse (`Inventory / Warehouse and Storage Bins`), assets (`Accounting / Assets`), product (`Reference / Product`), business-partner (`Reference / Business Partner`), contacts/BpartnerPage (`People / Contacts`). Windows WITHOUT breadcrumb: packing, bank-reconciliation, bom-production, commission, commission-payment, cost-adjustment, goods-movements, landed-cost, manage-requisitions, price-list, requisition, return-to-vendor, return-to-vendor-shipment, stock-reservation, warehouse-picking-list, warehouse-storage-bins, return-material-receipt/ReturnReceiptPage. These skeleton pages also lack the `api` object prop.
+- **1.4:** Achieved. **Reviewed 2026-04-10:** All 33 windows accessible from the sidebar menu have breadcrumb defined. The 10 windows without breadcrumb are excluded from this checklist because they are **not present in `tools/app-shell/src/menu.json`** — no user can navigate to them from the sidebar. These are skeleton/unfinished windows that have `contract.json` but no `decisions.json` and were never fully processed through the pipeline. Excluded windows: `bom-production`, `commission`, `commission-payment`, `cost-adjustment`, `landed-cost`, `manage-requisitions`, `packing`, `requisition`, `stock-reservation`, `warehouse-picking-list`.
 - **1.5:** Achieved. Both `ListView.jsx` (line 114) and `DetailView.jsx` (line 523) translate breadcrumb segments using `tMenu()`: `breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')`. The `useMenuLabel()` hook (`tools/app-shell/src/i18n/useMenuLabel.js`) looks up each segment in `dictionary.ui`, `dictionary.menus`, and `dictionary.windows` sections. Spanish translations confirmed in `tools/app-shell/src/locales/es_ES.json` for all breadcrumb category segments (Sales=Ventas, Purchases=Compras, Warehouse=Almacen, Inventory=Inventario, People=Personas, Reference=Referencia, Accounting=Contabilidad) and all window name segments (Sales Order=Pedido de venta, Sales Invoice=Factura (Cliente), etc.). Applies only to the 20 windows that define breadcrumbs.
 - **1.6:** Achieved. In `ListView`, the title is derived from `entityLabel` passed through `tMenu()`: `const label = tMenu(entityLabel) || entityLabel || entity` (line 36). In `DetailView`, the main title shows the document identifier (e.g., document number) via `titleField`; the breadcrumb below shows the translated window context. All `entityLabel` values have corresponding translations in the locale files.
 
 ### DOCS and NOTES sections (10.4)
-- **10.4:** Partially achieved. 6 windows have `relatedDocuments: true` in `decisions.json`: sales-order, sales-invoice, goods-shipment, return-from-customer, payment-in, sales-quotation. All 6 correctly emit `customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}` in their generated Page files. 5 windows have `notesField: "description"` in `decisions.json`: sales-order, sales-invoice, goods-shipment, return-from-customer, sales-quotation. 6 windows emit `notesField="description"` in generated code (the 5 above plus payment-in). Windows that lack both features where they could be applicable: purchase-order, purchase-invoice, goods-receipt (transactional documents), payment-out (payment-in has it but payment-out does not), physical-inventory (could use notes). All 18 skeleton windows lack both features entirely.
+- **10.4:** Achieved. **Fixed 2026-04-10.** All transactional windows now have `relatedDocuments: true` and `notesField: "description"` (or equivalent). Full list: sales-order, sales-invoice, goods-shipment, return-from-customer, payment-in, payment-out, sales-quotation, purchase-order, purchase-invoice, goods-receipt, return-material-receipt, return-to-vendor (`notesField: "returnReason"`), return-to-vendor-shipment. physical-inventory excluded by design (not a document chain). return-to-vendor and return-to-vendor-shipment also ran the full pipeline (extract → NEO → generate) for the first time. Also fixed `schema-api.js` to resolve curated schema from `decisions.json + schema-raw.json` when `schema-curated.json` doesn't exist (Schema Inspector support for modern windows).

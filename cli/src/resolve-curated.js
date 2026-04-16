@@ -214,6 +214,8 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   // Visual hints — badge (boolean pill), summable (numeric footer total), columnType override
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.badgeLabels) field.badgeLabels = fieldDecision.badgeLabels;
+  if (fieldDecision.badgeColors) field.badgeColors = fieldDecision.badgeColors;
+  if (fieldDecision.labels) field.labels = fieldDecision.labels;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
   if (fieldDecision.display) field.display = fieldDecision.display;
@@ -260,13 +262,15 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     field.defaultValue = rawField.defaultValue;
   }
 
-  // readOnlyLogic and displayLogic: only for visible fields
-  // Explicit null in decision means "omit this property"
+  // readOnlyLogic and displayLogic: only for visible fields.
+  // Explicit null in decisions previously meant "omit this property", which silenced
+  // the raw schema value. Changed: null in decisions now falls back to the raw value
+  // so that readOnlyLogic from the AD is never accidentally lost.
   if (isVisible) {
-    if (fieldDecision.readOnlyLogic !== null) {
-      const readOnlyLogic = fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null;
-      if (readOnlyLogic) field.readOnlyLogic = readOnlyLogic;
-    }
+    const readOnlyLogic = fieldDecision.readOnlyLogic !== undefined
+      ? (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null)
+      : (rawField.readOnlyLogic || null);
+    if (readOnlyLogic) field.readOnlyLogic = readOnlyLogic;
 
     if (fieldDecision.displayLogic !== null) {
       const displayLogic = fieldDecision.displayLogic || rawField.displayLogic || null;
@@ -283,6 +287,9 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
 
     // callout — carry from raw
     if (rawField.callout) field.callout = rawField.callout;
+
+    // validationRule — carry from raw so selector filtering (e.g. isSOTrx for PriceList) works
+    if (rawField.validationRule) field.validationRule = rawField.validationRule;
   }
 
   // enumValues
@@ -647,6 +654,22 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.noHeaderBorder) {
     schema.window.noHeaderBorder = true;
   }
+
+  // Propagate window-level draftMode to the primary (header) entity so generate-contract
+  // can emit the correct draftMode block. draftMode lives in decisions.window but
+  // generate-contract reads it from entity.draftMode.
+  if (windowDecisions.draftMode?.enabled) {
+    const primaryEntity = curatedEntities[0];
+    if (primaryEntity && !primaryEntity.draftMode) {
+      primaryEntity.draftMode = {
+        enabled: true,
+        processField: windowDecisions.draftMode.processField || 'documentAction',
+        processValue: windowDecisions.draftMode.processValue || 'CO',
+        label: windowDecisions.draftMode.label || 'Process',
+      };
+    }
+  }
+
   const rules = resolveRules(rulesRaw, decisions);
 
   return { schema, rules };
@@ -660,9 +683,12 @@ async function runCli() {
   const args = process.argv.slice(2);
   const windowIdx = args.indexOf('--window');
   const dump = args.includes('--dump');
+  // --write: regenerate contract.json from decisions without DB (safe for frontend-only changes)
+  const write = args.includes('--write');
 
   if (windowIdx === -1 || !args[windowIdx + 1]) {
-    console.error('Usage: node cli/src/resolve-curated.js --window <window-name> [--dump]');
+    console.error('Usage: node cli/src/resolve-curated.js --window <window-name> [--dump] [--write]');
+    console.error('  --write  Regenerate contract.json + frontend from decisions.json (no DB needed)');
     process.exit(1);
   }
 
@@ -691,6 +717,49 @@ async function runCli() {
   }
 
   const { schema, rules } = await resolveCurated(schemaRaw, rulesRaw, decisions);
+
+  if (write) {
+    // Regenerate contract.json from decisions (no DB needed) then regenerate frontend.
+    // This is the correct workflow whenever decisions.json changes without a full pipeline run.
+    const { generateContract } = await import('./generate-contract.js');
+
+    let processes = { processes: [] };
+    try {
+      processes = JSON.parse(await readFile(join(artifactsDir, 'processes.json'), 'utf-8'));
+    } catch { /* no processes.json */ }
+
+    let prevVersion = null;
+    try {
+      const existing = JSON.parse(await readFile(join(artifactsDir, 'contract.json'), 'utf-8'));
+      let v = existing.version ?? null;
+      while (v !== null && typeof v === 'object') v = v.version ?? null;
+      prevVersion = v;
+    } catch { /* no existing contract */ }
+
+    const contract = generateContract(
+      schema,
+      Array.isArray(rules) ? rules : rules.rules || [],
+      processes.processes || [],
+      prevVersion,
+    );
+
+    const contractPath = join(artifactsDir, 'contract.json');
+    await writeFile(contractPath, JSON.stringify(contract, null, 2));
+    console.log(`✓ contract.json written for ${windowName}`);
+
+    // Regenerate frontend
+    const { generateAll } = await import('./generate-frontend.js');
+    const files = generateAll(contract);
+    const { mkdirSync, writeFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const outDir = resolve(artifactsDir, 'generated', 'web', windowName);
+    mkdirSync(outDir, { recursive: true });
+    for (const [filename, code] of Object.entries(files)) {
+      writeFileSync(resolve(outDir, filename), code, 'utf-8');
+    }
+    console.log(`✓ Frontend regenerated (${Object.keys(files).length} files) for ${windowName}`);
+    return;
+  }
 
   if (dump) {
     console.log('--- schema ---');

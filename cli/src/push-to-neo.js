@@ -188,6 +188,24 @@ export async function pushToNeo(windowName, options = {}) {
   // Use the artifact slug (windowName) as spec name so it matches the frontend route
   const specName = windowName;
 
+  // Load decisions.json for per-field overrides (e.g. defaultExpr)
+  let decisionsData = {};
+  try {
+    const decisionsRaw = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8');
+    decisionsData = JSON.parse(decisionsRaw);
+  } catch { /* optional — not all windows have decisions.json */ }
+
+  // Build map: "entityName.fieldName" -> defaultExpr (from decisions.json)
+  const fieldDefaultExprs = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
+      if (fieldConf.defaultExpr != null) {
+        fieldDefaultExprs[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+      }
+    }
+  }
+
   // Extract all fields from backend contract
   const allFields = extractFieldsFromContract(contract.backendContract);
 
@@ -332,16 +350,38 @@ export async function pushToNeo(windowName, options = {}) {
     // Uses tabName (AD tab display name) as the primary key — unique within a window
     // and handles tabs that share the same DB table correctly.
     // Read entity names from the backend contract which reflects the resolved curated schema.
-    const contractEntities = contract.backendContract
-      ? Object.entries(contract.backendContract.entities).map(([name, data]) => ({
+    const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
+      name: ent.name,
+      tabName: ent.tabName,
+      tableName: ent.tableName,
+      javaQualifier: ent.entityFullClass ?? null,
+    }));
+    const desiredEntities = new Map(
+      schemaEntities
+        .filter((ent) => ent.tabName || ent.tableName)
+        .map((ent) => [ent.tabName || ent.tableName, ent]),
+    );
+
+    if (contract.backendContract?.entities) {
+      for (const [name, data] of Object.entries(contract.backendContract.entities)) {
+        const schemaFallback = schemaEntities.find((ent) =>
+          ent.name === name
+          || (data.tabName && ent.tabName === data.tabName)
+          || (data.tableName && ent.tableName === data.tableName)
+        );
+        const tabOrTableKey = data.tabName || schemaFallback?.tabName || data.tableName || schemaFallback?.tableName;
+        if (!tabOrTableKey) continue;
+        desiredEntities.set(tabOrTableKey, {
           name,
-          tabName: data.tabName,
-          tableName: data.tableName,
-          javaQualifier: data.javaQualifier,
-        }))
-      : (schemaRawData.entities || []);
-    if (contractEntities.length > 0) {
-      for (const ent of contractEntities) {
+          tabName: data.tabName || schemaFallback?.tabName || null,
+          tableName: data.tableName || schemaFallback?.tableName || null,
+          javaQualifier: data.javaQualifier ?? schemaFallback?.javaQualifier ?? null,
+        });
+      }
+    }
+
+    if (desiredEntities.size > 0) {
+      for (const ent of desiredEntities.values()) {
         const entityId = (ent.tabName && entityMapByName[ent.tabName])
           || (ent.tableName && entityMapByTableName[ent.tableName]);
         if (entityId) {
@@ -349,6 +389,7 @@ export async function pushToNeo(windowName, options = {}) {
             'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
             [ent.name, ent.javaQualifier ?? null, entityId],
           );
+          entityMapByName[ent.name] = entityId;
         }
       }
       console.log('       Entity names updated to contract names');
@@ -394,7 +435,8 @@ export async function pushToNeo(windowName, options = {}) {
       }
 
       const fieldId = colLookup.rows[0].etgo_sf_field_id;
-      await writerUpsertField(client, {
+      const defaultExprKey = `${f.entityName}.${f.fieldName}`;
+      const fieldParams = {
         entityId,
         fieldId,
         moduleId,
@@ -402,7 +444,11 @@ export async function pushToNeo(windowName, options = {}) {
         isReadOnly: vis.isReadOnly,
         javaQualifier: f.fieldName,
         audit: auditOpts,
-      });
+      };
+      if (defaultExprKey in fieldDefaultExprs) {
+        fieldParams.defaultValue = fieldDefaultExprs[defaultExprKey] || null;
+      }
+      await writerUpsertField(client, fieldParams);
       fieldResults.push({ column: f.column, entityName: f.entityName, success: true });
       successCount++;
     }

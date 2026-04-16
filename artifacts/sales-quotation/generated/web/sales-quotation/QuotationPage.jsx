@@ -97,7 +97,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner?isCustomer=Y"
     },
     {
       "entity": "quotation",

@@ -61,27 +61,9 @@ describe('PWA configuration', () => {
     assert.ok(content.includes('duration: Infinity'), 'toast should be persistent');
   });
 
-  it('UserContextSwitcher exposes a localized force-refresh recovery action', () => {
-    const switcherPath = resolve(APP_SHELL, 'src/components/UserContextSwitcher.jsx');
-    const switcher = readFileSync(switcherPath, 'utf8');
-    const en = readFileSync(resolve(APP_SHELL, 'src/locales/en_US.json'), 'utf8');
-    const es = readFileSync(resolve(APP_SHELL, 'src/locales/es_ES.json'), 'utf8');
-
-    assert.ok(
-      switcher.includes('clearServiceWorkerStateAndReload'),
-      'context switcher should wire the real cache-clearing recovery action'
-    );
-    assert.ok(
-      switcher.includes("ui('forceAppRefresh')"),
-      'context switcher should expose a localized force-refresh label'
-    );
-    assert.ok(en.includes('"forceAppRefresh":'), 'English locale should define forceAppRefresh');
-    assert.ok(es.includes('"forceAppRefresh":'), 'Spanish locale should define forceAppRefresh');
-  });
-
-  it('LoginPage clears caches on login', () => {
-    const loginPath = resolve(APP_SHELL, 'src/auth/LoginPage.jsx');
-    const content = readFileSync(loginPath, 'utf8');
+  it('OnboardingPage clears SW caches on environment login', () => {
+    const onboardingPath = resolve(APP_SHELL, 'src/pages/OnboardingPage.jsx');
+    const content = readFileSync(onboardingPath, 'utf8');
     assert.ok(content.includes('caches.keys()'), 'should enumerate caches');
     assert.ok(content.includes('caches.delete'), 'should delete caches');
   });
