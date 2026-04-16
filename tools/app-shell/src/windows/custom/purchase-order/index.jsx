@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
@@ -39,6 +39,7 @@ function CustomLinesTable(props) {
 export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
   const headers = useMemo(() => ({
@@ -55,6 +56,9 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
   return (
     <>
       <ListView
@@ -64,6 +68,7 @@ export default function PurchaseOrderWindow(props) {
         windowName={windowName}
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(row) => setCloneTarget(row)}
+        initialColumnFilters={initialColumnFilters}
         {...props}
       />
       {cloneTarget && createPortal(

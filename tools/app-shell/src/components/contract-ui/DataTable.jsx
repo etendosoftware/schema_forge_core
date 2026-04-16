@@ -735,14 +735,14 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *      that appears on row hover and on keyboard focus. Invoked with the row object; click
  *      propagation is stopped so it does not trigger row selection or navigation.
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow, onCloneRow }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, initialColumnFilters, rowFilter, onDeleteRow, onCloneRow }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const [searchQuery, setSearchQuery] = useState('');
-  const [columnFilters, setColumnFilters] = useState({});
+  const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
@@ -783,8 +783,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         return String(val ?? '').toLowerCase().includes(q);
       });
     }
+    // Row-level predicate filter (e.g. numeric conditions like outstandingAmount > 0)
+    if (rowFilter) result = result.filter(rowFilter);
     return result;
-  }, [data, filters, searchQuery, columnFilters]);
+  }, [data, filters, searchQuery, columnFilters, rowFilter]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),

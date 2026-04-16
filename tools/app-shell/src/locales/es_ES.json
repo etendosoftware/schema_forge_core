@@ -15033,7 +15033,7 @@
       "label": "Operarios"
     },
     "Bank Account": {
-      "label": "Cuenta"
+      "label": "Cuenta Bancaria"
     },
     "Bank": {
       "label": "Banco"
@@ -16802,6 +16802,8 @@
     "reportReadyHint": "Selecciona los filtros y haz clic en Ejecutar Informe",
     "resetToDefaults": "Restablecer valores predeterminados",
     "filter": "Filtrar...",
+    "all": "Todos",
+    "overdueOnly": "Solo vencidas",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
     "statusComplete": "Confirmado",
@@ -16902,8 +16904,9 @@
     "bpExpenses": "Gastos",
     "General": "General",
     "Financial": "Financiero",
-    "Contact Person": "Persona de contacto",
-    "Contact Bank Account": "Cuenta bancaria del contacto",
+    "Contact Person": "Persona",
+    "Contact Bank Account": "Cuenta Bancaria",
+    "Person": "Persona",
     "statusUnderEvaluation": "En evaluación",
     "statusCancelled": "Cancelado",
     "statusPaymentReceived": "Pago recibido",
@@ -17178,6 +17181,7 @@
     "recentInvoices": "Ventas recientes",
     "recentInvoicesSubtitle": "Facturas de ventas completadas de los últimos 7 días",
     "bestSellers": "Más vendidos",
+    "bestSellers12m": "Más vendidos (12 meses)",
     "income": "Ingresos",
     "expenses": "Gastos",
     "net": "Neto",
@@ -17215,8 +17219,14 @@
     "pendingPOs": "{count} Pedidos de compra pendientes de confirmación",
     "overdueInvoices": "{count} Factura de venta con saldo vencido",
     "overdueInvoices_plural": "{count} Facturas de venta con saldo vencido",
+    "salesOrdersToConfirm": "{count} Pedido de venta pendiente de confirmación",
+    "salesOrdersToConfirm_plural": "{count} Pedidos de venta pendientes de confirmación",
+    "salesInvoicesToConfirm": "{count} Factura de venta pendiente de confirmación",
+    "salesInvoicesToConfirm_plural": "{count} Facturas de venta pendientes de confirmación",
     "purchaseOrdersToConfirm": "{count} Pedido de compra pendiente de confirmación",
     "purchaseOrdersToConfirm_plural": "{count} Pedidos de compra pendientes de confirmación",
+    "purchaseInvoicesToConfirm": "{count} Factura de compra pendiente de confirmación",
+    "purchaseInvoicesToConfirm_plural": "{count} Facturas de compra pendientes de confirmación",
     "lowStockAlert": "{count} Producto con stock por debajo del mínimo",
     "lowStockAlerts": "{count} Productos con stock por debajo del mínimo",
     "invoiceTrendLabel": "Gráfico de tendencia de ingresos y gastos de los últimos 12 meses",
@@ -17233,8 +17243,8 @@
     "yourPassword": "Tu contraseña...",
     "noRole": "Sin rol",
     "noOrg": "Sin organización",
-    "creditTax": "Crédito e impuestos",
-    "creditTaxDescription": "Límites de crédito e identificación fiscal para este contacto.",
+    "creditTax": "Crédito",
+    "creditTaxDescription": "Límite de línea de crédito de este contacto.",
     "vendor": "Proveedor",
     "searchAddress": "Buscar dirección…",
     "typeToSearch": "Escribe para buscar…",

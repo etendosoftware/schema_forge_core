@@ -49,6 +49,57 @@ All widgets follow the standard NEO Headless response wrapper:
 
 The shape of each item in `data` is widget-specific. See [Response Contracts](#response-contracts) below.
 
+## Dashboard Navigation Contract
+
+Dashboard widgets that navigate to internal SPA windows should return a semantic `navigation` object instead of hardcoded frontend routes.
+
+```json
+{
+  "navigation": {
+    "type": "record",
+    "window": "sales-invoice",
+    "recordId": "A99FC716B8954DA8866550AE5CB51AB4"
+  }
+}
+```
+
+```json
+{
+  "navigation": {
+    "type": "list",
+    "window": "purchase-order",
+    "params": {
+      "DocStatus": "DR"
+    }
+  }
+}
+```
+
+```json
+{
+  "navigation": {
+    "type": "list",
+    "window": "sales-invoice",
+    "filter": "overdue"
+  }
+}
+```
+
+Rules:
+- `type`: `record` opens a detail route, `list` opens a list route
+- `window`: target spec name in kebab-case
+- `recordId`: required for `type = record`
+- `filter`: optional quick-filter key understood by the target window
+- `params`: optional query-string map for direct list filters
+
+Frontend convention:
+- `record` resolves to `/{window}/{recordId}`
+- `list` resolves to `/{window}?filter=...` and/or `/{window}?key=value`
+
+Backward compatibility:
+- Existing widgets may continue returning `link` during migration
+- Frontend should prefer `navigation` and fall back to `link` only when `navigation` is absent
+
 ## How to Create a New Widget Endpoint
 
 ### Step 1: Create the Java Handler
@@ -234,7 +285,12 @@ Single object with parallel `labels` (month abbreviations) and `values` (amounts
       {
         "type": "warning",
         "text": "3 overdue invoices",
-        "link": "/sales-invoice",
+        "navigation": {
+          "type": "list",
+          "window": "sales-invoice",
+          "filter": "overdue"
+        },
+        "link": "/sales-invoice?filter=overdue",
         "amount": "$12,400"
       }
     ],
@@ -243,7 +299,7 @@ Single object with parallel `labels` (month abbreviations) and `values` (amounts
 }
 ```
 
-Fields: `type` (`warning`|`info`), `text` (description), `link` (route path), `amount` (optional formatted string), `detail` (optional extra text).
+Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred semantic target), `link` (legacy route path during migration), `amount` (optional formatted string), `detail` (optional extra text).
 
 ### widget-activity
 
@@ -277,7 +333,12 @@ Fields: `id` (unique), `author` (display name), `text` (message), `timestamp` (I
         "client": "Hotel Buenas Noches",
         "date": "09-04-2026",
         "amount": 2468.9,
-        "status": "CO"
+        "status": "CO",
+        "navigation": {
+          "type": "record",
+          "window": "sales-invoice",
+          "recordId": "A1B2C3"
+        }
       }
     ],
     "count": 1

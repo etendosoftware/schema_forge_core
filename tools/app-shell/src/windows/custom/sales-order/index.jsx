@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import { ListView } from '@/components/contract-ui';
@@ -8,6 +8,7 @@ import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
   const headers = useMemo(() => ({
@@ -27,6 +28,9 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
   return (
     <>
       <ListView
@@ -39,6 +43,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
+        initialColumnFilters={initialColumnFilters}
         {...rest}
       />
       {cloneTarget && createPortal(
