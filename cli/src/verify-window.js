@@ -110,14 +110,23 @@ function verifyWindow(windowName) {
   }
 
   // 4. Import paths in HeaderPage.jsx
+  // '@/windows/custom/{name}/' is valid only when the component file actually exists there.
+  // resolveCustomImport() picks the correct path at generation time — this check catches
+  // stale imports that reference a path where the file no longer lives.
   if (existsSync(headerPagePath)) {
     const src = readFileSync(headerPagePath, 'utf8');
-    if (src.includes(`'@/windows/custom/${windowName}/`)) {
-      fail(`HeaderPage.jsx uses '@/windows/custom/${windowName}/' imports → will fail at runtime`);
-      issues++;
-    } else {
-      ok('HeaderPage.jsx import paths use correct relative paths');
+    const appShellImportRe = new RegExp(`'@/windows/custom/${windowName}/([^']+)'`, 'g');
+    let badImport = false;
+    let match;
+    while ((match = appShellImportRe.exec(src)) !== null) {
+      const componentPath = join(ROOT, 'tools', 'app-shell', 'src', 'windows', 'custom', windowName, `${match[1]}.jsx`);
+      if (!existsSync(componentPath)) {
+        fail(`HeaderPage.jsx imports '@/windows/custom/${windowName}/${match[1]}' but file not found → will fail at runtime`);
+        badImport = true;
+        issues++;
+      }
     }
+    if (!badImport) ok('HeaderPage.jsx import paths use correct relative paths');
   }
 
   // 5. addLineFields
