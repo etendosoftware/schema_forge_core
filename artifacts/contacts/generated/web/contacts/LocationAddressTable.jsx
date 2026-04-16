@@ -2,6 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:locationAddress
 const columns = [
+  { key: 'phone', column: 'Phone', type: 'string', label: 'Phone' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
 ];
 // @sf-generated-end columns:locationAddress

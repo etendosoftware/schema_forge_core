@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-10T20:04:02.547Z",
-  "checksum": "5d27577c6eb577f1",
+  "generatedAt": "2026-04-16T19:18:49.035Z",
+  "checksum": "c3f7ac8bcbcdf525",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -45,6 +45,12 @@
             "accountNo",
             "iBAN"
           ],
+          "requireSavedRecord": true
+        },
+        "locationAddress": {
+          "tabOrder": 3,
+          "label": "Location",
+          "customAddModal": "LocationEditorModal",
           "requireSavedRecord": true
         }
       },
@@ -114,6 +120,19 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
+            "form": true,
+            "section": "principal"
+          },
+          {
+            "name": "taxID",
+            "apiKey": "taxID",
+            "column": "TaxID",
+            "label": "Tax ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
             "form": true,
             "section": "principal"
           },
@@ -199,7 +218,7 @@
             "name": "oBTIKTaxIDKey",
             "apiKey": "oBTIKTaxIDKey",
             "column": "EM_OBTIK_Tax_ID_Key",
-            "label": "Clave NIF Pa\u00eds Residencia",
+            "label": "Clave NIF País Residencia",
             "type": "enum",
             "tsType": "string",
             "visibility": "editable",
@@ -221,7 +240,7 @@
               },
               {
                 "value": "4",
-                "name": "Documento oficial de identificaci\u00f3n expedido por el pa\u00eds"
+                "name": "Documento oficial de identificación expedido por el país"
               },
               {
                 "value": "5",
@@ -236,21 +255,7 @@
                 "name": "No Censado"
               }
             ],
-            "defaultValue": "'1'",
-            "section": "principal"
-          },
-          {
-            "name": "taxID",
-            "apiKey": "taxID",
-            "column": "TaxID",
-            "label": "Tax ID",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "section": "principal"
+            "defaultValue": "'1'"
           },
           {
             "name": "active",
@@ -492,6 +497,13 @@
             "reference": "FIN_Financial_Account",
             "inputMode": "selector",
             "section": "principal",
+            "validationRule": {
+              "code": "Fin_Financial_Account_ID IN (SELECT Fin_Financial_Account_ID FROM Fin_Finacc_Paymentmethod WHERE Fin_Paymentmethod_ID=@Fin_Paymentmethod_ID@)",
+              "contextParams": [],
+              "cascadeParams": [
+                "Fin_Paymentmethod_ID"
+              ]
+            },
             "displayLogic": {
               "raw": "record.customer",
               "evaluable": true,
@@ -512,6 +524,13 @@
             "reference": "PaymentMethod",
             "inputMode": "selector",
             "section": "principal",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.isActive='Y'\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
+              "contextParams": [],
+              "cascadeParams": [
+                "FIN_ISRECEIPT"
+              ]
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -567,6 +586,13 @@
             "reference": "FIN_Financial_Account",
             "inputMode": "selector",
             "section": "principal",
+            "validationRule": {
+              "code": "Fin_Financial_Account_ID IN (SELECT Fin_Financial_Account_ID FROM Fin_Finacc_Paymentmethod WHERE Fin_Paymentmethod_ID=@PO_Paymentmethod_ID@)",
+              "contextParams": [],
+              "cascadeParams": [
+                "PO_Paymentmethod_ID"
+              ]
+            },
             "displayLogic": {
               "raw": "record.vendor",
               "evaluable": true,
@@ -587,6 +613,13 @@
             "reference": "PaymentMethod",
             "inputMode": "selector",
             "section": "principal",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.isActive='Y'\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
+              "contextParams": [],
+              "cascadeParams": [
+                "FIN_ISRECEIPT"
+              ]
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -783,6 +816,13 @@
             "form": true,
             "reference": "PaymentMethod",
             "inputMode": "search",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.isActive='Y'\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
+              "contextParams": [],
+              "cascadeParams": [
+                "FIN_ISRECEIPT"
+              ]
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -822,6 +862,13 @@
             "form": true,
             "reference": "Financial_Account",
             "inputMode": "search",
+            "validationRule": {
+              "code": "Fin_Financial_Account_ID IN (SELECT Fin_Financial_Account_ID FROM Fin_Finacc_Paymentmethod WHERE Fin_Paymentmethod_ID=@Fin_Paymentmethod_ID@)",
+              "contextParams": [],
+              "cascadeParams": [
+                "Fin_Paymentmethod_ID"
+              ]
+            },
             "displayLogic": {
               "raw": "@IsCustomer@='Y'",
               "evaluable": true
@@ -1667,6 +1714,13 @@
             "form": true,
             "reference": "PaymentMethod",
             "inputMode": "search",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.isActive='Y'\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
+              "contextParams": [],
+              "cascadeParams": [
+                "FIN_ISRECEIPT"
+              ]
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -1706,6 +1760,13 @@
             "form": true,
             "reference": "Financial_Account",
             "inputMode": "search",
+            "validationRule": {
+              "code": "Fin_Financial_Account_ID IN (SELECT Fin_Financial_Account_ID FROM Fin_Finacc_Paymentmethod WHERE Fin_Paymentmethod_ID=@PO_Paymentmethod_ID@)",
+              "contextParams": [],
+              "cascadeParams": [
+                "PO_Paymentmethod_ID"
+              ]
+            },
             "displayLogic": {
               "raw": "@IsVendor@='Y'",
               "evaluable": true
@@ -2511,7 +2572,14 @@
             "grid": false,
             "form": true,
             "reference": "User",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "validationRule": {
+              "code": "AD_User.C_BPartner_ID=@C_BPartner_ID@",
+              "contextParams": [],
+              "cascadeParams": [
+                "C_BPartner_ID"
+              ]
+            }
           },
           {
             "name": "bankFormat",
@@ -2543,7 +2611,12 @@
               }
             ],
             "defaultValue": "GENERIC",
-            "section": "principal"
+            "section": "principal",
+            "validationRule": {
+              "code": "UPPER(Value)<>'SPANISH'",
+              "contextParams": [],
+              "cascadeParams": []
+            }
           },
           {
             "name": "accountNo",
@@ -2744,7 +2817,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
             "section": "other"
           },
@@ -3306,7 +3379,8 @@
             "email",
             "phone",
             "position"
-          ]
+          ],
+          "requireSavedRecord": true
         },
         "bankAccount": {
           "tabMode": "table-form",
@@ -3317,7 +3391,14 @@
             "bankFormat",
             "accountNo",
             "iBAN"
-          ]
+          ],
+          "requireSavedRecord": true
+        },
+        "locationAddress": {
+          "tabOrder": 3,
+          "label": "Location",
+          "customAddModal": "LocationEditorModal",
+          "requireSavedRecord": true
         }
       },
       "detailEntity": null,
@@ -9484,6 +9565,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "contact"
     }
   },
   "testManifest": {

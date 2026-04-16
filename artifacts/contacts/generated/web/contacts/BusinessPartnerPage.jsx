@@ -6,10 +6,13 @@ import ContactTable from './ContactTable';
 import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
+import LocationAddressTable from './LocationAddressTable';
+import LocationAddressForm from './LocationAddressForm';
+import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
 import catalogs from './mockCatalogs';
 
-import BusinessPartnerSidebar from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
+import BusinessPartnerSidebar from '../../../custom/BusinessPartnerSidebar';
 
 const breadcrumb = 'Contact';
 
@@ -606,6 +609,9 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "contact"
   }
 };
 
@@ -640,6 +646,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
           ], derived: [], hidden: [] }, requireSavedRecord: true },
+          { key: 'locationAddress', label: 'Location', Table: LocationAddressTable, Form: LocationAddressForm, customAddModal: LocationEditorModal, requireSavedRecord: true },
         ]}
         primaryTabs={[
           { key: 'general', label: 'General' },

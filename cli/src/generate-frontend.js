@@ -630,6 +630,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
         const requireSavedRecord = cfg.requireSavedRecord === true;
+        const customAddModalName = cfg.customAddModal ?? null;
         const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
         const addLineEntries = addLineFieldKeys.map(fk => {
           const f = entityFields.find(ef => ef.name === fk);
@@ -645,7 +646,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -695,10 +696,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const tableImportPath = (t.isCustomTable && specName)
         ? resolveCustomImport(specName, t.TableName).replace(/'/g, '')
         : `./${t.TableName}`;
+      const customModalImport = (t.isCustomAddModal && specName)
+        ? `\nimport ${t.CustomAddModalName} from ${resolveCustomImport(specName, t.CustomAddModalName)};`
+        : '';
       if (t.isFormTab) {
-        return `import ${t.FormName} from '${formImportPath}';`;
+        return `import ${t.FormName} from '${formImportPath}';${customModalImport}`;
       }
-      return `import ${t.TableName} from '${tableImportPath}';\nimport ${t.FormName} from '${formImportPath}';`;
+      return `import ${t.TableName} from '${tableImportPath}';\nimport ${t.FormName} from '${formImportPath}';${customModalImport}`;
     })
     .join('\n');
 
@@ -713,7 +717,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart}${requireSavedPart} },`;
+    const customAddModalPart = t.CustomAddModalName ? `, customAddModal: ${t.CustomAddModalName}` : '';
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
   }).join('\n');
 
   const secondaryTabsProp = secondaryTabDefs.length > 0

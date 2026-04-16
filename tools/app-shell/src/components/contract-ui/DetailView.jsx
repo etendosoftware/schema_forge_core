@@ -198,6 +198,7 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
+  const [customModalState, setCustomModalState] = useState({ key: null, bplLinkId: null });
   const [activeTab, setActiveTab] = useState(0);
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
@@ -1581,7 +1582,11 @@ export function DetailView({
                         data={secondaryHooks[stIdx]?.children ?? []}
                         entity={st.key}
                         selectorContext={selectorContextByEntity[st.key]}
-                        onRowClick={st.Form ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); } : undefined}
+                        onRowClick={st.customAddModal
+                          ? (row) => setCustomModalState({ key: st.key, bplLinkId: row.id })
+                          : st.Form
+                            ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); }
+                            : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
                         addRow={st.addLineFields?.entry?.length > 0 ? {
                           active: addingSecondaryLine[st.key] ?? false,
@@ -1699,9 +1704,15 @@ export function DetailView({
                       </div>
                     )}
                     </div>
-                    {st.addLineFields?.entry?.length > 0 && hook.editing && (
+                    {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
                       <button
-                        onClick={() => { void handleSecondaryAddLineToggle(st.key); }}
+                        onClick={() => {
+                          if (st.customAddModal) {
+                            setCustomModalState({ key: st.key, bplLinkId: null });
+                          } else {
+                            void handleSecondaryAddLineToggle(st.key);
+                          }
+                        }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
                         {ui('addEntity', { label: tMenu(st.label) })}
@@ -1973,6 +1984,26 @@ export function DetailView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {secondaryTabs.map((st, idx) => {
+        if (!st.customAddModal) return null;
+        const CustomModal = st.customAddModal;
+        return (
+          <CustomModal
+            key={st.key}
+            open={customModalState.key === st.key}
+            onClose={() => setCustomModalState({ key: null, bplLinkId: null })}
+            onSaved={() => {
+              secondaryHooks[idx]?.handleSelect(hook.selected ?? hook.editing);
+              setCustomModalState({ key: null, bplLinkId: null });
+            }}
+            bplLinkId={customModalState.key === st.key ? customModalState.bplLinkId : null}
+            bpId={parentRecordId}
+            contactsApiBase={apiBaseUrl}
+            token={token}
+            selectorContext={selectorContextByEntity[st.key] ?? {}}
+          />
+        );
+      })}
     </div>
   );
 }

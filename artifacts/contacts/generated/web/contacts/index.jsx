@@ -570,6 +570,9 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "contact"
   }
 };
 
