@@ -17249,7 +17249,12 @@
     "recordDeleted": "Record deleted",
     "recordsDeleted": "{count} record(s) deleted",
     "recordsCouldNotBeDeleted": "{count} record(s) could not be deleted",
-    "networkError": "Network error"
+    "networkError": "Network error",
+    "uomTypeArea": "Area",
+    "uomTypeLength": "Length",
+    "uomTypeTime": "Time",
+    "uomTypeVolume": "Volume",
+    "uomTypeWeight": "Weight"
   },
   "menus": {
     "Currency": {
