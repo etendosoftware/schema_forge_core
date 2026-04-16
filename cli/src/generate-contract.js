@@ -174,6 +174,9 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.cellType) mapped.cellType = f.cellType;
       if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
 
+      // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
+      if (f.validationRule) mapped.validationRule = f.validationRule;
+
       // Behavioral metadata: callout
       if (f.callout) {
         mapped.callout = { className: f.callout };
