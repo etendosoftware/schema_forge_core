@@ -8,7 +8,7 @@
  * Failure modes (F1–F10) are defined in docs/plans/2026-04-16-pipeline-completeness-validator.md
  *
  * Usage:
- *   node cli/src/validate-pipeline.js [--staged] [--strict] [--format=text|json] [--skip=F4,F7]
+ *   node cli/src/validate-pipeline.js [--scope=name1,name2] [--staged] [--changed-since=<ref>] [--strict] [--format=text|json] [--skip=F4,F7]
  *
  * Exit codes:
  *   0 = clean (no violations, or only warnings)
@@ -686,9 +686,10 @@ function formatJSON(result) {
 /**
  * Parse CLI arguments for the validator.
  */
-function parseCLIArgs(argv) {
+export function parseCLIArgs(argv) {
   const args = argv.slice(2);
   const options = {
+    scope: null,
     staged: false,
     strict: false,
     format: 'text',
@@ -697,7 +698,9 @@ function parseCLIArgs(argv) {
   };
 
   for (const arg of args) {
-    if (arg === '--staged') {
+    if (arg.startsWith('--scope=')) {
+      options.scope = arg.split('=').slice(1).join('=').split(',').map(s => s.trim()).filter(Boolean);
+    } else if (arg === '--staged') {
       options.staged = true;
     } else if (arg === '--strict') {
       options.strict = true;
@@ -716,9 +719,11 @@ function parseCLIArgs(argv) {
 async function main() {
   const options = parseCLIArgs(process.argv);
 
-  // Determine scope
+  // Determine scope — precedence: --scope > --changed-since > --staged > all
   let scope;
-  if (options.changedSince) {
+  if (options.scope && options.scope.length > 0) {
+    scope = options.scope;
+  } else if (options.changedSince) {
     const changed = await getChangedArtifactsSince(ROOT, options.changedSince);
     if (changed === null) {
       process.stderr.write(`validate-pipeline: could not resolve ref '${options.changedSince}'\n`);

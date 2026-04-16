@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { validatePipeline, classifyArtifact, getChangedArtifactsSince } from '../src/validate-pipeline.js';
+import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs } from '../src/validate-pipeline.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -450,5 +450,53 @@ describe('--changed-since flag', () => {
       skip: [],
     });
     assert.ok(Array.isArray(result.violations), 'violations must be an array');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// --scope flag
+// ---------------------------------------------------------------------------
+
+describe('--scope flag (parseCLIArgs)', () => {
+  it('parses a single window name', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--scope=window-ok']);
+    assert.deepEqual(opts.scope, ['window-ok']);
+  });
+
+  it('parses comma-separated window names', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--scope=a,b,c']);
+    assert.deepEqual(opts.scope, ['a', 'b', 'c']);
+  });
+
+  it('trims whitespace around names', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--scope= a , b ']);
+    assert.deepEqual(opts.scope, ['a', 'b']);
+  });
+
+  it('defaults scope to null when flag is absent', () => {
+    const opts = parseCLIArgs(['node', 'validate-pipeline.js', '--staged']);
+    assert.equal(opts.scope, null);
+    assert.equal(opts.staged, true);
+  });
+});
+
+describe('--scope flag (validatePipeline API)', () => {
+  it('validates only the specified single window', async () => {
+    const result = await runOnFixtures(['window-ok']);
+    assert.equal(result.summary.blocking, 0, 'window-ok should have no blocking violations');
+    // window-ok has skipped rules (F1/F2 sourceHashes not present) — no violations expected
+    assert.equal(result.violations.length, 0, 'window-ok should have no violations');
+  });
+
+  it('validates both windows when scope has two names', async () => {
+    const result = await runOnFixtures(['window-ok', 'window-ok-2']);
+    assert.equal(result.summary.blocking, 0, 'both windows should have no blocking violations');
+  });
+
+  it('--scope takes precedence over --staged in parseCLIArgs (scope is non-null)', () => {
+    const opts = parseCLIArgs(['node', 'x', '--scope=sales-order', '--staged']);
+    // Both are set — scope should win at main() level. parseCLIArgs captures both.
+    assert.deepEqual(opts.scope, ['sales-order']);
+    assert.equal(opts.staged, true);
   });
 });
