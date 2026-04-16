@@ -8,6 +8,7 @@ import { findActiveGroup } from './Sidebar.jsx';
 import { getSectionColor } from '@/lib/sectionColors.js';
 import { CopilotProvider } from '@/components/CopilotContext';
 import { CopilotWidget } from '@/components/CopilotWidget';
+import { CurrentWindowProvider } from '@/components/CurrentWindowContext';
 
 export default function AppLayout({ menuGroups }) {
   const location = useLocation();
@@ -23,6 +24,7 @@ export default function AppLayout({ menuGroups }) {
   const embedded = searchParams.get('embedded') === '1';
 
   return (
+    <CurrentWindowProvider>
     <CopilotProvider>
       <InspectorProvider>
         {!embedded && (
@@ -54,5 +56,6 @@ export default function AppLayout({ menuGroups }) {
         {!embedded && <CopilotWidget />}
       </InspectorProvider>
     </CopilotProvider>
+    </CurrentWindowProvider>
   );
 }

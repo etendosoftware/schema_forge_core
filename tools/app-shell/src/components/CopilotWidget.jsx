@@ -2,6 +2,7 @@ import * as React from 'react';
 import { ArrowLeft, Bot, History, Maximize2, Minimize2, Sparkles, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useCopilot } from './CopilotContext';
+import { useCurrentWindowContext } from './CurrentWindowContext';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
@@ -15,6 +16,7 @@ const LEFT_SIDE_ROUTES = ['/quick-sales-order', '/quick-purchase-order'];
 
 export function CopilotWidget() {
   const { isOpen: open, close: closePanel, toggle, state, actions } = useCopilot();
+  const { current: currentWindow } = useCurrentWindowContext();
   const location = useLocation();
   const ui = useUI();
   const isLeftSide = LEFT_SIDE_ROUTES.includes(location.pathname);
@@ -30,12 +32,40 @@ export function CopilotWidget() {
   const welcomeMessage = state.labels.ETCOP_Welcome_Message || ui('copilotWelcome');
   const inputPlaceholder = state.labels.ETCOP_Message_Placeholder || ui('askSomething');
 
-  // Bootstrap data when panel opens
+  // Bootstrap data when panel opens + auto-attach current window context.
+  // Auto-attach fires ONLY when attachments is empty and a window route is active.
+  const hasAttachments = state.attachments.length > 0;
   React.useEffect(() => {
     if (open) {
       actionsRef.current.loadBootstrap();
+      if (!hasAttachments && currentWindow) {
+        actionsRef.current.attachCurrentWindow(currentWindow);
+      }
     }
+    // We intentionally don't depend on `currentWindow` — navigating must NOT
+    // re-trigger auto-attach. The flag `hasAttachments` gates re-entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Live-sync attachments while the panel is open and a window route is active.
+  // Mirrors currentWindow -> attachments with dismissal tracking. When the user
+  // leaves a window route (currentWindow == null) we FREEZE to preserve chips.
+  //
+  // We key on a stable JSON signature so unrelated re-renders (e.g. keystrokes
+  // in unrelated state) don't thrash the sync. CurrentWindowContext already
+  // stabilizes `current`, but this is a cheap safety net.
+  const currentWindowSig = React.useMemo(
+    () => (currentWindow ? JSON.stringify(currentWindow) : null),
+    [currentWindow]
+  );
+  React.useEffect(() => {
+    if (!open) return;
+    if (currentWindow == null) return; // freeze on non-window routes
+    actionsRef.current.syncAttachments(currentWindow);
+    // currentWindow is read fresh from the closure; the effect only RUNS when
+    // `open` flips or the window signature changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, currentWindowSig]);
 
   // Load conversations when maximized + assistant selected (sidebar always visible)
   // Also reload when conversationId changes (new conv created mid-chat).
@@ -142,6 +172,8 @@ export function CopilotWidget() {
     onFileChange: handleFileChange,
     onRemoveFile: actions.removeFile,
     files: state.files,
+    attachments: state.attachments,
+    onRemoveAttachment: actions.removeAttachment,
     isSending: state.isSending,
     welcomeMessage,
     inputPlaceholder,
@@ -195,17 +227,14 @@ export function CopilotWidget() {
           'fixed z-50 transition-all duration-300 ease-out',
           maximized
             ? 'inset-4'
-            : 'bottom-20 left-6 w-full max-w-md translate-x-[var(--copilot-shift)]',
+            : 'bottom-20 left-6 w-full max-w-md h-[min(36rem,calc(100vh-6rem))] translate-x-[var(--copilot-shift)]',
           open
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : 'translate-y-4 opacity-0 pointer-events-none'
         )}
         style={maximized ? undefined : { '--copilot-shift': dockShift }}
       >
-        <Card className={cn(
-          'flex flex-col overflow-hidden border-border/50 shadow-2xl',
-          maximized && 'h-full',
-        )}>
+        <Card className="flex h-full flex-col overflow-hidden border-border/50 shadow-2xl">
           {/* Header */}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
             <div className="flex min-w-0 items-center gap-2">
@@ -266,10 +295,7 @@ export function CopilotWidget() {
           <Separator />
 
           {/* Body */}
-          <CardContent className={cn(
-            'flex flex-col p-0',
-            maximized ? 'flex-1 min-h-0' : 'min-h-[30rem]',
-          )}>
+          <CardContent className="flex flex-1 min-h-0 flex-col p-0">
             {renderBody()}
           </CardContent>
         </Card>

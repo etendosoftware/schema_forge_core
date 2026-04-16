@@ -10,8 +10,20 @@ export function CopilotProvider({ children }) {
   const { state, actions } = useCopilotChat({ token });
 
   const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen(prev => !prev), []);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    // Closing the panel (not minimize/maximize) clears any auto-attached context.
+    actions.clearAttachments();
+  }, [actions]);
+  const toggle = useCallback(() => {
+    setIsOpen(prev => {
+      const next = !prev;
+      if (!next) {
+        actions.clearAttachments();
+      }
+      return next;
+    });
+  }, [actions]);
 
   return (
     <CopilotContext.Provider value={{ isOpen, open, close, toggle, state, actions, token }}>

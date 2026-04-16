@@ -16,6 +16,7 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -202,6 +203,18 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
+
+  // Register this detail view with the current-window context so the Copilot
+  // widget can auto-attach the current record when opened.
+  const _detailTabTitle = tMenu(entityLabel) || entityLabel || entity;
+  const _isFormEditing = Boolean(hook.editing);
+  useRegisterWindowContext(_headerData ? {
+    spec: windowName,
+    tabTitle: _detailTabTitle,
+    selectedRecords: [_headerData],
+    formValues: hook.editing || null,
+    isFormEditing: _isFormEditing,
+  } : null);
   const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   const [showPrint, setShowPrint] = useState(false);

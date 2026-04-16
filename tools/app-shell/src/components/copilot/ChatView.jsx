@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
 import { cn } from '@/lib/utils';
 import { useUI } from '@/i18n';
+import { AttachmentChips } from './AttachmentChips.jsx';
 
 /**
  * ChatView — scrollable message area + file upload bar + input form.
@@ -32,6 +33,8 @@ export function ChatView({
   onFileChange,
   onRemoveFile,
   files = [],
+  attachments = [],
+  onRemoveAttachment,
   isSending = false,
   welcomeMessage,
   inputPlaceholder,
@@ -69,7 +72,7 @@ export function ChatView({
   return (
     <>
       {/* Message area */}
-      <div className="flex min-h-[16rem] flex-1 flex-col gap-3 overflow-y-auto p-4">
+      <div className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
             {welcomeMessage || ui('copilotWelcome')}
@@ -135,6 +138,17 @@ export function ChatView({
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Attached record / list-view context chips */}
+      {attachments.length > 0 && (
+        <>
+          <Separator />
+          <AttachmentChips
+            attachments={attachments}
+            onRemove={onRemoveAttachment}
+          />
+        </>
+      )}
 
       {/* Pending file preview bar */}
       {files.length > 0 && (

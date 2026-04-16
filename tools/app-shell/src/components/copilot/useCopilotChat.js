@@ -36,6 +36,10 @@ const SET_LOADING = 'SET_LOADING';
 const SET_ERROR = 'SET_ERROR';
 const RESET_CONVERSATION = 'RESET_CONVERSATION';
 const SET_FILTER = 'SET_FILTER';
+const ADD_ATTACHMENT = 'ADD_ATTACHMENT';
+const REMOVE_ATTACHMENT = 'REMOVE_ATTACHMENT';
+const CLEAR_ATTACHMENTS = 'CLEAR_ATTACHMENTS';
+const SYNC_ATTACHMENTS = 'SYNC_ATTACHMENTS';
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -53,6 +57,8 @@ const initialState = {
   files: [],
   fileIds: [],
   filter: '',
+  attachments: [],
+  dismissedIds: [],
   isLoadingAssistants: false,
   isLoadingConversations: false,
   isLoadingMessages: false,
@@ -153,6 +159,52 @@ function reducer(state, action) {
     case SET_FILTER:
       return { ...state, filter: action.payload };
 
+    case ADD_ATTACHMENT: {
+      const incoming = action.payload;
+      if (!incoming || !incoming.id) return state;
+      if (state.attachments.some((a) => a.id === incoming.id)) return state;
+      return { ...state, attachments: [...state.attachments, incoming] };
+    }
+
+    case REMOVE_ATTACHMENT: {
+      const alreadyDismissed = state.dismissedIds.includes(action.id);
+      return {
+        ...state,
+        attachments: state.attachments.filter((a) => a.id !== action.id),
+        dismissedIds: alreadyDismissed
+          ? state.dismissedIds
+          : [...state.dismissedIds, action.id],
+      };
+    }
+
+    case CLEAR_ATTACHMENTS:
+      return { ...state, attachments: [], dismissedIds: [] };
+
+    case SYNC_ATTACHMENTS: {
+      const desired = action.payload || [];
+      const desiredIds = new Set(desired.map((d) => d.id));
+      // Keep existing chips whose id is still in desired set (preserve live data).
+      const kept = state.attachments.filter((a) => desiredIds.has(a.id));
+      const keptIds = new Set(kept.map((a) => a.id));
+      // Update kept chips to the latest payload (so recordData/formValues refresh).
+      const refreshed = kept.map((a) => {
+        const latest = desired.find((d) => d.id === a.id);
+        return latest ? { ...a, ...latest } : a;
+      });
+      // Prune stale dismissals: only keep dismissedIds that are still in desired.
+      const prunedDismissed = state.dismissedIds.filter((id) => desiredIds.has(id));
+      const dismissedSet = new Set(prunedDismissed);
+      // Add desired chips not already present and not dismissed.
+      const additions = desired.filter(
+        (d) => !keptIds.has(d.id) && !dismissedSet.has(d.id)
+      );
+      return {
+        ...state,
+        attachments: [...refreshed, ...additions],
+        dismissedIds: prunedDismissed,
+      };
+    }
+
     default:
       return state;
   }
@@ -167,6 +219,71 @@ function makeMessageId() {
     return globalThis.crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+/**
+ * Build the structured context block prepended to the wire payload when there
+ * are active attachments. The UI message shown to the user is NOT prefixed.
+ */
+function buildContextPrefix(attachments) {
+  if (!attachments?.length) return '';
+  const windows = [...new Set(attachments.map((a) => a.windowSpec).filter(Boolean))];
+  const lines = ['[Context]', `Window(s): ${windows.join(', ')}`];
+  for (const a of attachments) {
+    const label = a.recordIdentifier || 'List view';
+    lines.push(`- ${a.tabTitle} — ${label}`);
+    if (a.kind === 'listView' || !a.recordData) {
+      lines.push('  List view (no record selected)');
+    } else {
+      lines.push(`  ${JSON.stringify(a.recordData)}`);
+    }
+    if (a.formValues && Object.keys(a.formValues).length > 0) {
+      lines.push(`  Form (editing): ${JSON.stringify(a.formValues)}`);
+    }
+  }
+  lines.push('[End Context]', '');
+  return lines.join('\n') + '\n';
+}
+
+/**
+ * Build the desired attachments array from a CurrentWindowContext snapshot.
+ * Pure helper shared by `attachCurrentWindow` (initial-open) and
+ * `syncAttachments` (live navigation/selection sync).
+ *
+ *   - 0 selected records  -> one `listView` attachment for the window
+ *   - N selected records  -> one `record` attachment per row
+ *
+ * Returns an empty array when `current` has no usable spec.
+ */
+function buildDesiredAttachments(current) {
+  if (!current || !current.spec) return [];
+  const { spec, tabTitle, selectedRecords = [], formValues, isFormEditing } = current;
+
+  if (!selectedRecords.length) {
+    return [
+      {
+        id: `${spec}:list`,
+        kind: 'listView',
+        windowSpec: spec,
+        tabTitle,
+      },
+    ];
+  }
+
+  return selectedRecords.map((record) => {
+    const recordId = record?.id ?? record?._identifier ?? null;
+    const identifier = record?._identifier || record?.documentNo || record?.name || recordId || '';
+    return {
+      id: `${spec}:${recordId ?? JSON.stringify(record).slice(0, 32)}`,
+      kind: 'record',
+      windowSpec: spec,
+      tabTitle,
+      recordIdentifier: String(identifier || ''),
+      recordData: record,
+      formValues: isFormEditing ? (formValues || null) : null,
+      isFormEditing: Boolean(isFormEditing),
+    };
+  });
 }
 
 function formatTimestamp(date = new Date()) {
@@ -339,10 +456,16 @@ export function useCopilotChat({ token }) {
     dispatch({ type: ADD_MESSAGE, payload: userMessage });
     dispatch({ type: SET_INPUT, payload: '' });
 
+    // Prepend structured context for attachments (the wire payload only — the
+    // user-visible bubble stays with the original text).
+    const wireQuestion = state.attachments.length > 0
+      ? buildContextPrefix(state.attachments) + question.trim()
+      : question.trim();
+
     try {
       const response = await sendQuestion(token, {
         app_id: state.selectedAssistant.app_id,
-        question: question.trim(),
+        question: wireQuestion,
         conversation_id: state.conversationId || undefined,
         file: state.fileIds.length > 0 ? state.fileIds : undefined,
       });
@@ -393,7 +516,7 @@ export function useCopilotChat({ token }) {
     } finally {
       dispatch({ type: SET_LOADING, key: 'isSending', value: false });
     }
-  }, [state.selectedAssistant, state.conversationId, state.fileIds, state.files, state.isSending, token]);
+  }, [state.selectedAssistant, state.conversationId, state.fileIds, state.files, state.isSending, state.attachments, token]);
 
   // ------------------------------------------------------------------
   // Conversation management
@@ -555,6 +678,47 @@ export function useCopilotChat({ token }) {
   }, []);
 
   // ------------------------------------------------------------------
+  // Attachments (record/window context)
+  // ------------------------------------------------------------------
+
+  const addAttachment = useCallback((attachment) => {
+    if (!attachment?.id) return;
+    dispatch({ type: ADD_ATTACHMENT, payload: attachment });
+  }, []);
+
+  const removeAttachment = useCallback((id) => {
+    dispatch({ type: REMOVE_ATTACHMENT, id });
+  }, []);
+
+  const clearAttachments = useCallback(() => {
+    dispatch({ type: CLEAR_ATTACHMENTS });
+  }, []);
+
+  /**
+   * Build attachments from a CurrentWindowContext `current` snapshot and add
+   * them to the attachments list.
+   *
+   *   - 0 selected records  -> one `listView` attachment for the window
+   *   - N selected records  -> one `record` attachment per row
+   */
+  const attachCurrentWindow = useCallback((current) => {
+    const desired = buildDesiredAttachments(current);
+    for (const payload of desired) {
+      dispatch({ type: ADD_ATTACHMENT, payload });
+    }
+  }, []);
+
+  /**
+   * Live-sync attachments with the current window snapshot (mirror-minus-dismissals).
+   * Freezes (no-op) when `current` is null — non-window routes preserve chips.
+   */
+  const syncAttachments = useCallback((current) => {
+    if (current == null) return;
+    const desired = buildDesiredAttachments(current);
+    dispatch({ type: SYNC_ATTACHMENTS, payload: desired });
+  }, []);
+
+  // ------------------------------------------------------------------
   // Stable actions object
   // ------------------------------------------------------------------
 
@@ -576,6 +740,11 @@ export function useCopilotChat({ token }) {
     setInput,
     setFilter,
     resetConversation,
+    addAttachment,
+    removeAttachment,
+    clearAttachments,
+    attachCurrentWindow,
+    syncAttachments,
   }), [
     loadBootstrap,
     loadConversations,
@@ -594,6 +763,11 @@ export function useCopilotChat({ token }) {
     setInput,
     setFilter,
     resetConversation,
+    addAttachment,
+    removeAttachment,
+    clearAttachments,
+    attachCurrentWindow,
+    syncAttachments,
   ]);
 
   return { state, actions };
