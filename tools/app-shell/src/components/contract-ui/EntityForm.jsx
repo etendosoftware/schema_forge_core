@@ -547,6 +547,15 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       || displayLogic?.readOnly?.[f.key] === true
       || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
     const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    // Shared read-only rendering for FK-style fields (dependent, selector, search)
+    const renderReadOnlyFk = () => (
+      <div key={f.key} className="space-y-1.5">
+        <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+          {label}
+        </Label>
+        <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+      </div>
+    );
     if (f.type === 'checkbox') {
       return (
         <div key={f.key} className="flex items-center gap-2 pt-6">
@@ -589,16 +598,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       );
     }
     if (f.type === 'dependent') {
-      if (isReadOnly) {
-        return (
-          <div key={f.key} className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-              {label}
-            </Label>
-            <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-          </div>
-        );
-      }
+      if (isReadOnly) return renderReadOnlyFk();
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
@@ -623,16 +623,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       );
     }
     if (f.type === 'selector') {
-      if (isReadOnly) {
-        return (
-          <div key={f.key} className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-              {label}
-            </Label>
-            <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-          </div>
-        );
-      }
+      if (isReadOnly) return renderReadOnlyFk();
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
@@ -675,16 +666,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       );
     }
     if (f.type === 'search') {
-      if (isReadOnly) {
-        return (
-          <div key={f.key} className="space-y-1.5">
-            <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
-              {label}
-            </Label>
-            <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
-          </div>
-        );
-      }
+      if (isReadOnly) return renderReadOnlyFk();
       // Use the URL from api.selectors when it carries explicit context params (e.g. ?isSOTrx=Y).
       // Always compute the selector URL from apiBaseUrl so it contains the full server path
       // (e.g. https://server/etendo/sws/neo/...). When the api.selectors entry carries
