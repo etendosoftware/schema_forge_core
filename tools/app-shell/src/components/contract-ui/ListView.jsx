@@ -41,14 +41,18 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  initialQuickFilterIndex = 0,
   onNew = null,
   newActions = [],
   labelOverrides,
+  initialColumnFilters,
+  rowFilter,
 }) {
-  const [activeFilterIndex, setActiveFilterIndex] = useState(0);
+  const [activeFilterIndex, setActiveFilterIndex] = useState(initialQuickFilterIndex ?? 0);
   const effectiveFilter = quickFilters
     ? (quickFilters[activeFilterIndex]?.filter ?? baseFilter)
     : baseFilter;
+  const effectiveRowFilter = quickFilters?.[activeFilterIndex]?.rowFilter ?? rowFilter;
   const hook = useEntity(entity, null, { token, apiBaseUrl, baseFilter: effectiveFilter });
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
@@ -423,6 +427,8 @@ export function ListView({
                     token={token}
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={labelOverrides}
+                    initialColumnFilters={initialColumnFilters}
+                    rowFilter={effectiveRowFilter}
                   />
                 )
               }
