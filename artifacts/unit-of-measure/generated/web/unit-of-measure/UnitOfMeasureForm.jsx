@@ -1,19 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
-const UOM_TYPE_OPTIONS = [
-  { value: 'A', label: 'Área' },
-  { value: 'L', label: 'Longitud' },
-  { value: 'T', label: 'Tiempo' },
-  { value: 'V', label: 'Volumen' },
-  { value: 'W', label: 'Peso' },
-];
-
 // @sf-generated-start fields:unitOfMeasure
 const fields = [
+  { key: 'eDICode', column: 'X12DE355', type: 'text', required: true, section: 'principal' },
   { key: 'name', column: 'Name', type: 'text', required: true, section: 'principal' },
   { key: 'symbol', column: 'UOMSymbol', type: 'text', section: 'principal' },
-  { key: 'uOMType', column: 'UOM_Type', type: 'select', options: UOM_TYPE_OPTIONS, section: 'principal' },
-  { key: 'isActive', column: 'IsActive', type: 'checkbox', section: 'principal' },
+  { key: 'standardPrecision', column: 'StdPrecision', type: 'number', required: true, section: 'principal' },
+  { key: 'costingPrecision', column: 'CostingPrecision', type: 'number', required: true, section: 'principal' },
+  { key: 'default', column: 'IsDefault', type: 'checkbox', section: 'principal' },
 ];
 // @sf-generated-end fields:unitOfMeasure
 

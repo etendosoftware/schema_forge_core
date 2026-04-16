@@ -27,7 +27,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "section": "principal",
             "seq": 1
           },
@@ -55,7 +55,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "section": "principal",
             "seq": 5
           },
@@ -69,7 +69,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "section": "principal",
             "seq": 6
           },
@@ -97,7 +97,7 @@
             "visibility": "editable",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "enumValues": [
               {
                 "value": "A",
@@ -133,7 +133,7 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "section": "principal",
             "seq": 7
           },
@@ -147,7 +147,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "section": "principal",
             "seq": 8
           },
