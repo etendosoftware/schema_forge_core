@@ -960,9 +960,11 @@ function QuickActions({ actions = [] }) {
  * Pending Tasks
  * ----------------------------------------------------------------*/
 
-function PendingTasks({ tasks = [] }) {
+function PendingTasks({ tasks = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className={WIDGET_HEADER_CLASS}>
@@ -977,6 +979,9 @@ function PendingTasks({ tasks = [] }) {
             const isWarning = task.type === 'warning';
             const taskKey = resolvePendingTaskKey(task);
             const target = resolveDashboardTarget({ navigation: task.navigation, link: task.link, fallback: '/dashboard' });
+            const detailText = task.amount != null
+              ? formatDashboardAmount(task.amount, currencyLabel, numberLocale)
+              : task.detail;
             return (
               <React.Fragment key={i}>
                 {i > 0 && <Separator />}
@@ -995,9 +1000,9 @@ function PendingTasks({ tasks = [] }) {
                         ? `${task.count} ${tMenu(task.labelKey)}`
                         : taskKey ? ui(taskKey, { count: task.count }) : task.text}
                     </p>
-                    {(task.amount || task.detail) && (
+                    {detailText && (
                       <p className="text-xs text-muted-foreground truncate">
-                        {task.amount || task.detail}
+                        {detailText}
                       </p>
                     )}
                   </div>
@@ -1334,7 +1339,7 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
       case 'kpi-profit':           return kpiWidget('netProfit');
       case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} currencyLabel={dashboardCurrency} />;
       case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} token={token} apiBaseUrl={apiBaseUrl} />;
-      case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} />;
+      case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} currencyLabel={dashboardCurrency} />;
       case 'quick-actions':        return <QuickActions key={id} actions={quickActions} />;
       case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />;
       case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} currencyLabel={dashboardCurrency} />;

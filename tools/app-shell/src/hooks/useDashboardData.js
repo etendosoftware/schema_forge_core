@@ -126,9 +126,9 @@ function mapPendingTasks(handlerData) {
       link: task.link || '',
       navigation: task.navigation || null,
     };
-    if (task.amount) mapped.amount = task.amount;
+    if (task.amount != null) mapped.amount = task.amount;
     if (task.detail) mapped.detail = task.detail;
-    if (task.count) mapped.count = task.count;
+    if (task.count != null) mapped.count = task.count;
     if (task.labelKey) mapped.labelKey = task.labelKey;
     if (task.taskKey) mapped.taskKey = task.taskKey;
 
