@@ -95,7 +95,7 @@ cd /path/to/etendo_core/schema_forge
 make install
 ```
 
-This installs all workspace dependencies (CLI tools + UI tools).
+This installs all workspace dependencies (CLI tools + UI tools) and activates the pre-commit hook that validates pipeline completeness on artifact changes.
 
 ### 6. Configure environment
 

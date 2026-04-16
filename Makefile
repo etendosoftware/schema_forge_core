@@ -50,8 +50,9 @@ build: ## Build app-shell for production
 
 # --- Setup ---
 
-install: ## Install all workspace dependencies
+install: ## Install all workspace dependencies and activate git hooks
 	npm install
+	git config core.hooksPath .githooks
 
 # --- Deploy ---
 
