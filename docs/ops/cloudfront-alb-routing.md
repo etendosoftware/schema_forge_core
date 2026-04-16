@@ -53,8 +53,13 @@ Replacing the three narrow behaviors with a **single catch-all `/etendo/*` behav
 | S3 bucket (SPA) | `etendo-go-staging-ui` |
 | S3 origin id in CF | `s3-etendo-go-staging-ui` |
 | ALB | `etendo-staging-alb` (`etendo-staging-alb-779214105.eu-west-3.elb.amazonaws.com`) |
+| ALB SG | `sg-0c1e24e22774d861e` |
+| ECS task SG | `sg-05dfda3d85b5f0179` |
 | ALB origin id in CF | `alb-etendo-staging` |
-| Target group | `etendo-core-tg` |
+| Target group (Etendo core) | `etendo-core-tg` |
+| Target group (jsreport) | `jsreport-tg/ae70720099505ee8` |
+| Target group (report-server) | `report-server-staging-tg/9e1663030944ad4f` |
+| ECS cluster / service (report-server) | `etendo-staging` / `report-server-service` |
 | Existing extra behavior | `/jsreport/*` → jsreport-tg (independent, leave alone) |
 
 ### CloudFront origins (pre-existing, both environments)
@@ -355,7 +360,16 @@ done
 
 Rollback puts us back to the broken state (three narrow behaviors, everything else falling to S3). Only use if the new config causes a regression we can't quickly diagnose.
 
-## Staging replication (BLOCKED on full experimental browser smoke test)
+## Staging report-server (APPLIED 2026-04-16)
+
+`/api/reports/*` and `/api/report-selectors/*` behaviors added to staging CF distribution `E2XAO6Y99940X9`.
+ALB rules (priority 5/6 on :80 and :443) route those paths to `report-server-staging-tg`.
+ECS service `report-server-service` running task def `report-server-staging:1` in `etendo-staging`.
+SG inbound rule added: port 3001 from ALB SG `sg-0c1e24e22774d861e` to ECS SG `sg-05dfda3d85b5f0179`.
+
+Verified: `GET /api/reports` → 9 reports, `POST /api/reports/report-order-not-shipped/render` → HTTP 200 HTML.
+
+## Staging /etendo/* replication (BLOCKED on full experimental browser smoke test)
 
 **Do not run** until every item in the browser smoke test on experimental is ticked.
 
