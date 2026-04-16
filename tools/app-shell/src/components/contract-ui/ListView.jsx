@@ -44,6 +44,7 @@ export function ListView({
   onNew = null,
   newActions = [],
   labelOverrides,
+  onCloneRow = null,
 }) {
   const [activeFilterIndex, setActiveFilterIndex] = useState(0);
   const effectiveFilter = quickFilters
@@ -423,6 +424,7 @@ export function ListView({
                     token={token}
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={labelOverrides}
+                    onCloneRow={onCloneRow}
                   />
                 )
               }

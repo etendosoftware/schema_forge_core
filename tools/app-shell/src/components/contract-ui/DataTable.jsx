@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Search, Inbox, X, ChevronDown, Check, Trash2 } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown, Check, Trash2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
@@ -292,7 +292,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, token, apiBaseUrl, entity, selectorContext }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -629,6 +629,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         );
       })}
       {hasDeleteColumn && <TableCell className="w-10" />}
+      {hasCloneColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 }
@@ -734,7 +735,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *      that appears on row hover and on keyboard focus. Invoked with the row object; click
  *      propagation is stopped so it does not trigger row selection or navigation.
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow }) {
+export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow, onCloneRow }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
@@ -1034,7 +1035,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     });
   };
 
-  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0);
+  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0) + (onCloneRow ? 1 : 0);
 
   return (
     <div className="space-y-0">
@@ -1125,6 +1126,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 );
               })}
               {onDeleteRow && <TableHead className="w-10 px-2" />}
+              {onCloneRow && <TableHead className="w-10 px-2" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1190,6 +1192,24 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                         </button>
                       </TableCell>
                     )}
+                    {onCloneRow && (
+                      <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative group/clonebtn flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => onCloneRow(row)}
+                            className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 flex items-center justify-center rounded border border-border bg-white text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
+                            style={{ width: 26, height: 26 }}
+                            aria-label="Clonar"
+                          >
+                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/clonebtn:opacity-100 pointer-events-none transition-opacity z-10">
+                            Clonar
+                          </div>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -1205,6 +1225,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 onFieldChange={addRow.onFieldChange}
                   selectable={selectable}
                   hasDeleteColumn={!!onDeleteRow}
+                  hasCloneColumn={!!onCloneRow}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -1224,6 +1245,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                   </TableCell>
                 ))}
                 {onDeleteRow && <TableCell />}
+                {onCloneRow && <TableCell />}
               </TableRow>
             </TableFooter>
           )}
