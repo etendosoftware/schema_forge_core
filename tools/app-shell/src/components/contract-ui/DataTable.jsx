@@ -14,6 +14,7 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { parseUserFilter } from '@/lib/gridQuery.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 
@@ -467,7 +468,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       )}
       {columns.map(col => {
         const field = fieldMap[col.key];
-        const fieldLabel = field ? (field.label ?? t(field.column) ?? field.key) : (col.label ?? t(col.column) ?? col.key);
+        const fieldLabel = field ? (t(field.column) ?? field.label ?? field.key) : (t(col.column) ?? col.label ?? col.key);
         if (!field) {
           // Show callout-derived values if available, otherwise dash.
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
@@ -734,14 +735,43 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *      that appears on row hover and on keyboard focus. Invoked with the row object; click
  *      propagation is stopped so it does not trigger row selection or navigation.
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, onDeleteRow }) {
+export function DataTable({
+  entity,
+  columns = [],
+  filters = [],
+  data = [],
+  onRowSelect,
+  onNavigate,
+  onRowClick,
+  selectedRowId,
+  selectedId,
+  compact,
+  loading,
+  addRow,
+  selectable = true,
+  isRowSelectable,
+  onSelectionChange,
+  sortColumn,
+  sortDirection,
+  onSort,
+  onColumnsReady,
+  token,
+  apiBaseUrl,
+  showFooterTotals = true,
+  selectorContext,
+  onDataMutated,
+  labelOverrides,
+  onDeleteRow,
+  onFilterChange,
+  onClearAllFilters,
+  columnFilters = {},
+}) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const [searchQuery, setSearchQuery] = useState('');
-  const [columnFilters, setColumnFilters] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
@@ -758,12 +788,38 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
   }, [columns, onColumnsReady]);
 
+  const [localFilterInputs, setLocalFilterInputs] = useState(() => {
+    const init = {};
+    for (const [key, val] of Object.entries(columnFilters)) {
+      if (val?.originalValue) init[key] = val.originalValue;
+    }
+    return init;
+  });
   const hasColumnFilter = useMemo(() => Object.values(columnFilters).some(v => v), [columnFilters]);
   const hasActiveFilter = searchQuery.length > 0 || hasColumnFilter;
 
+  const commitFilter = useCallback((key, value) => {
+    const col = columns.find(c => c.key === key);
+    const parsed = parseUserFilter(col || { key }, value);
+    onFilterChange?.(key, parsed);
+  }, [columns, onFilterChange]);
+
+  const filterTooltip = useCallback((col) => {
+    switch (col.type) {
+      case 'date':     return ui('filterHelpDate');
+      case 'number':
+      case 'amount':   return ui('filterHelpNumeric');
+      case 'selector': return ui('filterHelpSelector');
+      default:         return ui('filterHelpText');
+    }
+  }, [ui]);
+
   const filteredData = useMemo(() => {
+    // If onFilterChange is provided, we assume the sorting/filtering is handled by the backend
+    if (onFilterChange) return data;
+
     let result = data;
-    // Global search (existing behaviour)
+    // Global search (existing behavior for local-only grids)
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(row =>
@@ -773,17 +829,8 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         })
       );
     }
-    // Per-column filters (AND logic)
-    for (const [key, query] of Object.entries(columnFilters)) {
-      if (!query) continue;
-      const q = query.toLowerCase();
-      result = result.filter(row => {
-        const val = resolveIdentifier(row, key);
-        return String(val ?? '').toLowerCase().includes(q);
-      });
-    }
     return result;
-  }, [data, filters, searchQuery, columnFilters]);
+  }, [data, filters, searchQuery, onFilterChange]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),
@@ -1055,7 +1102,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                     />
                     {hasColumnFilter && (
                       <button
-                        onClick={() => setColumnFilters({})}
+                        onClick={() => { setLocalFilterInputs({}); onClearAllFilters ? onClearAllFilters() : setSearchQuery(''); }}
                         title={ui('clearAllFilters')}
                         className="h-4 w-4 flex items-center justify-center rounded text-muted-foreground/50 hover:text-foreground transition-colors"
                       >
@@ -1066,7 +1113,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? col.label ?? t(col.column) ?? col.key;
+                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key;
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (
@@ -1096,24 +1143,61 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                         </span>
                       )}
                       <div className="relative w-full">
-                        <input
-                          type="text"
-                          value={columnFilters[col.key] || ''}
-                          onChange={e => setColumnFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
-                          placeholder={ui('filter')}
-                          className={[
-                            'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
-                            'placeholder:text-muted-foreground/35 transition-colors',
-                            'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
-                            columnFilters[col.key]
-                              ? 'border-primary/40 bg-primary/5 pr-6'
-                              : 'border-border/35',
-                            isRight ? 'text-right' : '',
-                          ].filter(Boolean).join(' ')}
-                        />
-                        {columnFilters[col.key] && (
+                        {col.type === 'boolean' ? (
+                          <select
+                            value={localFilterInputs[col.key] ?? ''}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setLocalFilterInputs(prev => ({ ...prev, [col.key]: val }));
+                              commitFilter(col.key, val);
+                            }}
+                            className={[
+                              'w-full h-6 rounded border bg-background/80 px-1 text-xs text-foreground',
+                              'transition-colors cursor-pointer',
+                              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
+                              localFilterInputs[col.key]
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border/35',
+                            ].filter(Boolean).join(' ')}
+                          >
+                            <option value="">{ui('filterAll')}</option>
+                            <option value="true">{(() => {
+                              const raw = col.badgeLabels?.true;
+                              if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? ui('filterBooleanYes');
+                              return raw ?? ui('filterBooleanYes');
+                            })()}</option>
+                            <option value="false">{(() => {
+                              const raw = col.badgeLabels?.false;
+                              if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? ui('filterBooleanNo');
+                              return raw ?? ui('filterBooleanNo');
+                            })()}</option>
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={localFilterInputs[col.key] ?? ''}
+                            onChange={e => setLocalFilterInputs(prev => ({ ...prev, [col.key]: e.target.value }))}
+                            onBlur={() => commitFilter(col.key, localFilterInputs[col.key] ?? '')}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
+                            placeholder={ui('filter')}
+                            title={filterTooltip(col)}
+                            className={[
+                              'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
+                              'placeholder:text-muted-foreground/35 transition-colors',
+                              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
+                              localFilterInputs[col.key]
+                                ? 'border-primary/40 bg-primary/5 pr-6'
+                                : 'border-border/35',
+                              isRight ? 'text-right' : '',
+                            ].filter(Boolean).join(' ')}
+                          />
+                        )}
+                        {localFilterInputs[col.key] && col.type !== 'boolean' && (
                           <button
-                            onClick={() => setColumnFilters(prev => ({ ...prev, [col.key]: '' }))}
+                            onClick={() => {
+                              setLocalFilterInputs(prev => ({ ...prev, [col.key]: '' }));
+                              commitFilter(col.key, '');
+                            }}
                             className="absolute right-1 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors"
                           >
                             <X className="h-2.5 w-2.5" />

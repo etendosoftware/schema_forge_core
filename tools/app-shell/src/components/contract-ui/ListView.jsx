@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
@@ -49,7 +49,33 @@ export function ListView({
   const effectiveFilter = quickFilters
     ? (quickFilters[activeFilterIndex]?.filter ?? baseFilter)
     : baseFilter;
-  const hook = useEntity(entity, null, { token, apiBaseUrl, baseFilter: effectiveFilter });
+  const [columnFilters, setColumnFilters] = useState({});
+  const [tableColumns, setTableColumns] = useState([]);
+  const columnDefs = useMemo(
+    () => Object.fromEntries(tableColumns.map(c => [c.key, c])),
+    [tableColumns],
+  );
+
+  const handleFilterChange = useCallback((key, parsed) => {
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      if (parsed) next[key] = parsed;
+      else delete next[key];
+      return next;
+    });
+  }, []);
+
+  const handleClearAllFilters = useCallback(() => {
+    setColumnFilters({});
+  }, []);
+
+  const hook = useEntity(entity, null, {
+    token,
+    apiBaseUrl,
+    baseFilter: effectiveFilter,
+    columnDefs,
+    columnFilters,
+  });
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
   const t = useLabel();
@@ -59,7 +85,6 @@ export function ListView({
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);
-  const [tableColumns, setTableColumns] = useState([]);
   const [viewMode, setViewMode] = useState(() =>
     localStorage.getItem(`viewMode:${entity}`) || 'list'
   );
@@ -423,6 +448,9 @@ export function ListView({
                     token={token}
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={labelOverrides}
+                    onFilterChange={handleFilterChange}
+                    onClearAllFilters={handleClearAllFilters}
+                    columnFilters={columnFilters}
                   />
                 )
               }

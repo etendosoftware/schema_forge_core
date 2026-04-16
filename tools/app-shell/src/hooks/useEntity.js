@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
@@ -234,7 +235,17 @@ function normalizeRows(rows, entityName) {
   return Array.isArray(rows) ? rows.map(row => normalizeRecord(row, entityName)) : [];
 }
 
-export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
+const EMPTY_FILTERS = {};
+const EMPTY_DEFS = {};
+
+export function useEntity(entity, childEntity, {
+  token,
+  apiBaseUrl,
+  childSortBy,
+  baseFilter,
+  columnFilters = EMPTY_FILTERS,
+  columnDefs = EMPTY_DEFS,
+}) {
   const { logout } = useAuth();
   const ui = useUI();
   const [items, setItems] = useState([]);
@@ -249,7 +260,6 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   const [sortColumn, setSortColumn] = useState('creationDate');
   const [sortDirection, setSortDirection] = useState('desc');
   const startRowRef = useRef(0);
-  const sampleRowRef = useRef(null);
 
   const headers = buildHeaders(token);
 
@@ -257,8 +267,38 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     startRowRef.current = 0;
     setHasMore(true);
     setLoading(true);
-    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
+
+    const colDef = columnDefs[sortColumn] || { key: sortColumn };
+    const sortKey = resolveBackendSort(colDef, sortDirection);
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('_sortBy', sortKey);
+    queryParams.append('_startRow', '0');
+    queryParams.append('_endRow', String(BATCH_SIZE - 1));
+
+    if (baseFilter) {
+      // baseFilter is expected to be a raw query string fragment like "active=true"
+      const parts = baseFilter.split('&');
+      for (const p of parts) {
+        if (!p) continue;
+        const [k, v] = p.split('=');
+        if (k && v !== undefined) queryParams.append(k, decodeURIComponent(v));
+      }
+    }
+
+    // Apply column filters as SmartClient criteria (iContains for text search)
+    const criteria = [];
+    for (const [key, parsed] of Object.entries(columnFilters)) {
+      if (!parsed) continue;
+      const c = columnDefs[key] || { key };
+      const filterCriteria = buildBackendFilter(c, parsed);
+      if (filterCriteria) criteria.push(...filterCriteria);
+    }
+    if (criteria.length > 0) {
+      queryParams.append('criteria', JSON.stringify(criteria));
+    }
+
+    fetch(`${apiBaseUrl}/${entity}?${queryParams.toString()}`, { headers })
       .then(res => {
         if (res.status === 401) {
           logout();
@@ -269,21 +309,53 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       })
       .then(data => {
         const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), entity);
-        if (rows.length > 0) sampleRowRef.current = rows[0];
         setItems(rows);
         startRowRef.current = rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
         setLoading(false);
       })
-      .catch(() => { setItems([]); setHasMore(false); setLoading(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, logout]);
+      .catch((e) => {
+        console.error('refresh error', e);
+        setItems([]);
+        setHasMore(false);
+        setLoading(false);
+      });
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, columnFilters, columnDefs, logout]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     const start = startRowRef.current;
-    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
+
+    const colDef = columnDefs[sortColumn] || { key: sortColumn };
+    const sortKey = resolveBackendSort(colDef, sortDirection);
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('_sortBy', sortKey);
+    queryParams.append('_startRow', String(start));
+    queryParams.append('_endRow', String(start + BATCH_SIZE - 1));
+
+    if (baseFilter) {
+      const parts = baseFilter.split('&');
+      for (const p of parts) {
+        if (!p) continue;
+        const [k, v] = p.split('=');
+        if (k && v !== undefined) queryParams.append(k, decodeURIComponent(v));
+      }
+    }
+
+    const criteriaMore = [];
+    for (const [key, parsed] of Object.entries(columnFilters)) {
+      if (!parsed) continue;
+      const c = columnDefs[key] || { key };
+      const filterCriteria = buildBackendFilter(c, parsed);
+      if (filterCriteria) criteriaMore.push(...filterCriteria);
+    }
+    if (criteriaMore.length > 0) {
+      queryParams.append('criteria', JSON.stringify(criteriaMore));
+    }
+
+    fetch(`${apiBaseUrl}/${entity}?${queryParams.toString()}`, { headers })
       .then(res => {
         if (res.status === 401) {
           logout();
@@ -299,8 +371,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         if (rows.length < BATCH_SIZE) setHasMore(false);
         setLoadingMore(false);
       })
-      .catch(() => { setLoadingMore(false); setHasMore(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, logout]);
+      .catch((e) => {
+        console.error('loadMore error', e);
+        setLoadingMore(false);
+        setHasMore(false);
+      });
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, columnFilters, columnDefs, logout]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
