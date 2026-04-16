@@ -38,6 +38,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
   const [fetched,       setFetched]       = useState(null);
   const [confirmedDocs,  setConfirmedDocs]  = useState(null); // set after confirm+reload when both docs created
   const [confirmedTitle, setConfirmedTitle] = useState(null); // null = "Order confirmed", string = custom title
+  const [showClone,      setShowClone]      = useState(false);
 
   const status      = data?.documentStatus;
   const isDraft     = status === 'DR';
@@ -105,49 +106,38 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
       )
     : null;
 
-  // ── DRAFT ──────────────────────────────────────────────────────────────────
-  if (isDraft) {
-    return (
-      <>
-        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-          {ui('soConfirmBtn')}
-        </button>
-        <SendDocumentButton onClick={() => setShowSend(true)} />
-        {showConfirm && createPortal(
-          <ConfirmModal
-            orderId={recordId}
-            data={data}
-            apiBaseUrl={apiBaseUrl}
-            headers={headers}
-            onClose={() => setShowConfirm(false)}
-            onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
-          />,
-          document.body,
-        )}
-        {showSend && createPortal(
-          <SendDocumentModal
-            documentType="SalesOrder"
-            documentNo={data?.documentNo}
-            bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
-            documentId={recordId}
-            windowName="sales-order"
-            token={token}
-            onClose={() => setShowSend(false)}
-          />,
-          document.body,
-        )}
-        {confirmedPanel}
-      </>
-    );
+  const cloneButton = (
+    <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
+      <CopyIcon />{ui('cloneOrderBtn')}
+    </button>
+  );
+  const clonePortal = showClone ? createPortal(
+    <CloneModal
+      orderId={recordId}
+      data={data}
+      apiBaseUrl={apiBaseUrl}
+      headers={headers}
+      onClose={() => setShowClone(false)}
+      onCloned={(newId) => navigate(`/sales-order/${newId}`)}
+    />,
+    document.body,
+  ) : null;
+
+  // ── COMPLETED (loading) ────────────────────────────────────────────────────
+  if (isCompleted && !fetched) {
+    return <>{confirmedPanel}<span style={{ fontSize: 12, color: '#9CA3AF', padding: '4px 8px' }}>…</span></>;
   }
 
-  // ── COMPLETED ──────────────────────────────────────────────────────────────
-  if (isCompleted) {
-    if (!fetched) {
-      return <>{confirmedPanel}<span style={{ fontSize: 12, color: '#9CA3AF', padding: '4px 8px' }}>…</span></>;
-    }
+  // ── COMPLETED — compute derived values ─────────────────────────────────────
+  const openModal = (scrollTo = null) => {
+    setActionsScroll(scrollTo);
+    setShowActions(true);
+  };
 
+  let buttonLabel = null;
+  let derived = null;
+  let currency = '';
+  if (isCompleted) {
     const { shipments, invoices, orderLines } = fetched;
 
     const shipmentsDraft    = shipments.filter(s => s.documentStatus === 'DR');
@@ -165,58 +155,81 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
     const totalPending  = Math.max(0, totalOrder - totalInvoiced);
 
-    const currency = data?.['currency$_identifier'] || '';
+    currency = data?.['currency$_identifier'] || '';
 
     // Acción pendiente = hay qty/importe pendiente Y no hay borrador cubriendo esa acción
     // (si hay borrador, el chip en topbar ya lo cubre — el botón Gestionar no la incluye)
     const needsShip    = qtyPending > 0 && shipmentsDraft.length === 0;
     const needsInvoice = totalPending > 0 && !invoiceDraft;
 
-    let buttonLabel = null;
     if      (needsShip && needsInvoice) buttonLabel = ui('soManageShipmentAndInvoice');
     else if (needsShip)                 buttonLabel = ui('soManageShipment');
     else if (needsInvoice)              buttonLabel = ui('soManageInvoice');
 
-    const openModal = (scrollTo = null) => {
-      setActionsScroll(scrollTo);
-      setShowActions(true);
-    };
-
-    const derived = {
+    derived = {
       shipmentsComplete, invoicesComplete,
       qtyOrdered, qtyDelivered, qtyPending,
       totalOrder, totalInvoiced, totalPending,
       needsShip, needsInvoice,
     };
-
-    return (
-      <>
-        {/* Main action button — only shown when action is still pending */}
-        {buttonLabel && (
-          <button type="button" onClick={() => openModal(null)} style={btnPrimaryStyle}>
-            {buttonLabel}
-          </button>
-        )}
-
-        {showActions && createPortal(
-          <CreateDocsModal
-            orderId={recordId}
-            data={data}
-            base={base}
-            headers={headers}
-            currency={currency}
-            derived={derived}
-            onClose={() => setShowActions(false)}
-            onCreated={(docs) => { setShowActions(false); setConfirmedTitle(ui('soDocsCreatedTitle')); setConfirmedDocs(docs); }}
-          />,
-          document.body,
-        )}
-        {confirmedPanel}
-      </>
-    );
   }
 
-  return confirmedPanel;
+  return (
+    <>
+      {isDraft && (
+        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
+          {ui('soConfirmBtn')}
+        </button>
+      )}
+      {/* Main action button — only shown when action is still pending */}
+      {isCompleted && buttonLabel && (
+        <button type="button" onClick={() => openModal(null)} style={btnPrimaryStyle}>
+          {buttonLabel}
+        </button>
+      )}
+      {cloneButton}
+      {isDraft && <SendDocumentButton onClick={() => setShowSend(true)} />}
+      {clonePortal}
+      {isDraft && showConfirm && createPortal(
+        <ConfirmModal
+          orderId={recordId}
+          data={data}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setShowConfirm(false)}
+          onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
+        />,
+        document.body,
+      )}
+      {isCompleted && showActions && createPortal(
+        <CreateDocsModal
+          orderId={recordId}
+          data={data}
+          base={base}
+          headers={headers}
+          currency={currency}
+          derived={derived}
+          onClose={() => setShowActions(false)}
+          onCreated={(docs) => { setShowActions(false); setConfirmedTitle(ui('soDocsCreatedTitle')); setConfirmedDocs(docs); }}
+        />,
+        document.body,
+      )}
+      {isDraft && showSend && createPortal(
+        <SendDocumentModal
+          documentType="SalesOrder"
+          documentNo={data?.documentNo}
+          bpName={data?.['businessPartner$_identifier']}
+          bpEmail={data?.['userContact$_identifier']}
+          documentId={recordId}
+          windowName="sales-order"
+          token={token}
+          onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
+      {confirmedPanel}
+    </>
+  );
 }
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
@@ -598,6 +611,132 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
   );
 }
 
+// ── CopyIcon ───────────────────────────────────────────────────────────────────
+
+function CopyIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+// ── CloneModal ─────────────────────────────────────────────────────────────────
+
+function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
+  const ui = useUI();
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState(null);
+  const [lines,   setLines]   = useState(null); // null = loading
+
+  const documentNo = data?.documentNo || '';
+  const bpName     = data?.['businessPartner$_identifier'] || '';
+  const status     = data?.documentStatus;
+  const currency   = data?.['currency$_identifier'] || '';
+  const total      = Number(data?.grandTotalAmount) || 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (!cancelled) setLines(json?.response?.data ?? []); })
+      .catch(() => { if (!cancelled) setLines([]); });
+    return () => { cancelled = true; };
+  }, [orderId, apiBaseUrl, headers]);
+
+  const statusMap = {
+    DR: { label: ui('orderStatusDraft'),     bg: '#FEF3C7', color: '#D97706' },
+    CO: { label: ui('orderStatusCompleted'), bg: '#DCFCE7', color: '#16A34A' },
+    CL: { label: ui('orderStatusClosed'),    bg: '#F3F4F6', color: '#6B7280' },
+    VO: { label: ui('orderStatusVoided'),    bg: '#FEE2E2', color: '#DC2626' },
+  };
+  const badge = statusMap[status] || { label: status, bg: '#F3F4F6', color: '#6B7280' };
+
+  const lineCount   = lines?.length ?? null;
+  const productLine = lineCount === null
+    ? '…'
+    : `${lineCount === 1 ? ui('soLine') : ui('soLines', { count: lineCount })}  ·  ${currency} ${fmtNum(total)}`;
+
+  const handleClone = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneOrder`, { method: 'POST', headers });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json?.response?.error?.message || ui('cloneOrderError'));
+        return;
+      }
+      const newId = json?.response?.data?.id;
+      onClose();
+      onCloned(newId);
+    } catch {
+      setError(ui('cloneOrderError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={overlayStyle}>
+      <div style={{ ...cardStyle, width: 440 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0' }}>
+          <span style={{ fontWeight: 600, fontSize: 15, color: '#111827' }}>{ui('cloneOrderConfirmTitle')}</span>
+          <button type="button" onClick={onClose} style={closeBtn}>×</button>
+        </div>
+
+        <div style={{ padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Summary card */}
+          <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+            {/* Row 1: contact · docNo · badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F9FAFB' }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#111827', flex: 1,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {bpName}
+              </span>
+              {documentNo && (
+                <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {documentNo}
+                </span>
+              )}
+              {status && (
+                <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 999,
+                  background: badge.bg, color: badge.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {badge.label}
+                </span>
+              )}
+            </div>
+            {/* Row 2: products + total */}
+            <div style={{ padding: '6px 14px 9px', background: '#F9FAFB', borderTop: '1px solid #F3F4F6' }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>{productLine}</span>
+            </div>
+          </div>
+
+          {/* Explanatory text — same horizontal inset as card content */}
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0, padding: '0 2px' }}>{ui('cloneOrderConfirmBody')}</p>
+
+          {error && <div style={{ color: '#ef4444', fontSize: 12 }}>{error}</div>}
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} disabled={loading} style={btnSecondary}>
+              {ui('cancel')}
+            </button>
+            <button type="button" onClick={handleClone} disabled={loading}
+              style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
+              {loading && <Spinner />}
+              {loading ? ui('soProcessing') : ui('cloneOrderAction')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Shared styles ──────────────────────────────────────────────────────────────
 
 const overlayStyle = {
@@ -621,6 +760,20 @@ const btnPrimaryStyle = {
 const btnSecondary = {
   fontSize: 12, padding: '7px 14px', borderRadius: 6,
   border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280', cursor: 'pointer',
+};
+
+const iconBtnStyle = {
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  width: 32, height: 32, borderRadius: 6,
+  border: '1px solid var(--color-border, #e5e7eb)',
+  background: 'transparent', color: 'var(--color-muted-foreground, #6b7280)',
+  cursor: 'pointer',
+};
+
+const btnCloneStyle = {
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  padding: '5px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+  border: '1px solid #D1D5DB', background: 'transparent', color: '#374151', cursor: 'pointer',
 };
 
 const closeBtn = {

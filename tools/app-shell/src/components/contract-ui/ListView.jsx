@@ -45,6 +45,7 @@ export function ListView({
   onNew = null,
   newActions = [],
   labelOverrides,
+  onCloneRow = null,
   initialColumnFilters,
   rowFilter,
 }) {
@@ -427,6 +428,7 @@ export function ListView({
                     token={token}
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={labelOverrides}
+                    onCloneRow={onCloneRow}
                     initialColumnFilters={initialColumnFilters}
                     rowFilter={effectiveRowFilter}
                   />
