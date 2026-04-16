@@ -1,9 +1,12 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline
 
 # --- Testing ---
 
 test: ## Run all CLI tests
 	cd cli && node --test 'test/*.test.js'
+
+validate-pipeline: ## Validate pipeline completeness across all artifacts
+	node cli/src/validate-pipeline.js --format=text
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'

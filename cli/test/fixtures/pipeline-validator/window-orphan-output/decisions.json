@@ -1,0 +1,9 @@
+{
+  "$schema": "decisions-v2",
+  "version": 2,
+  "window": {},
+  "entities": {},
+  "rules": [],
+  "discardPatterns": [],
+  "excludedEntities": []
+}
