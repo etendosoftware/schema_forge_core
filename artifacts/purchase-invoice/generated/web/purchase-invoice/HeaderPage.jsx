@@ -12,6 +12,7 @@ import AccountingTable from './AccountingTable';
 import AccountingForm from './AccountingForm';
 import ReversedInvoicesTable from './ReversedInvoicesTable';
 import ReversedInvoicesForm from './ReversedInvoicesForm';
+import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 
@@ -31,15 +32,17 @@ const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
-const processes = [];
+const processes = [
+
+];
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
 const draftMode = {
-  enabled: true,
-  processField: 'documentAction',
-  processValue: 'CO',
-  label: 'Confirm',
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
 
@@ -56,7 +59,8 @@ const addLineFields = {
 
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
+    { key: 'grossAmount', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -78,7 +82,6 @@ const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
-        "orderReference",
         "documentStatus"
       ]
     },
@@ -115,17 +118,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
-      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
     "cashVat": {
       "get": true,
       "getById": true,
@@ -135,6 +127,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/cashVat",
       "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
+      "supportedFilters": []
+    },
+    "basicDiscounts": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
+      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -219,7 +222,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/C_BPartner_ID?isVendor=Y"
+      "url": "/sws/neo/purchase-invoice/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -235,7 +238,7 @@ const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/M_PriceList_ID?isSOTrx=N"
+      "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
     },
     {
       "entity": "header",
@@ -430,20 +433,20 @@ const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
-    },
-    {
       "entity": "cashVat",
       "field": "payment",
       "column": "FIN_Payment_ID",
       "reference": "Payment",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
+    },
+    {
+      "entity": "basicDiscounts",
+      "field": "discount",
+      "column": "C_Discount_ID",
+      "reference": "Discount",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
     },
     {
       "entity": "paymentPlan",
@@ -669,14 +672,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "tbaiXmlgenerator",
       "column": "EM_Tbai_Xmlgenerator",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiXmlgenerator",
@@ -790,12 +785,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -808,7 +805,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        draftMode={draftMode}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
@@ -823,6 +819,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
           { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
         ]}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        draftMode={draftMode}
         {...props}
       />
     );
