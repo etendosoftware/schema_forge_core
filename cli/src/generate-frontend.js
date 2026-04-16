@@ -3,6 +3,37 @@ import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
 
 /**
+ * Resolves the correct import path for a custom component.
+ *
+ * Two conventions coexist in the project:
+ *  - Pipeline windows (sales-order, sales-invoice, etc.) place their custom components
+ *    in `artifacts/{specName}/custom/` → import as `'../../../custom/<Component>'`
+ *    (3 levels up from `generated/web/{specName}/`)
+ *  - Hand-built windows (product, assets, contacts, etc.) place their custom components
+ *    in `tools/app-shell/src/windows/custom/{specName}/` → import as
+ *    `'@/windows/custom/{specName}/<Component>'`
+ *
+ * The function checks the filesystem at generation time and picks the right path.
+ * Falls back to `'../../../custom/'` (artifact-local, the convention for new windows).
+ *
+ * @param {string} specName  - window spec name, e.g. 'sales-invoice'
+ * @param {string} component - component filename without extension, e.g. 'InvoiceBottomPanel'
+ * @param {string} [appShellDir] - override the app-shell subdir (defaults to specName)
+ * @returns {string} - the quoted import path, e.g. `'../../../custom/Foo'`
+ */
+function resolveCustomImport(specName, component, appShellDir) {
+  if (existsSync(resolve(`artifacts/${specName}/custom/${component}.jsx`))) {
+    return `'../../../custom/${component}'`;
+  }
+  const dir = appShellDir || specName;
+  if (existsSync(resolve(`tools/app-shell/src/windows/custom/${dir}/${component}.jsx`))) {
+    return `'@/windows/custom/${dir}/${component}'`;
+  }
+  // Default: artifact-local convention for newly created windows
+  return `'../../../custom/${component}'`;
+}
+
+/**
  * Capitalize the first letter of a string.
  */
 export function capitalize(s) {
@@ -496,8 +527,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     autoPatterns.test(f.name) && !f.required && !f.reference
   );
   const entryFields = detailEditableFields.filter(f => !derivedFields.includes(f));
+  // Include all form=false fields with a defaultValue as hidden defaults, regardless of readOnly —
+  // readOnly fields like grossUnitPrice still need to be sent to the server for callout price calculation.
   const hiddenDefaultFields = detailFields.filter(f =>
-    f.visibility !== 'readOnly' && !f.form && f.defaultValue !== undefined
+    !f.form && f.defaultValue !== undefined
   );
 
   // The first search-type entry field (usually product) triggers a lookup modal
@@ -512,7 +545,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart} },`;
+    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value
+    const rawDv = f.defaultValue;
+    let defaultValuePart = '';
+    if (rawDv !== undefined && rawDv !== null && rawDv !== '') {
+      const numDv = Number(rawDv);
+      defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
+    }
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -647,13 +687,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const secondaryTabsImports = secondaryTabDefs
     .map(t => {
       if (t.isPanelTab && specName) {
-        return `import ${t.PanelName} from '@/windows/custom/${specName}/${t.PanelName}';`;
+        return `import ${t.PanelName} from ${resolveCustomImport(specName, t.PanelName)};`;
       }
       const formImportPath = (t.isCustomForm && specName)
-        ? `@/windows/custom/${specName}/${t.FormName}`
+        ? resolveCustomImport(specName, t.FormName).replace(/'/g, '')
         : `./${t.FormName}`;
       const tableImportPath = (t.isCustomTable && specName)
-        ? `@/windows/custom/${specName}/${t.TableName}`
+        ? resolveCustomImport(specName, t.TableName).replace(/'/g, '')
         : `./${t.TableName}`;
       if (t.isFormTab) {
         return `import ${t.FormName} from '${formImportPath}';`;
@@ -729,38 +769,38 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const customComponentImports = [];
   const customComponentProps = [];
   if (customComponents.bottomSection) {
-    customComponentImports.push(`import ${customComponents.bottomSection} from '@/windows/custom/${specName}/${customComponents.bottomSection}';`);
+    customComponentImports.push(`import ${customComponents.bottomSection} from ${resolveCustomImport(specName, customComponents.bottomSection)};`);
     customComponentProps.push(`\n        bottomSection={${customComponents.bottomSection}}`);
   }
   if (customComponents.topbarRight) {
-    customComponentImports.push(`import ${customComponents.topbarRight} from '@/windows/custom/${specName}/${customComponents.topbarRight}';`);
+    customComponentImports.push(`import ${customComponents.topbarRight} from ${resolveCustomImport(specName, customComponents.topbarRight)};`);
     customComponentProps.push(`\n        topbarRight={${customComponents.topbarRight}}`);
   }
   if (customComponents.topbarExtra) {
-    customComponentImports.push(`import ${customComponents.topbarExtra} from '@/windows/custom/${specName}/${customComponents.topbarExtra}';`);
+    customComponentImports.push(`import ${customComponents.topbarExtra} from ${resolveCustomImport(specName, customComponents.topbarExtra)};`);
     customComponentProps.push(`\n        topbarExtra={${customComponents.topbarExtra}}`);
   }
   if (customComponents.bulkActions) {
-    customComponentImports.push(`import ${customComponents.bulkActions} from '@/windows/custom/${specName}/${customComponents.bulkActions}';`);
+    customComponentImports.push(`import ${customComponents.bulkActions} from ${resolveCustomImport(specName, customComponents.bulkActions)};`);
   }
   if (customComponents.sidePanel) {
-    customComponentImports.push(`import ${customComponents.sidePanel} from '@/windows/custom/${specName}/${customComponents.sidePanel}';`);
+    customComponentImports.push(`import ${customComponents.sidePanel} from ${resolveCustomImport(specName, customComponents.sidePanel)};`);
     customComponentProps.push(`\n        sidePanel={${customComponents.sidePanel}}`);
     if (customComponents.sidePanelStyle) {
       customComponentProps.push(`\n        sidePanelStyle={${JSON.stringify(customComponents.sidePanelStyle)}}`);
     }
   }
   if (customComponents.moreMenuContent) {
-    customComponentImports.push(`import ${customComponents.moreMenuContent} from '../../../custom/${customComponents.moreMenuContent}';`);
+    customComponentImports.push(`import ${customComponents.moreMenuContent} from ${resolveCustomImport(specName, customComponents.moreMenuContent)};`);
     customComponentProps.push(`\n        customMenuContent={${customComponents.moreMenuContent}}`);
   }
   if (customComponents.newRecordComponent) {
-    customComponentImports.push(`import ${customComponents.newRecordComponent} from '@/windows/custom/${specName}/${customComponents.newRecordComponent}';`);
+    customComponentImports.push(`import ${customComponents.newRecordComponent} from ${resolveCustomImport(specName, customComponents.newRecordComponent)};`);
   }
   // newActions — import component modals if declared
   const newActionsWithComponents = newActionsConfig.filter(a => a.component);
   for (const action of newActionsWithComponents) {
-    customComponentImports.push(`import ${action.component} from '@/windows/custom/${specName}/${action.component}';`);
+    customComponentImports.push(`import ${action.component} from ${resolveCustomImport(specName, action.component)};`);
   }
   const customCompImportBlock = customComponentImports.length > 0
     ? customComponentImports.join('\n') + '\n'
@@ -770,7 +810,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Custom headerTable override
   const customHeaderTable = customComponents.headerTable ?? null;
   const headerTableImport = customHeaderTable
-    ? `import ${headerName}Table from '@/windows/custom/${specName}/${customHeaderTable}';`
+    ? `import ${headerName}Table from ${resolveCustomImport(specName, customHeaderTable)};`
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
@@ -790,7 +830,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   // Build optional import for RelatedDocuments
   const relatedDocsImport = relatedDocuments
-    ? `import RelatedDocuments from '../../../custom/RelatedDocuments';\n`
+    ? `import RelatedDocuments from ${resolveCustomImport(specName, 'RelatedDocuments')};\n`
     : '';
 
   // Draft mode config from frontend contract
@@ -848,7 +888,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   let listKpiCardsProp = '';
   if (listKpiCardsConfig?.customComponent && specName) {
     const kpiComp = listKpiCardsConfig.customComponent;
-    listKpiCardsImport = `import ${kpiComp} from '@/windows/custom/${specName}/${kpiComp}';\n`;
+    listKpiCardsImport = `import ${kpiComp} from ${resolveCustomImport(specName, kpiComp)};\n`;
     listKpiCardsProp = `\n      headerContent={(p) => <${kpiComp} {...p} />}`;
   }
 
@@ -863,7 +903,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   let formFooterProp = '';
   if (headerExtraConfig?.customForm && specName) {
     const compName = headerExtraConfig.customForm;
-    formFooterImport = `import ${compName} from '@/windows/custom/${specName}/${compName}';\n`;
+    formFooterImport = `import ${compName} from ${resolveCustomImport(specName, compName)};\n`;
     formFooterProp = `\n        formFooter={${compName}}`;
   }
 
@@ -875,7 +915,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const imports = [];
     const tabEntries = primaryTabsConfig.map(tab => {
       if (tab.panel) {
-        imports.push(`import ${tab.panel} from '@/windows/custom/${specName}/${tab.panel}';`);
+        imports.push(`import ${tab.panel} from ${resolveCustomImport(specName, tab.panel)};`);
         return `{ key: '${tab.key}', label: '${tab.label}', Panel: ${tab.panel} }`;
       }
       return `{ key: '${tab.key}', label: '${tab.label}' }`;
@@ -945,9 +985,9 @@ import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
-${isGallery ? `import ${headerName}Gallery from '@/windows/custom/${headerEntity}/${headerName}Gallery';` : ''}${isSidebar ? `
-import ${headerName}Sidebar from '@/windows/custom/${headerEntity}/${headerName}Sidebar';` : (isGallery ? `
-import ${headerName}DetailHeader from '@/windows/custom/${headerEntity}/${headerName}DetailHeader';` : '')}${statusBarImport}
+${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
+import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
+import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
 ${labelOverridesBlock}${statusBarCode}
