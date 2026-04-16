@@ -1,0 +1,75 @@
+name: Sync develop into epic/ETP-3504
+
+# Keeps a single rolling PR open: develop -> epic/ETP-3504.
+# On every push to develop the PR's diff updates automatically (same head branch).
+# This workflow only ensures the PR exists, has the right label, assignee and auto-merge.
+#
+# Why a PR (not a direct merge): runs all required checks (test, core-approval,
+# pr-architecture-alert, ...) against the merge result before it lands, surfaces
+# conflicts in the GitHub UI, and respects branch protection on the epic.
+#
+# See proposal: docs/plans/2026-04-16-auto-sync-develop-to-epic.md
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ensure-sync-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create epic-sync \
+            --description "Auto-sync PRs from develop into epic branches" \
+            --color BFD4F2 \
+            2>/dev/null || true
+
+      - name: Ensure rolling PR develop -> epic/ETP-3504
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          existing=$(gh pr list \
+            --base epic/ETP-3504 \
+            --head develop \
+            --state open \
+            --json number,url \
+            --jq '.[0] // empty')
+
+          if [ -z "$existing" ]; then
+            echo "No open sync PR found, creating one..."
+            pr_url=$(gh pr create \
+              --base epic/ETP-3504 \
+              --head develop \
+              --title "Epic ETP-3504: Sync develop into epic" \
+              --body "Rolling auto-sync of \`develop\` into \`epic/ETP-3504\`.
+
+This PR is updated automatically on every push to \`develop\`.
+
+**Merge with regular merge (no squash)** to preserve history — see [\`docs/branch-workflow.md\`](../blob/epic/ETP-3504/docs/branch-workflow.md).
+
+If this PR shows merge conflicts, resolve them by merging \`develop\` into \`epic/ETP-3504\` locally and pushing the result." \
+              --label epic-sync \
+              --assignee sebastianbarrozo)
+            echo "Created sync PR: $pr_url"
+            # Best-effort: enable auto-merge with regular merge method (no squash).
+            # Will no-op if auto-merge is disabled at repo level or required checks
+            # are not configured.
+            gh pr merge "$pr_url" --auto --merge \
+              || echo "auto-merge could not be enabled (continuing — PR is still open)"
+          else
+            pr_number=$(echo "$existing" | jq -r '.number')
+            pr_url=$(echo "$existing" | jq -r '.url')
+            echo "Sync PR already open: #$pr_number ($pr_url) — refreshed automatically by the push."
+          fi
