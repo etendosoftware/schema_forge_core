@@ -94,8 +94,7 @@
           "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
-          "section": "collapsed",
-          "searchable": true
+          "visibility": "discarded"
         },
         "taxDate": {
           "visibility": "discarded"

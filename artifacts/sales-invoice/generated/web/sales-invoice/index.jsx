@@ -69,7 +69,7 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
     },
     {
@@ -87,6 +87,14 @@ const api = {
       "reference": "Currency",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
+    },
+    {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
     },
     {
       "entity": "lines",
@@ -331,6 +339,9 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 

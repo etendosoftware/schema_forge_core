@@ -116,9 +116,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "editable",
-          "section": "collapsed",
-          "readOnlyLogic": "@Processed@='Y'"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",

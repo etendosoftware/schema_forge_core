@@ -210,6 +210,48 @@ catalogs['PaymentMethod'] = [
   }
 ];
 
+catalogs['Currency'] = [
+  {
+    "id": "USD",
+    "name": "US Dollar",
+    "symbol": "$"
+  },
+  {
+    "id": "EUR",
+    "name": "Euro",
+    "symbol": "EUR"
+  },
+  {
+    "id": "GBP",
+    "name": "Pound Sterling",
+    "symbol": "GBP"
+  },
+  {
+    "id": "ARS",
+    "name": "Argentine Peso",
+    "symbol": "ARS"
+  }
+];
+
+catalogs['PriceList'] = [
+  {
+    "id": "pl-001",
+    "name": "Standard Price List"
+  },
+  {
+    "id": "pl-002",
+    "name": "Wholesale Prices"
+  },
+  {
+    "id": "pl-003",
+    "name": "Retail Prices"
+  },
+  {
+    "id": "pl-004",
+    "name": "VIP Pricing"
+  }
+];
+
 catalogs['Product'] = [
   {
     "id": "prod-001",
