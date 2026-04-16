@@ -17469,7 +17469,12 @@
     "recordDeleted": "Registro eliminado",
     "recordsDeleted": "{count} registro(s) eliminado(s)",
     "recordsCouldNotBeDeleted": "{count} registro(s) no pudieron ser eliminados",
-    "networkError": "Error de red"
+    "networkError": "Error de red",
+    "uomTypeArea": "Área",
+    "uomTypeLength": "Longitud",
+    "uomTypeTime": "Tiempo",
+    "uomTypeVolume": "Volumen",
+    "uomTypeWeight": "Peso"
   },
   "menus": {
     "Tax": {

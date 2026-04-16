@@ -1,6 +1,7 @@
 import { DataTable } from '@/components/contract-ui';
+import { useUI } from '@/i18n';
 
-const TYPE_LABELS = { A: 'Área', L: 'Longitud', T: 'Tiempo', V: 'Volumen', W: 'Peso' };
+const TYPE_KEYS = { A: 'uomTypeArea', L: 'uomTypeLength', T: 'uomTypeTime', V: 'uomTypeVolume', W: 'uomTypeWeight' };
 const TYPE_COLORS = {
   A: 'bg-orange-100 text-orange-700',
   L: 'bg-blue-100 text-blue-700',
@@ -10,8 +11,9 @@ const TYPE_COLORS = {
 };
 
 const TypeBadge = ({ value }) => {
+  const ui = useUI();
   if (!value) return null;
-  const label = TYPE_LABELS[value] ?? value;
+  const label = ui(TYPE_KEYS[value] ?? value);
   const color = TYPE_COLORS[value] ?? 'bg-gray-100 text-gray-700';
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
@@ -25,7 +27,6 @@ const columns = [
   { key: 'name', column: 'Name', type: 'string' },
   { key: 'symbol', column: 'UOMSymbol', type: 'string' },
   { key: 'uOMType', column: 'UOM_Type', type: 'string', render: (row) => <TypeBadge value={row?.uOMType} /> },
-  { key: 'isActive', column: 'IsActive', type: 'boolean' },
 ];
 // @sf-generated-end columns:unitOfMeasure
 
