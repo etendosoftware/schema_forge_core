@@ -21,6 +21,23 @@ function checkFieldPresence(contract, test) {
 }
 
 /**
+ * Check editable-field: field exists in frontendContract and remains editable.
+ */
+function checkEditableField(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) {
+    return { passed: false, reason: `Entity '${test.entity}' not found in frontendContract` };
+  }
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) {
+    return { passed: false, reason: `Field '${test.field}' not found in entity '${test.entity}'` };
+  }
+  return field.visibility === 'editable'
+    ? { passed: true }
+    : { passed: false, reason: `Field '${test.field}' has visibility '${field.visibility}', expected 'editable'` };
+}
+
+/**
  * Check field-type: field has correct tsType in frontendContract
  */
 function checkFieldType(contract, test) {
@@ -58,23 +75,6 @@ function checkSystemField(contract, test) {
   return (field.visibility === 'system' || field.visibility === 'discarded')
     ? { passed: true }
     : { passed: false, reason: `Field '${test.field}' has visibility '${field.visibility}', expected 'system' or 'discarded'` };
-}
-
-/**
- * Check editable-field: field exists in frontendContract with visibility 'editable'
- */
-function checkEditableField(contract, test) {
-  const entity = contract.frontendContract?.entities?.[test.entity];
-  if (!entity) {
-    return { passed: false, reason: `Entity '${test.entity}' not found in frontendContract` };
-  }
-  const field = entity.fields.find(f => f.name === test.field);
-  if (!field) {
-    return { passed: false, reason: `Field '${test.field}' not found in entity '${test.entity}'` };
-  }
-  return field.visibility === 'editable'
-    ? { passed: true }
-    : { passed: false, reason: `Field '${test.field}' has visibility '${field.visibility}', expected 'editable'` };
 }
 
 /**
@@ -267,9 +267,9 @@ function checkDefaultValueType(contract, test) {
 
 const categoryHandlers = {
   'field-presence': checkFieldPresence,
+  'editable-field': checkEditableField,
   'field-type': checkFieldType,
   'system-field': checkSystemField,
-  'editable-field': checkEditableField,
   'searchable-filters': checkSearchableFilters,
   'visibility': checkVisibility,
   'rule-declared': checkRuleDeclared,
