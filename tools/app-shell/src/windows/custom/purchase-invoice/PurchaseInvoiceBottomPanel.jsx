@@ -46,7 +46,7 @@ export default function PurchaseInvoiceBottomPanel({
           {/* DOCS */}
           <div className="flex items-start gap-3 px-3 pb-3">
             <span
-              className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-0.5"
+              className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-0.5"
               style={{ letterSpacing: '0.04em' }}
             >
               {ui('docs')}
@@ -70,7 +70,7 @@ export default function PurchaseInvoiceBottomPanel({
               style={{ borderTopWidth: '0.5px' }}
             >
               <span
-                className="text-[11px] font-medium text-foreground uppercase shrink-0 w-14 pt-1.5"
+                className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-1.5"
                 style={{ letterSpacing: '0.04em' }}
               >
                 {ui('notes')}
@@ -84,7 +84,7 @@ export default function PurchaseInvoiceBottomPanel({
                     placeholder={ui('addNoteHint')}
                     rows={2}
                     autoFocus
-                    className="w-full text-sm bg-white border border-border/40 rounded px-2.5 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/40"
+                    className="w-full text-xs bg-white border border-border/40 rounded px-2.5 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/40"
                     style={{ borderWidth: '0.5px' }}
                   />
                 ) : (
@@ -93,7 +93,7 @@ export default function PurchaseInvoiceBottomPanel({
                     role="textbox"
                     onClick={() => setNotesFocused?.(true)}
                     onFocus={() => setNotesFocused?.(true)}
-                    className="w-full text-sm px-2.5 py-1.5 cursor-text min-h-[1.5rem] text-foreground/80 border border-transparent rounded hover:border-border/30 transition-colors"
+                    className="w-full text-xs px-2.5 py-1.5 cursor-text min-h-[1.5rem] text-foreground/80 border border-transparent rounded hover:border-border/30 transition-colors"
                   >
                     {data?.[notesField] || (
                       <span className="text-muted-foreground/40">{ui('addNoteHint')}</span>

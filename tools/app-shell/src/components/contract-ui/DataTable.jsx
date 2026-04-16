@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Search, Inbox, X, ChevronDown, Check, Trash2 } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown, Check, Trash2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -293,7 +292,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, token, apiBaseUrl, entity, selectorContext }) {
+function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -630,6 +629,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         );
       })}
       {hasDeleteColumn && <TableCell className="w-10" />}
+      {hasCloneColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 }
@@ -762,9 +762,11 @@ export function DataTable({
   onDataMutated,
   labelOverrides,
   onDeleteRow,
+  onCloneRow,
   onFilterChange,
   onClearAllFilters,
   columnFilters = {},
+  rowFilter,
 }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
@@ -815,22 +817,27 @@ export function DataTable({
   }, [ui]);
 
   const filteredData = useMemo(() => {
-    // If onFilterChange is provided, we assume the sorting/filtering is handled by the backend
-    if (onFilterChange) return data;
-
     let result = data;
-    // Global search (existing behavior for local-only grids)
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(row =>
-        filters.some(key => {
-          const val = resolveIdentifier(row, key);
-          return String(val ?? '').toLowerCase().includes(q);
-        })
-      );
+
+    // If onFilterChange is provided, column filters/sort are handled by the backend;
+    // skip local search + column filter loops. Otherwise apply them client-side.
+    if (!onFilterChange) {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        result = result.filter(row =>
+          filters.some(key => {
+            const val = resolveIdentifier(row, key);
+            return String(val ?? '').toLowerCase().includes(q);
+          })
+        );
+      }
     }
+
+    // Row-level predicate (e.g. numeric conditions like outstandingAmount > 0)
+    // is always applied locally — the backend cannot evaluate arbitrary JS predicates.
+    if (rowFilter) result = result.filter(rowFilter);
     return result;
-  }, [data, filters, searchQuery, onFilterChange]);
+  }, [data, filters, searchQuery, onFilterChange, rowFilter]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),
@@ -1081,7 +1088,7 @@ export function DataTable({
     });
   };
 
-  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0);
+  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0) + (onCloneRow ? 1 : 0);
 
   return (
     <div className="space-y-0">
@@ -1125,21 +1132,17 @@ export function DataTable({
                           className="text-xs font-medium text-muted-foreground/70 tracking-wide cursor-pointer select-none hover:text-foreground transition-colors bg-transparent border-0 p-0 text-left"
                           onClick={() => onSort(col.key)}
                         >
-                          <FieldHighlight entityName={entity} fieldName={col.key}>
-                            {colLabel}
-                            {isSorted && (
-                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                            )}
-                          </FieldHighlight>
+                          {colLabel}
+                          {isSorted && (
+                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          )}
                         </button>
                       ) : (
                         <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
-                          <FieldHighlight entityName={entity} fieldName={col.key}>
-                            {colLabel}
-                            {isSorted && (
-                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                            )}
-                          </FieldHighlight>
+                          {colLabel}
+                          {isSorted && (
+                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          )}
                         </span>
                       )}
                       <div className="relative w-full">
@@ -1209,6 +1212,7 @@ export function DataTable({
                 );
               })}
               {onDeleteRow && <TableHead className="w-10 px-2" />}
+              {onCloneRow && <TableHead className="w-10 px-2" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1274,6 +1278,24 @@ export function DataTable({
                         </button>
                       </TableCell>
                     )}
+                    {onCloneRow && (
+                      <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative group/clonebtn flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => onCloneRow(row)}
+                            className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 flex items-center justify-center rounded border border-border bg-white text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
+                            style={{ width: 26, height: 26 }}
+                            aria-label={ui('cloneOrderBtn')}
+                          >
+                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/clonebtn:opacity-100 pointer-events-none transition-opacity z-10">
+                            {ui('cloneOrderBtn')}
+                          </div>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -1289,6 +1311,7 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                   selectable={selectable}
                   hasDeleteColumn={!!onDeleteRow}
+                  hasCloneColumn={!!onCloneRow}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -1308,6 +1331,7 @@ export function DataTable({
                   </TableCell>
                 ))}
                 {onDeleteRow && <TableCell />}
+                {onCloneRow && <TableCell />}
               </TableRow>
             </TableFooter>
           )}

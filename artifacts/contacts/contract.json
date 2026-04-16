@@ -25,7 +25,7 @@
         "contact": {
           "tabMode": "table-form",
           "tabOrder": 1,
-          "label": "Contact Person",
+          "label": "Person",
           "addLineFields": [
             "firstName",
             "lastName",
@@ -38,7 +38,7 @@
         "bankAccount": {
           "tabMode": "table-form",
           "tabOrder": 2,
-          "label": "Contact Bank Account",
+          "label": "Bank Account",
           "addLineFields": [
             "bankName",
             "bankFormat",
@@ -118,19 +118,6 @@
             "section": "principal"
           },
           {
-            "name": "taxID",
-            "apiKey": "taxID",
-            "column": "TaxID",
-            "label": "Tax ID",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "section": "principal"
-          },
-          {
             "name": "businessPartnerCategory",
             "apiKey": "businessPartnerCategory",
             "column": "C_BP_Group_ID",
@@ -140,7 +127,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "BusinessPartnerCategory",
             "inputMode": "selector",
             "defaultValue": "@SQL=SELECT MAX(C_BP_GROUP_ID) FROM C_BP_GROUP WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@",
@@ -168,7 +155,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
+            "form": false,
             "section": "principal"
           },
           {
@@ -249,7 +236,21 @@
                 "name": "No Censado"
               }
             ],
-            "defaultValue": "'1'"
+            "defaultValue": "'1'",
+            "section": "principal"
+          },
+          {
+            "name": "taxID",
+            "apiKey": "taxID",
+            "column": "TaxID",
+            "label": "Tax ID",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "active",
@@ -3298,7 +3299,7 @@
         "contact": {
           "tabMode": "table-form",
           "tabOrder": 1,
-          "label": "Contact Person",
+          "label": "Person",
           "addLineFields": [
             "firstName",
             "lastName",
@@ -3310,7 +3311,7 @@
         "bankAccount": {
           "tabMode": "table-form",
           "tabOrder": 2,
-          "label": "Contact Bank Account",
+          "label": "Bank Account",
           "addLineFields": [
             "bankName",
             "bankFormat",

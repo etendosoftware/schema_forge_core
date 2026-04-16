@@ -3,7 +3,8 @@
   "window": {
     "category": "configuracion",
     "name": "Unit of Measure",
-    "detailEntity": "conversion"
+    "hidePrint": true,
+    "hideMoreMenu": true
   },
   "entities": {
     "unitOfMeasure": {
@@ -27,8 +28,15 @@
         },
         "uOMType": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "seq": 4
+        },
+        "isActive": {
+          "grid": false,
+          "form": false,
+          "section": "principal",
+          "seq": 11
         },
         "standardPrecision": {
           "section": "principal",

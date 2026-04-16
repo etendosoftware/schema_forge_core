@@ -44,13 +44,13 @@
           "displayLogic": null,
           "readOnlyLogic": "@Processed@='Y'",
           "section": "principal",
-          "seq": 30
+          "seq": 10
         },
         "invoiceDate": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 20
+          "seq": 30
         },
         "accountingDate": {
           "visibility": "system"
@@ -101,7 +101,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "createLinesFromOrder": {
           "visibility": "discarded"
@@ -116,9 +116,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "editable",
-          "section": "collapsed",
-          "readOnlyLogic": "@Processed@='Y'"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",
@@ -130,7 +128,7 @@
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 10
+          "seq": 20
         },
         "documentStatus": {
           "visibility": "readOnly",

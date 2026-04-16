@@ -41,15 +41,21 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  initialQuickFilterIndex = 0,
   onNew = null,
   newActions = [],
   labelOverrides,
+  onCloneRow = null,
+  initialColumnFilters,
+  rowFilter,
 }) {
-  const [activeFilterIndex, setActiveFilterIndex] = useState(0);
+  const [activeFilterIndex, setActiveFilterIndex] = useState(initialQuickFilterIndex ?? 0);
   const effectiveFilter = quickFilters
     ? (quickFilters[activeFilterIndex]?.filter ?? baseFilter)
     : baseFilter;
-  const [columnFilters, setColumnFilters] = useState({});
+  const effectiveRowFilter = quickFilters?.[activeFilterIndex]?.rowFilter ?? rowFilter;
+
+  const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [tableColumns, setTableColumns] = useState([]);
   const columnDefs = useMemo(
     () => Object.fromEntries(tableColumns.map(c => [c.key, c])),
@@ -451,6 +457,8 @@ export function ListView({
                     onFilterChange={handleFilterChange}
                     onClearAllFilters={handleClearAllFilters}
                     columnFilters={columnFilters}
+                    onCloneRow={onCloneRow}
+                    rowFilter={effectiveRowFilter}
                   />
                 )
               }

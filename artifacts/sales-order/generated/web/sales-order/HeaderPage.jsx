@@ -13,6 +13,15 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
 
+const labelOverrides = {
+  "es_ES": {
+    "C_BPartner_ID": "Contacto"
+  },
+  "en_US": {
+    "C_BPartner_ID": "Contact"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -42,7 +51,7 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
     { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
@@ -52,8 +61,7 @@ const addLineFields = {
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
   ],
   hidden: [
-    { key: 'grossUnitPrice', value: '0' },
-    { key: 'priceList', fromParent: 'priceList' },
+
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -255,19 +263,19 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-order/header/{id}/action/posted",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-order/header/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-order/header/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -354,7 +362,6 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -387,6 +394,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
         salesTheme
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -401,6 +409,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

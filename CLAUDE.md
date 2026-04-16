@@ -262,6 +262,56 @@ A "worked" window has `artifacts/{name}/decisions.json`. Legacy `schema-curated.
 `resolve-curated.js` merges raw + decisions → curated **in memory** (no intermediate files).
 See `docs/decisions-versioning.md` for migration guide.
 
+## Window Change Integrity Protocol (MANDATORY)
+
+**EVERY change to a window** (decisions.json, generator, contract, or generated files) MUST complete ALL steps below before considering the task done. No exceptions.
+
+### Step 1 — Edit only `decisions.json`
+Never edit `contract.json` or generated files directly. `decisions.json` is the single source of truth.
+If a change cannot be expressed in `decisions.json`, fix the generator (`generate-frontend.js`, `generate-contract.js`, `resolve-curated.js`) instead.
+
+### Step 2 — Regenerate via `--write`
+```bash
+node cli/src/resolve-curated.js --window <name> --write
+```
+This runs: `decisions.json + schema-raw.json → contract.json → generated/web/<name>/`
+
+### Step 3 — Verify contract integrity (MANDATORY after every --write)
+Run this and confirm **no field shows `false` for readOnly when it should be locked**:
+```bash
+python3 -c "
+import json
+with open('artifacts/<name>/contract.json') as f: d = json.load(f)
+h = d['frontendContract']['entities']['header']
+print('draftMode:', bool(h.get('draftMode',{}).get('enabled')))
+print('category:', d.get('apiPrediction',{}).get('window',{}).get('category'))
+for fld in h['fields']:
+    if fld.get('form',True) and fld.get('visibility') not in ('discarded','system','readOnly'):
+        rl = fld.get('readOnlyLogic')
+        print(fld['name'], '— readOnly:', bool(rl), '| callout:', bool(fld.get('callout')), '| validationRule:', bool(fld.get('validationRule')))
+"
+```
+All editable header fields of a document that has a completion flow MUST have `readOnly: True`.
+
+### Step 4 — Verify generated import paths
+```bash
+head -15 artifacts/<name>/generated/web/<name>/HeaderPage.jsx
+```
+All custom component imports must use `'../../../custom/<Component>'` (relative path, 3 levels up).
+Never `'@/windows/custom/<name>/<Component>'` — those resolve to app-shell, not the artifact custom dir.
+
+### Step 5 — Verify addLineFields (if lines entity exists)
+```bash
+grep -A 25 "sf-generated-start addLineFields" artifacts/<name>/generated/web/<name>/HeaderPage.jsx
+```
+Check: `product` has `required: true, lookup: true` | quantity has `defaultValue: 1` | `hidden` array has `grossUnitPrice` and `priceList: fromParent`.
+
+### What causes regressions
+- `decisions.json` field has `"readOnlyLogic": null` → silences the raw AD value → field becomes editable on completed docs
+- Running `--write` on a window whose contract had manual fixes → those fixes are lost (always fix in decisions, never in contract)
+- Changing generator files → ALL windows that use that feature must be re-verified
+- Changing `generate-contract.js` or `resolve-curated.js` → run `--write` for every active window
+
 ## Documentation
 
 All docs in `docs/` — see `docs/index.md` for index. Key: PRD.md, TDD.md, architecture-overview.md.

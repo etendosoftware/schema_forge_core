@@ -202,13 +202,20 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
-  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
+  const isDraftModeCompleted = Boolean(
+    draftMode?.enabled && (
+      isProcessed || _headerData?.documentStatus === 'CO'
+    )
+  );
+  const isDocumentReadOnly = lockWhenProcessed && isProcessed;
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
+  const handledOpenAddLineRef = useRef(false);
+  const handledOpenSecondaryLineRef = useRef(false);
 
   useEffect(() => {
     if (!showMoreMenu) return;
@@ -273,6 +280,8 @@ export function DetailView({
 
   // Track fields whose values were set by a callout response to avoid re-triggering
   const calloutAppliedRef = useRef(new Set());
+  // Guard: fire default callouts only once per new-record session
+  const defaultCalloutsTriggeredRef = useRef(false);
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
@@ -288,11 +297,16 @@ export function DetailView({
 
   // Auto-open add-line form after header auto-save navigation (openAddLine flag in route state).
   useEffect(() => {
-    if (!location.state?.openAddLine || isNew || !hook.editing) return;
+    if (!location.state?.openAddLine || isNew || !hook.editing) {
+      handledOpenAddLineRef.current = false;
+      return;
+    }
+    if (handledOpenAddLineRef.current) return;
+    handledOpenAddLineRef.current = true;
     setAddingLine(true);
     setEditingChild(null);
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state?.openAddLine, isNew, hook.editing, navigate]);
+  }, [location.state?.openAddLine, isNew, hook.editing, navigate, location.pathname]);
 
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
@@ -305,6 +319,22 @@ export function DetailView({
     setAddingLine(prev => !prev);
     setEditingChild(null);
   }, [isNew, hook.handleSave, navigate, windowName]);
+
+  const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
+    const targetTab = secondaryTabs.find(st => st.key === tabKey);
+    if (!targetTab) return;
+    if (isNew && targetTab.requireSavedRecord) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return;
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openSecondaryTab: tabKey, openAddSecondaryLine: true },
+      });
+      return;
+    }
+    setAddingSecondaryLine(prev => ({ ...prev, [tabKey]: !prev[tabKey] }));
+    setSelectedSecondaryLine(null);
+  }, [secondaryTabs, isNew, hook.handleSave, navigate, windowName]);
 
   // Resolve $_identifier for default FK values.
   // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
@@ -325,6 +355,38 @@ export function DetailView({
       }
     }
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
+
+  // After defaults load for a new record, fire callouts for non-dependent selector fields
+  // so the callout chain runs (e.g. businessPartner → priceList, paymentTerms).
+  // This mirrors what classic Etendo does when opening a blank document.
+  useEffect(() => {
+    if (!isNew) { defaultCalloutsTriggeredRef.current = false; return; }
+    if (defaultCalloutsTriggeredRef.current) return;
+    if (!hook.editing || !api?.selectors) return;
+    // Wait until defaults have actually arrived (editing is non-empty)
+    const hasDefaults = Object.values(hook.editing).some(v => v != null && v !== '');
+    if (!hasDefaults) return;
+
+    defaultCalloutsTriggeredRef.current = true;
+
+    // Trigger callouts for primary (non-dependent) selector fields that have default values.
+    // 'dependent' selectors (e.g. partnerAddress) are derived by other callouts — skip them.
+    const triggers = (api.selectors || [])
+      .filter(s => s.entity === entity && s.inputMode !== 'dependent' && hook.editing[s.field]);
+
+    // Stagger calls by (i * executeCallout.debounceMs + buffer) so each result settles
+    // before the next callout fires. The backend is idempotent: returns {} for fields
+    // with no registered callout, so it is safe to call for every selector field.
+    const STAGGER_MS = 400; // > useCallout debounce (300ms)
+    const editingSnapshot = { ...hook.editing };
+    triggers.forEach(({ field }, i) => {
+      setTimeout(() => {
+        const value = editingSnapshot[field];
+        if (value) executeCallout(field, value, editingSnapshot);
+      }, i * STAGGER_MS);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, hook.editing, api, entity]);
 
   useEffect(() => {
     setDirectFetched(false);
@@ -691,6 +753,25 @@ export function DetailView({
     tabs.push({ key: 'others', label: othersLabel || ui('others') });
   }
 
+  useEffect(() => {
+    const targetTabKey = location.state?.openSecondaryTab;
+    if (!targetTabKey || isNew || !hook.editing) {
+      handledOpenSecondaryLineRef.current = false;
+      return;
+    }
+    if (handledOpenSecondaryLineRef.current) return;
+    handledOpenSecondaryLineRef.current = true;
+    const nextTabIndex = tabs.findIndex(tab => tab.key === targetTabKey);
+    if (nextTabIndex >= 0) {
+      setActiveTab(nextTabIndex);
+    }
+    if (location.state?.openAddSecondaryLine) {
+      setAddingSecondaryLine(prev => ({ ...prev, [targetTabKey]: true }));
+      setSelectedSecondaryLine(null);
+    }
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openSecondaryTab, location.state?.openAddSecondaryLine, isNew, hook.editing, navigate, location.pathname, tabs]);
+
   if (hook.loading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -948,14 +1029,14 @@ export function DetailView({
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
                   <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                     const saved = await hook.handleSave(data);
                     if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                   }}>
                     <Save className="h-3.5 w-3.5" />
-                    {ui('saveDraft')}
+                    {ui('save')}
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
                     const saved = await hook.handleSaveAndProcess(draftMode);
@@ -969,7 +1050,7 @@ export function DetailView({
                     }
                   }}>
                     <Check className="h-3.5 w-3.5" />
-                    {ui('save')} &amp; {draftMode.label || ui('process')}
+                    {draftMode.label || ui('process')}
                   </Button>
                 </>
               ) : isNew ? (<>
@@ -978,7 +1059,7 @@ export function DetailView({
                   if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
                 }}>
                   <Save className="h-3.5 w-3.5" />
-                  {ui('saveDraft')}
+                  {ui('save')}
                 </Button>
                 {!isProcessed && hook.children.length > 0 && (
                 <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
@@ -993,7 +1074,7 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  {ui('saveAndProcess', { action: tMenu(draftMode.label) || ui('process') })}
+                  {tMenu(draftMode.label) || ui('process')}
                 </Button>
                 )}
               </>
@@ -1659,7 +1740,7 @@ export function DetailView({
                     </div>
                     {st.addLineFields?.entry?.length > 0 && hook.editing && (
                       <button
-                        onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                        onClick={() => { void handleSecondaryAddLineToggle(st.key); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
                         {ui('addEntity', { label: tMenu(st.label) })}
@@ -1782,7 +1863,7 @@ export function DetailView({
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
                     {customTabs.length > 0 && (
                       <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-20">{ui('docs')}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-24">{ui('docs')}</span>
                         <div className="flex-1">
                           {customTabs.map(ct => {
                             const TabComponent = ct.Component;
@@ -1803,7 +1884,7 @@ export function DetailView({
                     )}
                     {notesField && (
                       <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
-                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-20">{ui('notes')}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
                         <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
                             <textarea
@@ -1813,7 +1894,7 @@ export function DetailView({
                               placeholder={ui('description')}
                               rows={3}
                               autoFocus
-                              className="w-full text-sm bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
+                              className="w-full text-xs bg-transparent px-2 py-0.5 resize-none focus:outline-none placeholder:text-muted-foreground/40"
                             />
                           ) : (
                             <div
@@ -1821,7 +1902,7 @@ export function DetailView({
                               role="textbox"
                               onClick={() => setNotesFocused(true)}
                               onFocus={() => setNotesFocused(true)}
-                              className="w-full text-sm px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
+                              className="w-full text-xs px-2 py-0.5 cursor-text min-h-[1.5rem] whitespace-pre-wrap break-words text-foreground/80"
                             >
                               {data[notesField] || <span className="text-muted-foreground/40">{ui('description')}</span>}
                             </div>

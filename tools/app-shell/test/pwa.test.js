@@ -1,9 +1,27 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const APP_SHELL = resolve(import.meta.dirname, '..');
+
+let builtArtifacts = null;
+
+function readBuiltArtifacts() {
+  if (!builtArtifacts) {
+    execFileSync('npm', ['run', 'build', '--workspace=@schema-forge/app-shell'], {
+      cwd: resolve(APP_SHELL, '..', '..'),
+      stdio: 'pipe',
+    });
+    builtArtifacts = {
+      indexHtml: readFileSync(resolve(APP_SHELL, 'dist/index.html'), 'utf8'),
+      sw: readFileSync(resolve(APP_SHELL, 'dist/sw.js'), 'utf8'),
+    };
+  }
+
+  return builtArtifacts;
+}
 
 describe('PWA configuration', () => {
   it('vite-plugin-pwa is listed in devDependencies', () => {
@@ -63,6 +81,27 @@ describe('PWA configuration', () => {
     const content = readFileSync(mainPath, 'utf8');
     assert.ok(content.includes("import { Toaster } from 'sonner'"), 'should import Toaster from sonner');
     assert.ok(content.includes('<Toaster'), 'should render Toaster');
+  });
+
+  it('production build fingerprints assets so immutable caching stays correct', () => {
+    const { indexHtml, sw } = readBuiltArtifacts();
+
+    assert.match(
+      indexHtml,
+      /assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.js/
+    );
+    assert.match(
+      indexHtml,
+      /assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.css/
+    );
+    assert.ok(
+      !sw.includes('url:"assets/index.js",revision:null'),
+      'service worker should not precache a stable /assets/index.js URL'
+    );
+    assert.ok(
+      !sw.includes('url:"assets/index.css",revision:null'),
+      'service worker should not precache a stable /assets/index.css URL'
+    );
   });
 
   it('favicon.png exists in public/ for the PWA icon', () => {

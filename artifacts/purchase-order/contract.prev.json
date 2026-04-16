@@ -1,7 +1,7 @@
 {
-  "version": "0.15.0",
-  "generatedAt": "2026-04-13T16:48:02.792Z",
-  "checksum": "5425467cb5d83dec",
+  "version": "0.16.0",
+  "generatedAt": "2026-04-13T16:54:03.058Z",
+  "checksum": "6bfb5a9c90aa4832",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -31,12 +31,6 @@
           "C_BPartner_ID": "Contact",
           "DatePromised": "Expected Delivery Date"
         }
-      },
-      "statusEnumLabels": {
-        "DR": "Borrador",
-        "CO": "Confirmado",
-        "CL": "Cerrado",
-        "VO": "Anulado"
       },
       "noHeaderBorder": true,
       "layoutType": "default"
@@ -118,7 +112,7 @@
             "label": "Partner Address",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": false,
             "form": true,
@@ -232,7 +226,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "collapsed",
@@ -342,7 +336,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",
@@ -1895,12 +1890,6 @@
           "DatePromised": "Expected Delivery Date"
         }
       },
-      "statusEnumLabels": {
-        "DR": "Borrador",
-        "CO": "Confirmado",
-        "CL": "Cerrado",
-        "VO": "Anulado"
-      },
       "noHeaderBorder": true
     },
     "entities": {
@@ -3309,7 +3298,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "orderLineHandler"
       },
       "lineTax": {
         "tableName": "C_OrderLineTax",
