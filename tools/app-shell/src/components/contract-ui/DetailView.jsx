@@ -202,8 +202,13 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
-  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
+  const isDraftModeCompleted = Boolean(
+    draftMode?.enabled && (
+      isProcessed || _headerData?.documentStatus === 'CO'
+    )
+  );
+  const isDocumentReadOnly = lockWhenProcessed && isProcessed;
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1024,7 +1029,7 @@ export function DetailView({
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
                   <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                     const saved = await hook.handleSave(data);

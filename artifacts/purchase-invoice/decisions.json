@@ -223,7 +223,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded",
+          "visibility": "system",
           "form": false,
           "displayLogic": null
         },

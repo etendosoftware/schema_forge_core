@@ -1,7 +1,7 @@
 {
-  "version": "0.9.0",
-  "generatedAt": "2026-04-16T15:21:20.208Z",
-  "checksum": "0f024b3f2dbd792a",
+  "version": "0.9.1",
+  "generatedAt": "2026-04-16T18:10:50.792Z",
+  "checksum": "f5a63e6da62dbf97",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -3258,7 +3258,7 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {
