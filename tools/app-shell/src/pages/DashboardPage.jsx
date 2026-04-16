@@ -193,6 +193,31 @@ function formatDashboardCompact(value, currencyLabel) {
   return formatAmount(num, currencyLabel);
 }
 
+function formatAxisTick(value, locale = 'en-US') {
+  const num = Number(value) || 0;
+  const abs = Math.abs(num);
+
+  const formatPlain = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+
+  const formatCompact = (divisor, suffix) => {
+    const compact = num / divisor;
+    const hasFraction = Math.abs(compact) < 100 && Math.abs(compact % 1) >= 0.05;
+    const formatter = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: hasFraction ? 1 : 0,
+    });
+    return `${formatter.format(compact)}${suffix}`;
+  };
+
+  if (abs >= 1_000_000_000) return formatCompact(1_000_000_000, 'B');
+  if (abs >= 1_000_000) return formatCompact(1_000_000, 'M');
+  if (abs >= 1_000) return formatCompact(1_000, 'K');
+  return formatPlain.format(num);
+}
+
 /* ------------------------------------------------------------------
  * Widget config hook (localStorage persistence)
  * ----------------------------------------------------------------*/
@@ -700,7 +725,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
                   <g key={frac}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                      {(val / 1000).toFixed(0)}k
+                      {formatAxisTick(val, bcp47)}
                     </text>
                   </g>
                 );
@@ -766,7 +791,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
                   <g key={frac}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - BAR_PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                      {(val / 1000).toFixed(0)}k
+                      {formatAxisTick(val, bcp47)}
                     </text>
                   </g>
                 );
