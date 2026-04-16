@@ -1,6 +1,6 @@
 # Grid Filters and Sorting: Display-Value Analysis and Paginated Proposal
 
-**Status:** Proposal
+**Status:** In Progress (Stages 1–5 done, Stage 6 pending)
 **Date:** 2026-04-14
 **Scope:** Grid/list filtering **and sorting** in app-shell tables, with focus on display-aligned behavior and backend-applied pagination
 
@@ -539,24 +539,27 @@ The work is split into six independently shippable stages. Each stage produces a
 - **Validation:** clicking sort on an FK / enum / status / boolean column yields consistent order on the first click, independent of `sampleRowRef`.
 - **Risk:** low. Resolves Problem B on its own.
 
-### Stage 3 — Display-aware filtering (still in-memory)
-- Wire `getDisplayText` + `parseUserFilter` into the existing client-side filter path in `DataTable.jsx`.
-- Pagination semantics unchanged (still filters loaded rows only).
-- **Validation:** user types `14/04/2026`, `completado`, `complete`, and the filter matches rows whose displayed value matches.
+### Stage 3 — Display-aware filtering (still in-memory) [DONE — merged with Stage 5]
+- Wired `parseUserFilter` into `DataTable.jsx` with debounced inputs (Enter/Tab to apply).
+- Skipped pure in-memory phase — went directly to backend-applied filters.
+- Added i18n keys for filter help text (`filterHelpText`, `filterHelpDate`, `filterHelpNumeric`, `filterHelpSelector`, `filterAll`, `filterBooleanYes`, `filterBooleanNo`) in both `en_US.json` and `es_ES.json`.
+- **Validation:** filter inputs parse by column type and send structured filters to backend.
 - **Risk:** medium — user-visible filter semantics change.
 
-### Stage 4 — State lift (pure refactor)
-- Lift `columnFilters` + `globalFilter` from `DataTable` up to `ListView` (or equivalent parent).
-- Behavior unchanged — prepares the plumbing for Stage 5.
-- **Validation:** all filters observed in Stage 3 continue to work identically.
+### Stage 4 — State lift (pure refactor) [DONE]
+- Lifted `columnFilters` state from `DataTable` to `ListView`.
+- `ListView` now owns `columnFilters`, `columnDefs`, `handleFilterChange`, `handleClearAllFilters`.
+- `DataTable` receives filters as props and calls `onFilterChange` / `onClearAllFilters`.
+- **Validation:** filter state lives in parent; DataTable is a controlled component.
 - **Risk:** low (refactor without behavior change).
 
-### Stage 5 — Backend-applied filters
-- `useEntity.refresh()` and `useEntity.loadMore()` receive active filters and translate them via `buildBackendFilter` into NEO Headless query parameters.
-- Preserve existing `baseFilter`.
-- **Blocker:** requires §8 NEO Headless validation **before** starting (filter syntax, AND/OR combination, `$_identifier` filtering, date ranges).
-- **Validation:** dataset with >200 rows; apply a column filter, scroll to load additional pages, and confirm later pages are also filtered (no late surprises).
-- **Risk:** high — backend contract dependency. Resolves the pagination correctness requirement.
+### Stage 5 — Backend-applied filters [DONE]
+- `useEntity` now accepts `columnFilters` and `columnDefs` options.
+- `refresh()` and `loadMore()` build `URLSearchParams` with `buildBackendFilter` results.
+- Existing `baseFilter` preserved alongside new column filters.
+- Removed `sampleRowRef` dependency entirely.
+- **Validation:** filters are included in paginated API requests. Needs E2E validation with >200 row dataset.
+- **Risk:** high — backend contract dependency. NEO Headless filter syntax validation still needed (§8).
 
 ### Stage 6 — Enum-label sort fallback
 - If NEO Headless cannot sort by translated enum/status label, apply a best-effort client-side resort of the current page only, driven by `enumOrder`.
@@ -566,17 +569,23 @@ The work is split into six independently shippable stages. Each stage produces a
 
 ### Stage risk summary
 
-| Stage | Risk | Driver |
-|-------|------|--------|
-| 1 | None | Isolated library with tests |
-| 2 | Low | Localized change; failure mode obvious |
-| 3 | Medium | Changes user-visible filter semantics |
-| 4 | Low | Behavior-preserving refactor |
-| 5 | **High** | Depends on NEO Headless contract (§8) |
-| 6 | Low | Optional fallback |
+| Stage | Status | Risk | Driver |
+|-------|--------|------|--------|
+| 1 | **DONE** | None | Isolated library with tests |
+| 2 | **DONE** | Low | Localized change; failure mode obvious |
+| 3 | **DONE** | Medium | Changes user-visible filter semantics |
+| 4 | **DONE** | Low | Behavior-preserving refactor |
+| 5 | **DONE** | **High** | Depends on NEO Headless contract (§8) |
+| 6 | PENDING | Low | Optional fallback |
+
+### Additional changes included in this implementation
+- Default locale changed from `en_US` to `es_ES` (primary client locale) in `LocaleProvider.jsx` and `useLocaleState.js`.
+- `generate-frontend.js`: added `foreignKey` → `selector` type mapping so grid columns carry correct type metadata.
+- Filter UX: debounced input with Enter/Tab to apply, placeholder help text by column type.
 
 ### Sequencing caveat
-Stages 4 and 5 share the filter pipeline. Stage 4 shipped alone delivers no user-visible benefit — it only prepares Stage 5. Keep them close in time to avoid leaving the refactor dangling.
+~~Stages 4 and 5 share the filter pipeline. Stage 4 shipped alone delivers no user-visible benefit — it only prepares Stage 5. Keep them close in time to avoid leaving the refactor dangling.~~
+Stages 3–5 were implemented together in a single pass, avoiding the dangling refactor risk.
 
 ---
 
