@@ -27,15 +27,14 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
     const nextDraft = {
       creditLimit: data?.creditLimit ?? '',
       creditUsed: data?.creditUsed ?? '',
-      taxID: data?.taxID ?? '',
       active: data?.active ?? true,
     };
     setCreditTaxDraft(nextDraft);
     draftRef.current = nextDraft;
-  }, [data?.creditLimit, data?.creditUsed, data?.taxID, data?.active]);
+  }, [data?.creditLimit, data?.creditUsed, data?.active]);
 
   const creditTaxReadOnly = useMemo(() => (
-    editing ? {} : { creditLimit: true, creditUsed: true, taxID: true, active: true }
+    editing ? {} : { creditLimit: true, creditUsed: true, active: true }
   ), [editing]);
 
   async function persistCreditTaxField(fieldKey) {
@@ -90,7 +89,6 @@ export default function ContactsFinancialPanel({ data, token, apiBaseUrl, catalo
   const creditFields = [
     { key: 'creditLimit', column: 'SO_CreditLimit', type: 'number', required: true, section: 'other' },
     { key: 'creditUsed', column: 'SO_CreditUsed', type: 'number', required: true, readOnly: true, section: 'other' },
-    { key: 'taxID', column: 'TaxID', type: 'text', section: 'other' },
     { key: 'active', column: 'IsActive', type: 'checkbox', required: true, readOnly: true, section: 'other', defaultValue: 'Y' },
   ];
 

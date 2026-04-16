@@ -629,6 +629,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
         const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
+        const requireSavedRecord = cfg.requireSavedRecord === true;
         const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
         const addLineEntries = addLineFieldKeys.map(fk => {
           const f = entityFields.find(ef => ef.name === fk);
@@ -644,7 +645,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -702,23 +703,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     .join('\n');
 
   const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
+    const requireSavedPart = t.requireSavedRecord ? ', requireSavedRecord: true' : '';
     if (t.isFormTab) {
-      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName} },`;
+      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart} },`;
     }
     if (t.isPanelTab) {
-      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName} },`;
+      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart} },`;
     }
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart}${requireSavedPart} },`;
   }).join('\n');
 
-  const secondaryTabsRequireSaved = windowConfig.secondaryTabs && Object.values(windowConfig.secondaryTabs).some(t => t.requireSavedRecord);
   const secondaryTabsProp = secondaryTabDefs.length > 0
-    ? secondaryTabsRequireSaved
-      ? `\n        secondaryTabs={recordId === 'new' ? [] : [\n${secondaryTabsPropEntries}\n        ]}`
-      : `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
+    ? `\n        secondaryTabs={[\n${secondaryTabsPropEntries}\n        ]}`
     : '';
 
   // Build optional DetailView props from window-level decisions config

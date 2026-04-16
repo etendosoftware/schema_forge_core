@@ -209,6 +209,8 @@ export function DetailView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
+  const handledOpenAddLineRef = useRef(false);
+  const handledOpenSecondaryLineRef = useRef(false);
 
   useEffect(() => {
     if (!showMoreMenu) return;
@@ -290,11 +292,16 @@ export function DetailView({
 
   // Auto-open add-line form after header auto-save navigation (openAddLine flag in route state).
   useEffect(() => {
-    if (!location.state?.openAddLine || isNew || !hook.editing) return;
+    if (!location.state?.openAddLine || isNew || !hook.editing) {
+      handledOpenAddLineRef.current = false;
+      return;
+    }
+    if (handledOpenAddLineRef.current) return;
+    handledOpenAddLineRef.current = true;
     setAddingLine(true);
     setEditingChild(null);
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state?.openAddLine, isNew, hook.editing, navigate]);
+  }, [location.state?.openAddLine, isNew, hook.editing, navigate, location.pathname]);
 
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
@@ -307,6 +314,22 @@ export function DetailView({
     setAddingLine(prev => !prev);
     setEditingChild(null);
   }, [isNew, hook.handleSave, navigate, windowName]);
+
+  const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
+    const targetTab = secondaryTabs.find(st => st.key === tabKey);
+    if (!targetTab) return;
+    if (isNew && targetTab.requireSavedRecord) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return;
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openSecondaryTab: tabKey, openAddSecondaryLine: true },
+      });
+      return;
+    }
+    setAddingSecondaryLine(prev => ({ ...prev, [tabKey]: !prev[tabKey] }));
+    setSelectedSecondaryLine(null);
+  }, [secondaryTabs, isNew, hook.handleSave, navigate, windowName]);
 
   // Resolve $_identifier for default FK values.
   // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
@@ -724,6 +747,25 @@ export function DetailView({
   if (showOthers === true) {
     tabs.push({ key: 'others', label: othersLabel || ui('others') });
   }
+
+  useEffect(() => {
+    const targetTabKey = location.state?.openSecondaryTab;
+    if (!targetTabKey || isNew || !hook.editing) {
+      handledOpenSecondaryLineRef.current = false;
+      return;
+    }
+    if (handledOpenSecondaryLineRef.current) return;
+    handledOpenSecondaryLineRef.current = true;
+    const nextTabIndex = tabs.findIndex(tab => tab.key === targetTabKey);
+    if (nextTabIndex >= 0) {
+      setActiveTab(nextTabIndex);
+    }
+    if (location.state?.openAddSecondaryLine) {
+      setAddingSecondaryLine(prev => ({ ...prev, [targetTabKey]: true }));
+      setSelectedSecondaryLine(null);
+    }
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openSecondaryTab, location.state?.openAddSecondaryLine, isNew, hook.editing, navigate, location.pathname, tabs]);
 
   if (hook.loading) {
     return (
@@ -1693,7 +1735,7 @@ export function DetailView({
                     </div>
                     {st.addLineFields?.entry?.length > 0 && hook.editing && (
                       <button
-                        onClick={() => { setAddingSecondaryLine(prev => ({ ...prev, [st.key]: !prev[st.key] })); setSelectedSecondaryLine(null); }}
+                        onClick={() => { void handleSecondaryAddLineToggle(st.key); }}
                         className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
                         {ui('addEntity', { label: tMenu(st.label) })}
