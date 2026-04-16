@@ -95,7 +95,7 @@ cd /path/to/etendo_core/schema_forge
 make install
 ```
 
-This installs all workspace dependencies (CLI tools + UI tools) and activates the pre-commit hook that validates pipeline completeness on artifact changes.
+This installs all workspace dependencies (CLI tools + UI tools) **and activates the pre-commit hook** (`.githooks/pre-commit`) that validates pipeline completeness on artifact changes. See [Pipeline Validation](#pipeline-validation) below for details and bypass options.
 
 ### 6. Configure environment
 
@@ -444,6 +444,59 @@ make test-frontend       Run frontend generator tests
 make validate-pipeline   Check artifact pipeline consistency (see docs/pipeline-validator-reference.md)
 make clean               Remove build artifacts
 ```
+
+## Pipeline Validation
+
+The pipeline validator catches incomplete runs — stale `decisions.json` vs `contract.json` vs `generated/`,
+orphan registry entries, missing report mock-data, and missing aggregate contracts.
+No DB access required; it works entirely on git-tracked files.
+
+### Quick reference
+
+| Scenario                                          | Command                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| Check the whole repo                              | `make validate-pipeline`                                           |
+| Check a single window I'm working on              | `node cli/src/validate-pipeline.js --scope=sales-order`            |
+| Check several windows                             | `node cli/src/validate-pipeline.js --scope=a,b,c`                  |
+| Check only what I've staged for commit            | `node cli/src/validate-pipeline.js --staged`                       |
+| Check what changed since main                     | `node cli/src/validate-pipeline.js --changed-since=main`           |
+| Get JSON output (CI / scripts)                    | `node cli/src/validate-pipeline.js --format=json`                  |
+| Skip a noisy rule temporarily                     | `node cli/src/validate-pipeline.js --skip=F4`                      |
+
+### Pre-commit hook
+
+`make install` activates the hook via `git config core.hooksPath .githooks`. The hook runs **only on staged
+artifact / generator / registry files** — it's fast and won't fire on unrelated commits.
+
+Bypass when you need it:
+
+```bash
+git commit --no-verify -m "WIP: partial extract"
+```
+
+**OK to bypass:** WIP commits, partial extracts, draft branches.
+**Not OK to bypass:** final commits on a feature branch, PRs targeting the epic branch.
+
+### CI behavior
+
+`.github/workflows/pipeline-validate.yml` runs in **shadow mode** today (`continue-on-error: true`) — failures
+annotate the PR but do not block merge. This will flip to enforce mode once the P3 backfill lands.
+
+### What to do when it fails
+
+| Code | What it means | Fix |
+| ---- | ------------- | --- |
+| F1 stale-decisions | `decisions.json` changed after `contract.json` was generated | `node cli/src/resolve-curated.js --window <name> --write` |
+| F2 stale-generated | `generated/` is out of date with `contract.json` | Same command — regenerates `generated/` |
+| F3 orphan-registry | `contract.json` exists but window is not in registry | Re-add the artifact **or** remove the entry from `tools/app-shell/src/windows/registry.js` |
+| F4 orphan-output (WARN) | `generated/` exists but no `contract.json` | Safe to ignore for now |
+
+Full rule reference: [`docs/pipeline-validator-reference.md`](docs/pipeline-validator-reference.md)
+
+### Further reading
+
+- [`docs/pipeline-validator-reference.md`](docs/pipeline-validator-reference.md) — complete rule table (F1–F10), severity, and resolution steps
+- [`docs/plans/2026-04-16-pipeline-completeness-validator.md`](docs/plans/2026-04-16-pipeline-completeness-validator.md) — design plan
 
 ## Project Structure
 
