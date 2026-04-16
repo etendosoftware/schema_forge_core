@@ -119,7 +119,7 @@ function LocationCard({ records, loading, onEdit, onDelete, onAdd, ui }) {
                   </span>
                   <button
                     type="button"
-                    onClick={() => onEdit(rec.locationAddress, rec.id)}
+                    onClick={() => onEdit(rec.id)}
                     title={ui('edit')}
                     className="text-gray-400 hover:text-gray-700 transition-colors p-0.5 shrink-0"
                   >
@@ -159,8 +159,8 @@ export default function BillingPreferencesForm(props) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const organizationId = resolveId(data?.organization ?? data?.adOrgId ?? data?.ad_org_id);
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
-  // { open, bplId: C_Location_ID|null, bplLinkId: C_BPartner_Location_ID|null }
-  const [locationModal, setLocationModal] = useState({ open: false, bplId: null, bplLinkId: null });
+  // { open, bplLinkId: C_BPartner_Location_ID|null }
+  const [locationModal, setLocationModal] = useState({ open: false, bplLinkId: null });
   const [deleteLocationId, setDeleteLocationId] = useState(null);
 
   // Sub-entity records (current BP's discount + addresses)
@@ -258,8 +258,8 @@ export default function BillingPreferencesForm(props) {
     await refreshAddressRecords();
   }
 
-  function openLocationModal(bplId, bplLinkId) {
-    setLocationModal({ open: true, bplId: bplId ?? null, bplLinkId: bplLinkId ?? null });
+  function openLocationModal(bplLinkId) {
+    setLocationModal({ open: true, bplLinkId: bplLinkId ?? null });
   }
 
   async function handleDiscountChange(newDiscountId) {
@@ -391,12 +391,11 @@ export default function BillingPreferencesForm(props) {
     {bpId && (
       <LocationEditorModal
         open={locationModal.open}
-        onClose={() => setLocationModal({ open: false, bplId: null, bplLinkId: null })}
+        onClose={() => setLocationModal({ open: false, bplLinkId: null })}
         onSaved={async () => {
           await refreshAddressRecords();
-          setLocationModal({ open: false, bplId: null, bplLinkId: null });
+          setLocationModal({ open: false, bplLinkId: null });
         }}
-        bplId={locationModal.bplId}
         bplLinkId={locationModal.bplLinkId}
         bpId={bpId}
         contactsApiBase={apiBase}
