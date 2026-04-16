@@ -243,6 +243,66 @@ describe('edge cases', () => {
 
 // ─── v2 Category Handler Tests ────────────────────────────────────────────────
 
+describe('editable-field handler', () => {
+  it('passes when the frontend field exists and is editable', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'priceList', visibility: 'editable', form: true, section: 'collapsed' },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          {
+            id: 'ef-1',
+            category: 'editable-field',
+            entity: 'header',
+            field: 'priceList',
+            runner: 'node',
+            description: 'priceList is editable in the collapsed header section',
+          },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, true);
+  });
+
+  it('fails when the frontend field is present but not editable', () => {
+    const contract = {
+      frontendContract: {
+        entities: {
+          header: {
+            fields: [
+              { name: 'orderReference', visibility: 'readOnly', form: true, section: 'collapsed' },
+            ],
+          },
+        },
+      },
+      testManifest: {
+        tests: [
+          {
+            id: 'ef-2',
+            category: 'editable-field',
+            entity: 'header',
+            field: 'orderReference',
+            runner: 'node',
+            description: 'orderReference should remain editable in the collapsed header section',
+          },
+        ],
+      },
+    };
+    const results = generateTestAssertions(contract);
+    assert.equal(results[0].passed, false);
+    assert.ok(results[0].reason.includes("expected 'editable'"));
+  });
+});
+
+
 describe('displaylogic-valid handler', () => {
   it('passes for field with valid JS displayLogic', () => {
     const contract = {

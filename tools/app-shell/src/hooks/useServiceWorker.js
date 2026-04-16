@@ -1,5 +1,21 @@
 import { useEffect, useCallback, useRef } from 'react';
 
+export async function clearServiceWorkerStateAndReload() {
+  try {
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }
+    const reg = await navigator.serviceWorker?.getRegistration();
+    if (reg) {
+      await reg.unregister();
+    }
+  } finally {
+    window.location.reload();
+  }
+}
+
+
 /**
  * Hook to manage service worker updates.
  *
@@ -55,20 +71,7 @@ export function useServiceWorker({ onUpdateAvailable } = {}) {
   }, []);
 
   /** Delete every cache entry and unregister the SW, then reload */
-  const clearCacheAndReload = useCallback(async () => {
-    try {
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map((name) => caches.delete(name)));
-      }
-      const reg = await navigator.serviceWorker?.getRegistration();
-      if (reg) {
-        await reg.unregister();
-      }
-    } finally {
-      window.location.reload();
-    }
-  }, []);
+  const clearCacheAndReload = useCallback(() => clearServiceWorkerStateAndReload(), []);
 
   /** Manually trigger an update check (useful on route changes) */
   const checkForUpdate = useCallback(() => {
