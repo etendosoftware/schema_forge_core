@@ -39,8 +39,14 @@ import { useCopilot } from '@/components/CopilotContext';
 import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
-import { formatAmount } from '@/lib/formatAmount';
 import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import {
+  formatDashboardAmount,
+  formatDashboardAxisTick,
+  formatDashboardCompact,
+  formatDashboardNumber,
+  localeFromUi,
+} from '@/lib/dashboardNumberFormat.js';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -179,43 +185,6 @@ function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
   }, [token, selectedOrg?.id, apiBaseUrl]);
 
   return currencyLabel;
-}
-
-function formatDashboardAmount(value, currencyLabel) {
-  return formatAmount(value, currencyLabel);
-}
-
-function formatDashboardCompact(value, currencyLabel) {
-  const num = Number(value) || 0;
-  if (!currencyLabel) return num.toLocaleString('en-US');
-  if (Math.abs(num) >= 1_000_000) return `${formatAmount(num / 1_000_000, currencyLabel)}M`;
-  if (Math.abs(num) >= 1_000) return `${formatAmount(num / 1_000, currencyLabel)}K`;
-  return formatAmount(num, currencyLabel);
-}
-
-function formatAxisTick(value, locale = 'en-US') {
-  const num = Number(value) || 0;
-  const abs = Math.abs(num);
-
-  const formatPlain = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-
-  const formatCompact = (divisor, suffix) => {
-    const compact = num / divisor;
-    const hasFraction = Math.abs(compact) < 100 && Math.abs(compact % 1) >= 0.05;
-    const formatter = new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: hasFraction ? 1 : 0,
-    });
-    return `${formatter.format(compact)}${suffix}`;
-  };
-
-  if (abs >= 1_000_000_000) return formatCompact(1_000_000_000, 'B');
-  if (abs >= 1_000_000) return formatCompact(1_000_000, 'M');
-  if (abs >= 1_000) return formatCompact(1_000, 'K');
-  return formatPlain.format(num);
 }
 
 /* ------------------------------------------------------------------
@@ -593,12 +562,12 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
   const [tooltip, setTooltip] = useState(null);
 
   // Generate locale-aware month abbreviations for the same window as the incoming labels
-  const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
-  const fmt = new Intl.DateTimeFormat(bcp47, { month: 'short' });
+  const fmt = new Intl.DateTimeFormat(numberLocale, { month: 'short' });
   const localizedLabels = labels.map((_, i) => {
     const now = new Date();
     const d = new Date(now.getFullYear(), now.getMonth() - (labels.length - 1 - i), 1);
@@ -617,7 +586,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
   });
   const hasExpenses = normalizedExpenseValues.some((v) => Math.abs(v) > 0);
 
-  const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel);
+  const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel, numberLocale);
 
   const showTooltip = (x, y, i) =>
     setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? normalizedExpenseValues[i] : null });
@@ -725,7 +694,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
                   <g key={frac}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                      {formatAxisTick(val, bcp47)}
+                      {formatDashboardAxisTick(val, numberLocale)}
                     </text>
                   </g>
                 );
@@ -791,7 +760,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
                   <g key={frac}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - BAR_PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                      {formatAxisTick(val, bcp47)}
+                      {formatDashboardAxisTick(val, numberLocale)}
                     </text>
                   </g>
                 );
@@ -912,6 +881,8 @@ async function findTopClientRoute({ client, token, apiBaseUrl }) {
 function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl = '' }) {
   const ui = useUI();
   const navigate = useNavigate();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
 
   const handleClientClick = async (client) => {
     const route = await findTopClientRoute({ client, token, apiBaseUrl });
@@ -941,7 +912,7 @@ function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl =
                       <span className="text-sm truncate">{c.name}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className="text-sm font-medium">{formatDashboardAmount(c.total, currencyLabel)}</span>
+                      <span className="text-sm font-medium">{formatDashboardAmount(c.total, currencyLabel, numberLocale)}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground opacity-60 group-hover:opacity-100 transition-opacity" />
                     </div>
                 </button>
@@ -1059,6 +1030,8 @@ function PendingTasks({ tasks = [] }) {
 function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
   const fallbackToCollectNavigation = createDashboardNavigation({ type: 'list', window: 'sales-invoice', filter: 'overdue' });
   const fallbackToPayNavigation = createDashboardNavigation({ type: 'list', window: 'purchase-invoice', filter: 'overdue' });
@@ -1087,7 +1060,7 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-green-600">{formatDashboardAmount(toCollect.amount, currencyLabel)}</span>
+            <span className="text-sm font-semibold text-green-600">{formatDashboardAmount(toCollect.amount, currencyLabel, numberLocale)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1101,7 +1074,7 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-destructive">{formatDashboardAmount(toPay.amount, currencyLabel)}</span>
+            <span className="text-sm font-semibold text-destructive">{formatDashboardAmount(toPay.amount, currencyLabel, numberLocale)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1128,6 +1101,7 @@ function fmtDate(str, locale = 'en-US') {
 function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className={WIDGET_HEADER_CLASS}>
@@ -1158,7 +1132,7 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel)}</span>
+                      <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel, numberLocale)}</span>
                     </div>
                   </Link>
                 </React.Fragment>
@@ -1172,26 +1146,22 @@ function RecentInvoices({ invoices = [], currencyLabel = '' }) {
 }
 
 /* ------------------------------------------------------------------
- * Number formatter helpers
- * ----------------------------------------------------------------*/
-
-function fmtCompact(n, currencyLabel = '') {
-  const v = Number(n) || 0;
-  if (currencyLabel) return formatDashboardCompact(v, currencyLabel);
-  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
-  return v.toLocaleString('en-US');
-}
-
-/* ------------------------------------------------------------------
  * Best Sellers Widget
  * ----------------------------------------------------------------*/
 
 function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   const [viewMode, setViewMode] = useState('quantity');
   const rows = viewMode === 'quantity' ? sellers : products;
+
+  const formatBestSellerValue = (row) => (
+    viewMode === 'quantity'
+      ? formatDashboardNumber(row.qty, numberLocale)
+      : formatDashboardAmount(row.amount, currencyLabel, numberLocale)
+  );
 
   return (
     <Card className="flex flex-col h-full">
@@ -1232,9 +1202,7 @@ function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
                     <span className="block truncate">{row.name}</span>
                   </td>
                   <td className="px-4 py-2 text-right font-medium tabular-nums">
-                    {viewMode === 'quantity'
-                      ? fmtCompact(row.qty)
-                      : formatDashboardAmount(row.amount, currencyLabel)}
+                    {formatBestSellerValue(row)}
                   </td>
                 </tr>
               ))}
