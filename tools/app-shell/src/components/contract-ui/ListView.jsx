@@ -4,12 +4,18 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, Eye, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw } from 'lucide-react';
+import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw, Eye } from 'lucide-react';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.jsx';
 
 /**
  * Full-width list view for an entity.
@@ -36,13 +42,19 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
+  initialQuickFilterIndex = 0,
   onNew = null,
+  newActions = [],
   labelOverrides,
+  onCloneRow = null,
+  initialColumnFilters,
+  rowFilter,
 }) {
-  const [activeFilterIndex, setActiveFilterIndex] = useState(0);
+  const [activeFilterIndex, setActiveFilterIndex] = useState(initialQuickFilterIndex ?? 0);
   const effectiveFilter = quickFilters
     ? (quickFilters[activeFilterIndex]?.filter ?? baseFilter)
     : baseFilter;
+  const effectiveRowFilter = quickFilters?.[activeFilterIndex]?.rowFilter ?? rowFilter;
   const hook = useEntity(entity, null, { token, apiBaseUrl, baseFilter: effectiveFilter });
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
@@ -100,6 +112,19 @@ export function ListView({
     }
     setShowSortPopover(false);
   }, [hook.sortColumn, hook.setSortColumn, hook.setSortDirection]);
+
+  // Header click: none → asc → desc → clear
+  const handleColumnSort = useCallback((colKey) => {
+    if (hook.sortColumn !== colKey) {
+      hook.setSortColumn(colKey);
+      hook.setSortDirection('asc');
+    } else if (hook.sortDirection === 'asc') {
+      hook.setSortDirection('desc');
+    } else {
+      hook.setSortColumn('creationDate');
+      hook.setSortDirection('desc');
+    }
+  }, [hook.sortColumn, hook.sortDirection, hook.setSortColumn, hook.setSortDirection]);
 
   const handleClearSort = useCallback(() => {
     hook.setSortColumn('creationDate');
@@ -244,9 +269,6 @@ export function ListView({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <Search className="h-4 w-4" />
-              </button>
               {!(listViewOptions?.hideLink ?? hideLink) && (
                 <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
                   <Link2 className="h-4 w-4" />
@@ -310,18 +332,6 @@ export function ListView({
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
-              {!(listViewOptions?.hideEye ?? hideEyeCount) && (
-                <div className="flex items-center gap-1.5 ml-1">
-                  <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  {!(listViewOptions?.hideCounter ?? hideEyeCount) && !hook.loading && (
-                    <span className="text-sm text-muted-foreground tabular-nums">
-                      {hook.items.length}
-                    </span>
-                  )}
-                </div>
-              )}
               {!(listViewOptions?.hidePrint ?? hidePrint) && (
                 <Button
                   variant="outline"
@@ -361,12 +371,29 @@ export function ListView({
                   <Plus className="h-4 w-4" />
                   {ui('newRecord')}
                 </Button>
-                <div className="w-px bg-primary-foreground/20" />
-                <Button
-                  className="rounded-none rounded-r-lg px-2"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
+                {newActions.length > 0 && (
+                  <>
+                    <div className="w-px bg-primary-foreground/20" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button className="rounded-none rounded-r-lg px-2" data-testid="action-new-more">
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {newActions.map((action) => (
+                          <DropdownMenuItem
+                            key={action.key}
+                            onClick={action.onClick}
+                            data-testid={`action-new-${action.key}`}
+                          >
+                            {action.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
               )}
             </div>
@@ -406,11 +433,15 @@ export function ListView({
                     compact={false}
                     sortColumn={hook.sortColumn}
                     sortDirection={hook.sortDirection}
+                    onSort={handleColumnSort}
                     onColumnsReady={setTableColumns}
                     api={api}
                     token={token}
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={labelOverrides}
+                    onCloneRow={onCloneRow}
+                    initialColumnFilters={initialColumnFilters}
+                    rowFilter={effectiveRowFilter}
                   />
                 )
               }

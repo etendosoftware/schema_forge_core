@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { KPIHeader, KPICard } from '@/components/contract-ui/KPIHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,6 @@ import {
   AlertTriangle,
   Info,
   ChevronRight,
-  ChevronDown,
   ChevronUp,
   Clock,
   Search,
@@ -40,7 +39,14 @@ import { useCopilot } from '@/components/CopilotContext';
 import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
-import { formatAmount } from '@/lib/formatAmount';
+import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import {
+  formatDashboardAmount,
+  formatDashboardAxisTick,
+  formatDashboardCompact,
+  formatDashboardNumber,
+  localeFromUi,
+} from '@/lib/dashboardNumberFormat.js';
 
 /* ------------------------------------------------------------------
  * Icon lookup
@@ -86,16 +92,28 @@ function getWidgetMeta(id) {
 
 function resolvePendingTaskKey(task) {
   const text = String(task?.text ?? '').toLowerCase();
+  const windowName = task?.navigation?.window;
+  const filter = task?.navigation?.filter;
+  const docStatus = task?.navigation?.params?.DocStatus;
 
   if (task?.taskKey) return task.taskKey;
-  if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
+  if ((windowName === 'sales-invoice' && filter === 'overdue') || task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
-  if (task?.link === '/goods-shipment' || text.includes('pending shipment')) {
+  if ((windowName === 'sales-order' && docStatus === 'DR') || task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
+  }
+  if ((windowName === 'sales-invoice' && docStatus === 'DR') || task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
+  }
+  if ((windowName === 'goods-shipment' && docStatus === 'DR') || task?.link === '/goods-shipment' || text.includes('pending shipment')) {
     return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
   }
-  if (task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
+  if ((windowName === 'purchase-order' && docStatus === 'DR') || task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
     return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
+  }
+  if ((windowName === 'purchase-invoice' && docStatus === 'DR') || task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
+    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -122,6 +140,10 @@ function resolveQuickActionRoute(route) {
     default:
       return route;
   }
+}
+
+function resolveDashboardTarget({ navigation, link, fallback = '/dashboard' }) {
+  return resolveDashboardNavigation(navigation) || link || fallback;
 }
 
 function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
@@ -172,18 +194,6 @@ function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
   }, [token, selectedOrg?.id, apiBaseUrl]);
 
   return currencyLabel;
-}
-
-function formatDashboardAmount(value, currencyLabel) {
-  return formatAmount(value, currencyLabel);
-}
-
-function formatDashboardCompact(value, currencyLabel) {
-  const num = Number(value) || 0;
-  if (!currencyLabel) return num.toLocaleString('en-US');
-  if (Math.abs(num) >= 1_000_000) return `${formatAmount(num / 1_000_000, currencyLabel)}M`;
-  if (Math.abs(num) >= 1_000) return `${formatAmount(num / 1_000, currencyLabel)}K`;
-  return formatAmount(num, currencyLabel);
 }
 
 /* ------------------------------------------------------------------
@@ -557,23 +567,16 @@ const BAR_PAD_BOTTOM = 28;
 const WIDGET_HEADER_CLASS = 'pt-4 pb-2 flex-none';
 const WIDGET_TITLE_CLASS = 'text-xs font-medium text-muted-foreground';
 
-function useCollapsed(key) {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(key) === 'true');
-  const toggle = () => setCollapsed((c) => { const next = !c; localStorage.setItem(key, String(next)); return next; });
-  return [collapsed, toggle];
-}
-
 function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { locale } = useLocaleSwitch();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_revenue');
+  const numberLocale = localeFromUi(locale);
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
   const [tooltip, setTooltip] = useState(null);
 
   // Generate locale-aware month abbreviations for the same window as the incoming labels
-  const bcp47 = locale === 'es_ES' ? 'es-ES' : 'en-US';
-  const fmt = new Intl.DateTimeFormat(bcp47, { month: 'short' });
+  const fmt = new Intl.DateTimeFormat(numberLocale, { month: 'short' });
   const localizedLabels = labels.map((_, i) => {
     const now = new Date();
     const d = new Date(now.getFullYear(), now.getMonth() - (labels.length - 1 - i), 1);
@@ -592,7 +595,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
   });
   const hasExpenses = normalizedExpenseValues.some((v) => Math.abs(v) > 0);
 
-  const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel);
+  const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel, numberLocale);
 
   const showTooltip = (x, y, i) =>
     setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? normalizedExpenseValues[i] : null });
@@ -639,49 +642,43 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
     <Card>
       <CardHeader className={WIDGET_HEADER_CLASS}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer select-none" onClick={toggleCollapsed}>
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className={WIDGET_TITLE_CLASS}>
-              {ui('revenueVsExpenses12m')}
-            </CardTitle>
-          </div>
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              {hasExpenses && (
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    {tMenu('Revenue')}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
-                    {tMenu('Expenses')}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center border rounded-md overflow-hidden">
-                <button
-                  onClick={() => switchChartType('line')}
-                  className={`p-1 transition-colors ${chartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-                  title="Line chart"
-                >
-                  <LineChart className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => switchChartType('bar')}
-                  className={`p-1 transition-colors ${chartType === 'bar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-                  title="Bar chart"
-                >
-                  <BarChart2 className="h-3.5 w-3.5" />
-                </button>
+          <CardTitle className={WIDGET_TITLE_CLASS}>
+            {ui('revenueVsExpenses12m')}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {hasExpenses && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  {tMenu('Revenue')}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
+                  {tMenu('Expenses')}
+                </span>
               </div>
+            )}
+            <div className="flex items-center border rounded-md overflow-hidden">
+              <button
+                onClick={() => switchChartType('line')}
+                className={`p-1 transition-colors ${chartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                title="Line chart"
+              >
+                <LineChart className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => switchChartType('bar')}
+                className={`p-1 transition-colors ${chartType === 'bar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                title="Bar chart"
+              >
+                <BarChart2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-4 pt-0">
-          {chartType === 'line' ? (
+      <CardContent className="p-4 pt-0">
+        {chartType === 'line' ? (
             <svg
               viewBox={`0 0 ${CHART_W} ${CHART_H}`}
               className="w-full h-auto"
@@ -706,7 +703,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
                   <g key={frac}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                      {(val / 1000).toFixed(0)}k
+                      {formatDashboardAxisTick(val, numberLocale)}
                     </text>
                   </g>
                 );
@@ -772,7 +769,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
                   <g key={frac}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - BAR_PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                      {(val / 1000).toFixed(0)}k
+                      {formatDashboardAxisTick(val, numberLocale)}
                     </text>
                   </g>
                 );
@@ -845,8 +842,7 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
               })()}
             </svg>
           )}
-        </CardContent>
-      )}
+      </CardContent>
     </Card>
   );
 }
@@ -855,18 +851,59 @@ function RevenueChart({ labels = [], values = [], expenseValues = [], currencyLa
  * Top Clients
  * ----------------------------------------------------------------*/
 
-function TopClients({ clients = [], currencyLabel = '' }) {
+async function findTopClientRoute({ client, token, apiBaseUrl }) {
+  const directRoute = resolveDashboardNavigation(client?.navigation);
+  if (directRoute) return directRoute;
+  if (client?.id) return `/contacts/${client.id}`;
+
+  const name = String(client?.name ?? '').trim();
+  if (!token || !apiBaseUrl || !name) return '/contacts';
+
+  const criteria = encodeURIComponent(JSON.stringify({
+    operator: 'and',
+    criteria: [
+      { fieldName: 'name', operator: 'equals', value: name },
+    ],
+  }));
+
+  try {
+    const res = await fetch(
+      `${apiBaseUrl}/contacts/businessPartner?_sortBy=name asc&_startRow=0&_endRow=10&criteria=${criteria}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    if (!res.ok) return '/contacts';
+
+    const json = await res.json();
+    const rows = json?.response?.data ?? [];
+    const exact = rows.find((row) => String(row?.name ?? '').trim() === name) ?? rows[0] ?? null;
+    return exact?.id ? `/contacts/${exact.id}` : '/contacts';
+  } catch {
+    return '/contacts';
+  }
+}
+
+function TopClients({ clients = [], currencyLabel = '', token = '', apiBaseUrl = '' }) {
   const ui = useUI();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_topclients');
+  const navigate = useNavigate();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
+
+  const handleClientClick = async (client) => {
+    const route = await findTopClientRoute({ client, token, apiBaseUrl });
+    navigate(route);
+  };
+
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-center gap-2">
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('topClients12m')}</CardTitle>
-        </div>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('topClients12m')}</CardTitle>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+      <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
         {clients.length === 0 ? (
             <p className="text-sm text-muted-foreground">{ui('noDataAvailable')}</p>
         ) : (
@@ -874,20 +911,25 @@ function TopClients({ clients = [], currencyLabel = '' }) {
             {clients.map((c, i) => (
               <React.Fragment key={c.name}>
                 {i > 0 && <Separator />}
-                <div className="flex items-center justify-between py-2 px-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}</span>
-                    <span className="text-sm truncate">{c.name}</span>
-                  </div>
-                  <span className="text-sm font-medium shrink-0 ml-2">
-                    {formatDashboardAmount(c.total, currencyLabel)}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleClientClick(c)}
+                  className="flex w-full items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group text-left"
+                >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}</span>
+                      <span className="text-sm truncate">{c.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-sm font-medium">{formatDashboardAmount(c.total, currencyLabel, numberLocale)}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                </button>
               </React.Fragment>
             ))}
           </div>
         )}
-      </CardContent>}
+      </CardContent>
     </Card>
   );
 }
@@ -927,19 +969,17 @@ function QuickActions({ actions = [] }) {
  * Pending Tasks
  * ----------------------------------------------------------------*/
 
-function PendingTasks({ tasks = [] }) {
+function PendingTasks({ tasks = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_pendingtasks');
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-center gap-2">
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('pendingTasks')}</CardTitle>
-        </div>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <CardTitle className={WIDGET_TITLE_CLASS}>{ui('pendingTasks')}</CardTitle>
       </CardHeader>
-      {!collapsed && <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+      <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
         {tasks.length === 0 && (
           <p className="text-sm text-muted-foreground">{tMenu('No pending tasks')}</p>
         )}
@@ -947,11 +987,15 @@ function PendingTasks({ tasks = [] }) {
           {tasks.map((task, i) => {
             const isWarning = task.type === 'warning';
             const taskKey = resolvePendingTaskKey(task);
+            const target = resolveDashboardTarget({ navigation: task.navigation, link: task.link, fallback: '/dashboard' });
+            const detailText = task.amount != null
+              ? formatDashboardAmount(task.amount, currencyLabel, numberLocale)
+              : task.detail;
             return (
               <React.Fragment key={i}>
                 {i > 0 && <Separator />}
                 <Link
-                  to={task.link}
+                  to={target}
                   className="flex items-center gap-3 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group"
                 >
                   {isWarning ? (
@@ -960,14 +1004,14 @@ function PendingTasks({ tasks = [] }) {
                     <Info className="h-4 w-4 shrink-0 text-blue-500" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">
+                    <p className="text-sm leading-snug break-words whitespace-normal">
                       {task.labelKey && task.count != null
                         ? `${task.count} ${tMenu(task.labelKey)}`
                         : taskKey ? ui(taskKey, { count: task.count }) : task.text}
                     </p>
-                    {(task.amount || task.detail) && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {task.amount || task.detail}
+                    {detailText && (
+                      <p className="text-xs text-muted-foreground leading-snug break-words whitespace-normal">
+                        {detailText}
                       </p>
                     )}
                   </div>
@@ -988,7 +1032,7 @@ function PendingTasks({ tasks = [] }) {
             );
           })}
         </div>
-      </CardContent>}
+      </CardContent>
     </Card>
   );
 }
@@ -1000,14 +1044,28 @@ function PendingTasks({ tasks = [] }) {
 function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
+  const fallbackToCollectNavigation = createDashboardNavigation({ type: 'list', window: 'sales-invoice', filter: 'overdue' });
+  const fallbackToPayNavigation = createDashboardNavigation({ type: 'list', window: 'purchase-invoice', filter: 'overdue' });
+  const toCollectTarget = resolveDashboardTarget({
+    navigation: toCollect.navigation || fallbackToCollectNavigation,
+    link: '/sales-invoice?filter=overdue',
+    fallback: '/sales-invoice',
+  });
+  const toPayTarget = resolveDashboardTarget({
+    navigation: toPay.navigation || fallbackToPayNavigation,
+    link: '/purchase-invoice?filter=overdue',
+    fallback: '/purchase-invoice',
+  });
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className={WIDGET_HEADER_CLASS}>
         <CardTitle className={WIDGET_TITLE_CLASS}>{ui('collectionsPayments')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3 flex-1 min-h-0 overflow-y-auto">
-        <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
+        <Link to={toCollectTarget} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
             <div>
@@ -1016,12 +1074,12 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-green-600">{formatDashboardAmount(toCollect.amount, currencyLabel)}</span>
+            <span className="text-sm font-semibold text-green-600">{formatDashboardAmount(toCollect.amount, currencyLabel, numberLocale)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
         <Separator />
-        <Link to="/purchase-invoice" className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
+        <Link to={toPayTarget} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors group">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
             <div>
@@ -1030,7 +1088,7 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-destructive">{formatDashboardAmount(toPay.amount, currencyLabel)}</span>
+            <span className="text-sm font-semibold text-destructive">{formatDashboardAmount(toPay.amount, currencyLabel, numberLocale)}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </Link>
@@ -1043,71 +1101,62 @@ function CollectionsPayments({ pendingAmounts = {}, currencyLabel = '' }) {
  * Recent Invoices Widget
  * ----------------------------------------------------------------*/
 
-function fmtDate(str) {
+function fmtDate(str, locale = 'en-US') {
   if (!str) return '';
   // Support dd-MM-yyyy and yyyy-MM-dd
   const iso = /^\d{4}-\d{2}-\d{2}/.test(str) ? str : (() => { const m = str.match(/^(\d{2})-(\d{2})-(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : str; })();
   const d = new Date(iso);
   if (isNaN(d)) return str;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Normalize locale: es_ES → es-ES (BCP 47)
+  const bcp47 = (locale || 'en-US').replace('_', '-');
+  return d.toLocaleDateString(bcp47, { month: 'short', day: 'numeric' });
 }
 
 function RecentInvoices({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_recent_invoices');
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
-        <div className="flex items-start gap-2">
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-          <div>
-            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('recentInvoices')}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">{ui('recentInvoicesSubtitle')}</p>
-          </div>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
+        <div className="space-y-0.5">
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('recentInvoices')}</CardTitle>
+          <p className="text-xs text-muted-foreground">{ui('recentInvoicesSubtitle')}</p>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
-          {invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{ui('noInvoicesFound')}</p>
-          ) : (
-            <div className="space-y-0">
-              {invoices.map((inv, i) => {
-                return (
-                  <React.Fragment key={inv.id || i}>
-                    {i > 0 && <Separator />}
-                    <Link to="/sales-invoice" className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="min-w-0">
-                          <p className="text-sm truncate">{inv.client}</p>
-                          <p className="text-xs text-muted-foreground">{fmtDate(inv.date)}</p>
-                        </div>
+      <CardContent className="p-4 pt-0 flex-1 min-h-0 overflow-y-auto">
+        {invoices.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{ui('noInvoicesFound')}</p>
+        ) : (
+          <div className="space-y-0">
+            {invoices.map((inv, i) => {
+              const target = resolveDashboardTarget({
+                navigation: inv.navigation,
+                link: inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice',
+                fallback: '/sales-invoice',
+              });
+              return (
+                <React.Fragment key={inv.id || i}>
+                  {i > 0 && <Separator />}
+                  <Link to={target} className="flex items-center justify-between py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="min-w-0">
+                        <p className="text-sm truncate">{inv.client}</p>
+                        <p className="text-xs text-muted-foreground">{fmtDate(inv.date, locale)}</p>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel)}</span>
-                      </div>
-                    </Link>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-sm font-medium">{formatDashboardAmount(inv.amount, currencyLabel, numberLocale)}</span>
+                    </div>
+                  </Link>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
-}
-
-/* ------------------------------------------------------------------
- * Number formatter helpers
- * ----------------------------------------------------------------*/
-
-function fmtCompact(n, currencyLabel = '') {
-  const v = Number(n) || 0;
-  if (currencyLabel) return formatDashboardCompact(v, currencyLabel);
-  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
-  return v.toLocaleString('en-US');
 }
 
 /* ------------------------------------------------------------------
@@ -1117,18 +1166,22 @@ function fmtCompact(n, currencyLabel = '') {
 function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
-  const [collapsed, toggleCollapsed] = useCollapsed('dashboard_collapsed_best_sellers');
+  const { locale } = useLocaleSwitch();
+  const numberLocale = localeFromUi(locale);
   const [viewMode, setViewMode] = useState('quantity');
   const rows = viewMode === 'quantity' ? sellers : products;
 
+  const formatBestSellerValue = (row) => (
+    viewMode === 'quantity'
+      ? formatDashboardNumber(row.qty, numberLocale)
+      : formatDashboardAmount(row.amount, currencyLabel, numberLocale)
+  );
+
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={`${WIDGET_HEADER_CLASS} cursor-pointer select-none`} onClick={toggleCollapsed}>
+      <CardHeader className={WIDGET_HEADER_CLASS}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-            <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers')}</CardTitle>
-          </div>
+          <CardTitle className={WIDGET_TITLE_CLASS}>{ui('bestSellers12m')}</CardTitle>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -1151,38 +1204,26 @@ function BestSellers({ sellers = [], products = [], currencyLabel = '' }) {
           </div>
         </div>
       </CardHeader>
-      {!collapsed && (
-        <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-4">{ui('noDataAvailable')}</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{tMenu('Product Name')}</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2">
-                    {viewMode === 'quantity' ? tMenu('Qty') : tMenu('Revenue')}
-                  </th>
+      <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground p-4">{ui('noDataAvailable')}</p>
+        ) : (
+          <table className="w-full text-sm">
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={`${viewMode}-${row.name}`} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
+                  <td className="px-4 py-2 truncate max-w-0" style={{ maxWidth: '1px', width: '60%' }}>
+                    <span className="block truncate">{row.name}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right font-medium tabular-nums">
+                    {formatBestSellerValue(row)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={`${viewMode}-${row.name}`} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
-                    <td className="px-4 py-2 truncate max-w-0" style={{ maxWidth: '1px', width: '60%' }}>
-                      <span className="block truncate">{row.name}</span>
-                    </td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">
-                      {viewMode === 'quantity'
-                        ? fmtCompact(row.qty)
-                        : formatDashboardAmount(row.amount, currencyLabel)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </CardContent>
-      )}
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
     </Card>
   );
 }
@@ -1306,8 +1347,8 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
       case 'kpi-expenses':         return kpiWidget('expensesThisMonth');
       case 'kpi-profit':           return kpiWidget('netProfit');
       case 'revenue-chart':        return <RevenueChart key={id} labels={revenueTrend.labels} values={revenueTrend.values} expenseValues={expenseTrend} currencyLabel={dashboardCurrency} />;
-      case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} />;
-      case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} />;
+      case 'top-clients':          return <TopClients key={id} clients={topClients} currencyLabel={dashboardCurrency} token={token} apiBaseUrl={apiBaseUrl} />;
+      case 'pending-tasks':        return <PendingTasks key={id} tasks={pendingTasks} currencyLabel={dashboardCurrency} />;
       case 'quick-actions':        return <QuickActions key={id} actions={quickActions} />;
       case 'collections-payments': return <CollectionsPayments key={id} pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />;
       case 'recent-invoices':      return <RecentInvoices key={id} invoices={recentInvoices} currencyLabel={dashboardCurrency} />;

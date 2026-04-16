@@ -306,7 +306,7 @@ export function CopilotWidget() {
         onClick={toggle}
         size="icon"
         className={cn(
-          'fixed bottom-6 left-6 z-50 h-12 w-12 rounded-full shadow-lg translate-x-[var(--copilot-shift)] transition-transform duration-300 ease-out',
+          'fixed bottom-6 left-6 z-70 h-12 w-12 rounded-full shadow-lg translate-x-[var(--copilot-shift)] transition-transform duration-300 ease-out',
           !open && 'animate-pulse shadow-primary/25 shadow-xl'
         )}
         style={{ '--copilot-shift': dockShift }}

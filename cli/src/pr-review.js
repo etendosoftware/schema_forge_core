@@ -266,6 +266,10 @@ function analyzeLargeFiles(changedFiles) {
   const offenders = [];
 
   for (const path of changedFiles) {
+    // Locale JSON files grow predictably as the app is translated — skip them.
+    if (/\/locales\/[^/]+\.json$/.test(path)) {
+      continue;
+    }
     if (!existsSync(path)) {
       continue;
     }

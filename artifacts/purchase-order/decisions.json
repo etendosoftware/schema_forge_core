@@ -23,7 +23,11 @@
     "secondaryTabs": {},
     "noHeaderBorder": true,
     "hidePrint": true,
-    "hideSaveStatuses": ["CO", "CL", "VO"]
+    "hideSaveStatuses": [
+      "CO",
+      "CL",
+      "VO"
+    ]
   },
   "entities": {
     "header": {
@@ -71,7 +75,8 @@
           "section": "principal",
           "displayLogic": null,
           "form": true,
-          "order": 1
+          "order": 1,
+          "selectorFilter": "isVendor=Y"
         },
         "partnerAddress": {
           "visibility": "editable",
@@ -265,6 +270,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "orderLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"

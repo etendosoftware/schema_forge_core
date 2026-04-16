@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import AppSidebar from './Sidebar.jsx';
 import { CommandPalette } from '@/components/CommandPalette.jsx';
-import { InspectorProvider } from '@/components/inspector/InspectorProvider.jsx';
-import { SchemaInspector } from '@/components/inspector/SchemaInspector.jsx';
 import { findActiveGroup } from './Sidebar.jsx';
 import { getSectionColor } from '@/lib/sectionColors.js';
 import { CopilotProvider } from '@/components/CopilotContext';
@@ -26,35 +24,32 @@ export default function AppLayout({ menuGroups }) {
   return (
     <CurrentWindowProvider>
     <CopilotProvider>
-      <InspectorProvider>
-        {!embedded && (
-          <AppSidebar
-            menuGroups={menuGroups}
-            expanded={sidebarExpanded}
-            onToggle={() => setSidebarExpanded(prev => {
-              const next = !prev;
-              try { localStorage.setItem('sidebar-expanded', String(next)); } catch {}
-              return next;
-            })}
-          />
-        )}
+      {!embedded && (
+        <AppSidebar
+          menuGroups={menuGroups}
+          expanded={sidebarExpanded}
+          onToggle={() => setSidebarExpanded(prev => {
+            const next = !prev;
+            try { localStorage.setItem('sidebar-expanded', String(next)); } catch {}
+            return next;
+          })}
+        />
+      )}
+      <div
+        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-background"
+        style={{ marginLeft: embedded ? 0 : marginLeft }}
+      >
         <div
-          className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-background"
-          style={{ marginLeft: embedded ? 0 : marginLeft }}
+          key={location.pathname}
+          className="relative flex-1 flex flex-col overflow-hidden page-transition"
         >
-          <div
-            key={location.pathname}
-            className="relative flex-1 flex flex-col overflow-hidden page-transition"
-          >
-            <div className="relative z-10 flex-1 flex flex-col min-h-0">
-              <Outlet />
-            </div>
+          <div className="flex-1 flex flex-col min-h-0">
+            <Outlet />
           </div>
         </div>
-        {!embedded && <CommandPalette />}
-        {!embedded && <SchemaInspector />}
-        {!embedded && <CopilotWidget />}
-      </InspectorProvider>
+      </div>
+      {!embedded && <CommandPalette />}
+      {!embedded && <CopilotWidget />}
     </CopilotProvider>
     </CurrentWindowProvider>
   );
