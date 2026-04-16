@@ -38,9 +38,10 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # Collect artifact names that changed in this PR (three-dot diff against base branch)
+            # Collect artifact names that changed in this PR (three-dot diff against base branch).
+            # Use `|| true` so grep's exit code 1 (no matches) does not fail the step.
             CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
-              | grep -oE '^artifacts/[^/]+/' \
+              | { grep -oE '^artifacts/[^/]+/' || true; } \
               | sed 's|artifacts/||;s|/||' \
               | sort -u \
               | tr '\n' ',' \
