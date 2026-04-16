@@ -1200,12 +1200,12 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                             onClick={() => onCloneRow(row)}
                             className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 flex items-center justify-center rounded border border-border bg-white text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
                             style={{ width: 26, height: 26 }}
-                            aria-label="Clonar"
+                            aria-label={ui('cloneOrderBtn')}
                           >
                             <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/clonebtn:opacity-100 pointer-events-none transition-opacity z-10">
-                            Clonar
+                            {ui('cloneOrderBtn')}
                           </div>
                         </div>
                       </TableCell>
