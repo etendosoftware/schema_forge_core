@@ -1,23 +1,16 @@
 import { useLocation } from 'react-router-dom';
-import { useInspector } from '@/components/inspector/InspectorProvider.jsx';
 import {
-  Pencil,
-  PencilOff,
-  Save,
-  Loader2,
   Search,
   Sparkles,
   Plus,
   Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
-import { Badge } from '@/components/ui/badge.jsx';
 import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import { useMenuLabel } from '@/i18n';
 import { findActiveGroup } from './Sidebar.jsx';
 
 export default function TopBar({ menuGroups }) {
-  const inspector = useInspector();
   const location = useLocation();
   const activeGroup = findActiveGroup(menuGroups, location.pathname);
   const currentPath = location.pathname.replace(/^\//, '');
@@ -58,21 +51,6 @@ export default function TopBar({ menuGroups }) {
 
       {/* Right: action icons */}
       <div className="flex shrink-0 items-center gap-1 px-4">
-        {inspector.editMode && (
-          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 mr-1">
-            Edit Mode
-          </Badge>
-        )}
-        {inspector.editMode && inspector.dirty && (
-          <Button size="sm" variant="outline" onClick={inspector.save} disabled={inspector.saving} className="mr-1">
-            {inspector.saving ? (
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-1" />
-            )}
-            Save
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="icon"
@@ -95,19 +73,6 @@ export default function TopBar({ menuGroups }) {
           <Bell className="h-4 w-4" />
         </Button>
         <LocaleSwitcher />
-        <Button
-          variant={inspector.editMode ? 'default' : 'ghost'}
-          size="icon"
-          className="h-9 w-9"
-          onClick={() => inspector.setEditMode(!inspector.editMode)}
-        >
-          {inspector.editMode ? (
-            <PencilOff className="h-4 w-4" />
-          ) : (
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          )}
-          <span className="sr-only">Toggle edit mode</span>
-        </Button>
       </div>
     </header>
   );
