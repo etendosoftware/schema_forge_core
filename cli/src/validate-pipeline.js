@@ -428,6 +428,33 @@ async function getStagedArtifacts(root) {
   }
 }
 
+/**
+ * Get list of artifact names changed since a given git ref (e.g. 'origin/main').
+ * Uses `git diff --name-only <ref>...HEAD` (three-dot diff — changes since branch point).
+ * Returns null if git is unavailable or the ref cannot be resolved.
+ *
+ * @param {string} root - repo root path
+ * @param {string} ref  - git ref to compare against (e.g. 'origin/main', 'HEAD~1')
+ * @returns {Promise<string[]|null>}
+ */
+export async function getChangedArtifactsSince(root, ref) {
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['diff', '--name-only', `${ref}...HEAD`],
+      { cwd: root },
+    );
+    const names = new Set();
+    for (const line of stdout.split('\n')) {
+      const m = line.match(/^artifacts\/([^/]+)\//);
+      if (m) names.add(m[1]);
+    }
+    return Array.from(names);
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Core validator
 // ---------------------------------------------------------------------------
@@ -472,6 +499,7 @@ export async function validatePipeline({
       // No staged artifacts — nothing to check
       return {
         violations: [],
+        skipped: [],
         summary: { total: 0, blocking: 0, warnings: 0, skipped: 0, ok: 0 },
       };
     }
@@ -665,6 +693,7 @@ function parseCLIArgs(argv) {
     strict: false,
     format: 'text',
     skip: [],
+    changedSince: null,
   };
 
   for (const arg of args) {
@@ -676,6 +705,8 @@ function parseCLIArgs(argv) {
       options.format = arg.split('=')[1];
     } else if (arg.startsWith('--skip=')) {
       options.skip = arg.split('=')[1].split(',').map(s => s.trim()).filter(Boolean);
+    } else if (arg.startsWith('--changed-since=')) {
+      options.changedSince = arg.split('=').slice(1).join('=');
     }
   }
 
@@ -684,7 +715,21 @@ function parseCLIArgs(argv) {
 
 async function main() {
   const options = parseCLIArgs(process.argv);
-  const scope = options.staged ? 'staged' : 'all';
+
+  // Determine scope
+  let scope;
+  if (options.changedSince) {
+    const changed = await getChangedArtifactsSince(ROOT, options.changedSince);
+    if (changed === null) {
+      process.stderr.write(`validate-pipeline: could not resolve ref '${options.changedSince}'\n`);
+      process.exit(1);
+    }
+    scope = changed; // may be empty array → validator returns early with empty result
+  } else if (options.staged) {
+    scope = 'staged';
+  } else {
+    scope = 'all';
+  }
 
   let result;
   try {
@@ -696,6 +741,12 @@ async function main() {
   } catch (err) {
     process.stderr.write(`validate-pipeline: fatal error: ${err.message}\n`);
     process.exit(1);
+  }
+
+  // Attach scope info to summary for JSON consumers (e.g. CI workflow)
+  if (options.changedSince) {
+    result.summary.scope = Array.isArray(scope) ? scope : [];
+    result.summary.empty = result.summary.scope.length === 0;
   }
 
   if (options.format === 'json') {
