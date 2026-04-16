@@ -1,9 +1,19 @@
 {
   "$schema": "decisions-v2",
   "version": 2,
-  "window": {},
-  "entities": {},
-  "rules": [],
+  "window": { "title": "Purchase Order" },
+  "entities": {
+    "purchase-order": {
+      "fields": {
+        "documentNo": { "visibility": "readOnly" },
+        "vendor": { "visibility": "editable" },
+        "orderDate": { "visibility": "editable" }
+      }
+    }
+  },
+  "rules": [
+    { "id": "vendor-discount", "decision": "Keep" }
+  ],
   "discardPatterns": [],
   "excludedEntities": []
 }

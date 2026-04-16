@@ -1,9 +1,15 @@
 {
   "$schema": "decisions-v2",
   "version": 2,
-  "window": {},
-  "entities": {},
+  "window": { "title": "Orphan Output Window" },
+  "entities": {
+    "orphan-output": {
+      "fields": {
+        "status": { "visibility": "readOnly" }
+      }
+    }
+  },
   "rules": [],
-  "discardPatterns": [],
+  "discardPatterns": ["_internal*"],
   "excludedEntities": []
 }

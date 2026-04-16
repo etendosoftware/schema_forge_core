@@ -21,6 +21,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { needsMigration } from './migrations/index.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -179,9 +180,13 @@ async function ruleF2(artifactDir, artifactName) {
 
 /**
  * F3: New window has contract.json but no entry in registry.js.
- * The caller passes registryContent (raw text of registry.js).
+ * The caller passes registryContent (raw text of registry.js), or null if unreadable.
  */
 async function ruleF3(artifactDir, artifactName, registryContent) {
+  if (registryContent === null) {
+    return skipped('F3', artifactName, 'registry.js could not be read — F3 check skipped');
+  }
+
   const contractPath = join(artifactDir, 'contract.json');
   if (!(await fileExists(contractPath))) return null;
 
@@ -228,8 +233,6 @@ async function ruleF5(artifactDir, artifactName) {
 
   const decisions = await readJSON(decisionsPath);
 
-  // Dynamically import migration checker to stay consistent with actual definitions
-  const { needsMigration } = await import('./migrations/index.js');
   if (needsMigration(decisions)) {
     return violation(
       'F5', artifactName, 'BLOCK',
@@ -364,10 +367,13 @@ async function ruleF9(artifactDir, artifactName) {
  * F10: registry.js has loader for a window but artifacts/<window>/generated/web/<window>/index.jsx is missing.
  * @param {string} artifactDir - absolute path to the artifact directory
  * @param {string} artifactName
- * @param {string} registryContent
+ * @param {string|null} registryContent - raw text of registry.js, or null if unreadable
  * @param {string} repoRoot - repo root (for resolving custom window paths)
  */
 async function ruleF10(artifactDir, artifactName, registryContent, repoRoot = ROOT) {
+  if (registryContent === null) {
+    return skipped('F10', artifactName, 'registry.js could not be read — F10 check skipped');
+  }
   if (!registryContent.includes(`'${artifactName}'`)) return null; // not in registry, skip
 
   const indexPath = join(artifactDir, 'generated', 'web', artifactName, 'index.jsx');
@@ -435,7 +441,7 @@ async function getStagedArtifacts(root) {
  * @param {string[]} [options.skip=[]] - list of rule IDs to skip (e.g. ['F4', 'F7'])
  * @param {string} [options.root=ROOT] - repo root (override for testing)
  * @param {string} [options.registryPath] - override path to registry.js (for testing)
- * @returns {Promise<{violations: Array, summary: object}>}
+ * @returns {Promise<{violations: Array, skipped: Array, summary: object}>}
  */
 export async function validatePipeline({
   scope = 'all',
@@ -449,12 +455,13 @@ export async function validatePipeline({
   const resolvedRegistryPath = registryPath ?? join(root, 'tools', 'app-shell', 'src', 'windows', 'registry.js');
 
   // Load registry content for F3 and F10
-  let registryContent = '';
+  // null = unreadable (F3/F10 will emit skipped entries instead of false BLOCKs)
+  let registryContent = null;
   try {
     registryContent = await readFile(resolvedRegistryPath, 'utf-8');
   } catch {
-    // Registry file not found — F3/F10 checks will be skipped
-    registryContent = '';
+    // Registry file not found or unreadable — F3/F10 checks will emit skipped entries
+    registryContent = null;
   }
 
   // Determine which artifacts to check
@@ -566,6 +573,20 @@ export async function validatePipeline({
   const blocking = violations.filter(v => v.severity === 'BLOCK').length;
   const warnings = violations.filter(v => v.severity === 'WARN').length;
 
+  // Compute ok count per-artifact (worst-case wins: violation > skipped > ok).
+  // This prevents ok from going negative when an artifact emits multiple violations.
+  /** @type {Map<string, 'violation'|'skipped'|'ok'>} */
+  const artifactStatus = new Map(artifactNames.map(n => [n, 'ok']));
+  for (const entry of violations) {
+    artifactStatus.set(entry.artifact, 'violation');
+  }
+  for (const entry of skippedEntries) {
+    if (artifactStatus.get(entry.artifact) !== 'violation') {
+      artifactStatus.set(entry.artifact, 'skipped');
+    }
+  }
+  const okCount = [...artifactStatus.values()].filter(s => s === 'ok').length;
+
   return {
     violations,
     skipped: skippedEntries,
@@ -574,7 +595,8 @@ export async function validatePipeline({
       blocking,
       warnings,
       skipped: skippedEntries.length,
-      ok: artifactNames.length - violations.length - skippedEntries.length,
+      /** ok = number of artifacts with no violations and no skipped checks */
+      ok: okCount,
     },
   };
 }

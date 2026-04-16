@@ -350,3 +350,55 @@ describe('Whole-repo validation (non-strict)', () => {
     assert.ok(typeof result.summary.total === 'number', 'summary.total should be a number');
   });
 });
+
+// ---------------------------------------------------------------------------
+// C1 — F3/F10 emit skipped when registry is unreadable
+// ---------------------------------------------------------------------------
+
+describe('Registry unreadable — F3/F10 emit skipped not BLOCK (C1)', () => {
+  it('F3 emits a skipped entry (not BLOCK) when registryPath does not exist', async () => {
+    const result = await runOnFixtures(['window-ok'], {
+      registryPath: '/nonexistent/path/registry.js',
+    });
+    const f3Block = result.violations.find(v => v.rule === 'F3' && v.severity === 'BLOCK');
+    assert.ok(!f3Block, 'F3 must NOT emit BLOCK when registry is unreadable');
+    const f3Skip = result.skipped.find(s => s.rule === 'F3');
+    assert.ok(f3Skip, 'F3 must emit a skipped entry when registry is unreadable');
+  });
+
+  it('F10 emits a skipped entry (not BLOCK) when registryPath does not exist', async () => {
+    const result = await runOnFixtures(['window-ok'], {
+      registryPath: '/nonexistent/path/registry.js',
+    });
+    const f10Block = result.violations.find(v => v.rule === 'F10' && v.severity === 'BLOCK');
+    assert.ok(!f10Block, 'F10 must NOT emit BLOCK when registry is unreadable');
+    const f10Skip = result.skipped.find(s => s.rule === 'F10');
+    assert.ok(f10Skip, 'F10 must emit a skipped entry when registry is unreadable');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// C2 — summary.ok never goes negative
+// ---------------------------------------------------------------------------
+
+describe('summary.ok never negative (C2)', () => {
+  it('ok is >= 0 even when one artifact has multiple violations', async () => {
+    // window-stale-decisions can emit F1 (stale hash) and potentially others.
+    // Run multiple bad fixtures to stress the ok count.
+    const result = await runOnFixtures([
+      'window-stale-decisions',
+      'window-orphan-registry',
+      'window-version-downgrade',
+    ]);
+    assert.ok(result.summary.ok >= 0, `summary.ok must not be negative, got: ${result.summary.ok}`);
+  });
+
+  it('ok equals artifactCount minus artifacts-with-violations when all violations come from one artifact', async () => {
+    // window-stale-decisions fires F1 (and F3 skipped since it has contract and is in mock-registry).
+    // Only 1 artifact in scope. It has at least 1 violation → ok should be 0, not negative.
+    const result = await runOnFixtures(['window-stale-decisions']);
+    assert.ok(result.summary.ok >= 0, `summary.ok must not be negative, got: ${result.summary.ok}`);
+    // There's 1 artifact total; it has violations, so ok must be 0
+    assert.equal(result.summary.ok, 0, 'ok should be 0 when the only artifact has violations');
+  });
+});

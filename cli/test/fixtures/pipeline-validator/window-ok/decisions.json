@@ -1,8 +1,15 @@
 {
   "$schema": "decisions-v2",
   "version": 2,
-  "window": {},
-  "entities": {},
+  "window": { "title": "Sales Order" },
+  "entities": {
+    "sales-order": {
+      "fields": {
+        "documentNo": { "visibility": "readOnly" },
+        "businessPartner": { "visibility": "editable" }
+      }
+    }
+  },
   "rules": [],
   "discardPatterns": [],
   "excludedEntities": []
