@@ -152,6 +152,10 @@ function mapPendingTasks(handlerData) {
         purchaseOrdersToConfirm_plural: '/purchase-order?DocStatus=DR',
         purchaseInvoicesToConfirm: '/purchase-invoice?DocStatus=DR',
         purchaseInvoicesToConfirm_plural: '/purchase-invoice?DocStatus=DR',
+        pendingReceptions: '/purchase-order?filter=pendingDelivery',
+        pendingReceptions_plural: '/purchase-order?filter=pendingDelivery',
+        pendingSalesDeliveries: '/sales-order?filter=pendingDelivery',
+        pendingSalesDeliveries_plural: '/sales-order?filter=pendingDelivery',
       };
       if (FILTER_LINKS[mapped.taskKey]) {
         mapped.link = FILTER_LINKS[mapped.taskKey];
@@ -183,6 +187,12 @@ function inferPendingTaskKey(task) {
   }
   if (task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
     return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
+  }
+  if (task?.link?.startsWith('/purchase-order?filter=pendingDelivery') || text.includes('pending reception')) {
+    return task?.count === 1 ? 'pendingReceptions' : 'pendingReceptions_plural';
+  }
+  if (task?.link?.startsWith('/sales-order?filter=pendingDelivery') || text.includes('pending delivery')) {
+    return task?.count === 1 ? 'pendingSalesDeliveries' : 'pendingSalesDeliveries_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';

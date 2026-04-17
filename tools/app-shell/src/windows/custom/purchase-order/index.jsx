@@ -57,7 +57,14 @@ export default function PurchaseOrderWindow(props) {
   }
 
   const docStatus = searchParams.get('DocStatus');
+  const filterParam = searchParams.get('filter');
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
+  const QUICK_FILTERS = [
+    { label: 'all' },
+    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatusPurchase ?? 100) < 100 },
+  ];
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
 
   return (
     <>
@@ -69,6 +76,8 @@ export default function PurchaseOrderWindow(props) {
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(row) => setCloneTarget(row)}
         initialColumnFilters={initialColumnFilters}
+        quickFilters={QUICK_FILTERS}
+        initialQuickFilterIndex={initialQuickFilterIndex}
         {...props}
       />
       {cloneTarget && createPortal(
