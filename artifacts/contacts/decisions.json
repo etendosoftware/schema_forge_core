@@ -460,6 +460,27 @@
           "section": "principal"
         }
       }
+    },
+    "customer": {
+      "fields": {
+        "etgoEmail": { "visibility": "discarded" },
+        "etgoPhone": { "visibility": "discarded" },
+        "etgoWeb":   { "visibility": "discarded" }
+      }
+    },
+    "vendorCreditor": {
+      "fields": {
+        "etgoEmail": { "visibility": "discarded" },
+        "etgoPhone": { "visibility": "discarded" },
+        "etgoWeb":   { "visibility": "discarded" }
+      }
+    },
+    "employee": {
+      "fields": {
+        "etgoEmail": { "visibility": "discarded" },
+        "etgoPhone": { "visibility": "discarded" },
+        "etgoWeb":   { "visibility": "discarded" }
+      }
     }
   },
   "version": 2

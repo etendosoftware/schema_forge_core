@@ -281,14 +281,16 @@ export function generateBackendContract(schema, rules = [], processes = []) {
   const endpoints = [];
 
   for (const entity of schema.entities) {
-    const fields = entity.fields.map(f => ({
-      name: f.name,
-      apiKey: f.apiKey || f.name,
-      column: f.column,
-      type: f.type,
-      visibility: f.visibility,
-      required: f.required,
-    }));
+    const fields = entity.fields
+      .filter(f => f.visibility !== 'discarded')
+      .map(f => ({
+        name: f.name,
+        apiKey: f.apiKey || f.name,
+        column: f.column,
+        type: f.type,
+        visibility: f.visibility,
+        required: f.required,
+      }));
 
     const beEntity = { tableName: entity.tableName, tabId: entity.tabId, tabName: entity.tabName, fields };
     if (entity.javaQualifier) beEntity.javaQualifier = entity.javaQualifier;
