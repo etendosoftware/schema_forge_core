@@ -7,7 +7,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Search, Inbox, X, ChevronDown, Check, Trash2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { FieldHighlight } from '@/components/inspector/FieldHighlight.jsx';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -1081,21 +1080,17 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                           className="text-xs font-medium text-muted-foreground/70 tracking-wide cursor-pointer select-none hover:text-foreground transition-colors bg-transparent border-0 p-0 text-left"
                           onClick={() => onSort(col.key)}
                         >
-                          <FieldHighlight entityName={entity} fieldName={col.key}>
-                            {colLabel}
-                            {isSorted && (
-                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                            )}
-                          </FieldHighlight>
+                          {colLabel}
+                          {isSorted && (
+                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          )}
                         </button>
                       ) : (
                         <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
-                          <FieldHighlight entityName={entity} fieldName={col.key}>
-                            {colLabel}
-                            {isSorted && (
-                              <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
-                            )}
-                          </FieldHighlight>
+                          {colLabel}
+                          {isSorted && (
+                            <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
+                          )}
                         </span>
                       )}
                       <div className="relative w-full">

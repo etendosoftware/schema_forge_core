@@ -203,8 +203,13 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
-  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
+  const isDraftModeCompleted = Boolean(
+    draftMode?.enabled && (
+      isProcessed || _headerData?.documentStatus === 'CO'
+    )
+  );
+  const isDocumentReadOnly = lockWhenProcessed && isProcessed;
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -276,6 +281,8 @@ export function DetailView({
 
   // Track fields whose values were set by a callout response to avoid re-triggering
   const calloutAppliedRef = useRef(new Set());
+  // Guard: fire default callouts only once per new-record session
+  const defaultCalloutsTriggeredRef = useRef(false);
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
@@ -349,6 +356,38 @@ export function DetailView({
       }
     }
   }, [isNew, hook.editing, catalogsLoaded, catalogs, api]);
+
+  // After defaults load for a new record, fire callouts for non-dependent selector fields
+  // so the callout chain runs (e.g. businessPartner → priceList, paymentTerms).
+  // This mirrors what classic Etendo does when opening a blank document.
+  useEffect(() => {
+    if (!isNew) { defaultCalloutsTriggeredRef.current = false; return; }
+    if (defaultCalloutsTriggeredRef.current) return;
+    if (!hook.editing || !api?.selectors) return;
+    // Wait until defaults have actually arrived (editing is non-empty)
+    const hasDefaults = Object.values(hook.editing).some(v => v != null && v !== '');
+    if (!hasDefaults) return;
+
+    defaultCalloutsTriggeredRef.current = true;
+
+    // Trigger callouts for primary (non-dependent) selector fields that have default values.
+    // 'dependent' selectors (e.g. partnerAddress) are derived by other callouts — skip them.
+    const triggers = (api.selectors || [])
+      .filter(s => s.entity === entity && s.inputMode !== 'dependent' && hook.editing[s.field]);
+
+    // Stagger calls by (i * executeCallout.debounceMs + buffer) so each result settles
+    // before the next callout fires. The backend is idempotent: returns {} for fields
+    // with no registered callout, so it is safe to call for every selector field.
+    const STAGGER_MS = 400; // > useCallout debounce (300ms)
+    const editingSnapshot = { ...hook.editing };
+    triggers.forEach(({ field }, i) => {
+      setTimeout(() => {
+        const value = editingSnapshot[field];
+        if (value) executeCallout(field, value, editingSnapshot);
+      }, i * STAGGER_MS);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, hook.editing, api, entity]);
 
   useEffect(() => {
     setDirectFetched(false);
@@ -991,7 +1030,7 @@ export function DetailView({
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && (draftMode?.enabled ? (
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
                   <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
                     const saved = await hook.handleSave(data);
