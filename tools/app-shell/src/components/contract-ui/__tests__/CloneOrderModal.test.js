@@ -12,8 +12,8 @@ describe('CloneOrderModal', () => {
     assert.match(src, /export default function CloneOrderModal/);
   });
 
-  it('accepts orderId, data, apiBaseUrl, headers, onClose and onCloned props', () => {
-    assert.match(src, /orderId/);
+  it('accepts recordId, data, apiBaseUrl, headers, onClose and onCloned props', () => {
+    assert.match(src, /recordId/);
     assert.match(src, /apiBaseUrl/);
     assert.match(src, /headers/);
     assert.match(src, /onClose/);
@@ -21,12 +21,12 @@ describe('CloneOrderModal', () => {
   });
 
   it('fetches line count from the API on mount', () => {
-    assert.match(src, /\/lines\?parentId=\$\{orderId\}/);
+    assert.match(src, /\/lines\?parentId=\$\{recordId\}/);
     assert.match(src, /useEffect/);
   });
 
-  it('calls the cloneOrder action endpoint via POST', () => {
-    assert.match(src, /\/header\/\$\{orderId\}\/action\/cloneOrder/);
+  it('calls the configured clone action endpoint via POST', () => {
+    assert.match(src, /\/header\/\$\{recordId\}\/action\/\$\{cloneActionName\}/);
     assert.match(src, /method.*POST/);
   });
 
