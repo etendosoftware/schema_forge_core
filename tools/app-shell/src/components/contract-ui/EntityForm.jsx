@@ -10,6 +10,7 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
+import { CreateContactContext } from './CreateContactContext.js';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
@@ -67,6 +68,10 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   // Tracks whether the user is actively typing so the sync effect doesn't fight keystrokes.
   const isEditingRef = useRef(false);
   const debounceRef = useRef(null);
+
+  // Optional "Create contact" capability injected by custom windows via context.
+  const createCtx = React.useContext(CreateContactContext);
+  const canCreate = !!createCtx && createCtx.fieldKey === field.key;
 
   React.useEffect(() => {
     // Only sync from outside when the user is NOT actively editing.
@@ -213,8 +218,17 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           </button>
         )}
       </div>
-      {open && filtered.length > 0 && (
+      {open && (canCreate || filtered.length > 0) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+          {canCreate && (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
+              onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
+            >
+              + {ui('createContact')}
+            </button>
+          )}
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -235,9 +249,29 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+          {canCreate && (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
+              onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
+            >
+              + {ui('createContact')}
+            </button>
+          )}
           <div className="px-3 py-2 text-xs text-muted-foreground">
-            {ui('noResultsFor')} "{query}"
+            {ui('noResultsFor')} &ldquo;{query}&rdquo;
           </div>
+        </div>
+      )}
+      {open && !query && !fetching && canCreate && filtered.length === 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
+          <button
+            type="button"
+            className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+            onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
+          >
+            + {ui('createContact')}
+          </button>
         </div>
       )}
     </div>
