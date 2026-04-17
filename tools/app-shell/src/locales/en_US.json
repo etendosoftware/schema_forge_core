@@ -12121,7 +12121,7 @@
       "description": ""
     },
     "EM_OBTIK_Tax_ID_Key": {
-      "label": "Clave NIF País Residencia",
+      "label": "Residence Country Tax ID Key",
       "description": ""
     },
     "Iscreated": {
@@ -16635,7 +16635,7 @@
     "validationFieldOrganization": "Organization",
     "validationFieldClient": "Client",
     "validationFieldBusinessPartnerCategory": "Business Partner Category",
-    "validationFieldNifCountryKey": "Clave NIF País Residencia",
+    "validationFieldNifCountryKey": "Residence Country Tax ID Key",
     "lineAdded": "Line added",
     "recordCreated": "Record created",
     "recordSaved": "Record saved",
