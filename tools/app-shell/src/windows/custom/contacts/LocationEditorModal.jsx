@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI, useLabel } from '@/i18n';
 import { toast } from 'sonner';
 
-const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '' };
+const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '', shipToAddress: true, invoiceToAddress: true };
 const SELECTOR_PAGE_SIZE = 120;
 
 function normalizeText(value) {
@@ -54,6 +54,7 @@ export default function LocationEditorModal({
   selectorContext = {},
 }) {
   const ui = useUI();
+  const t = useLabel();
   const [form, setForm] = useState(EMPTY_FORM);
   const [countries, setCountries] = useState([]);
   const [countrySelectorBase, setCountrySelectorBase] = useState('');
@@ -248,6 +249,8 @@ export default function LocationEditorModal({
               countryLabel: rec['country$_identifier'] ?? '',
               region: rec.region ?? '',
               regionLabel: rec['region$_identifier'] ?? '',
+              shipToAddress: rec.shipToAddress === 'Y' || rec.shipToAddress === true,
+              invoiceToAddress: rec.invoiceToAddress === 'Y' || rec.invoiceToAddress === true,
             });
           }
         })
@@ -552,6 +555,8 @@ export default function LocationEditorModal({
         cityName: form.city || null,
         country: form.country || null,
         region: form.region || null,
+        shipToAddress: form.shipToAddress ? 'Y' : 'N',
+        invoiceToAddress: form.invoiceToAddress ? 'Y' : 'N',
       };
       const postHeaders = { ...authHeader, 'Content-Type': 'application/json' };
 
@@ -709,6 +714,28 @@ export default function LocationEditorModal({
                 </span>
                 <ChevronDown size={16} className="text-gray-500 shrink-0" />
               </button>
+            </div>
+
+            {/* Shipping / Invoicing Address checkboxes */}
+            <div className="flex gap-6 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.shipToAddress}
+                  onChange={e => setField('shipToAddress', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{t('IsShipTo') || 'Shipping Address'}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.invoiceToAddress}
+                  onChange={e => setField('invoiceToAddress', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{t('IsBillTo') || 'Invoicing Address'}</span>
+              </label>
             </div>
 
           </div>

@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-16T19:18:49.035Z",
-  "checksum": "c3f7ac8bcbcdf525",
+  "generatedAt": "2026-04-17T12:32:16.037Z",
+  "checksum": "1a6abb320903f827",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -2817,7 +2817,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": true,
+            "grid": false,
             "form": true,
             "section": "other"
           },
@@ -2845,7 +2845,11 @@
             "grid": true,
             "form": true,
             "defaultValue": ".",
-            "section": "principal"
+            "section": "principal",
+            "labels": {
+              "en_US": "Location / Address",
+              "es_ES": "Dirección"
+            }
           },
           {
             "name": "fax",
@@ -2868,9 +2872,14 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
-            "defaultValue": "Y"
+            "defaultValue": "Y",
+            "section": "principal",
+            "labels": {
+              "en_US": "Shipping Address",
+              "es_ES": "Dir.envíos"
+            }
           },
           {
             "name": "invoiceToAddress",
@@ -2881,9 +2890,14 @@
             "tsType": "boolean",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
-            "defaultValue": "Y"
+            "defaultValue": "Y",
+            "section": "principal",
+            "labels": {
+              "en_US": "Invoicing Address",
+              "es_ES": "Dir.factura"
+            }
           },
           {
             "name": "active",

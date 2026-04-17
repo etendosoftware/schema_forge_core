@@ -702,7 +702,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       if (t.isFormTab) {
         return `import ${t.FormName} from '${formImportPath}';${customModalImport}`;
       }
-      return `import ${t.TableName} from '${tableImportPath}';\nimport ${t.FormName} from '${formImportPath}';${customModalImport}`;
+      const formImport = (t.isCustomAddModal && !t.isCustomForm) ? '' : `\nimport ${t.FormName} from '${formImportPath}';`;
+      return `import ${t.TableName} from '${tableImportPath}';${formImport}${customModalImport}`;
     })
     .join('\n');
 
@@ -718,7 +719,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
     const customAddModalPart = t.CustomAddModalName ? `, customAddModal: ${t.CustomAddModalName}` : '';
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
+    const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
   }).join('\n');
 
   const secondaryTabsProp = secondaryTabDefs.length > 0
