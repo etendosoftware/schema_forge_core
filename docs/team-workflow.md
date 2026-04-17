@@ -26,7 +26,7 @@ main          ← production-ready, protected
 
 ```bash
 # 1. Clone
-git clone git@github.com:etendosoftware/project_analyzer.git schema-forge
+git clone git@github.com:etendosoftware/etendo_schema_forge.git schema-forge
 cd schema-forge
 
 # 2. Install dependencies

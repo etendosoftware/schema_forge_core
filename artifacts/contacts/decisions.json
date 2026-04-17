@@ -1,0 +1,416 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "contact",
+    "name": "Contacts",
+    "entityLabel": "Contact",
+    "sidebarLayout": true,
+    "breadcrumb": "Contact",
+    "detailEntity": null,
+    "primaryTabs": [
+      {
+        "key": "general",
+        "label": "General"
+      },
+      {
+        "key": "financial",
+        "label": "Financial",
+        "panel": "ContactsFinancialPanel"
+      }
+    ],
+    "quickFilters": [
+      {
+        "label": "All",
+        "filter": null
+      },
+      {
+        "label": "Customers",
+        "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
+      },
+      {
+        "label": "Vendors",
+        "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
+      }
+    ],
+    "customComponents": {
+      "headerTable": "ContactsTable"
+    },
+    "hidePrint": true,
+    "hideMoreMenu": true,
+    "processOverrides": {
+      "setNewCurrency": {
+        "exclude": true
+      }
+    },
+    "listBaseFilter": "criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D",
+    "listViewOptions": {
+      "hidePrint": true,
+      "hideEye": true,
+      "hideCounter": true,
+      "hideLink": true,
+      "hideFilters": true
+    },
+    "secondaryTabs": {
+      "contact": {
+        "tabMode": "table-form",
+        "tabOrder": 1,
+        "label": "Person",
+        "addLineFields": [
+          "firstName",
+          "lastName",
+          "email",
+          "phone",
+          "position"
+        ],
+        "requireSavedRecord": true
+      },
+      "bankAccount": {
+        "tabMode": "table-form",
+        "tabOrder": 2,
+        "label": "Bank Account",
+        "addLineFields": [
+          "bankName",
+          "bankFormat",
+          "accountNo",
+          "iBAN"
+        ],
+        "requireSavedRecord": true
+      }
+    }
+  },
+  "entities": {
+    "businessPartner": {
+      "fields": {
+        "tbaiIssimplifiedinv": {
+          "visibility": "discarded"
+        },
+        "employee": {
+          "visibility": "editable",
+          "form": false
+        },
+        "isSalesRepresentative": {
+          "visibility": "editable",
+          "form": false
+        },
+        "operator": {
+          "visibility": "editable",
+          "form": false
+        },
+        "salaryCategory": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "name": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "searchKey": {
+          "visibility": "editable",
+          "grid": false,
+          "searchable": true,
+          "section": "principal"
+        },
+        "businessPartnerCategory": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false,
+          "section": "principal",
+          "label": "Business Partner Category",
+          "reference": "BusinessPartnerCategory",
+          "inputMode": "selector"
+        },
+        "description": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false,
+          "section": "principal"
+        },
+        "taxID": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "creditLimit": {
+          "visibility": "editable",
+          "form": true,
+          "label": "Credit Limit",
+          "grid": false,
+          "section": "other"
+        },
+        "creditUsed": {
+          "visibility": "readOnly",
+          "form": false,
+          "label": "Credit Used",
+          "grid": false,
+          "section": "other"
+        },
+        "name2": {
+          "visibility": "editable",
+          "form": false
+        },
+        "uRL": {
+          "visibility": "editable",
+          "form": false
+        },
+        "consumptionDays": {
+          "visibility": "editable",
+          "form": false
+        },
+        "referenceNo": {
+          "visibility": "editable",
+          "form": false
+        },
+        "greeting": {
+          "visibility": "editable",
+          "form": false
+        },
+        "bPCurrencyID": {
+          "visibility": "editable",
+          "form": false
+        },
+        "isCustomerConsent": {
+          "visibility": "editable",
+          "form": false
+        },
+        "active": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false,
+          "section": "other"
+        },
+        "vendor": {
+          "visibility": "editable",
+          "label": "Vendor",
+          "grid": true,
+          "form": false,
+          "section": "principal"
+        },
+        "purchasePricelist": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "pOPaymentMethod": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "PaymentMethod",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "pOPaymentTerms": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "PaymentTerm",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "pOFinancialAccount": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "FIN_Financial_Account",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "vendorBlocking": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal",
+          "displayLogic": "record.vendor"
+        },
+        "customer": {
+          "visibility": "editable",
+          "label": "Customer",
+          "grid": true,
+          "form": false,
+          "section": "principal"
+        },
+        "priceList": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "PriceList",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "paymentMethod": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "PaymentMethod",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "paymentTerms": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "PaymentTerm",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "account": {
+          "visibility": "editable",
+          "form": false,
+          "reference": "FIN_Financial_Account",
+          "inputMode": "selector",
+          "section": "principal",
+          "displayLogic": "record.customer"
+        },
+        "customerBlocking": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal",
+          "displayLogic": "record.customer"
+        }
+      }
+    },
+    "locationAddress": {
+      "fields": {
+        "name": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "phone": {
+          "visibility": "editable",
+          "grid": false,
+          "section": "other"
+        },
+        "active": {
+          "visibility": "readOnly",
+          "grid": false,
+          "section": "other"
+        }
+      }
+    },
+    "contact": {
+      "fields": {
+        "name": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false,
+          "searchable": true,
+          "section": "principal"
+        },
+        "firstName": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "lastName": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "email": {
+          "visibility": "editable",
+          "grid": true,
+          "searchable": true,
+          "section": "principal"
+        },
+        "phone": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "position": {
+          "visibility": "editable",
+          "section": "principal"
+        },
+        "active": {
+          "visibility": "readOnly",
+          "section": "other"
+        },
+        "alternativePhone": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal"
+        },
+        "isdefaultfordocs": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal"
+        },
+        "commercialauth": {
+          "visibility": "editable",
+          "form": false,
+          "section": "principal"
+        },
+        "viasms": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other"
+        },
+        "viaemail": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other"
+        }
+      }
+    },
+    "basicDiscount": {
+      "fields": {
+        "lineNo": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "discount": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal",
+          "reference": "Discount",
+          "inputMode": "selector"
+        },
+        "customer": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "vendor": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        }
+      }
+    },
+    "bankAccount": {
+      "fields": {
+        "bankName": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "bankFormat": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "accountNo": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "iBAN": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "displayedAccount": {
+          "visibility": "readOnly",
+          "grid": false,
+          "section": "principal"
+        }
+      }
+    }
+  },
+  "version": 2
+}

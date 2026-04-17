@@ -1,18 +1,25 @@
 import { EntityForm } from '@/components/contract-ui';
 
+// @sf-generated-start fields:goodsReceipt
 const fields = [
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, reference: 'BusinessPartner', inputMode: 'search' },
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
-  { key: 'movementDate', column: 'MovementDate', type: 'date', required: true },
-  { key: 'dateAcct', column: 'DateAcct', type: 'date', required: true },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', required: true, reference: 'Warehouse', inputMode: 'selector' },
-  { key: 'description', column: 'Description', type: 'textarea' },
-  { key: 'poReference', column: 'POReference', type: 'text' },
-  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true },
-  { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true },
-  { key: 'docStatus', column: 'DocStatus', type: 'text', required: true, readOnly: true },
+  { key: 'documentNo', column: 'DocumentNo', type: 'text', label: 'Document No.', required: true, readOnly: true, section: 'principal' },
+  // @sf-custom-slot callout:SL_InOut_BPartner
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search' },
+  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', label: 'Partner Address', required: true, section: 'principal', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' } },
+  // @sf-custom-slot callout:SE_InOut_Warehouse
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse', required: true, section: 'principal', reference: 'Warehouse', inputMode: 'selector' },
+  // @sf-custom-slot callout:SL_InOut_AccountingDate
+  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true, section: 'principal', defaultValue: '@#Date@' },
+  { key: 'orderReference', column: 'POReference', type: 'text', label: 'Order Reference', section: 'principal' },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed' },
 ];
+// @sf-generated-end fields:goodsReceipt
 
+// @sf-generated-start component:GoodsReceiptForm
 export default function GoodsReceiptForm(props) {
+  // @sf-custom-slot hooks:GoodsReceiptForm
   return <EntityForm fields={fields} {...props} />;
 }
+// @sf-generated-end component:GoodsReceiptForm
+
+// @sf-custom-slot section:GoodsReceiptForm-custom

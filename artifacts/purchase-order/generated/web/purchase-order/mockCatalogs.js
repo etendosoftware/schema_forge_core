@@ -191,22 +191,22 @@ catalogs['Warehouse'] = [
   }
 ];
 
-catalogs['PriceList'] = [
+catalogs['PaymentMethod'] = [
   {
-    "id": "pl-001",
-    "name": "Standard Price List"
+    "id": "pm-001",
+    "name": "Wire Transfer"
   },
   {
-    "id": "pl-002",
-    "name": "Wholesale Prices"
+    "id": "pm-002",
+    "name": "Credit Card"
   },
   {
-    "id": "pl-003",
-    "name": "Retail Prices"
+    "id": "pm-003",
+    "name": "Check"
   },
   {
-    "id": "pl-004",
-    "name": "VIP Pricing"
+    "id": "pm-004",
+    "name": "Cash"
   }
 ];
 
@@ -233,22 +233,22 @@ catalogs['PaymentTerm'] = [
   }
 ];
 
-catalogs['PaymentMethod'] = [
+catalogs['PriceList'] = [
   {
-    "id": "pm-001",
-    "name": "Wire Transfer"
+    "id": "pl-001",
+    "name": "Standard Price List"
   },
   {
-    "id": "pm-002",
-    "name": "Credit Card"
+    "id": "pl-002",
+    "name": "Wholesale Prices"
   },
   {
-    "id": "pm-003",
-    "name": "Check"
+    "id": "pl-003",
+    "name": "Retail Prices"
   },
   {
-    "id": "pm-004",
-    "name": "Cash"
+    "id": "pl-004",
+    "name": "VIP Pricing"
   }
 ];
 
@@ -375,6 +375,29 @@ catalogs['Product'] = [
   }
 ];
 
+catalogs['UOM'] = [
+  {
+    "id": "uom-001",
+    "name": "Each"
+  },
+  {
+    "id": "uom-002",
+    "name": "Box"
+  },
+  {
+    "id": "uom-003",
+    "name": "Kg"
+  },
+  {
+    "id": "uom-004",
+    "name": "Meter"
+  },
+  {
+    "id": "uom-005",
+    "name": "Liter"
+  }
+];
+
 catalogs['Tax'] = [
   {
     "id": "tax-001",
@@ -408,26 +431,26 @@ catalogs['Tax'] = [
   }
 ];
 
-catalogs['UOM'] = [
+catalogs['Currency'] = [
   {
-    "id": "uom-001",
-    "name": "Each"
+    "id": "USD",
+    "name": "US Dollar",
+    "symbol": "$"
   },
   {
-    "id": "uom-002",
-    "name": "Box"
+    "id": "EUR",
+    "name": "Euro",
+    "symbol": "EUR"
   },
   {
-    "id": "uom-003",
-    "name": "Kg"
+    "id": "GBP",
+    "name": "Pound Sterling",
+    "symbol": "GBP"
   },
   {
-    "id": "uom-004",
-    "name": "Meter"
-  },
-  {
-    "id": "uom-005",
-    "name": "Liter"
+    "id": "ARS",
+    "name": "Argentine Peso",
+    "symbol": "ARS"
   }
 ];
 

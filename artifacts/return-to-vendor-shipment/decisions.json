@@ -1,0 +1,13 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "purchases",
+    "name": "Return to Vendor Shipment",
+    "relatedDocuments": true,
+    "notesField": "description"
+  },
+  "entities": {},
+  "rules": {},
+  "discardPatterns": [],
+  "version": 2
+}

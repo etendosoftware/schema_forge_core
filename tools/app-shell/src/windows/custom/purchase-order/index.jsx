@@ -1,0 +1,90 @@
+import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ListView } from '@/components/contract-ui';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
+import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
+import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
+
+// Simplified list columns aligned with Sales Order visual style
+const LIST_COLUMNS = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+];
+
+// Lines table columns without lineNo
+const LINES_COLUMNS = [
+  { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
+  { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', label: 'Ordered Quantity' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price' },
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', label: 'Line Net Amount' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+];
+
+function CustomHeaderTable(props) {
+  return <HeaderTable columns={LIST_COLUMNS} {...props} />;
+}
+
+function CustomLinesTable(props) {
+  return <LinesTable columns={LINES_COLUMNS} {...props} />;
+}
+
+export default function PurchaseOrderWindow(props) {
+  const { recordId, windowName, token, apiBaseUrl } = props;
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [cloneTarget, setCloneTarget] = useState(null);
+
+  const headers = useMemo(() => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }), [token]);
+
+  if (recordId) {
+    return (
+      <GeneratedApp
+        {...props}
+        DetailTable={CustomLinesTable}
+      />
+    );
+  }
+
+  const docStatus = searchParams.get('DocStatus');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
+  return (
+    <>
+      <ListView
+        entity="header"
+        Table={CustomHeaderTable}
+        entityLabel="Purchase Order"
+        windowName={windowName}
+        breadcrumb="Purchases / Purchase Order"
+        onCloneRow={(row) => setCloneTarget(row)}
+        initialColumnFilters={initialColumnFilters}
+        {...props}
+      />
+      {cloneTarget && createPortal(
+        <CloneOrderModal
+          orderId={cloneTarget.id}
+          data={cloneTarget}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setCloneTarget(null)}
+          onCloned={(newId) => {
+            setCloneTarget(null);
+            navigate(`/purchase-order/${newId}`);
+          }}
+        />,
+        document.body,
+      )}
+    </>
+  );
+}

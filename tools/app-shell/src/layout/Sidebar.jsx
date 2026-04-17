@@ -8,6 +8,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip.jsx';
 import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover.jsx';
+import {
   Eye,
   LayoutDashboard,
   ShoppingCart,
@@ -18,11 +23,11 @@ import {
   Settings,
   FolderKanban,
   Target,
-  LogOut,
   FileJson,
   PanelLeftOpen,
   PanelLeftClose,
   ChevronRight,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
@@ -40,12 +45,21 @@ const ICON_MAP = {
   Target,
   Eye,
   FileJson,
+  Plug,
 };
 
-export function findActiveGroup(menuGroups, pathname) {
+export function findActiveGroup(menuGroups, pathname, search) {
   const currentPath = pathname.replace(/^\//, '');
+  const currentFull = currentPath + (search || '');
   return menuGroups.find((g) =>
-    g.items.some((item) => item.name === currentPath)
+    g.items.some((item) => {
+      const itemPath = item.path || item.name;
+      // Exact match including query params for items that use ?category=
+      if (item.path && item.path.includes('?')) {
+        return currentFull === itemPath;
+      }
+      return item.name === currentPath;
+    })
   ) || null;
 }
 
@@ -53,10 +67,10 @@ const COLLAPSED_W = 60;
 const EXPANDED_W = 240;
 
 export default function AppSidebar({ menuGroups, expanded, onToggle }) {
-  const { username, logout } = useAuth();
+  const { selectedOrg } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname.replace(/^\//, '');
-  const activeGroup = findActiveGroup(menuGroups, location.pathname);
+  const activeGroup = findActiveGroup(menuGroups, location.pathname, location.search);
   const tMenu = useMenuLabel();
 
   const [openGroups, setOpenGroups] = useState(() => {
@@ -64,7 +78,6 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
     if (activeGroup) initial[activeGroup.group] = true;
     return initial;
   });
-
   const toggleGroup = (group) => {
     setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
@@ -74,35 +87,35 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
   return (
     <TooltipProvider>
       <nav
-        className="fixed inset-y-0 left-0 z-50 flex flex-col bg-[hsl(222,47%,11%)] transition-[width] duration-200 ease-in-out overflow-hidden"
+        className="fixed inset-y-0 left-0 z-40 flex flex-col bg-background transition-[width] duration-200 ease-in-out overflow-hidden border-l-[3px] border-l-blue-500"
         style={{ width }}
       >
         {/* Header: logo + toggle */}
         <div className={cn(
-          'flex shrink-0 items-center py-3 border-b border-white/10',
+          'flex shrink-0 items-center h-14',
           expanded ? 'px-4 gap-3' : 'justify-center'
         )}>
           <img
-            src="./favicon.png"
+            src="/favicon.png"
             alt="Etendo"
             className="h-9 w-9 shrink-0 rounded-lg"
           />
           {expanded && (
-            <div className="flex flex-col leading-none min-w-0">
-              <span className="text-sm font-semibold text-white truncate">Schema Forge</span>
-              <span className="text-[10px] text-white/50">ERP Generator</span>
+            <div className="flex flex-col leading-none min-w-0 flex-1 text-left">
+              <span className="text-sm font-semibold text-foreground truncate">{selectedOrg?.name || tMenu('Your company')}</span>
             </div>
           )}
           <button
             onClick={onToggle}
             className={cn(
-              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white transition-colors',
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors',
               expanded ? 'ml-auto' : 'hidden'
             )}
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
         </div>
+
 
         {/* Expand button (only when collapsed) */}
         {!expanded && (
@@ -111,48 +124,135 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={onToggle}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <PanelLeftOpen className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Expand menu</TooltipContent>
+              <TooltipContent side="right">{tMenu('Expand menu')}</TooltipContent>
             </Tooltip>
           </div>
         )}
 
         {/* Menu groups */}
         <div className="flex-1 overflow-auto py-2">
-          {menuGroups.map((g) => {
+          {menuGroups.map((g, gIdx) => {
+            // Show section label if this group starts a new section
+            const prevSection = gIdx > 0 ? menuGroups[gIdx - 1].section : null;
+            const showSectionLabel = expanded && g.section && g.section !== prevSection;
             const Icon = ICON_MAP[g.icon] || Package;
             const isGroupActive = activeGroup?.group === g.group;
             const color = getSectionColor(tMenu(g.group));
             const isOpen = openGroups[g.group];
+            const visibleItems = g.items.filter(i => !i.hidden);
+            const isDirect = visibleItems.length === 1;
 
             if (!expanded) {
-              // Collapsed: icon only
+              // Collapsed: direct icon link for single-item groups, popover for multi-item
+              if (isDirect) {
+                const singleItem = visibleItems[0];
+                const itemPath = singleItem.path || singleItem.name;
+                const isItemActive = singleItem.path?.includes('?')
+                  ? (currentPath + location.search) === itemPath
+                  : currentPath === singleItem.name;
+                return (
+                  <div key={g.group} className="flex justify-center py-0.5">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <NavLink
+                          to={`/${itemPath}`}
+                          className={cn(
+                            'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+                            isItemActive || isGroupActive
+                              ? 'bg-[#FFD500] text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:bg-white hover:text-foreground'
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </NavLink>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{tMenu(singleItem.label)}</TooltipContent>
+                    </Tooltip>
+                  </div>
+                );
+              }
+
+              // Collapsed: popover submenu
               return (
                 <div key={g.group} className="flex justify-center py-0.5">
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <NavLink
-                        to={`/${g.items[0].name}`}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
                         className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                          'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
                           isGroupActive
-                            ? 'text-white'
-                            : 'text-white/60 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#FFD500] text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:bg-white hover:text-foreground'
                         )}
-                        style={isGroupActive ? {
-                          borderLeft: `3px solid ${color.accent}`,
-                          backgroundColor: color.accent + '25',
-                        } : undefined}
                       >
                         <Icon className="h-5 w-5" />
-                      </NavLink>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{tMenu(g.group)}</TooltipContent>
-                  </Tooltip>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="right"
+                      className="w-48 p-1.5"
+                    >
+                      <p className="px-2 py-1 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                        {tMenu(g.group)}
+                      </p>
+                      {g.items.map((item) => {
+                        const itemPath = item.path || item.name;
+                        const currentFull = currentPath + location.search;
+                        const isItemActive = item.path?.includes('?')
+                          ? currentFull === itemPath
+                          : currentPath === item.name;
+                        return (
+                          <NavLink
+                            key={item.name}
+                            to={`/${itemPath}`}
+                            className={cn(
+                              'block px-2 py-1.5 text-sm rounded-md transition-colors',
+                              isItemActive
+                                ? 'text-foreground bg-[#FFD500] font-medium'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            )}
+                          >
+                            {tMenu(item.label)}
+                          </NavLink>
+                        );
+                      })}
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              );
+            }
+
+            // Expanded: direct NavLink for single-item groups, collapsible for multi-item
+            if (isDirect) {
+              const singleItem = visibleItems[0];
+              const itemPath = singleItem.path || singleItem.name;
+              const isItemActive = singleItem.path?.includes('?')
+                ? (currentPath + location.search) === itemPath
+                : currentPath === singleItem.name;
+              return (
+                <div key={g.group}>
+                  {showSectionLabel && (
+                    <div className="px-4 pt-4 pb-1">
+                      <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">{tMenu(g.section)}</span>
+                    </div>
+                  )}
+                  <NavLink
+                    to={`/${itemPath}`}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors',
+                      isItemActive || isGroupActive
+                        ? 'bg-[#FFD500] text-foreground font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 text-left truncate">{tMenu(singleItem.label)}</span>
+                  </NavLink>
                 </div>
               );
             }
@@ -160,15 +260,21 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
             // Expanded: group with collapsible items
             return (
               <div key={g.group}>
+                {showSectionLabel && (
+                  <div className="px-4 pt-4 pb-1">
+                    <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">{tMenu(g.section)}</span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleGroup(g.group)}
                   className={cn(
                     'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors',
-                    isGroupActive
-                      ? 'text-white'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                    isGroupActive && !isOpen
+                      ? 'bg-[#FFD500] text-foreground font-medium'
+                      : isGroupActive
+                        ? 'text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
-                  style={isGroupActive ? { borderLeft: `3px solid ${color.accent}` } : undefined}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 text-left truncate">{tMenu(g.group)}</span>
@@ -178,18 +284,22 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
                   )} />
                 </button>
                 {isOpen && (
-                  <div className="ml-7 border-l border-white/10 pl-2 py-0.5">
+                  <div className="ml-7 border-l border-border/50 pl-2 py-0.5">
                     {g.items.map((item) => {
-                      const isItemActive = item.name === currentPath;
+                      const itemPath = item.path || item.name;
+                      const currentFull = currentPath + location.search;
+                      const isItemActive = item.path?.includes('?')
+                        ? currentFull === itemPath
+                        : currentPath === item.name;
                       return (
                         <NavLink
                           key={item.name}
-                          to={`/${item.name}`}
+                          to={`/${itemPath}`}
                           className={cn(
-                            'block px-3 py-1.5 text-xs rounded-md transition-colors',
+                            'block px-3 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'text-white bg-white/10 font-medium'
-                              : 'text-white/50 hover:text-white hover:bg-white/5'
+                              ? 'bg-[#FFD500] text-foreground font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           )}
                         >
                           {tMenu(item.label)}
@@ -205,85 +315,44 @@ export default function AppSidebar({ menuGroups, expanded, onToggle }) {
 
         {/* Footer */}
         <div className={cn(
-          'flex flex-col border-t border-white/10 pt-3 pb-3',
+          'flex flex-col border-t border-border/50 pt-3 pb-3',
           expanded ? 'px-2 gap-1' : 'items-center gap-1.5'
         )}>
-          {/* Artifacts */}
-          {!expanded ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <NavLink
-                  to="/artifacts"
-                  className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-                    location.pathname.startsWith('/artifacts')
-                      ? 'text-white bg-white/10'
-                      : 'text-white/60 hover:bg-white/10 hover:text-white'
-                  )}
-                >
-                  <FileJson className="h-5 w-5" />
-                </NavLink>
-              </TooltipTrigger>
-              <TooltipContent side="right">Artifacts</TooltipContent>
-            </Tooltip>
-          ) : (
-            <NavLink
-              to="/artifacts"
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors',
-                location.pathname.startsWith('/artifacts')
-                  ? 'text-white bg-white/10'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              )}
-            >
-              <FileJson className="h-4 w-4" />
-              <span>Artifacts</span>
-            </NavLink>
+          {/* Artifacts (Solo visible en desarrollo si se activa la flag) */}
+          {import.meta.env.VITE_SHOW_ARTIFACTS === 'true' && (
+            !expanded ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to="/artifacts"
+                    className={cn(
+                      'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                      location.pathname.startsWith('/artifacts')
+                        ? 'text-foreground bg-muted'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    <FileJson className="h-5 w-5" />
+                  </NavLink>
+                </TooltipTrigger>
+                <TooltipContent side="right">{tMenu('Artifacts')}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <NavLink
+                to="/artifacts"
+                className={cn(
+                  'flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors',
+                  location.pathname.startsWith('/artifacts')
+                    ? 'text-foreground bg-muted'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+              >
+                <FileJson className="h-4 w-4" />
+                <span>{tMenu('Artifacts')}</span>
+              </NavLink>
+            )
           )}
 
-          {/* User */}
-          {!expanded ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <div className="flex h-10 w-10 items-center justify-center">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
-                    <span className="text-xs font-semibold">{username?.charAt(0).toUpperCase()}</span>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">{username}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/60">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
-                <span className="text-[10px] font-semibold">{username?.charAt(0).toUpperCase()}</span>
-              </div>
-              <span className="truncate">{username}</span>
-            </div>
-          )}
-
-          {/* Logout */}
-          {!expanded ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={logout}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Logout</TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={logout}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/60 rounded-md hover:text-white hover:bg-white/5 transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </button>
-          )}
         </div>
       </nav>
     </TooltipProvider>

@@ -1,0 +1,12 @@
+[
+  {"category":"Revenue","description":"Sales","amount":148500,"percentage":100},
+  {"category":"Revenue","description":"Service Income","amount":22000,"percentage":100},
+  {"category":"COGS","description":"Cost of Goods","amount":-67200,"percentage":45},
+  {"category":"Gross Profit","description":"Gross Profit","amount":103300,"percentage":60},
+  {"category":"Expenses","description":"Salaries","amount":-42000,"percentage":null},
+  {"category":"Expenses","description":"Rent","amount":-8400,"percentage":null},
+  {"category":"Expenses","description":"Utilities","amount":-3200,"percentage":null},
+  {"category":"Expenses","description":"Marketing","amount":-5600,"percentage":null},
+  {"category":"Expenses","description":"Depreciation","amount":-3800,"percentage":null},
+  {"category":"Net Profit","description":"Net Profit","amount":40300,"percentage":24}
+]

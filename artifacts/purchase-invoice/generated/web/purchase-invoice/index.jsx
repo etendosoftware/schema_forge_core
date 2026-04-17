@@ -1,4 +1,4 @@
-import InvoicePage from './InvoicePage';
+import HeaderPage from './HeaderPage';
 
 const windowMeta = { category: 'purchases', name: 'Purchase Invoice' };
 
@@ -6,221 +6,710 @@ const api = {
   "specName": "purchase-invoice",
   "baseUrl": "/sws/neo/purchase-invoice",
   "crud": {
-    "invoice": {
+    "header": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoice",
-      "detailUrl": "/sws/neo/purchase-invoice/invoice/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/header",
+      "detailUrl": "/sws/neo/purchase-invoice/header/{id}",
       "supportedFilters": [
-        "businessPartner",
-        "invoiceDate",
-        "supplierReference",
         "documentNo",
-        "documentStatus",
-        "paymentComplete"
+        "invoiceDate",
+        "businessPartner",
+        "documentStatus"
       ]
     },
-    "invoiceLine": {
+    "lines": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoiceLine",
-      "detailUrl": "/sws/neo/purchase-invoice/invoiceLine/{id}",
-      "supportedFilters": [
-        "product"
-      ]
-    },
-    "invoiceTax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoiceTax",
-      "detailUrl": "/sws/neo/purchase-invoice/invoiceTax/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/lines",
+      "detailUrl": "/sws/neo/purchase-invoice/lines/{id}",
       "supportedFilters": []
     },
-    "invoiceDiscount": {
+    "intrastat": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/invoiceDiscount",
-      "detailUrl": "/sws/neo/purchase-invoice/invoiceDiscount/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/intrastat",
+      "detailUrl": "/sws/neo/purchase-invoice/intrastat/{id}",
       "supportedFilters": []
     },
-    "paymentSchedule": {
+    "tax": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/paymentSchedule",
-      "detailUrl": "/sws/neo/purchase-invoice/paymentSchedule/{id}",
+      "listUrl": "/sws/neo/purchase-invoice/tax",
+      "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
+      "supportedFilters": []
+    },
+    "cashVat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/cashVat",
+      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
+      "supportedFilters": []
+    },
+    "basicDiscounts": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
+      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
+      "supportedFilters": []
+    },
+    "paymentPlan": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/paymentPlan",
+      "detailUrl": "/sws/neo/purchase-invoice/paymentPlan/{id}",
+      "supportedFilters": []
+    },
+    "paymentDetails": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
+      "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
+      "supportedFilters": []
+    },
+    "reversedInvoices": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
+      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
+      "supportedFilters": []
+    },
+    "accounting": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/accounting",
+      "detailUrl": "/sws/neo/purchase-invoice/accounting/{id}",
+      "supportedFilters": []
+    },
+    "siiData": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/siiData",
+      "detailUrl": "/sws/neo/purchase-invoice/siiData/{id}",
+      "supportedFilters": []
+    },
+    "batuz": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/batuz",
+      "detailUrl": "/sws/neo/purchase-invoice/batuz/{id}",
       "supportedFilters": []
     }
   },
   "selectors": [
     {
-      "entity": "invoice",
+      "entity": "header",
+      "field": "transactionDocument",
+      "column": "C_DocTypeTarget_ID",
+      "reference": "DocumentType",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument"
+    },
+    {
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/businessPartner"
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/header/selectors/businessPartner"
     },
     {
-      "entity": "invoice",
+      "entity": "header",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/partnerAddress"
+      "inputMode": "dependent",
+      "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress"
     },
     {
-      "entity": "invoice",
+      "entity": "header",
       "field": "priceList",
       "column": "M_PriceList_ID",
       "reference": "PriceList",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/priceList"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
     },
     {
-      "entity": "invoice",
+      "entity": "header",
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/paymentTerms"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/paymentTerms"
     },
     {
-      "entity": "invoice",
+      "entity": "header",
       "field": "paymentMethod",
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/paymentMethod"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod"
     },
     {
-      "entity": "invoice",
+      "entity": "header",
+      "field": "salesOrder",
+      "column": "C_Order_ID",
+      "reference": "Order",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/salesOrder"
+    },
+    {
+      "entity": "header",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/currency"
+    },
+    {
+      "entity": "header",
+      "field": "userContact",
+      "column": "AD_User_ID",
+      "reference": "User",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/header/selectors/userContact"
+    },
+    {
+      "entity": "header",
+      "field": "salesRepresentative",
+      "column": "SalesRep_ID",
+      "reference": "User",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/header/selectors/salesRepresentative"
+    },
+    {
+      "entity": "header",
+      "field": "charge",
+      "column": "C_Charge_ID",
+      "reference": "Charge",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/charge"
+    },
+    {
+      "entity": "header",
       "field": "project",
       "column": "C_Project_ID",
       "reference": "Project",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/project"
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/header/selectors/project"
     },
     {
-      "entity": "invoice",
-      "field": "costCenter",
-      "column": "C_Costcenter_ID",
-      "reference": "CostCenter",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/costCenter"
-    },
-    {
-      "entity": "invoice",
-      "field": "currency",
-      "column": "C_Currency_ID",
-      "reference": "Currency",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/currency"
-    },
-    {
-      "entity": "invoice",
-      "field": "purchaseOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "url": "/sws/neo/purchase-invoice/invoice/selectors/purchaseOrder"
-    },
-    {
-      "entity": "invoiceLine",
+      "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
       "reference": "Product",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/product"
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/product"
     },
     {
-      "entity": "invoiceLine",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/tax"
-    },
-    {
-      "entity": "invoiceLine",
+      "entity": "lines",
       "field": "account",
       "column": "Account_ID",
-      "reference": "Account",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/account"
+      "reference": "GLAccount",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
     },
     {
-      "entity": "invoiceLine",
-      "field": "alternativeUOM",
-      "column": "C_Aum",
-      "reference": "UOM",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/alternativeUOM"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "attributeSetValue",
-      "column": "M_AttributeSetInstance_ID",
-      "reference": "AttributeSetInstance",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/attributeSetValue"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "uom",
-      "column": "C_UOM_ID",
-      "reference": "UOM",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/uom"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "purchaseOrderLine",
-      "column": "C_OrderLine_ID",
-      "reference": "OrderLine",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/purchaseOrderLine"
-    },
-    {
-      "entity": "invoiceLine",
-      "field": "goodsReceiptLine",
-      "column": "M_InOutLine_ID",
-      "reference": "InOutLine",
-      "url": "/sws/neo/purchase-invoice/invoiceLine/selectors/goodsReceiptLine"
-    },
-    {
-      "entity": "invoiceTax",
+      "entity": "lines",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "url": "/sws/neo/purchase-invoice/invoiceTax/selectors/tax"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
     },
     {
-      "entity": "invoiceDiscount",
+      "entity": "lines",
+      "field": "salesOrderLine",
+      "column": "C_OrderLine_ID",
+      "reference": "OrderLine",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/salesOrderLine"
+    },
+    {
+      "entity": "lines",
+      "field": "goodsShipmentLine",
+      "column": "M_InOutLine_ID",
+      "reference": "GoodsShipmentLine",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/goodsShipmentLine"
+    },
+    {
+      "entity": "lines",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/project"
+    },
+    {
+      "entity": "lines",
+      "field": "costcenter",
+      "column": "C_Costcenter_ID",
+      "reference": "CostCenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/costcenter"
+    },
+    {
+      "entity": "lines",
+      "field": "asset",
+      "column": "A_Asset_ID",
+      "reference": "Asset",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/asset"
+    },
+    {
+      "entity": "lines",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "UserDimension1",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/stDimension"
+    },
+    {
+      "entity": "lines",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "UserDimension2",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/ndDimension"
+    },
+    {
+      "entity": "intrastat",
+      "field": "invoiceLine",
+      "column": "C_Invoiceline_ID",
+      "reference": "InvoiceLine",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/intrastat/selectors/invoiceLine"
+    },
+    {
+      "entity": "intrastat",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/intrastat/selectors/product"
+    },
+    {
+      "entity": "intrastat",
+      "field": "incoterms",
+      "column": "C_Incoterms_ID",
+      "reference": "Incoterms",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/intrastat/selectors/incoterms"
+    },
+    {
+      "entity": "intrastat",
+      "field": "origCountry",
+      "column": "Orig_C_Country_ID",
+      "reference": "Country",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/intrastat/selectors/origCountry"
+    },
+    {
+      "entity": "intrastat",
+      "field": "supplementaryUOM",
+      "column": "Intr_C_Uom_ID",
+      "reference": "Intr_C_Uom",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/intrastat/selectors/supplementaryUOM"
+    },
+    {
+      "entity": "tax",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
+    },
+    {
+      "entity": "cashVat",
+      "field": "payment",
+      "column": "FIN_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
+    },
+    {
+      "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
-      "url": "/sws/neo/purchase-invoice/invoiceDiscount/selectors/discount"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
     },
     {
-      "entity": "paymentSchedule",
+      "entity": "paymentPlan",
       "field": "paymentMethod",
       "column": "Fin_Paymentmethod_ID",
       "reference": "PaymentMethod",
-      "url": "/sws/neo/purchase-invoice/paymentSchedule/selectors/paymentMethod"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/paymentMethod"
     },
     {
-      "entity": "paymentSchedule",
+      "entity": "paymentPlan",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
-      "url": "/sws/neo/purchase-invoice/paymentSchedule/selectors/currency"
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/paymentPlan/selectors/currency"
+    },
+    {
+      "entity": "paymentDetails",
+      "field": "finPaymentID",
+      "column": "Fin_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
+    },
+    {
+      "entity": "reversedInvoices",
+      "field": "reversedInvoice",
+      "column": "Reversed_C_Invoice_ID",
+      "reference": "Invoice",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
+    },
+    {
+      "entity": "accounting",
+      "field": "accountingSchema",
+      "column": "C_AcctSchema_ID",
+      "reference": "AcctSchema",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/accountingSchema"
+    },
+    {
+      "entity": "accounting",
+      "field": "currency",
+      "column": "C_Currency_ID",
+      "reference": "Currency",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/currency"
+    },
+    {
+      "entity": "accounting",
+      "field": "period",
+      "column": "C_Period_ID",
+      "reference": "Period",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/period"
+    },
+    {
+      "entity": "accounting",
+      "field": "account",
+      "column": "Account_ID",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/account"
+    },
+    {
+      "entity": "accounting",
+      "field": "businessPartner",
+      "column": "C_BPartner_ID",
+      "reference": "BPartner",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/businessPartner"
+    },
+    {
+      "entity": "accounting",
+      "field": "product",
+      "column": "M_Product_ID",
+      "reference": "Product",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/product"
+    },
+    {
+      "entity": "accounting",
+      "field": "project",
+      "column": "C_Project_ID",
+      "reference": "Project",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/project"
+    },
+    {
+      "entity": "accounting",
+      "field": "costcenter",
+      "column": "C_Costcenter_ID",
+      "reference": "Costcenter",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/costcenter"
+    },
+    {
+      "entity": "accounting",
+      "field": "asset",
+      "column": "A_Asset_ID",
+      "reference": "Asset",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/asset"
+    },
+    {
+      "entity": "accounting",
+      "field": "stDimension",
+      "column": "User1_ID",
+      "reference": "User1",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/stDimension"
+    },
+    {
+      "entity": "accounting",
+      "field": "ndDimension",
+      "column": "User2_ID",
+      "reference": "User2",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/accounting/selectors/ndDimension"
+    },
+    {
+      "entity": "siiData",
+      "field": "conexinSII",
+      "column": "Aeatsii_Conexion_ID",
+      "reference": "Aeatsii_Conexion",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/siiData/selectors/conexinSII"
+    },
+    {
+      "entity": "batuz",
+      "field": "invoice",
+      "column": "C_Invoice_ID",
+      "reference": "Invoice",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/batuz/selectors/invoice"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "entity": "header",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/generateTo",
+      "processId": "142",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "aPRMAddpayment",
+      "column": "EM_APRM_Addpayment",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMAddpayment",
+      "processId": "9BED7889E1034FE68BD85D5D16857320",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/posted"
+    },
+    {
+      "entity": "header",
+      "field": "aPRMProcessinvoice",
+      "column": "EM_APRM_Processinvoice",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMProcessinvoice",
+      "processId": "B54318B49E984B9CB855AEFB1F474CD6",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "documentAction",
+      "column": "DocAction",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/documentAction",
+      "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "createLinesFromOrder",
+      "column": "Createfromorders",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFromOrder",
+      "processId": "AB2EFCAABB7B4EC0A9B30CFB82963FB6",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "createLinesFromShipment",
+      "column": "Createfrominouts",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFromShipment",
+      "processId": "7737CA7330FD49FBA7EBC225E85F2BC9",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "copyFrom",
+      "column": "CopyFrom",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/copyFrom",
+      "processId": "210",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "calculatePromotions",
+      "column": "Calculate_Promotions",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/calculatePromotions",
+      "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiSend",
+      "column": "EM_Aeatsii_Send",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiSend",
+      "processId": "2ECF46DAAEEB486EAF79D3594D50DE5F",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiModif",
+      "column": "EM_Aeatsii_Modif",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiModif",
+      "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiXmlgenerator",
+      "column": "EM_Tbai_Xmlgenerator",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiXmlgenerator",
+      "processId": "BE2486102F2C41779B760609FD69A225",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/processNow",
+      "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "createLinesFrom",
+      "column": "CreateFrom",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFrom"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDup",
+      "column": "EM_Aeatsii_Dup",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiDup",
+      "processId": "92C02F9A367140C085D1EE3BD27C4E96",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiUnsubscribe",
+      "column": "EM_Aeatsii_Unsubscribe",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiUnsubscribe",
+      "processId": "BE564945CB2D4892AC0EE51204C5DB7D",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "etvfacRectCreate",
+      "column": "EM_Etvfac_Rect_Create",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/etvfacRectCreate",
+      "processId": "E36A8BA259164E78AFDDC760172C18F5",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tBAIQRcode",
+      "column": "em_tbai_qrcode",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/tBAIQRcode",
+      "processId": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "tbaiVoidxmlgenerator",
+      "column": "EM_Tbai_Voidxmlgenerator",
+      "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiVoidxmlgenerator",
+      "processId": "535A8BAE44A34759A7C8FF40D62A5070",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "lines",
+      "field": "explode",
+      "column": "Explode",
+      "url": "/sws/neo/purchase-invoice/lines/{id}/action/explode",
+      "processId": "6E1ADD5C8B6B4ACB82237DAA8114451E",
+      "processType": "classic"
+    },
+    {
+      "entity": "lines",
+      "field": "matchLCCosts",
+      "column": "Match_Lccosts",
+      "url": "/sws/neo/purchase-invoice/lines/{id}/action/matchLCCosts",
+      "processId": "281FFDFAB31C4394A2EAA73A6F9F3A3F",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "updatePaymentPlan",
+      "column": "Update_Payment_Plan",
+      "url": "/sws/neo/purchase-invoice/paymentPlan/{id}/action/updatePaymentPlan",
+      "processId": "FB740AB61B0E42B198D2C88D3A0D0CE6",
+      "processType": "classic"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "aprmModifPaymentOUTPlan",
+      "column": "EM_Aprm_Modif_Paym_Out_Sched",
+      "url": "/sws/neo/purchase-invoice/paymentPlan/{id}/action/aprmModifPaymentOUTPlan",
+      "processId": "6F87442DF7BC43AB8A666BDED2F7D64E",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "paymentPlan",
+      "field": "aprmModifPaymentINPlan",
+      "column": "EM_Aprm_Modif_Paym_Sched",
+      "url": "/sws/neo/purchase-invoice/paymentPlan/{id}/action/aprmModifPaymentINPlan",
+      "processId": "4EEB3497082C4F2182E16A4371CD5D96",
+      "processType": "obuiapp"
+    }
+  ],
   "queryParams": {
     "pagination": {
       "startRow": "_startRow",
@@ -233,14 +722,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
   }
 };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  // @sf-custom-slot hooks:App
-  return <InvoicePage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
+  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
 // @sf-generated-end component:App
-
-// @sf-custom-slot section:App-custom

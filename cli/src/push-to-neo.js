@@ -54,6 +54,7 @@ export function mapVisibility(visibility) {
     case 'readOnly':
       return { isIncluded: 'Y', isReadOnly: 'Y' };
     case 'system':
+      return { isIncluded: 'Y', isReadOnly: 'Y' };
     case 'discarded':
       return { isIncluded: 'N', isReadOnly: 'N' };
     default:
@@ -80,6 +81,8 @@ export function extractFieldsFromContract(backendContract) {
     for (const field of entityData.fields) {
       fields.push({
         entityName,
+        tabId: entityData.tabId || null,
+        tableName: entityData.tableName || null,
         fieldName: field.name,
         column: field.column,
         visibility: field.visibility,
@@ -147,7 +150,7 @@ export async function loadConfig(projectRoot) {
  * @param {object} [options] - Override options
  * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
  * @param {string} [options.projectRoot] - Override project root path
- * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {string} [options.moduleId='94E1B433CF55451EABB764750AC5902A'] - AD_Module_ID for new rows (defaults to com.etendoerp.go)
  * @param {object} [options.dbConfig] - Override DB pool config (passed to createDbPool)
  * @param {object} [options.audit] - Override audit defaults
  * @param {string} [options.etendoUrl] - Kept for backwards compat (dry-run plan display)
@@ -160,24 +163,48 @@ export async function pushToNeo(windowName, options = {}) {
   const artifactsDir = join(projectRoot, 'artifacts', windowName);
 
   // Load artifacts
-  let contractRaw, schemaRaw;
+  let contractRaw, schemaRawJson;
   try {
     contractRaw = await readFile(join(artifactsDir, 'contract.json'), 'utf-8');
   } catch (err) {
     throw new Error(`Cannot read contract.json for window '${windowName}': ${err.message}`);
   }
   try {
-    schemaRaw = await readFile(join(artifactsDir, 'schema-curated.json'), 'utf-8');
+    schemaRawJson = await readFile(join(artifactsDir, 'schema-raw.json'), 'utf-8');
   } catch (err) {
-    throw new Error(`Cannot read schema-curated.json for window '${windowName}': ${err.message}`);
+    throw new Error(`Cannot read schema-raw.json for window '${windowName}': ${err.message}`);
   }
 
   const contract = JSON.parse(contractRaw);
-  const schema = JSON.parse(schemaRaw);
+  const schemaRawData = JSON.parse(schemaRawJson);
 
-  const windowId = schema.window.id;
-  const windowDisplayName = schema.window.name;
-  const specName = toSpecName(windowDisplayName);
+  let windowId = schemaRawData.window.id;
+  if (options.overrideWindow) {
+    windowId = options.overrideWindow;
+  } else if (contract.backendContract?.window?.id) {
+    windowId = contract.backendContract.window.id;
+  }
+  const windowDisplayName = schemaRawData.window.name;
+  // Use the artifact slug (windowName) as spec name so it matches the frontend route
+  const specName = windowName;
+
+  // Load decisions.json for per-field overrides (e.g. defaultExpr)
+  let decisionsData = {};
+  try {
+    const decisionsRaw = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8');
+    decisionsData = JSON.parse(decisionsRaw);
+  } catch { /* optional — not all windows have decisions.json */ }
+
+  // Build map: "entityName.fieldName" -> defaultExpr (from decisions.json)
+  const fieldDefaultExprs = {};
+  for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
+    const entityName = entityConf.name || entityKey;
+    for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
+      if (fieldConf.defaultExpr != null) {
+        fieldDefaultExprs[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+      }
+    }
+  }
 
   // Extract all fields from backend contract
   const allFields = extractFieldsFromContract(contract.backendContract);
@@ -239,7 +266,7 @@ export async function pushToNeo(windowName, options = {}) {
   }
 
   // Live mode — write to DB via transaction
-  const moduleId = options.moduleId || '0';
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
   const auditOpts = options.audit || {};
   const pool = createDbPool(options.dbConfig);
   const client = await pool.connect();
@@ -247,41 +274,141 @@ export async function pushToNeo(windowName, options = {}) {
   try {
     await client.query('BEGIN');
 
-    // Step 1: Upsert spec
-    console.log(`[1/3] Upserting spec '${specName}' for window ${windowId}...`);
+    // Step 1: Upsert spec (look up existing spec first for idempotent updates)
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
+    console.log(`[1/4] Upserting spec '${specName}' for window ${windowId}...`);
     const specResult = await writerUpsertSpec(client, {
       name: specName,
       moduleId,
       windowId,
       specType: 'W',
+      specId: existingSpecId,
       audit: auditOpts,
     });
     const specId = specResult.specId;
     console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
 
     // Step 2: Populate spec from AD metadata
-    console.log(`[2/3] Populating spec from AD metadata...`);
+    console.log(`[2/4] Populating spec from AD metadata...`);
     const popResult = await writerPopulateSpec(client, {
       specId,
       moduleId,
+      includeAllMethods: true,
       audit: auditOpts,
     });
 
-    // Build entity name -> entityId map from populate result
-    const entityMap = {};
+    // Build entity lookup maps from populate result
+    // Primary: by tabId (exact match, safe for tabs sharing same table)
+    // Fallback 1: by tab name (AD tab display name, e.g. "Header", "Lines")
+    // Fallback 2: by tableName (e.g. "C_Order") — bridges curated names to AD tab names
+    const entityMapByTabId = {};
+    const entityMapByName = {};
+    const entityMapByTableName = {};
     for (const ent of popResult.entities) {
-      entityMap[ent.name] = ent.entityId;
+      if (ent.tabId) entityMapByTabId[ent.tabId] = ent.entityId;
+      entityMapByName[ent.name] = ent.entityId;
     }
+
+    // Query DB to map populated entities to their table names (via ad_tab -> ad_table)
+    if (popResult.entities.length > 0) {
+      const tableNameQuery = await client.query(
+        `SELECT e.etgo_sf_entity_id, t.tablename, tab.seqno
+         FROM etgo_sf_entity e
+         JOIN ad_tab tab ON tab.ad_tab_id = e.ad_tab_id
+         JOIN ad_table t ON t.ad_table_id = tab.ad_table_id
+         WHERE e.etgo_sf_spec_id = $1
+         ORDER BY tab.seqno`,
+        [specId],
+      );
+      for (const row of tableNameQuery.rows) {
+        // If multiple entities share a table, keep the first one (lowest seqno)
+        if (!entityMapByTableName[row.tablename]) {
+          entityMapByTableName[row.tablename] = row.etgo_sf_entity_id;
+        }
+      }
+    }
+
+    // Build entity name -> tableName map from schema-raw (used for entity matching)
+    const curatedToTable = {};
+    if (schemaRawData.entities) {
+      for (const ent of schemaRawData.entities) {
+        if (ent.name && ent.tableName) {
+          curatedToTable[ent.name] = ent.tableName;
+        }
+      }
+    }
+
     console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
 
+    // Rename entities to match contract names (e.g. "Header" → "order")
+    // Uses tabName (AD tab display name) as the primary key — unique within a window
+    // and handles tabs that share the same DB table correctly.
+    // Read entity names from the backend contract which reflects the resolved curated schema.
+    const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
+      name: ent.name,
+      tabName: ent.tabName,
+      tableName: ent.tableName,
+      javaQualifier: ent.entityFullClass ?? null,
+    }));
+    const desiredEntities = new Map(
+      schemaEntities
+        .filter((ent) => ent.tabName || ent.tableName)
+        .map((ent) => [ent.tabName || ent.tableName, ent]),
+    );
+
+    if (contract.backendContract?.entities) {
+      for (const [name, data] of Object.entries(contract.backendContract.entities)) {
+        const schemaFallback = schemaEntities.find((ent) =>
+          ent.name === name
+          || (data.tabName && ent.tabName === data.tabName)
+          || (data.tableName && ent.tableName === data.tableName)
+        );
+        const tabOrTableKey = data.tabName || schemaFallback?.tabName || data.tableName || schemaFallback?.tableName;
+        if (!tabOrTableKey) continue;
+        desiredEntities.set(tabOrTableKey, {
+          name,
+          tabName: data.tabName || schemaFallback?.tabName || null,
+          tableName: data.tableName || schemaFallback?.tableName || null,
+          javaQualifier: data.javaQualifier ?? schemaFallback?.javaQualifier ?? null,
+        });
+      }
+    }
+
+    if (desiredEntities.size > 0) {
+      for (const ent of desiredEntities.values()) {
+        const entityId = (ent.tabName && entityMapByName[ent.tabName])
+          || (ent.tableName && entityMapByTableName[ent.tableName]);
+        if (entityId) {
+          await client.query(
+            'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
+            [ent.name, ent.javaQualifier ?? null, entityId],
+          );
+          entityMapByName[ent.name] = entityId;
+        }
+      }
+      console.log('       Entity names updated to contract names');
+    }
+
     // Step 3: Update field visibility from contract
-    console.log(`[3/3] Updating ${allFields.length} fields from contract visibility...`);
+    console.log(`[3/4] Updating ${allFields.length} fields from contract visibility...`);
     let successCount = 0;
     let errorCount = 0;
     const fieldResults = [];
 
     for (const f of allFields) {
-      const entityId = entityMap[f.entityName];
+      // Match by tabId first (exact, handles same-table tabs),
+      // then by curated name (if AD tab name matches),
+      // then by tableName (bridges curated name -> table -> populated entity)
+      const tableForEntity = f.tableName || curatedToTable[f.entityName];
+      const entityId = (f.tabId && entityMapByTabId[f.tabId])
+        || entityMapByName[f.entityName]
+        || (tableForEntity && entityMapByTableName[tableForEntity]);
       if (!entityId) {
         console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
         errorCount++;
@@ -308,21 +435,54 @@ export async function pushToNeo(windowName, options = {}) {
       }
 
       const fieldId = colLookup.rows[0].etgo_sf_field_id;
-      await writerUpsertField(client, {
+      const defaultExprKey = `${f.entityName}.${f.fieldName}`;
+      const fieldParams = {
         entityId,
         fieldId,
         moduleId,
         isIncluded: vis.isIncluded,
         isReadOnly: vis.isReadOnly,
+        javaQualifier: f.fieldName,
         audit: auditOpts,
-      });
+      };
+      if (defaultExprKey in fieldDefaultExprs) {
+        fieldParams.defaultValue = fieldDefaultExprs[defaultExprKey] || null;
+      }
+      await writerUpsertField(client, fieldParams);
       fieldResults.push({ column: f.column, entityName: f.entityName, success: true });
       successCount++;
     }
 
+    // Step 4: Exclude all fields NOT in the contract
+    console.log(`[4/4] Excluding non-contract fields...`);
+    const contractColumns = new Set(allFields.map(f => f.column));
+    let excludedCount = 0;
+
+    for (const ent of popResult.entities) {
+      const entityId = ent.entityId;
+      const allEntityFields = await client.query(
+        `SELECT sf.etgo_sf_field_id, c.columnname
+         FROM etgo_sf_field sf
+         JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
+         WHERE sf.etgo_sf_entity_id = $1 AND sf.isincluded = 'Y'`,
+        [entityId],
+      );
+
+      for (const row of allEntityFields.rows) {
+        if (!contractColumns.has(row.columnname)) {
+          await client.query(
+            `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
+            [row.etgo_sf_field_id],
+          );
+          excludedCount++;
+        }
+      }
+    }
+    console.log(`       ${excludedCount} non-contract fields excluded.`);
+
     await client.query('COMMIT');
 
-    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors.`);
+    console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors, ${excludedCount} excluded.`);
 
     return {
       dryRun: false,
@@ -332,6 +492,7 @@ export async function pushToNeo(windowName, options = {}) {
       entitiesPopulated: popResult.entityCount,
       fieldsUpdated: successCount,
       fieldsErrored: errorCount,
+      fieldsExcluded: excludedCount,
       fieldResults,
     };
   } catch (err) {
@@ -354,9 +515,10 @@ export async function pushToNeo(windowName, options = {}) {
  * @param {object} [options] - Override options
  * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
  * @param {string} [options.projectRoot] - Override project root path
- * @param {string} [options.moduleId='0'] - AD_Module_ID for new rows
+ * @param {string} [options.moduleId='94E1B433CF55451EABB764750AC5902A'] - AD_Module_ID for new rows (defaults to com.etendoerp.go)
  * @param {object} [options.dbConfig] - Override DB pool config
  * @param {object} [options.audit] - Override audit defaults
+ * @param {string} [options.specType='P'] - Spec type: 'P' (process) or 'R' (report)
  * @returns {object} Result summary
  */
 export async function pushProcessToNeo(processName, options = {}) {
@@ -380,15 +542,18 @@ export async function pushProcessToNeo(processName, options = {}) {
   const processId = contract.process.id;
   const specName = contract.process.specName;
   const processDisplayName = contract.process.name;
+  const specType = options.specType || 'P';
 
   // Dry run mode
   if (options.dryRun === true) {
-    console.log(`[DRY RUN] Push to NEO for process: ${processDisplayName} (${processName})`);
+    const typeLabel = specType === 'R' ? 'report' : 'process';
+    console.log(`[DRY RUN] Push to NEO for ${typeLabel}: ${processDisplayName} (${processName})`);
     console.log(`  Spec name: ${specName}`);
     console.log(`  Process ID: ${processId}`);
+    console.log(`  Spec type: ${specType}`);
     console.log(`  Method: direct DB write`);
-    console.log(`\n  Step 1: upsertSpec (specType=P)`);
-    console.log(`    Params: { name: '${specName}', specType: 'P', processId: '${processId}' }`);
+    console.log(`\n  Step 1: upsertSpec (specType=${specType})`);
+    console.log(`    Params: { name: '${specName}', specType: '${specType}', processId: '${processId}' }`);
     console.log(`\n  Step 2: populateSpec (auto-creates entity + fields from AD_Process_Para)`);
     console.log(`    Params: { specId: <from step 1> }`);
 
@@ -397,14 +562,14 @@ export async function pushProcessToNeo(processName, options = {}) {
       specName,
       processId,
       plan: {
-        spec: { action: 'upsertSpec', params: { name: specName, specType: 'P', processId } },
+        spec: { action: 'upsertSpec', params: { name: specName, specType, processId } },
         populate: { action: 'populateSpec', params: { specId: '(from step 1)' } },
       },
     };
   }
 
   // Live mode — write to DB via transaction
-  const moduleId = options.moduleId || '0';
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
   const auditOpts = options.audit || {};
   const pool = createDbPool(options.dbConfig);
   const client = await pool.connect();
@@ -412,13 +577,21 @@ export async function pushProcessToNeo(processName, options = {}) {
   try {
     await client.query('BEGIN');
 
-    // Step 1: Upsert spec
+    // Step 1: Upsert spec (look up existing spec first for idempotent updates)
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
     console.log(`[1/2] Upserting spec '${specName}' for process ${processId}...`);
     const specResult = await writerUpsertSpec(client, {
       name: specName,
       moduleId,
       processId,
-      specType: 'P',
+      specType,
+      specId: existingSpecId,
       audit: auditOpts,
     });
     const specId = specResult.specId;
@@ -455,22 +628,188 @@ export async function pushProcessToNeo(processName, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Report push function (NeoHandler-based reports)
+// ---------------------------------------------------------------------------
+
+/**
+ * Push a report's configuration to NEO Headless.
+ * Creates a spec (type R) and an entity with the NeoHandler java_qualifier.
+ *
+ * Uses report-contract.json from the artifact directory.
+ * The handler class must be compiled and deployed in the Etendo module.
+ *
+ * @param {string} reportName - The report artifact folder name (e.g., "aging-receivable")
+ * @param {object} [options] - Override options
+ * @param {boolean} [options.dryRun] - If true, log planned actions without writing to DB
+ * @param {string} [options.projectRoot] - Override project root path
+ * @param {string} [options.moduleId='94E1B433CF55451EABB764750AC5902A'] - AD_Module_ID
+ * @param {object} [options.dbConfig] - Override DB pool config
+ * @param {object} [options.audit] - Override audit defaults
+ * @returns {object} Result summary
+ */
+export async function pushReportToNeo(reportName, options = {}) {
+  const projectRoot = options.projectRoot || ROOT;
+  const artifactsDir = join(projectRoot, 'artifacts', reportName);
+
+  // Load report contract
+  let contractRaw;
+  try {
+    contractRaw = await readFile(join(artifactsDir, 'report-contract.json'), 'utf-8');
+  } catch (err) {
+    throw new Error(`Cannot read report-contract.json for '${reportName}': ${err.message}`);
+  }
+
+  const contract = JSON.parse(contractRaw);
+  const specName = contract.reportId || reportName;
+  const handler = contract.neo?.handler || null;
+  const title = contract.title?.en_US || specName;
+  const description = `Report: ${title}`;
+
+  // Resolve process ID if referenced in jasper config
+  const processId = contract.jasper?.processId || null;
+
+  if (options.dryRun === true) {
+    console.log(`[DRY RUN] Push report to NEO: ${title} (${specName})`);
+    console.log(`  Spec name: ${specName}`);
+    console.log(`  Spec type: R (report)`);
+    console.log(`  Process ID: ${processId || '(none)'}`);
+    console.log(`  NeoHandler: ${handler || '(none)'}`);
+    console.log(`  Method: direct DB write`);
+    console.log(`\n  Step 1: upsertSpec (specType=R)`);
+    console.log(`  Step 2: create entity with java_qualifier='${handler}'`);
+    return { dryRun: true, specName, handler };
+  }
+
+  // Live mode
+  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
+  const auditOpts = options.audit || {};
+  const pool = createDbPool(options.dbConfig);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Step 1: Upsert spec
+    const existingSpec = await client.query(
+      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+      [specName],
+    );
+    const existingSpecId = existingSpec.rows.length > 0
+      ? existingSpec.rows[0].etgo_sf_spec_id
+      : null;
+
+    console.log(`[1/2] Upserting spec '${specName}' (type=R)...`);
+    const specResult = await writerUpsertSpec(client, {
+      name: specName,
+      moduleId,
+      processId,
+      specType: 'R',
+      description,
+      specId: existingSpecId,
+      audit: auditOpts,
+    });
+    const specId = specResult.specId;
+    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+
+    // Step 2: Create/update the entity with the handler qualifier
+    if (handler) {
+      const existingEntity = await client.query(
+        'SELECT etgo_sf_entity_id FROM etgo_sf_entity WHERE etgo_sf_spec_id = $1',
+        [specId],
+      );
+
+      if (existingEntity.rows.length > 0) {
+        // Update handler qualifier on existing entity
+        const entityId = existingEntity.rows[0].etgo_sf_entity_id;
+        await client.query(
+          `UPDATE etgo_sf_entity SET java_qualifier = $1, name = $2, updated = now() WHERE etgo_sf_entity_id = $3`,
+          [handler, specName, entityId],
+        );
+        console.log(`[2/2] Updated entity handler: ${handler} (entity ${entityId})`);
+      } else {
+        // Create a minimal entity for the handler
+        const { generateId } = await import('./neo-writer.js');
+        const entityId = generateId();
+        const auditVals = {
+          ad_client_id: auditOpts.ad_client_id || '0',
+          ad_org_id: auditOpts.ad_org_id || '0',
+          isactive: 'Y',
+          created: new Date(),
+          createdby: auditOpts.createdby || '0',
+          updated: new Date(),
+          updatedby: auditOpts.updatedby || '0',
+        };
+        await client.query(
+          `INSERT INTO etgo_sf_entity
+           (etgo_sf_entity_id, etgo_sf_spec_id, name, ad_module_id, java_qualifier,
+            isget, ispost, isput, ispatch, isdelete, seqno,
+            ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby)
+           VALUES ($1, $2, $3, $4, $5,
+                   'Y', 'Y', 'N', 'N', 'N', 10,
+                   $6, $7, $8, $9, $10, $11, $12)`,
+          [entityId, specId, specName, moduleId, handler,
+           auditVals.ad_client_id, auditVals.ad_org_id, auditVals.isactive,
+           auditVals.created, auditVals.createdby, auditVals.updated, auditVals.updatedby],
+        );
+        console.log(`[2/2] Created entity with handler: ${handler} (entity ${entityId})`);
+      }
+    } else if (processId) {
+      // No handler — populate from AD_Process metadata (standard report flow)
+      console.log(`[2/2] Populating spec from AD_Process...`);
+      const popResult = await writerPopulateSpec(client, {
+        specId,
+        moduleId,
+        audit: auditOpts,
+      });
+      console.log(`       Entity: ${popResult.entities[0]?.name || 'unnamed'}, Fields: ${popResult.fieldCount}`);
+    } else {
+      console.log(`[2/2] No handler or processId — spec-only registration.`);
+    }
+
+    await client.query('COMMIT');
+    console.log(`\nDone. Report spec '${specName}' configured.`);
+
+    return { dryRun: false, specName, specId, handler };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+    await closePool(pool);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
 
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const windowName = args.find(a => !a.startsWith('--'));
+  const isReport = args.includes('--type') && args[args.indexOf('--type') + 1] === 'report';
+  const overrideWindowArg = args.find(a => a.startsWith('--override-window='));
+  const overrideWindow = overrideWindowArg ? overrideWindowArg.split('=')[1] : null;
+  const name = args.find(a => !a.startsWith('--') && a !== 'report');
 
-  if (!windowName) {
-    console.error('Usage: node cli/src/push-to-neo.js <windowName> [--dry-run]');
-    console.error('Example: node cli/src/push-to-neo.js sales-order');
+  if (!name) {
+    console.error('Usage:');
+    console.error('  node cli/src/push-to-neo.js <windowName> [--dry-run] [--override-window=123]');
+    console.error('  node cli/src/push-to-neo.js <reportName> --type report [--dry-run]');
+    console.error('');
+    console.error('Examples:');
+    console.error('  node cli/src/push-to-neo.js sales-order');
+    console.error('  node cli/src/push-to-neo.js aging-receivable --type report');
+    console.error('  node cli/src/push-to-neo.js aging-receivable --type report --dry-run');
     process.exit(1);
   }
 
   try {
-    const result = await pushToNeo(windowName, { dryRun });
+    let result;
+    if (isReport) {
+      result = await pushReportToNeo(name, { dryRun });
+    } else {
+      result = await pushToNeo(name, { dryRun, overrideWindow });
+    }
     if (!dryRun) {
       console.log('\nResult:', JSON.stringify(result, null, 2));
     }

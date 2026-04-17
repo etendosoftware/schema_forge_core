@@ -229,6 +229,64 @@ catalogs['PaymentMethod'] = [
   }
 ];
 
+catalogs['Currency'] = [
+  {
+    "id": "USD",
+    "name": "US Dollar",
+    "symbol": "$"
+  },
+  {
+    "id": "EUR",
+    "name": "Euro",
+    "symbol": "EUR"
+  },
+  {
+    "id": "GBP",
+    "name": "Pound Sterling",
+    "symbol": "GBP"
+  },
+  {
+    "id": "ARS",
+    "name": "Argentine Peso",
+    "symbol": "ARS"
+  }
+];
+
+catalogs['User'] = [
+  {
+    "id": "user-001",
+    "name": "Alice Johnson"
+  },
+  {
+    "id": "user-002",
+    "name": "Bob Smith"
+  },
+  {
+    "id": "user-003",
+    "name": "Carol Williams"
+  },
+  {
+    "id": "user-004",
+    "name": "David Brown"
+  },
+  {
+    "id": "user-005",
+    "name": "Eva Martinez"
+  },
+  {
+    "id": "user-006",
+    "name": "Frank Lee"
+  },
+  {
+    "id": "user-007",
+    "name": "Grace Kim"
+  },
+  {
+    "id": "user-008",
+    "name": "Henry Davis"
+  }
+];
+
 catalogs['Product'] = [
   {
     "id": "prod-001",
@@ -382,29 +440,6 @@ catalogs['Tax'] = [
     "id": "tax-006",
     "name": "Reduced Rate 5%",
     "rate": 5
-  }
-];
-
-catalogs['UOM'] = [
-  {
-    "id": "uom-001",
-    "name": "Each"
-  },
-  {
-    "id": "uom-002",
-    "name": "Box"
-  },
-  {
-    "id": "uom-003",
-    "name": "Kg"
-  },
-  {
-    "id": "uom-004",
-    "name": "Meter"
-  },
-  {
-    "id": "uom-005",
-    "name": "Liter"
   }
 ];
 
