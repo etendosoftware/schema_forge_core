@@ -14,8 +14,8 @@ const fields = [
   { key: 'netMassKg', column: 'Netmass_Kg', type: 'number', label: 'Net Mass (Kg)', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'hasSuplementaryUnit', column: 'Hasunit', type: 'checkbox', label: 'Has Suplementary Unit', required: true, section: 'other', defaultValue: 'N', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'conversionRate', column: 'Conversion', type: 'number', label: 'Conversion Rate', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
-  { key: 'supplementaryUOM', column: 'Intr_C_Uom_ID', type: 'selector', label: 'Supplementary UOM', section: 'other', reference: 'Intr_C_Uom', inputMode: 'selector', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'staticalValue', column: 'Statical_Amt', type: 'number', label: 'Statical Value', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
+  { key: 'supplementaryUOM', column: 'Intr_C_Uom_ID', type: 'selector', label: 'Supplementary UOM', section: 'other', reference: 'Intr_C_Uom', inputMode: 'selector', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
 ];
 // @sf-generated-end fields:intrastat
 

@@ -101,7 +101,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "createLinesFromOrder": {
           "visibility": "discarded"
@@ -116,9 +116,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "editable",
-          "section": "collapsed",
-          "readOnlyLogic": "@Processed@='Y'"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",
