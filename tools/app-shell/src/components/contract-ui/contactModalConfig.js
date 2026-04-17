@@ -1,0 +1,59 @@
+export const contactModalConfig = {
+  headerFields: [
+    { id: 'searchKey', labelKey: 'identifier', type: 'text', required: true },
+    { id: 'name', labelKey: 'contactName', type: 'text', required: true },
+    { id: 'taxID', labelKey: 'taxIDField', type: 'text', placeholder: 'B-12345678', required: true },
+    {
+      id: 'taxIdType',
+      labelKey: 'taxIdTypeField',
+      type: 'dynamicSelect',
+      optionsKey: 'taxIdTypes',
+    },
+  ],
+  sections: [
+    {
+      id: 'general',
+      labelKey: 'generalTab',
+      component: 'AddressSection',
+    },
+    {
+      id: 'financial',
+      labelKey: 'financieroTab',
+      component: 'FinancialSection',
+    },
+    {
+      id: 'contacts',
+      labelKey: 'contactPersonTab',
+      repeatable: true,
+      initialRows: 1,
+      noHeaders: true,
+      countsToProgress: true,
+      emptyTextKey: 'noContactsYet',
+      addLabelKey: 'addContactPerson',
+      fields: [
+        { id: 'firstName', labelKey: 'contactFirstName', type: 'text' },
+        { id: 'lastName', labelKey: 'contactLastName', type: 'text' },
+        { id: 'email', labelKey: 'contactEmail', type: 'email' },
+        { id: 'phone', labelKey: 'contactPhone', type: 'tel' },
+      ],
+    },
+    {
+      id: 'bankAccount',
+      labelKey: 'bankTab',
+      repeatable: true,
+      initialRows: 1,
+      noHeaders: true,
+      countsToProgress: true,
+      emptyTextKey: 'noBankAccountsYet',
+      addLabelKey: 'addBankAccount',
+      fields: [
+        { id: 'bankName', labelKey: 'bankNameField', type: 'text' },
+        { id: 'bankAccountFormat', labelKey: 'bankAccountFormatField', type: 'text' },
+        { id: 'genericAccountNo', labelKey: 'genericAccountNoField', type: 'text' },
+        { id: 'iban', labelKey: 'ibanField', type: 'text' },
+      ],
+    },
+  ],
+  requiredFields: ['searchKey', 'name', 'taxID', 'country'],
+  progressFields: ['searchKey', 'name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
+};
