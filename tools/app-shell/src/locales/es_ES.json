@@ -16852,7 +16852,7 @@
     "customers": "Clientes",
     "vendors": "Proveedores",
     "commercialName": "Nombre comercial",
-    "locationColumn": "Ubicación",
+    "locationColumn": "Dirección",
     "emailColumn": "Correo electrónico",
     "typeColumn": "Tipo",
     "phoneColumn": "Teléfono",
