@@ -1,17 +1,28 @@
 // tools/spike-hello-app/server.js
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { requireJwt } from './src/jwt-middleware.js';
 
 const PORT = process.env.PORT || 4100;
 const ETENDO_URL = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
+const JWKS_URL = `${ETENDO_URL}/neo/apps/.well-known/jwks.json`;
+const APP_ID = 'spike-hello-app';
 
 const app = express();
 
-// Health
+// Health (no auth)
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-// API placeholder — replaced in Task 6
-app.get('/api/me', (_req, res) => res.json({ placeholder: true }));
+// All /api routes require a valid Etendo Go JWT
+app.use('/api', requireJwt({ jwksUrl: JWKS_URL, audience: APP_ID }));
+
+app.get('/api/me', (req, res) => {
+  res.json({
+    userId: req.etendoContext.sub,
+    tenant: req.etendoContext.tenant,
+    org: req.etendoContext.org,
+  });
+});
 
 // Static UI (built output)
 app.use(express.static('dist'));
