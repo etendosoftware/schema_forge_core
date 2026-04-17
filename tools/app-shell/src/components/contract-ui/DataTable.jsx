@@ -728,6 +728,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   const ui = useUI();
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale.replace('_', '-'), { year: 'numeric', month: '2-digit', day: '2-digit' }),
+    [locale]
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -967,7 +971,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       const raw = row[col.key];
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
-      const formatted = parsed && !isNaN(parsed) ? parsed.toLocaleDateString(locale.replace('_', '-'), { year: 'numeric', month: '2-digit', day: '2-digit' }) : '\u2014';
+      const formatted = parsed && !isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
       return <span>{formatted}</span>;
     }
     if (col.type === 'amount') {

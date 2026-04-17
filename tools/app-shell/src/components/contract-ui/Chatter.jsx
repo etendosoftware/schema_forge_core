@@ -5,13 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useLocaleSwitch } from '@/i18n/LocaleProvider';
 import { MessageSquare, Send, ChevronDown } from 'lucide-react';
 
 /**
  * Format a timestamp into a human-readable relative string.
  * Handles Date objects, ISO strings, and Unix timestamps (ms).
+ * The locale is used only for the absolute-date fallback (>= 7 days old).
  */
-function formatRelativeTime(timestamp) {
+function formatRelativeTime(timestamp, locale = 'es_ES') {
   if (!timestamp) return '';
   const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
   const now = new Date();
@@ -26,7 +28,7 @@ function formatRelativeTime(timestamp) {
   if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
   if (diffDays === 1) return 'yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString(navigator.language, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  return date.toLocaleDateString(locale.replace('_', '-'), { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
 /**
@@ -40,6 +42,7 @@ function getInitial(author) {
  * A single message row in the chatter.
  */
 function MessageItem({ message }) {
+  const { locale } = useLocaleSwitch();
   const isSystem = message.type === 'system';
 
   if (isSystem) {
@@ -50,7 +53,7 @@ function MessageItem({ message }) {
           {message.text}
           {message.timestamp && (
             <span className="ml-2 text-[10px] text-muted-foreground/60">
-              {formatRelativeTime(message.timestamp)}
+              {formatRelativeTime(message.timestamp, locale)}
             </span>
           )}
         </p>
@@ -71,7 +74,7 @@ function MessageItem({ message }) {
           <span className="text-sm font-medium truncate">{message.author || 'Unknown'}</span>
           {message.timestamp && (
             <span className="text-[11px] text-muted-foreground shrink-0">
-              {formatRelativeTime(message.timestamp)}
+              {formatRelativeTime(message.timestamp, locale)}
             </span>
           )}
         </div>
