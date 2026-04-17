@@ -114,6 +114,13 @@
         { "name": "quick-sales-order", "label": "Quick Sales Order" },
         { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
       ]
+    },
+    {
+      "group": "Spike Apps",
+      "icon": "FlaskConical",
+      "items": [
+        { "name": "spike-hello-app", "label": "Hello App (spike)" }
+      ]
     }
   ]
 }
