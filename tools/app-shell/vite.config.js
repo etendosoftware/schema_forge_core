@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import schemaApiPlugin from './vite-plugins/schema-api.js';
 import reportApiPlugin from './vite-plugins/report-api.js';
 import mcpRetryProxy from './vite-plugins/mcp-proxy.js';
+import appsSpikePlugin from './vite-plugins/apps-spike.js';
 
 // Read ETENDO_URL from .env.local for proxy config only (not exposed to client)
 function readEnvFile() {
@@ -152,6 +153,10 @@ export default defineConfig(({ mode }) => {
     reportApiPlugin(),
     mcpWellKnownPlugin(),
     mcpRetryProxy(ETENDO_URL),
+    appsSpikePlugin({
+      privateKeyPath: resolve(__dirname, '../../etendo_core/modules/com.etendoerp.go/config/apps-spike/private-key.pem'),
+      publicKeyPath: resolve(__dirname, '../../etendo_core/modules/com.etendoerp.go/config/apps-spike/public-key.pem'),
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
