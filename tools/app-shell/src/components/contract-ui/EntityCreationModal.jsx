@@ -67,6 +67,17 @@ function FieldRenderer({ field, value, onChange, opts, ui, form, autoFocus }) {
     retryLabel: ui('retryLoad'),
   };
 
+  if (field.type === 'select') {
+    return (
+      <select style={SELECT_STYLE} className={SELECT_CLS} value={value} onChange={e => onChange(field.id, e.target.value)}>
+        {!field.required && <option value="">—</option>}
+        {(field.options ?? []).map(o => (
+          <option key={o.id} value={o.id}>{o.label}</option>
+        ))}
+      </select>
+    );
+  }
+
   if (field.type === 'dynamicSelect') {
     return (
       <DynamicSelect
@@ -144,7 +155,20 @@ function RepeatableSection({ section, rows, onAdd, onUpdate, onRemove, ui }) {
                 </div>
               )}
               <div className="grid grid-cols-4 gap-3">
-                {section.fields.map(f => (
+                {section.fields.map(f => f.type === 'select' ? (
+                  <select
+                    key={f.id}
+                    style={SELECT_STYLE}
+                    className={SELECT_CLS}
+                    value={row[f.id] ?? ''}
+                    onChange={e => onUpdate(i, f.id, e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {(f.options ?? []).map(o => (
+                      <option key={o.id} value={o.id}>{o.label}</option>
+                    ))}
+                  </select>
+                ) : (
                   <input
                     key={f.id}
                     type={f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : 'text'}
@@ -152,7 +176,10 @@ function RepeatableSection({ section, rows, onAdd, onUpdate, onRemove, ui }) {
                     className={`${INPUT_CLS} w-full`}
                     value={row[f.id] ?? ''}
                     placeholder={ui(f.labelKey)}
-                    onChange={e => onUpdate(i, f.id, e.target.value)}
+                    onChange={e => {
+                      const v = f.type === 'tel' ? e.target.value.replace(/[^\d\s+\-().]/g, '') : e.target.value;
+                      onUpdate(i, f.id, v);
+                    }}
                   />
                 ))}
               </div>
@@ -351,6 +378,7 @@ export default function EntityCreationModal({
   const ui = useUI();
   const [tab, setTab] = useState(sections[0]?.id ?? '');
   const [form, setForm] = useState(initialValues);
+
   const [repeatables, setRepeatables] = useState(() =>
     Object.fromEntries(
       sections.filter(s => s.repeatable).map(s => {
@@ -502,7 +530,7 @@ export default function EntityCreationModal({
 
         {/* Tab bar + progress bar */}
         <div style={MODAL_STYLES.tabBar}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {sections.map(s => {
               const active = tab === s.id;
               return (

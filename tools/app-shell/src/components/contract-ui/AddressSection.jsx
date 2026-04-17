@@ -40,7 +40,7 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-md max-h-[540px] bg-white rounded-xl shadow-2xl flex flex-col"
+        className="w-full max-w-md max-h-[540px] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden"
         onMouseDown={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
@@ -150,7 +150,7 @@ export default function AddressSection({ form, onChange, opts }) {
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] font-medium text-foreground">{ui('postalCodeLabel')}</label>
-          <input type="text" className={INPUT_CLS} value={form.postalCode ?? ''} onChange={e => onChange('postalCode', e.target.value)} />
+          <input type="text" className={INPUT_CLS} value={form.postalCode ?? ''} onChange={e => onChange('postalCode', e.target.value.replace(/[^\d\s-]/g, ''))} />
         </div>
         <div className="space-y-1.5">
           <label className="text-[13px] font-medium text-foreground">{ui('cityLabel')}</label>

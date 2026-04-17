@@ -74,6 +74,37 @@ export default function CreateContactModal({
         .then(d => (d?.items || []).map(i => ({ id: i.id, label: i.label || i.name || i.id })))
         .catch(() => []);
 
+    const fetchAllPages = async (baseUrl) => {
+      const PAGE = 120;
+      let offset = 0;
+      const all = [];
+      for (let i = 0; i < 20; i++) {
+        const res = await fetch(`${baseUrl}?limit=${PAGE}&offset=${offset}`, { headers: h });
+        if (!res.ok) break;
+        const data = await res.json();
+        const items = (data?.items || []).map(x => ({ id: x.id, label: x.label || x.name || x.id }));
+        all.push(...items);
+        if (!data?.hasMore || items.length === 0) break;
+        offset += items.length;
+      }
+      return all;
+    };
+
+    const countrySelectors = [
+      `${bpApiBaseUrl}/locationAddress/selectors/C_Country_ID`,
+      `${bpApiBaseUrl}/bankAccount/selectors/C_Country_ID`,
+    ];
+
+    const fetchCountries = async () => {
+      for (const url of countrySelectors) {
+        try {
+          const items = await fetchAllPages(url);
+          if (items.length > 0) return items;
+        } catch (_) { /* try next */ }
+      }
+      return [];
+    };
+
     Promise.all([
       fetchSel(`${bp}/selectors/EM_OBTIK_Tax_ID_Key`),
       fetchSel(`${bp}/selectors/M_PriceList_ID`),
@@ -81,7 +112,7 @@ export default function CreateContactModal({
       fetchSel(`${bp}/selectors/FIN_Paymentmethod_ID`),
       fetchSel(`${bp}/selectors/C_PaymentTerm_ID`),
       fetchSel(`${bp}/selectors/FIN_Financial_Account_ID`),
-      fetchSel(`${bpApiBaseUrl}/bankAccount/selectors/C_Country_ID`),
+      fetchCountries(),
     ])
       .then(([taxIdTypes, salesPriceLists, purchasePriceLists, paymentMethods, paymentTerms, financialAccounts, countries]) => {
         if (cancelled) return;
@@ -227,7 +258,7 @@ export default function CreateContactModal({
     }
 
     // Steps 3, 4, 5 — parallel: contact persons + bank accounts + billing preferences
-    const contacts = (repeatables.contacts ?? []).filter(c => c.firstName || c.lastName);
+    const contacts = (repeatables.contacts ?? []).filter(c => c.firstName || c.lastName || c.email || c.phone);
     const banks = (repeatables.bankAccount ?? []).filter(b => b.bankName || b.iban);
 
     const first = (key) => opts[key]?.options?.[0]?.id;
@@ -260,22 +291,27 @@ export default function CreateContactModal({
           method: 'POST',
           headers,
           body: JSON.stringify({
+            parentId: newId,
+            businessPartner: newId,
             firstName: c.firstName,
             lastName: c.lastName,
             name: [c.firstName, c.lastName].filter(Boolean).join(' '),
             ...(c.email && { email: c.email }),
             ...(c.phone && { phone: c.phone }),
-            active: true,
             isdefaultfordocs: false,
-            grantPortalAccess: false,
             commercialauth: false,
             viasms: false,
             viaemail: false,
           }),
         });
+        const contactBody = await contactRes.json().catch(() => null);
         if (!contactRes.ok) {
-          const err = await contactRes.json().catch(() => null);
-          throw new Error(err?.response?.error?.message || err?.message || `Contact POST failed (HTTP ${contactRes.status})`);
+          throw new Error(
+            contactBody?.error?.message ||
+            contactBody?.response?.error?.message ||
+            contactBody?.message ||
+            `Contact POST failed (HTTP ${contactRes.status})`
+          );
         }
       }),
       // Step 4 — bank accounts (C_BPartner_Bank_Account)
@@ -284,15 +320,16 @@ export default function CreateContactModal({
           method: 'POST',
           headers,
           body: JSON.stringify({
-            bankFormat: 'GENERIC',
+            bankFormat: b.bankAccountFormat || 'GENERIC',
             ...(b.bankName && { bankName: b.bankName }),
             ...(b.genericAccountNo && { accountNo: b.genericAccountNo }),
             ...(b.iban && { iBAN: b.iban }),
+            ...(form.country && { country: form.country }),
           }),
         });
         if (!bankRes.ok) {
-          const err = await bankRes.json().catch(() => null);
-          throw new Error(err?.response?.error?.message || err?.message || `Bank account POST failed (HTTP ${bankRes.status})`);
+          const raw = await bankRes.text().catch(() => '');
+          throw new Error(`Bank account POST failed (HTTP ${bankRes.status}): ${raw.slice(0, 300)}`);
         }
       }),
       // Step 5 — billing preferences PATCH
@@ -323,7 +360,7 @@ export default function CreateContactModal({
         searchKey: '',
         name: '',
         taxID: '',
-        taxIdType: '',
+        taxIdType: '1',
         creditLimit: 0,
         discount: '',
         isCustomer: documentType === 'sale',

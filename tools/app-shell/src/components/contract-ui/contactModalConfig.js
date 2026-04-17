@@ -48,7 +48,12 @@ export const contactModalConfig = {
       addLabelKey: 'addBankAccount',
       fields: [
         { id: 'bankName', labelKey: 'bankNameField', type: 'text' },
-        { id: 'bankAccountFormat', labelKey: 'bankAccountFormatField', type: 'text' },
+        { id: 'bankAccountFormat', labelKey: 'bankAccountFormatField', type: 'select', options: [
+          { id: 'GENERIC', label: 'Generic account no.' },
+          { id: 'IBAN', label: 'IBAN' },
+          { id: 'SWIFT', label: 'SWIFT + Generic account no.' },
+          { id: 'SPANISH', label: 'Spanish' },
+        ]},
         { id: 'genericAccountNo', labelKey: 'genericAccountNoField', type: 'text' },
         { id: 'iban', labelKey: 'ibanField', type: 'text' },
       ],
