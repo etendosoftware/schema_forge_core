@@ -198,7 +198,7 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
-  const [customModalState, setCustomModalState] = useState({ key: null, bplLinkId: null });
+  const [customModalState, setCustomModalState] = useState({ key: null, rowId: null });
   const [activeTab, setActiveTab] = useState(0);
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
@@ -1622,7 +1622,7 @@ export function DetailView({
                         entity={st.key}
                         selectorContext={selectorContextByEntity[st.key]}
                         onRowClick={st.customAddModal
-                          ? (row) => setCustomModalState({ key: st.key, bplLinkId: row.id })
+                          ? (row) => setCustomModalState({ key: st.key, rowId: row.id })
                           : st.Form
                             ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); }
                             : undefined}
@@ -1747,7 +1747,7 @@ export function DetailView({
                       <button
                         onClick={() => {
                           if (st.customAddModal) {
-                            setCustomModalState({ key: st.key, bplLinkId: null });
+                            setCustomModalState({ key: st.key, rowId: null });
                           } else {
                             void handleSecondaryAddLineToggle(st.key);
                           }
@@ -2030,14 +2030,14 @@ export function DetailView({
           <CustomModal
             key={st.key}
             open={customModalState.key === st.key}
-            onClose={() => setCustomModalState({ key: null, bplLinkId: null })}
+            onClose={() => setCustomModalState({ key: null, rowId: null })}
             onSaved={() => {
               secondaryHooks[idx]?.handleSelect(hook.selected ?? hook.editing);
-              setCustomModalState({ key: null, bplLinkId: null });
+              setCustomModalState({ key: null, rowId: null });
             }}
-            bplLinkId={customModalState.key === st.key ? customModalState.bplLinkId : null}
+            rowId={customModalState.key === st.key ? customModalState.rowId : null}
             bpId={parentRecordId}
-            contactsApiBase={apiBaseUrl}
+            apiBase={apiBaseUrl}
             token={token}
             selectorContext={selectorContextByEntity[st.key] ?? {}}
           />

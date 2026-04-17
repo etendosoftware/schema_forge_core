@@ -38,18 +38,18 @@ async function fetchSelectorPage(url, headers) {
  *   open            — boolean: controls visibility
  *   onClose         — () => void
  *   onSaved         — () => void: called after successful save; caller re-fetches address state
- *   bplLinkId       — string|null: C_BPartner_Location_ID of existing record (null = create)
+ *   rowId           — string|null: C_BPartner_Location_ID of existing record (null = create)
  *   bpId            — string: parent Business Partner ID (required for create)
- *   contactsApiBase — string: e.g. "/sws/neo/contacts"
+ *   apiBase         — string: e.g. "/sws/neo/contacts"
  *   token           — string: JWT bearer token
  */
 export default function LocationEditorModal({
   open,
   onClose,
   onSaved,
-  bplLinkId,
+  rowId: bplLinkId,
   bpId,
-  contactsApiBase,
+  apiBase: contactsApiBase,
   token,
   selectorContext = {},
 }) {
