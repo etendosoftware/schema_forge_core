@@ -1,7 +1,7 @@
 {
   "version": "0.11.1",
-  "generatedAt": "2026-04-16T18:06:40.538Z",
-  "checksum": "4df18427dfcdcc4e",
+  "generatedAt": "2026-04-16T19:17:53.112Z",
+  "checksum": "f3f9191b991b60bf",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -371,7 +371,7 @@
             "form": true,
             "reference": "PriceList",
             "inputMode": "selector",
-            "section": "collapsed",
+            "section": "principal",
             "validationRule": {
               "code": "M_PriceList.issopricelist = @isSOTrx@",
               "contextParams": [],
@@ -652,7 +652,7 @@
             "required": false,
             "grid": false,
             "form": true,
-            "section": "collapsed"
+            "section": "principal"
           }
         ],
         "searchableFields": [
