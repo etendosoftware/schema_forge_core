@@ -7,6 +7,7 @@
     "dev:server": "node --watch server.js",
     "dev:ui": "vite",
     "dev": "concurrently -k -n server,ui -c blue,green \"npm:dev:server\" \"npm:dev:ui\"",
+    "dev:with-shell": "concurrently -k -n shell,server,ui -c magenta,blue,green \"cd ../app-shell && npm run dev\" \"npm:dev:server\" \"npm:dev:ui\"",
     "build": "vite build",
     "start": "NODE_ENV=production node server.js",
     "test": "node --test test/*.test.js"
