@@ -5,15 +5,15 @@ import assert from 'node:assert/strict';
 // localStorage key and default value behavior.
 
 const STORAGE_KEY = 'schema-forge-locale';
-const DEFAULT_LOCALE = 'en_US';
+const DEFAULT_LOCALE = 'es_ES';
 
 describe('useLocaleState logic', () => {
   it('STORAGE_KEY is schema-forge-locale', () => {
     assert.equal(STORAGE_KEY, 'schema-forge-locale');
   });
 
-  it('DEFAULT_LOCALE is en_US', () => {
-    assert.equal(DEFAULT_LOCALE, 'en_US');
+  it('DEFAULT_LOCALE is es_ES', () => {
+    assert.equal(DEFAULT_LOCALE, 'es_ES');
   });
 
   it('useLocaleState module exports the hook', async () => {
