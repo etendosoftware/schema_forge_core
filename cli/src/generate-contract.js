@@ -169,6 +169,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.statusBar) mapped.statusBar = true;
       if (f.badge) mapped.badge = true;
       if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
+      if (f.labels) mapped.labels = f.labels;
       if (f.summable) mapped.summable = true;
       if (f.display) mapped.display = f.display;
       if (f.cellType) mapped.cellType = f.cellType;
