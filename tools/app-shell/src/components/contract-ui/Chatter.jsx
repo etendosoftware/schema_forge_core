@@ -26,7 +26,7 @@ function formatRelativeTime(timestamp) {
   if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
   if (diffDays === 1) return 'yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString();
+  return date.toLocaleDateString(navigator.language, { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
 /**

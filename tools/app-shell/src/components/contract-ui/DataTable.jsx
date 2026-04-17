@@ -12,6 +12,7 @@ import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
@@ -933,7 +934,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               onCheckedChange={(nextChecked) => {
                 void handleInlineToggle(row, col, nextChecked);
               }}
-              aria-label={col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key}
+              aria-label={resolveColumnLabel(col, locale, t)}
             />
           </div>
         );
@@ -966,7 +967,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       const raw = row[col.key];
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
-      const formatted = parsed && !isNaN(parsed) ? parsed.toLocaleDateString() : '\u2014';
+      const formatted = parsed && !isNaN(parsed) ? parsed.toLocaleDateString(locale.replace('_', '-'), { year: 'numeric', month: '2-digit', day: '2-digit' }) : '\u2014';
       return <span>{formatted}</span>;
     }
     if (col.type === 'amount') {
@@ -1049,7 +1050,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? col.label ?? t(col.column) ?? col.key;
+                const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (
