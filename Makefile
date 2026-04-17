@@ -41,6 +41,9 @@ generate: ## Generate frontend from Sales Order contract
 dev: ## Start app-shell dev server (http://localhost:3100)
 	cd tools/app-shell && npm run dev
 
+dev-spike: ## Start app-shell + spike-hello-app together (shell 3100, UI 5173, API 4100)
+	cd tools/spike-hello-app && npm run dev:with-shell
+
 build: ## Build app-shell for production
 	cd tools/app-shell && npm run build
 	node cli/src/generate-reports-manifest.js
