@@ -33,6 +33,9 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
     { key: 'name', column: 'Name', type: 'string', label: t('commercialName') },
     { key: '__type', type: 'string', label: t('typeColumn'), render: (row) => <TypeBadge row={row} t={t} /> },
     { key: '__location', type: 'string', label: t('locationColumn'), render: (row) => row.__location ?? '—' },
+    { key: 'etgoWeb', column: 'EM_Etgo_Web', type: 'string', label: t('webColumn'), render: (row) => row.etgoWeb ?? '—' },
+    { key: 'etgoEmail', column: 'EM_Etgo_Email', type: 'string', label: t('emailColumn'), render: (row) => row.etgoEmail ?? '—' },
+    { key: 'etgoPhone', column: 'EM_Etgo_Phone', type: 'string', label: t('phoneColumn'), render: (row) => row.etgoPhone ?? '—' },
   ], [gl]);
   const [enrichedData, setEnrichedData] = useState(data);
   const lastDataRef = useRef(null);
