@@ -75,6 +75,12 @@
           "iBAN"
         ],
         "requireSavedRecord": true
+      },
+      "locationAddress": {
+        "tabOrder": 3,
+        "label": "Location",
+        "customAddModal": "LocationEditorModal",
+        "requireSavedRecord": true
       }
     }
   },
@@ -277,7 +283,20 @@
           "visibility": "editable",
           "grid": true,
           "searchable": true,
+          "labels": { "en_US": "Location / Address", "es_ES": "Dirección" },
           "section": "principal"
+        },
+        "shipToAddress": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal",
+          "labels": { "en_US": "Shipping Address", "es_ES": "Dir.envíos" }
+        },
+        "invoiceToAddress": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal",
+          "labels": { "en_US": "Invoicing Address", "es_ES": "Dir.factura" }
         },
         "phone": {
           "visibility": "editable",
