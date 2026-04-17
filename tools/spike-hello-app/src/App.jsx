@@ -8,12 +8,12 @@ export default function App() {
     (async () => {
       try {
         const me = await fetchMe();
-        const products = await fetchEtendo('/neo/entity/product?limit=1');
+        const products = await fetchEtendo('/neo/product/product?_pageSize=1');
         setState({
           loading: false,
           user: me.userId,
           tenant: me.tenant,
-          productCount: products?.totalCount ?? products?.items?.length ?? 0,
+          productCount: products?.response?.totalRows ?? products?.response?.data?.length ?? 0,
         });
       } catch (err) {
         setState({ loading: false, error: err.message });
