@@ -1,7 +1,7 @@
 // tools/spike-hello-app/server.js
 import express from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import { requireJwt } from './src/jwt-middleware.js';
+import { createEtendoProxy } from './src/etendo-proxy.js';
 
 const PORT = process.env.PORT || 4100;
 const ETENDO_URL = process.env.ETENDO_URL || 'http://localhost:8080/etendo';
@@ -23,6 +23,10 @@ app.get('/api/me', (req, res) => {
     org: req.etendoContext.org,
   });
 });
+
+app.use('/api/etendo',
+  requireJwt({ jwksUrl: JWKS_URL, audience: APP_ID }),
+  createEtendoProxy({ target: ETENDO_URL }));
 
 // Static UI (built output)
 app.use(express.static('dist'));

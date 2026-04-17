@@ -24,6 +24,7 @@ export function requireJwt({ jwksUrl, audience }) {
     if (!token) return res.status(401).json({ error: 'missing token' });
     try {
       req.etendoContext = await verifyJwt(token, { jwksUrl, audience });
+      req.jwtRaw = token;
       next();
     } catch (err) {
       res.status(401).json({ error: 'invalid token', detail: err.message });
