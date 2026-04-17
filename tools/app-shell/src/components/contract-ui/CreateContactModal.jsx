@@ -206,11 +206,10 @@ export default function CreateContactModal({
     const newId = record?.id;
     const newName = record?.name ?? form.name;
 
-    // Step 2 — POST address (C_Location + C_BPartner_Location)
-    if (newId) {
-      const bpLocationBase = bpApiBaseUrl.replace('/contacts', '/bp-location');
+    // Step 2 — POST address (handled atomically by ContactsLocationAddressHandler)
+    if (newId && (form.address || form.city || form.country)) {
       const locName = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
-      const locRes = await fetch(`${bpLocationBase}/bpLocation?parentId=${newId}`, {
+      await fetch(`${bpApiBaseUrl}/locationAddress?parentId=${newId}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -221,36 +220,10 @@ export default function CreateContactModal({
           cityName: form.city || null,
           country: form.country || null,
           region: form.region || null,
-          businessPartner: newId,
+          shipToAddress: 'Y',
+          invoiceToAddress: 'Y',
         }),
       }).catch(() => null);
-
-      if (locRes?.ok) {
-        const locData = await locRes.json().catch(() => null);
-        const locId = locData?.response?.data?.[0]?.id ?? locData?.id;
-        if (locId) {
-          const existing = await fetch(
-            `${bpApiBaseUrl}/locationAddress?parentId=${newId}&_startRow=0&_endRow=5`,
-            { headers }
-          ).then(r => r.ok ? r.json() : null).catch(() => null);
-          const alreadyLinked = (existing?.response?.data ?? []).some(
-            r => r.id === locId || r.locationAddress === locId
-          );
-          if (!alreadyLinked) {
-            await fetch(`${bpApiBaseUrl}/locationAddress?parentId=${newId}`, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({
-                name: locName,
-                businessPartner: newId,
-                locationAddress: locId,
-                shipToAddress: 'Y',
-                invoiceToAddress: 'Y',
-              }),
-            }).catch(() => {});
-          }
-        }
-      }
     }
 
     // Steps 3, 4, 5 — parallel: contact persons + bank accounts + billing preferences
