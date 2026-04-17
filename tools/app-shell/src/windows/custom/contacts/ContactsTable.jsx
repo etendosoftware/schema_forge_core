@@ -33,8 +33,6 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
     { key: 'name', column: 'Name', type: 'string', label: t('commercialName') },
     { key: '__type', type: 'string', label: t('typeColumn'), render: (row) => <TypeBadge row={row} t={t} /> },
     { key: '__location', type: 'string', label: t('locationColumn'), render: (row) => row.__location ?? '—' },
-    { key: '__phone', type: 'string', label: t('phoneColumn'), render: (row) => row.__phone ?? '—' },
-    { key: '__email', type: 'string', label: t('emailColumn'), render: (row) => row.__email ?? '—' },
   ], [gl]);
   const [enrichedData, setEnrichedData] = useState(data);
   const lastDataRef = useRef(null);
@@ -48,33 +46,18 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
     lastDataRef.current = data;
 
     const headers = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`${apiBaseUrl}/locationAddress?_startRow=0&_endRow=9999`, { headers })
-        .then((r) => (r.ok ? r.json() : null)),
-      fetch(`${apiBaseUrl}/contact?_startRow=0&_endRow=9999`, { headers })
-        .then((r) => (r.ok ? r.json() : null)),
-    ]).then(([locData, contactData]) => {
+    fetch(`${apiBaseUrl}/locationAddress?_startRow=0&_endRow=9999`, { headers })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((locData) => {
       const locByBP = {};
       for (const rec of (locData?.response?.data ?? [])) {
         if (!locByBP[rec.businessPartner]) {
           locByBP[rec.businessPartner] = rec['locationAddress$_identifier'] ?? rec.name ?? '';
         }
       }
-      const emailByBP = {};
-      const phoneByBP = {};
-      for (const rec of (contactData?.response?.data ?? [])) {
-        if (!emailByBP[rec.businessPartner] && rec.email) {
-          emailByBP[rec.businessPartner] = rec.email;
-        }
-        if (!phoneByBP[rec.businessPartner] && rec.phone) {
-          phoneByBP[rec.businessPartner] = rec.phone;
-        }
-      }
       setEnrichedData(data.map((row) => ({
         ...row,
         __location: locByBP[row.id] ?? null,
-        __email: emailByBP[row.id] ?? null,
-        __phone: phoneByBP[row.id] ?? null,
       })));
     }).catch(() => setEnrichedData(data));
   }, [data, token, apiBaseUrl]);
