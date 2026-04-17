@@ -11,7 +11,7 @@ const fields = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'number', label: 'Total Gross Amount', required: true, readOnly: true, section: 'summary' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'number', label: 'Total Net Amount', required: true, readOnly: true, section: 'summary' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'number', label: 'Total Outstanding', required: true, readOnly: true, section: 'summary', defaultValue: '0' },
-  { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', label: 'Price List', required: true, section: 'collapsed', reference: 'PriceList', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', label: 'Price List', required: true, section: 'principal', reference: 'PriceList', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
 ];
 // @sf-generated-end fields:header
 
@@ -19,5 +19,5 @@ const fields = [
 export default function HeaderForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-HeaderForm.hasCollapsedFields = true;
+HeaderForm.hasCollapsedFields = false;
 // @sf-generated-end component:HeaderForm

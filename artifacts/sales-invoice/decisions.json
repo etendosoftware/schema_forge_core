@@ -78,7 +78,7 @@
         },
         "priceList": {
           "visibility": "editable",
-          "section": "collapsed",
+          "section": "principal",
           "reference": "PriceList",
           "inputMode": "selector",
           "readOnlyLogic": "@Processed@='Y'"
@@ -292,7 +292,7 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "taxAmount": {
           "visibility": "discarded"
