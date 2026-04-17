@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale } from '@/i18n';
 
 const filters = ['searchKey', 'name'];
 
-function TypeBadge({ row, t }) {
+function TypeBadge({ row }) {
+  const dictionary = useLocale();
+  const gl = dictionary?.genericLabels || {};
+  const t = (key) => gl[key] || key;
   const isCust = row.customer === true || row.customer === 'Y';
   const isVend = row.vendor === true || row.vendor === 'Y';
   if (isCust && isVend) {
@@ -24,18 +27,15 @@ function TypeBadge({ row, t }) {
   return '—';
 }
 
-export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest }) {
-  const dictionary = useLocale();
-  const gl = dictionary?.genericLabels || {};
-  const t = (key) => gl[key] || key;
+const columns = [
+  { key: 'name', column: 'Name', type: 'string', labels: { en_US: 'Commercial Name', es_ES: 'Nombre comercial' } },
+  { key: '__type', type: 'string', labels: { en_US: 'Type', es_ES: 'Tipo' }, render: (row) => <TypeBadge row={row} /> },
+  { key: '__location', type: 'string', labels: { en_US: 'Location', es_ES: 'Ubicación' }, render: (row) => row.__location ?? '—' },
+  { key: '__phone', type: 'string', labels: { en_US: 'Phone', es_ES: 'Teléfono' }, render: (row) => row.__phone ?? '—' },
+  { key: '__email', type: 'string', labels: { en_US: 'Email', es_ES: 'Correo electrónico' }, render: (row) => row.__email ?? '—' },
+];
 
-  const columns = useMemo(() => [
-    { key: 'name', column: 'Name', type: 'string', label: t('commercialName') },
-    { key: '__type', type: 'string', label: t('typeColumn'), render: (row) => <TypeBadge row={row} t={t} /> },
-    { key: '__location', type: 'string', label: t('locationColumn'), render: (row) => row.__location ?? '—' },
-    { key: '__phone', type: 'string', label: t('phoneColumn'), render: (row) => row.__phone ?? '—' },
-    { key: '__email', type: 'string', label: t('emailColumn'), render: (row) => row.__email ?? '—' },
-  ], [gl]);
+export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest }) {
   const [enrichedData, setEnrichedData] = useState(data);
   const lastDataRef = useRef(null);
 

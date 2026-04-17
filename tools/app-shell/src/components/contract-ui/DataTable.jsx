@@ -816,6 +816,16 @@ export function DataTable({
     }
   }, [ui]);
 
+  const presentStatusValues = useMemo(() => {
+    const result = {};
+    for (const col of columns) {
+      if (col.type === 'status' && col.enumLabels) {
+        result[col.key] = new Set(data.map(row => row[col.key]).filter(Boolean));
+      }
+    }
+    return result;
+  }, [columns, data]);
+
   const filteredData = useMemo(() => {
     let result = data;
 
@@ -955,7 +965,7 @@ export function DataTable({
     }
     if (col.type === 'status') {
       const raw = row[col.key];
-      const label = col.enumLabels?.[raw] ?? statusLabel(raw, dictionary);
+      const label = statusLabel(raw, dictionary);
       if (col.display === 'dot') {
         const dotColor = getStatusDotColor(raw);
         return (
@@ -1146,7 +1156,34 @@ export function DataTable({
                         </span>
                       )}
                       <div className="relative w-full">
-                        {col.type === 'boolean' ? (
+                        {(col.type === 'status' || col.type === 'enum') && col.enumLabels && Object.keys(col.enumLabels).length > 0 ? (
+                          <select
+                            value={localFilterInputs[col.key] ?? ''}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setLocalFilterInputs(prev => ({ ...prev, [col.key]: val }));
+                              commitFilter(col.key, val);
+                            }}
+                            className={[
+                              'w-full h-6 rounded border bg-background/80 px-1 text-xs text-foreground',
+                              'transition-colors cursor-pointer',
+                              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
+                              localFilterInputs[col.key]
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border/35',
+                            ].filter(Boolean).join(' ')}
+                          >
+                            <option value="">{ui('filterAll')}</option>
+                            {Object.keys(col.enumLabels)
+                              .filter(code => {
+                                const present = presentStatusValues[col.key];
+                                return !present?.size || present.has(code);
+                              })
+                              .map(code => (
+                                <option key={code} value={code}>{dictionary?.statuses?.[code]?.label || col.enumLabels[code] || statusLabel(code, dictionary)}</option>
+                              ))}
+                          </select>
+                        ) : col.type === 'boolean' ? (
                           <select
                             value={localFilterInputs[col.key] ?? ''}
                             onChange={e => {
@@ -1195,7 +1232,7 @@ export function DataTable({
                             ].filter(Boolean).join(' ')}
                           />
                         )}
-                        {localFilterInputs[col.key] && col.type !== 'boolean' && (
+                        {localFilterInputs[col.key] && col.type !== 'boolean' && !((col.type === 'status' || col.type === 'enum') && col.enumLabels) && (
                           <button
                             onClick={() => {
                               setLocalFilterInputs(prev => ({ ...prev, [col.key]: '' }));

@@ -219,6 +219,10 @@ function parseDateFilter(trimmed) {
 }
 
 function parseEnumLabelFilter(trimmed, col) {
+  // Direct code match (e.g. value committed from a dropdown: 'DR', 'CO')
+  if (col.enumLabels && Object.prototype.hasOwnProperty.call(col.enumLabels, trimmed)) {
+    return { mode: 'enumLabel', value: [trimmed] };
+  }
   const invertedMap = invertEnumLabels(col.enumLabels);
   const lower = trimmed.toLowerCase();
   const matches = [];
@@ -264,25 +268,21 @@ export function resolveBackendSort(col, direction) {
   const dir = direction === 'desc' ? 'desc' : 'asc';
   const key = col?.key ?? '';
 
-  // Explicit override always wins
-  if (col?.backendSortKey) return `${col.backendSortKey} ${dir}`;
-
   const sortMode = col?.sortMode ?? inferSortMode(col?.type, col);
+  const isIdentifierSort = sortMode === 'identifier' || !!col?.backendSortKey;
+  const backendKey = col?.backendSortKey ?? (sortMode === 'identifier' ? `${key}$_identifier` : key);
 
-  switch (sortMode) {
-    case 'identifier':
-      // FK / selector: sort by the companion identifier field
-      return `${key}$_identifier ${dir}`;
-
-    case 'enumLabel':
-    case 'booleanLabel':
-      // Best effort: sort by raw column on backend; Stage 6 will add client-side resort
-      return `${key} ${dir}`;
-
-    default:
-      // 'raw' and everything else: sort by raw column
-      return `${key} ${dir}`;
+  // For `_identifier` paths, OpenBravo's AdvancedQueryBuilder only recognizes
+  // them as "identifier sorts" when the token ENDS in `._identifier`. A
+  // trailing ` asc` / ` desc` suffix defeats that check and the raw path
+  // reaches Hibernate (which has no such property → 500). Use the minus-prefix
+  // convention for desc and bare token for asc, which the same method does
+  // detect correctly via its `startsWith("-")` branch.
+  if (isIdentifierSort) {
+    return dir === 'desc' ? `-${backendKey}` : backendKey;
   }
+
+  return `${backendKey} ${dir}`;
 }
 
 /**
@@ -382,7 +382,8 @@ function inferFilterMode(type) {
   switch (type) {
     case 'date':     return 'date';
     case 'selector': return 'identifier';
-    case 'status':   return 'enumLabel';
+    case 'status':
+    case 'enum':     return 'enumLabel';
     case 'boolean':  return 'booleanLabel';
     case 'number':
     case 'amount':   return 'numeric';

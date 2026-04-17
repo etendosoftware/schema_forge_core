@@ -246,16 +246,16 @@ describe('parseUserFilter', () => {
 // ---------------------------------------------------------------------------
 
 describe('resolveBackendSort', () => {
-  it('uses backendSortKey when explicitly defined', () => {
+  it('uses backendSortKey when explicitly defined (identifier uses minus-prefix for desc)', () => {
     const col = { key: 'bp', type: 'selector', backendSortKey: 'bp$_identifier' };
-    assert.equal(resolveBackendSort(col, 'asc'), 'bp$_identifier asc');
-    assert.equal(resolveBackendSort(col, 'desc'), 'bp$_identifier desc');
+    assert.equal(resolveBackendSort(col, 'asc'), 'bp$_identifier');
+    assert.equal(resolveBackendSort(col, 'desc'), '-bp$_identifier');
   });
 
   it('infers $\_identifier sort for selector type (no backendSortKey)', () => {
     const col = { key: 'businessPartner', type: 'selector' };
-    assert.equal(resolveBackendSort(col, 'asc'), 'businessPartner$_identifier asc');
-    assert.equal(resolveBackendSort(col, 'desc'), 'businessPartner$_identifier desc');
+    assert.equal(resolveBackendSort(col, 'asc'), 'businessPartner$_identifier');
+    assert.equal(resolveBackendSort(col, 'desc'), '-businessPartner$_identifier');
   });
 
   it('uses raw column for string type', () => {
@@ -304,7 +304,7 @@ describe('resolveBackendSort', () => {
     const col = { key: 'businessPartner', type: 'selector' };
     // No sampleRow involved — pure metadata
     const result = resolveBackendSort(col, 'asc');
-    assert.equal(result, 'businessPartner$_identifier asc');
+    assert.equal(result, 'businessPartner$_identifier');
   });
 });
 

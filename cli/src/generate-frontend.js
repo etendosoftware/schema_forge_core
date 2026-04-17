@@ -155,7 +155,7 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
