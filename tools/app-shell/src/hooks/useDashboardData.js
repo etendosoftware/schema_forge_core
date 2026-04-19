@@ -142,6 +142,10 @@ function mapPendingTasks(handlerData) {
       const FILTER_LINKS = {
         overdueInvoices: '/sales-invoice?filter=overdue',
         overdueInvoices_plural: '/sales-invoice?filter=overdue',
+        collectionsDueToday: '/sales-invoice?filter=overdue',
+        collectionsDueToday_plural: '/sales-invoice?filter=overdue',
+        paymentsDueToday: '/purchase-invoice?filter=overdue',
+        paymentsDueToday_plural: '/purchase-invoice?filter=overdue',
         pendingReceptions: '/purchase-order?filter=pendingDelivery',
         pendingReceptions_plural: '/purchase-order?filter=pendingDelivery',
         pendingSalesDeliveries: '/sales-order?filter=pendingDelivery',
@@ -168,6 +172,12 @@ function inferPendingTaskKey(task) {
   }
   if (task?.link?.startsWith('/sales-order?filter=pendingDelivery') || text.includes('pending delivery')) {
     return task?.count === 1 ? 'pendingSalesDeliveries' : 'pendingSalesDeliveries_plural';
+  }
+  if (text.includes('collection') && text.includes('due today')) {
+    return task?.count === 1 ? 'collectionsDueToday' : 'collectionsDueToday_plural';
+  }
+  if (text.includes('payment') && text.includes('due today')) {
+    return task?.count === 1 ? 'paymentsDueToday' : 'paymentsDueToday_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
