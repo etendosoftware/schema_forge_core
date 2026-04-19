@@ -5,7 +5,7 @@ import { useUI } from '@/i18n';
 import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
 import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
-import InvoiceTopbarExtra from '@generated/sales-invoice/custom/InvoiceTopbarExtra.jsx';
+import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
 
@@ -68,7 +68,7 @@ export default function SalesInvoiceWindow(props) {
       <HeaderPage
         {...props}
         bottomSection={InvoiceBottomPanel}
-        topbarRight={InvoiceTopbarExtra}
+        topbarRight={SalesInvoiceTopbar}
         notesField="description"
         customTabs={[{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }]}
         onAfterSave={true}

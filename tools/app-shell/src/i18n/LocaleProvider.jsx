@@ -10,7 +10,7 @@ const localeModules = import.meta.glob('../locales/*.json', { eager: true });
  * Accepts a locale prop (e.g., "en_US") and resolves the matching JSON file.
  * Optionally accepts setLocale callback for locale switching.
  */
-export function LocaleProvider({ locale = 'en_US', setLocale, children }) {
+export function LocaleProvider({ locale = 'es_ES', setLocale, children }) {
   const dictionary = useMemo(() => {
     const key = `../locales/${locale}.json`;
     return localeModules[key]?.default ?? localeModules[key] ?? {};
@@ -45,5 +45,5 @@ export function useLocale() {
  */
 export function useLocaleSwitch() {
   const ctx = useContext(LocaleContext);
-  return { locale: ctx?.locale ?? 'en_US', setLocale: ctx?.setLocale ?? null };
+  return { locale: ctx?.locale ?? 'es_ES', setLocale: ctx?.setLocale ?? null };
 }

@@ -29,7 +29,20 @@ const fmtNum = (v, decimals = 2) =>
  *  - onClose: () => void
  *  - onCloned: (newId: string) => void
  */
-export default function CloneOrderModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
+export default function CloneOrderModal({
+  recordId,
+  data,
+  apiBaseUrl,
+  headers,
+  onClose,
+  onCloned,
+  cloneActionName = 'cloneOrder',
+  titleKey = 'cloneOrderConfirmTitle',
+  bodyKey = 'cloneOrderConfirmBody',
+  actionLabelKey = 'cloneOrderAction',
+  errorKey = 'cloneOrderError',
+  processingKey = 'soProcessing',
+}) {
   const ui = useUI();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
@@ -43,12 +56,12 @@ export default function CloneOrderModal({ orderId, data, apiBaseUrl, headers, on
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers })
+    fetch(`${apiBaseUrl}/lines?parentId=${recordId}&_startRow=0&_endRow=999`, { headers })
       .then(r => r.ok ? r.json() : null)
       .then(json => { if (!cancelled) setLines(json?.response?.data ?? []); })
       .catch(() => { if (!cancelled) setLines([]); });
     return () => { cancelled = true; };
-  }, [orderId, apiBaseUrl, headers]);
+  }, [recordId, apiBaseUrl, headers]);
 
   const statusMap = {
     DR: { label: ui('orderStatusDraft'),     bg: '#FEF3C7', color: '#D97706' },
@@ -67,17 +80,17 @@ export default function CloneOrderModal({ orderId, data, apiBaseUrl, headers, on
     setLoading(true);
     setError(null);
     try {
-      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneOrder`, { method: 'POST', headers });
+      const res  = await fetch(`${apiBaseUrl}/header/${recordId}/action/${cloneActionName}`, { method: 'POST', headers });
       const json = await res.json();
       if (!res.ok) {
-        setError(json?.response?.error?.message || ui('cloneOrderError'));
+        setError(json?.response?.error?.message || ui(errorKey));
         return;
       }
       const newId = json?.response?.data?.id;
       onClose();
       onCloned(newId);
     } catch {
-      setError(ui('cloneOrderError'));
+      setError(ui(errorKey));
     } finally {
       setLoading(false);
     }
@@ -88,7 +101,7 @@ export default function CloneOrderModal({ orderId, data, apiBaseUrl, headers, on
       <div style={{ ...cardStyle, width: 440 }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0' }}>
-          <span style={{ fontWeight: 600, fontSize: 15, color: '#111827' }}>{ui('cloneOrderConfirmTitle')}</span>
+          <span style={{ fontWeight: 600, fontSize: 15, color: '#111827' }}>{ui(titleKey)}</span>
           <button type="button" onClick={onClose} style={closeBtn}>×</button>
         </div>
 
@@ -117,7 +130,7 @@ export default function CloneOrderModal({ orderId, data, apiBaseUrl, headers, on
             </div>
           </div>
 
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0, padding: '0 2px' }}>{ui('cloneOrderConfirmBody')}</p>
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0, padding: '0 2px' }}>{ui(bodyKey)}</p>
 
           {error && <div style={{ color: '#ef4444', fontSize: 12 }}>{error}</div>}
 
@@ -129,7 +142,7 @@ export default function CloneOrderModal({ orderId, data, apiBaseUrl, headers, on
               style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer',
                 display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               {loading && <Spinner />}
-              {loading ? ui('soProcessing') : ui('cloneOrderAction')}
+              {loading ? ui(processingKey) : ui(actionLabelKey)}
             </button>
           </div>
         </div>
