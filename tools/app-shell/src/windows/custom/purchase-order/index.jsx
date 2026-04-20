@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -43,6 +43,7 @@ function CustomLinesTable(props) {
 export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
@@ -73,6 +74,16 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const filterParam = searchParams.get('filter');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
+  const QUICK_FILTERS = [
+    { label: 'all' },
+    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatusPurchase ?? 100) < 100 },
+  ];
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
+
   return (
     <>
       <ListView
@@ -82,6 +93,9 @@ export default function PurchaseOrderWindow(props) {
         windowName={windowName}
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(row) => setCloneTarget(row)}
+        initialColumnFilters={initialColumnFilters}
+        quickFilters={QUICK_FILTERS}
+        initialQuickFilterIndex={initialQuickFilterIndex}
         {...props}
       />
       {cloneTarget && createPortal(
