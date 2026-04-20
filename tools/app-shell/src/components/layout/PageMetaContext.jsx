@@ -16,7 +16,7 @@ export function usePageMeta() {
   return useContext(PageMetaContext);
 }
 
-export function useSetPageMeta(meta) {
+export function useSetPageMeta(meta, deps = []) {
   const ctx = useContext(PageMetaContext);
   const metaRef = useRef(meta);
   metaRef.current = meta;
@@ -25,5 +25,5 @@ export function useSetPageMeta(meta) {
     ctx?.setMeta(metaRef.current);
     return () => ctx?.setMeta({});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta?.title, meta?.breadcrumb]);
+  }, [meta?.title, meta?.breadcrumb, ...deps]);
 }

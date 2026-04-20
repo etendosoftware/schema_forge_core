@@ -12,6 +12,7 @@ import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
 import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -710,7 +711,15 @@ export function DetailView({
   // When addLineGuard is provided, it receives the current record data and must return true to allow.
   const canAddLines = addLineGuard ? addLineGuard(data) : true;
   const windowTitle = tMenu(breadcrumb) || breadcrumb || windowName || '';
-  useSetPageMeta({ title: windowTitle, breadcrumb: windowTitle });
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = windowName || windowTitle;
+  const favActive = isFavorite(favKey);
+  useSetPageMeta({
+    title: windowTitle,
+    breadcrumb: windowTitle,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, windowTitle) : undefined,
+    isFavorite: favActive,
+  }, [favActive]);
 
   const title = isNew
     ? ui('newRecord')

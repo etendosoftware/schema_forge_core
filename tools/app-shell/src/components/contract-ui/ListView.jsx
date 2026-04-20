@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye } from 'lucide-react';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
@@ -59,7 +60,15 @@ export function ListView({
   const t = useLabel();
   const ui = useUI();
   const label = tMenu(entityLabel) || entityLabel || entity;
-  useSetPageMeta({ title: label, breadcrumb: label });
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = windowName || entity || '';
+  const favActive = isFavorite(favKey);
+  useSetPageMeta({
+    title: label,
+    breadcrumb: label,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, label) : undefined,
+    isFavorite: favActive,
+  }, [favActive]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
