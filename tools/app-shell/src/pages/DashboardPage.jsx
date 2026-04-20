@@ -95,21 +95,6 @@ function resolvePendingTaskKey(task) {
   if ((windowName === 'sales-invoice' && filter === 'overdue') || task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
-  if ((windowName === 'sales-order' && docStatus === 'DR') || task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
-  }
-  if ((windowName === 'sales-invoice' && docStatus === 'DR') || task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
-  }
-  if ((windowName === 'goods-shipment' && docStatus === 'DR') || task?.link === '/goods-shipment' || text.includes('pending shipment')) {
-    return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
-  }
-  if ((windowName === 'purchase-order' && docStatus === 'DR') || task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
-    return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
-  }
-  if ((windowName === 'purchase-invoice' && docStatus === 'DR') || task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
-  }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
   }
@@ -354,7 +339,7 @@ const WIDGET_PREVIEWS = {
   'pending-tasks': (ui, tMenu) => (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingShipments_plural', { count: 2 })], ['#3b82f6', ui('purchaseOrdersToConfirm_plural', { count: 5 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
+      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingReceptions_plural', { count: 2 })], ['#3b82f6', ui('pendingSalesDeliveries_plural', { count: 4 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
         <g key={i} transform={`translate(12, ${10 + i * 22})`}>
           <circle cx="6" cy="7" r="5" fill={color} opacity="0.8" />
           <rect x="18" y="3" width="110" height="7" rx="3.5" fill="#cbd5e1" />
