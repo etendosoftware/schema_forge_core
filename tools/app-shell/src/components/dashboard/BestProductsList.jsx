@@ -35,71 +35,337 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
   const hasPositiveTrend = rows.some((r) => (r.trendPct ?? 0) > 0);
 
   return (
-    <div className="rounded-xl border overflow-hidden bg-white flex flex-col h-full" style={{ borderColor: '#E8EAEF' }}>
+    <div
+      className="overflow-hidden bg-white"
+      style={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '0px',
+        width: '100%',
+        height: '100%',
+        border: '1px solid #E8EAEF',
+        borderRadius: '8px',
+      }}
+    >
       <div
-        className="flex flex-col border-b"
-        style={{ backgroundColor: '#F5F7F9', borderBottomColor: '#E8EAEF', padding: '8px 12px', gap: '4px' }}
+        style={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '8px 12px',
+          gap: '16px',
+          width: '100%',
+          height: '48px',
+          background: '#F5F7F9',
+          borderBottom: '1px solid #E8EAEF',
+          flex: 'none',
+          order: 0,
+          alignSelf: 'stretch',
+          flexGrow: 0,
+        }}
       >
-        {hasPositiveTrend && (
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: '#1E874C' }}>
-            <Check className="h-3.5 w-3.5 shrink-0" />
-            <span>{ui('bestProductsTrendPositive')}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between" style={{ minHeight: hasPositiveTrend ? 'auto' : '32px' }}>
-          <span className="text-xs font-medium uppercase" style={{ color: '#282833', letterSpacing: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '0px',
+            gap: '10px',
+            width: 'auto',
+            height: '16px',
+          }}
+        >
+          <span
+            style={{
+              height: '16px',
+              fontFamily: 'Inter',
+              fontStyle: 'normal',
+              fontWeight: 500,
+              fontSize: '12px',
+              lineHeight: '16px',
+              color: '#282833',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {ui('bestProductsTitle')}
           </span>
-          <div className="flex items-center rounded-full border overflow-hidden text-xs" style={{ borderColor: '#E8EAEF' }}>
-            <button
-              type="button"
-              onClick={() => setViewMode('quantity')}
-              className="px-2.5 py-1 transition-colors font-medium"
-              style={viewMode === 'quantity'
-                ? { backgroundColor: '#121217', color: '#FFFFFF' }
-                : { color: '#6C6C89', backgroundColor: 'transparent' }}
-            >
-              {ui('bestProductsToggleUnits')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('revenue')}
-              className="px-2.5 py-1 transition-colors font-medium"
-              style={viewMode === 'revenue'
-                ? { backgroundColor: '#121217', color: '#FFFFFF' }
-                : { color: '#6C6C89', backgroundColor: 'transparent' }}
-            >
-              {ui('bestProductsToggleRevenue')}
-            </button>
-          </div>
         </div>
       </div>
-      <div className="p-4 flex-1 min-h-0 overflow-y-auto">
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '8px 12px 0px',
+          gap: '20px',
+          width: '100%',
+          height: '48px',
+          flex: 'none',
+          order: 1,
+          alignSelf: 'stretch',
+          flexGrow: 0,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', height: '24px' }}>
+          {hasPositiveTrend && (
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#1E874C' }}>
+              <Check className="h-3.5 w-3.5 shrink-0" />
+              <span>{ui('bestProductsTrendPositive')}</span>
+            </div>
+          )}
+        </div>
+        
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '4px',
+            gap: '4px',
+            width: '175.33px',
+            height: '40px',
+            background: '#F5F7F9',
+            borderRadius: '12px',
+            flex: 'none',
+            order: 1,
+            flexGrow: 0,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setViewMode('quantity')}
+            style={{
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '4px 8px',
+              width: '81.33px',
+              height: '32px',
+              background: viewMode === 'quantity' ? '#FFFFFF' : 'transparent',
+              boxShadow: viewMode === 'quantity' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
+              borderRadius: '8px',
+              flex: 'none',
+              order: 0,
+              flexGrow: 0,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                padding: '0px 4px',
+                width: '72px',
+                height: '24px',
+                flex: 'none',
+                order: 1,
+                flexGrow: 0,
+              }}
+            >
+              <span
+                style={{
+                  width: '64px',
+                  height: '24px',
+                  fontFamily: 'Inter',
+                  fontStyle: 'normal',
+                  fontWeight: 500,
+                  fontSize: '14px',
+                  lineHeight: '24px',
+                  color: viewMode === 'quantity' ? '#121217' : '#6C6C89',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0,
+                }}
+              >
+                {ui('bestProductsToggleUnits')}
+              </span>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('revenue')}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '4px 8px',
+              width: '82px',
+              height: '32px',
+              background: viewMode === 'revenue' ? '#FFFFFF' : 'transparent',
+              boxShadow: viewMode === 'revenue' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
+              borderRadius: '8px',
+              flex: 'none',
+              order: 1,
+              flexGrow: 0,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                padding: '0px 4px',
+                width: '66px',
+                height: '24px',
+                flex: 'none',
+                order: 1,
+                flexGrow: 0,
+              }}
+            >
+              <span
+                style={{
+                  width: '58px',
+                  height: '24px',
+                  fontFamily: 'Inter',
+                  fontStyle: 'normal',
+                  fontWeight: 500,
+                  fontSize: '14px',
+                  lineHeight: '24px',
+                  color: viewMode === 'revenue' ? '#121217' : '#6C6C89',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0,
+                }}
+              >
+                {ui('bestProductsToggleRevenue')}
+              </span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          padding: '8px 0px',
+          gap: '8px',
+          width: '100%',
+          flex: 'none',
+          order: 2,
+          alignSelf: 'stretch',
+          flexGrow: 1,
+          overflowY: 'auto',
+        }}
+      >
         {rows.length === 0 ? (
-          <p className="text-sm" style={{ color: '#828FA3' }}>{ui('noDataAvailable')}</p>
+          <p className="text-sm" style={{ color: '#828FA3', padding: '0 12px' }}>{ui('noDataAvailable')}</p>
         ) : (
-          <div className="space-y-0">
-            {rows.map((row, i) => {
-              const value = viewMode === 'quantity'
-                ? formatDashboardNumber(row.qty, numberLocale)
-                : formatDashboardAmount(row.amount, currencyLabel, numberLocale);
-              return (
-                <div key={`${viewMode}-${row.name}-${i}`}>
-                  {i > 0 && <Separator />}
-                  <div className="flex items-center justify-between py-2.5 px-1">
-                    <span className="text-sm truncate min-w-0 flex-1 mr-2" style={{ color: '#3F3F50' }}>{row.name}</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <TrendPill pct={row.trendPct ?? null} />
-                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums" style={{ color: '#3F3F50', borderColor: '#E8EAEF' }}>
-                        {value}
-                      </span>
-                      <ChevronRight className="h-3.5 w-3.5 opacity-40" style={{ color: '#6C6C89' }} />
-                    </div>
-                  </div>
+          rows.map((row, i) => {
+            const value = viewMode === 'quantity'
+              ? formatDashboardNumber(row.qty, numberLocale)
+              : formatDashboardAmount(row.amount, currencyLabel, numberLocale);
+            return (
+              <div
+                key={`${viewMode}-${row.name}-${i}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '4px 8px',
+                  width: '100%',
+                  height: '32px',
+                  borderRadius: '0px',
+                  flex: 'none',
+                  order: i,
+                  alignSelf: 'stretch',
+                  flexGrow: 0,
+                }}
+                className="hover:bg-muted/50 transition-colors"
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '0px 16px 0px 8px',
+                    width: '232px',
+                    height: '24px',
+                    borderRadius: '0px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      height: '24px',
+                      fontFamily: 'Inter',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '24px',
+                      color: '#121217',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      width: '100%',
+                    }}
+                  >
+                    {row.name}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    padding: '0px 8px 0px 0px',
+                    height: '24px',
+                    borderRadius: '0px',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0,
+                  }}
+                >
+                  <TrendPill pct={row.trendPct ?? null} />
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '0px 8px',
+                    height: '24px',
+                    border: '1px solid #D1D4DB',
+                    borderRadius: '360px',
+                    flex: 'none',
+                    order: 2,
+                    flexGrow: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      height: '24px',
+                      fontFamily: 'Inter',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      fontSize: '12px',
+                      lineHeight: '24px',
+                      color: '#6C6C89',
+                    }}
+                  >
+                    {value}
+                  </span>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

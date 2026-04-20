@@ -115,6 +115,16 @@ function DashboardContent({ apiBaseUrl }) {
     minHeight: '234px',
   };
 
+  const dashboardRow3Style = {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: '0px',
+    gap: '16px',
+    width: '100%',
+    minHeight: '328px',
+  };
+
   return (
     <div className="h-full flex flex-col">
       <TopBar
@@ -159,9 +169,9 @@ function DashboardContent({ apiBaseUrl }) {
             </div>
           </div>
 
-          {/* Row 3: Financial trend (8) | Best products (4) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            <div className="lg:col-span-8">
+          {/* Row 3: Financial trend | Best products */}
+          <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRow3Style}>
+            <div className="flex flex-col w-full h-[328px] min-w-0" style={{ flex: '901 1 0' }}>
               <FinancialTrendChart
                 labels={revenueTrend.labels}
                 values={revenueTrend.values}
@@ -169,7 +179,7 @@ function DashboardContent({ apiBaseUrl }) {
                 currencyLabel={dashboardCurrency}
               />
             </div>
-            <div className="lg:col-span-4">
+            <div className="flex flex-col w-full h-[328px] min-w-0" style={{ flex: '443.33 1 0' }}>
               <BestProductsList
                 sellers={bestSellers}
                 products={bestProducts}

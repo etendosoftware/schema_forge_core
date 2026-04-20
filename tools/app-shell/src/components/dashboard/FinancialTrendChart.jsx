@@ -8,14 +8,14 @@ import {
   localeFromUi,
 } from '@/lib/dashboardNumberFormat.js';
 
-const CHART_W = 600;
-const CHART_H = 220;
-const PAD_X = 40;
-const PAD_Y = 20;
-const PAD_BOTTOM = 30;
-const BAR_PAD_X = 20;
+const CHART_W = 869;
+const CHART_H = 196;
+const PAD_X = 74;
+const PAD_Y = 10;
+const PAD_BOTTOM = 24;
+const BAR_PAD_X = 74;
 const BAR_PAD_Y = 10;
-const BAR_PAD_BOTTOM = 28;
+const BAR_PAD_BOTTOM = 24;
 
 export function FinancialTrendChart({ labels = [], values = [], expenseValues = [], currencyLabel = '' }) {
   const ui = useUI();
@@ -45,15 +45,13 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
 
   const fmtTooltip = (n) => formatDashboardAmount(n, currencyLabel, numberLocale);
 
-  const growthPct = values.length >= 2 && values[0] > 0
-    ? Math.round(((values[values.length - 1] - values[0]) / values[0]) * 100)
-    : null;
+  const growthPct = values.length >= 2 
+    ? (values[0] > 0 ? Math.round(((values[values.length - 1] - values[0]) / values[0]) * 100) : 0)
+    : 0;
 
-  const statusLine = growthPct !== null
-    ? (growthPct >= 0
-        ? ui('financialTrendGrowthUp').replace('{pct}', Math.abs(growthPct))
-        : ui('financialTrendGrowthDown').replace('{pct}', Math.abs(growthPct)))
-    : null;
+  const statusLine = growthPct >= 0
+    ? ui('financialTrendGrowthUp').replace('{pct}', Math.abs(growthPct))
+    : ui('financialTrendGrowthDown').replace('{pct}', Math.abs(growthPct));
 
   // Line chart geometry
   const allValues = hasExpenses ? [...values, ...normalizedExpenses] : values;
@@ -98,60 +96,332 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     setTooltip({ x, y, label: localizedLabels[i], revenue: values[i], expense: hasExpenses ? normalizedExpenses[i] : null });
 
   return (
-    <div className="rounded-xl border overflow-hidden bg-white" style={{ borderColor: '#E8EAEF' }}>
+    <div
+      style={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '0px',
+        width: '100%',
+        height: '100%',
+        background: '#FFFFFF',
+        border: '1px solid #E8EAEF',
+        borderRadius: '8px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Cabecera estándar del widget */}
       <div
-        className="flex flex-col border-b"
-        style={{ backgroundColor: '#F5F7F9', borderBottomColor: '#E8EAEF', padding: '8px 12px', gap: '4px' }}
+        style={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '8px 12px',
+          gap: '16px',
+          width: '100%',
+          height: '48px',
+          background: '#F5F7F9',
+          borderBottom: '1px solid #E8EAEF',
+          flex: 'none',
+          order: 0,
+        }}
       >
-        {statusLine && (
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: '#1E874C' }}>
-            <Check className="h-3.5 w-3.5 shrink-0" />
-            <span>{statusLine}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between" style={{ minHeight: statusLine ? 'auto' : '32px' }}>
-          <span className="text-xs font-medium uppercase" style={{ color: '#282833', letterSpacing: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '0px',
+            gap: '10px',
+            width: 'auto',
+            height: '16px',
+          }}
+        >
+          <span
+            style={{
+              height: '16px',
+              fontFamily: 'Inter',
+              fontStyle: 'normal',
+              fontWeight: 500,
+              fontSize: '12px',
+              lineHeight: '16px',
+              color: '#282833',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {ui('financialTrendTitle')}
           </span>
-          <div className="flex items-center gap-3">
-            {hasExpenses && (
-              <div className="flex items-center gap-3 text-xs" style={{ color: '#828FA3' }}>
-                <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#1E874C' }} />
-                  {ui('financialTrendIncomeLegend')}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#D50B3E' }} />
-                  {ui('financialTrendExpensesLegend')}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center border rounded-md overflow-hidden" style={{ borderColor: '#E8EAEF' }}>
-              <button
-                onClick={() => switchChartType('line')}
-                className="p-1 transition-colors"
-                style={chartType === 'line'
-                  ? { backgroundColor: '#121217', color: '#FFFFFF' }
-                  : { color: '#6C6C89', backgroundColor: 'transparent' }}
-              >
-                <LineChart className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => switchChartType('bar')}
-                className="p-1 transition-colors"
-                style={chartType === 'bar'
-                  ? { backgroundColor: '#121217', color: '#FFFFFF' }
-                  : { color: '#6C6C89', backgroundColor: 'transparent' }}
-              >
-                <BarChart2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
-      <div className="p-4">
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          padding: '8px 16px 20px',
+          gap: '8px',
+          width: '100%',
+          flex: 1,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '0px 0px 8px',
+            gap: '20px',
+            width: '100%',
+            height: '48px',
+            flex: 'none',
+            order: 0,
+            alignSelf: 'stretch',
+            flexGrow: 0,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '20px',
+              width: 'auto',
+              minWidth: '100px',
+              height: '20px',
+              flex: 'none',
+              order: 0,
+              flexGrow: 0,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0px',
+                gap: '8px',
+                width: 'auto',
+                height: '20px',
+                flex: 'none',
+                order: 0,
+                flexGrow: 0,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '0px',
+                  width: '20px',
+                  height: '20px',
+                  background: '#EEFBF4',
+                  borderRadius: '10px',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0,
+                }}
+              >
+                <Check style={{ width: '12.5px', height: '12.5px', color: '#17663A' }} />
+              </div>
+              <span
+                style={{
+                  display: 'block',
+                  width: '166px',
+                  height: '16px',
+                  fontFamily: 'Inter',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '16px',
+                  color: '#17663A',
+                  flex: 'none',
+                  order: 1,
+                  flexGrow: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {statusLine}
+              </span>
+            </div>
+
+            {hasExpenses && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '20px',
+                  width: '153px',
+                  height: '16px',
+                  flex: 'none',
+                  order: 1,
+                  flexGrow: 0,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: '0px',
+                    gap: '8px',
+                    width: '71px',
+                    height: '16px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '14px',
+                      height: '4px',
+                      background: '#26A95F',
+                      flex: 'none',
+                      order: 0,
+                      flexGrow: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      width: '49px',
+                      height: '16px',
+                      fontFamily: 'Inter',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      fontSize: '12px',
+                      lineHeight: '16px',
+                      color: '#121217',
+                      flex: 'none',
+                      order: 1,
+                      flexGrow: 0,
+                    }}
+                  >
+                    {ui('financialTrendIncomeLegend')}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: '0px',
+                    gap: '8px',
+                    width: '62px',
+                    height: '16px',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '14px',
+                      height: '4px',
+                      background: '#F3164E',
+                      flex: 'none',
+                      order: 0,
+                      flexGrow: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      width: '40px',
+                      height: '16px',
+                      fontFamily: 'Inter',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      fontSize: '12px',
+                      lineHeight: '16px',
+                      color: '#121217',
+                      flex: 'none',
+                      order: 1,
+                      flexGrow: 0,
+                    }}
+                  >
+                    {ui('financialTrendExpensesLegend')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '4px',
+              gap: '4px',
+              width: '96px',
+              height: '40px',
+              background: '#F5F7F9',
+              borderRadius: '12px',
+              flex: 'none',
+              order: 1,
+              flexGrow: 0,
+            }}
+          >
+            <button
+              onClick={() => switchChartType('line')}
+              style={{
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '4px 8px',
+                width: '42px',
+                height: '32px',
+                background: chartType === 'line' ? '#FFFFFF' : 'transparent',
+                boxShadow: chartType === 'line' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
+                borderRadius: '8px',
+                flex: 'none',
+                order: 0,
+                flexGrow: 0,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <LineChart style={{ width: '20px', height: '20px', color: '#828FA3' }} />
+            </button>
+            <button
+              onClick={() => switchChartType('bar')}
+              style={{
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '4px 8px',
+                width: '42px',
+                height: '32px',
+                background: chartType === 'bar' ? '#FFFFFF' : 'transparent',
+                boxShadow: chartType === 'bar' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
+                borderRadius: '8px',
+                flex: 'none',
+                order: 1,
+                flexGrow: 0,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <BarChart2 style={{ width: '20px', height: '20px', color: '#828FA3' }} />
+            </button>
+          </div>
+        </div>
         {chartType === 'line' ? (
-          <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full h-auto" role="img">
+          <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} style={{ width: '100%', height: '100%', overflow: 'visible' }} role="img">
             <defs>
               <linearGradient id="trend-income-gradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#1E874C" stopOpacity="0.3" />
@@ -229,7 +499,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
             })()}
           </svg>
         ) : (
-          <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full h-auto" role="img">
+          <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} style={{ width: '100%', height: '100%', overflow: 'visible' }} role="img">
             {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
               const y = BAR_PAD_Y + barPlotH - frac * barPlotH;
               const val = frac * barMaxVal;
