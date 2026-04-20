@@ -88,6 +88,8 @@ const customLoaders = {
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
   'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
+  'quick-sales-order': () => import('./quick-order/index.jsx'),
+  'quick-purchase-order': () => import('./quick-order/index.jsx'),
 };
 
 /**
