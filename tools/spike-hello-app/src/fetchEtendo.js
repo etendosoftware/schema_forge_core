@@ -1,11 +1,10 @@
-export async function fetchEtendo(path, opts = {}) {
-  const res = await fetch(`/api/etendo${path}`, opts);
-  if (!res.ok) throw new Error(`Etendo call failed: ${res.status}`);
-  return res.json();
+import { createShellClient } from '@etendoerp/apps-sdk';
+
+function readToken() {
+  const url = new URL(window.location.href);
+  return url.searchParams.get('jwt') || '';
 }
 
-export async function fetchMe() {
-  const res = await fetch('/api/me');
-  if (!res.ok) throw new Error(`me failed: ${res.status}`);
-  return res.json();
-}
+export const shell = createShellClient({ appId: 'spike-hello-app', token: readToken() });
+export const fetchEtendo = (path, opts) => shell.fetch(path, opts);
+export const fetchMe = () => shell.me();
