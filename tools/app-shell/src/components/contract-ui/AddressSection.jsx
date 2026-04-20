@@ -186,7 +186,7 @@ export default function AddressSection({ form, onChange, opts }) {
         </div>
         <div className="space-y-1.5">
           <label style={MODAL_STYLES.fieldLabel}>{ui('contactPhone')}</label>
-          <input type="tel" className={INPUT_CLS} value={form.etgoPhone ?? ''} onChange={e => onChange('etgoPhone', e.target.value)} />
+          <input type="tel" className={INPUT_CLS} value={form.etgoPhone ?? ''} onChange={e => onChange('etgoPhone', e.target.value.replace(/[^\d\s+\-().]/g, ''))} />
         </div>
 
         {/* Row 3 */}
