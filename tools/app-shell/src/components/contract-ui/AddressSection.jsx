@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Check, X, Lock } from 'lucide-react';
+import { Search, ChevronDown, Check, X } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { MODAL_STYLES } from './modal-styles.js';
 
@@ -180,19 +180,19 @@ export default function AddressSection({ form, onChange, opts }) {
             <ChevronDown size={14} className="text-muted-foreground shrink-0" />
           </button>
         </div>
-        <div className="space-y-1.5 opacity-50">
-          <label style={{ ...MODAL_STYLES.fieldLabel, display: 'flex', alignItems: 'center', gap: '4px' }}>{ui('contactEmail')}<Lock size={10} className="text-muted-foreground" /></label>
-          <input type="text" disabled title={ui('comingSoon')} placeholder={ui('comingSoon')} className={`${INPUT_CLS} cursor-not-allowed`} />
+        <div className="space-y-1.5">
+          <label style={MODAL_STYLES.fieldLabel}>{ui('contactEmail')}</label>
+          <input type="email" className={INPUT_CLS} value={form.etgoEmail ?? ''} onChange={e => onChange('etgoEmail', e.target.value)} />
         </div>
-        <div className="space-y-1.5 opacity-50">
-          <label style={{ ...MODAL_STYLES.fieldLabel, display: 'flex', alignItems: 'center', gap: '4px' }}>{ui('contactPhone')}<Lock size={10} className="text-muted-foreground" /></label>
-          <input type="text" disabled title={ui('comingSoon')} placeholder={ui('comingSoon')} className={`${INPUT_CLS} cursor-not-allowed`} />
+        <div className="space-y-1.5">
+          <label style={MODAL_STYLES.fieldLabel}>{ui('contactPhone')}</label>
+          <input type="tel" className={INPUT_CLS} value={form.etgoPhone ?? ''} onChange={e => onChange('etgoPhone', e.target.value)} />
         </div>
 
         {/* Row 3 */}
-        <div className="space-y-1.5 opacity-50">
-          <label style={{ ...MODAL_STYLES.fieldLabel, display: 'flex', alignItems: 'center', gap: '4px' }}>{ui('websiteField')}<Lock size={10} className="text-muted-foreground" /></label>
-          <input type="text" disabled title={ui('comingSoon')} placeholder={ui('comingSoon')} className={`${INPUT_CLS} cursor-not-allowed`} />
+        <div className="space-y-1.5">
+          <label style={MODAL_STYLES.fieldLabel}>{ui('websiteField')}</label>
+          <input type="text" className={INPUT_CLS} value={form.etgoWeb ?? ''} onChange={e => onChange('etgoWeb', e.target.value)} />
         </div>
         <div /><div /><div />
       </div>

@@ -216,6 +216,9 @@ export default function CreateContactModal({
       customerBlocking: false,
       vendorBlocking: false,
       setNewCurrency: false,
+      ...(form.etgoEmail?.trim() && { etgoEmail: form.etgoEmail.trim() }),
+      ...(form.etgoPhone?.trim() && { etgoPhone: form.etgoPhone.trim() }),
+      ...(form.etgoWeb?.trim() && { etgoWeb: form.etgoWeb.trim() }),
     };
 
     const res = await fetch(`${bpApiBaseUrl}/businessPartner`, {
@@ -392,6 +395,9 @@ export default function CreateContactModal({
         city: '',
         country: '',
         region: '',
+        etgoEmail: '',
+        etgoPhone: '',
+        etgoWeb: '',
       }}
       opts={optsWithRetry}
       componentMap={COMPONENT_MAP}
