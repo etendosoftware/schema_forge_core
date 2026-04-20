@@ -113,6 +113,14 @@
           "section": "principal",
           "order": 2
         },
+        "etgoIdentifier": {
+          "visibility": "readOnly",
+          "form": true,
+          "grid": false,
+          "label": "Identifier",
+          "section": "principal",
+          "order": 0
+        },
         "searchKey": {
           "visibility": "editable",
           "grid": false,
