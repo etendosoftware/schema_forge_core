@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { kpisConfig, actions } from '@generated/dashboard/generated/config';
 import { useAuth } from '@/auth/AuthContext';
 import { createDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { useDashboardDateRange } from '@/components/dashboard/DashboardDateRangeContext';
 
 /* ------------------------------------------------------------------
  * Constants
@@ -25,8 +26,9 @@ function getApiBase() {
  * Fetch a dashboard widget endpoint.
  * All widget endpoints live under /sws/neo/dashboard/{entity}.
  */
-async function fetchWidget(apiBase, token, entity) {
-  const url = `${apiBase}/sws/neo/dashboard/${entity}`;
+async function fetchWidget(apiBase, token, entity, range) {
+  const qs = range ? `?range=${encodeURIComponent(range)}` : '';
+  const url = `${apiBase}/sws/neo/dashboard/${entity}${qs}`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
 
@@ -235,6 +237,7 @@ function mapRecentInvoices(handlerData) {
     .filter((inv) => isWithinLastDays(inv?.date, 7))
     .map((inv) => ({
       id: inv.id || '',
+      documentNo: inv.documentNo || inv.document_no || inv.docNo || null,
       client: inv.client || '',
       date: inv.date || '',
       amount: inv.amount || 0,
@@ -257,6 +260,7 @@ function mapBestProducts(handlerData) {
     name: p.name || '',
     qty: p.qty || 0,
     amount: p.amount || 0,
+    trendPct: p.trendPct ?? null,
   }));
 }
 
@@ -270,6 +274,7 @@ function mapBestSellers(handlerData) {
     name: s.name || '',
     qty: s.qty || 0,
     uom: s.uom || '',
+    trendPct: s.trendPct ?? null,
   }));
 }
 
@@ -365,6 +370,7 @@ function buildEmptyFallback() {
  */
 export function useDashboardData() {
   const { token } = useAuth();
+  const { range } = useDashboardDateRange();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -384,15 +390,15 @@ export function useDashboardData() {
         invoicesRes, bestProductsRes, bestSellersRes, pendingAmountsRes,
         topClientsRes,
       ] = await Promise.allSettled([
-        fetchWidget(apiBase, token, 'kpis'),
-        fetchWidget(apiBase, token, 'trends'),
-        fetchWidget(apiBase, token, 'pending-tasks'),
-        fetchWidget(apiBase, token, 'activity'),
-        fetchWidget(apiBase, token, 'recent-invoices'),
-        fetchWidget(apiBase, token, 'best-products'),
-        fetchWidget(apiBase, token, 'best-sellers'),
-        fetchWidget(apiBase, token, 'pending-amounts'),
-        fetchWidget(apiBase, token, 'top-clients'),
+        fetchWidget(apiBase, token, 'kpis', range),
+        fetchWidget(apiBase, token, 'trends', range),
+        fetchWidget(apiBase, token, 'pending-tasks', range),
+        fetchWidget(apiBase, token, 'activity', range),
+        fetchWidget(apiBase, token, 'recent-invoices', range),
+        fetchWidget(apiBase, token, 'best-products', range),
+        fetchWidget(apiBase, token, 'best-sellers', range),
+        fetchWidget(apiBase, token, 'pending-amounts', range),
+        fetchWidget(apiBase, token, 'top-clients', range),
       ]);
 
       const kpisData    = kpisRes.status    === 'fulfilled' ? kpisRes.value    : null;
@@ -450,7 +456,7 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  }, [token, apiBase]);
+  }, [token, apiBase, range]);
 
   useEffect(() => {
     fetchData();
