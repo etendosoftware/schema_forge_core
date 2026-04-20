@@ -152,6 +152,13 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/header/selectors/shippingCompany"
+    },
+    {
+      "entity": "header",
       "field": "charge",
       "column": "C_Charge_ID",
       "url": "/sws/neo/purchase-order/header/selectors/charge"

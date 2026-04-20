@@ -265,6 +265,13 @@
         "organization": {
           "visibility": "system",
           "form": false
+        },
+        "shippingCompany": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false,
+          "reference": "Shipper",
+          "inputMode": null
         }
       }
     },

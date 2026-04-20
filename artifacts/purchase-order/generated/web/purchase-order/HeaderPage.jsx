@@ -61,7 +61,7 @@ const addLineFields = {
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
     { key: 'warehouse', fromParent: 'warehouse' },
-    { key: 'shippingCompany', value: '@M_Shipper_ID@' },
+    { key: 'shippingCompany', fromParent: 'shippingCompany' },
     { key: 'orderDate', fromParent: 'orderDate' },
     { key: 'scheduledDeliveryDate', fromParent: 'scheduledDeliveryDate' },
     { key: 'businessPartner', value: '@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@' },
@@ -218,6 +218,13 @@ const api = {
       "field": "incoterms",
       "column": "C_Incoterms_ID",
       "url": "/sws/neo/purchase-order/header/selectors/incoterms"
+    },
+    {
+      "entity": "header",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/header/selectors/shippingCompany"
     },
     {
       "entity": "header",
