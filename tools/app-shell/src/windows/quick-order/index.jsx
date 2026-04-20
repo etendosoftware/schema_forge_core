@@ -6,8 +6,8 @@ const APP = findAppById('quick-order');
 if (!APP) throw new Error('quick-order not found in apps registry');
 
 const SLUG_TO_TYPE = {
-  'quick-sales-order': 'sales',
-  'quick-purchase-order': 'purchase',
+  'quick-order-sales': 'sales',
+  'quick-order-purchase': 'purchase',
 };
 
 export default function QuickOrderWindow({ token, windowName }) {

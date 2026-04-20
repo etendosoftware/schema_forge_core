@@ -112,7 +112,9 @@
       "icon": "FlaskConical",
       "items": [
         { "name": "quick-sales-order", "label": "Quick Sales Order" },
-        { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
+        { "name": "quick-purchase-order", "label": "Quick Purchase Order" },
+        { "name": "quick-order-sales", "label": "Quick Order — Sales (SDK)" },
+        { "name": "quick-order-purchase", "label": "Quick Order — Purchase (SDK)" }
       ]
     },
     {
