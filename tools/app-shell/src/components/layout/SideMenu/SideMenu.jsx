@@ -181,6 +181,7 @@ export function findActiveGroup(menuGroups, pathname, search) {
   const currentPath = pathname.replace(/^\//, '');
   const currentFull = currentPath + (search || '');
   return menuGroups.find((g) =>
+    g.group !== 'Favorites' &&
     g.items.some((item) => matchesItem(item, currentPath, currentFull))
   ) || null;
 }
