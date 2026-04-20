@@ -60,7 +60,7 @@ export default function TopBar({
     <TooltipProvider>
       <header
         className={cn(
-          'flex h-[62px] shrink-0 items-center gap-4 px-6 bg-page-bg',
+          'flex h-[62px] shrink-0 items-center gap-4 pl-0 pr-6 bg-page-bg',
           className
         )}
       >
