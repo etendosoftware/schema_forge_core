@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import TopBar from '@/components/layout/TopBar';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import {
   DollarSign,
   CreditCard,
@@ -1281,6 +1281,17 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
   const { config, toggle, reorder, reset } = useWidgetConfig();
+  useSetPageMeta({
+    title: ui('dashboardTitle'),
+    breadcrumb: ui('dashboardTitle'),
+    onAIClick: openCopilot,
+    menuAction: {
+      label: ui('configureDashboard'),
+      icon: LayoutGrid,
+      onClick: () => {},
+      disabled: true,
+    },
+  });
   const dashboardCurrency = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
@@ -1337,22 +1348,9 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <TopBar
-        title={ui('dashboardTitle')}
-        breadcrumb={ui('dashboardTitle')}
-        menuAction={{
-          label: ui('configureDashboard'),
-          icon: LayoutGrid,
-          onClick: () => {},
-          disabled: true,
-        }}
-        onPageHelp={() => {}}
-        onAIClick={openCopilot}
-      />
-
+    <div className="flex-1 min-h-0 flex flex-col">
       {loading ? <DashboardSkeleton /> : (
-        <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto">
+        <div className="p-6 bg-white rounded-tl-2xl flex-1 min-h-0 overflow-y-auto">
           {visibleItems.length > 0 && (() => {
             const getSize = (item) => item.size || getWidgetMeta(item.id)?.defaultSize || 'medium';
             const getColSpan = (item) => SIZE_COLS[getSize(item)] ?? 1;

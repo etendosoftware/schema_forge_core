@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
-import { X, MoreVertical, Check, Save, List, Search, Sparkles, Plus, Bell, Mic, Printer, Send, Trash2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Send, Trash2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -11,6 +11,8 @@ import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
 import { useMenuLabel, useUI, useLocale } from '@/i18n';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -35,7 +37,6 @@ function evalDisplayLogicRaw(expr, data) {
   });
 }
 import { cn } from '@/lib/utils.js';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
 import DocumentPrintDrawer from './DocumentPrintDrawer.jsx';
 import { toast } from 'sonner';
 
@@ -717,9 +718,26 @@ export function DetailView({
   // Guard that controls whether "+ Add Lines" is shown.
   // When addLineGuard is provided, it receives the current record data and must return true to allow.
   const canAddLines = addLineGuard ? addLineGuard(data) : true;
+  const windowTitle = breadcrumb
+    ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
+    : tMenu(windowName) || windowName || '';
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = windowName || windowTitle;
+  const favActive = isFavorite(favKey);
+
   const title = isNew
     ? ui('newRecord')
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
+  const fullBreadcrumb = breadcrumb
+    ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${title ? ` / ${title}` : ''}`
+    : windowTitle;
+
+  useSetPageMeta({
+    title: title || windowTitle,
+    breadcrumb: fullBreadcrumb,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, windowTitle) : undefined,
+    isFavorite: favActive,
+  }, [favActive, title]);
 
   const allEntryFields = addLineFields.entry ?? [];
   const hiddenEntryDefaults = addLineFields.hidden ?? [];
@@ -790,57 +808,7 @@ export function DetailView({
   }
 
   return (
-    <div className="h-full flex flex-col" data-testid="detail-view">
-      {/* Top bar area (gray background, inherited from parent) */}
-      {!embedded && <div className="px-6 pt-3 pb-3">
-        {/* Row: Title + Global search + action icons */}
-        <div className="flex items-center gap-4">
-          {/* Left: title + breadcrumb */}
-          <div className="shrink-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">{title}</h1>
-            </div>
-            {!hideTopBar && breadcrumb && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}{title ? ` / ${title}` : ''}
-              </p>
-            )}
-          </div>
-
-          {/* Center: global search */}
-          {!hideTopBar && (
-            <div className="flex-1 flex justify-center">
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder={ui('searchPlaceholder')}
-                  readOnly
-                  tabIndex={-1}
-                  className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-                />
-                <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-              </div>
-            </div>
-          )}
-          {hideTopBar && <div className="flex-1" />}
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-          </div>
-        </div>
-      </div>}
-
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view">
       {/* Content card with rounded top-left corner */}
       <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}

@@ -120,7 +120,7 @@ function CollapsedGroupPopover({
             'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
             isGroupActive
               ? 'bg-accent-highlight text-accent-highlight-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : 'bg-page-bg text-muted-foreground hover:text-foreground'
           )}
         >
           <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className="h-5 w-5" />
@@ -147,7 +147,7 @@ function CollapsedGroupPopover({
             const currentFull = currentPath + locationSearch;
             const isItemActive = item.path?.includes('?')
               ? currentFull === itemPath
-              : currentPath === item.name;
+              : currentPath === item.name || currentPath.startsWith(item.name + '/');
             return (
               <NavLink
                 key={item.name}
@@ -169,21 +169,24 @@ function CollapsedGroupPopover({
   );
 }
 
+function matchesItem(item, currentPath, currentFull) {
+  const itemPath = item.path || item.name;
+  if (item.path && item.path.includes('?')) {
+    return currentFull === itemPath;
+  }
+  return currentPath === item.name || currentPath.startsWith(item.name + '/');
+}
+
 export function findActiveGroup(menuGroups, pathname, search) {
   const currentPath = pathname.replace(/^\//, '');
   const currentFull = currentPath + (search || '');
   return menuGroups.find((g) =>
-    g.items.some((item) => {
-      const itemPath = item.path || item.name;
-      if (item.path && item.path.includes('?')) {
-        return currentFull === itemPath;
-      }
-      return item.name === currentPath;
-    })
+    g.group !== 'Favorites' &&
+    g.items.some((item) => matchesItem(item, currentPath, currentFull))
   ) || null;
 }
 
-const COLLAPSED_W = 60;
+const COLLAPSED_W = 56;
 const EXPANDED_W = 240;
 
 export default function SideMenu({
@@ -282,26 +285,27 @@ export default function SideMenu({
             <div className="absolute bottom-0 left-3 right-3 border-t border-border/50" />
           </div>
         ) : (
-          <div className="relative flex justify-center items-center h-[62px]">
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={onToggle}
-                  aria-label={ui('expandMenu')}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  <PanelLeftOpen className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{ui('expandMenu')}</TooltipContent>
-            </Tooltip>
-            <div className="absolute bottom-0 left-2 right-2 border-t border-border/50" />
+          <div className="flex flex-row items-center justify-center h-[63px] px-2">
+            <div className="flex items-center w-10 h-full border-b border-[#E8EAEF]">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={onToggle}
+                    aria-label={ui('expandMenu')}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <PanelLeftOpen className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{ui('expandMenu')}</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         )}
 
         {/* Menu groups */}
-        <div className="flex-1 overflow-auto py-2 sidebar-scroll">
+        <div className={cn('flex-1 overflow-auto sidebar-scroll', expanded ? 'py-2' : 'flex flex-col py-2 px-2 gap-3')}>
           {resolvedMenuGroups.map((g, gIdx) => {
             const prevSection = gIdx > 0 ? resolvedMenuGroups[gIdx - 1].section : null;
             const showSectionLabel = expanded && g.section && g.section !== prevSection;
@@ -318,14 +322,11 @@ export default function SideMenu({
                 const itemPath = singleItem.path || singleItem.name;
                 const isItemActive = singleItem.path?.includes('?')
                   ? (currentPath + location.search) === itemPath
-                  : currentPath === singleItem.name;
+                  : currentPath === singleItem.name || currentPath.startsWith(singleItem.name + '/');
                 return (
                   <div
                     key={g.group}
-                    className={cn(
-                      'flex justify-center py-0.5 border-l-[3px] transition-colors',
-                      isItemActive || isGroupActive ? 'border-accent-highlight' : 'border-transparent'
-                    )}
+                    className="flex justify-center"
                   >
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -335,7 +336,7 @@ export default function SideMenu({
                             'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
                             isItemActive || isGroupActive
                               ? 'bg-accent-highlight text-accent-highlight-foreground'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              : 'bg-page-bg text-muted-foreground hover:text-foreground'
                           )}
                         >
                           <Icon weight={isItemActive || isGroupActive ? 'fill' : 'regular'} className="h-5 w-5" />
@@ -350,10 +351,7 @@ export default function SideMenu({
               return (
                 <div
                   key={g.group}
-                  className={cn(
-                    'flex justify-center py-0.5 border-l-[3px] transition-colors',
-                    isGroupActive ? 'border-accent-highlight' : 'border-transparent'
-                  )}
+                  className="flex justify-center"
                 >
                   <CollapsedGroupPopover
                     group={g.group}
@@ -375,7 +373,7 @@ export default function SideMenu({
               const itemPath = singleItem.path || singleItem.name;
               const isItemActive = singleItem.path?.includes('?')
                 ? (currentPath + location.search) === itemPath
-                : currentPath === singleItem.name;
+                : currentPath === singleItem.name || currentPath.startsWith(singleItem.name + '/');
               return (
                 <div key={g.group}>
                   {showSectionLabel && (
@@ -414,26 +412,28 @@ export default function SideMenu({
                     </span>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(g.group)}
-                  aria-expanded={!!isOpen}
-                  className={cn(
-                    'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors border-l-[3px]',
-                    isGroupActive && !isOpen
-                      ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
-                      : isGroupActive
-                        ? 'font-medium hover:bg-muted/50 border-accent-highlight'
-                        : 'hover:bg-muted/50 border-transparent'
-                  )}
-                >
-                  <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')} />
-                  <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>{tMenu(g.group)}</span>
-                  <ChevronDown className={cn(
-                    'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
-                    isOpen && 'rotate-180'
-                  )} />
-                </button>
+                <div className="px-2 py-0.5">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(g.group)}
+                    aria-expanded={!!isOpen}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px]',
+                      isGroupActive && !isOpen
+                        ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
+                        : isGroupActive
+                          ? 'font-medium hover:bg-muted/50 border-accent-highlight'
+                          : 'hover:bg-muted/50 border-transparent'
+                    )}
+                  >
+                    <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')} />
+                    <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>{tMenu(g.group)}</span>
+                    <ChevronDown className={cn(
+                      'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
+                      isOpen && 'rotate-180'
+                    )} />
+                  </button>
+                </div>
                 {isOpen && (
                   <div className="py-0.5">
                     {g.items.length === 0 && g.group === 'Favorites' && (
@@ -446,7 +446,7 @@ export default function SideMenu({
                       const currentFull = currentPath + location.search;
                       const isItemActive = g.group !== 'Favorites' && (item.path?.includes('?')
                         ? currentFull === itemPath
-                        : currentPath === item.name);
+                        : currentPath === item.name || currentPath.startsWith(item.name + '/'));
                       return (
                         <NavLink
                           key={item.name}
@@ -454,16 +454,16 @@ export default function SideMenu({
                           className={cn(
                             'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'text-accent-highlight-foreground/80 font-semibold'
+                              ? 'text-accent-highlight-foreground font-semibold'
                               : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
                           <span className={cn(
                             'absolute left-[22px] top-0 bottom-0 w-0.5',
-                            isItemActive ? 'bg-accent-highlight' : 'bg-border'
+                            isItemActive ? 'bg-white/40' : 'bg-border'
                           )} />
                           {isItemActive && (
-                            <span className="absolute left-[28px] right-2 top-0 bottom-0 bg-accent-highlight" />
+                            <span className="absolute left-[23px] right-2 top-0 bottom-0 bg-accent-highlight" />
                           )}
                           <span className="relative z-10">{tMenu(item.label)}</span>
                         </NavLink>
@@ -478,9 +478,10 @@ export default function SideMenu({
 
         {/* Pinned footer: Help + user */}
         <div className={cn(
-          'flex flex-col shrink-0 border-t border-border/50 pt-2 pb-2',
-          expanded ? 'px-2 gap-1' : 'items-center gap-1.5'
+          'flex flex-col shrink-0 pb-2',
+          expanded ? 'px-2 gap-1 pt-2' : 'px-2 gap-1'
         )}>
+          <div className={cn('border-t border-[#E8EAEF] mb-1', expanded ? 'mx-[-8px]' : 'w-10')} />
           {!expanded ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -488,7 +489,7 @@ export default function SideMenu({
                   type="button"
                   onClick={handleHelpClick}
                   aria-label={ui('helpAndSupport')}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Headphones className="h-5 w-5" />
                 </button>
