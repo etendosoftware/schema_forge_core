@@ -3,6 +3,7 @@ import AppIframeHost from '../spike-apps-host/AppIframeHost.jsx';
 import { findAppById } from '../../apps-registry.js';
 
 const APP = findAppById('quick-order');
+if (!APP) throw new Error('quick-order not found in apps registry');
 
 export default function QuickOrderWindow({ token }) {
   // `type` comes from the menu entry via the window's query params (wired in
