@@ -285,7 +285,7 @@ export default function SideMenu({
             <div className="absolute bottom-0 left-3 right-3 border-t border-border/50" />
           </div>
         ) : (
-          <div className="relative flex justify-center items-center h-[62px]">
+          <div className="flex flex-row justify-between items-center h-[63px] px-2 gap-[10px]">
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <button
