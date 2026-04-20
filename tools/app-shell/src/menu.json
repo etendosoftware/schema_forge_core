@@ -98,6 +98,7 @@
     {
       "group": "Connections",
       "icon": "Plug",
+      "section": "System",
       "items": [
         { "name": "authorize", "label": "Connect with Claude" }
       ]
@@ -105,6 +106,7 @@
     {
       "group": "Settings",
       "icon": "Settings",
+      "section": "System",
       "items": [
         { "name": "price-list", "label": "Price List" },
         { "name": "payment-term", "label": "Payment Term" },
@@ -119,6 +121,7 @@
     {
       "group": "Proof of Concept",
       "icon": "FlaskConical",
+      "section": "System",
       "items": [
         { "name": "quick-sales-order", "label": "Quick Sales Order" },
         { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
