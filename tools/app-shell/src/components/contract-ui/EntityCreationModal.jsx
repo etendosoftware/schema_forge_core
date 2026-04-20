@@ -148,7 +148,7 @@ function RepeatableSection({ section, rows, onAdd, onUpdate, onRemove, ui }) {
               {i === 0 && (
                 <div className="grid grid-cols-4 gap-3 mb-1.5">
                   {section.fields.map(f => (
-                    <label key={f.id} style={{ display: 'block', height: '24px', lineHeight: '24px', padding: 0, marginBottom: 0, fontSize: '14px', fontWeight: 500, color: '#121217' }}>
+                    <label key={f.id} style={MODAL_STYLES.fieldLabel}>
                       {ui(f.labelKey)}
                     </label>
                   ))}
@@ -328,7 +328,7 @@ function CollapsibleFieldSection({ section, form, onChange, opts, ui }) {
         <div className="grid grid-cols-4 gap-3">
           {allFields.map(f => (
             <div key={f.id} className={`space-y-1.5${f.fullWidth ? ' col-span-4' : ''}`}>
-              <label className="text-sm font-medium text-foreground">{ui(f.labelKey)}</label>
+              <label style={MODAL_STYLES.fieldLabel}>{ui(f.labelKey)}</label>
               <FieldRenderer field={f} value={form[f.id] ?? ''} onChange={onChange} opts={opts} ui={ui} form={form} />
             </div>
           ))}
@@ -447,7 +447,7 @@ export default function EntityCreationModal({
         <div className="grid grid-cols-4 gap-3">
           {section.fields.map(f => (
             <div key={f.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ display: 'block', height: '24px', lineHeight: '24px', padding: 0, marginBottom: 0, fontSize: '14px', fontWeight: 500, color: '#121217' }}>{ui(f.labelKey)}</label>
+              <label style={MODAL_STYLES.fieldLabel}>{ui(f.labelKey)}</label>
               <FieldRenderer field={f} value={form[f.id] ?? ''} onChange={onChange} opts={opts} ui={ui} form={form} />
             </div>
           ))}
@@ -519,7 +519,7 @@ export default function EntityCreationModal({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', padding: '0px 20px 12px 20px', gap: '20px', width: '100%', alignSelf: 'stretch' }}>
             {headerFields.map((f, idx) => (
               <div key={f.id} style={{ ...MODAL_STYLES.field, gridColumn: f.fullWidth ? 'span 4' : undefined }}>
-                <label style={{ display: 'block', height: '24px', lineHeight: '24px', padding: 0, marginBottom: 0, fontSize: '14px', fontWeight: 500, color: '#121217' }}>
+                <label style={MODAL_STYLES.fieldLabel}>
                   {ui(f.labelKey)}{f.required && <span style={{ color: '#ef4444', marginLeft: '2px' }}>*</span>}
                 </label>
                 <FieldRenderer field={f} value={form[f.id] ?? ''} onChange={onChange} opts={opts} ui={ui} form={form} autoFocus={idx === 0} />

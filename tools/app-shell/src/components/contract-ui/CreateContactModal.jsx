@@ -198,6 +198,8 @@ export default function CreateContactModal({
   };
 
   const handleSave = async (form, repeatables) => {
+    const toErrMsg = v => (typeof v === 'string' ? v : v?.message) || null;
+
     // Step 1 — Create BP
     const createPayload = {
       searchKey: form.searchKey?.trim(),
@@ -225,9 +227,9 @@ export default function CreateContactModal({
     if (!res.ok) {
       const errData = await res.json().catch(() => null);
       throw new Error(
-        errData?.message ||
-        errData?.error ||
-        errData?.response?.error ||
+        toErrMsg(errData?.message) ||
+        toErrMsg(errData?.error) ||
+        toErrMsg(errData?.response?.error) ||
         `${ui('createContactError')} (HTTP ${res.status})`
       );
     }
@@ -237,115 +239,123 @@ export default function CreateContactModal({
     const newId = record?.id;
     const newName = record?.name ?? form.name;
 
-    // Step 2 — POST address (handled atomically by ContactsLocationAddressHandler)
-    if (newId && (form.address || form.city || form.country)) {
-      const locName = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
-      await fetch(`${bpApiBaseUrl}/locationAddress?parentId=${newId}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          name: locName,
-          addressLine1: form.address || null,
-          addressLine2: form.address2 || null,
-          postalCode: form.postalCode || null,
-          cityName: form.city || null,
-          country: form.country || null,
-          region: form.region || null,
-          shipToAddress: 'Y',
-          invoiceToAddress: 'Y',
-        }),
-      }).catch(() => null);
-    }
-
-    // Steps 3, 4, 5 — parallel: contact persons + bank accounts + billing preferences
-    const contacts = (repeatables.contacts ?? []).filter(c => c.firstName || c.lastName || c.email || c.phone);
-    const banks = (repeatables.bankAccount ?? []).filter(b => b.bankName || b.iban);
-
-    const first = (key) => opts[key]?.options?.[0]?.id;
-    const salesPriceList    = form.salesPriceList    || first('salesPriceLists');
-    const paymentMethod     = form.paymentMethod     || first('paymentMethods');
-    const paymentTerm       = form.paymentTerm       || first('paymentTerms');
-    const financialAccount  = form.financialAccount  || first('financialAccounts');
-    const purchasePriceList = form.purchasePriceList || first('purchasePriceLists');
-    const paymentMethodPO   = form.paymentMethodPO   || first('paymentMethods');
-    const paymentTermPO     = form.paymentTermPO     || first('paymentTerms');
-    const financialAccountPO = form.financialAccountPO || first('financialAccounts');
-
-    const billingPatch = {
-      ...(form.isCustomer && salesPriceList    && { priceList: salesPriceList }),
-      ...(form.isCustomer && paymentMethod     && { paymentMethod }),
-      ...(form.isCustomer && paymentTerm       && { paymentTerms: paymentTerm }),
-      ...(form.isCustomer && financialAccount  && { account: financialAccount }),
-      ...(form.isCustomer && { customerBlocking: form.customerBlock }),
-      ...(form.isVendor   && purchasePriceList && { purchasePricelist: purchasePriceList }),
-      ...(form.isVendor   && paymentMethodPO   && { pOPaymentMethod: paymentMethodPO }),
-      ...(form.isVendor   && paymentTermPO     && { pOPaymentTerms: paymentTermPO }),
-      ...(form.isVendor   && financialAccountPO && { pOFinancialAccount: financialAccountPO }),
-      ...(form.isVendor   && { vendorBlocking: form.paymentBlock }),
-    };
-
-    await Promise.all([
-      // Step 3 — contact persons (C_BPartner_Contact)
-      ...contacts.map(async (c) => {
-        const contactRes = await fetch(`${bpApiBaseUrl}/contact?parentId=${newId}`, {
+    try {
+      // Step 2 — POST address (handled atomically by ContactsLocationAddressHandler)
+      if (newId && (form.address || form.city || form.country)) {
+        const locName = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
+        await fetch(`${bpApiBaseUrl}/locationAddress?parentId=${newId}`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            parentId: newId,
-            businessPartner: newId,
-            firstName: c.firstName,
-            lastName: c.lastName,
-            name: [c.firstName, c.lastName].filter(Boolean).join(' '),
-            ...(c.email && { email: c.email }),
-            ...(c.phone && { phone: c.phone }),
-            isdefaultfordocs: false,
-            commercialauth: false,
-            viasms: false,
-            viaemail: false,
+            name: locName,
+            addressLine1: form.address || null,
+            addressLine2: form.address2 || null,
+            postalCode: form.postalCode || null,
+            cityName: form.city || null,
+            country: form.country || null,
+            region: form.region || null,
+            shipToAddress: 'Y',
+            invoiceToAddress: 'Y',
           }),
-        });
-        const contactBody = await contactRes.json().catch(() => null);
-        if (!contactRes.ok) {
-          throw new Error(
-            contactBody?.error?.message ||
-            contactBody?.response?.error?.message ||
-            contactBody?.message ||
-            `Contact POST failed (HTTP ${contactRes.status})`
-          );
-        }
-      }),
-      // Step 4 — bank accounts (C_BPartner_Bank_Account)
-      ...banks.map(async (b) => {
-        const bankRes = await fetch(`${bpApiBaseUrl}/bankAccount?parentId=${newId}`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            bankFormat: b.bankAccountFormat || 'GENERIC',
-            ...(b.bankName && { bankName: b.bankName }),
-            ...(b.genericAccountNo && { accountNo: b.genericAccountNo }),
-            ...(b.iban && { iBAN: b.iban }),
-            ...(form.country && { country: form.country }),
-          }),
-        });
-        if (!bankRes.ok) {
-          const raw = await bankRes.text().catch(() => '');
-          throw new Error(`Bank account POST failed (HTTP ${bankRes.status}): ${raw.slice(0, 300)}`);
-        }
-      }),
-      // Step 5 — billing preferences PATCH
-      Object.keys(billingPatch).length > 0
-        ? fetch(`${bpApiBaseUrl}/businessPartner/${newId}`, {
-            method: 'PATCH',
+        }).catch(() => null);
+      }
+
+      // Steps 3, 4, 5 — parallel: contact persons + bank accounts + billing preferences
+      const contacts = (repeatables.contacts ?? []).filter(c => c.firstName || c.lastName || c.email || c.phone);
+      const banks = (repeatables.bankAccount ?? []).filter(b => b.bankName || b.iban);
+
+      const first = (key) => opts[key]?.options?.[0]?.id;
+      const salesPriceList    = form.salesPriceList    || first('salesPriceLists');
+      const paymentMethod     = form.paymentMethod     || first('paymentMethods');
+      const paymentTerm       = form.paymentTerm       || first('paymentTerms');
+      const financialAccount  = form.financialAccount  || first('financialAccounts');
+      const purchasePriceList = form.purchasePriceList || first('purchasePriceLists');
+      const paymentMethodPO   = form.paymentMethodPO   || first('paymentMethods');
+      const paymentTermPO     = form.paymentTermPO     || first('paymentTerms');
+      const financialAccountPO = form.financialAccountPO || first('financialAccounts');
+
+      const billingPatch = {
+        ...(form.isCustomer && salesPriceList    && { priceList: salesPriceList }),
+        ...(form.isCustomer && paymentMethod     && { paymentMethod }),
+        ...(form.isCustomer && paymentTerm       && { paymentTerms: paymentTerm }),
+        ...(form.isCustomer && financialAccount  && { account: financialAccount }),
+        ...(form.isCustomer && { customerBlocking: form.customerBlock }),
+        ...(form.isVendor   && purchasePriceList && { purchasePricelist: purchasePriceList }),
+        ...(form.isVendor   && paymentMethodPO   && { pOPaymentMethod: paymentMethodPO }),
+        ...(form.isVendor   && paymentTermPO     && { pOPaymentTerms: paymentTermPO }),
+        ...(form.isVendor   && financialAccountPO && { pOFinancialAccount: financialAccountPO }),
+        ...(form.isVendor   && { vendorBlocking: form.paymentBlock }),
+      };
+
+      await Promise.all([
+        // Step 3 — contact persons (C_BPartner_Contact)
+        ...contacts.map(async (c) => {
+          const contactRes = await fetch(`${bpApiBaseUrl}/contact?parentId=${newId}`, {
+            method: 'POST',
             headers,
-            body: JSON.stringify(billingPatch),
-          }).then(async patchRes => {
-            if (!patchRes.ok) {
-              const err = await patchRes.json().catch(() => null);
-              throw new Error(err?.message || err?.error || `${ui('createContactError')} (billing PATCH ${patchRes.status})`);
-            }
-          })
-        : Promise.resolve(),
-    ]);
+            body: JSON.stringify({
+              parentId: newId,
+              businessPartner: newId,
+              firstName: c.firstName,
+              lastName: c.lastName,
+              name: [c.firstName, c.lastName].filter(Boolean).join(' '),
+              ...(c.email && { email: c.email }),
+              ...(c.phone && { phone: c.phone }),
+              isdefaultfordocs: false,
+              commercialauth: false,
+              viasms: false,
+              viaemail: false,
+            }),
+          });
+          const contactBody = await contactRes.json().catch(() => null);
+          if (!contactRes.ok) {
+            throw new Error(
+              contactBody?.error?.message ||
+              contactBody?.response?.error?.message ||
+              contactBody?.message ||
+              `Contact POST failed (HTTP ${contactRes.status})`
+            );
+          }
+        }),
+        // Step 4 — bank accounts (C_BPartner_Bank_Account)
+        ...banks.map(async (b) => {
+          const bankRes = await fetch(`${bpApiBaseUrl}/bankAccount?parentId=${newId}`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              bankFormat: b.bankAccountFormat || 'GENERIC',
+              ...(b.bankName && { bankName: b.bankName }),
+              ...(b.genericAccountNo && { accountNo: b.genericAccountNo }),
+              ...(b.iban && { iBAN: b.iban }),
+              ...(form.country && { country: form.country }),
+            }),
+          });
+          if (!bankRes.ok) {
+            const raw = await bankRes.text().catch(() => '');
+            throw new Error(`Bank account POST failed (HTTP ${bankRes.status}): ${raw.slice(0, 300)}`);
+          }
+        }),
+        // Step 5 — billing preferences PATCH
+        Object.keys(billingPatch).length > 0
+          ? fetch(`${bpApiBaseUrl}/businessPartner/${newId}`, {
+              method: 'PATCH',
+              headers,
+              body: JSON.stringify(billingPatch),
+            }).then(async patchRes => {
+              if (!patchRes.ok) {
+                const err = await patchRes.json().catch(() => null);
+                throw new Error(toErrMsg(err?.message) || toErrMsg(err?.error) || `${ui('createContactError')} (billing PATCH ${patchRes.status})`);
+              }
+            })
+          : Promise.resolve(),
+      ]);
+    } catch (e) {
+      // BP was created in Step 1 but subsequent steps failed — roll it back to avoid orphans
+      if (newId) {
+        await fetch(`${bpApiBaseUrl}/businessPartner/${newId}`, { method: 'DELETE', headers }).catch(() => null);
+      }
+      throw e;
+    }
 
     onCreated({ id: newId, name: newName });
     onClose();

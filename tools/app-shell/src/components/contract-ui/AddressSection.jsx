@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Check, X, Lock } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { MODAL_STYLES } from './modal-styles.js';
 
 const INPUT_CLS =
   'w-full !h-[40px] rounded-md border border-gray-300 bg-white px-3 !text-[14px] focus:outline-none focus:ring-2 focus:ring-primary';
@@ -141,32 +142,32 @@ export default function AddressSection({ form, onChange, opts }) {
       <div className="address-grid">
         {/* Row 1 */}
         <div className="space-y-1.5">
-          <label className="text-[13px] font-medium text-foreground">{ui('addressLine1')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine1')}</label>
           <input type="text" className={INPUT_CLS} value={form.address ?? ''} onChange={e => onChange('address', e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[13px] font-medium text-foreground">{ui('addressLine2')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine2')}</label>
           <input type="text" className={INPUT_CLS} value={form.address2 ?? ''} onChange={e => onChange('address2', e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[13px] font-medium text-foreground">{ui('postalCodeLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('postalCodeLabel')}</label>
           <input type="text" className={INPUT_CLS} value={form.postalCode ?? ''} onChange={e => onChange('postalCode', e.target.value.replace(/[^\d\s-]/g, ''))} />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[13px] font-medium text-foreground">{ui('cityLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('cityLabel')}</label>
           <input type="text" className={INPUT_CLS} value={form.city ?? ''} onChange={e => onChange('city', e.target.value)} />
         </div>
 
         {/* Row 2 */}
         <div className="space-y-1.5">
-          <label className="text-[13px] font-medium text-foreground">{ui('countryLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('countryLabel')}</label>
           <button type="button" onClick={() => setCountryPickerOpen(true)} className={`picker-btn ${PICKER_BTN_CLS}`}>
             <span className={`truncate ${form.country ? 'text-foreground' : 'text-muted-foreground'}`}>{countryLabel || '—'}</span>
             <ChevronDown size={14} className="text-muted-foreground shrink-0" />
           </button>
         </div>
         <div className="space-y-1.5">
-          <label className="text-[13px] font-medium text-foreground">{ui('regionLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('regionLabel')}</label>
           <button
             type="button"
             onClick={() => form.country && setRegionPickerOpen(true)}
@@ -180,17 +181,17 @@ export default function AddressSection({ form, onChange, opts }) {
           </button>
         </div>
         <div className="space-y-1.5 opacity-50">
-          <label className="text-sm font-medium text-foreground flex items-center gap-1">{ui('contactEmail')}<Lock size={10} className="text-muted-foreground" /></label>
+          <label style={{ ...MODAL_STYLES.fieldLabel, display: 'flex', alignItems: 'center', gap: '4px' }}>{ui('contactEmail')}<Lock size={10} className="text-muted-foreground" /></label>
           <input type="text" disabled title={ui('comingSoon')} placeholder={ui('comingSoon')} className={`${INPUT_CLS} cursor-not-allowed`} />
         </div>
         <div className="space-y-1.5 opacity-50">
-          <label className="text-sm font-medium text-foreground flex items-center gap-1">{ui('contactPhone')}<Lock size={10} className="text-muted-foreground" /></label>
+          <label style={{ ...MODAL_STYLES.fieldLabel, display: 'flex', alignItems: 'center', gap: '4px' }}>{ui('contactPhone')}<Lock size={10} className="text-muted-foreground" /></label>
           <input type="text" disabled title={ui('comingSoon')} placeholder={ui('comingSoon')} className={`${INPUT_CLS} cursor-not-allowed`} />
         </div>
 
         {/* Row 3 */}
         <div className="space-y-1.5 opacity-50">
-          <label className="text-sm font-medium text-foreground flex items-center gap-1">{ui('websiteField')}<Lock size={10} className="text-muted-foreground" /></label>
+          <label style={{ ...MODAL_STYLES.fieldLabel, display: 'flex', alignItems: 'center', gap: '4px' }}>{ui('websiteField')}<Lock size={10} className="text-muted-foreground" /></label>
           <input type="text" disabled title={ui('comingSoon')} placeholder={ui('comingSoon')} className={`${INPUT_CLS} cursor-not-allowed`} />
         </div>
         <div /><div /><div />

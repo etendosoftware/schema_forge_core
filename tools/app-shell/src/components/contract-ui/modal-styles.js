@@ -144,6 +144,17 @@ export const MODAL_STYLES = {
     fontFamily: 'Inter, sans-serif',
   },
 
+  fieldLabel: {
+    display: 'block',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '14px',
+    fontWeight: 500,
+    lineHeight: '24px',
+    color: '#121217',
+    padding: 0,
+    marginBottom: 0,
+  },
+
   btnSaveEnabled: {
     display: 'flex',
     flexDirection: 'row',

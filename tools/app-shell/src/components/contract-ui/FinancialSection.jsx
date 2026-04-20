@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { MODAL_STYLES } from './modal-styles.js';
 
 const TRIGGER_CLS =
   'w-full flex items-center justify-between gap-2 rounded-md border border-input bg-white px-3 !text-[14px] text-left hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary transition-colors cursor-pointer';
@@ -149,19 +150,19 @@ export default function FinancialSection({ form, onChange, opts }) {
           <div className="pl-6 space-y-3">
             <div className="grid grid-cols-4 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('salesPriceListField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('salesPriceListField')}</label>
                 <DynamicSelect {...dynProps('salesPriceLists')} value={form.salesPriceList ?? ''} onChange={v => onChange('salesPriceList', v)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('paymentMethodField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('paymentMethodField')}</label>
                 <DynamicSelect {...dynProps('paymentMethods')} value={form.paymentMethod ?? ''} onChange={v => onChange('paymentMethod', v)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('paymentTermField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('paymentTermField')}</label>
                 <DynamicSelect {...dynProps('paymentTerms')} value={form.paymentTerm ?? ''} onChange={v => onChange('paymentTerm', v)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('financialAccountField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('financialAccountField')}</label>
                 <DynamicSelect {...dynProps('financialAccounts')} value={form.financialAccount ?? ''} onChange={v => onChange('financialAccount', v)} />
               </div>
             </div>
@@ -177,19 +178,19 @@ export default function FinancialSection({ form, onChange, opts }) {
           <div className="pl-6 space-y-3">
             <div className="grid grid-cols-4 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('purchasePriceListField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('purchasePriceListField')}</label>
                 <DynamicSelect {...dynProps('purchasePriceLists')} value={form.purchasePriceList ?? ''} onChange={v => onChange('purchasePriceList', v)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('paymentMethodPOField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('paymentMethodPOField')}</label>
                 <DynamicSelect {...dynProps('paymentMethods')} value={form.paymentMethodPO ?? ''} onChange={v => onChange('paymentMethodPO', v)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('paymentTermPOField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('paymentTermPOField')}</label>
                 <DynamicSelect {...dynProps('paymentTerms')} value={form.paymentTermPO ?? ''} onChange={v => onChange('paymentTermPO', v)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-foreground">{ui('financialAccountPOField')}</label>
+                <label style={MODAL_STYLES.fieldLabel}>{ui('financialAccountPOField')}</label>
                 <DynamicSelect {...dynProps('financialAccounts')} value={form.financialAccountPO ?? ''} onChange={v => onChange('financialAccountPO', v)} />
               </div>
             </div>
