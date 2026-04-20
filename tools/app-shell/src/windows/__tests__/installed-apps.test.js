@@ -12,21 +12,36 @@ describe('buildMenuGroups + installed apps', () => {
       'spike-hello-app should be hidden when not installed');
   });
 
-  it('injects menu entries for installed apps into the Marketplace group', () => {
+  it('injects quick-order entries into Sales and Purchases groups', () => {
     const groups = buildMenuGroups(['quick-order']);
+    const sales = groups.find(g => g.group === 'Sales');
+    const purchases = groups.find(g => g.group === 'Purchases');
     const marketplace = groups.find(g => g.group === 'Marketplace');
+
+    assert.ok(sales, 'Sales group missing');
+    assert.ok(purchases, 'Purchases group missing');
     assert.ok(marketplace, 'Marketplace group missing');
-    const names = marketplace.items.map(i => i.name);
-    assert.ok(names.includes('app-store'), 'App Store entry should always be present');
-    assert.ok(names.includes('quick-order-sales'), 'quick-order-sales should appear when installed');
-    assert.ok(names.includes('quick-order-purchase'), 'quick-order-purchase should appear when installed');
+
+    assert.ok(sales.items.map(i => i.name).includes('quick-order-sales'),
+      'quick-order-sales should land under Sales');
+    assert.ok(purchases.items.map(i => i.name).includes('quick-order-purchase'),
+      'quick-order-purchase should land under Purchases');
+    assert.ok(marketplace.items.map(i => i.name).includes('app-store'),
+      'App Store entry should always be present in Marketplace');
   });
 
-  it('handles multiple installed apps', () => {
-    const groups = buildMenuGroups(['quick-order', 'spike-hello-app']);
+  it('falls back to app-level menuGroup when entry has none', () => {
+    const groups = buildMenuGroups(['spike-hello-app']);
     const marketplace = groups.find(g => g.group === 'Marketplace');
-    const names = marketplace.items.map(i => i.name);
-    assert.ok(names.includes('spike-hello-app'));
-    assert.ok(names.includes('quick-order-sales'));
+    assert.ok(marketplace.items.map(i => i.name).includes('spike-hello-app'),
+      'spike-hello-app should land under Marketplace (app-level fallback)');
+  });
+
+  it('handles multiple installed apps across different groups', () => {
+    const groups = buildMenuGroups(['quick-order', 'spike-hello-app']);
+    const sales = groups.find(g => g.group === 'Sales');
+    const marketplace = groups.find(g => g.group === 'Marketplace');
+    assert.ok(sales.items.map(i => i.name).includes('quick-order-sales'));
+    assert.ok(marketplace.items.map(i => i.name).includes('spike-hello-app'));
   });
 });

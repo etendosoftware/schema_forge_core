@@ -63,9 +63,13 @@ export function buildMenuGroups(installedAppIds = []) {
   const extraByGroup = new Map();
   for (const app of APP_CATALOG) {
     if (!installedSet.has(app.appId)) continue;
-    if (!extraByGroup.has(app.menuGroup)) extraByGroup.set(app.menuGroup, []);
     for (const entry of app.menuEntries) {
-      extraByGroup.get(app.menuGroup).push({ ...entry });
+      // Each entry may override the app's default menuGroup so one app
+      // can add a sales item under Sales and a purchase item under
+      // Purchases without needing a single shared group.
+      const targetGroup = entry.menuGroup || app.menuGroup;
+      if (!extraByGroup.has(targetGroup)) extraByGroup.set(targetGroup, []);
+      extraByGroup.get(targetGroup).push({ ...entry });
     }
   }
 

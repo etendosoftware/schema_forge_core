@@ -38,11 +38,19 @@ permissions, registry sync) is out of scope — the goal is only to change
   iframeUrl: 'http://localhost:5174',
   menuGroup: 'Marketplace',
   menuEntries: [
-    { name: 'quick-order-sales', label: 'Quick Order — Sales' },
-    { name: 'quick-order-purchase', label: 'Quick Order — Purchase' },
+    { name: 'quick-order-sales', label: 'Quick Order — Sales', menuGroup: 'Sales' },
+    { name: 'quick-order-purchase', label: 'Quick Order — Purchase', menuGroup: 'Purchases' },
   ],
 }
 ```
+
+Each entry may override the app-level `menuGroup`. This lets a single app
+surface its items across multiple shell sections (e.g. Quick Order lives
+alongside the built-in Sales Order under Sales and alongside Purchase
+Order under Purchases) instead of being forced into one container group.
+The app-level `menuGroup` is used as the fallback when an entry omits it
+(e.g. the Hello App lands in Marketplace because every entry inherits
+the default).
 
 `INTERNAL_APPS` and `findAppById` are kept as backward-compat exports for
 the Vite token-minting plugin and the iframe-host windows.
@@ -63,10 +71,10 @@ updates dispatch a custom `etendo:installed-apps-changed` event (the
 ### Dynamic menu
 
 `buildMenuGroups(installedAppIds)` merges catalog-declared menu entries
-into the shell menu at the group named in `menuGroup` (currently only the
-`Marketplace` group is targeted). `App.jsx` subscribes via
-`useInstalledApps()` and rebuilds `menuGroups` on every change, so
-installing or uninstalling takes effect immediately.
+into the shell menu at the group named by `entry.menuGroup` (falling back
+to `app.menuGroup`). `App.jsx` subscribes via `useInstalledApps()` and
+rebuilds `menuGroups` on every change, so installing or uninstalling
+takes effect immediately.
 
 `buildWindowMap()` still registers loaders for every SDK app entry even
 when the app is not installed, so a stale link or direct URL navigation

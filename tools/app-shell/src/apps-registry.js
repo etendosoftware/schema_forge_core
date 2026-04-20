@@ -33,8 +33,8 @@ export const APP_CATALOG = [
     iframeUrl: 'http://localhost:5174',
     menuGroup: 'Marketplace',
     menuEntries: [
-      { name: 'quick-order-sales', label: 'Quick Order — Sales' },
-      { name: 'quick-order-purchase', label: 'Quick Order — Purchase' },
+      { name: 'quick-order-sales', label: 'Quick Order — Sales', menuGroup: 'Sales' },
+      { name: 'quick-order-purchase', label: 'Quick Order — Purchase', menuGroup: 'Purchases' },
     ],
   },
 ];
