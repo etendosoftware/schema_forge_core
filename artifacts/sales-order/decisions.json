@@ -294,18 +294,18 @@
           "visibility": "discarded"
         },
         "unitPrice": {
-          "grid": false,
+          "grid": true,
           "form": true,
           "section": "principal",
-          "order": 4
+          "order": 4,
+          "gridOrder": 4
         },
         "grossUnitPrice": {
           "visibility": "system"
         },
         "lineNetAmount": {
-          "grid": true,
-          "form": false,
-          "gridOrder": 4
+          "grid": false,
+          "form": false
         },
         "tax": {
           "grid": true,

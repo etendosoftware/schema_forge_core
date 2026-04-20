@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-20T14:23:16.566Z",
-  "checksum": "45f437784721c337",
+  "generatedAt": "2026-04-20T14:25:12.375Z",
+  "checksum": "5fe88d0f754b915b",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -499,8 +499,9 @@
             "tsType": "number",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
+            "gridOrder": 4,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -592,11 +593,10 @@
             "label": "Line Net Amount",
             "type": "amount",
             "tsType": "number",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
-            "gridOrder": 4,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1628,7 +1628,7 @@
             "apiKey": "lineNetAmount",
             "column": "LineNetAmt",
             "type": "amount",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true
           },
           {

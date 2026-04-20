@@ -264,10 +264,11 @@
           "visibility": "system"
         },
         "unitPrice": {
-          "grid": false,
+          "grid": true,
           "form": true,
           "inputMode": "number",
-          "order": 4
+          "order": 4,
+          "gridOrder": 4
         },
         "discount": {
           "grid": true,
@@ -276,10 +277,8 @@
           "gridOrder": 5
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
-          "form": false,
-          "gridOrder": 4
+          "grid": false,
+          "form": false
         },
         "tax": {
           "grid": true,

@@ -308,10 +308,11 @@
           "readOnlyLogic": null
         },
         "unitPrice": {
-          "grid": false,
+          "grid": true,
           "form": true,
           "section": "principal",
           "order": 4,
+          "gridOrder": 4,
           "readOnlyLogic": null
         },
         "grossUnitPrice": {
@@ -320,9 +321,8 @@
           "displayLogic": null
         },
         "lineNetAmount": {
-          "grid": true,
+          "grid": false,
           "form": false,
-          "gridOrder": 4,
           "readOnlyLogic": null
         },
         "lineGrossAmount": {
