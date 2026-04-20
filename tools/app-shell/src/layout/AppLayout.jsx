@@ -45,9 +45,9 @@ function AppLayoutInner({ menuGroups, embedded }) {
         )}
         <div
           key={location.pathname}
-          className="relative flex-1 flex flex-col overflow-hidden page-transition px-3 pb-3"
+          className="relative flex-1 flex flex-col overflow-hidden page-transition pr-3 pb-3"
         >
-          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-xl border border-border/30 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-r-xl border border-border/30 overflow-hidden">
             <Outlet />
           </div>
         </div>
