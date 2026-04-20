@@ -11,7 +11,7 @@ const columns = [
 ];
 // @sf-generated-end columns:businessPartner
 
-const filters = ['searchKey', 'name'];
+const filters = ['name'];
 
 // @sf-generated-start component:BusinessPartnerTable
 export default function BusinessPartnerTable(props) {

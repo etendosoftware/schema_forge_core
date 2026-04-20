@@ -54,7 +54,6 @@ const api = {
       "listUrl": "/sws/neo/contacts/businessPartner",
       "detailUrl": "/sws/neo/contacts/businessPartner/{id}",
       "supportedFilters": [
-        "searchKey",
         "name"
       ]
     },

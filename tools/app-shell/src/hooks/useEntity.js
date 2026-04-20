@@ -192,7 +192,7 @@ function applyContactsRequiredFields(entity, payload, source = {}) {
 
   if (entity === 'businessPartner' || entity === 'bpartner') {
     if (!payload.name && source.name) payload.name = source.name;
-    if (!payload.searchKey && source.searchKey) payload.searchKey = source.searchKey;
+    if (!payload.searchKey) payload.searchKey = source.searchKey || source.name || payload.name;
   }
 
   return payload;
