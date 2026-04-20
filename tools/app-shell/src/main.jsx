@@ -1,4 +1,7 @@
 import { createRoot } from 'react-dom/client';
+import { initRum } from './lib/rum.js';
+
+initRum();
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import App from './App.jsx';
