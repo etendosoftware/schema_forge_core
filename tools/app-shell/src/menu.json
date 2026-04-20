@@ -56,20 +56,6 @@
       ]
     },
     {
-      "group": "Finance",
-      "icon": "Building2",
-      "section": "Finance",
-      "items": [
-        { "name": "payment-in", "label": "Payment In" },
-        { "name": "payment-out", "label": "Payment Out" },
-        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
-        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "assets", "label": "Assets" },
-        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
-        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
-      ]
-    },
-    {
       "group": "Inventory",
       "icon": "Package",
       "section": "Operations",
@@ -93,6 +79,20 @@
         { "name": "project", "label": "Project" },
         { "name": "time-tracking", "label": "Time Tracking" },
         { "name": "document", "label": "Document" }
+      ]
+    },
+    {
+      "group": "Finance",
+      "icon": "Building2",
+      "section": "Finance",
+      "items": [
+        { "name": "payment-in", "label": "Payment In" },
+        { "name": "payment-out", "label": "Payment Out" },
+        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
+        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
+        { "name": "assets", "label": "Assets" },
+        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
+        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
       ]
     },
     {

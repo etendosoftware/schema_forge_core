@@ -421,7 +421,7 @@ export default function SideMenu({
                     isGroupActive && !isOpen
                       ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
                       : isGroupActive
-                        ? 'border-accent-highlight font-medium hover:bg-muted/50'
+                        ? 'font-medium hover:bg-muted/50 border-accent-highlight'
                         : 'hover:bg-muted/50 border-transparent'
                   )}
                 >
@@ -450,12 +450,16 @@ export default function SideMenu({
                           key={item.name}
                           to={`/${itemPath}`}
                           className={cn(
-                            'flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors border-l-[3px]',
+                            'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'bg-accent-highlight text-accent-highlight-foreground font-semibold border-accent-highlight'
-                              : 'text-text-primary hover:bg-muted/50 border-transparent'
+                              ? 'bg-accent-highlight text-accent-highlight-foreground font-semibold'
+                              : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
+                          <span className={cn(
+                            'absolute left-[22px] top-0 bottom-0 w-0.5',
+                            isItemActive ? 'bg-accent-highlight' : 'bg-border'
+                          )} />
                           {tMenu(item.label)}
                         </NavLink>
                       );
