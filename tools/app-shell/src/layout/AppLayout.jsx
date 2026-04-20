@@ -2,6 +2,8 @@ import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import SideMenu from '@/components/layout/SideMenu';
 import { SidebarProvider, useSidebar } from '@/components/layout/SidebarContext';
 import { FavoritesProvider } from '@/components/layout/FavoritesContext';
+import { PageMetaProvider, usePageMeta } from '@/components/layout/PageMetaContext';
+import TopBar from '@/components/layout/TopBar';
 import { CommandPalette } from '@/components/CommandPalette.jsx';
 import { CopilotProvider } from '@/components/CopilotContext';
 import { CopilotWidget } from '@/components/CopilotWidget';
@@ -12,6 +14,7 @@ const EXPANDED_W = 240;
 function AppLayoutInner({ menuGroups, embedded }) {
   const location = useLocation();
   const { expanded, toggle } = useSidebar();
+  const meta = usePageMeta();
   const marginLeft = expanded ? EXPANDED_W : COLLAPSED_W;
 
   return (
@@ -27,6 +30,18 @@ function AppLayoutInner({ menuGroups, embedded }) {
         className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-page-bg"
         style={{ marginLeft: embedded ? 0 : marginLeft }}
       >
+        {!embedded && (
+          <TopBar
+            title={meta?.title}
+            breadcrumb={meta?.breadcrumb}
+            menuAction={meta?.menuAction}
+            onAddToFavorites={meta?.onAddToFavorites}
+            isFavorite={meta?.isFavorite}
+            onPageHelp={meta?.onPageHelp}
+            onAIClick={meta?.onAIClick}
+            rightExtras={meta?.rightExtras}
+          />
+        )}
         <div
           key={location.pathname}
           className="relative flex-1 flex flex-col overflow-hidden page-transition"
@@ -50,7 +65,9 @@ export default function AppLayout({ menuGroups }) {
     <CopilotProvider>
       <FavoritesProvider>
         <SidebarProvider>
-          <AppLayoutInner menuGroups={menuGroups} embedded={embedded} />
+          <PageMetaProvider>
+            <AppLayoutInner menuGroups={menuGroups} embedded={embedded} />
+          </PageMetaProvider>
         </SidebarProvider>
       </FavoritesProvider>
     </CopilotProvider>
