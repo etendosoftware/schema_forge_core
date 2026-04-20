@@ -278,6 +278,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 1,
+          "gridOrder": 1,
           "readOnlyLogic": null
         },
         "operativeQuantity": {
@@ -295,6 +297,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 3,
+          "gridOrder": 3,
           "readOnlyLogic": null
         },
         "uOM": {
@@ -304,9 +308,10 @@
           "readOnlyLogic": null
         },
         "unitPrice": {
-          "grid": true,
+          "grid": false,
           "form": true,
           "section": "principal",
+          "order": 4,
           "readOnlyLogic": null
         },
         "grossUnitPrice": {
@@ -316,18 +321,23 @@
         },
         "lineNetAmount": {
           "grid": true,
-          "form": true,
-          "section": "principal",
+          "form": false,
+          "gridOrder": 4,
           "readOnlyLogic": null
         },
         "lineGrossAmount": {
-          "form": false,
-          "displayLogic": null
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 7,
+          "gridOrder": 7
         },
         "tax": {
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 6,
+          "gridOrder": 6,
           "inputMode": "selector",
           "readOnlyLogic": null
         },
@@ -345,6 +355,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 5,
+          "gridOrder": 5,
           "readOnlyLogic": null
         },
         "taxableAmount": {
@@ -447,8 +459,11 @@
           "displayLogic": null
         },
         "description": {
-          "form": false,
-          "displayLogic": null
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 2,
+          "gridOrder": 2
         },
         "managePrereservation": {
           "visibility": "discarded",

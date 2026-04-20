@@ -269,11 +269,15 @@
         "product": {
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "order": 1,
+          "gridOrder": 1
         },
         "orderedQuantity": {
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "order": 3,
+          "gridOrder": 3
         },
         "operativeQuantity": {
           "visibility": "discarded"
@@ -290,26 +294,33 @@
           "visibility": "discarded"
         },
         "unitPrice": {
-          "grid": true,
-          "section": "principal"
+          "grid": false,
+          "form": true,
+          "section": "principal",
+          "order": 4
         },
         "grossUnitPrice": {
           "visibility": "system"
         },
         "lineNetAmount": {
           "grid": true,
-          "section": "principal"
+          "form": false,
+          "gridOrder": 4
         },
         "tax": {
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "order": 6,
+          "gridOrder": 6
         },
         "listPrice": {
           "visibility": "discarded"
         },
         "discount": {
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "order": 5,
+          "gridOrder": 5
         },
         "warehouseRule": {
           "visibility": "discarded"
@@ -358,7 +369,11 @@
           "visibility": "discarded"
         },
         "lineGrossAmount": {
-          "visibility": "discarded"
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 7,
+          "gridOrder": 7
         },
         "grossListPrice": {
           "visibility": "system"
@@ -382,7 +397,10 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "principal"
+          "grid": true,
+          "section": "principal",
+          "order": 2,
+          "gridOrder": 2
         },
         "invoicedQuantity": {
           "visibility": "system"

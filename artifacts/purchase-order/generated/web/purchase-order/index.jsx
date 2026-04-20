@@ -206,6 +206,14 @@ const api = {
     },
     {
       "entity": "lines",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-order/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
@@ -218,14 +226,6 @@ const api = {
       "column": "C_UOM_ID",
       "reference": "UOM",
       "url": "/sws/neo/purchase-order/lines/selectors/uOM"
-    },
-    {
-      "entity": "lines",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/lines/selectors/tax"
     },
     {
       "entity": "lines",

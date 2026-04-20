@@ -24,11 +24,12 @@ const LIST_COLUMNS = [
 // Lines table columns without lineNo
 const LINES_COLUMNS = [
   { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
+  { key: 'description', column: 'Description', type: 'string', label: 'Description' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', label: 'Ordered Quantity' },
-  { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price' },
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', label: 'Line Net Amount' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
   { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
 ];
 
 function CustomHeaderTable(props) {
