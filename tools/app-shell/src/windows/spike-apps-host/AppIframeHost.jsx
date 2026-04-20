@@ -24,7 +24,8 @@ export default function AppIframeHost({ appUrl, appId, token }) {
     (async () => {
       try {
         const appToken = await fetchAppToken(appId, token);
-        setSrc(`${appUrl}/#jwt=${appToken}`);
+        const separator = appUrl.includes('?') ? '&' : '?';
+        setSrc(`${appUrl}${separator}jwt=${encodeURIComponent(appToken)}`);
       } catch (err) {
         setError(err.message);
       }
