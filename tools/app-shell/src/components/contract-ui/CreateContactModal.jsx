@@ -245,7 +245,8 @@ export default function CreateContactModal({
     try {
       // Step 2 — POST address (handled atomically by ContactsLocationAddressHandler)
       if (newId && (form.address || form.city || form.country)) {
-        const locName = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
+        const countryLabel = opts.countries?.options?.find(c => c.id === form.country)?.label;
+        const locName = [form.city, form.address].filter(Boolean).join(', ') || countryLabel || 'Location';
         await fetch(`${bpApiBaseUrl}/locationAddress?parentId=${newId}`, {
           method: 'POST',
           headers,

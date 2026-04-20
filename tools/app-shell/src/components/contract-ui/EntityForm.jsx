@@ -171,7 +171,8 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const createBtn = canCreate ? (
     <button
       type="button"
-      className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
+      className="w-full text-left px-3 py-2 text-sm font-medium hover:bg-blue-50 border-b border-border/40 transition-colors"
+      style={{ color: '#202452' }}
       onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
     >
       + {ui('createContact')}
