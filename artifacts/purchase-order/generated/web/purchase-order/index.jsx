@@ -250,13 +250,6 @@ const api = {
     },
     {
       "entity": "lines",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-order/lines/selectors/businessPartner"
-    },
-    {
-      "entity": "lines",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",

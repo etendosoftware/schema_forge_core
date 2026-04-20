@@ -414,11 +414,7 @@
           "inputMode": null
         },
         "businessPartner": {
-          "visibility": "readOnly",
-          "form": false,
-          "reference": "BusinessPartner",
-          "inputMode": null,
-          "readOnlyLogic": null
+          "visibility": "discarded"
         },
         "partnerAddress": {
           "visibility": "readOnly",

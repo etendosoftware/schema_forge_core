@@ -64,7 +64,6 @@ const addLineFields = {
     { key: 'shippingCompany', fromParent: 'shippingCompany' },
     { key: 'orderDate', fromParent: 'orderDate' },
     { key: 'scheduledDeliveryDate', fromParent: 'scheduledDeliveryDate' },
-    { key: 'businessPartner', value: '@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@' },
     { key: 'partnerAddress', fromParent: 'partnerAddress' },
     { key: 'currency', fromParent: 'currency' },
   ],
@@ -316,13 +315,6 @@ const api = {
       "column": "M_Shipper_ID",
       "reference": "Shipper",
       "url": "/sws/neo/purchase-order/lines/selectors/shippingCompany"
-    },
-    {
-      "entity": "lines",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-order/lines/selectors/businessPartner"
     },
     {
       "entity": "lines",
