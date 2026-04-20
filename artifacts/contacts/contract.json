@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-20T16:02:39.384Z",
-  "checksum": "4f09a147187b223b",
+  "generatedAt": "2026-04-20T16:07:06.700Z",
+  "checksum": "c1978a789561284a",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -56,8 +56,14 @@
       },
       "detailEntity": null,
       "labelOverrides": {
+        "en_US": {
+          "FIN_Financial_Account_ID": "Account",
+          "PO_Financial_Account_ID": "Account"
+        },
         "es_ES": {
-          "EM_Etgo_Identifier": "Identificador"
+          "EM_Etgo_Identifier": "Identificador",
+          "FIN_Financial_Account_ID": "Cuenta",
+          "PO_Financial_Account_ID": "Cuenta"
         }
       },
       "primaryTabs": [
@@ -3479,8 +3485,14 @@
       },
       "detailEntity": null,
       "labelOverrides": {
+        "en_US": {
+          "FIN_Financial_Account_ID": "Account",
+          "PO_Financial_Account_ID": "Account"
+        },
         "es_ES": {
-          "EM_Etgo_Identifier": "Identificador"
+          "EM_Etgo_Identifier": "Identificador",
+          "FIN_Financial_Account_ID": "Cuenta",
+          "PO_Financial_Account_ID": "Cuenta"
         }
       },
       "primaryTabs": [
@@ -9778,8 +9790,14 @@
       "category": "contact"
     },
     "labelOverrides": {
+      "en_US": {
+        "FIN_Financial_Account_ID": "Account",
+        "PO_Financial_Account_ID": "Account"
+      },
       "es_ES": {
-        "EM_Etgo_Identifier": "Identificador"
+        "EM_Etgo_Identifier": "Identificador",
+        "FIN_Financial_Account_ID": "Cuenta",
+        "PO_Financial_Account_ID": "Cuenta"
       }
     }
   },

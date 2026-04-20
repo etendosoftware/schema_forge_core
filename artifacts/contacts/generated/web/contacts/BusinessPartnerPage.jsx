@@ -16,8 +16,14 @@ import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSid
 const breadcrumb = 'Contact';
 
 const labelOverrides = {
+  "en_US": {
+    "FIN_Financial_Account_ID": "Account",
+    "PO_Financial_Account_ID": "Account"
+  },
   "es_ES": {
-    "EM_Etgo_Identifier": "Identificador"
+    "EM_Etgo_Identifier": "Identificador",
+    "FIN_Financial_Account_ID": "Cuenta",
+    "PO_Financial_Account_ID": "Cuenta"
   }
 };
 
@@ -618,8 +624,14 @@ const api = {
     "category": "contact"
   },
   "labelOverrides": {
+    "en_US": {
+      "FIN_Financial_Account_ID": "Account",
+      "PO_Financial_Account_ID": "Account"
+    },
     "es_ES": {
-      "EM_Etgo_Identifier": "Identificador"
+      "EM_Etgo_Identifier": "Identificador",
+      "FIN_Financial_Account_ID": "Cuenta",
+      "PO_Financial_Account_ID": "Cuenta"
     }
   }
 };
