@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Radii</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--bg-page);display:flex;gap:16px;align-items:center;}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .box{width:70px;height:70px;background:#FFF;border:1px solid var(--border-1);}
+  .lab{font:600 12px/16px var(--font-sans);color:var(--fg-1);}
+  .tag{font:500 11px/14px var(--font-mono);color:var(--fg-3);}
+</style></head><body>
+  <div class="cell"><div class="box" style="border-radius:4px"></div><div class="lab">xs</div><div class="tag">4px</div></div>
+  <div class="cell"><div class="box" style="border-radius:6px"></div><div class="lab">sm</div><div class="tag">6px</div></div>
+  <div class="cell"><div class="box" style="border-radius:8px"></div><div class="lab">md</div><div class="tag">8px · buttons</div></div>
+  <div class="cell"><div class="box" style="border-radius:12px"></div><div class="lab">lg</div><div class="tag">12px · cards</div></div>
+  <div class="cell"><div class="box" style="border-radius:16px"></div><div class="lab">xl</div><div class="tag">16px · modals</div></div>
+  <div class="cell"><div class="box" style="border-radius:999px;width:120px"></div><div class="lab">pill</div><div class="tag">999px</div></div>
+</body></html>

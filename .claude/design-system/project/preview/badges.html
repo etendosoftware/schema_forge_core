@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Badges & Pills</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--bg-page);display:flex;flex-direction:column;gap:16px;}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font:500 12px/16px var(--font-sans);border:1px solid transparent;}
+  .dot{width:6px;height:6px;border-radius:50%;}
+  .tag-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:var(--bg-subtle);border:1px solid var(--border-1);font:500 12px/16px var(--font-sans);color:var(--fg-2);}
+  .tag-chip .x{color:var(--fg-3);cursor:pointer;}
+  .count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--bg-subtle);border:1px solid var(--border-1);font:600 11px/1 var(--font-sans);color:var(--fg-2);}
+</style></head><body>
+  <div class="row">
+    <span class="pill" style="background:var(--danger-bg);color:var(--danger-fg);border-color:var(--danger-border)">Facturas vencidas</span>
+    <span class="pill" style="background:var(--warning-pill);color:var(--warning-fg);border-color:var(--warning-border)">Sin conciliar</span>
+    <span class="pill" style="background:var(--success-bg);color:var(--success-fg);border-color:var(--success-border)">Pendiente de envío</span>
+    <span class="pill" style="background:var(--pending-bg);color:var(--pending-fg);border-color:var(--pending-border)">Pendiente</span>
+  </div>
+  <div class="row">
+    <span class="pill" style="background:#fff;border-color:var(--border-1);color:var(--fg-2)"><span class="dot" style="background:#F2CB00"></span>09/03/2026</span>
+    <span class="pill" style="background:#fff;border-color:var(--border-1);color:var(--fg-2)"><span class="dot" style="background:#1E7A47"></span>23/03/2026</span>
+    <span class="pill" style="background:#fff;border-color:var(--border-1);color:var(--fg-2)"><span class="dot" style="background:#D50B3E"></span>15/01/2026</span>
+  </div>
+  <div class="row">
+    <span class="tag-chip">GT709 <span class="x">×</span></span>
+    <span class="tag-chip">Servicios reconocido…</span>
+    <span class="count">112</span>
+    <span class="count" style="background:var(--etendo-ink);color:#fff;border-color:transparent">1</span>
+  </div>
+</body></html>

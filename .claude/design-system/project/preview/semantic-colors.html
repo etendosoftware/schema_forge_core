@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Semantic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--bg-page);display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+  .card{border:1px solid var(--border-1);border-radius:var(--radius-lg);padding:14px;display:flex;flex-direction:column;gap:10px;}
+  .pill{align-self:flex-start;padding:4px 10px;border-radius:var(--radius-pill);font:500 12px/16px var(--font-sans);border:1px solid transparent;}
+  .label{font:600 12px/16px var(--font-sans);color:var(--fg-1);}
+  .hex{font:500 10px/13px var(--font-mono);color:var(--fg-3);}
+</style></head><body>
+  <div class="card">
+    <div class="pill" style="background:var(--success-bg);color:var(--success-fg);border-color:var(--success-border)">Completado</div>
+    <div><div class="label">Success</div><div class="hex">#DBEEE4 / #1E7A47</div></div>
+  </div>
+  <div class="card">
+    <div class="pill" style="background:var(--pending-bg);color:var(--pending-fg);border-color:var(--pending-border)">Pendiente</div>
+    <div><div class="label">Pending</div><div class="hex">#FFF9EB / #8A6E25</div></div>
+  </div>
+  <div class="card">
+    <div class="pill" style="background:var(--warning-bg);color:var(--warning-fg);border-color:var(--warning-border)">Aviso</div>
+    <div><div class="label">Warning</div><div class="hex">#F6EEDB / #8A6A1F</div></div>
+  </div>
+  <div class="card">
+    <div class="pill" style="background:var(--danger-bg);color:var(--danger-fg);border-color:var(--danger-border)">Error</div>
+    <div><div class="label">Danger</div><div class="hex">#FDE7EC / #D50B3E</div></div>
+  </div>
+  <div class="card">
+    <div class="pill" style="background:var(--info-bg);color:var(--info-fg);border-color:var(--info-border)">Info</div>
+    <div><div class="label">Info</div><div class="hex">#E6F0FB / #1D5BAA</div></div>
+  </div>
+</body></html>

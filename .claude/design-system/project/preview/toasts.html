@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Toasts</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--bg-subtle);display:flex;flex-direction:column;gap:12px;align-items:center;}
+  .toast{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;font:500 13px/18px var(--font-sans);box-shadow:var(--shadow-md);}
+  .toast svg{width:16px;height:16px;}
+  .x{margin-left:4px;opacity:.6;cursor:pointer;}
+  .success{background:var(--success-bg);color:var(--success-fg);border:1px solid var(--success-border);}
+  .warn{background:var(--warning-bg);color:var(--warning-fg);border:1px solid var(--warning-border);}
+  .danger{background:var(--danger-bg);color:var(--danger-fg);border:1px solid var(--danger-border);}
+  .info{background:var(--info-bg);color:var(--info-fg);border:1px solid var(--info-border);}
+</style></head><body>
+  <div class="toast success">✓ 112 contactos importados correctamente <span class="x">×</span></div>
+  <div class="toast success">✓ Filtro guardado correctamente <span class="x">×</span></div>
+  <div class="toast warn">⚠ 8 filas serán omitidas por errores <span class="x">×</span></div>
+  <div class="toast danger">✕ No se pudo completar la importación <span class="x">×</span></div>
+</body></html>

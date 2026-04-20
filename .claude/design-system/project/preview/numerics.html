@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Numeric type</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--bg-page);display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .col{border:1px solid var(--border-1);border-radius:var(--radius-lg);padding:16px;}
+  .eyebrow{margin-bottom:6px;}
+  .num-lg{font:700 36px/44px var(--font-sans);color:var(--fg-1);letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
+  .delta{display:inline-flex;align-items:center;gap:4px;font:500 11px/14px var(--font-sans);margin-top:6px;}
+  .up{color:var(--success-fg);} .down{color:var(--danger-fg);}
+  .id{font:400 13px/18px var(--font-mono);color:var(--fg-2);}
+</style></head><body>
+  <div class="col">
+    <div class="eyebrow">Ingresos</div>
+    <div class="num-lg">EUR 12.4M</div>
+    <div class="delta up">▲ 8% vs año anterior</div>
+  </div>
+  <div class="col">
+    <div class="eyebrow">Gastos</div>
+    <div class="num-lg">EUR 8.2M</div>
+    <div class="delta down">▼ 3% vs año anterior</div>
+  </div>
+  <div class="col">
+    <div class="eyebrow">Factura · Mono</div>
+    <div class="id">I260001</div>
+    <div class="id" style="margin-top:4px">08/04/2026</div>
+    <div class="id" style="margin-top:4px;color:var(--fg-1);font-weight:500">€ 324.000,00</div>
+  </div>
+</body></html>

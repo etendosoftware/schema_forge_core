@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Sidebar nav</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:0;background:var(--bg-chrome);display:flex;font-family:var(--font-sans);}
+  .rail{width:56px;min-height:420px;background:var(--bg-chrome);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;border-right:1px solid var(--border-1);}
+  .item{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#828FA3;cursor:pointer;border:0;background:transparent;}
+  .item:hover{background:#fff;color:var(--fg-1);}
+  .item.active{background:linear-gradient(#F8D414,#FFE356);color:var(--etendo-ink);box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);}
+  .item svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+  .expanded{width:240px;background:var(--bg-chrome);padding:8px;border-right:1px solid var(--border-1);display:flex;flex-direction:column;gap:2px;}
+  .company{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;}
+  .company .mark{width:24px;height:24px;border-radius:6px;background:linear-gradient(#F8D414,#FFE356);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);flex-shrink:0;}
+  .company .mark svg{width:13px;height:13px;fill:#202452;}
+  .company .name{font:600 13px/16px var(--font-sans);color:var(--fg-1);flex:1;}
+  .company .chev{width:14px;height:14px;color:var(--fg-3);}
+  .sec{font:600 10px/14px var(--font-sans);color:var(--fg-4);letter-spacing:.06em;text-transform:uppercase;padding:14px 10px 4px;}
+  .row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;color:var(--fg-2);font:500 13px/18px var(--font-sans);cursor:pointer;}
+  .row:hover{background:#fff;}
+  .row.active{background:linear-gradient(#F8D414,#FFE356);color:var(--etendo-ink);font-weight:600;}
+  .row svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;color:var(--fg-3);}
+  .row.active svg{color:var(--etendo-ink);}
+  .row .caret{margin-left:auto;color:var(--fg-4);width:14px;height:14px;}
+</style></head><body>
+  <div class="rail">
+    <button class="item" title="Primeros pasos"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
+    <button class="item active" title="Inicio"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 22V12h6v10"/></svg></button>
+    <button class="item" title="Favoritos"><svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 10 17 15 18 22 12 19 6 22 7 15 2 10 9 9"/></svg></button>
+    <button class="item" title="Contactos"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></button>
+    <button class="item" title="CRM"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg></button>
+    <button class="item" title="Ventas"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 4 4 5-5"/></svg></button>
+    <button class="item" title="Facturas"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></button>
+    <button class="item" title="Pedidos"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg></button>
+    <div style="width:24px;height:1px;background:var(--border-1);margin:6px 0;"></div>
+    <button class="item" title="Ayuda"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+    <button class="item" title="Cuenta"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></button>
+  </div>
+  <div class="expanded">
+    <div class="company">
+      <div class="mark"><svg viewBox="0 0 20.241 20"><path d="M 18.006 15.543 L 13.443 10.003 L 18.198 4.229 L 19.946 2.102 C 20.636 1.263 20.04 0 18.953 0 L 0.771 0 C 0.345 0 0 0.345 0 0.771 L 0 19.229 C 0 19.655 0.345 20 0.771 20 L 18.952 20 C 20.038 20 20.634 18.737 19.944 17.898 L 18.003 15.541 Z M 1.856 18.144 L 1.856 1.856 L 17.74 1.856 L 12.237 8.538 L 10.155 6.734 C 9.911 6.438 9.548 6.266 9.163 6.266 L 5.663 6.266 L 5.663 8.122 L 8.893 8.122 L 11.035 9.997 L 9.086 11.645 L 5.665 11.645 L 5.665 13.502 L 9.355 13.502 C 9.739 13.502 10.104 13.331 10.348 13.033 L 12.24 11.461 L 17.742 18.141 L 1.856 18.141 Z"/></svg></div>
+      <div class="name">Tu empresa</div>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="sec">General</div>
+    <div class="row"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Primeros pasos</div>
+    <div class="row active"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 22V12h6v10"/></svg>Inicio</div>
+    <div class="row"><svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 10 17 15 18 22 12 19 6 22 7 15 2 10 9 9"/></svg>Favoritos<svg class="caret" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <div class="sec">Comercial</div>
+    <div class="row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg>Contactos</div>
+    <div class="row"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>CRM<svg class="caret" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <div class="row"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 4 4 5-5"/></svg>Ventas<svg class="caret" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+  </div>
+</body></html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Shadows</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:32px;background:var(--bg-page);display:flex;gap:24px;align-items:center;}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .box{width:100px;height:60px;background:#fff;border-radius:8px;}
+  .lab{font:600 12px/16px var(--font-sans);color:var(--fg-1);}
+  .tag{font:500 11px/14px var(--font-mono);color:var(--fg-3);}
+</style></head><body>
+  <div class="cell"><div class="box" style="box-shadow:var(--shadow-xs)"></div><div class="lab">xs</div><div class="tag">split btn</div></div>
+  <div class="cell"><div class="box" style="box-shadow:var(--shadow-sm)"></div><div class="lab">sm</div><div class="tag">dropdowns</div></div>
+  <div class="cell"><div class="box" style="box-shadow:var(--shadow-md)"></div><div class="lab">md</div><div class="tag">toasts · popovers</div></div>
+  <div class="cell"><div class="box" style="box-shadow:var(--shadow-lg)"></div><div class="lab">lg</div><div class="tag">modals</div></div>
+  <div class="cell"><div class="box" style="box-shadow:var(--shadow-focus)"></div><div class="lab">focus</div><div class="tag">yellow · 35%</div></div>
+</body></html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;background:var(--bg-page);display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:8px;font:600 13px/1 var(--font-sans);border:1px solid transparent;cursor:pointer;}
+  .btn svg{width:14px;height:14px;stroke-width:2;}
+  .primary{background:var(--etendo-ink);color:#fff;}
+  .primary:hover{background:#2a2a30;}
+  .secondary{background:#fff;color:var(--fg-1);border-color:var(--border-2);}
+  .secondary:hover{background:var(--bg-subtle);}
+  .tertiary{background:transparent;color:var(--fg-1);}
+  .tertiary:hover{background:var(--bg-subtle);}
+  .split{display:inline-flex;border-radius:8px;overflow:hidden;}
+  .split .main{border-top-right-radius:0;border-bottom-right-radius:0;padding-right:12px;}
+  .split .chev{width:32px;justify-content:center;padding:0;border-top-left-radius:0;border-bottom-left-radius:0;border-left:1px solid rgba(255,255,255,.18);background:var(--etendo-ink);color:#fff;}
+  .icon-only{width:36px;padding:0;justify-content:center;}
+</style></head><body>
+  <button class="btn primary">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nuevo contacto
+  </button>
+  <div class="split">
+    <button class="btn primary main">+ Nueva factura</button>
+    <button class="btn primary chev">▾</button>
+  </div>
+  <button class="btn secondary">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v3l-3-3m6 0l-3 3v-3"/><path d="M3 9h18M3 15h18"/></svg>
+    Pídeselo a Copilot
+  </button>
+  <button class="btn secondary">Volver</button>
+  <button class="btn tertiary">Cancelar</button>
+  <button class="btn secondary icon-only" aria-label="search">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+</body></html>

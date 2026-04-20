@@ -1,0 +1,262 @@
+/* =========================================================================
+   ETENDO DESIGN SYSTEM — Colors & Type
+   Source of truth: SaaS Etendo.fig (Color/Palette, Typography, Effects).
+   All hex values extracted from Figma swatches 50→900.
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* =====================================================================
+     PALETTE — 10-step ladders straight from /Color/Palette in Figma.
+     Index 500 is the "default" tone for each hue.
+     ===================================================================== */
+
+  /* Gray (neutral) */
+  --gray-50:  #F7F7F8;
+  --gray-100: #E8E8ED;
+  --gray-200: #D1D1DB;
+  --gray-300: #A9A9BC;
+  --gray-400: #8A8AA3;
+  --gray-500: #6C6C89;
+  --gray-600: #55556D;
+  --gray-700: #3F3F50;
+  --gray-800: #282833;
+  --gray-900: #121217;   /* ink — also used for primary buttons */
+
+  /* Purple — PRIMARY brand accent */
+  --purple-50:  #F4F1FD;
+  --purple-100: #E2DAFB;
+  --purple-200: #C6B6F7;
+  --purple-300: #A991F3;
+  --purple-400: #8D6CEF;
+  --purple-500: #7047EB;
+  --purple-600: #5423E7;
+  --purple-700: #4316CA;
+  --purple-800: #3712A5;
+  --purple-900: #2B0E81;
+
+  /* Red — ERROR */
+  --red-50:  #FEF0F4;
+  --red-100: #FDD8E1;
+  --red-200: #FBB1C4;
+  --red-300: #F98BA6;
+  --red-400: #F76489;
+  --red-500: #F53D6B;
+  --red-600: #F3164E;
+  --red-700: #D50B3E;
+  --red-800: #AF0932;
+  --red-900: #880727;
+
+  /* Yellow — WARNING & logo */
+  --yellow-50:  #FFF9EB;
+  --yellow-100: #FFF3D6;
+  --yellow-200: #FFE7AD;
+  --yellow-300: #FFDA85;
+  --yellow-400: #FFCE5C;
+  --yellow-500: #FFC233;
+  --yellow-600: #FAAF00;
+  --yellow-700: #C28800;
+  --yellow-800: #8A6100;
+  --yellow-900: #523900;
+
+  /* Green — SUCCESS */
+  --green-50:  #EEFBF4;
+  --green-100: #DFF8EA;
+  --green-200: #B2EECC;
+  --green-300: #84E4AE;
+  --green-400: #56D990;
+  --green-500: #2DCA72;
+  --green-600: #26A95F;
+  --green-700: #17663A;   /* text-on-light */
+  --green-800: #17663A;
+  --green-900: #0F4527;
+
+  /* Orange — PENDING */
+  --orange-50:  #FFF2EE;
+  --orange-100: #FFE8E1;
+  --orange-200: #FFCDBD;
+  --orange-300: #FFB399;
+  --orange-400: #FF9876;
+  --orange-500: #FF7D52;
+  --orange-600: #FF571F;
+  --orange-700: #EB3A00;
+  --orange-800: #B82E00;
+  --orange-900: #852100;
+
+  /* Pink */
+  --pink-50:  #FEECFB;
+  --pink-100: #FDDDF8;
+  --pink-200: #FCC5F3;
+  --pink-300: #FA99EA;
+  --pink-400: #F87CE4;
+  --pink-500: #F75FDE;
+  --pink-600: #F42AD3;
+  --pink-700: #DB0BB9;
+  --pink-800: #A5088C;
+  --pink-900: #70065F;
+
+  /* Blue — INFO */
+  --blue-50:  #F0FAFF;
+  --blue-100: #DBF3FF;
+  --blue-200: #ADE4FF;
+  --blue-300: #70D1FF;
+  --blue-400: #38BEFF;
+  --blue-500: #00ACFF;
+  --blue-600: #0090D6;
+  --blue-700: #0075AD;
+  --blue-800: #005985;
+  --blue-900: #003E5C;
+
+  /* =====================================================================
+     BRAND — tokens used directly in the product
+     ===================================================================== */
+  --etendo-ink:          var(--gray-900);    /* #121217 — primary buttons, body text */
+  --etendo-primary:      var(--purple-500);  /* #7047EB — links, focus, brand accent */
+  --etendo-primary-soft: var(--purple-50);   /* hover/selected bg for primary actions */
+
+  /* Etendo "yellow" — the LOGO tile gradient. As a solid, use the lighter
+     highlight #FFE356. Used for active nav pill, selected row, logo fill. */
+  --etendo-yellow:       #FFE356;
+  --etendo-yellow-hi:    #F8D414;
+  --etendo-yellow-soft:  var(--yellow-50);    /* #FFF9EB — warning/selected bg */
+
+  /* Back-compat pill aliases (used by older CSS in the UI kit) */
+  --warning-pill:   var(--yellow-50);
+  --danger-pill-bg: var(--red-100);
+
+  /* Logo-tile gradient — sampled from /SaaS-Master-Detail/Onboarding */
+  --logo-tile-top:    #F8D414;
+  --logo-tile-bot:    #FFE356;
+  --logo-glyph:       #202452;  /* dark navy inside the yellow tile */
+
+  /* Page chrome */
+  --bg-page:     #FFFFFF;
+  --bg-chrome:   #F5F7F9;   /* app background / rail behind content */
+  --bg-subtle:   var(--gray-50);
+  --bg-hover:    var(--gray-50);
+  --bg-card:     #FFFFFF;
+
+  /* Foreground ramp */
+  --fg-1: var(--gray-900);
+  --fg-2: var(--gray-700);
+  --fg-3: var(--gray-500);
+  --fg-4: var(--gray-400);
+  --fg-rail-icon: #828FA3;   /* collapsed rail icon color */
+  --fg-inv: #FFFFFF;
+
+  /* Borders */
+  --border-1: var(--gray-100);   /* #E8E8ED — default card/input */
+  --border-2: var(--gray-200);   /* #D1D1DB — divider, strong */
+  --border-strong: var(--gray-300);
+
+  /* =====================================================================
+     SEMANTIC STATE PAIRS
+     Pattern: <state>-bg (tint 50), <state>-border (tint 100),
+              <state>-fg (tint 700) for text on the tint.
+     ===================================================================== */
+  --success-bg: var(--green-50);  --success-border: var(--green-200); --success-fg: var(--green-700);
+  --warning-bg: var(--yellow-50); --warning-border: var(--yellow-200); --warning-fg: var(--yellow-700);
+  --danger-bg:  var(--red-50);    --danger-border:  var(--red-200);    --danger-fg:  var(--red-700);
+  --info-bg:    var(--blue-50);   --info-border:    var(--blue-200);   --info-fg:    var(--blue-700);
+  --pending-bg: var(--orange-50); --pending-border: var(--orange-200); --pending-fg: var(--orange-700);
+
+  /* =====================================================================
+     SHADOWS — opacities match Figma's rgba(18,18,23, .03/.04/.05/.10)
+     ===================================================================== */
+  --shadow-xs: 0 1px 1px rgba(18,18,23,.03);
+  --shadow-sm: 0 1px 2px rgba(18,18,23,.04), 0 0 0 1px rgba(18,18,23,.03);
+  --shadow-md: 0 4px 12px rgba(18,18,23,.05), 0 1px 2px rgba(18,18,23,.04);
+  --shadow-lg: 0 12px 32px rgba(18,18,23,.10), 0 2px 6px rgba(18,18,23,.05);
+  --shadow-focus-primary: 0 0 0 3px rgba(112,71,235,.25);
+  --shadow-focus-danger:  0 0 0 3px rgba(245,61,107,.25);
+
+  /* =====================================================================
+     RADII — observed values: 8 (buttons/inputs), 10 (logo tile),
+     12 (cards), 16 (modals), 999 (pills/tags)
+     ===================================================================== */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-logo: 10px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* =====================================================================
+     SPACING — 4px base grid
+     ===================================================================== */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* =====================================================================
+     TYPE — Inter only (Regular / Medium / Semi Bold / Bold per METADATA).
+     Dominant body size = 14/20. Page title = 20/32 Bold (observed).
+     ===================================================================== */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Display — big numbers like "EUR 12.4M" on the dashboard. */
+  --t-display-size: 44px;   --t-display-lh: 52px;   --t-display-w: 500;
+  /* Page title ("Inicio", "Contactos") */
+  --t-h1-size:      20px;   --t-h1-lh: 32px;        --t-h1-w: 700;
+  /* Section lead ("Estas son tus tareas pendientes") */
+  --t-h2-size:      18px;   --t-h2-lh: 28px;        --t-h2-w: 600;
+  --t-h3-size:      16px;   --t-h3-lh: 24px;        --t-h3-w: 600;
+  /* Dominant body (Inter 14 Regular) */
+  --t-body-size:    14px;   --t-body-lh: 20px;      --t-body-w: 400;
+  --t-body-strong-w: 500;
+  /* Field labels, helper text */
+  --t-small-size:   12px;   --t-small-lh: 16px;     --t-small-w: 400;
+  /* UI caption (button/menu) */
+  --t-caption-size: 14px;   --t-caption-lh: 20px;   --t-caption-w: 500;
+  /* Eyebrow (ALL CAPS section labels: TAREAS PENDIENTES, VENTAS RECIENTES) */
+  --t-eyebrow-size: 11px;   --t-eyebrow-lh: 14px;   --t-eyebrow-w: 600;
+  --t-eyebrow-track: 0.08em;
+}
+
+/* =========================================================================
+   Semantic / element styles
+   ========================================================================= */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--t-body-size);
+  line-height: var(--t-body-lh);
+  font-weight: var(--t-body-w);
+  color: var(--fg-2);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11";   /* Inter stylistic set for cleaner g/R */
+}
+
+h1, .h1 { font: var(--t-h1-w) var(--t-h1-size)/var(--t-h1-lh) var(--font-sans); color: var(--fg-1); letter-spacing: -0.01em; }
+h2, .h2 { font: var(--t-h2-w) var(--t-h2-size)/var(--t-h2-lh) var(--font-sans); color: var(--fg-1); letter-spacing: -0.005em; }
+h3, .h3 { font: var(--t-h3-w) var(--t-h3-size)/var(--t-h3-lh) var(--font-sans); color: var(--fg-1); }
+p       { font: var(--t-body-w) var(--t-body-size)/var(--t-body-lh) var(--font-sans); color: var(--fg-2); }
+
+.display {
+  font: var(--t-display-w) var(--t-display-size)/var(--t-display-lh) var(--font-sans);
+  color: var(--fg-1); letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.small   { font: var(--t-small-w) var(--t-small-size)/var(--t-small-lh) var(--font-sans); color: var(--fg-3); }
+.caption { font: var(--t-caption-w) var(--t-caption-size)/var(--t-caption-lh) var(--font-sans); color: var(--fg-2); }
+.eyebrow {
+  font: var(--t-eyebrow-w) var(--t-eyebrow-size)/var(--t-eyebrow-lh) var(--font-sans);
+  color: var(--fg-3); letter-spacing: var(--t-eyebrow-track); text-transform: uppercase;
+}
+.num {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "cv11";
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:var(--bg-subtle);display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .card{background:#fff;border:1px solid var(--border-1);border-radius:12px;padding:14px;}
+  .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .eyebrow{font:600 11px/14px var(--font-sans);color:var(--fg-3);letter-spacing:.06em;text-transform:uppercase;}
+  .ico{display:inline-flex;width:28px;height:28px;border-radius:8px;background:var(--bg-subtle);align-items:center;justify-content:center;color:var(--fg-2);font-size:14px;}
+  .num{font:700 28px/32px var(--font-sans);color:var(--fg-1);letter-spacing:-0.02em;}
+  .label{font:500 12px/16px var(--font-sans);color:var(--fg-3);margin-top:6px;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font:500 11px/14px var(--font-sans);margin-top:8px;border:1px solid transparent;}
+</style></head><body>
+  <div class="card">
+    <div class="hd"><span class="ico">≡</span><span class="eyebrow">Ventas</span></div>
+    <div class="num">3</div>
+    <span class="pill" style="background:var(--danger-bg);color:var(--danger-fg);border-color:var(--danger-border)">Facturas vencidas</span>
+  </div>
+  <div class="card">
+    <div class="hd"><span class="ico">↕</span><span class="eyebrow">Compras</span></div>
+    <div class="num">1</div>
+    <span class="pill" style="background:var(--warning-pill);color:var(--warning-fg);border-color:var(--warning-border)">Sin conciliar</span>
+  </div>
+  <div class="card">
+    <div class="hd"><span class="ico">◈</span><span class="eyebrow">Pedidos</span></div>
+    <div class="num">2</div>
+    <span class="pill" style="background:var(--success-bg);color:var(--success-fg);border-color:var(--success-border)">Pendiente de envío</span>
+  </div>
+</body></html>

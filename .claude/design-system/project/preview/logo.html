@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Logo</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:var(--bg-page);display:flex;align-items:center;gap:28px;flex-wrap:wrap;}
+  .col{display:flex;flex-direction:column;gap:6px;align-items:center;}
+  .caption{font:500 11px/14px var(--font-sans);color:var(--fg-3);letter-spacing:.04em;text-transform:uppercase;}
+  /* Mark — rounded tile, yellow gradient, dark navy glyph */
+  .mark{display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative;box-shadow:inset 0 0 0 1px var(--border-1);}
+  .mark::before{content:"";position:absolute;inset:3px;border-radius:9px;background:linear-gradient(#F8D414,#FFE356);}
+  .mark svg{position:relative;z-index:1;color:#202452;}
+  .mark-64{width:64px;height:64px;} .mark-64 svg{width:28px;height:28px;}
+  .mark-44{width:44px;height:44px;} .mark-44 svg{width:20px;height:20px;}
+  .mark-32{width:32px;height:32px;border-radius:8px;} .mark-32::before{inset:2px;border-radius:6px;} .mark-32 svg{width:15px;height:15px;}
+  /* Lockup */
+  .lockup{display:flex;align-items:center;gap:10px;}
+  .wordmark{font:700 20px/32px var(--font-sans);color:var(--etendo-ink);letter-spacing:-0.01em;}
+  /* Inverse */
+  .mono{display:flex;align-items:center;justify-content:center;background:#121217;border-radius:12px;width:64px;height:64px;}
+  .mono svg{width:28px;height:28px;color:#FFDA44;}
+</style></head><body>
+  <div class="col">
+    <div class="mark mark-64"><svg viewBox="0 0 20.241 20" fill="currentColor"><path d="M 18.006 15.543 L 13.443 10.003 L 18.198 4.229 L 18.191 4.232 L 19.946 2.102 C 20.636 1.263 20.04 0 18.953 0 L 0.771 0 C 0.345 0 0 0.345 0 0.771 L 0 19.229 C 0 19.655 0.345 20 0.771 20 L 18.952 20 C 20.038 20 20.634 18.737 19.944 17.898 L 18.003 15.541 L 18.006 15.541 L 18.006 15.543 Z M 1.856 18.144 L 1.856 1.856 L 17.74 1.856 L 12.237 8.538 L 10.155 6.734 C 9.911 6.438 9.548 6.266 9.163 6.266 L 5.663 6.266 L 5.663 8.122 L 8.893 8.122 L 11.035 9.997 L 11.038 10.001 L 9.086 11.645 L 5.665 11.645 L 5.665 13.502 L 7.557 13.502 L 9.257 13.502 L 9.355 13.502 C 9.739 13.502 10.104 13.331 10.348 13.033 L 12.24 11.461 L 17.742 18.141 L 1.856 18.141 L 1.856 18.144 Z"/></svg></div>
+    <div class="caption">Mark · 64</div>
+  </div>
+  <div class="col">
+    <div class="lockup">
+      <div class="mark mark-44"><svg viewBox="0 0 20.241 20" fill="currentColor"><path d="M 18.006 15.543 L 13.443 10.003 L 18.198 4.229 L 18.191 4.232 L 19.946 2.102 C 20.636 1.263 20.04 0 18.953 0 L 0.771 0 C 0.345 0 0 0.345 0 0.771 L 0 19.229 C 0 19.655 0.345 20 0.771 20 L 18.952 20 C 20.038 20 20.634 18.737 19.944 17.898 L 18.003 15.541 L 18.006 15.541 L 18.006 15.543 Z M 1.856 18.144 L 1.856 1.856 L 17.74 1.856 L 12.237 8.538 L 10.155 6.734 C 9.911 6.438 9.548 6.266 9.163 6.266 L 5.663 6.266 L 5.663 8.122 L 8.893 8.122 L 11.035 9.997 L 11.038 10.001 L 9.086 11.645 L 5.665 11.645 L 5.665 13.502 L 7.557 13.502 L 9.257 13.502 L 9.355 13.502 C 9.739 13.502 10.104 13.331 10.348 13.033 L 12.24 11.461 L 17.742 18.141 L 1.856 18.141 L 1.856 18.144 Z"/></svg></div>
+      <div class="wordmark">Etendo</div>
+    </div>
+    <div class="caption">Lockup · horizontal</div>
+  </div>
+  <div class="col">
+    <div class="mark mark-32"><svg viewBox="0 0 20.241 20" fill="currentColor"><path d="M 18.006 15.543 L 13.443 10.003 L 18.198 4.229 L 18.191 4.232 L 19.946 2.102 C 20.636 1.263 20.04 0 18.953 0 L 0.771 0 C 0.345 0 0 0.345 0 0.771 L 0 19.229 C 0 19.655 0.345 20 0.771 20 L 18.952 20 C 20.038 20 20.634 18.737 19.944 17.898 L 18.003 15.541 L 18.006 15.541 L 18.006 15.543 Z M 1.856 18.144 L 1.856 1.856 L 17.74 1.856 L 12.237 8.538 L 10.155 6.734 C 9.911 6.438 9.548 6.266 9.163 6.266 L 5.663 6.266 L 5.663 8.122 L 8.893 8.122 L 11.035 9.997 L 11.038 10.001 L 9.086 11.645 L 5.665 11.645 L 5.665 13.502 L 7.557 13.502 L 9.257 13.502 L 9.355 13.502 C 9.739 13.502 10.104 13.331 10.348 13.033 L 12.24 11.461 L 17.742 18.141 L 1.856 18.141 L 1.856 18.144 Z"/></svg></div>
+    <div class="caption">Mark · 32</div>
+  </div>
+  <div class="col">
+    <div class="mono"><svg viewBox="0 0 20.241 20" fill="currentColor"><path d="M 18.006 15.543 L 13.443 10.003 L 18.198 4.229 L 18.191 4.232 L 19.946 2.102 C 20.636 1.263 20.04 0 18.953 0 L 0.771 0 C 0.345 0 0 0.345 0 0.771 L 0 19.229 C 0 19.655 0.345 20 0.771 20 L 18.952 20 C 20.038 20 20.634 18.737 19.944 17.898 L 18.003 15.541 L 18.006 15.541 L 18.006 15.543 Z M 1.856 18.144 L 1.856 1.856 L 17.74 1.856 L 12.237 8.538 L 10.155 6.734 C 9.911 6.438 9.548 6.266 9.163 6.266 L 5.663 6.266 L 5.663 8.122 L 8.893 8.122 L 11.035 9.997 L 11.038 10.001 L 9.086 11.645 L 5.665 11.645 L 5.665 13.502 L 7.557 13.502 L 9.257 13.502 L 9.355 13.502 C 9.739 13.502 10.104 13.331 10.348 13.033 L 12.24 11.461 L 17.742 18.141 L 1.856 18.141 L 1.856 18.144 Z"/></svg></div>
+    <div class="caption">Inverse · on ink</div>
+  </div>
+</body></html>

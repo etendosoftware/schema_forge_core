@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Brand Palette</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:var(--bg-page);display:flex;gap:12px;align-items:stretch;font-family:var(--font-sans);}
+  .sw{flex:1;border-radius:var(--radius-lg);border:1px solid var(--border-1);padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:110px;position:relative;overflow:hidden;}
+  .sw .chip{width:28px;height:28px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);}
+  .sw .name{font:600 13px/18px var(--font-sans);color:var(--fg-1);margin-top:10px;}
+  .sw .sub{font:500 11px/14px var(--font-sans);color:var(--fg-3);letter-spacing:.04em;text-transform:uppercase;margin-top:2px;}
+  .sw .hex{font:500 12px/14px ui-monospace,monospace;color:var(--fg-3);margin-top:6px;}
+  .sw.ink{background:#121217;}
+  .sw.ink .name{color:#fff;} .sw.ink .hex,.sw.ink .sub{color:#A9A9BC;}
+  .sw.purple{background:#7047EB;color:#fff;}
+  .sw.purple .name{color:#fff;} .sw.purple .hex,.sw.purple .sub{color:rgba(255,255,255,.8);}
+  .sw.yellow .chip{background:linear-gradient(#F8D414,#FFE356);}
+</style></head><body>
+  <div class="sw ink">
+    <div class="chip" style="background:#121217;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)"></div>
+    <div><div class="name">Ink</div><div class="sub">Primary buttons · text</div><div class="hex">#121217</div></div>
+  </div>
+  <div class="sw purple">
+    <div class="chip" style="background:#7047EB;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)"></div>
+    <div><div class="name">Purple</div><div class="sub">Brand · primary accent</div><div class="hex">#7047EB</div></div>
+  </div>
+  <div class="sw yellow">
+    <div class="chip"></div>
+    <div><div class="name">Etendo Yellow</div><div class="sub">Logo · warning · active</div><div class="hex">#F8D414 → #FFE356</div></div>
+  </div>
+  <div class="sw">
+    <div class="chip" style="background:#F5F7F9"></div>
+    <div><div class="name">Chrome</div><div class="sub">App background · rail</div><div class="hex">#F5F7F9</div></div>
+  </div>
+</body></html>
