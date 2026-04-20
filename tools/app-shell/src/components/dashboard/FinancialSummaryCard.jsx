@@ -84,7 +84,6 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
         <div
           className="flex flex-row items-center"
           style={{
-            width: '135px',
             height: '16px',
             padding: '0px',
             gap: '10px',
@@ -92,7 +91,6 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
         >
           <span
             style={{
-              width: '135px',
               height: '16px',
               fontFamily: 'Inter',
               fontStyle: 'normal',
@@ -100,6 +98,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
               fontSize: '12px',
               lineHeight: '16px',
               color: '#282833',
+              whiteSpace: 'nowrap',
             }}
           >
             {ui('financialSummaryTitle')}

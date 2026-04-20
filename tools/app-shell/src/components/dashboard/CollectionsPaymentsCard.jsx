@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Separator } from '@/components/ui/separator';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
@@ -21,34 +20,358 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
   ) || '/purchase-invoice?filter=overdue';
 
   return (
-    <div className="rounded-xl border overflow-hidden bg-white flex flex-col h-full" style={{ borderColor: '#E8EAEF' }}>
+    <div
+      className="overflow-hidden bg-white"
+      style={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '0px',
+        width: '100%',
+        height: '100%',
+        border: '1px solid #E8EAEF',
+        borderRadius: '8px',
+      }}
+    >
       <div
-        className="flex items-center border-b"
-        style={{ backgroundColor: '#F5F7F9', borderBottomColor: '#E8EAEF', padding: '8px 12px', minHeight: '48px' }}
+        style={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '8px 12px',
+          gap: '16px',
+          width: '100%',
+          height: '48px',
+          background: '#F5F7F9',
+          borderBottom: '1px solid #E8EAEF',
+        }}
       >
-        <span className="text-xs font-medium uppercase" style={{ color: '#282833', letterSpacing: 0 }}>
-          {ui('collectionsPaymentsTitle')}
-        </span>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '0px',
+            gap: '10px',
+            width: 'auto',
+            height: '16px',
+          }}
+        >
+          <span
+            style={{
+              height: '16px',
+              fontFamily: 'Inter',
+              fontStyle: 'normal',
+              fontWeight: 500,
+              fontSize: '12px',
+              lineHeight: '16px',
+              color: '#282833',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {ui('collectionsPaymentsTitle')}
+          </span>
+        </div>
       </div>
-      <div className="p-4 space-y-4 flex-1 min-h-0">
-        <Link to={toCollectTarget} className="block space-y-1.5 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors">
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium" style={{ color: '#17663A' }}>{ui('toCollectLabel')}</p>
-            <span className="text-xs tabular-nums" style={{ color: '#828FA3' }}>{toCollect.count}</span>
+      
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          padding: '12px',
+          width: '100%',
+          flex: 1,
+        }}
+      >
+        <Link
+          to={toCollectTarget}
+          className="hover:opacity-80 transition-opacity"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            gap: '8px',
+            width: '189.33px',
+            height: '60px',
+            textDecoration: 'none',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '4px',
+              width: '189.33px',
+              height: '24px',
+            }}
+          >
+            <span
+              style={{
+                width: '70px',
+                height: '20px',
+                fontFamily: 'Inter',
+                fontStyle: 'normal',
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#17663A',
+              }}
+            >
+              {ui('toCollectLabel')}
+            </span>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '4px 8px',
+                width: '27px',
+                height: '24px',
+                background: '#F5F7F9',
+                borderRadius: '8px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  padding: '0px 2px',
+                  width: '11px',
+                  height: '16px',
+                  borderRadius: '0px',
+                }}
+              >
+                <span
+                  style={{
+                    width: '7px',
+                    height: '16px',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '16px',
+                    color: '#3F3F50',
+                  }}
+                >
+                  {toCollect.count}
+                </span>
+              </div>
+            </div>
           </div>
-          <span className="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-bold tabular-nums" style={{ backgroundColor: '#EEFBF4', borderColor: '#B2EECC', color: '#17663A' }}>
-            {formatDashboardAmount(toCollect.amount, currencyLabel, numberLocale)}
-          </span>
+          <div
+            style={{
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '4px 8px',
+              width: 'max-content',
+              height: '28px',
+              background: '#EEFBF4',
+              border: '1px solid #B2EECC',
+              borderRadius: '8px',
+              flex: 'none',
+              order: 1,
+              flexGrow: 0,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                padding: '0px 4px',
+                width: 'max-content',
+                height: '20px',
+                borderRadius: '0px',
+                flex: 'none',
+                order: 1,
+                flexGrow: 0,
+              }}
+            >
+              <span
+                style={{
+                  width: 'max-content',
+                  height: '20px',
+                  fontFamily: 'Inter',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '20px',
+                  color: '#17663A',
+                  whiteSpace: 'nowrap',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0,
+                }}
+              >
+                {formatDashboardAmount(toCollect.amount, currencyLabel, numberLocale)}
+              </span>
+            </div>
+          </div>
         </Link>
-        <Separator />
-        <Link to={toPayTarget} className="block space-y-1.5 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors">
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium" style={{ color: '#D50B3E' }}>{ui('toPayLabel')}</p>
-            <span className="text-xs tabular-nums" style={{ color: '#828FA3' }}>{toPay.count}</span>
+        
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            padding: '16px 0px',
+            width: '189.33px',
+            height: '32px',
+          }}
+        >
+          <div
+            style={{
+              width: '189.33px',
+              height: '0px',
+              border: '1px solid #E8EAEF',
+            }}
+          />
+        </div>
+
+        <Link
+          to={toPayTarget}
+          className="hover:opacity-80 transition-opacity"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            gap: '8px',
+            width: '189.33px',
+            height: '60px',
+            textDecoration: 'none',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '4px',
+              width: '189.33px',
+              height: '24px',
+            }}
+          >
+            <span
+              style={{
+                width: '65px',
+                height: '20px',
+                fontFamily: 'Inter',
+                fontStyle: 'normal',
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#AF0932',
+              }}
+            >
+              {ui('toPayLabel')}
+            </span>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '4px 8px',
+                width: '26px',
+                height: '24px',
+                background: '#F5F7F9',
+                borderRadius: '8px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  padding: '0px 2px',
+                  width: '10px',
+                  height: '16px',
+                  borderRadius: '0px',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '16px',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '16px',
+                    color: '#3F3F50',
+                  }}
+                >
+                  {toPay.count}
+                </span>
+              </div>
+            </div>
           </div>
-          <span className="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-bold tabular-nums" style={{ backgroundColor: '#FEF0F4', borderColor: '#FBB1C4', color: '#D50B3E' }}>
-            {formatDashboardAmount(toPay.amount, currencyLabel, numberLocale)}
-          </span>
+          <div
+            style={{
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '4px 8px',
+              width: 'max-content',
+              height: '28px',
+              background: '#FEF0F4',
+              border: '1px solid #FBB1C4',
+              borderRadius: '8px',
+              flex: 'none',
+              order: 1,
+              flexGrow: 0,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                padding: '0px 4px',
+                width: 'max-content',
+                height: '20px',
+                borderRadius: '0px',
+                flex: 'none',
+                order: 1,
+                flexGrow: 0,
+              }}
+            >
+              <span
+                style={{
+                  width: 'max-content',
+                  height: '20px',
+                  fontFamily: 'Inter',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '20px',
+                  color: '#D50B3E',
+                  whiteSpace: 'nowrap',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0,
+                }}
+              >
+                {formatDashboardAmount(toPay.amount, currencyLabel, numberLocale)}
+              </span>
+            </div>
+          </div>
         </Link>
       </div>
     </div>

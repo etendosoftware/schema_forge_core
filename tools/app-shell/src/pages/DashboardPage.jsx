@@ -83,9 +83,9 @@ function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
 
 function useQuickActions(ui) {
   return useMemo(() => [
-    { label: ui('quickAccessSalesOrders'),  to: '/sales-order',   icon: TrendingUp },
-    { label: ui('quickAccessSalesInvoices'), to: '/sales-invoice', icon: FileText   },
-    { label: ui('quickAccessContacts'),      to: '/contacts',      icon: Users      },
+    { label: ui('quickAccessSalesOrders'),  to: '/sales-order/new',   icon: TrendingUp },
+    { label: ui('quickAccessSalesInvoices'), to: '/sales-invoice/new', icon: FileText   },
+    { label: ui('quickAccessContacts'),      to: '/contacts/new',      icon: Users      },
   ], [ui]);
 }
 
