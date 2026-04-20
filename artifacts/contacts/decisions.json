@@ -110,13 +110,15 @@
           "visibility": "editable",
           "grid": true,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "order": 2
         },
         "searchKey": {
           "visibility": "editable",
           "grid": false,
           "searchable": true,
-          "section": "principal"
+          "section": "principal",
+          "order": 1
         },
         "businessPartnerCategory": {
           "visibility": "editable",
@@ -135,7 +137,36 @@
         },
         "taxID": {
           "visibility": "editable",
-          "section": "principal"
+          "section": "principal",
+          "order": 4
+        },
+        "oBTIKTaxIDKey": {
+          "visibility": "editable",
+          "order": 3
+        },
+        "etgoWeb": {
+          "visibility": "editable",
+          "form": true,
+          "grid": true,
+          "label": "Web",
+          "section": "principal",
+          "order": 5
+        },
+        "etgoEmail": {
+          "visibility": "editable",
+          "form": true,
+          "grid": true,
+          "label": "Email",
+          "section": "principal",
+          "order": 6
+        },
+        "etgoPhone": {
+          "visibility": "editable",
+          "form": true,
+          "grid": true,
+          "label": "Phone",
+          "section": "principal",
+          "order": 7
         },
         "creditLimit": {
           "visibility": "editable",
@@ -429,6 +460,27 @@
           "grid": false,
           "section": "principal"
         }
+      }
+    },
+    "customer": {
+      "fields": {
+        "etgoEmail": { "visibility": "discarded" },
+        "etgoPhone": { "visibility": "discarded" },
+        "etgoWeb":   { "visibility": "discarded" }
+      }
+    },
+    "vendorCreditor": {
+      "fields": {
+        "etgoEmail": { "visibility": "discarded" },
+        "etgoPhone": { "visibility": "discarded" },
+        "etgoWeb":   { "visibility": "discarded" }
+      }
+    },
+    "employee": {
+      "fields": {
+        "etgoEmail": { "visibility": "discarded" },
+        "etgoPhone": { "visibility": "discarded" },
+        "etgoWeb":   { "visibility": "discarded" }
       }
     }
   },
