@@ -714,16 +714,20 @@ export function DetailView({
   const { toggleFavorite, isFavorite } = useFavorites();
   const favKey = windowName || windowTitle;
   const favActive = isFavorite(favKey);
-  useSetPageMeta({
-    title: windowTitle,
-    breadcrumb: windowTitle,
-    onAddToFavorites: favKey ? () => toggleFavorite(favKey, windowTitle) : undefined,
-    isFavorite: favActive,
-  }, [favActive]);
 
   const title = isNew
     ? ui('newRecord')
     : `${resolveIdentifier(data, titleField) || data._identifier || data.id || ''}`;
+  const fullBreadcrumb = breadcrumb
+    ? `${breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}${title ? ` / ${title}` : ''}`
+    : windowTitle;
+
+  useSetPageMeta({
+    title: title || windowTitle,
+    breadcrumb: fullBreadcrumb,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, windowTitle) : undefined,
+    isFavorite: favActive,
+  }, [favActive, title]);
 
   const allEntryFields = addLineFields.entry ?? [];
   const hiddenEntryDefaults = addLineFields.hidden ?? [];
