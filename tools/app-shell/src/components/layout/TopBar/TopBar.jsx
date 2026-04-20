@@ -37,7 +37,7 @@ export default function TopBar({
   menuAction,
   onAddToFavorites,
   isFavorite = false,
-  onPageHelp,
+  onPageHelp = () => {},
   onSearchClick,
   searchPlaceholder,
   onAIClick,

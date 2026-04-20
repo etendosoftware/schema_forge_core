@@ -1291,7 +1291,6 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
       onClick: () => {},
       disabled: true,
     },
-    onPageHelp: () => {},
   });
   const dashboardCurrency = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
 
