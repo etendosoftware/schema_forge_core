@@ -59,7 +59,7 @@ export default function TopBar({
     <TooltipProvider>
       <header
         className={cn(
-          'flex h-14 shrink-0 items-center gap-4 px-4 bg-page-bg',
+          'flex h-[62px] shrink-0 items-center gap-4 px-6 bg-page-bg',
           className
         )}
       >
@@ -163,9 +163,9 @@ export default function TopBar({
                 type="button"
                 onClick={handleAIClick}
                 aria-label={ui('aiAssistant')}
-                className="copilot-btn flex h-8 w-8 items-center justify-center rounded-lg text-topbar-icon transition-colors"
+                className="copilot-btn flex h-10 w-10 items-center justify-center rounded-lg text-topbar-icon transition-colors"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-5 w-5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{ui('aiAssistant')}</TooltipContent>
@@ -177,9 +177,9 @@ export default function TopBar({
                 type="button"
                 onClick={onNewClick}
                 aria-label={ui('newRecord')}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-topbar-icon hover:text-foreground hover:bg-muted transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-topbar-icon hover:text-foreground hover:bg-muted transition-colors"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{ui('newRecord')}</TooltipContent>
@@ -191,9 +191,9 @@ export default function TopBar({
                 type="button"
                 onClick={onBellClick}
                 aria-label={ui('notifications')}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-topbar-icon hover:text-foreground hover:bg-muted transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-topbar-icon hover:text-foreground hover:bg-muted transition-colors"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-5 w-5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{ui('notifications')}</TooltipContent>

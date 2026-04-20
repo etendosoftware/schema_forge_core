@@ -145,7 +145,7 @@ function CollapsedGroupPopover({
                 key={item.name}
                 to={`/${itemPath}`}
                 className={cn(
-                  'flex w-full items-center px-3 py-1.5 text-sm transition-colors',
+                  'flex w-full items-center px-3 py-2 text-sm transition-colors',
                   isItemActive
                     ? 'bg-accent-highlight text-accent-highlight-foreground font-semibold'
                     : 'text-foreground hover:bg-muted/50'
@@ -229,29 +229,33 @@ export default function SideMenu({
       >
         {/* Header */}
         {expanded ? (
-          <div className="flex shrink-0 items-center h-14 px-3 gap-2 border-b border-border/50">
-            <img
-              src={logoSrc}
-              alt="Etendo"
-              className="h-8 w-8 shrink-0 rounded-lg"
-            />
-            <div className="flex flex-1 min-w-0 items-center gap-1 overflow-hidden">
-              <span className="text-sm font-semibold text-foreground truncate">
+          <div className="relative flex shrink-0 items-center h-[62px] px-3 gap-2">
+            <button
+              type="button"
+              className="flex flex-1 min-w-0 items-center gap-2 h-10 pl-1 pr-2 rounded-full bg-muted/60 hover:bg-muted transition-colors"
+            >
+              <img
+                src={logoSrc}
+                alt="Etendo"
+                className="h-8 w-8 shrink-0 rounded-full"
+              />
+              <span className="flex-1 text-left text-sm font-semibold text-foreground truncate">
                 {selectedOrg?.name || ui('yourCompany')}
               </span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </div>
+            </button>
             <button
               type="button"
               onClick={onToggle}
               aria-label={ui('collapseMenu')}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
+            <div className="absolute bottom-0 left-3 right-3 border-t border-border/50" />
           </div>
         ) : (
-          <div className="flex justify-center items-center h-14 border-b border-border/50">
+          <div className="relative flex justify-center items-center h-[62px]">
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <button
@@ -265,6 +269,7 @@ export default function SideMenu({
               </TooltipTrigger>
               <TooltipContent side="right">{ui('expandMenu')}</TooltipContent>
             </Tooltip>
+            <div className="absolute bottom-0 left-2 right-2 border-t border-border/50" />
           </div>
         )}
 
