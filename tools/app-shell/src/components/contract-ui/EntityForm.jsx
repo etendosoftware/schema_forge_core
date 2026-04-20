@@ -168,6 +168,16 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   // If field is mandatory but value is empty, or if we have a value, don't show clear unless value exists
   const hasSelection = value != null && value !== '';
 
+  const createBtn = canCreate ? (
+    <button
+      type="button"
+      className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
+      onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
+    >
+      + {ui('createContact')}
+    </button>
+  ) : null;
+
   return (
     <div className="relative">
       <div className="relative">
@@ -220,15 +230,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       </div>
       {open && (canCreate || filtered.length > 0) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
-          {canCreate && (
-            <button
-              type="button"
-              className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
-              onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
-            >
-              + {ui('createContact')}
-            </button>
-          )}
+          {createBtn}
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -249,15 +251,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
-          {canCreate && (
-            <button
-              type="button"
-              className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
-              onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
-            >
-              + {ui('createContact')}
-            </button>
-          )}
+          {createBtn}
           <div className="px-3 py-2 text-xs text-muted-foreground">
             {ui('noResultsFor')} &ldquo;{query}&rdquo;
           </div>
@@ -265,13 +259,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       )}
       {open && !query && !fetching && canCreate && filtered.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
-          <button
-            type="button"
-            className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
-            onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
-          >
-            + {ui('createContact')}
-          </button>
+          {createBtn}
         </div>
       )}
     </div>

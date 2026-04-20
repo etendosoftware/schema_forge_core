@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
@@ -7,26 +7,14 @@ import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const navigate = useNavigate();
   const [cloneTarget, setCloneTarget] = useState(null);
-  const [createContactState, setCreateContactState] = useState(null);
 
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
-
-  const bpApiBaseUrl = useMemo(
-    () => (apiBaseUrl ? apiBaseUrl.replace(/\/[^/]+$/, '/contacts') : null),
-    [apiBaseUrl],
-  );
-
-  const createContactCtxValue = useMemo(() => ({
-    fieldKey: 'businessPartner',
-    onOpen: (query, onSelect) => setCreateContactState({ query, onSelect }),
-  }), []);
+  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
+    useCreateContactModal({ apiBaseUrl, token });
 
   if (recordId) {
     return (
