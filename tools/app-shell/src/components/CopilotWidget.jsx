@@ -22,7 +22,7 @@ function getResponse(text, responses) {
   return responses.default;
 }
 
-export function CopilotWidget() {
+export function CopilotWidget({ hideTrigger = false }) {
   const { isOpen: open, close: closePanel, toggle } = useCopilot();
   const location = useLocation();
   const ui = useUI();
@@ -235,7 +235,7 @@ export function CopilotWidget() {
       </div>
 
       {/* Floating trigger button */}
-      <Button
+      {!hideTrigger && <Button
         onClick={toggle}
         size="icon"
         className={cn(
@@ -253,7 +253,7 @@ export function CopilotWidget() {
             <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-yellow-300 animate-spin [animation-duration:3s]" />
           </span>
         )}
-      </Button>
+      </Button>}
     </>
   );
 }

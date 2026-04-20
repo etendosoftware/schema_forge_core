@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+.sidebar-scroll::-webkit-scrollbar {
+  width: 12px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: #E8EAEF;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #d0d3db;
+  background-clip: padding-box;
+}
+
 .address-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -42,6 +59,25 @@
 
 .page-transition {
   animation: page-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes copilot-gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.copilot-btn {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.copilot-btn:hover {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7, #ec4899, #6366f1);
+  background-size: 300% 300%;
+  animation: copilot-gradient 2.5s ease infinite;
+  color: white !important;
+  border-radius: 0.5rem;
 }
 
 @keyframes slide-in-from-right {
@@ -133,31 +169,31 @@
 @keyframes modal-enter {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 .modal-enter {
-  animation: modal-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modal-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modal-exit {
   from {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.97);
   }
 }
 
 .modal-exit {
-  animation: modal-exit 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: modal-exit 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .content-bg {
@@ -224,6 +260,17 @@
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Figma design tokens (ETP-3802) */
+    --accent-highlight: 51 100% 50%;            /* #FFD500 */
+    --accent-highlight-foreground: 240 12% 8%;  /* #121217 on yellow */
+    --page-bg: 210 20% 97%;                     /* #F5F7F9 */
+    --text-primary: 240 12% 8%;                 /* #121217 */
+    --search-bg: 223 16% 92%;                   /* #E8EAEF */
+    --topbar-icon: 216 15% 57%;                 /* #828FA3 */
+    --topbar-breadcrumb: 225 12% 38%;           /* #555B6D */
+    --text-secondary: 240 12% 48%;              /* #6C6C89 */
+    --search-placeholder: 225 12% 38%;          /* #555B6D */
   }
 
   .dark {
@@ -255,5 +302,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Figma design tokens (ETP-3802) — dark mode overrides */
+    --accent-highlight: 51 100% 50%;
+    --accent-highlight-foreground: 240 12% 8%;
+    --page-bg: 222 47% 11%;
+    --text-primary: 210 20% 98%;
+    --search-bg: 215 20% 22%;
+    --topbar-icon: 216 15% 65%;
+    --search-placeholder: 225 12% 55%;
   }
 }

@@ -2,20 +2,25 @@
   "menu": [
     {
       "group": "Home",
-      "icon": "LayoutDashboard",
+      "icon": "Home",
       "section": "General",
       "items": [
-        { "name": "dashboard", "label": "Dashboard" }
+        { "name": "dashboard", "label": "Home" }
       ]
     },
     {
+      "group": "Favorites",
+      "icon": "Star",
+      "section": "General",
+      "items": []
+    },
+    {
       "group": "People",
-      "icon": "Users",
+      "icon": "Contact2",
       "section": "Commercial",
       "items": [
         { "name": "contacts", "label": "Contacts" },
         { "name": "business-partner", "label": "Business Partner", "hidden": true },
-        { "name": "crm", "label": "CRM", "hidden": true },
         { "name": "deal", "label": "Deal", "hidden": true },
         { "name": "activity", "label": "Activity", "hidden": true },
         { "name": "lead", "label": "Lead", "hidden": true },
@@ -26,7 +31,7 @@
     },
     {
       "group": "Sales",
-      "icon": "ShoppingCart",
+      "icon": "TrendingUp",
       "section": "Commercial",
       "items": [
         { "name": "sales-quotation", "label": "Sales Quotation" },
@@ -39,7 +44,8 @@
     },
     {
       "group": "Purchases",
-      "icon": "Truck",
+      "icon": "Receipt",
+      "section": "Operations",
       "items": [
         { "name": "purchase-order", "label": "Purchase Order" },
         { "name": "goods-receipt", "label": "Goods Receipt" },
@@ -50,21 +56,9 @@
       ]
     },
     {
-      "group": "Finance",
-      "icon": "Calculator",
-      "items": [
-        { "name": "payment-in", "label": "Payment In" },
-        { "name": "payment-out", "label": "Payment Out" },
-        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
-        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "assets", "label": "Assets" },
-        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
-        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
-      ]
-    },
-    {
       "group": "Inventory",
       "icon": "Package",
+      "section": "Operations",
       "items": [
         { "name": "product", "label": "Product" },
         { "name": "product-category", "label": "Product Category" },
@@ -78,12 +72,27 @@
     },
     {
       "group": "Projects",
-      "icon": "FolderKanban",
+      "icon": "Briefcase",
+      "section": "Operations",
       "hidden": true,
       "items": [
         { "name": "project", "label": "Project" },
         { "name": "time-tracking", "label": "Time Tracking" },
         { "name": "document", "label": "Document" }
+      ]
+    },
+    {
+      "group": "Finance",
+      "icon": "Building2",
+      "section": "Finance",
+      "items": [
+        { "name": "payment-in", "label": "Payment In" },
+        { "name": "payment-out", "label": "Payment Out" },
+        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
+        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
+        { "name": "assets", "label": "Assets" },
+        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
+        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
       ]
     },
     {
