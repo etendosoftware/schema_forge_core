@@ -16,6 +16,7 @@ export default function LinesGrid({ shell, cfg, orderId }) {
   if (!orderId) return <p style={{ color: '#6b7280' }}>Save the header first to add lines.</p>;
 
   async function addLine() {
+    if (Number(qty) < 1) { setError('Quantity must be at least 1'); return; }
     setAdding(true); setError(null);
     try {
       const body = {
@@ -32,7 +33,8 @@ export default function LinesGrid({ shell, cfg, orderId }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      setLines((prev) => [...prev, result.response?.data?.[0]]);
+      const newLine = result.response?.data?.[0];
+      if (newLine) setLines((prev) => [...prev, newLine]);
       setProductId(''); setQty(1); setPrice('0');
     } catch (err) {
       setError(err.message);
