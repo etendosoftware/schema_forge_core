@@ -1,4 +1,4 @@
-import { Check, ArrowUp, ArrowDown } from 'lucide-react';
+import { Check, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
 import { formatDashboardCompact, localeFromUi } from '@/lib/dashboardNumberFormat.js';
@@ -27,33 +27,9 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
   const profit   = kpis.find((k) => k.key === 'netProfit');
 
   const metrics = [
-    {
-      key: 'revenueThisMonth',
-      kpi: revenue,
-      labelKey: 'financialSummaryIncome',
-      valueWidth: '156px',
-      badgeWidth: '142px',
-      wrapWidth: '110px',
-      labelWidth: '106px',
-    },
-    {
-      key: 'expensesThisMonth',
-      kpi: expenses,
-      labelKey: 'financialSummaryExpenses',
-      valueWidth: '142px',
-      badgeWidth: '142px',
-      wrapWidth: '110px',
-      labelWidth: '106px',
-    },
-    {
-      key: 'netProfit',
-      kpi: profit,
-      labelKey: 'financialSummaryProfit',
-      valueWidth: '147px',
-      badgeWidth: '147px',
-      wrapWidth: '115px',
-      labelWidth: '111px',
-    },
+    { key: 'revenueThisMonth',  kpi: revenue,  labelKey: 'financialSummaryIncome' },
+    { key: 'expensesThisMonth', kpi: expenses, labelKey: 'financialSummaryExpenses' },
+    { key: 'netProfit',         kpi: profit,   labelKey: 'financialSummaryProfit' },
   ];
 
   return (
@@ -70,7 +46,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
       }}
     >
       <div
-        className="flex flex-row items-center justify-between self-stretch border-b"
+        className="flex flex-row items-center justify-between self-stretch"
         style={{
           boxSizing: 'border-box',
           width: '100%',
@@ -81,29 +57,21 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
           borderBottom: '1px solid #E8EAEF',
         }}
       >
-        <div
-          className="flex flex-row items-center"
+        <span
           style={{
             height: '16px',
-            padding: '0px',
-            gap: '10px',
+            fontFamily: 'Inter',
+            fontStyle: 'normal',
+            fontWeight: 500,
+            fontSize: '12px',
+            lineHeight: '16px',
+            color: '#282833',
+            whiteSpace: 'nowrap',
           }}
         >
-          <span
-            style={{
-              height: '16px',
-              fontFamily: 'Inter',
-              fontStyle: 'normal',
-              fontWeight: 500,
-              fontSize: '12px',
-              lineHeight: '16px',
-              color: '#282833',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {ui('financialSummaryTitle')}
-          </span>
-        </div>
+          {ui('financialSummaryTitle')}
+        </span>
+        <ExternalLink style={{ width: '16px', height: '16px', color: '#828FA3', flexShrink: 0 }} />
       </div>
 
       <div
@@ -116,9 +84,9 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
         }}
       >
         <div
-          className="flex flex-row items-center justify-center"
+          className="flex flex-row items-center"
           style={{
-            width: '284px',
+            width: '100%',
             height: '20px',
             padding: '0px',
             gap: '8px',
@@ -129,6 +97,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
             style={{
               width: '20px',
               height: '20px',
+              flexShrink: 0,
               padding: '0px',
               backgroundColor: '#EEFBF4',
               borderRadius: '10px',
@@ -138,10 +107,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
           </div>
           <span
             style={{
-              flex: 'none',
-              order: 1,
-              flexGrow: 0,
-              width: '256px',
+              flex: 1,
               height: '16px',
               fontFamily: 'Inter',
               fontStyle: 'normal',
@@ -150,6 +116,8 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
               lineHeight: '16px',
               color: '#17663A',
               whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {ui('financialSummaryPositive')}
@@ -165,7 +133,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
             gap: '20px',
           }}
         >
-          {metrics.map(({ key, kpi, labelKey, valueWidth, badgeWidth, wrapWidth, labelWidth }) => {
+          {metrics.map(({ key, kpi, labelKey }) => {
             const trend = kpi?.trend ?? 0;
             const trendPositive = trend >= 0;
             const pct = Math.abs(trend).toFixed(0);
@@ -184,7 +152,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
                 key={key}
                 className="flex flex-col justify-center items-start self-stretch"
                 style={{
-                  width: '200px',
+                  minWidth: 0,
                   height: '130px',
                   padding: '0px',
                   gap: '8px',
@@ -192,78 +160,62 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
                   borderRadius: '8px',
                   alignSelf: 'stretch',
                   flexGrow: 1,
-                  flexShrink: 0,
+                  flexShrink: 1,
+                  flexBasis: 0,
                 }}
               >
                 <div className="flex flex-row items-start self-stretch" style={{ width: '100%', height: '24px' }}>
-                  <div className="flex flex-row items-center" style={{ gap: '6px', width: '165px', height: '24px' }}>
-                    <span
-                      className="flex items-center"
-                      style={{ width: '165px', height: '20px', fontSize: '14px', fontWeight: 400, lineHeight: '20px', color: '#3F3F50' }}
-                    >
-                      {ui(labelKey)}
-                    </span>
-                  </div>
+                  <span
+                    style={{
+                      height: '20px',
+                      fontSize: '14px',
+                      fontWeight: 400,
+                      lineHeight: '20px',
+                      color: '#3F3F50',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {ui(labelKey)}
+                  </span>
                 </div>
-                <div className="flex flex-col items-start self-stretch" style={{ width: '100%', height: '64px' }}>
-                  <div className="flex flex-col items-start" style={{ width: valueWidth, height: '64px' }}>
-                    <div className="flex flex-col items-start" style={{ gap: '8px', width: valueWidth, height: '64px' }}>
-                      <span
-                        className="flex items-center"
-                        style={{
-                          width: valueWidth,
-                          height: '32px',
-                          ...valueTypography,
-                          fontWeight: 500,
-                          color: '#121217',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'clip',
-                        }}
-                      >
-                        {formattedValue}
-                      </span>
-                      <span
-                        className="inline-flex items-center"
-                        style={{
-                          width: badgeWidth,
-                          height: '24px',
-                          padding: '4px 8px',
-                          borderRadius: '360px',
-                          ...badgeStyle,
-                        }}
-                      >
-                        <TrendIcon style={{ width: '16px', height: '16px', flexShrink: 0 }} />
-                        <span
-                          className="inline-flex items-start"
-                          style={{
-                            padding: '0px 2px',
-                            width: wrapWidth,
-                            height: '16px',
-                            borderRadius: '0px',
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: labelWidth,
-                              height: '16px',
-                              fontFamily: 'Inter',
-                              fontStyle: 'normal',
-                              fontWeight: 400,
-                              fontSize: '12px',
-                              lineHeight: '16px',
-                              color: badgeStyle.color,
-                              flex: 'none',
-                              order: 0,
-                              flexGrow: 0,
-                            }}
-                          >
-                            {trendLabel}
-                          </span>
-                        </span>
-                      </span>
-                    </div>
-                  </div>
+                <div className="flex flex-col items-start" style={{ width: '100%', gap: '8px' }}>
+                  <span
+                    style={{
+                      height: '32px',
+                      ...valueTypography,
+                      fontWeight: 500,
+                      color: '#121217',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                    }}
+                  >
+                    {formattedValue}
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    style={{
+                      height: '24px',
+                      padding: '4px 8px',
+                      borderRadius: '360px',
+                      maxWidth: '100%',
+                      ...badgeStyle,
+                    }}
+                  >
+                    <TrendIcon style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        lineHeight: '16px',
+                        color: badgeStyle.color,
+                        fontWeight: 400,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {trendLabel}
+                    </span>
+                  </span>
                 </div>
               </div>
             );

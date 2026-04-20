@@ -40,12 +40,17 @@ const ICON_MAP = {
 
 function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
   const [currencyLabel, setCurrencyLabel] = useState('');
+  const [isCurrencyReady, setIsCurrencyReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setIsCurrencyReady(false);
 
     async function loadCurrency() {
-      if (!token) { setCurrencyLabel(''); return; }
+      if (!token) {
+        if (!cancelled) { setCurrencyLabel(''); setIsCurrencyReady(true); }
+        return;
+      }
       try {
         const headers = { Authorization: `Bearer ${token}` };
         const base = apiBaseUrl || '/sws/neo';
@@ -64,17 +69,20 @@ function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
             ?? defaults.currencyIdentifier
             ?? defaults.currency
             ?? defaults.C_Currency_ID$_identifier;
-          if (value) { if (!cancelled) setCurrencyLabel(String(value)); return; }
+          if (value) {
+            if (!cancelled) { setCurrencyLabel(String(value)); setIsCurrencyReady(true); }
+            return;
+          }
         }
       } catch { /* best-effort */ }
-      if (!cancelled) setCurrencyLabel('');
+      if (!cancelled) { setCurrencyLabel(''); setIsCurrencyReady(true); }
     }
 
     loadCurrency();
     return () => { cancelled = true; };
   }, [token, selectedOrg?.id, apiBaseUrl]);
 
-  return currencyLabel;
+  return { currencyLabel, isCurrencyReady };
 }
 
 /* ------------------------------------------------------------------
@@ -102,7 +110,7 @@ function DashboardContent({ apiBaseUrl }) {
     recentInvoices, bestProducts, bestSellers, pendingAmounts, loading,
   } = useDashboardData();
 
-  const dashboardCurrency = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
+  const { currencyLabel: dashboardCurrency, isCurrencyReady } = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = useQuickActions(ui);
   const dashboardRowStyle = {
@@ -134,7 +142,7 @@ function DashboardContent({ apiBaseUrl }) {
         onAIClick={openCopilot}
       />
 
-      {loading ? <DashboardSkeleton /> : (
+      {(loading || !isCurrencyReady) ? <DashboardSkeleton /> : (
         <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto space-y-4">
           <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
 
