@@ -19,6 +19,33 @@
   background-clip: padding-box;
 }
 
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.address-grid > * {
+  min-width: 0;
+}
+
+.entity-creation-modal input:not([type="checkbox"]):not([type="radio"]),
+.entity-creation-modal select {
+  height: 40px !important;
+  min-height: 40px !important;
+  font-size: 14px !important;
+  padding: 0 12px !important;
+  background-color: #ffffff !important;
+  box-sizing: border-box !important;
+}
+
+.entity-creation-modal .picker-btn {
+  height: 40px !important;
+  min-height: 40px !important;
+  font-size: 14px !important;
+  box-sizing: border-box !important;
+}
+
 @keyframes page-enter {
   from {
     opacity: 0;
