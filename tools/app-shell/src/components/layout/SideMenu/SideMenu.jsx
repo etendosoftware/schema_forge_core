@@ -325,10 +325,7 @@ export default function SideMenu({
                 return (
                   <div
                     key={g.group}
-                    className={cn(
-                      'flex justify-center py-0.5 border-l-[3px] transition-colors',
-                      isItemActive || isGroupActive ? 'border-accent-highlight' : 'border-transparent'
-                    )}
+                    className="flex justify-center py-0.5"
                   >
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -353,10 +350,7 @@ export default function SideMenu({
               return (
                 <div
                   key={g.group}
-                  className={cn(
-                    'flex justify-center py-0.5 border-l-[3px] transition-colors',
-                    isGroupActive ? 'border-accent-highlight' : 'border-transparent'
-                  )}
+                  className="flex justify-center py-0.5"
                 >
                   <CollapsedGroupPopover
                     group={g.group}
