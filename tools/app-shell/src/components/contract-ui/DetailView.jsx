@@ -800,7 +800,7 @@ export function DetailView({
   }
 
   return (
-    <div className="h-full flex flex-col" data-testid="detail-view">
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="detail-view">
       {/* Content card with rounded top-left corner */}
       <div className={`flex-1 flex flex-col ${contentBg} rounded-tl-2xl overflow-hidden min-h-0`}>
         {/* Action bar: Cancel + status | actions + save */}

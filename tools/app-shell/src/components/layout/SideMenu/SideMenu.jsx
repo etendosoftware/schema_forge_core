@@ -305,7 +305,7 @@ export default function SideMenu({
         )}
 
         {/* Menu groups */}
-        <div className={cn('flex-1 overflow-auto sidebar-scroll', expanded ? 'py-2' : 'flex flex-col py-2 pl-2 gap-3')}>
+        <div className={cn('flex-1 overflow-auto sidebar-scroll', expanded ? 'py-2' : 'flex flex-col py-2 px-2 gap-3')}>
           {resolvedMenuGroups.map((g, gIdx) => {
             const prevSection = gIdx > 0 ? resolvedMenuGroups[gIdx - 1].section : null;
             const showSectionLabel = expanded && g.section && g.section !== prevSection;
@@ -452,16 +452,16 @@ export default function SideMenu({
                           className={cn(
                             'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'text-accent-highlight-foreground/80 font-semibold'
+                              ? 'text-accent-highlight-foreground font-semibold'
                               : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
                           <span className={cn(
                             'absolute left-[22px] top-0 bottom-0 w-0.5',
-                            isItemActive ? 'bg-accent-highlight' : 'bg-border'
+                            isItemActive ? 'bg-white/40' : 'bg-border'
                           )} />
                           {isItemActive && (
-                            <span className="absolute left-[28px] right-2 top-0 bottom-0 bg-accent-highlight" />
+                            <span className="absolute left-[23px] right-2 top-0 bottom-0 bg-accent-highlight" />
                           )}
                           <span className="relative z-10">{tMenu(item.label)}</span>
                         </NavLink>

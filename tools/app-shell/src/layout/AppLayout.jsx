@@ -27,7 +27,7 @@ function AppLayoutInner({ menuGroups, embedded }) {
         />
       )}
       <div
-        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-page-bg"
+        className="flex h-screen flex-col transition-[margin-left] duration-200 ease-in-out bg-page-bg"
         style={{ marginLeft: embedded ? 0 : marginLeft }}
       >
         {!embedded && (
@@ -45,9 +45,9 @@ function AppLayoutInner({ menuGroups, embedded }) {
         )}
         <div
           key={location.pathname}
-          className="relative flex-1 flex flex-col page-transition pr-3 pb-3"
+          className="relative flex-1 min-h-0 flex flex-col page-transition pr-3 pb-3"
         >
-          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-r-xl border-y border-r border-border/30 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-xl border border-border/30 overflow-hidden">
             <Outlet />
           </div>
         </div>
