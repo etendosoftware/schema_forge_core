@@ -546,8 +546,7 @@ export default function LocationEditorModal({
     }
     setSaving(true);
     try {
-      const countryLabel = countryOptions.find(c => c.id === form.country)?.label;
-      const name = [form.city, form.address].filter(Boolean).join(', ') || countryLabel || 'Location';
+      const name = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
       const payload = {
         name,
         addressLine1: form.address || null,
@@ -764,14 +763,14 @@ export default function LocationEditorModal({
               </div>
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     ref={countrySearchRef}
                     type="text"
                     value={countryQuery}
                     onChange={e => setCountryQuery(e.target.value)}
                     placeholder={ui('countrySearchPlaceholder')}
-                    className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -832,14 +831,14 @@ export default function LocationEditorModal({
               </div>
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     ref={regionSearchRef}
                     type="text"
                     value={regionQuery}
                     onChange={e => setRegionQuery(e.target.value)}
                     placeholder={ui('regionSearchPlaceholder')}
-                    className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
