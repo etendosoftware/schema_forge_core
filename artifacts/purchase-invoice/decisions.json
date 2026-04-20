@@ -176,7 +176,7 @@
           "grid": true
         },
         "description": {
-          "section": "principal"
+          "form": false
         },
         "salesOrder": {
           "section": "other",
