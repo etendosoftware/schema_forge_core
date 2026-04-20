@@ -1,30 +1,47 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import CreateContactModal from '@/components/contract-ui/CreateContactModal';
+import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
+  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
+    useCreateContactModal({ apiBaseUrl, token });
 
   if (recordId) {
     return (
-      <GeneratedApp
-        windowName={windowName}
-        recordId={recordId}
-        token={token}
-        apiBaseUrl={apiBaseUrl}
-        {...rest}
-      />
+      <CreateContactContext.Provider value={createContactCtxValue}>
+        <GeneratedApp
+          windowName={windowName}
+          recordId={recordId}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          {...rest}
+        />
+        {createContactState && createPortal(
+          <CreateContactModal
+            bpApiBaseUrl={bpApiBaseUrl}
+            headers={headers}
+            initialQuery={createContactState.query}
+            documentType="sale"
+            onClose={() => setCreateContactState(null)}
+            onCreated={(newBP) => {
+              createContactState.onSelect({ id: newBP.id, name: newBP.name });
+              setCreateContactState(null);
+            }}
+          />,
+          document.body,
+        )}
+      </CreateContactContext.Provider>
     );
   }
 

@@ -16108,6 +16108,27 @@
     "Commercial": {
       "label": "Commercial"
     },
+    "Operations": {
+      "label": "Operations"
+    },
+    "Analytics": {
+      "label": "Analytics"
+    },
+    "First Steps": {
+      "label": "First Steps"
+    },
+    "Favorites": {
+      "label": "Favorites"
+    },
+    "HR": {
+      "label": "HR"
+    },
+    "Accounts": {
+      "label": "Accounts"
+    },
+    "Payments and collections": {
+      "label": "Payments and collections"
+    },
     "Contacts": {
       "label": "Contacts"
     },
@@ -16491,8 +16512,11 @@
     "invoicePreviewSend": "Send",
     "invoicePreviewDownloadPdf": "Download PDF",
     "invoicePreviewClient": "Client:",
+    "invoicePreviewCategorization": "Categorization",
+    "invoicePreviewAccountingAccount": "Accounting account",
     "invoicePreviewEmails": "Emails",
     "invoicePreviewSendEmail": "Send email",
+    "invoicePreviewNoEmailHistory": "No email history",
     "invoicePreviewGeneral": "General",
     "invoicePreviewPayments": "Payments",
     "invoicePreviewFiles": "Files",
@@ -16522,6 +16546,23 @@
     "others": "Others",
     "relatedDocuments": "Related Documents",
     "searchPlaceholder": "Search clients, orders, invoices...",
+    "searchWithVoice": "Search with voice",
+    "helpAndSupport": "Help & Support",
+    "helpComingSoon": "Help & Support is coming soon.",
+    "notifications": "Notifications",
+    "aiAssistant": "Copilot",
+    "yourCompany": "Your company",
+    "switchCompany": "Switch company",
+    "navigation": "Navigation",
+    "collapseMenu": "Collapse menu",
+    "expandMenu": "Expand menu",
+    "toggleSidebar": "Toggle sidebar",
+    "more": "More",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "noFavoritesYet": "No favorites yet",
+    "pageHelp": "Page help",
+    "configureDashboard": "Configure dashboard",
     "searchInvoices": "Search invoices...",
     "searchPages": "Search pages...",
     "askSomething": "Ask something...",
@@ -16714,7 +16755,7 @@
     "statusPaymentMade": "Payment Made",
     "statusWithdrawnNotCleared": "Withdrawn not Cleared",
     "statusDepositedNotCleared": "Deposited not Cleared",
-    "dashboardTitle": "Dashboard",
+    "dashboardTitle": "Home",
     "smartScanTitle": "Smart Scan",
     "smartScanSubtitle": "Process incoming documents automatically.",
     "smartScanUploadTitle": "Drop documents here or click to upload",
@@ -17027,6 +17068,7 @@
     "lowStockAlerts": "{count} Products with stock below minimum",
     "invoiceTrendLabel": "Revenue and expenses trend chart for the last 12 months",
     "barChartAria": "Monthly sales bar chart",
+    "language": "Language",
     "logout": "Logout",
     "organization": "Organization",
     "selectOrg": "Select org...",
@@ -17296,7 +17338,59 @@
     "uomTypeVolume": "Volume",
     "uomTypeWeight": "Weight",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "createContact": "Create contact",
+    "newContact": "New contact",
+    "addressSection": "Address",
+    "noAddressYet": "No address",
+    "hideAddressButton": "Hide address",
+    "financieroTab": "Financial",
+    "profileComplete": "Complete profile",
+    "identifier": "Identifier",
+    "contactName": "Name",
+    "taxIDField": "Tax ID",
+    "bpGroupField": "Business partner group",
+    "taxIdTypeField": "Tax ID country type",
+    "contactPersonSubtable": "Contact person",
+    "bankAccountSubtable": "Contact bank account",
+    "contactFirstName": "First name",
+    "contactLastName": "Last name",
+    "contactEmail": "Email",
+    "contactPhone": "Phone",
+    "websiteField": "Website",
+    "bankNameField": "Bank name",
+    "bankAccountFormatField": "Account format",
+    "genericAccountNoField": "Generic account no.",
+    "ibanField": "IBAN",
+    "creditLimitField": "Credit limit",
+    "discountField": "Discount",
+    "noneDiscount": "None",
+    "isVendorField": "Vendor",
+    "purchasePriceListField": "Purchase price list",
+    "paymentMethodPOField": "Payment method (PO)",
+    "paymentTermPOField": "Payment terms",
+    "financialAccountPOField": "Financial account (PO)",
+    "vendorBlockField": "Vendor block",
+    "saveContact": "Save contact",
+    "createContactError": "Error creating contact",
+    "noFinancialData": "No financial data",
+    "customerBlockField": "Customer block",
+    "generalTab": "General",
+    "contactPersonTab": "Person",
+    "bankTab": "Bank account",
+    "addContactPerson": "Add contact person",
+    "addBankAccount": "Add bank account",
+    "noContactsYet": "No contact persons yet",
+    "noBankAccountsYet": "No bank accounts yet",
+    "loadingOptions": "Loading...",
+    "errorLoadingOptions": "Error loading",
+    "retryLoad": "Retry",
+    "salesPriceListField": "Price List",
+    "paymentMethodField": "Payment Method",
+    "paymentTermField": "Payment Terms",
+    "financialAccountField": "Financial Account",
+    "customerDataSection": "Customer data",
+    "vendorDataSection": "Vendor data"
   },
   "menus": {
     "Currency": {

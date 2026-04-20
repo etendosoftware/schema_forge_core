@@ -1,40 +1,30 @@
-import { useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
-import AppSidebar from './Sidebar.jsx';
+import SideMenu from '@/components/layout/SideMenu';
+import { SidebarProvider, useSidebar } from '@/components/layout/SidebarContext';
+import { FavoritesProvider } from '@/components/layout/FavoritesContext';
 import { CommandPalette } from '@/components/CommandPalette.jsx';
-import { findActiveGroup } from './Sidebar.jsx';
-import { getSectionColor } from '@/lib/sectionColors.js';
 import { CopilotProvider } from '@/components/CopilotContext';
 import { CopilotWidget } from '@/components/CopilotWidget';
 
-export default function AppLayout({ menuGroups }) {
+const COLLAPSED_W = 60;
+const EXPANDED_W = 240;
+
+function AppLayoutInner({ menuGroups, embedded }) {
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const activeGroup = findActiveGroup(menuGroups, location.pathname);
-  const sectionColor = getSectionColor(activeGroup?.group);
-  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
-    try { return localStorage.getItem('sidebar-expanded') === 'true'; } catch { return false; }
-  });
-
-  const marginLeft = sidebarExpanded ? 240 : 60;
-
-  const embedded = searchParams.get('embedded') === '1';
+  const { expanded, toggle } = useSidebar();
+  const marginLeft = expanded ? EXPANDED_W : COLLAPSED_W;
 
   return (
-    <CopilotProvider>
+    <>
       {!embedded && (
-        <AppSidebar
+        <SideMenu
           menuGroups={menuGroups}
-          expanded={sidebarExpanded}
-          onToggle={() => setSidebarExpanded(prev => {
-            const next = !prev;
-            try { localStorage.setItem('sidebar-expanded', String(next)); } catch {}
-            return next;
-          })}
+          expanded={expanded}
+          onToggle={toggle}
         />
       )}
       <div
-        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-background"
+        className="flex h-screen flex-col overflow-hidden transition-[margin-left] duration-200 ease-in-out bg-page-bg"
         style={{ marginLeft: embedded ? 0 : marginLeft }}
       >
         <div
@@ -47,7 +37,22 @@ export default function AppLayout({ menuGroups }) {
         </div>
       </div>
       {!embedded && <CommandPalette />}
-      {!embedded && <CopilotWidget />}
+      {!embedded && <CopilotWidget hideTrigger />}
+    </>
+  );
+}
+
+export default function AppLayout({ menuGroups }) {
+  const [searchParams] = useSearchParams();
+  const embedded = searchParams.get('embedded') === '1';
+
+  return (
+    <CopilotProvider>
+      <FavoritesProvider>
+        <SidebarProvider>
+          <AppLayoutInner menuGroups={menuGroups} embedded={embedded} />
+        </SidebarProvider>
+      </FavoritesProvider>
     </CopilotProvider>
   );
 }

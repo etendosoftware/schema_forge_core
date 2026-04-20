@@ -105,18 +105,18 @@
           "section": "principal"
         },
         "priceList": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "paymentMethod": {
           "reference": "PaymentMethod",
-          "section": "collapsed"
+          "section": "principal"
         },
         "paymentTerms": {
           "visibility": "system"
         },
         "warehouse": {
           "inputMode": "search",
-          "section": "collapsed"
+          "form": false
         },
         "salesRepresentative": {
           "visibility": "system"
@@ -211,7 +211,7 @@
           "visibility": "system"
         },
         "description": {
-          "section": "collapsed"
+          "form": false
         },
         "reservationStatus": {
           "visibility": "discarded"

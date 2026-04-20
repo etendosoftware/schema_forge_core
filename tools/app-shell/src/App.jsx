@@ -5,6 +5,7 @@ import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import FirstStepsPage from './pages/FirstStepsPage.jsx';
 import SalesPage from './pages/SalesPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PurchasesPage from './pages/PurchasesPage.jsx';
@@ -147,6 +148,7 @@ function AppRoutes({ menuGroups, windowMap }) {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage apiBaseUrl={API_BASE_URL} />} />
+        <Route path="first-steps" element={<FirstStepsPage />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="inventory" element={<InventoryPage />} />
