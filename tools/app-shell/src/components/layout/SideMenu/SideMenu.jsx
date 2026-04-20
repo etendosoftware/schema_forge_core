@@ -128,7 +128,7 @@ function CollapsedGroupPopover({
       </PopoverTrigger>
       <PopoverContent
         side="right"
-        sideOffset={8}
+        sideOffset={12}
         onMouseEnter={cancelClose}
         onMouseLeave={scheduleClose}
         className="w-52 p-0 overflow-hidden"
