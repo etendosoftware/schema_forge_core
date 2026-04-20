@@ -70,7 +70,7 @@ export function UserAvatarButton({ expanded = false }) {
       <DropdownMenuContent
         side="right"
         align="end"
-        sideOffset={26}
+        sideOffset={14}
         className="w-56"
       >
         <div className="border-b px-4 py-3">
