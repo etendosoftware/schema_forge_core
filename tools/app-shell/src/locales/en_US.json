@@ -16108,6 +16108,27 @@
     "Commercial": {
       "label": "Commercial"
     },
+    "Operations": {
+      "label": "Operations"
+    },
+    "Analytics": {
+      "label": "Analytics"
+    },
+    "First Steps": {
+      "label": "First Steps"
+    },
+    "Favorites": {
+      "label": "Favorites"
+    },
+    "HR": {
+      "label": "HR"
+    },
+    "Accounts": {
+      "label": "Accounts"
+    },
+    "Payments and collections": {
+      "label": "Payments and collections"
+    },
     "Contacts": {
       "label": "Contacts"
     },
@@ -16525,6 +16546,23 @@
     "others": "Others",
     "relatedDocuments": "Related Documents",
     "searchPlaceholder": "Search clients, orders, invoices...",
+    "searchWithVoice": "Search with voice",
+    "helpAndSupport": "Help & Support",
+    "helpComingSoon": "Help & Support is coming soon.",
+    "notifications": "Notifications",
+    "aiAssistant": "Copilot",
+    "yourCompany": "Your company",
+    "switchCompany": "Switch company",
+    "navigation": "Navigation",
+    "collapseMenu": "Collapse menu",
+    "expandMenu": "Expand menu",
+    "toggleSidebar": "Toggle sidebar",
+    "more": "More",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "noFavoritesYet": "No favorites yet",
+    "pageHelp": "Page help",
+    "configureDashboard": "Configure dashboard",
     "searchInvoices": "Search invoices...",
     "searchPages": "Search pages...",
     "askSomething": "Ask something...",
@@ -16716,7 +16754,7 @@
     "statusPaymentMade": "Payment Made",
     "statusWithdrawnNotCleared": "Withdrawn not Cleared",
     "statusDepositedNotCleared": "Deposited not Cleared",
-    "dashboardTitle": "Dashboard",
+    "dashboardTitle": "Home",
     "smartScanTitle": "Smart Scan",
     "smartScanSubtitle": "Process incoming documents automatically.",
     "smartScanUploadTitle": "Drop documents here or click to upload",
@@ -17031,6 +17069,7 @@
     "lowStockAlerts": "{count} Products with stock below minimum",
     "invoiceTrendLabel": "Revenue and expenses trend chart for the last 12 months",
     "barChartAria": "Monthly sales bar chart",
+    "language": "Language",
     "logout": "Logout",
     "organization": "Organization",
     "selectOrg": "Select org...",
