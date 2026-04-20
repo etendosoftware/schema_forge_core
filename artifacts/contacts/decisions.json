@@ -339,7 +339,8 @@
           "grid": false,
           "section": "other"
         }
-      }
+      },
+      "javaQualifier": "contactsLocationAddressHandler"
     },
     "contact": {
       "fields": {
