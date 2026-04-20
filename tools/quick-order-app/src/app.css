@@ -1,0 +1,58 @@
+.qo-app {
+  padding: 1.25rem 1.5rem;
+  display: grid;
+  gap: 1rem;
+  max-width: 720px;
+}
+
+.qo-meta {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+}
+
+.qo-muted {
+  color: hsl(var(--muted-foreground));
+}
+
+.qo-error {
+  color: hsl(var(--destructive));
+  font-size: 0.875rem;
+}
+
+.qo-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 480px;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background-color: hsl(var(--card));
+}
+
+.qo-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.qo-lines {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background-color: hsl(var(--card));
+}
+
+.qo-lines-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.qo-line-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+}

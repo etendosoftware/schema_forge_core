@@ -19,15 +19,19 @@ export default function App() {
     });
   }, []);
 
-  if (err) return <div style={{ padding: 16, color: '#b91c1c' }}>{err}</div>;
-  if (!me) return <div style={{ padding: 16 }}>Loading…</div>;
+  if (err) {
+    return (
+      <div className="qo-app qo-error">{err}</div>
+    );
+  }
+  if (!me) {
+    return <div className="qo-app qo-muted">Loading…</div>;
+  }
 
   return (
-    <div style={{ padding: 16, fontFamily: 'system-ui, sans-serif' }}>
-      <h1 style={{ fontSize: 20, fontWeight: 600 }}>{cfg.title}</h1>
-      <p style={{ color: '#6b7280', marginTop: 4, marginBottom: 16 }}>
-        {me.userId} · {me.tenant}
-      </p>
+    <div className="qo-app">
+      <h1>{cfg.title}</h1>
+      <p className="qo-meta">{me.userId} · {me.tenant}</p>
       <OrderForm shell={shell} cfg={cfg} onSave={setOrderId} />
       <LinesGrid shell={shell} cfg={cfg} orderId={orderId} />
     </div>

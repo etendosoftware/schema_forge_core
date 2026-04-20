@@ -13,7 +13,7 @@ export default function LinesGrid({ shell, cfg, orderId }) {
 
   const products = useLookup(shell, { path: PRODUCT_LOOKUP_PATH, enabled: !!orderId });
 
-  if (!orderId) return <p style={{ color: '#6b7280' }}>Save the header first to add lines.</p>;
+  if (!orderId) return <p className="qo-muted">Save the header first to add lines.</p>;
 
   async function addLine() {
     if (Number(qty) < 1) { setError('Quantity must be at least 1'); return; }
@@ -44,9 +44,9 @@ export default function LinesGrid({ shell, cfg, orderId }) {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 12, marginTop: 24 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 600 }}>Lines</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8 }}>
+    <div className="qo-lines">
+      <h2>Lines</h2>
+      <div className="qo-lines-row">
         <select value={productId} onChange={(e) => setProductId(e.target.value)} disabled={products.loading}>
           <option value="">— product —</option>
           {products.items.map((p) => (
@@ -59,9 +59,9 @@ export default function LinesGrid({ shell, cfg, orderId }) {
           {adding ? 'Adding…' : 'Add'}
         </button>
       </div>
-      {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
+      {error && <div className="qo-error">{error}</div>}
       {lines.length > 0 && (
-        <ul style={{ marginTop: 8 }}>
+        <ul className="qo-line-list">
           {lines.map((l) => (
             <li key={l.id}>{l._identifier || l.id} — qty {l.orderedQuantity} @ {l.unitPrice}</li>
           ))}

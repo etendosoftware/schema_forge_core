@@ -20,7 +20,7 @@ export default function OrderForm({ shell, cfg, onSave }) {
         data: {
           businessPartner: bpId,
           orderDate,
-          documentStatus: 'DR', // Draft
+          documentStatus: 'DR',
         },
       };
       const result = await shell.fetch(cfg.headerPath, {
@@ -37,8 +37,8 @@ export default function OrderForm({ shell, cfg, onSave }) {
   }
 
   return (
-    <form onSubmit={handleSave} style={{ display: 'grid', gap: 12, maxWidth: 480 }}>
-      <label style={{ display: 'grid', gap: 4 }}>
+    <form onSubmit={handleSave} className="qo-form">
+      <label className="qo-field">
         <span>Business partner</span>
         <select value={bpId} onChange={(e) => setBpId(e.target.value)} disabled={bps.loading}>
           <option value="">— select —</option>
@@ -47,14 +47,16 @@ export default function OrderForm({ shell, cfg, onSave }) {
           ))}
         </select>
       </label>
-      <label style={{ display: 'grid', gap: 4 }}>
+      <label className="qo-field">
         <span>Order date</span>
         <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
       </label>
-      {error && <div style={{ color: '#b91c1c' }}>{error}</div>}
-      <button type="submit" disabled={saving}>
-        {saving ? 'Saving…' : 'Save draft'}
-      </button>
+      {error && <div className="qo-error">{error}</div>}
+      <div>
+        <button type="submit" disabled={saving}>
+          {saving ? 'Saving…' : 'Save draft'}
+        </button>
+      </div>
     </form>
   );
 }
