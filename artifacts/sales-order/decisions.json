@@ -309,9 +309,11 @@
         },
         "tax": {
           "grid": true,
+          "form": true,
           "section": "principal",
           "order": 6,
-          "gridOrder": 6
+          "gridOrder": 6,
+          "inputMode": "search"
         },
         "listPrice": {
           "visibility": "discarded"

@@ -282,7 +282,8 @@
         },
         "tax": {
           "grid": true,
-          "inputMode": "selector",
+          "form": true,
+          "inputMode": "search",
           "order": 6,
           "gridOrder": 6
         },

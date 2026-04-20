@@ -338,7 +338,7 @@
           "section": "principal",
           "order": 6,
           "gridOrder": 6,
-          "inputMode": "selector",
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "listPrice": {
