@@ -13,6 +13,14 @@ import {
   PopoverContent,
 } from '@/components/ui/popover.jsx';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.jsx';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -230,20 +238,39 @@ export default function SideMenu({
         {/* Header */}
         {expanded ? (
           <div className="relative flex shrink-0 items-center h-[62px] px-3 gap-2">
-            <button
-              type="button"
-              className="flex flex-1 min-w-0 items-center gap-2 h-10 pl-1 pr-2 rounded-full bg-muted/60 hover:bg-muted transition-colors"
-            >
-              <img
-                src={logoSrc}
-                alt="Etendo"
-                className="h-8 w-8 shrink-0 rounded-full"
-              />
-              <span className="flex-1 text-left text-sm font-semibold text-foreground truncate">
-                {selectedOrg?.name || ui('yourCompany')}
-              </span>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={ui('switchCompany')}
+                  className="flex flex-1 min-w-0 items-center gap-2 h-10 pl-1 pr-2 rounded-full bg-muted/60 hover:bg-muted transition-colors"
+                >
+                  <img
+                    src={logoSrc}
+                    alt="Etendo"
+                    className="h-8 w-8 shrink-0 rounded-full"
+                  />
+                  <span className="flex-1 text-left text-sm font-semibold text-foreground truncate">
+                    {selectedOrg?.name || ui('yourCompany')}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>{ui('switchCompany')}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled>
+                  <img
+                    src={logoSrc}
+                    alt=""
+                    className="h-5 w-5 mr-2 rounded-full"
+                  />
+                  <span className="flex-1 truncate">
+                    {selectedOrg?.name || ui('yourCompany')}
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <button
               type="button"
               onClick={onToggle}
