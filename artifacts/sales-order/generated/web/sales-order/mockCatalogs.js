@@ -168,6 +168,44 @@ catalogs['BusinessPartnerLocation'] = [
   }
 ];
 
+catalogs['PriceList'] = [
+  {
+    "id": "pl-001",
+    "name": "Standard Price List"
+  },
+  {
+    "id": "pl-002",
+    "name": "Wholesale Prices"
+  },
+  {
+    "id": "pl-003",
+    "name": "Retail Prices"
+  },
+  {
+    "id": "pl-004",
+    "name": "VIP Pricing"
+  }
+];
+
+catalogs['PaymentMethod'] = [
+  {
+    "id": "pm-001",
+    "name": "Wire Transfer"
+  },
+  {
+    "id": "pm-002",
+    "name": "Credit Card"
+  },
+  {
+    "id": "pm-003",
+    "name": "Check"
+  },
+  {
+    "id": "pm-004",
+    "name": "Cash"
+  }
+];
+
 catalogs['Warehouse'] = [
   {
     "id": "wh-001",
@@ -191,99 +229,26 @@ catalogs['Warehouse'] = [
   }
 ];
 
-catalogs['PriceList'] = [
+catalogs['Currency'] = [
   {
-    "id": "pl-001",
-    "name": "Standard Price List"
+    "id": "USD",
+    "name": "US Dollar",
+    "symbol": "$"
   },
   {
-    "id": "pl-002",
-    "name": "Wholesale Prices"
+    "id": "EUR",
+    "name": "Euro",
+    "symbol": "EUR"
   },
   {
-    "id": "pl-003",
-    "name": "Retail Prices"
+    "id": "GBP",
+    "name": "Pound Sterling",
+    "symbol": "GBP"
   },
   {
-    "id": "pl-004",
-    "name": "VIP Pricing"
-  }
-];
-
-catalogs['PaymentTerm'] = [
-  {
-    "id": "pt-001",
-    "name": "Immediate"
-  },
-  {
-    "id": "pt-002",
-    "name": "Net 15"
-  },
-  {
-    "id": "pt-003",
-    "name": "Net 30"
-  },
-  {
-    "id": "pt-004",
-    "name": "Net 60"
-  },
-  {
-    "id": "pt-005",
-    "name": "2/10 Net 30"
-  }
-];
-
-catalogs['PaymentMethod'] = [
-  {
-    "id": "pm-001",
-    "name": "Wire Transfer"
-  },
-  {
-    "id": "pm-002",
-    "name": "Credit Card"
-  },
-  {
-    "id": "pm-003",
-    "name": "Check"
-  },
-  {
-    "id": "pm-004",
-    "name": "Cash"
-  }
-];
-
-catalogs['User'] = [
-  {
-    "id": "user-001",
-    "name": "Alice Johnson"
-  },
-  {
-    "id": "user-002",
-    "name": "Bob Smith"
-  },
-  {
-    "id": "user-003",
-    "name": "Carol Williams"
-  },
-  {
-    "id": "user-004",
-    "name": "David Brown"
-  },
-  {
-    "id": "user-005",
-    "name": "Eva Martinez"
-  },
-  {
-    "id": "user-006",
-    "name": "Frank Lee"
-  },
-  {
-    "id": "user-007",
-    "name": "Grace Kim"
-  },
-  {
-    "id": "user-008",
-    "name": "Henry Davis"
+    "id": "ARS",
+    "name": "Argentine Peso",
+    "symbol": "ARS"
   }
 ];
 
@@ -440,29 +405,6 @@ catalogs['Tax'] = [
     "id": "tax-006",
     "name": "Reduced Rate 5%",
     "rate": 5
-  }
-];
-
-catalogs['UOM'] = [
-  {
-    "id": "uom-001",
-    "name": "Each"
-  },
-  {
-    "id": "uom-002",
-    "name": "Box"
-  },
-  {
-    "id": "uom-003",
-    "name": "Kg"
-  },
-  {
-    "id": "uom-004",
-    "name": "Meter"
-  },
-  {
-    "id": "uom-005",
-    "name": "Liter"
   }
 ];
 

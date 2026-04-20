@@ -1,0 +1,593 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "purchases",
+    "name": "Purchase Order",
+    "notesField": "description",
+    "relatedDocuments": true,
+    "hideDeleteWhenComplete": true,
+    "customComponents": {
+      "topbarRight": "PurchaseOrderActions",
+      "topbarExtra": "PurchaseOrderDraftChips"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "C_BPartner_ID": "Contacto",
+        "DatePromised": "Fecha de entrega esperada"
+      },
+      "en_US": {
+        "C_BPartner_ID": "Contact",
+        "DatePromised": "Expected Delivery Date"
+      }
+    },
+    "secondaryTabs": {},
+    "noHeaderBorder": true,
+    "hidePrint": true,
+    "hideSaveStatuses": [
+      "CO",
+      "CL",
+      "VO"
+    ]
+  },
+  "entities": {
+    "header": {
+      "javaQualifier": "purchaseOrderHeaderHandler",
+      "fields": {
+        "transactionDocument": {
+          "visibility": "editable",
+          "grid": true,
+          "form": false,
+          "reference": "DocumentType",
+          "section": "other",
+          "inputMode": null
+        },
+        "documentNo": {
+          "visibility": "readOnly",
+          "grid": true,
+          "searchable": true,
+          "form": true,
+          "section": "principal",
+          "order": 2
+        },
+        "documentStatus": {
+          "grid": true,
+          "form": false,
+          "searchable": true,
+          "gridOrder": 4
+        },
+        "currency": {
+          "form": false,
+          "reference": null,
+          "inputMode": null,
+          "section": "other"
+        },
+        "orderDate": {
+          "grid": true,
+          "searchable": true,
+          "section": "principal",
+          "form": true,
+          "order": 3
+        },
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "section": "principal",
+          "displayLogic": null,
+          "form": true,
+          "order": 1,
+          "selectorFilter": "isVendor=Y"
+        },
+        "partnerAddress": {
+          "visibility": "editable",
+          "form": true,
+          "section": "principal",
+          "order": 4,
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          }
+        },
+        "warehouse": {
+          "grid": true,
+          "form": true,
+          "section": "collapsed"
+        },
+        "scheduledDeliveryDate": {
+          "section": "principal",
+          "form": true,
+          "order": 5
+        },
+        "paymentMethod": {
+          "reference": "PaymentMethod",
+          "form": true,
+          "section": "collapsed"
+        },
+        "paymentTerms": {
+          "form": false,
+          "section": "collapsed"
+        },
+        "priceList": {
+          "grid": true,
+          "section": "collapsed",
+          "form": true
+        },
+        "invoiceAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
+          "section": "other",
+          "form": false,
+          "name": "invoiceFrom"
+        },
+        "description": {
+          "form": false
+        },
+        "deliveryNotes": {
+          "section": "other",
+          "form": false
+        },
+        "orderReference": {
+          "searchable": true,
+          "form": false
+        },
+        "grandTotalAmount": {
+          "grid": true,
+          "form": false,
+          "section": "other"
+        },
+        "summedLineAmount": {
+          "form": false,
+          "section": "other"
+        },
+        "priceIncludesTax": {
+          "visibility": "readOnly",
+          "section": "other",
+          "form": false
+        },
+        "project": {
+          "section": "other",
+          "form": false,
+          "displayLogic": null
+        },
+        "costcenter": {
+          "reference": "CostCenter",
+          "section": "other",
+          "form": false,
+          "displayLogic": null
+        },
+        "asset": {
+          "section": "other",
+          "form": false,
+          "displayLogic": null
+        },
+        "stDimension": {
+          "reference": "UserDimension1",
+          "section": "other",
+          "form": false,
+          "displayLogic": null
+        },
+        "ndDimension": {
+          "reference": "UserDimension2",
+          "section": "other",
+          "form": false,
+          "displayLogic": null
+        },
+        "salesRepresentative": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other",
+          "name": "companyAgent",
+          "reference": null,
+          "inputMode": null
+        },
+        "accountingDate": {
+          "visibility": "readOnly",
+          "form": false,
+          "section": "other"
+        },
+        "incoterms": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other",
+          "reference": null,
+          "inputMode": null
+        },
+        "iNCOTERMSDescription": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other"
+        },
+        "freightAmount": {
+          "visibility": "readOnly",
+          "form": false,
+          "section": "other"
+        },
+        "deliveryMethod": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other"
+        },
+        "priority": {
+          "visibility": "editable",
+          "grid": true,
+          "form": false,
+          "section": "other"
+        },
+        "chargeAmount": {
+          "visibility": "readOnly",
+          "form": false,
+          "section": "other"
+        },
+        "charge": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other",
+          "reference": null,
+          "inputMode": null
+        },
+        "deliveryTerms": {
+          "visibility": "editable",
+          "form": false,
+          "section": "other"
+        },
+        "deliveryStatusPurchase": {
+          "grid": true,
+          "form": false,
+          "section": "other"
+        },
+        "invoiceStatus": {
+          "grid": true,
+          "form": false,
+          "section": "other"
+        },
+        "documentAction": {
+          "visibility": "system",
+          "displayLogic": null
+        },
+        "rMReceiveMaterials": {
+          "visibility": "system"
+        },
+        "rMCreateInvoice": {
+          "visibility": "system"
+        },
+        "createPOLines": {
+          "visibility": "discarded",
+          "displayLogic": null
+        },
+        "cashVAT": {
+          "form": false
+        },
+        "organization": {
+          "visibility": "system",
+          "form": false
+        }
+      }
+    },
+    "lines": {
+      "javaQualifier": "orderLineHandler",
+      "fields": {
+        "lineNo": {
+          "visibility": "system"
+        },
+        "product": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
+        "operativeQuantity": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "operativeUOM": {
+          "form": false,
+          "inputMode": "selector",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "orderedQuantity": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
+        "uOM": {
+          "grid": false,
+          "form": false,
+          "inputMode": null,
+          "readOnlyLogic": null
+        },
+        "unitPrice": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
+        "grossUnitPrice": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "lineNetAmount": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
+        "lineGrossAmount": {
+          "form": false,
+          "displayLogic": null
+        },
+        "tax": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "inputMode": "selector",
+          "readOnlyLogic": null
+        },
+        "listPrice": {
+          "visibility": "readOnly",
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "grossListPrice": {
+          "form": false,
+          "displayLogic": null
+        },
+        "discount": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "readOnlyLogic": null
+        },
+        "taxableAmount": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "project": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "costcenter": {
+          "form": false,
+          "reference": "CostCenter",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "asset": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "stDimension": {
+          "form": false,
+          "reference": "UserDimension1",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "ndDimension": {
+          "form": false,
+          "reference": "UserDimension2",
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "warehouse": {
+          "visibility": "readOnly",
+          "form": false,
+          "reference": "Warehouse",
+          "inputMode": null,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "currency": {
+          "visibility": "readOnly",
+          "form": false,
+          "reference": "Currency",
+          "inputMode": null
+        },
+        "businessPartner": {
+          "visibility": "readOnly",
+          "form": false,
+          "reference": "BusinessPartner",
+          "inputMode": null,
+          "readOnlyLogic": null
+        },
+        "partnerAddress": {
+          "visibility": "readOnly",
+          "form": false,
+          "reference": "BusinessPartnerLocation",
+          "inputMode": null
+        },
+        "orderDate": {
+          "visibility": "readOnly",
+          "form": false,
+          "displayLogic": null
+        },
+        "scheduledDeliveryDate": {
+          "form": false,
+          "displayLogic": null
+        },
+        "reservedQuantity": {
+          "visibility": "readOnly",
+          "form": false,
+          "displayLogic": null
+        },
+        "deliveredQuantity": {
+          "form": false,
+          "displayLogic": null
+        },
+        "invoicedQuantity": {
+          "form": false,
+          "displayLogic": null
+        },
+        "shippingCompany": {
+          "visibility": "readOnly",
+          "form": false,
+          "reference": "Shipper",
+          "inputMode": null,
+          "displayLogic": null
+        },
+        "freightAmount": {
+          "visibility": "readOnly",
+          "form": false,
+          "displayLogic": null
+        },
+        "attributeSetValue": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "description": {
+          "form": false,
+          "displayLogic": null
+        },
+        "managePrereservation": {
+          "visibility": "discarded",
+          "displayLogic": null
+        },
+        "explode": {
+          "visibility": "discarded",
+          "displayLogic": null
+        }
+      }
+    },
+    "lineTax": {
+      "fields": {
+        "lineNo": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "tax": {
+          "visibility": "readOnly",
+          "grid": true,
+          "inputMode": null
+        },
+        "taxableAmount": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "taxAmount": {
+          "visibility": "readOnly",
+          "grid": true
+        }
+      }
+    },
+    "prereservedQty": {
+      "name": "reservedStock",
+      "fields": {
+        "reservation": {
+          "grid": true,
+          "inputMode": null
+        },
+        "storageBin": {
+          "visibility": "readOnly",
+          "grid": true,
+          "inputMode": null
+        },
+        "attributeSetValue": {
+          "visibility": "readOnly"
+        },
+        "allocated": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "quantity": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "released": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "businessPartner": {
+          "visibility": "readOnly",
+          "reference": "BusinessPartner",
+          "inputMode": null,
+          "readOnlyLogic": null
+        }
+      }
+    },
+    "basicDiscounts": {
+      "exclude": true
+    },
+    "tax": {
+      "exclude": true
+    },
+    "paymentPlan": {
+      "exclude": true
+    },
+    "paymentDetails": {
+      "name": "paymentDetails",
+      "fields": {
+        "payment": {
+          "visibility": "readOnly",
+          "grid": true,
+          "inputMode": null
+        },
+        "paymentDate": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "dueDate": {
+          "visibility": "readOnly"
+        },
+        "paymentMethod": {
+          "visibility": "readOnly",
+          "grid": true,
+          "reference": "PaymentMethod",
+          "inputMode": null
+        },
+        "finFinancialAccountID": {
+          "visibility": "readOnly",
+          "reference": "FinancialAccount",
+          "inputMode": null
+        },
+        "expected": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "paidAmount": {
+          "visibility": "readOnly",
+          "grid": true
+        },
+        "writeoffAmount": {
+          "visibility": "readOnly"
+        },
+        "expectedConverted": {
+          "visibility": "readOnly",
+          "displayLogic": null
+        },
+        "paidConverted": {
+          "visibility": "readOnly",
+          "displayLogic": null
+        },
+        "finaccTxnConvertRate": {
+          "visibility": "readOnly",
+          "displayLogic": null
+        },
+        "status": {
+          "grid": true
+        }
+      }
+    },
+    "intrastat": {
+      "exclude": true
+    }
+  },
+  "rules": {},
+  "discardPatterns": [
+    "CopyFrom*",
+    "EM_*"
+  ],
+  "version": 2
+}

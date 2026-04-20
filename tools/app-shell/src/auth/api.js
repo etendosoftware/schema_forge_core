@@ -6,6 +6,7 @@ function detectBaseUrl() {
 }
 
 const DEFAULT_BASE_URL = detectBaseUrl();
+console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env.VITE_API_BASE);
 
 export function buildHeaders(token) {
   const headers = { 'Content-Type': 'application/json' };
@@ -19,30 +20,12 @@ export function isTokenExpired(token) {
   return !token;
 }
 
-export async function login(baseUrl, username, password, roleId, orgId) {
-  const body = { username, password };
-  const headers = { 'Content-Type': 'application/json' };
-
-  if (roleId) body.role = roleId;
-  if (orgId) body.organization = orgId;
-
-  const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}/sws/login`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `Login failed: ${res.status}`);
-  }
-  return res.json();
-}
-
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const token = getToken();
-    const res = await fetch(`${baseUrl || DEFAULT_BASE_URL}${path}`, {
+    const res = await fetch(`${baseUrl != null ? baseUrl : DEFAULT_BASE_URL}${path}`, {
       ...options,
+      credentials: 'include',
       headers: {
         ...buildHeaders(token),
         ...options.headers,

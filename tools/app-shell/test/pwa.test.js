@@ -1,9 +1,27 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const APP_SHELL = resolve(import.meta.dirname, '..');
+
+let builtArtifacts = null;
+
+function readBuiltArtifacts() {
+  if (!builtArtifacts) {
+    execFileSync('npm', ['run', 'build', '--workspace=@schema-forge/app-shell'], {
+      cwd: resolve(APP_SHELL, '..', '..'),
+      stdio: 'pipe',
+    });
+    builtArtifacts = {
+      indexHtml: readFileSync(resolve(APP_SHELL, 'dist/index.html'), 'utf8'),
+      sw: readFileSync(resolve(APP_SHELL, 'dist/sw.js'), 'utf8'),
+    };
+  }
+
+  return builtArtifacts;
+}
 
 describe('PWA configuration', () => {
   it('vite-plugin-pwa is listed in devDependencies', () => {
@@ -14,7 +32,7 @@ describe('PWA configuration', () => {
   it('vite.config.js imports and configures VitePWA', () => {
     const config = readFileSync(resolve(APP_SHELL, 'vite.config.js'), 'utf8');
     assert.ok(config.includes("import { VitePWA } from 'vite-plugin-pwa'"), 'should import VitePWA');
-    assert.ok(config.includes("registerType: 'prompt'"), 'should use prompt register type');
+    assert.ok(config.includes("registerType: 'autoUpdate'"), 'should use autoUpdate register type');
     assert.ok(config.includes("cleanupOutdatedCaches: true"), 'should enable cache cleanup');
   });
 
@@ -30,9 +48,9 @@ describe('PWA configuration', () => {
     assert.ok(existsSync(hookPath), 'useServiceWorker.js should exist');
     const content = readFileSync(hookPath, 'utf8');
     assert.ok(content.includes('export function useServiceWorker'), 'should export useServiceWorker');
-    assert.ok(content.includes('applyUpdate'), 'should provide applyUpdate');
     assert.ok(content.includes('clearCacheAndReload'), 'should provide clearCacheAndReload');
     assert.ok(content.includes('checkForUpdate'), 'should provide checkForUpdate');
+    assert.ok(content.includes('controllerchange'), 'should listen for controllerchange');
   });
 
   it('UpdateToast component exists and exports showUpdateToast', () => {
@@ -43,9 +61,9 @@ describe('PWA configuration', () => {
     assert.ok(content.includes('duration: Infinity'), 'toast should be persistent');
   });
 
-  it('LoginPage clears caches on login', () => {
-    const loginPath = resolve(APP_SHELL, 'src/auth/LoginPage.jsx');
-    const content = readFileSync(loginPath, 'utf8');
+  it('OnboardingPage clears SW caches on environment login', () => {
+    const onboardingPath = resolve(APP_SHELL, 'src/pages/OnboardingPage.jsx');
+    const content = readFileSync(onboardingPath, 'utf8');
     assert.ok(content.includes('caches.keys()'), 'should enumerate caches');
     assert.ok(content.includes('caches.delete'), 'should delete caches');
   });
@@ -55,7 +73,6 @@ describe('PWA configuration', () => {
     const content = readFileSync(appPath, 'utf8');
     assert.ok(content.includes('ServiceWorkerManager'), 'should include ServiceWorkerManager');
     assert.ok(content.includes('useServiceWorker'), 'should use the SW hook');
-    assert.ok(content.includes('showUpdateToast'), 'should show update toast');
     assert.ok(content.includes('location.pathname'), 'should check updates on route change');
   });
 
@@ -64,6 +81,27 @@ describe('PWA configuration', () => {
     const content = readFileSync(mainPath, 'utf8');
     assert.ok(content.includes("import { Toaster } from 'sonner'"), 'should import Toaster from sonner');
     assert.ok(content.includes('<Toaster'), 'should render Toaster');
+  });
+
+  it('production build fingerprints assets so immutable caching stays correct', () => {
+    const { indexHtml, sw } = readBuiltArtifacts();
+
+    assert.match(
+      indexHtml,
+      /assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.js/
+    );
+    assert.match(
+      indexHtml,
+      /assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.css/
+    );
+    assert.ok(
+      !sw.includes('url:"assets/index.js",revision:null'),
+      'service worker should not precache a stable /assets/index.js URL'
+    );
+    assert.ok(
+      !sw.includes('url:"assets/index.css",revision:null'),
+      'service worker should not precache a stable /assets/index.css URL'
+    );
   });
 
   it('favicon.png exists in public/ for the PWA icon', () => {

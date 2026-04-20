@@ -47,6 +47,20 @@ Flag violations clearly with the specific rule broken and the file/line involved
 - General Etendo AD findings placed inside `artifacts/` instead of `docs/etendo-ad/`.
 - Test files not co-located in `cli/test/` or the appropriate test directory.
 - Components placed in the wrong component directory.
+- Duplicated logic blocks introduced in the same PR instead of extracting a shared helper or reusing an existing abstraction.
+- Changes that contradict the documented runtime split: Schema Forge defines contracts/configuration, Etendo Go serves them at runtime.
+- New review automation should prefer deterministic checks in `cli/` plus `.github/workflows/` instead of burying complex shell logic directly in workflow YAML.
+
+
+## Review Outcome Guidance
+
+### Request changes
+
+- Use **request changes** when the issue is merge-blocking: duplicated code blocks, missing tests for new behavior, CommonJS usage, secrets, `.env` files, wrong directories, or contract-breaking changes without the required version/test updates.
+
+### Comment only
+
+- Use **comment only** for advisory findings: new dependencies that need justification, simplification opportunities, or architecture observations that do not immediately break correctness or repository policy.
 
 ## Code Patterns
 

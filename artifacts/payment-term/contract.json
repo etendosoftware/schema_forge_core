@@ -1,91 +1,121 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-06T17:20:28.664Z",
-  "checksum": "f1d08d5ff2f81f73",
+  "version": "0.2.0",
+  "generatedAt": "2026-04-09T12:47:46.470Z",
+  "checksum": "77b868629ea8db77",
   "frontendContract": {
     "window": {
-      "id": "204",
+      "id": "141",
       "name": "Payment Term",
-      "primaryEntity": "paymentTerm",
-      "category": "reference"
+      "primaryEntity": "header",
+      "category": "configuracion",
+      "detailEntity": null,
+      "layoutType": "default",
+      "breadcrumb": "Settings / Payment Term",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "labelOverrides": {
+        "es_ES": {
+          "Value": "Clave",
+          "Name": "Nombre",
+          "Description": "Descripción",
+          "FixMonthOffset": "Meses de desplazamiento",
+          "NetDays": "Días",
+          "IsDefault": "Por defecto",
+          "IsActive": "Activo"
+        }
+      }
     },
     "entities": {
-      "paymentTerm": {
+      "header": {
+        "tableName": "C_PaymentTerm",
+        "tabId": "184",
+        "tabName": "Header",
+        "uiPattern": "STD",
         "fields": [
           {
-            "name": "name",
-            "column": "Name",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true
-          },
-          {
             "name": "searchKey",
+            "apiKey": "searchKey",
             "column": "Value",
+            "label": "Search Key",
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 1
           },
           {
-            "name": "description",
-            "column": "Description",
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "label": "Name",
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
+            "required": true,
+            "grid": true,
+            "form": true,
+            "section": "principal",
+            "seq": 2
           },
           {
-            "name": "netDays",
+            "name": "offsetMonthDue",
+            "apiKey": "offsetMonthDue",
+            "column": "FixMonthOffset",
+            "label": "Offset Month Due",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "section": "principal",
+            "seq": 3
+          },
+          {
+            "name": "overduePaymentDaysRule",
+            "apiKey": "overduePaymentDaysRule",
             "column": "NetDays",
+            "label": "Overdue Payment Days Rule",
             "type": "integer",
             "tsType": "number",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 4
           },
           {
-            "name": "discountDays",
-            "column": "DiscountDays",
-            "type": "integer",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "discount",
-            "column": "Discount",
-            "type": "number",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
+            "name": "default",
+            "apiKey": "default",
+            "column": "IsDefault",
+            "label": "Default",
             "type": "boolean",
             "tsType": "boolean",
-            "visibility": "readOnly",
-            "required": true,
+            "visibility": "editable",
+            "required": false,
             "grid": true,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 5,
+            "badge": true,
+            "labels": { "es_ES": "Por defecto", "en_US": "Default" },
+            "badgeLabels": {
+              "true": { "es_ES": "Sí", "en_US": "Yes" },
+              "false": { "es_ES": "No", "en_US": "No" }
+            },
+            "badgeColors": {
+              "true": "bg-blue-100 text-blue-800",
+              "false": "bg-gray-100 text-gray-500"
+            }
           }
         ],
         "searchableFields": [
-          "name",
-          "searchKey"
+          "searchKey",
+          "name"
         ],
         "computedFields": []
       }
@@ -93,88 +123,390 @@
   },
   "backendContract": {
     "window": {
-      "id": "204",
+      "id": "141",
       "name": "Payment Term",
-      "primaryEntity": "paymentTerm",
-      "category": "reference"
+      "primaryEntity": "header",
+      "category": "configuracion",
+      "detailEntity": "lines"
     },
     "entities": {
-      "paymentTerm": {
+      "header": {
+        "tableName": "C_PaymentTerm",
+        "tabId": "184",
+        "tabName": "Header",
         "fields": [
           {
-            "name": "name",
-            "column": "Name",
-            "type": "string",
-            "visibility": "editable",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
             "required": true
           },
           {
             "name": "searchKey",
+            "apiKey": "searchKey",
             "column": "Value",
             "type": "string",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "description",
-            "column": "Description",
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
             "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "textarea",
             "visibility": "editable",
             "required": false
           },
           {
-            "name": "netDays",
+            "name": "offsetMonthDue",
+            "apiKey": "offsetMonthDue",
+            "column": "FixMonthOffset",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "overduePaymentDaysRule",
+            "apiKey": "overduePaymentDaysRule",
             "column": "NetDays",
             "type": "integer",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "discountDays",
-            "column": "DiscountDays",
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "default",
+            "apiKey": "default",
+            "column": "IsDefault",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "fixedDueDate",
+            "apiKey": "fixedDueDate",
+            "column": "IsDueFixed",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "maturityDate1",
+            "apiKey": "maturityDate1",
+            "column": "FixMonthDay",
             "type": "integer",
             "visibility": "editable",
             "required": false
           },
           {
-            "name": "discount",
-            "column": "Discount",
-            "type": "number",
+            "name": "maturityDate2",
+            "apiKey": "maturityDate2",
+            "column": "FixMonthDay2",
+            "type": "integer",
             "visibility": "editable",
             "required": false
           },
           {
-            "name": "isActive",
-            "column": "IsActive",
+            "name": "maturityDate3",
+            "apiKey": "maturityDate3",
+            "column": "Fixmonthday3",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "nextBusinessDay",
+            "apiKey": "nextBusinessDay",
+            "column": "IsNextBusinessDay",
             "type": "boolean",
-            "visibility": "readOnly",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "overduePaymentDayRule",
+            "apiKey": "overduePaymentDayRule",
+            "column": "NetDay",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "comments",
+            "apiKey": "comments",
+            "column": "DocumentNote",
+            "type": "text",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "valid",
+            "apiKey": "valid",
+            "column": "IsValid",
+            "type": "boolean",
+            "visibility": "discarded",
             "required": true
           },
           {
-            "name": "adClientId",
+            "name": "client",
+            "apiKey": "client",
             "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_PaymentTerm_ID",
             "type": "id",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "created",
+            "name": "creationDate",
+            "apiKey": "creationDate",
             "column": "Created",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "CreatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
             "name": "updated",
+            "apiKey": "updated",
             "column": "Updated",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "lines": {
+        "tableName": "C_Paymenttermline",
+        "tabId": "800074",
+        "tabName": "Lines",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "percentageDue",
+            "apiKey": "percentageDue",
+            "column": "Percentage",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "offsetMonthDue",
+            "apiKey": "offsetMonthDue",
+            "column": "FixMonthOffset",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "overduePaymentDaysRule",
+            "apiKey": "overduePaymentDaysRule",
+            "column": "NetDays",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "fixedDueDate",
+            "apiKey": "fixedDueDate",
+            "column": "IsDueFixed",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "maturityDate1",
+            "apiKey": "maturityDate1",
+            "column": "FixMonthDay",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "maturityDate2",
+            "apiKey": "maturityDate2",
+            "column": "FixMonthDay2",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "maturityDate3",
+            "apiKey": "maturityDate3",
+            "column": "Fixmonthday3",
+            "type": "integer",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "paymentMethod",
+            "apiKey": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "rest",
+            "apiKey": "rest",
+            "column": "Onremainder",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "excludeTax",
+            "apiKey": "excludeTax",
+            "column": "Excludetax",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "lastDayCutoff",
+            "apiKey": "lastDayCutoff",
+            "column": "FixMonthCutoff",
+            "type": "integer",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "overduePaymentDayRule",
+            "apiKey": "overduePaymentDayRule",
+            "column": "NetDay",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "nextBusinessDay",
+            "apiKey": "nextBusinessDay",
+            "column": "IsNextBusinessDay",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_Paymenttermline_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "paymentTerms",
+            "apiKey": "paymentTerms",
+            "column": "C_PaymentTerm_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "formOfPayment",
+            "apiKey": "formOfPayment",
+            "column": "PaymentRule",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           }
@@ -184,223 +516,234 @@
     "endpoints": [
       {
         "method": "GET",
-        "path": "/paymentTerm",
-        "entity": "paymentTerm",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": [
-          "name",
-          "searchKey"
+          "searchKey",
+          "name"
         ]
       },
       {
         "method": "GET",
-        "path": "/paymentTerm/:id",
-        "entity": "paymentTerm",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/paymentTerm",
-        "entity": "paymentTerm",
+        "path": "/header",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/paymentTerm/:id",
-        "entity": "paymentTerm",
+        "path": "/header/:id",
+        "entity": "header",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/paymentTerm/:id",
-        "entity": "paymentTerm",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lines",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/lines",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/lines/:id",
+        "entity": "lines",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/lines/:id",
+        "entity": "lines",
         "supportedFilters": []
       }
     ],
     "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "payment-term",
+    "baseUrl": "/sws/neo/payment-term",
+    "crud": {
+      "header": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/payment-term/header",
+        "detailUrl": "/sws/neo/payment-term/header/{id}",
+        "supportedFilters": [
+          "searchKey",
+          "name"
+        ]
+      }
+    },
+    "selectors": [],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=name"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    }
   },
   "testManifest": {
     "tests": [
       {
         "id": "t-1",
         "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "name",
+        "entity": "header",
+        "field": "searchKey",
         "runner": "node",
-        "description": "Field 'name' should be present in paymentTerm"
+        "description": "Field 'searchKey' should be present in header"
       },
       {
         "id": "t-2",
         "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "searchKey",
+        "entity": "header",
+        "field": "name",
         "runner": "node",
-        "description": "Field 'searchKey' should be present in paymentTerm"
+        "description": "Field 'name' should be present in header"
       },
       {
         "id": "t-3",
         "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "description",
+        "entity": "header",
+        "field": "offsetMonthDue",
         "runner": "node",
-        "description": "Field 'description' should be present in paymentTerm"
+        "description": "Field 'offsetMonthDue' should be present in header"
       },
       {
         "id": "t-4",
         "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "netDays",
+        "entity": "header",
+        "field": "overduePaymentDaysRule",
         "runner": "node",
-        "description": "Field 'netDays' should be present in paymentTerm"
+        "description": "Field 'overduePaymentDaysRule' should be present in header"
       },
       {
         "id": "t-5",
         "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "discountDays",
+        "entity": "header",
+        "field": "default",
         "runner": "node",
-        "description": "Field 'discountDays' should be present in paymentTerm"
+        "description": "Field 'default' should be present in header"
       },
       {
         "id": "t-6",
-        "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "discount",
+        "category": "field-type",
+        "entity": "header",
+        "field": "searchKey",
         "runner": "node",
-        "description": "Field 'discount' should be present in paymentTerm"
+        "description": "Field 'searchKey' should have type 'string' in header"
       },
       {
         "id": "t-7",
-        "category": "field-presence",
-        "entity": "paymentTerm",
-        "field": "isActive",
+        "category": "field-type",
+        "entity": "header",
+        "field": "name",
         "runner": "node",
-        "description": "Field 'isActive' should be present in paymentTerm"
+        "description": "Field 'name' should have type 'string' in header"
       },
       {
         "id": "t-8",
         "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "name",
+        "entity": "header",
+        "field": "offsetMonthDue",
         "runner": "node",
-        "description": "Field 'name' should have type 'string' in paymentTerm"
+        "description": "Field 'offsetMonthDue' should have type 'number' in header"
       },
       {
         "id": "t-9",
         "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "searchKey",
+        "entity": "header",
+        "field": "overduePaymentDaysRule",
         "runner": "node",
-        "description": "Field 'searchKey' should have type 'string' in paymentTerm"
+        "description": "Field 'overduePaymentDaysRule' should have type 'number' in header"
       },
       {
         "id": "t-10",
         "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "description",
+        "entity": "header",
+        "field": "default",
         "runner": "node",
-        "description": "Field 'description' should have type 'string' in paymentTerm"
+        "description": "Field 'default' should have type 'boolean' in header"
       },
       {
         "id": "t-11",
-        "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "netDays",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "searchKey",
         "runner": "node",
-        "description": "Field 'netDays' should have type 'number' in paymentTerm"
+        "description": "Field 'searchKey' should be a supported filter for header"
       },
       {
         "id": "t-12",
-        "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "discountDays",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "name",
         "runner": "node",
-        "description": "Field 'discountDays' should have type 'number' in paymentTerm"
+        "description": "Field 'name' should be a supported filter for header"
       },
       {
         "id": "t-13",
-        "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "discount",
+        "category": "visibility",
+        "entity": "header",
         "runner": "node",
-        "description": "Field 'discount' should have type 'number' in paymentTerm"
+        "description": "Header entity should have correct grid/form field visibility"
       },
       {
         "id": "t-14",
-        "category": "field-type",
-        "entity": "paymentTerm",
-        "field": "isActive",
+        "category": "system-field",
+        "entity": "header",
+        "field": "organization",
         "runner": "node",
-        "description": "Field 'isActive' should have type 'boolean' in paymentTerm"
+        "description": "System field 'organization' should exist in backend but not frontend for header"
       },
       {
         "id": "t-15",
-        "category": "searchable-filters",
-        "entity": "paymentTerm",
-        "field": "name",
+        "category": "system-field",
+        "entity": "header",
+        "field": "client",
         "runner": "node",
-        "description": "Field 'name' should be a supported filter for paymentTerm"
+        "description": "System field 'client' should exist in backend but not frontend for header"
       },
       {
         "id": "t-16",
-        "category": "searchable-filters",
-        "entity": "paymentTerm",
-        "field": "searchKey",
-        "runner": "node",
-        "description": "Field 'searchKey' should be a supported filter for paymentTerm"
-      },
-      {
-        "id": "t-17",
-        "category": "visibility",
-        "entity": "paymentTerm",
-        "runner": "node",
-        "description": "Entity 'paymentTerm' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-18",
         "category": "system-field",
-        "entity": "paymentTerm",
-        "field": "adClientId",
+        "entity": "header",
+        "field": "id",
         "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for paymentTerm"
-      },
-      {
-        "id": "t-19",
-        "category": "system-field",
-        "entity": "paymentTerm",
-        "field": "adOrgId",
-        "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for paymentTerm"
-      },
-      {
-        "id": "t-20",
-        "category": "system-field",
-        "entity": "paymentTerm",
-        "field": "created",
-        "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for paymentTerm"
-      },
-      {
-        "id": "t-21",
-        "category": "system-field",
-        "entity": "paymentTerm",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for paymentTerm"
+        "description": "System field 'id' should exist in backend but not frontend for header"
       }
-    ],
-    "summary": {
-      "total": 21,
-      "byCategory": {
-        "field-presence": 7,
-        "field-type": 7,
-        "searchable-filters": 2,
-        "visibility": 1,
-        "system-field": 4
-      },
-      "byRunner": {
-        "node": 21,
-        "junit": 0
-      }
-    }
+    ]
   }
 }

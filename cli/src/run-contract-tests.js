@@ -21,6 +21,23 @@ function checkFieldPresence(contract, test) {
 }
 
 /**
+ * Check editable-field: field exists in frontendContract and remains editable.
+ */
+function checkEditableField(contract, test) {
+  const entity = contract.frontendContract?.entities?.[test.entity];
+  if (!entity) {
+    return { passed: false, reason: `Entity '${test.entity}' not found in frontendContract` };
+  }
+  const field = entity.fields.find(f => f.name === test.field);
+  if (!field) {
+    return { passed: false, reason: `Field '${test.field}' not found in entity '${test.entity}'` };
+  }
+  return field.visibility === 'editable'
+    ? { passed: true }
+    : { passed: false, reason: `Field '${test.field}' has visibility '${field.visibility}', expected 'editable'` };
+}
+
+/**
  * Check field-type: field has correct tsType in frontendContract
  */
 function checkFieldType(contract, test) {
@@ -250,6 +267,7 @@ function checkDefaultValueType(contract, test) {
 
 const categoryHandlers = {
   'field-presence': checkFieldPresence,
+  'editable-field': checkEditableField,
   'field-type': checkFieldType,
   'system-field': checkSystemField,
   'searchable-filters': checkSearchableFilters,

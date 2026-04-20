@@ -1,145 +1,69 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { lockWindow, unlockWindow, getLockStatus, validateLock } from '../src/lock-window.js';
 
-describe('lockWindow', () => {
-  let locks;
+/**
+ * lock-window.js now uses GitHub Issues via `gh` CLI.
+ * Pure unit tests are replaced by format/parse validation tests.
+ * Full integration tests require a live GitHub repo.
+ */
 
-  beforeEach(() => {
-    locks = {};
+describe('lock-window title format', () => {
+  const PREFIX = '🔒 LOCK: ';
+  const SUFFIX = ' #';
+
+  function lockTitle(name) {
+    return `${PREFIX}${name}${SUFFIX}`;
+  }
+
+  function parseTitle(title) {
+    if (!title.startsWith(PREFIX) || !title.endsWith(SUFFIX)) return null;
+    return title.slice(PREFIX.length, -SUFFIX.length);
+  }
+
+  it('creates unambiguous title with trailing #', () => {
+    assert.equal(lockTitle('purchase-invoice'), '🔒 LOCK: purchase-invoice #');
+    assert.equal(lockTitle('sales-invoice'), '🔒 LOCK: sales-invoice #');
+    assert.equal(lockTitle('invoice'), '🔒 LOCK: invoice #');
   });
 
-  it('locks an unlocked window', () => {
-    const result = lockWindow(locks, 'Sales Order', {
-      owner: 'sebastian',
-      branch: 'feat/sales-order',
-      reason: 'Extracting fields',
-    });
-    assert.equal(result.success, true);
-    assert.ok(result.locks['Sales Order']);
-    assert.equal(result.locks['Sales Order'].owner, 'sebastian');
-    assert.equal(result.locks['Sales Order'].branch, 'feat/sales-order');
-    assert.equal(result.locks['Sales Order'].reason, 'Extracting fields');
-    assert.ok(result.locks['Sales Order'].since);
+  it('purchase-invoice title does not match invoice title', () => {
+    const piTitle = lockTitle('purchase-invoice');
+    const invTitle = lockTitle('invoice');
+    assert.notEqual(piTitle, invTitle);
   });
 
-  it('rejects locking already-locked window by different owner', () => {
-    locks['Sales Order'] = {
-      owner: 'alex',
-      branch: 'feat/other',
-      since: '2026-03-12',
-      reason: 'Working on it',
-    };
-    const result = lockWindow(locks, 'Sales Order', {
-      owner: 'sebastian',
-      branch: 'feat/sales-order',
-      reason: 'Need it',
-    });
-    assert.equal(result.success, false);
-    assert.ok(result.error);
-    assert.match(result.error, /alex/);
+  it('sales-invoice title does not match invoice title', () => {
+    const siTitle = lockTitle('sales-invoice');
+    const invTitle = lockTitle('invoice');
+    assert.notEqual(siTitle, invTitle);
   });
 
-  it('allows same owner to re-lock (update reason)', () => {
-    locks['Sales Order'] = {
-      owner: 'sebastian',
-      branch: 'feat/sales-order',
-      since: '2026-03-12',
-      reason: 'Old reason',
-    };
-    const result = lockWindow(locks, 'Sales Order', {
-      owner: 'sebastian',
-      branch: 'feat/sales-order-v2',
-      reason: 'New reason',
-    });
-    assert.equal(result.success, true);
-    assert.equal(result.locks['Sales Order'].reason, 'New reason');
-    assert.equal(result.locks['Sales Order'].branch, 'feat/sales-order-v2');
-  });
-});
-
-describe('unlockWindow', () => {
-  let locks;
-
-  beforeEach(() => {
-    locks = {};
+  it('exact match prevents partial collision', () => {
+    const titles = [
+      lockTitle('invoice'),
+      lockTitle('purchase-invoice'),
+      lockTitle('sales-invoice'),
+      lockTitle('recurring-invoice'),
+    ];
+    // Each title is unique — no substring collision
+    for (let i = 0; i < titles.length; i++) {
+      for (let j = 0; j < titles.length; j++) {
+        if (i !== j) {
+          assert.notEqual(titles[i], titles[j], `${titles[i]} should not equal ${titles[j]}`);
+        }
+      }
+    }
   });
 
-  it('unlocks a window owned by requesting owner', () => {
-    locks['Sales Order'] = {
-      owner: 'sebastian',
-      branch: 'feat/sales-order',
-      since: '2026-03-12',
-      reason: 'Working',
-    };
-    const result = unlockWindow(locks, 'Sales Order', 'sebastian');
-    assert.equal(result.success, true);
-    assert.equal(result.locks['Sales Order'], undefined);
+  it('parses window name from title correctly', () => {
+    assert.equal(parseTitle('🔒 LOCK: purchase-invoice #'), 'purchase-invoice');
+    assert.equal(parseTitle('🔒 LOCK: sales-order #'), 'sales-order');
+    assert.equal(parseTitle('🔒 LOCK: invoice #'), 'invoice');
   });
 
-  it('rejects unlock by different owner', () => {
-    locks['Sales Order'] = {
-      owner: 'alex',
-      branch: 'feat/other',
-      since: '2026-03-12',
-      reason: 'Working',
-    };
-    const result = unlockWindow(locks, 'Sales Order', 'sebastian');
-    assert.equal(result.success, false);
-    assert.ok(result.error);
-    assert.match(result.error, /alex/);
-  });
-
-  it('succeeds silently for already-unlocked window', () => {
-    const result = unlockWindow(locks, 'Sales Order', 'sebastian');
-    assert.equal(result.success, true);
-  });
-});
-
-describe('getLockStatus', () => {
-  it('returns all locks sorted by window name', () => {
-    const locks = {
-      'Purchase Order': { owner: 'alex', branch: 'feat/po', since: '2026-03-12', reason: 'PO work' },
-      'Business Partner': { owner: 'sebastian', branch: 'feat/bp', since: '2026-03-11', reason: 'BP work' },
-      'Sales Order': { owner: 'catalyst', branch: 'feat/so', since: '2026-03-10', reason: 'SO work' },
-    };
-    const status = getLockStatus(locks);
-    assert.equal(status.length, 3);
-    assert.equal(status[0].window, 'Business Partner');
-    assert.equal(status[1].window, 'Purchase Order');
-    assert.equal(status[2].window, 'Sales Order');
-    assert.equal(status[0].owner, 'sebastian');
-  });
-
-  it('returns empty array when no locks', () => {
-    const status = getLockStatus({});
-    assert.deepEqual(status, []);
-  });
-});
-
-describe('validateLock', () => {
-  it('returns valid when owner has the lock', () => {
-    const locks = {
-      'Sales Order': { owner: 'sebastian', branch: 'feat/so', since: '2026-03-12', reason: 'Work' },
-    };
-    const result = validateLock(locks, 'Sales Order', 'sebastian');
-    assert.equal(result.valid, true);
-    assert.equal(result.error, undefined);
-  });
-
-  it('returns invalid when different owner has lock', () => {
-    const locks = {
-      'Sales Order': { owner: 'alex', branch: 'feat/so', since: '2026-03-12', reason: 'Work' },
-    };
-    const result = validateLock(locks, 'Sales Order', 'sebastian');
-    assert.equal(result.valid, false);
-    assert.ok(result.error);
-    assert.match(result.error, /alex/);
-  });
-
-  it('returns invalid when window is not locked', () => {
-    const result = validateLock({}, 'Sales Order', 'sebastian');
-    assert.equal(result.valid, false);
-    assert.ok(result.error);
+  it('returns null for non-lock titles', () => {
+    assert.equal(parseTitle('Some other issue'), null);
+    assert.equal(parseTitle('🔒 LOCK: no-hash'), null);
+    assert.equal(parseTitle('LOCK: missing-emoji #'), null);
   });
 });

@@ -1,40 +1,44 @@
-import { ListView, DetailView } from '@/components/contract-ui';
-import PaymentMethodTable from './PaymentMethodTable';
-import PaymentMethodForm from './PaymentMethodForm';
-import catalogs from './mockCatalogs';
+import PaymentMethodPage from './PaymentMethodPage';
 
-const windowMeta = { category: 'reference', name: 'Payment Method' };
+const windowMeta = { category: 'configuracion', name: 'Payment Method' };
 
-export default function App({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="paymentMethod"
-        Form={PaymentMethodForm}
-        catalogs={catalogs}
-        entityLabel="Payment Method"
-        windowName={windowName}
-        recordId={recordId}
-<<<<<<< HEAD
-        window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
+const api = {
+  "specName": "payment-method",
+  "baseUrl": "/sws/neo/payment-method",
+  "crud": {
+    "paymentMethod": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/payment-method/paymentMethod",
+      "detailUrl": "/sws/neo/payment-method/paymentMethod/{id}",
+      "supportedFilters": [
+        "name"
+      ]
+    }
+  },
+  "selectors": [],
+  "actions": [],
+  "queryParams": {
+    "pagination": {
+      "startRow": "_startRow",
+      "endRow": "_endRow",
+      "default": "0-100"
+    },
+    "sorting": {
+      "param": "_sortBy",
+      "example": "_sortBy=name"
+    },
+    "filtering": "Use field name as query param: ?fieldName=value",
+    "parentFilter": "parentId={id} for child entities"
   }
+};
 
-  return (
-    <ListView
-      entity="paymentMethod"
-      Table={PaymentMethodTable}
-      entityLabel="Payment Method"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
-      {...props}
-    />
-  );
+// @sf-generated-start component:App
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <PaymentMethodPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

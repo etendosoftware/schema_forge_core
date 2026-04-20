@@ -51,12 +51,27 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+  			'accent-highlight': {
+  				DEFAULT: 'hsl(var(--accent-highlight))',
+  				foreground: 'hsl(var(--accent-highlight-foreground))'
+  			},
+  			'page-bg': 'hsl(var(--page-bg))',
+  			'text-primary': 'hsl(var(--text-primary))',
+  			'search-bg': 'hsl(var(--search-bg))',
+  			'topbar-icon': 'hsl(var(--topbar-icon))',
+  			'topbar-breadcrumb': 'hsl(var(--topbar-breadcrumb))',
+  			'text-secondary': 'hsl(var(--text-secondary))',
+  			'search-placeholder': 'hsl(var(--search-placeholder))'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		zIndex: {
+  			60: '60',
+  			70: '70',
   		}
   	}
   },

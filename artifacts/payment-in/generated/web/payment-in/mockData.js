@@ -1,124 +1,247 @@
-// Auto-generated mock data for payment-in window
+// Auto-generated mock data - do not edit manually
 
-export const paymentIn = [
+export const finPayment = [
   {
-    "id": "mock-pyin-001",
-    "documentNo": "PAY-IN-001",
-    "businessPartner": "Pinnacle Services Ltd",
-    "paymentDate": "2026-03-01",
-    "amount": 18500.00,
+    "id": "mock-finPayment-001",
+    "documentNo": "FI-00001",
+    "referenceNo": "FI-00001",
+    "paymentDate": "2026-01-15",
+    "businessPartner": "Acme Corp",
+    "description": "Standard order for Q1 delivery",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 38907,
+    "account": "Sample account",
     "currency": "USD",
-    "paymentMethod": "Bank Transfer",
-    "description": "Payment for consulting services invoice SINV-001",
-    "status": "Confirmed",
-    "salesInvoice": "SINV-001"
+    "status": "DR"
   },
   {
-    "id": "mock-pyin-002",
-    "documentNo": "PAY-IN-002",
-    "businessPartner": "Horizon Labs Inc",
-    "paymentDate": "2026-03-03",
-    "amount": 15680.00,
-    "currency": "USD",
-    "paymentMethod": "Wire Transfer",
-    "description": "Lab consumables and reagents payment",
-    "status": "Confirmed",
-    "salesInvoice": "SINV-008"
-  },
-  {
-    "id": "mock-pyin-003",
-    "documentNo": "PAY-IN-003",
-    "businessPartner": "Atlas Manufacturing Co",
-    "paymentDate": "2026-03-05",
-    "amount": 25000.00,
-    "currency": "USD",
-    "paymentMethod": "Check",
-    "description": "Partial payment for machinery parts order",
-    "status": "Pending",
-    "salesInvoice": "SINV-004"
-  },
-  {
-    "id": "mock-pyin-004",
-    "documentNo": "PAY-IN-004",
-    "businessPartner": "Nova Enterprises SA",
-    "paymentDate": "2026-03-08",
-    "amount": 6720.00,
+    "id": "mock-finPayment-002",
+    "documentNo": "FI-00002",
+    "referenceNo": "FI-00002",
+    "paymentDate": "2026-01-16",
+    "businessPartner": "TechFlow Inc",
+    "description": "Rush order - priority shipping required",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 9306,
+    "account": "Sample account",
     "currency": "EUR",
-    "paymentMethod": "Wire Transfer",
-    "description": "Industrial sensors full settlement",
-    "status": "Draft",
-    "salesInvoice": "SINV-005"
+    "status": "CO"
   },
   {
-    "id": "mock-pyin-005",
-    "documentNo": "PAY-IN-005",
-    "businessPartner": "Quantum Logistics LLC",
-    "paymentDate": "2026-03-10",
-    "amount": 12000.00,
-    "currency": "USD",
-    "paymentMethod": "Bank Transfer",
-    "description": "Warehouse automation partial payment",
-    "status": "Confirmed",
-    "salesInvoice": "SINV-006"
-  },
-  {
-    "id": "mock-pyin-006",
-    "documentNo": "PAY-IN-006",
-    "businessPartner": "Cedar Holdings Group",
-    "paymentDate": "2026-03-12",
-    "amount": 9600.00,
+    "id": "mock-finPayment-003",
+    "documentNo": "FI-00003",
+    "referenceNo": "FI-00003",
+    "paymentDate": "2026-01-17",
+    "businessPartner": "Global Trade Ltd",
+    "description": "Bulk purchase for warehouse restocking",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 11544,
+    "account": "Sample account",
     "currency": "GBP",
-    "paymentMethod": "Bank Transfer",
-    "description": "Software license renewal annual payment",
-    "status": "Pending",
-    "salesInvoice": "SINV-003"
+    "status": "VO"
   },
   {
-    "id": "mock-pyin-007",
-    "documentNo": "PAY-IN-007",
-    "businessPartner": "Sterling & Co",
-    "paymentDate": "2026-03-15",
-    "amount": 500.00,
+    "id": "mock-finPayment-004",
+    "documentNo": "FI-00004",
+    "referenceNo": "FI-00004",
+    "paymentDate": "2026-01-18",
+    "businessPartner": "Summit Industries",
+    "description": "Sample order for client evaluation",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 11872,
+    "account": "Sample account",
     "currency": "USD",
-    "paymentMethod": "Bank Transfer",
-    "description": "Deposit for precision instruments order",
-    "status": "Confirmed",
-    "salesInvoice": "SINV-009"
+    "status": "IP"
   },
   {
-    "id": "mock-pyin-008",
-    "documentNo": "PAY-IN-008",
-    "businessPartner": "Pinnacle Services Ltd",
-    "paymentDate": "2026-03-18",
-    "amount": 15600.00,
-    "currency": "USD",
-    "paymentMethod": "Wire Transfer",
-    "description": "Year-end consulting and support payment",
-    "status": "Draft",
-    "salesInvoice": "SINV-007"
+    "id": "mock-finPayment-005",
+    "documentNo": "FI-00005",
+    "referenceNo": "FI-00005",
+    "paymentDate": "2026-01-19",
+    "businessPartner": "Pacific Partners",
+    "description": "Recurring monthly supply order",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 48460,
+    "account": "Sample account",
+    "currency": "EUR",
+    "status": "DR"
   },
   {
-    "id": "mock-pyin-009",
-    "documentNo": "PAY-IN-009",
-    "businessPartner": "Atlas Manufacturing Co",
-    "paymentDate": "2026-03-22",
-    "amount": 12890.40,
-    "currency": "USD",
-    "paymentMethod": "Check",
-    "description": "Replacement parts and maintenance kits",
-    "status": "Confirmed",
-    "salesInvoice": "SINV-010"
+    "id": "mock-finPayment-006",
+    "documentNo": "FI-00006",
+    "referenceNo": "FI-00006",
+    "paymentDate": "2026-01-20",
+    "businessPartner": "Alpine Solutions",
+    "description": "Special pricing agreement applies",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 45418,
+    "account": "Sample account",
+    "currency": "GBP",
+    "status": "CO"
   },
   {
-    "id": "mock-pyin-010",
-    "documentNo": "PAY-IN-010",
-    "businessPartner": "Quantum Logistics LLC",
-    "paymentDate": "2026-03-25",
-    "amount": 20000.00,
+    "id": "mock-finPayment-007",
+    "documentNo": "FI-00007",
+    "referenceNo": "FI-00007",
+    "paymentDate": "2026-01-21",
+    "businessPartner": "Meridian Group",
+    "description": "Consolidated order from multiple requests",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 33840,
+    "account": "Sample account",
     "currency": "USD",
-    "paymentMethod": "Bank Transfer",
-    "description": "Conveyor belt system upgrade advance",
-    "status": "Pending",
-    "salesInvoice": "SINV-012"
+    "status": "VO"
+  },
+  {
+    "id": "mock-finPayment-008",
+    "documentNo": "FI-00008",
+    "referenceNo": "FI-00008",
+    "paymentDate": "2026-01-22",
+    "businessPartner": "Vertex Systems",
+    "description": "Trial order for new product line",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 25716,
+    "account": "Sample account",
+    "currency": "EUR",
+    "status": "IP"
+  },
+  {
+    "id": "mock-finPayment-009",
+    "documentNo": "FI-00009",
+    "referenceNo": "FI-00009",
+    "paymentDate": "2026-01-23",
+    "businessPartner": "Atlas Manufacturing",
+    "description": "Replacement for damaged goods",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 44780,
+    "account": "Sample account",
+    "currency": "GBP",
+    "status": "DR"
+  },
+  {
+    "id": "mock-finPayment-010",
+    "documentNo": "FI-00010",
+    "referenceNo": "FI-00010",
+    "paymentDate": "2026-01-24",
+    "businessPartner": "Nova Enterprises",
+    "description": "Pre-season inventory build-up",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 12483,
+    "account": "Sample account",
+    "currency": "USD",
+    "status": "CO"
+  },
+  {
+    "id": "mock-finPayment-011",
+    "documentNo": "FI-00011",
+    "referenceNo": "FI-00011",
+    "paymentDate": "2026-01-25",
+    "businessPartner": "Pinnacle Services",
+    "description": "Customer-specific configuration",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 46022,
+    "account": "Sample account",
+    "currency": "EUR",
+    "status": "VO"
+  },
+  {
+    "id": "mock-finPayment-012",
+    "documentNo": "FI-00012",
+    "referenceNo": "FI-00012",
+    "paymentDate": "2026-01-26",
+    "businessPartner": "Horizon Labs",
+    "description": "Government contract fulfillment",
+    "paymentMethod": "Sample paymentMethod",
+    "amount": 38634,
+    "account": "Sample account",
+    "currency": "GBP",
+    "status": "IP"
+  }
+];
+
+export const finPaymentScheduleDetail = [
+  {
+    "id": "mock-finPaymentScheduleDetail-001",
+    "dueDate": "2026-01-15",
+    "amount": 38907,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-001"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-002",
+    "dueDate": "2026-01-16",
+    "amount": 9306,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-002"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-003",
+    "dueDate": "2026-01-17",
+    "amount": 11544,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-003"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-004",
+    "dueDate": "2026-01-18",
+    "amount": 11872,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-004"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-005",
+    "dueDate": "2026-01-19",
+    "amount": 48460,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-005"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-006",
+    "dueDate": "2026-01-20",
+    "amount": 45418,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-006"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-007",
+    "dueDate": "2026-01-21",
+    "amount": 33840,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-007"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-008",
+    "dueDate": "2026-01-22",
+    "amount": 25716,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-008"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-009",
+    "dueDate": "2026-01-23",
+    "amount": 44780,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-009"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-010",
+    "dueDate": "2026-01-24",
+    "amount": 12483,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-010"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-011",
+    "dueDate": "2026-01-25",
+    "amount": 46022,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-011"
+  },
+  {
+    "id": "mock-finPaymentScheduleDetail-012",
+    "dueDate": "2026-01-26",
+    "amount": 38634,
+    "invoicePaymentSchedule": "Sample invoicePaymentSchedule",
+    "finPaymentId": "mock-finPayment-012"
   }
 ];

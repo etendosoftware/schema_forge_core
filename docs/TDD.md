@@ -11,7 +11,7 @@
 
 ## 1. System Overview
 
-Schema Forge generates a standard Etendo module from curated metadata and rule decisions. The generated backend runs inside the Etendo platform — same JVM, same OBDal, same transaction. The generated frontend is a React SPA that communicates via Etendo RX endpoints.
+Schema Forge is the design and tooling layer for building a simplified Etendo interface. It analyzes Etendo AD metadata, helps humans make design decisions, and configures the NEO Headless runtime via direct DB writes — no backend code generation needed. The runtime module (`com.etendoerp.go`) serves APIs dynamically from configuration stored in 3 database tables.
 
 ### 1.1 Technology Stack
 
@@ -20,8 +20,8 @@ Schema Forge generates a standard Etendo module from curated metadata and rule d
 | CLI tools | Node.js | Zero-dependency, CI-friendly |
 | Decision tools | React web apps | Same ecosystem as generated frontend |
 | IA integration | Anthropic Claude API (Sonnet) | Schema as system prompt, conversational generation |
-| Generated backend | Java (Etendo module) | OBDal, event handlers, processes, Etendo RX |
-| Generated frontend | React SPA | Output of UI Generator, served as static from module |
+| Runtime API | Java (NEO Headless — NeoServlet) | Metadata-driven REST API, no code generation |
+| Generated frontend | React SPA | Output of generate-frontend.js, served as static |
 | Contract tests | Node.js | JSON assertions, no backend needed, instant |
 | Integration tests | JUnit (extends OBBaseTest) | Standard Etendo test infrastructure |
 
@@ -29,50 +29,55 @@ Schema Forge generates a standard Etendo module from curated metadata and rule d
 
 ```
 schema-forge/
-├── cli/
-│   ├── extract-fields.js
-│   ├── extract-rules.js
-│   ├── validate-schema.js
-│   ├── validate-processes.js
-│   ├── generate-contract.js
-│   ├── generate-backend.js
-│   └── check-version.js
+├── cli/                                  # Node.js CLI tools
+│   └── src/
+│       ├── extract-from-db.js            # Extract fields + rules from Etendo DB
+│       ├── extract-from-process.js       # Extract process/report metadata + parameters
+│       ├── extract-fields.js             # Field extraction with FK resolution
+│       ├── extract-rules.js              # Rule + callout extraction
+│       ├── pre-classify.js               # Auto-classify rules (deterministic + AI)
+│       ├── validate-schema.js            # 4-level validation
+│       ├── generate-contract.js          # Frontend/backend contracts (windows, processes, reports)
+│       ├── push-to-neo.js                # Direct DB writes → NEO Headless config (specType W/P/R)
+│       ├── neo-writer.js                 # Low-level DB writer for ETGO_SF_* tables
+│       ├── custom-section-markers.js     # Delimiter constants for generated code boundaries
+│       ├── generate-frontend.js          # React SPA generation (windows, processes, reports)
+│       ├── generate-mock-data.js         # Mock catalogs for UI preview
+│       ├── run-contract-tests.js         # Contract test runner
+│       ├── pr-review.js                  # Deterministic PR review report for duplicate blocks and architecture drift
+│       ├── epic-rollup-report.js         # Develop-targeted epic rollout report built from included feature PRs
+│       ├── resolve-menu.js               # AD_Menu resolver (auto-detect type from menu ID or name)
+│       └── pipeline.js                   # Full pipeline orchestrator (window/process/report/menu modes)
 │
-├── tools/
-│   ├── decision-editor/
-│   ├── rule-catalog/
-│   ├── ui-generator/
-│   ├── process-designer/
-│   └── permission-matrix/
+├── tools/                                # React decision UIs
+│   ├── app-shell/                        # Main UI shell (Vite + React + Tailwind, port 5173)
+│   ├── decision-panel/                   # Field visibility + rule curation (port 5174)
+│   └── ui-preview/                       # Live preview with mock data (port 5175)
 │
-├── templates/etendo-module/
-│   ├── build.gradle.tmpl
-│   ├── EventHandler.java.tmpl
-│   ├── DalProcess.java.tmpl
-│   ├── RxEndpoint.java.tmpl
-│   └── dataset.xml.tmpl
+├── templates/etendo-module/              # Legacy templates (replaced by NEO Headless runtime config)
 │
-├── artifacts/{window-name}/
-│   ├── schema-raw.json
-│   ├── rules-raw.json
-│   ├── schema-curated.json
-│   ├── rules-curated.json
-│   ├── processes.json
-│   ├── permissions.json
-│   ├── flows.json
-│   ├── contract-v{n}.json
-│   ├── decisions-log.json
+├── artifacts/{window-or-process-name}/   # Per-window/process: schemas, rules, decisions, generated code
+│   ├── schema-raw.json                   # Raw extraction from DB
+│   ├── schema-curated.json               # After human visibility decisions
+│   ├── rules-raw.json                    # Extracted business rules
+│   ├── rules-curated.json                # After human rule decisions
+│   ├── contract.json                     # Frontend + backend contract
 │   └── generated/
-│       └── com.etendo.schemaforge.{window}/
-│           ├── build.gradle
-│           ├── src/main/java/...
-│           ├── referencedata/standard/...
-│           ├── web/{window}/...
-│           └── src-test/...
+│       └── web/{name}/                   # React SPA components
 │
-└── core-maps/
-    ├── system-columns.json
-    └── impact-messages.json
+├── core-maps/                            # Shared metadata
+│   ├── system-columns.json               # System field categories
+│   ├── impact-messages.json              # Human-friendly impact messages
+│   └── ad-reference-map.json             # AD Reference type mappings
+│
+├── scripts/                              # Helper scripts
+│   ├── neo-token-sysadmin.sh             # JWT token for System Administrator
+│   └── neo-token-groupadmin.sh           # JWT token for Group Admin role
+│
+└── docs/                                 # All documentation
+    ├── architecture-overview.md           # System architecture
+    ├── PRD.md / TDD.md                    # Product + technical design
+    └── plans/                             # Feature plans and evaluations
 ```
 
 ### 1.3 Two-Loop Architecture
@@ -81,7 +86,7 @@ The system operates in two independent loops:
 
 **Fast loop (UI design):** Human ↔ IA generating React. Preview in sandboxed iframe with Babel standalone + mock data. No compilation, no backend, no database. Seconds per turn.
 
-**Validation loop (backend verification):** Generate Java + XML → contract tests (instant, Node.js) → compile module (gradlew, minutes) → integration tests (JUnit, seconds after compile). Runs once after decisions are finalized.
+**Validation loop (backend verification):** Configure via push-to-neo → contract tests (Node.js, instant) → verify endpoints live. No compilation needed — NEO Headless serves APIs dynamically from configuration.
 
 The loops are independent. The UI Decisor can run 20+ turns in the fast loop without ever touching the validation loop. The validation loop runs once at the end.
 

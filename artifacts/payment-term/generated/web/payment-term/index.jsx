@@ -1,40 +1,45 @@
-import { ListView, DetailView } from '@/components/contract-ui';
-import PaymentTermTable from './PaymentTermTable';
-import PaymentTermForm from './PaymentTermForm';
-import catalogs from './mockCatalogs';
+import HeaderPage from './HeaderPage';
 
-const windowMeta = { category: 'reference', name: 'Payment Term' };
+const windowMeta = { category: 'configuracion', name: 'Payment Term' };
 
-export default function App({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="paymentTerm"
-        Form={PaymentTermForm}
-        catalogs={catalogs}
-        entityLabel="Payment Term"
-        windowName={windowName}
-        recordId={recordId}
-<<<<<<< HEAD
-        window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
+const api = {
+  "specName": "payment-term",
+  "baseUrl": "/sws/neo/payment-term",
+  "crud": {
+    "header": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/payment-term/header",
+      "detailUrl": "/sws/neo/payment-term/header/{id}",
+      "supportedFilters": [
+        "searchKey",
+        "name"
+      ]
+    }
+  },
+  "selectors": [],
+  "actions": [],
+  "queryParams": {
+    "pagination": {
+      "startRow": "_startRow",
+      "endRow": "_endRow",
+      "default": "0-100"
+    },
+    "sorting": {
+      "param": "_sortBy",
+      "example": "_sortBy=name"
+    },
+    "filtering": "Use field name as query param: ?fieldName=value",
+    "parentFilter": "parentId={id} for child entities"
   }
+};
 
-  return (
-    <ListView
-      entity="paymentTerm"
-      Table={PaymentTermTable}
-      entityLabel="Payment Term"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
-      {...props}
-    />
-  );
+// @sf-generated-start component:App
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

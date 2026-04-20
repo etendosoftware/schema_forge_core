@@ -1,0 +1,14 @@
+[
+  {"category":"Assets","account":"Cash","amount":45000},
+  {"category":"Assets","account":"Accounts Receivable","amount":67000},
+  {"category":"Assets","account":"Inventory","amount":125000},
+  {"category":"Assets","account":"Fixed Assets","amount":280000},
+  {"category":"Liabilities","account":"Accounts Payable","amount":38000},
+  {"category":"Liabilities","account":"Loans","amount":150000},
+  {"category":"Liabilities","account":"Accrued Expenses","amount":12000},
+  {"category":"Equity","account":"Share Capital","amount":200000},
+  {"category":"Equity","account":"Retained Earnings","amount":87000},
+  {"category":"Equity","account":"Current Year Profit","amount":30000},
+  {"category":"Totals","account":"Total Assets","amount":517000},
+  {"category":"Totals","account":"Total Liabilities & Equity","amount":517000}
+]

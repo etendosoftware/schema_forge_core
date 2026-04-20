@@ -2,6 +2,29 @@
 
 const catalogs = {};
 
+catalogs['Warehouse'] = [
+  {
+    "id": "wh-001",
+    "name": "Main Warehouse"
+  },
+  {
+    "id": "wh-002",
+    "name": "East Distribution Center"
+  },
+  {
+    "id": "wh-003",
+    "name": "West Hub"
+  },
+  {
+    "id": "wh-004",
+    "name": "North Storage"
+  },
+  {
+    "id": "wh-005",
+    "name": "South Logistics"
+  }
+];
+
 catalogs['BusinessPartner'] = [
   {
     "id": "bp-001",
@@ -165,29 +188,6 @@ catalogs['BusinessPartnerLocation'] = [
     "id": "bploc-020",
     "name": "Lab - 95 Violet Rd",
     "businessPartnerId": "bp-010"
-  }
-];
-
-catalogs['Warehouse'] = [
-  {
-    "id": "wh-001",
-    "name": "Main Warehouse"
-  },
-  {
-    "id": "wh-002",
-    "name": "East Distribution Center"
-  },
-  {
-    "id": "wh-003",
-    "name": "West Hub"
-  },
-  {
-    "id": "wh-004",
-    "name": "North Storage"
-  },
-  {
-    "id": "wh-005",
-    "name": "South Logistics"
   }
 ];
 
