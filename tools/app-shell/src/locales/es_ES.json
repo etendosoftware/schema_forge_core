@@ -1384,6 +1384,18 @@
       "label": "Rectification invoice type",
       "description": "Type of rectification invoice to send to SII"
     },
+    "EM_Etgo_Web": {
+      "label": "Web",
+      "description": "Un enlace web para el contacto."
+    },
+    "EM_Etgo_Email": {
+      "label": "Correo electrónico",
+      "description": "Dirección de correo electrónico del contacto."
+    },
+    "EM_Etgo_Phone": {
+      "label": "Teléfono",
+      "description": "Número de teléfono del contacto."
+    },
     "Exercise": {
       "label": "Exercise",
       "description": "Exercise"
@@ -16853,6 +16865,7 @@
     "vendors": "Proveedores",
     "commercialName": "Nombre comercial",
     "locationColumn": "Dirección",
+    "webColumn": "Web",
     "emailColumn": "Correo electrónico",
     "typeColumn": "Tipo",
     "phoneColumn": "Teléfono",
