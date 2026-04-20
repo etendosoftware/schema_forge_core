@@ -67,7 +67,7 @@ export default function TopBar({
         {/* Left: title + breadcrumb + 3-dot menu */}
         {title && (
           <div className="flex items-center gap-1 shrink-0 min-w-0">
-            <div className="flex flex-col min-w-0 leading-tight">
+            <div className="flex flex-col justify-center items-start min-w-0 h-12">
               <div className="flex items-center gap-2">
                 <span className="text-xl font-semibold leading-8 text-text-primary truncate">
                   {title}
