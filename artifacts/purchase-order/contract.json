@@ -1,7 +1,7 @@
 {
   "version": "0.17.0",
-  "generatedAt": "2026-04-16T14:50:59.574Z",
-  "checksum": "ff822af570a3aab6",
+  "generatedAt": "2026-04-20T13:34:07.113Z",
+  "checksum": "ca88a51e721aea55",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -205,10 +205,9 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "reference": "Warehouse",
             "inputMode": "selector",
-            "section": "collapsed",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -228,7 +227,7 @@
             "form": true,
             "reference": "PaymentMethod",
             "inputMode": "selector",
-            "section": "collapsed",
+            "section": "principal",
             "validationRule": {
               "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@IsSOTrx@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@IsSOTrx@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
               "contextParams": [],
@@ -255,7 +254,7 @@
             "form": false,
             "reference": "PaymentTerm",
             "inputMode": "selector",
-            "section": "collapsed",
+            "section": "principal",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -275,7 +274,7 @@
             "form": true,
             "reference": "PriceList",
             "inputMode": "selector",
-            "section": "collapsed",
+            "section": "principal",
             "validationRule": {
               "code": "M_PriceList.issopricelist = @isSOTrx@",
               "contextParams": [],
@@ -2178,6 +2177,14 @@
             "required": false
           },
           {
+            "name": "paymentMethod",
+            "apiKey": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
             "name": "rMReceiveMaterials",
             "apiKey": "rMReceiveMaterials",
             "column": "RM_ReceiveMaterials",
@@ -2186,11 +2193,11 @@
             "required": false
           },
           {
-            "name": "paymentMethod",
-            "apiKey": "paymentMethod",
-            "column": "FIN_Paymentmethod_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
+            "name": "rMCreateInvoice",
+            "apiKey": "rMCreateInvoice",
+            "column": "RM_CreateInvoice",
+            "type": "button",
+            "visibility": "system",
             "required": false
           },
           {
@@ -2200,14 +2207,6 @@
             "type": "foreignKey",
             "visibility": "editable",
             "required": true
-          },
-          {
-            "name": "rMCreateInvoice",
-            "apiKey": "rMCreateInvoice",
-            "column": "RM_CreateInvoice",
-            "type": "button",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "priceList",
@@ -2586,28 +2585,12 @@
             "required": false
           },
           {
-            "name": "invoiceTerms",
-            "apiKey": "invoiceTerms",
-            "column": "InvoiceRule",
-            "type": "enum",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
+            "name": "delivered",
+            "apiKey": "delivered",
+            "column": "IsDelivered",
             "type": "boolean",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "reservationStatus",
-            "apiKey": "reservationStatus",
-            "column": "SO_Res_Status",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": false
           },
           {
             "name": "deliveryLocation",
@@ -2706,12 +2689,28 @@
             "required": true
           },
           {
+            "name": "reservationStatus",
+            "apiKey": "reservationStatus",
+            "column": "SO_Res_Status",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "processNow",
             "apiKey": "processNow",
             "column": "Processing",
             "type": "button",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "invoiceTerms",
+            "apiKey": "invoiceTerms",
+            "column": "InvoiceRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
           },
           {
             "name": "accountingDate",
@@ -2738,9 +2737,9 @@
             "required": true
           },
           {
-            "name": "delivered",
-            "apiKey": "delivered",
-            "column": "IsDelivered",
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
             "type": "boolean",
             "visibility": "system",
             "required": true
@@ -3266,6 +3265,14 @@
             "required": false
           },
           {
+            "name": "resourceAssignment",
+            "apiKey": "resourceAssignment",
+            "column": "S_ResourceAssignment_ID",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "sOPOReference",
             "apiKey": "sOPOReference",
             "column": "Ref_OrderLine_ID",
@@ -3282,6 +3289,14 @@
             "required": true
           },
           {
+            "name": "salesOrder",
+            "apiKey": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "priceAdjustment",
             "apiKey": "priceAdjustment",
             "column": "M_Offer_ID",
@@ -3290,19 +3305,19 @@
             "required": false
           },
           {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "cOrderDiscountID",
             "apiKey": "cOrderDiscountID",
             "column": "C_Order_Discount_ID",
             "type": "foreignKey",
             "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "reservationStatus",
-            "apiKey": "reservationStatus",
-            "column": "SO_Res_Status",
-            "type": "enum",
-            "visibility": "discarded",
             "required": false
           },
           {
@@ -3322,6 +3337,14 @@
             "required": false
           },
           {
+            "name": "reservationStatus",
+            "apiKey": "reservationStatus",
+            "column": "SO_Res_Status",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "manageReservation",
             "apiKey": "manageReservation",
             "column": "Manage_Reservation",
@@ -3330,10 +3353,18 @@
             "required": false
           },
           {
-            "name": "directShipment",
-            "apiKey": "directShipment",
-            "column": "DirectShip",
-            "type": "boolean",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_OrderLine_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -3346,43 +3377,11 @@
             "required": true
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_OrderLine_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "salesOrder",
-            "apiKey": "salesOrder",
-            "column": "C_Order_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "dateDelivered",
-            "apiKey": "dateDelivered",
-            "column": "DateDelivered",
-            "type": "date",
-            "visibility": "system",
+            "name": "chargeAmount",
+            "apiKey": "chargeAmount",
+            "column": "ChargeAmt",
+            "type": "amount",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -3394,11 +3393,11 @@
             "required": false
           },
           {
-            "name": "chargeAmount",
-            "apiKey": "chargeAmount",
-            "column": "ChargeAmt",
-            "type": "amount",
-            "visibility": "discarded",
+            "name": "dateDelivered",
+            "apiKey": "dateDelivered",
+            "column": "DateDelivered",
+            "type": "date",
+            "visibility": "system",
             "required": false
           },
           {
@@ -3410,12 +3409,12 @@
             "required": true
           },
           {
-            "name": "resourceAssignment",
-            "apiKey": "resourceAssignment",
-            "column": "S_ResourceAssignment_ID",
-            "type": "string",
+            "name": "directShipment",
+            "apiKey": "directShipment",
+            "column": "DirectShip",
+            "type": "boolean",
             "visibility": "system",
-            "required": false
+            "required": true
           },
           {
             "name": "creationDate",
@@ -3530,30 +3529,6 @@
             "required": true
           },
           {
-            "name": "salesOrder",
-            "apiKey": "salesOrder",
-            "column": "C_Order_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "salesOrderLine",
-            "apiKey": "salesOrderLine",
-            "column": "C_Orderline_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "cOrderlinetaxID",
-            "apiKey": "cOrderlinetaxID",
-            "column": "C_Orderlinetax_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "organization",
             "apiKey": "organization",
             "column": "AD_Org_ID",
@@ -3573,6 +3548,30 @@
             "name": "client",
             "apiKey": "client",
             "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "cOrderlinetaxID",
+            "apiKey": "cOrderlinetaxID",
+            "column": "C_Orderlinetax_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrderLine",
+            "apiKey": "salesOrderLine",
+            "column": "C_Orderline_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "apiKey": "salesOrder",
+            "column": "C_Order_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -3673,20 +3672,20 @@
             "required": false
           },
           {
-            "name": "salesOrderLine",
-            "apiKey": "salesOrderLine",
-            "column": "C_Orderline_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "active",
             "apiKey": "active",
             "column": "Isactive",
             "type": "boolean",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "salesOrderLine",
+            "apiKey": "salesOrderLine",
+            "column": "C_Orderline_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           },
           {
             "name": "organization",
@@ -3808,19 +3807,19 @@
             "required": true
           },
           {
-            "name": "writeoffAmount",
-            "apiKey": "writeoffAmount",
-            "column": "Writeoffamt",
-            "type": "amount",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
             "name": "currency",
             "apiKey": "currency",
             "column": "C_Currency_ID",
             "type": "foreignKey",
             "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "writeoffAmount",
+            "apiKey": "writeoffAmount",
+            "column": "Writeoffamt",
+            "type": "amount",
+            "visibility": "readOnly",
             "required": false
           },
           {
@@ -3888,12 +3887,20 @@
             "required": false
           },
           {
-            "name": "invoiceAmount",
-            "apiKey": "invoiceAmount",
-            "column": "Invoicedamt",
-            "type": "amount",
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_Bpartner_ID",
+            "type": "foreignKey",
             "visibility": "system",
-            "required": false
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
           },
           {
             "name": "finPaymentDetailVID",
@@ -3904,26 +3911,26 @@
             "required": true
           },
           {
-            "name": "orderPaymentPlan",
-            "apiKey": "orderPaymentPlan",
-            "column": "Fin_Payment_Sched_Ord_V_Id",
-            "type": "foreignKey",
+            "name": "invoiceAmount",
+            "apiKey": "invoiceAmount",
+            "column": "Invoicedamt",
+            "type": "amount",
             "visibility": "system",
             "required": false
-          },
-          {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_Bpartner_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
           },
           {
             "name": "active",
             "apiKey": "active",
             "column": "Isactive",
             "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "orderPaymentPlan",
+            "apiKey": "orderPaymentPlan",
+            "column": "Fin_Payment_Sched_Ord_V_Id",
+            "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
@@ -3942,14 +3949,6 @@
             "type": "string",
             "visibility": "system",
             "required": false
-          },
-          {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
           },
           {
             "name": "activity",
@@ -3984,14 +3983,6 @@
             "required": false
           },
           {
-            "name": "salesRegion",
-            "apiKey": "salesRegion",
-            "column": "C_Salesregion_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "creationDate",
             "apiKey": "creationDate",
             "column": "Created",
@@ -4006,6 +3997,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "salesRegion",
+            "apiKey": "salesRegion",
+            "column": "C_Salesregion_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           },
           {
             "name": "aPRMDisplayedAcc",
@@ -7476,28 +7475,12 @@
         "id": "t-338",
         "category": "system-field",
         "entity": "header",
-        "field": "invoiceTerms",
+        "field": "delivered",
         "runner": "node",
-        "description": "System field 'invoiceTerms' should exist in backend but not frontend for header"
+        "description": "System field 'delivered' should exist in backend but not frontend for header"
       },
       {
         "id": "t-339",
-        "category": "system-field",
-        "entity": "header",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-340",
-        "category": "system-field",
-        "entity": "header",
-        "field": "reservationStatus",
-        "runner": "node",
-        "description": "System field 'reservationStatus' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-341",
         "category": "system-field",
         "entity": "header",
         "field": "deliveryLocation",
@@ -7505,7 +7488,7 @@
         "description": "System field 'deliveryLocation' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-342",
+        "id": "t-340",
         "category": "system-field",
         "entity": "header",
         "field": "selfService",
@@ -7513,7 +7496,7 @@
         "description": "System field 'selfService' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-343",
+        "id": "t-341",
         "category": "system-field",
         "entity": "header",
         "field": "dropShipLocation",
@@ -7521,7 +7504,7 @@
         "description": "System field 'dropShipLocation' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-344",
+        "id": "t-342",
         "category": "system-field",
         "entity": "header",
         "field": "dropShipPartner",
@@ -7529,7 +7512,7 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-345",
+        "id": "t-343",
         "category": "system-field",
         "entity": "header",
         "field": "dropShipContact",
@@ -7537,7 +7520,7 @@
         "description": "System field 'dropShipContact' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-346",
+        "id": "t-344",
         "category": "system-field",
         "entity": "header",
         "field": "selected",
@@ -7545,7 +7528,7 @@
         "description": "System field 'selected' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-347",
+        "id": "t-345",
         "category": "system-field",
         "entity": "header",
         "field": "posted",
@@ -7553,7 +7536,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-348",
+        "id": "t-346",
         "category": "system-field",
         "entity": "header",
         "field": "formOfPayment",
@@ -7561,7 +7544,7 @@
         "description": "System field 'formOfPayment' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-349",
+        "id": "t-347",
         "category": "system-field",
         "entity": "header",
         "field": "salesTransaction",
@@ -7569,7 +7552,7 @@
         "description": "System field 'salesTransaction' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-350",
+        "id": "t-348",
         "category": "system-field",
         "entity": "header",
         "field": "datePrinted",
@@ -7577,7 +7560,7 @@
         "description": "System field 'datePrinted' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-351",
+        "id": "t-349",
         "category": "system-field",
         "entity": "header",
         "field": "processed",
@@ -7585,12 +7568,28 @@
         "description": "System field 'processed' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-352",
+        "id": "t-350",
+        "category": "system-field",
+        "entity": "header",
+        "field": "reservationStatus",
+        "runner": "node",
+        "description": "System field 'reservationStatus' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-351",
         "category": "system-field",
         "entity": "header",
         "field": "processNow",
         "runner": "node",
         "description": "System field 'processNow' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-352",
+        "category": "system-field",
+        "entity": "header",
+        "field": "invoiceTerms",
+        "runner": "node",
+        "description": "System field 'invoiceTerms' should exist in backend but not frontend for header"
       },
       {
         "id": "t-353",
@@ -7612,9 +7611,9 @@
         "id": "t-355",
         "category": "system-field",
         "entity": "header",
-        "field": "delivered",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'delivered' should exist in backend but not frontend for header"
+        "description": "System field 'active' should exist in backend but not frontend for header"
       },
       {
         "id": "t-356",
@@ -7884,12 +7883,20 @@
         "id": "t-389",
         "category": "system-field",
         "entity": "lines",
+        "field": "resourceAssignment",
+        "runner": "node",
+        "description": "System field 'resourceAssignment' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-390",
+        "category": "system-field",
+        "entity": "lines",
         "field": "sOPOReference",
         "runner": "node",
         "description": "System field 'sOPOReference' should exist in backend but not frontend for lines"
       },
       {
-        "id": "t-390",
+        "id": "t-391",
         "category": "system-field",
         "entity": "lines",
         "field": "descriptionOnly",
@@ -7897,87 +7904,7 @@
         "description": "System field 'descriptionOnly' should exist in backend but not frontend for lines"
       },
       {
-        "id": "t-391",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "priceAdjustment",
-        "runner": "node",
-        "description": "System field 'priceAdjustment' should exist in backend but not frontend for lines"
-      },
-      {
         "id": "t-392",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "cOrderDiscountID",
-        "runner": "node",
-        "description": "System field 'cOrderDiscountID' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-393",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "reservationStatus",
-        "runner": "node",
-        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-394",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "warehouseRule",
-        "runner": "node",
-        "description": "System field 'warehouseRule' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-395",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "createReservation",
-        "runner": "node",
-        "description": "System field 'createReservation' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-396",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "manageReservation",
-        "runner": "node",
-        "description": "System field 'manageReservation' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-397",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "directShipment",
-        "runner": "node",
-        "description": "System field 'directShipment' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-398",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-399",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-400",
-        "category": "system-field",
-        "entity": "lines",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for lines"
-      },
-      {
-        "id": "t-401",
         "category": "system-field",
         "entity": "lines",
         "field": "salesOrder",
@@ -7985,12 +7912,84 @@
         "description": "System field 'salesOrder' should exist in backend but not frontend for lines"
       },
       {
+        "id": "t-393",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "priceAdjustment",
+        "runner": "node",
+        "description": "System field 'priceAdjustment' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-394",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-395",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "cOrderDiscountID",
+        "runner": "node",
+        "description": "System field 'cOrderDiscountID' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-396",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "warehouseRule",
+        "runner": "node",
+        "description": "System field 'warehouseRule' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-397",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "createReservation",
+        "runner": "node",
+        "description": "System field 'createReservation' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-398",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "reservationStatus",
+        "runner": "node",
+        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-399",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "manageReservation",
+        "runner": "node",
+        "description": "System field 'manageReservation' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-400",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for lines"
+      },
+      {
+        "id": "t-401",
+        "category": "system-field",
+        "entity": "lines",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for lines"
+      },
+      {
         "id": "t-402",
         "category": "system-field",
         "entity": "lines",
-        "field": "dateDelivered",
+        "field": "chargeAmount",
         "runner": "node",
-        "description": "System field 'dateDelivered' should exist in backend but not frontend for lines"
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-403",
@@ -8004,9 +8003,9 @@
         "id": "t-404",
         "category": "system-field",
         "entity": "lines",
-        "field": "chargeAmount",
+        "field": "dateDelivered",
         "runner": "node",
-        "description": "System field 'chargeAmount' should exist in backend but not frontend for lines"
+        "description": "System field 'dateDelivered' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-405",
@@ -8020,9 +8019,9 @@
         "id": "t-406",
         "category": "system-field",
         "entity": "lines",
-        "field": "resourceAssignment",
+        "field": "directShipment",
         "runner": "node",
-        "description": "System field 'resourceAssignment' should exist in backend but not frontend for lines"
+        "description": "System field 'directShipment' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-407",
@@ -8100,36 +8099,12 @@
         "id": "t-416",
         "category": "system-field",
         "entity": "lineTax",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "System field 'salesOrder' should exist in backend but not frontend for lineTax"
-      },
-      {
-        "id": "t-417",
-        "category": "system-field",
-        "entity": "lineTax",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "System field 'salesOrderLine' should exist in backend but not frontend for lineTax"
-      },
-      {
-        "id": "t-418",
-        "category": "system-field",
-        "entity": "lineTax",
-        "field": "cOrderlinetaxID",
-        "runner": "node",
-        "description": "System field 'cOrderlinetaxID' should exist in backend but not frontend for lineTax"
-      },
-      {
-        "id": "t-419",
-        "category": "system-field",
-        "entity": "lineTax",
         "field": "organization",
         "runner": "node",
         "description": "System field 'organization' should exist in backend but not frontend for lineTax"
       },
       {
-        "id": "t-420",
+        "id": "t-417",
         "category": "system-field",
         "entity": "lineTax",
         "field": "active",
@@ -8137,12 +8112,36 @@
         "description": "System field 'active' should exist in backend but not frontend for lineTax"
       },
       {
-        "id": "t-421",
+        "id": "t-418",
         "category": "system-field",
         "entity": "lineTax",
         "field": "client",
         "runner": "node",
         "description": "System field 'client' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-419",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "cOrderlinetaxID",
+        "runner": "node",
+        "description": "System field 'cOrderlinetaxID' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-420",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-421",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for lineTax"
       },
       {
         "id": "t-422",
@@ -8180,17 +8179,17 @@
         "id": "t-426",
         "category": "system-field",
         "entity": "reservedStock",
-        "field": "salesOrderLine",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'salesOrderLine' should exist in backend but not frontend for reservedStock"
+        "description": "System field 'active' should exist in backend but not frontend for reservedStock"
       },
       {
         "id": "t-427",
         "category": "system-field",
         "entity": "reservedStock",
-        "field": "active",
+        "field": "salesOrderLine",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for reservedStock"
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for reservedStock"
       },
       {
         "id": "t-428",
@@ -8284,12 +8283,20 @@
         "id": "t-439",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "invoiceAmount",
+        "field": "businessPartner",
         "runner": "node",
-        "description": "System field 'invoiceAmount' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'businessPartner' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-440",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-441",
         "category": "system-field",
         "entity": "paymentDetails",
         "field": "finPaymentDetailVID",
@@ -8297,20 +8304,12 @@
         "description": "System field 'finPaymentDetailVID' should exist in backend but not frontend for paymentDetails"
       },
       {
-        "id": "t-441",
-        "category": "system-field",
-        "entity": "paymentDetails",
-        "field": "orderPaymentPlan",
-        "runner": "node",
-        "description": "System field 'orderPaymentPlan' should exist in backend but not frontend for paymentDetails"
-      },
-      {
         "id": "t-442",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "businessPartner",
+        "field": "invoiceAmount",
         "runner": "node",
-        "description": "System field 'businessPartner' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'invoiceAmount' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-443",
@@ -8324,25 +8323,25 @@
         "id": "t-444",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "client",
+        "field": "orderPaymentPlan",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'orderPaymentPlan' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-445",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "invoiceno",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'invoiceno' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'client' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-446",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "organization",
+        "field": "invoiceno",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'invoiceno' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-447",
@@ -8380,25 +8379,25 @@
         "id": "t-451",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "salesRegion",
-        "runner": "node",
-        "description": "System field 'salesRegion' should exist in backend but not frontend for paymentDetails"
-      },
-      {
-        "id": "t-452",
-        "category": "system-field",
-        "entity": "paymentDetails",
         "field": "creationDate",
         "runner": "node",
         "description": "System field 'creationDate' should exist in backend but not frontend for paymentDetails"
       },
       {
-        "id": "t-453",
+        "id": "t-452",
         "category": "system-field",
         "entity": "paymentDetails",
         "field": "createdBy",
         "runner": "node",
         "description": "System field 'createdBy' should exist in backend but not frontend for paymentDetails"
+      },
+      {
+        "id": "t-453",
+        "category": "system-field",
+        "entity": "paymentDetails",
+        "field": "salesRegion",
+        "runner": "node",
+        "description": "System field 'salesRegion' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-454",
@@ -8712,23 +8711,23 @@
       {
         "id": "t-497",
         "category": "rule-declared",
-        "rule": "C_BPartner Location - Bill To",
-        "runner": "node",
-        "description": "Rule 'C_BPartner Location - Bill To' (validation) should be declared"
-      },
-      {
-        "id": "t-498",
-        "category": "rule-declared",
         "rule": "C_DocType PO/SO",
         "runner": "node",
         "description": "Rule 'C_DocType PO/SO' (validation) should be declared"
       },
       {
-        "id": "t-499",
+        "id": "t-498",
         "category": "rule-declared",
         "rule": "AD_User - Org Tree",
         "runner": "node",
         "description": "Rule 'AD_User - Org Tree' (validation) should be declared"
+      },
+      {
+        "id": "t-499",
+        "category": "rule-declared",
+        "rule": "C_BPartner Location - Bill To",
+        "runner": "node",
+        "description": "Rule 'C_BPartner Location - Bill To' (validation) should be declared"
       },
       {
         "id": "t-500",

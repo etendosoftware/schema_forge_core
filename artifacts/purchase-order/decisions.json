@@ -92,8 +92,7 @@
         },
         "warehouse": {
           "grid": true,
-          "form": true,
-          "section": "collapsed"
+          "form": false
         },
         "scheduledDeliveryDate": {
           "section": "principal",
@@ -103,15 +102,15 @@
         "paymentMethod": {
           "reference": "PaymentMethod",
           "form": true,
-          "section": "collapsed"
+          "section": "principal"
         },
         "paymentTerms": {
           "form": false,
-          "section": "collapsed"
+          "section": "principal"
         },
         "priceList": {
           "grid": true,
-          "section": "collapsed",
+          "section": "principal",
           "form": true
         },
         "invoiceAddress": {
