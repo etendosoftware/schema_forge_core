@@ -50,22 +50,20 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
   ],
   derived: [
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
-    { key: 'lineGrossAmount', value: '0' },
     { key: 'warehouse', fromParent: 'warehouse' },
-    { key: 'shippingCompany', value: '@M_Shipper_ID@' },
+    { key: 'shippingCompany', fromParent: 'shippingCompany' },
     { key: 'orderDate', fromParent: 'orderDate' },
     { key: 'scheduledDeliveryDate', fromParent: 'scheduledDeliveryDate' },
-    { key: 'businessPartner', value: '@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@' },
     { key: 'partnerAddress', fromParent: 'partnerAddress' },
     { key: 'currency', fromParent: 'currency' },
   ],
@@ -222,6 +220,13 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/header/selectors/shippingCompany"
+    },
+    {
+      "entity": "header",
       "field": "charge",
       "column": "C_Charge_ID",
       "url": "/sws/neo/purchase-order/header/selectors/charge"
@@ -276,6 +281,14 @@ const api = {
     },
     {
       "entity": "lines",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-order/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
@@ -291,14 +304,6 @@ const api = {
     },
     {
       "entity": "lines",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/lines/selectors/tax"
-    },
-    {
-      "entity": "lines",
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
@@ -310,13 +315,6 @@ const api = {
       "column": "M_Shipper_ID",
       "reference": "Shipper",
       "url": "/sws/neo/purchase-order/lines/selectors/shippingCompany"
-    },
-    {
-      "entity": "lines",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-order/lines/selectors/businessPartner"
     },
     {
       "entity": "lines",

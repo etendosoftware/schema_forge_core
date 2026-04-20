@@ -265,6 +265,13 @@
         "organization": {
           "visibility": "system",
           "form": false
+        },
+        "shippingCompany": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false,
+          "reference": "Shipper",
+          "inputMode": null
         }
       }
     },
@@ -278,6 +285,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 1,
+          "gridOrder": 1,
           "readOnlyLogic": null
         },
         "operativeQuantity": {
@@ -295,6 +304,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 3,
+          "gridOrder": 3,
           "readOnlyLogic": null
         },
         "uOM": {
@@ -307,6 +318,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 4,
+          "gridOrder": 4,
           "readOnlyLogic": null
         },
         "grossUnitPrice": {
@@ -315,20 +328,24 @@
           "displayLogic": null
         },
         "lineNetAmount": {
-          "grid": true,
-          "form": true,
-          "section": "principal",
+          "grid": false,
+          "form": false,
           "readOnlyLogic": null
         },
         "lineGrossAmount": {
-          "form": false,
-          "displayLogic": null
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 7,
+          "gridOrder": 7
         },
         "tax": {
           "grid": true,
           "form": true,
           "section": "principal",
-          "inputMode": "selector",
+          "order": 6,
+          "gridOrder": 6,
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "listPrice": {
@@ -345,6 +362,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 5,
+          "gridOrder": 5,
           "readOnlyLogic": null
         },
         "taxableAmount": {
@@ -395,11 +414,7 @@
           "inputMode": null
         },
         "businessPartner": {
-          "visibility": "readOnly",
-          "form": false,
-          "reference": "BusinessPartner",
-          "inputMode": null,
-          "readOnlyLogic": null
+          "visibility": "discarded"
         },
         "partnerAddress": {
           "visibility": "readOnly",
@@ -447,8 +462,11 @@
           "displayLogic": null
         },
         "description": {
-          "form": false,
-          "displayLogic": null
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 2,
+          "gridOrder": 2
         },
         "managePrereservation": {
           "visibility": "discarded",
