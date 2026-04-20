@@ -323,6 +323,7 @@ export default function CreateContactModal({
             method: 'POST',
             headers,
             body: JSON.stringify({
+              parentId: newId,
               bankFormat: b.bankAccountFormat || 'GENERIC',
               ...(b.bankName && { bankName: b.bankName }),
               ...(b.genericAccountNo && { accountNo: b.genericAccountNo }),
