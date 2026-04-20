@@ -69,7 +69,7 @@ export default function TopBar({
           <div className="flex items-center gap-1 shrink-0 min-w-0">
             <div className="flex flex-col min-w-0 leading-tight">
               <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-text-primary truncate">
+                <span className="text-xl font-semibold leading-8 text-text-primary truncate">
                   {title}
                 </span>
                 {recordCount != null && (
