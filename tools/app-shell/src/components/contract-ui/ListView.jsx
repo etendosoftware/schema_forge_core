@@ -63,9 +63,12 @@ export function ListView({
   const { toggleFavorite, isFavorite } = useFavorites();
   const favKey = windowName || entity || '';
   const favActive = isFavorite(favKey);
+  const fullBreadcrumb = breadcrumb
+    ? breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')
+    : label;
   useSetPageMeta({
     title: label,
-    breadcrumb: label,
+    breadcrumb: fullBreadcrumb,
     onAddToFavorites: favKey ? () => toggleFavorite(favKey, label) : undefined,
     isFavorite: favActive,
   }, [favActive]);
