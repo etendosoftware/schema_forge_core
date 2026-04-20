@@ -8,7 +8,7 @@ import { CommandPalette } from '@/components/CommandPalette.jsx';
 import { CopilotProvider } from '@/components/CopilotContext';
 import { CopilotWidget } from '@/components/CopilotWidget';
 
-const COLLAPSED_W = 60;
+const COLLAPSED_W = 56;
 const EXPANDED_W = 240;
 
 function AppLayoutInner({ menuGroups, embedded }) {

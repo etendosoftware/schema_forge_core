@@ -128,7 +128,7 @@ function CollapsedGroupPopover({
       </PopoverTrigger>
       <PopoverContent
         side="right"
-        sideOffset={10}
+        sideOffset={8}
         onMouseEnter={cancelClose}
         onMouseLeave={scheduleClose}
         className="w-52 p-0 overflow-hidden"
@@ -186,7 +186,7 @@ export function findActiveGroup(menuGroups, pathname, search) {
   ) || null;
 }
 
-const COLLAPSED_W = 60;
+const COLLAPSED_W = 56;
 const EXPANDED_W = 240;
 
 export default function SideMenu({
@@ -285,26 +285,25 @@ export default function SideMenu({
             <div className="absolute bottom-0 left-3 right-3 border-t border-border/50" />
           </div>
         ) : (
-          <div className="flex flex-row justify-between items-center h-[63px] px-2 gap-[10px]">
+          <div className="flex flex-row items-center h-[63px] px-2 border-b border-[#E8EAEF]">
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   onClick={onToggle}
                   aria-label={ui('expandMenu')}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <PanelLeftOpen className="h-4 w-4" />
+                  <PanelLeftOpen className="h-5 w-5" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">{ui('expandMenu')}</TooltipContent>
             </Tooltip>
-            <div className="absolute bottom-0 left-2 right-2 border-t border-border/50" />
           </div>
         )}
 
         {/* Menu groups */}
-        <div className="flex-1 overflow-auto py-2 sidebar-scroll">
+        <div className={cn('flex-1 overflow-auto sidebar-scroll', expanded ? 'py-2' : 'flex flex-col py-2 pl-2 gap-3')}>
           {resolvedMenuGroups.map((g, gIdx) => {
             const prevSection = gIdx > 0 ? resolvedMenuGroups[gIdx - 1].section : null;
             const showSectionLabel = expanded && g.section && g.section !== prevSection;
@@ -325,7 +324,7 @@ export default function SideMenu({
                 return (
                   <div
                     key={g.group}
-                    className="flex justify-center py-0.5"
+                    className="flex justify-center"
                   >
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -335,7 +334,7 @@ export default function SideMenu({
                             'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
                             isItemActive || isGroupActive
                               ? 'bg-accent-highlight text-accent-highlight-foreground'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              : 'bg-page-bg text-muted-foreground hover:text-foreground'
                           )}
                         >
                           <Icon weight={isItemActive || isGroupActive ? 'fill' : 'regular'} className="h-5 w-5" />
@@ -350,7 +349,7 @@ export default function SideMenu({
               return (
                 <div
                   key={g.group}
-                  className="flex justify-center py-0.5"
+                  className="flex justify-center"
                 >
                   <CollapsedGroupPopover
                     group={g.group}
@@ -475,10 +474,10 @@ export default function SideMenu({
 
         {/* Pinned footer: Help + user */}
         <div className={cn(
-          'flex flex-col shrink-0 pt-2 pb-2',
-          expanded ? 'px-2 gap-1' : 'items-center gap-1.5'
+          'flex flex-col shrink-0 pb-2',
+          expanded ? 'px-2 gap-1 pt-2' : 'px-2 gap-1'
         )}>
-          <div className={cn('border-t border-border/50 mb-1', expanded ? 'mx-1' : 'w-8')} />
+          <div className={cn('border-t border-[#E8EAEF] mb-1', expanded ? 'mx-[-8px]' : 'w-10')} />
           {!expanded ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -486,7 +485,7 @@ export default function SideMenu({
                   type="button"
                   onClick={handleHelpClick}
                   aria-label={ui('helpAndSupport')}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Headphones className="h-5 w-5" />
                 </button>
