@@ -28,6 +28,8 @@ import {
   PanelLeftClose,
   ChevronRight,
   Plug,
+  Store,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 import { getSectionColor } from '@/lib/sectionColors.js';
@@ -46,6 +48,8 @@ const ICON_MAP = {
   Eye,
   FileJson,
   Plug,
+  Store,
+  FlaskConical,
 };
 
 export function findActiveGroup(menuGroups, pathname, search) {

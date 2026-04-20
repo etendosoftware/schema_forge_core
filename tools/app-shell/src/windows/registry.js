@@ -1,4 +1,5 @@
 import menuConfig from '../menu.json' with { type: 'json' };
+import { APP_CATALOG } from '../apps-registry.js';
 
 /**
  * Known window loaders -- maps slug to dynamic import.
@@ -51,23 +52,50 @@ const windowLoaders = {
 };
 
 /**
- * Return the 2-level menu groups from menu.json.
- * Groups or items with hidden: true are excluded.
+ * Return the 2-level menu groups, merging installed SDK apps into the
+ * Marketplace group. Groups or items with hidden: true are excluded.
+ *
+ * @param {string[]} [installedAppIds] — appIds present in the installed-apps
+ *   store. External apps only appear in the menu when their id is here.
  */
-export function buildMenuGroups() {
+export function buildMenuGroups(installedAppIds = []) {
+  const installedSet = new Set(installedAppIds);
+  const extraByGroup = new Map();
+  for (const app of APP_CATALOG) {
+    if (!installedSet.has(app.appId)) continue;
+    if (!extraByGroup.has(app.menuGroup)) extraByGroup.set(app.menuGroup, []);
+    for (const entry of app.menuEntries) {
+      extraByGroup.get(app.menuGroup).push({ ...entry });
+    }
+  }
+
   return menuConfig.menu
     .filter(group => !group.hidden)
-    .map(group => ({
-      ...group,
-      items: group.items.filter(item => !item.hidden),
-    }));
+    .map(group => {
+      const extras = extraByGroup.get(group.group) || [];
+      return {
+        ...group,
+        items: [
+          ...group.items.filter(item => !item.hidden),
+          ...extras,
+        ],
+      };
+    });
 }
 
 /**
- * Flat list of all window slugs from menu.json.
+ * Flat list of all window slugs from menu.json plus every potential menu
+ * entry from the app catalog (so route resolution never fails for an app
+ * that happens to be installed).
  */
 export function getAllWindowNames() {
-  return menuConfig.menu.flatMap(g => g.items.map(i => i.name));
+  const names = menuConfig.menu.flatMap(g => g.items.map(i => i.name));
+  for (const app of APP_CATALOG) {
+    for (const entry of app.menuEntries) {
+      if (!names.includes(entry.name)) names.push(entry.name);
+    }
+  }
+  return names;
 }
 
 /**
@@ -93,21 +121,31 @@ const customLoaders = {
 };
 
 /**
- * Build window map with loaders for all windows in menu.json.
+ * Build window map with loaders for all windows in menu.json plus every
+ * SDK-app menu entry from the catalog (so installing an app from the
+ * App Store never hits PlaceholderWindow on first render).
+ *
  * Resolution order: customLoaders > windowLoaders > PlaceholderWindow
  */
 export function buildWindowMap() {
   const map = {};
+  const register = (item) => {
+    map[item.name] = {
+      name: item.name,
+      label: item.label,
+      contract: null,
+      loader: customLoaders[item.name]
+        || windowLoaders[item.name]
+        || (() => import('./PlaceholderWindow.jsx')),
+    };
+  };
+
   for (const group of menuConfig.menu) {
-    for (const item of group.items) {
-      map[item.name] = {
-        name: item.name,
-        label: item.label,
-        contract: null,
-        loader: customLoaders[item.name]
-          || windowLoaders[item.name]
-          || (() => import('./PlaceholderWindow.jsx')),
-      };
+    for (const item of group.items) register(item);
+  }
+  for (const app of APP_CATALOG) {
+    for (const entry of app.menuEntries) {
+      if (!map[entry.name]) register(entry);
     }
   }
   return map;

@@ -2,6 +2,8 @@
 
 Unified external app for Quick Sales Order and Quick Purchase Order, driven by the `type` query param (`sales` | `purchase`). Both shell menu entries (`quick-order-sales`, `quick-order-purchase`) load the same iframe UI and the shell-side window wrapper maps the menu slug to a `type`.
 
+The menu entries are NOT hardcoded in `menu.json`. They only appear after the user installs the app from the shell's **App Store** page (`/app-store`), which toggles a flag in `localStorage` (`etendo.installedApps`). The shell's `buildMenuGroups()` injects the catalog-declared entries dynamically. See `tools/app-shell/src/apps-registry.js` and `tools/app-shell/src/hooks/useInstalledApps.js`.
+
 Consumes the SDK packages:
 - `@etendoerp/apps-sdk` (browser) — shell client, fetches data via the BFF, plus shared CSS tokens (`@etendoerp/apps-sdk/styles.css`).
 - `@etendoerp/apps-sdk-bff` (Node) — mounts `/health`, `/api/me`, `/api/etendo/*`.

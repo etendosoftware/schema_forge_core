@@ -22,3 +22,4 @@ Proposals differ from plans:
 | [etendo-go-apps-technical-annex.md](etendo-go-apps-technical-annex.md) | Draft / Pending approval | Technical annex — architecture, descriptor, JWT+JWKS, BFF, lifecycle, SDK |
 | [etendo-apps-sdk.md](etendo-apps-sdk.md) | Draft / Pending approval | Apps SDK v1 (internal apps) — `@etendo/apps-sdk` + `@etendo/apps-sdk-bff`, migration from spike, quick-order as first consumer |
 | [apps-sdk-styling.md](apps-sdk-styling.md) | Draft / Pending approval | Apps SDK styling (Option A) — ship shared CSS tokens + base.css so iframe apps inherit shell look with one import |
+| [apps-sdk-mock-installer.md](apps-sdk-mock-installer.md) | Draft / Pending approval | Mock App Store installer — localStorage-backed install toggle, catalog-driven menu entries for SDK apps |

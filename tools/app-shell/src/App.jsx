@@ -19,6 +19,7 @@ import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
 import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
+import { useInstalledApps } from './hooks/useInstalledApps.js';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -28,6 +29,7 @@ const OAuth2ClientsPage = lazy(() => import('./pages/OAuth2ClientsPage.jsx'));
 const AuthorizePage = lazy(() => import('./pages/AuthorizePage.jsx'));
 const QuickSalesOrderPage = lazy(() => import('./pages/QuickSalesOrderPage.jsx'));
 const QuickPurchaseOrderPage = lazy(() => import('./pages/QuickPurchaseOrderPage.jsx'));
+const AppStorePage = lazy(() => import('./pages/AppStorePage.jsx'));
 
 function detectBasePath() {
   const envBase = import.meta.env.VITE_API_BASE;
@@ -162,6 +164,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="authorize" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AuthorizePage /></Suspense>} />
         <Route path="quick-sales-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickSalesOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
         <Route path="quick-purchase-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickPurchaseOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
+        <Route path="app-store" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AppStorePage /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
@@ -191,7 +194,10 @@ function ServiceWorkerManager() {
 }
 
 export default function App() {
-  const [menuGroups] = useState(() => buildMenuGroups());
+  const installedApps = useInstalledApps();
+  // Rebuild the menu whenever the installed-apps set changes; windowMap is
+  // static because it already registers loaders for every known SDK app.
+  const menuGroups = buildMenuGroups(installedApps);
   const [windowMap] = useState(() => buildWindowMap());
   const [locale, setLocale] = useLocaleState();
 
