@@ -452,13 +452,13 @@ export default function SideMenu({
                           className={cn(
                             'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'text-accent-highlight-foreground'
+                              ? 'text-accent-highlight-foreground font-semibold'
                               : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
                           <span className={cn(
                             'absolute left-[22px] top-0 bottom-0',
-                            isItemActive ? 'right-0 bg-accent-highlight' : 'w-0.5 bg-border'
+                            isItemActive ? 'right-2 bg-accent-highlight' : 'w-0.5 bg-border'
                           )} />
                           <span className="relative z-10">{tMenu(item.label)}</span>
                         </NavLink>
