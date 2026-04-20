@@ -1,8 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import CreateContactModal from '@/components/contract-ui/CreateContactModal';
+import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
@@ -21,11 +24,12 @@ const LIST_COLUMNS = [
 // Lines table columns without lineNo
 const LINES_COLUMNS = [
   { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
+  { key: 'description', column: 'Description', type: 'string', label: 'Description' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', label: 'Ordered Quantity' },
-  { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price' },
-  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', label: 'Line Net Amount' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'amount', label: 'Unit Price' },
   { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
 ];
 
 function CustomHeaderTable(props) {
@@ -42,22 +46,43 @@ export default function PurchaseOrderWindow(props) {
   const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
+  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
+    useCreateContactModal({ apiBaseUrl, token });
 
   if (recordId) {
     return (
-      <GeneratedApp
-        {...props}
-        DetailTable={CustomLinesTable}
-      />
+      <CreateContactContext.Provider value={createContactCtxValue}>
+        <GeneratedApp
+          {...props}
+          DetailTable={CustomLinesTable}
+        />
+        {createContactState && createPortal(
+          <CreateContactModal
+            bpApiBaseUrl={bpApiBaseUrl}
+            headers={headers}
+            initialQuery={createContactState.query}
+            documentType="purchase"
+            onClose={() => setCreateContactState(null)}
+            onCreated={(newBP) => {
+              createContactState.onSelect({ id: newBP.id, name: newBP.name });
+              setCreateContactState(null);
+            }}
+          />,
+          document.body,
+        )}
+      </CreateContactContext.Provider>
     );
   }
 
   const docStatus = searchParams.get('DocStatus');
+  const filterParam = searchParams.get('filter');
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
+  const QUICK_FILTERS = [
+    { label: 'all' },
+    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatusPurchase ?? 100) < 100 },
+  ];
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
 
   return (
     <>
@@ -69,6 +94,8 @@ export default function PurchaseOrderWindow(props) {
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(row) => setCloneTarget(row)}
         initialColumnFilters={initialColumnFilters}
+        quickFilters={QUICK_FILTERS}
+        initialQuickFilterIndex={initialQuickFilterIndex}
         {...props}
       />
       {cloneTarget && createPortal(

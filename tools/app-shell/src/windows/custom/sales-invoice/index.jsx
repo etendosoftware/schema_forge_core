@@ -1,13 +1,17 @@
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
 import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
 import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
-import InvoiceTopbarExtra from '@generated/sales-invoice/custom/InvoiceTopbarExtra.jsx';
+import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
+import CreateContactModal from '@/components/contract-ui/CreateContactModal';
+import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
 /* eslint-disable react/prop-types */
 
@@ -49,6 +53,8 @@ export default function SalesInvoiceWindow(props) {
   const ui = useUI();
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
+  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
+    useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Sales / Sales Invoice';
   previewRowSetterRef = setPreviewRow;
 
@@ -65,16 +71,32 @@ export default function SalesInvoiceWindow(props) {
 
   if (recordId) {
     return (
-      <HeaderPage
-        {...props}
-        bottomSection={InvoiceBottomPanel}
-        topbarRight={InvoiceTopbarExtra}
-        notesField="description"
-        customTabs={[{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }]}
-        onAfterSave={true}
-        addLineGuard={(d) => !!d?.businessPartner}
-        breadcrumb={breadcrumb}
-      />
+      <CreateContactContext.Provider value={createContactCtxValue}>
+        <HeaderPage
+          {...props}
+          bottomSection={InvoiceBottomPanel}
+          topbarRight={SalesInvoiceTopbar}
+          notesField="description"
+          customTabs={[{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }]}
+          onAfterSave={true}
+          addLineGuard={(d) => !!d?.businessPartner}
+          breadcrumb={breadcrumb}
+        />
+        {createContactState && createPortal(
+          <CreateContactModal
+            bpApiBaseUrl={bpApiBaseUrl}
+            headers={headers}
+            initialQuery={createContactState.query}
+            documentType="sale"
+            onClose={() => setCreateContactState(null)}
+            onCreated={(newBP) => {
+              createContactState.onSelect({ id: newBP.id, name: newBP.name });
+              setCreateContactState(null);
+            }}
+          />,
+          document.body,
+        )}
+      </CreateContactContext.Provider>
     );
   }
 

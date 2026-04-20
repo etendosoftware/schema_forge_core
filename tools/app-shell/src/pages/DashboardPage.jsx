@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
+import TopBar from '@/components/layout/TopBar';
 import {
   DollarSign,
   CreditCard,
@@ -24,15 +23,10 @@ import {
   ChevronRight,
   ChevronUp,
   Clock,
-  Search,
-  Sparkles,
-  Plus,
-  Bell,
-  Mic,
-  LayoutGrid,
   LineChart,
   BarChart2,
   GripVertical,
+  LayoutGrid,
 } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
@@ -99,21 +93,6 @@ function resolvePendingTaskKey(task) {
   if (task?.taskKey) return task.taskKey;
   if ((windowName === 'sales-invoice' && filter === 'overdue') || task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
-  }
-  if ((windowName === 'sales-order' && docStatus === 'DR') || task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
-  }
-  if ((windowName === 'sales-invoice' && docStatus === 'DR') || task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
-  }
-  if ((windowName === 'goods-shipment' && docStatus === 'DR') || task?.link === '/goods-shipment' || text.includes('pending shipment')) {
-    return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
-  }
-  if ((windowName === 'purchase-order' && docStatus === 'DR') || task?.link === '/purchase-order' || text.includes('purchase orders to confirm')) {
-    return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
-  }
-  if ((windowName === 'purchase-invoice' && docStatus === 'DR') || task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -359,7 +338,7 @@ const WIDGET_PREVIEWS = {
   'pending-tasks': (ui, tMenu) => (
     <svg viewBox="0 0 280 100" className="w-full h-full">
       <rect width="280" height="100" rx="0" fill="#f8fafc" />
-      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingShipments_plural', { count: 2 })], ['#3b82f6', ui('purchaseOrdersToConfirm_plural', { count: 5 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
+      {[['#f59e0b', ui('overdueInvoices_plural', { count: 3 })], ['#3b82f6', ui('pendingReceptions_plural', { count: 2 })], ['#3b82f6', ui('pendingSalesDeliveries_plural', { count: 4 })], ['#f59e0b', ui('lowStockAlert', { count: 1 })]].map(([color, text], i) => (
         <g key={i} transform={`translate(12, ${10 + i * 22})`}>
           <circle cx="6" cy="7" r="5" fill={color} opacity="0.8" />
           <rect x="18" y="3" width="110" height="7" rx="3.5" fill="#cbd5e1" />
@@ -1359,57 +1338,18 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Top bar */}
-      <div className="px-6 pt-3 pb-3">
-        <div className="flex items-center gap-4">
-          <div className="shrink-0">
-            <h1 className="text-xl font-bold text-foreground">{ui('dashboardTitle')}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {dashboardCurrency
-                ? `${ui('dashboardCurrencyContext')}: ${dashboardCurrency}`
-                : ui('dashboardCurrencyUnavailable')}
-            </p>
-          </div>
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-            </div>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={openCopilot}
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground/40 cursor-not-allowed transition-colors"
-              title={`${ui('customizeDashboard')} (${ui('comingSoon')})`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-            <UserAvatarButton />
-          </div>
-        </div>
-      </div>
+      <TopBar
+        title={ui('dashboardTitle')}
+        breadcrumb={ui('dashboardTitle')}
+        menuAction={{
+          label: ui('configureDashboard'),
+          icon: LayoutGrid,
+          onClick: () => {},
+          disabled: true,
+        }}
+        onPageHelp={() => {}}
+        onAIClick={openCopilot}
+      />
 
       {loading ? <DashboardSkeleton /> : (
         <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto">

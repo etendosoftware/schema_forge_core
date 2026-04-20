@@ -7,7 +7,7 @@ const fields = [
   { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true || record['gROSSPRICE'] === 'Y' },
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', label: 'Line Net Amount', required: true, readOnly: true, section: 'principal', readOnlyLogic: (record) => record['editLineAmount'] !== true || record['processed'] === true },
   { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', section: 'principal', reference: 'Tax', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
-  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed' },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal' },
 ];
 // @sf-generated-end fields:lines
 
@@ -15,5 +15,5 @@ const fields = [
 export default function LinesForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-LinesForm.hasCollapsedFields = true;
+LinesForm.hasCollapsedFields = false;
 // @sf-generated-end component:LinesForm

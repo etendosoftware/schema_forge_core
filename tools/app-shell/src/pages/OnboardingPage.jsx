@@ -600,7 +600,7 @@ export default function OnboardingPage() {
         const data = await res.json();
         if (data.token) {
           localStorage.setItem('sf_auth_token', data.token);
-          localStorage.setItem('sf_auth_user', env.adminUser || '');
+          localStorage.setItem('sf_auth_user', env.adminUserName || env.adminUser || '');
           if (data.roleList) {
             localStorage.setItem('sf_auth_rolelist', JSON.stringify(data.roleList));
             const role = data.roleList[0];
@@ -1029,7 +1029,7 @@ export default function OnboardingPage() {
                     <div>
                       <p className="font-medium text-gray-900">{env.clientName}</p>
                       <p className="text-sm text-gray-500">
-                        {env.orgName || '\u2014'} &middot; {env.adminUser || '\u2014'}
+                        {env.orgName || '\u2014'} &middot; {env.adminUserName || env.adminUser || '\u2014'}
                       </p>
                     </div>
                   </div>

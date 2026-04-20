@@ -379,7 +379,11 @@ export default function InvoicePaymentModal({
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>
                         <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: badgeStyle.bg, color: badgeStyle.color }}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                          {status === 'paid'
+                            ? ui('statusPaid')
+                            : status === 'partial'
+                              ? ui('statusPartiallyExecuted')
+                              : ui('statusPending')}
                         </span>
                       </div>
                     </div>
