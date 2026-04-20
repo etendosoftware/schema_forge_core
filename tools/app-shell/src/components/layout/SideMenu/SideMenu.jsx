@@ -412,26 +412,28 @@ export default function SideMenu({
                     </span>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(g.group)}
-                  aria-expanded={!!isOpen}
-                  className={cn(
-                    'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors border-l-[3px]',
-                    isGroupActive && !isOpen
-                      ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
-                      : isGroupActive
-                        ? 'font-medium hover:bg-muted/50 border-accent-highlight'
-                        : 'hover:bg-muted/50 border-transparent'
-                  )}
-                >
-                  <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')} />
-                  <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>{tMenu(g.group)}</span>
-                  <ChevronDown className={cn(
-                    'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
-                    isOpen && 'rotate-180'
-                  )} />
-                </button>
+                <div className="px-2 py-0.5">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(g.group)}
+                    aria-expanded={!!isOpen}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px]',
+                      isGroupActive && !isOpen
+                        ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
+                        : isGroupActive
+                          ? 'font-medium hover:bg-muted/50 border-accent-highlight'
+                          : 'hover:bg-muted/50 border-transparent'
+                    )}
+                  >
+                    <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')} />
+                    <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>{tMenu(g.group)}</span>
+                    <ChevronDown className={cn(
+                      'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
+                      isOpen && 'rotate-180'
+                    )} />
+                  </button>
+                </div>
                 {isOpen && (
                   <div className="py-0.5">
                     {g.items.length === 0 && g.group === 'Favorites' && (
