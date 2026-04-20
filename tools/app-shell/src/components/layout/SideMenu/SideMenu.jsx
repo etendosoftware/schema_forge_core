@@ -120,7 +120,7 @@ function CollapsedGroupPopover({
             'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
             isGroupActive
               ? 'bg-accent-highlight text-accent-highlight-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : 'bg-page-bg text-muted-foreground hover:text-foreground'
           )}
         >
           <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className="h-5 w-5" />

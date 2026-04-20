@@ -44,10 +44,10 @@ export function UserAvatarButton({ expanded = false }) {
     <button
       type="button"
       aria-label={username || ui('account')}
-      className="relative h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+      className="relative h-10 w-10 flex items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
       title={username}
     >
-      <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold bg-primary/10 text-foreground hover:bg-primary/20 transition-colors">
+      <div className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold bg-[#E8EAEF] text-foreground transition-colors">
         {initial}
       </div>
       {roleInitial && (
