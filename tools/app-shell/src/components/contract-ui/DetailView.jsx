@@ -619,7 +619,15 @@ export function DetailView({
       for (const qtyKey of ['invoicedQuantity', 'orderedQuantity', 'movementQuantity']) {
         if (result[qtyKey] === 0 && Number(rowValues[qtyKey]) > 0) delete result[qtyKey];
       }
-      if (Object.keys(result).length > 0) applyUpdates?.(result);
+      // Fallback: when callout returns no lineNetAmount (e.g. SL_Invoice_Amt throws
+      // PriceAdjustment exception for products without standard cost), compute qty × price.
+      // Covers both the inline add-row (DataTable) and the sidebar detail form (DetailView).
+      if (result.lineNetAmount == null && (field === 'invoicedQuantity' || field === 'unitPrice')) {
+        const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
+        const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
+        if (qty > 0 && price > 0) result.lineNetAmount = String(qty * price);
+      }
+      applyUpdates?.(result);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
       // unitPrice or grossUnitPrice but did not compute lineNetAmount.
@@ -1337,6 +1345,17 @@ export function DetailView({
                                   : hiddenField.value;
                               }
                             }
+                            // Always recompute lineNetAmount = qty × unitPrice before POST.
+                            // The product callout sets lineNetAmount for qty=1; if the user
+                            // changes qty before the async callout responds, the stale qty=1
+                            // value would persist. Recomputing here ensures consistency.
+                            // lineNetAmount = QtyInvoiced × PriceActual is always correct:
+                            // unitPrice is already the net price for both gross and net price lists.
+                            {
+                              const qty   = parseFloat(String(lineData.invoicedQuantity ?? '')) || 0;
+                              const price = parseFloat(String(lineData.unitPrice        ?? '')) || 0;
+                              if (qty > 0 && price > 0) lineData.lineNetAmount = qty * price;
+                            }
                             return hook.handleAddChild?.(lineData);
                           },
                           onCancel: () => setAddingLine(false),
@@ -1453,6 +1472,11 @@ export function DetailView({
                           onChange={(key, val, column) => {
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
+                            handleLineFieldChange(
+                              key, val,
+                              { ...(lineEdits ?? selectedLine ?? {}), [key]: val },
+                              (updates) => setLineEdits(prev => ({ ...(prev ?? selectedLine), ...updates })),
+                            );
                           }}
                                 entity={detailEntity}
                                 catalogs={catalogs}
@@ -1492,13 +1516,11 @@ export function DetailView({
                                         body: JSON.stringify(fieldValues),
                                       });
                                       if (res.ok) {
-                                        hook.handleUpdateChild(selectedLine.id, lineEdits);
-                                        setSelectedLine(prev => ({ ...prev, ...lineEdits }));
                                         setLineEdits(null);
                                         setLineEditColumns({});
                                         toast.success('Record saved');
-                                        // Re-fetch the line to pick up trigger-computed fields
-                                        // (e.g. lineNetAmount after a price change on tax-included price lists).
+                                        // Always refresh from persisted record — backend may recompute
+                                        // derived fields (lineNetAmount, discounts) on save.
                                         try {
                                           const freshRes = await fetch(childUrl, {
                                             headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -1507,10 +1529,17 @@ export function DetailView({
                                             const freshJson = await freshRes.json();
                                             const freshLine = freshJson?.response?.data?.[0] ?? freshJson;
                                             if (freshLine?.id) {
+                                              hook.handleUpdateChild(selectedLine.id, freshLine);
                                               setSelectedLine(prev => ({ ...prev, ...freshLine }));
                                             }
+                                          } else {
+                                            hook.handleUpdateChild(selectedLine.id, fieldValues);
+                                            setSelectedLine(prev => ({ ...prev, ...fieldValues }));
                                           }
-                                        } catch (_) { /* ignore — lineEdits values already shown */ }
+                                        } catch (_) {
+                                          hook.handleUpdateChild(selectedLine.id, fieldValues);
+                                          setSelectedLine(prev => ({ ...prev, ...fieldValues }));
+                                        }
                                       } else {
                                         toast.error(await extractErrorMessage(res));
                                       }
