@@ -142,31 +142,31 @@
 @keyframes modal-enter {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 .modal-enter {
-  animation: modal-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modal-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modal-exit {
   from {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.97);
   }
 }
 
 .modal-exit {
-  animation: modal-exit 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: modal-exit 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .content-bg {
