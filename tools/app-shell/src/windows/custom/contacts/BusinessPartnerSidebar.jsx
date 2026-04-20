@@ -1,3 +1,1 @@
-export default function BusinessPartnerSidebar() {
-  return null;
-}
+export { default } from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
