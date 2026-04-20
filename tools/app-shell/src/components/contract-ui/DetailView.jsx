@@ -710,7 +710,9 @@ export function DetailView({
   // Guard that controls whether "+ Add Lines" is shown.
   // When addLineGuard is provided, it receives the current record data and must return true to allow.
   const canAddLines = addLineGuard ? addLineGuard(data) : true;
-  const windowTitle = tMenu(breadcrumb) || breadcrumb || windowName || '';
+  const windowTitle = breadcrumb
+    ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
+    : tMenu(windowName) || windowName || '';
   const { toggleFavorite, isFavorite } = useFavorites();
   const favKey = windowName || windowTitle;
   const favActive = isFavorite(favKey);
