@@ -37,6 +37,11 @@
     },
     "hidePrint": true,
     "hideMoreMenu": true,
+    "labelOverrides": {
+      "es_ES": {
+        "EM_Etgo_Identifier": "Identificador"
+      }
+    },
     "processOverrides": {
       "setNewCurrency": {
         "exclude": true

@@ -15,6 +15,12 @@ import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSid
 
 const breadcrumb = 'Contact';
 
+const labelOverrides = {
+  "es_ES": {
+    "EM_Etgo_Identifier": "Identificador"
+  }
+};
+
 
 // @sf-generated-start summary:businessPartner
 const summary = [
@@ -610,6 +616,11 @@ const api = {
   },
   "window": {
     "category": "contact"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "EM_Etgo_Identifier": "Identificador"
+    }
   }
 };
 
@@ -652,6 +663,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
+        labelOverrides={labelOverrides}
         {...props}
         sidebarContent={(data) => (
           <BusinessPartnerSidebar
@@ -678,6 +690,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       quickFilters={[{"label":"All","filter":null},{"label":"Customers","filter":"criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"},{"label":"Vendors","filter":"criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"}]}
       hidePrint
       hideMoreMenu
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-20T15:04:08.474Z",
-  "checksum": "a17eeb8d2fdcefcd",
+  "generatedAt": "2026-04-20T16:02:39.384Z",
+  "checksum": "4f09a147187b223b",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -55,6 +55,11 @@
         }
       },
       "detailEntity": null,
+      "labelOverrides": {
+        "es_ES": {
+          "EM_Etgo_Identifier": "Identificador"
+        }
+      },
       "primaryTabs": [
         {
           "key": "general",
@@ -3473,6 +3478,11 @@
         }
       },
       "detailEntity": null,
+      "labelOverrides": {
+        "es_ES": {
+          "EM_Etgo_Identifier": "Identificador"
+        }
+      },
       "primaryTabs": [
         {
           "key": "general",
@@ -9766,6 +9776,11 @@
     },
     "window": {
       "category": "contact"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "EM_Etgo_Identifier": "Identificador"
+      }
     }
   },
   "testManifest": {

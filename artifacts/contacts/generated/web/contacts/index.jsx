@@ -572,6 +572,11 @@ const api = {
   },
   "window": {
     "category": "contact"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "EM_Etgo_Identifier": "Identificador"
+    }
   }
 };
 
