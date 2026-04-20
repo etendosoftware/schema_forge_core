@@ -481,9 +481,10 @@ export default function SideMenu({
 
         {/* Pinned footer: Help + user */}
         <div className={cn(
-          'flex flex-col shrink-0 border-t border-border/50 pt-2 pb-2',
+          'flex flex-col shrink-0 pt-2 pb-2',
           expanded ? 'px-2 gap-1' : 'items-center gap-1.5'
         )}>
+          <div className={cn('border-t border-border/50 mb-1', expanded ? 'mx-1' : 'w-8')} />
           {!expanded ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
