@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import { ListView } from '@/components/contract-ui';
@@ -11,6 +11,7 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
@@ -44,6 +45,16 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const filterParam = searchParams.get('filter');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
+  const QUICK_FILTERS = [
+    { label: 'all' },
+    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatus ?? 100) < 100 },
+  ];
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
+
   return (
     <>
       <ListView
@@ -56,6 +67,9 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
+        initialColumnFilters={initialColumnFilters}
+        quickFilters={QUICK_FILTERS}
+        initialQuickFilterIndex={initialQuickFilterIndex}
         {...rest}
       />
       {cloneTarget && createPortal(

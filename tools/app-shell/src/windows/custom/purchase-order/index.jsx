@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -24,11 +24,12 @@ const LIST_COLUMNS = [
 // Lines table columns without lineNo
 const LINES_COLUMNS = [
   { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
+  { key: 'description', column: 'Description', type: 'string', label: 'Description' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', label: 'Ordered Quantity' },
-  { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price' },
-  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', label: 'Line Net Amount' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'unitPrice', column: 'PriceActual', type: 'amount', label: 'Unit Price' },
   { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
 ];
 
 function CustomHeaderTable(props) {
@@ -42,6 +43,7 @@ function CustomLinesTable(props) {
 export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
@@ -72,6 +74,16 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
+  const docStatus = searchParams.get('DocStatus');
+  const filterParam = searchParams.get('filter');
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+
+  const QUICK_FILTERS = [
+    { label: 'all' },
+    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatusPurchase ?? 100) < 100 },
+  ];
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
+
   return (
     <>
       <ListView
@@ -81,6 +93,9 @@ export default function PurchaseOrderWindow(props) {
         windowName={windowName}
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(row) => setCloneTarget(row)}
+        initialColumnFilters={initialColumnFilters}
+        quickFilters={QUICK_FILTERS}
+        initialQuickFilterIndex={initialQuickFilterIndex}
         {...props}
       />
       {cloneTarget && createPortal(

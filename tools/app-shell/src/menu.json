@@ -1,14 +1,6 @@
 {
   "menu": [
     {
-      "group": "First Steps",
-      "icon": "ClipboardCheck",
-      "section": "General",
-      "items": [
-        { "name": "first-steps", "label": "First Steps" }
-      ]
-    },
-    {
       "group": "Home",
       "icon": "Home",
       "section": "General",
@@ -32,15 +24,9 @@
         { "name": "deal", "label": "Deal", "hidden": true },
         { "name": "activity", "label": "Activity", "hidden": true },
         { "name": "lead", "label": "Lead", "hidden": true },
-        { "name": "hr", "label": "HR", "hidden": true }
-      ]
-    },
-    {
-      "group": "CRM",
-      "icon": "Share2",
-      "section": "Commercial",
-      "items": [
-        { "name": "crm", "label": "CRM" }
+        { "name": "hr", "label": "HR", "hidden": true },
+        { "name": "employee", "label": "Employee", "hidden": true },
+        { "name": "absence", "label": "Absence", "hidden": true }
       ]
     },
     {
@@ -70,20 +56,6 @@
       ]
     },
     {
-      "group": "Finance",
-      "icon": "Building2",
-      "section": "Finance",
-      "items": [
-        { "name": "payment-in", "label": "Payment In" },
-        { "name": "payment-out", "label": "Payment Out" },
-        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
-        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "assets", "label": "Assets" },
-        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
-        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
-      ]
-    },
-    {
       "group": "Inventory",
       "icon": "Package",
       "section": "Operations",
@@ -110,25 +82,23 @@
       ]
     },
     {
-      "group": "HR",
-      "icon": "Users",
-      "section": "People",
+      "group": "Finance",
+      "icon": "Building2",
+      "section": "Finance",
       "items": [
-        { "name": "employee", "label": "Employee" },
-        { "name": "absence", "label": "Absence" }
-      ]
-    },
-    {
-      "group": "Analytics",
-      "icon": "Presentation",
-      "section": "Analytics",
-      "items": [
-        { "name": "analytics", "label": "Analytics" }
+        { "name": "payment-in", "label": "Payment In" },
+        { "name": "payment-out", "label": "Payment Out" },
+        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
+        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
+        { "name": "assets", "label": "Assets" },
+        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
+        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
       ]
     },
     {
       "group": "Connections",
       "icon": "Plug",
+      "section": "System",
       "items": [
         { "name": "authorize", "label": "Connect with Claude" }
       ]
@@ -136,6 +106,7 @@
     {
       "group": "Settings",
       "icon": "Settings",
+      "section": "System",
       "items": [
         { "name": "price-list", "label": "Price List" },
         { "name": "payment-term", "label": "Payment Term" },
@@ -150,6 +121,7 @@
     {
       "group": "Proof of Concept",
       "icon": "FlaskConical",
+      "section": "System",
       "items": [
         { "name": "quick-sales-order", "label": "Quick Sales Order" },
         { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
