@@ -152,6 +152,13 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/header/selectors/shippingCompany"
+    },
+    {
+      "entity": "header",
       "field": "charge",
       "column": "C_Charge_ID",
       "url": "/sws/neo/purchase-order/header/selectors/charge"
@@ -206,6 +213,14 @@ const api = {
     },
     {
       "entity": "lines",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-order/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
@@ -221,14 +236,6 @@ const api = {
     },
     {
       "entity": "lines",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/lines/selectors/tax"
-    },
-    {
-      "entity": "lines",
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
@@ -240,13 +247,6 @@ const api = {
       "column": "M_Shipper_ID",
       "reference": "Shipper",
       "url": "/sws/neo/purchase-order/lines/selectors/shippingCompany"
-    },
-    {
-      "entity": "lines",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-order/lines/selectors/businessPartner"
     },
     {
       "entity": "lines",
