@@ -73,7 +73,7 @@ export default function TopBar({
                   {title}
                 </span>
                 {recordCount != null && (
-                  <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-xs font-medium text-muted-foreground bg-muted rounded-full shrink-0">
+                  <span className="inline-flex items-center justify-center w-7 h-6 px-2 py-1 text-xs font-medium text-muted-foreground bg-page-bg border border-[#D1D4DB] rounded-lg shrink-0">
                     {recordCount}
                   </span>
                 )}
