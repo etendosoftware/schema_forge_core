@@ -30,15 +30,17 @@ const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
-const processes = [];
+const processes = [
+
+];
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
 const draftMode = {
-  enabled: true,
-  processField: 'documentAction',
-  processValue: 'CO',
-  label: 'Confirm',
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
 
@@ -55,7 +57,8 @@ const addLineFields = {
 
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
+    { key: 'grossAmount', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -112,7 +115,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/header/selectors/C_BPartner_ID?isCustomer=Y"
+      "url": "/sws/neo/sales-invoice/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -152,7 +155,7 @@ const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/M_PriceList_ID?isSOTrx=Y"
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
     },
     {
       "entity": "lines",
@@ -276,14 +279,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "tbaiVoidxmlgenerator",
       "column": "EM_Tbai_Voidxmlgenerator",
       "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiVoidxmlgenerator",
@@ -397,12 +392,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -415,7 +412,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        draftMode={draftMode}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
@@ -434,6 +430,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        draftMode={draftMode}
         salesTheme
         {...props}
       />

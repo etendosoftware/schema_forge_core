@@ -78,7 +78,7 @@
         },
         "priceList": {
           "visibility": "editable",
-          "section": "collapsed",
+          "section": "principal",
           "reference": "PriceList",
           "inputMode": "selector",
           "readOnlyLogic": "@Processed@='Y'"
@@ -101,7 +101,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "createLinesFromOrder": {
           "visibility": "discarded"
@@ -116,9 +116,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "editable",
-          "section": "collapsed",
-          "readOnlyLogic": "@Processed@='Y'"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",
@@ -294,7 +292,7 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "taxAmount": {
           "visibility": "discarded"

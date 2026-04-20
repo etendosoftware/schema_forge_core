@@ -1384,6 +1384,18 @@
       "label": "Rectification invoice type",
       "description": "Type of rectification invoice to send to SII"
     },
+    "EM_Etgo_Web": {
+      "label": "Web",
+      "description": "Un enlace web para el contacto."
+    },
+    "EM_Etgo_Email": {
+      "label": "Correo electrónico",
+      "description": "Dirección de correo electrónico del contacto."
+    },
+    "EM_Etgo_Phone": {
+      "label": "Teléfono",
+      "description": "Número de teléfono del contacto."
+    },
     "Exercise": {
       "label": "Exercise",
       "description": "Exercise"
@@ -14901,7 +14913,7 @@
       "label": "Elemento "
     },
     "Location": {
-      "label": "Domicilio"
+      "label": "Dirección"
     },
     "Preference": {
       "label": "Preferencia"
@@ -16558,7 +16570,7 @@
     "pending": "Pendiente",
     "you": "Tú",
     "customer": "Cliente",
-    "paymentDate": "Fecha de pago",
+    "paymentDate": "Fecha",
     "method": "Método",
     "depositTo": "Depositar en",
     "statusCleared": "Conciliado",
@@ -16574,7 +16586,7 @@
     "selectCustomerFirst": "Selecciona primero un cliente",
     "selectInvoice": "Selecciona una factura...",
     "selectPaymentMethod": "Selecciona un método de pago...",
-    "selectAccount": "Selecciona una cuenta...",
+    "selectAccount": "Seleccionar cuenta...",
     "loadingInvoices": "Cargando facturas...",
     "noPendingInvoices": "No hay facturas pendientes",
     "account": "Cuenta",
@@ -16731,8 +16743,11 @@
     "invoicePreviewSend": "Enviar",
     "invoicePreviewDownloadPdf": "Descargar PDF",
     "invoicePreviewClient": "Cliente:",
+    "invoicePreviewCategorization": "Categorización",
+    "invoicePreviewAccountingAccount": "Cuenta contable",
     "invoicePreviewEmails": "Emails",
     "invoicePreviewSendEmail": "Enviar email",
+    "invoicePreviewNoEmailHistory": "Sin historial de emails",
     "invoicePreviewGeneral": "General",
     "invoicePreviewPayments": "Pagos",
     "invoicePreviewFiles": "Archivos",
@@ -16787,7 +16802,7 @@
     "searchPages": "Buscar páginas...",
     "askSomething": "Pregunta algo...",
     "noResults": "Sin resultados",
-    "noResultsFor": "Sin resultados para \"{query}\"",
+    "noResultsFor": "Sin resultados para",
     "noResultsFound": "No se encontraron resultados.",
     "oauthAuthorizeConnection": "Autorizar conexión",
     "oauthAuthorizeConnectionDesc": "Una aplicación está solicitando acceso a tu cuenta de Etendo",
@@ -16862,7 +16877,6 @@
     "selectLabelPrefix": "Seleccionar",
     "searchLabelPrefix": "Buscar",
     "selectParentFirst": "Selecciona primero el campo padre",
-    "noResultsFor": "Sin resultados para",
     "recordsFound": "{count} registros encontrados",
     "reportReadyTitle": "Tu informe está listo",
     "reportReadyHint": "Selecciona los filtros y haz clic en Ejecutar Informe",
@@ -16891,7 +16905,8 @@
     "customers": "Clientes",
     "vendors": "Proveedores",
     "commercialName": "Nombre comercial",
-    "locationColumn": "Ubicación",
+    "locationColumn": "Dirección",
+    "webColumn": "Web",
     "emailColumn": "Correo electrónico",
     "typeColumn": "Tipo",
     "phoneColumn": "Teléfono",
@@ -16912,7 +16927,7 @@
     "validationFieldClient": "Cliente",
     "validationFieldBusinessPartnerCategory": "Categoría de tercero",
     "validationFieldNifCountryKey": "Clave NIF País Residencia",
-    "lineAdded": "Línea agregada",
+    "lineAdded": "Línea añadida",
     "recordCreated": "Registro creado",
     "recordSaved": "Registro guardado",
     "invoicePdfGenerating": "Generando factura...",
@@ -16937,7 +16952,6 @@
     "invoicePdfGrandTotal": "TOTAL",
     "invoicePdfNotes": "Observaciones",
     "recordProcessed": "Registro procesado",
-    "lineAdded": "Línea añadida",
     "Confirm": "Confirmar",
     "close": "Cerrar",
     "payments": "Pagos",
@@ -16950,11 +16964,8 @@
     "paidAmount": "Pagado",
     "outstandingLabel": "Pendiente",
     "registerPayment": "Registrar pago",
-    "invoiceNumber": "Factura #",
-    "paymentDate": "Fecha",
     "paymentAmount": "Importe",
     "paymentAccount": "Cuenta",
-    "selectAccount": "Seleccionar cuenta...",
     "amountExceedsOutstanding": "El importe supera el pendiente",
     "All": "Todos",
     "Customers": "Clientes",
@@ -17530,6 +17541,11 @@
     "cloneOrderConfirmBody": "Se creará una copia en borrador de este pedido con los mismos datos.",
     "cloneOrderAction": "Clonar →",
     "cloneOrderError": "Ocurrió un error al clonar el pedido",
+    "cloneInvoiceConfirmTitle": "Clonar factura",
+    "cloneInvoiceConfirmBody": "Se creará una copia en borrador de esta factura con los mismos datos.",
+    "cloneInvoiceAction": "Clonar →",
+    "cloneInvoiceError": "Ocurrió un error al clonar la factura",
+    "invoiceProcessing": "Procesando...",
     "orderStatusDraft": "Borrador",
     "orderStatusCompleted": "Completado",
     "orderStatusClosed": "Cerrado",
@@ -17560,7 +17576,9 @@
     "uomTypeLength": "Longitud",
     "uomTypeTime": "Tiempo",
     "uomTypeVolume": "Volumen",
-    "uomTypeWeight": "Peso"
+    "uomTypeWeight": "Peso",
+    "yes": "Sí",
+    "no": "No"
   },
   "menus": {
     "Tax": {

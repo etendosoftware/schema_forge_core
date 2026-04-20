@@ -12,6 +12,17 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Order';
 
+const labelOverrides = {
+  "es_ES": {
+    "C_BPartner_ID": "Contacto",
+    "DatePromised": "Fecha de entrega esperada"
+  },
+  "en_US": {
+    "C_BPartner_ID": "Contact",
+    "DatePromised": "Expected Delivery Date"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -39,7 +50,7 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
@@ -49,7 +60,14 @@ const addLineFields = {
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
+    { key: 'lineGrossAmount', value: '0' },
+    { key: 'warehouse', fromParent: 'warehouse' },
+    { key: 'shippingCompany', value: '@M_Shipper_ID@' },
+    { key: 'orderDate', fromParent: 'orderDate' },
     { key: 'scheduledDeliveryDate', fromParent: 'scheduledDeliveryDate' },
+    { key: 'businessPartner', value: '@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@' },
+    { key: 'partnerAddress', fromParent: 'partnerAddress' },
+    { key: 'currency', fromParent: 'currency' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -127,7 +145,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-order/header/selectors/businessPartner?isVendor=Y"
+      "url": "/sws/neo/purchase-order/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -602,7 +620,6 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -631,6 +648,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -645,6 +663,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

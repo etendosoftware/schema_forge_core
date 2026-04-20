@@ -12,6 +12,7 @@ import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
@@ -216,19 +217,6 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
   );
 }
 
-/**
- * Return a colored dot class based on whether a date is past, future, or today.
- * Green = future (not yet due), Red = past (overdue), null = today or empty.
- */
-function getDateDotColor(dateValue) {
-  if (!dateValue) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(dateValue);
-  d.setHours(0, 0, 0, 0);
-  if (d.getTime() === today.getTime()) return null;
-  return d > today ? 'bg-emerald-500' : 'bg-red-500';
-}
 
 function isTruthyBoolean(value) {
   return value === true || value === 'Y' || value === 'true';
@@ -740,6 +728,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   const ui = useUI();
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale.replace('_', '-'), { year: 'numeric', month: '2-digit', day: '2-digit' }),
+    [locale]
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -946,7 +938,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               onCheckedChange={(nextChecked) => {
                 void handleInlineToggle(row, col, nextChecked);
               }}
-              aria-label={col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key}
+              aria-label={resolveColumnLabel(col, locale, t)}
             />
           </div>
         );
@@ -976,17 +968,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       return <span className="text-slate-300">&mdash;</span>;
     }
     if (col.type === 'date') {
-      const dotColor = getDateDotColor(row[col.key]);
       const raw = row[col.key];
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
-      const formatted = parsed && !isNaN(parsed) ? parsed.toLocaleDateString() : '\u2014';
-      return (
-        <span className="inline-flex items-center gap-1.5">
-          {formatted}
-          {dotColor && <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />}
-        </span>
-      );
+      const formatted = parsed && !isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
+      return <span>{formatted}</span>;
     }
     if (col.type === 'amount') {
       return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
@@ -1068,7 +1054,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? col.label ?? t(col.column) ?? col.key;
+                const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
                 const isRight = col.type === 'amount';
                 return (

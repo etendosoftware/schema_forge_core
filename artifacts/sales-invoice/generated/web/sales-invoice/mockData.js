@@ -17,6 +17,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 38907,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -35,6 +36,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 9306,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -53,6 +55,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 11544,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -71,6 +74,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 11872,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -89,6 +93,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 48460,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -107,6 +112,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 45418,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -125,6 +131,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 33840,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -143,6 +150,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 25716,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -161,6 +169,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 44780,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -179,6 +188,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 12483,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -197,6 +207,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 46022,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   },
   {
@@ -215,6 +226,7 @@ export const header = [
     "paymentComplete": "Sample paymentComplete",
     "posted": "Sample posted",
     "outstandingAmount": 38634,
+    "priceList": "Sample priceList",
     "processed": "Sample processed"
   }
 ];
