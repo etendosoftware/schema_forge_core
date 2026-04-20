@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { INTERNAL_APPS } from '../src/apps-registry.js';
 
 /**
  * Vite plugin that serves the Etendo Go Apps spike (ETP-3805) JWT endpoints
@@ -31,7 +32,7 @@ export default function appsSpikePlugin(options = {}) {
     ),
     kid = 'apps-spike-1',
     issuer = 'etendo-go',
-    ttlSeconds = 300,
+    ttlSeconds = 3600,
     scopes = ['read:products', 'read:users'],
   } = options;
 
@@ -113,6 +114,11 @@ export default function appsSpikePlugin(options = {}) {
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       writeError(res, 401, 'Missing or invalid Authorization header');
+      return;
+    }
+    const registered = INTERNAL_APPS.find((a) => a.appId === appId);
+    if (!registered) {
+      writeError(res, 404, `unknown_app: ${appId}`);
       return;
     }
     const etendoToken = authHeader.slice('Bearer '.length);
