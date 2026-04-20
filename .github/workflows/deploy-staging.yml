@@ -3,7 +3,7 @@ name: Deploy SPA
 on:
   push:
     branches:
-      # - develop  # temporarily disabled — re-enable after epic/ETP-3504 is merged
+      - develop
       - epic/ETP-3504
 
 jobs:
