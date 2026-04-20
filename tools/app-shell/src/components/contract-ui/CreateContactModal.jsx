@@ -262,7 +262,7 @@ export default function CreateContactModal({
 
       // Steps 3, 4, 5 — parallel: contact persons + bank accounts + billing preferences
       const contacts = (repeatables.contacts ?? []).filter(c => c.firstName || c.lastName || c.email || c.phone);
-      const banks = (repeatables.bankAccount ?? []).filter(b => b.bankName || b.iban);
+      const banks = (repeatables.bankAccount ?? []).filter(b => b.bankName || b.iban || b.genericAccountNo);
 
       const first = (key) => opts[key]?.options?.[0]?.id;
       const salesPriceList    = form.salesPriceList    || first('salesPriceLists');
