@@ -2968,7 +2968,8 @@
               "source": "N"
             }
           }
-        ]
+        ],
+        "javaQualifier": "contactsLocationAddressHandler"
       },
       "contact": {
         "tableName": "AD_User",
@@ -8044,7 +8045,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "contactsLocationAddressHandler"
       },
       "contact": {
         "tableName": "AD_User",
