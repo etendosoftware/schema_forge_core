@@ -452,7 +452,7 @@ export default function SideMenu({
                           className={cn(
                             'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'text-accent-highlight-foreground font-semibold'
+                              ? 'text-accent-highlight-foreground/80 font-semibold'
                               : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
