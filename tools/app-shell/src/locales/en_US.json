@@ -17170,7 +17170,7 @@
     "sqWhatToDo": "How do you want to confirm?",
     "sqCreateOrder": "Create sales order",
     "sqCreateOrderDesc": "For products with stock, deliveries or orders with multiple shipments.",
-    "sqInvoiceDirectlyDesc": "Coming soon — for now, create the order and invoice from there.",
+    "sqInvoiceDirectlyDesc": "For services or sales without physical delivery. No shipment.",
     "sqConfirmActionOrder": "Confirm → Sales order",
     "sqOrderCreated": "Order created",
     "sqViewOrder": "View order →",
