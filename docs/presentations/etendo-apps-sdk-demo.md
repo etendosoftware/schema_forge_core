@@ -2,243 +2,444 @@
 marp: true
 theme: default
 paginate: true
-header: "Etendo Apps SDK · Quick Order demo"
+size: 16:9
+header: "Etendo Apps SDK"
 footer: "ETP-3805 · 2026-04-20"
 style: |
-  section { font-family: 'Inter', -apple-system, sans-serif; font-size: 28px; }
-  h1 { color: #1f3a5f; }
-  h2 { color: #2563eb; }
-  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
-  pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 16px; font-size: 20px; }
+  section {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 26px;
+    padding: 60px 80px;
+    line-height: 1.5;
+  }
+  section.lead {
+    text-align: center;
+    justify-content: center;
+  }
+  h1 {
+    color: #1f3a5f;
+    font-size: 44px;
+    margin-bottom: 24px;
+  }
+  h2 {
+    color: #2563eb;
+    font-size: 36px;
+    margin-bottom: 32px;
+  }
+  h3 {
+    color: #475569;
+    font-size: 24px;
+    font-weight: 500;
+  }
+  p, li { margin-bottom: 12px; }
+  ul, ol { margin-left: 8px; }
+  code {
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 22px;
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: 20px;
+    line-height: 1.5;
+  }
+  table {
+    font-size: 22px;
+    margin-top: 16px;
+  }
+  th, td { padding: 10px 14px; }
   .muted { color: #64748b; }
+  .big { font-size: 32px; }
+  .tiny { font-size: 18px; color: #94a3b8; }
+  blockquote {
+    border-left: 4px solid #2563eb;
+    padding: 4px 16px;
+    color: #475569;
+    font-style: italic;
+  }
 ---
+
+<!-- _class: lead -->
 
 # Etendo Apps SDK
 
-### Building external apps that feel native to the shell
+## <span class="muted">External apps that feel native to the shell</span>
 
-**Demo:** `quick-order-app` — a real consumer of the SDK
-Shell menu entries: _Quick Order — Sales (SDK)_ · _Quick Order — Purchase (SDK)_
+<br/>
 
-<span class="muted">ETP-3805 · `feature/ETP-3805` · PR #352</span>
+<span class="tiny">ETP-3805 · PR #352 · 2026-04-20</span>
 
 ---
 
+<!-- _class: lead -->
+
 ## The problem
 
-Every new UI feature today means:
+<br/>
 
-- Adding a new route inside the shell (`tools/app-shell/src/pages/...`)
-- Editing shell state, i18n, design system on every change
-- One deploy unit → every team waits on shell release
+<span class="big">Every UI feature today<br/>means editing the shell.</span>
 
-We want apps that:
+---
 
-- Live in their own repo / folder / deploy lane
-- Still inherit the shell session, API access, and look
-- Can be written by teams that don't know the shell internals
+## Today's pain
+
+<br/>
+
+- New route → edit `tools/app-shell/src/pages/...`
+
+- New state → edit shell reducers
+
+- New API call → shared session, shared deploy
+
+<br/>
+
+> **One bundle. One deploy lane. Everyone waits.**
+
+---
+
+<!-- _class: lead -->
+
+## What if apps were independent?
+
+<br/>
+
+<span class="muted">Own repo. Own deploy. Still part of the shell.</span>
 
 ---
 
 ## The shape of the answer
 
-<br/>
-
 ```
-┌────────────────────────────┐        ┌──────────────────────────┐
-│         Etendo shell       │        │     External app (Vite)  │
-│  ┌──────────────────────┐  │        │  ┌────────────────────┐  │
-│  │ React SPA            │  │ iframe │  │ React/Vue/any UI   │  │
-│  │  AppIframeHost  ─────┼──┼────────┼─▶│  consumes SDK      │  │
-│  └──────────────────────┘  │  JWT   │  └─────────┬──────────┘  │
-│                            │        │            │             │
-└────────────────────────────┘        │  ┌─────────▼──────────┐  │
-                                      │  │ Node BFF (Express) │  │
-                                      │  │ mountEtendoBff()   │  │
-                                      │  └─────────┬──────────┘  │
-                                      └────────────┼─────────────┘
-                                                   ▼
-                                            Etendo / NEO
+┌────────────────────┐   iframe    ┌────────────────────┐
+│   Etendo shell     │   + JWT     │  External app      │
+│                    │──────────▶  │  (Vite / React)    │
+│   AppIframeHost    │             │                    │
+└────────────────────┘             │    uses the SDK    │
+                                   │                    │
+                                   └─────────┬──────────┘
+                                             │
+                                   ┌─────────▼──────────┐
+                                   │ Node BFF (Express) │
+                                   │  mountEtendoBff()  │
+                                   └─────────┬──────────┘
+                                             ▼
+                                         Etendo / NEO
 ```
 
 ---
 
-## Two packages, one contract
+<!-- _class: lead -->
 
-### `@etendoerp/apps-sdk` (browser)
+## Two packages
+
+---
+
+## `@etendoerp/apps-sdk`
+
+### <span class="muted">Browser · talks to the BFF · inherits shell look</span>
 
 ```js
 import { createShellClient } from '@etendoerp/apps-sdk';
-import '@etendoerp/apps-sdk/styles.css';   // inherit shell look
+import '@etendoerp/apps-sdk/styles.css';
 
 const shell = createShellClient({
   appId: 'quick-order',
   token: new URLSearchParams(location.search).get('jwt'),
 });
-
-await shell.me();                          // who am I?
-await shell.fetch('/neo/sales-order/sales-order', { method: 'POST', ... });
 ```
 
-### `@etendoerp/apps-sdk-bff` (Node)
+---
+
+## `@etendoerp/apps-sdk-bff`
+
+### <span class="muted">Node · verifies JWT · swaps for service token</span>
 
 ```js
 import express from 'express';
 import { mountEtendoBff } from '@etendoerp/apps-sdk-bff';
 
 const app = express();
-mountEtendoBff(app);   // /health · /api/me · /api/etendo/*
+
+mountEtendoBff(app);
+// → /health · /api/me · /api/etendo/*
 ```
 
 ---
 
-## The JWT + service-account bridge
+<!-- _class: lead -->
 
-1. Shell mints a short-lived **app JWT** (RS256, claims: `userId`, `appId`, `tenant`).
-2. App receives it via `?jwt=...` when the iframe loads.
-3. SDK sends it on every call as `Authorization: Bearer <jwt>`.
-4. BFF verifies the JWT (JWKS fetched from the shell).
-5. BFF swaps it for a **service-account token** before calling NEO.
+## JWT bridge
 
-The app never sees the Etendo service token — only its scoped JWT.
 <br/>
 
-> **Why:** apps are sandboxed, revocable, and can be rate-limited per `appId` without touching Etendo sessions.
+<span class="muted">Apps never see the Etendo service token.</span>
 
 ---
 
-## Shared look via CSS tokens
+## How auth flows
 
-Without tokens, iframe apps look like an unstyled Vite page.
-One import fixes the visual disconnect.
+<br/>
 
-```js
-import '@etendoerp/apps-sdk/styles.css';
+1. Shell mints a **short-lived JWT** for the app.
+
+2. App receives it via `?jwt=...` on iframe load.
+
+3. SDK sends it as `Authorization: Bearer` on every call.
+
+4. BFF verifies the JWT (JWKS).
+
+5. BFF swaps it for a **service-account token** → NEO.
+
+---
+
+## Why it matters
+
+<br/>
+
+- Apps are **sandboxed** — revocable per `appId`.
+
+- Rate-limits per app, not per session.
+
+- The service-account secret **never leaves the BFF**.
+
+<br/>
+
+> Security surface is small and auditable.
+
+---
+
+<!-- _class: lead -->
+
+## Shared look
+
+<br/>
+
+<span class="big">One import.</span>
+
+---
+
+## `@etendoerp/apps-sdk/styles.css`
+
+<br/>
+
+Ships the **same tokens the shell uses**:
+
+```
+--background   --foreground   --primary
+--border       --radius       --muted
 ```
 
-Ships the same `:root` tokens the shell uses (`--background`, `--foreground`,
-`--primary`, `--border`, `--radius`, ...) plus minimal element defaults
-for `body`, headings, buttons, inputs, tables.
+Plus minimal defaults for `body`, `h1..h6`, `button`, `input`, `table`.
 
-<span class="muted">Proposal: `docs/proposals/apps-sdk-styling.md`</span>
+<br/>
 
----
-
-## Demo: Quick Order
-
-**One app, two menu entries** — differentiated by `?type=sales|purchase`.
-
-| Menu entry                     | Slug                    | `type`     |
-|--------------------------------|-------------------------|------------|
-| Quick Order — Sales (SDK)      | `quick-order-sales`     | `sales`    |
-| Quick Order — Purchase (SDK)   | `quick-order-purchase`  | `purchase` |
-
-Config in `src/config.js` controls per-variant:
-
-- Entity paths (`/neo/sales-order/sales-order` vs `/neo/purchase-order/...`)
-- Business-partner criteria (`isCustomer=Y` vs `isVendor=Y`)
-- Title, price-list filter
+<span class="tiny">Proposal: <code>docs/proposals/apps-sdk-styling.md</code></span>
 
 ---
 
-## Quick Order — data flow
+<!-- _class: lead -->
+
+# Demo
+
+## Quick Order
+
+---
+
+## One app, two menu entries
+
+<br/>
+
+| Menu entry                     | `?type`     |
+|--------------------------------|-------------|
+| Quick Order — Sales (SDK)      | `sales`     |
+| Quick Order — Purchase (SDK)   | `purchase`  |
+
+<br/>
+
+Config in `src/config.js` drives:
+
+- NEO paths (`/neo/sales-order/...` vs `/neo/purchase-order/...`)
+- BP criteria (`isCustomer=Y` vs `isVendor=Y`)
+
+---
+
+## The UI
+
+<br/>
+
+- **Left:** customer selector · product grid.
+
+- **Right:** cart — qty `−/+`, editable price, remove, total.
+
+- **Action:** `Save draft` → POST header, loop POST each line.
+
+<br/>
+
+9 reducer tests + 3 config tests. All green.
+
+---
+
+## Data flow on save
 
 ```
- User types in search → ProductGrid
-        │
-        ▼
- shell.fetch('/neo/product/product?_pageSize=100')
-        │  (JWT → BFF → service token → NEO)
-        ▼
- Cards rendered ── click ──▶ cartReducer ──▶ CartPanel
-                                  │
-                        user edits qty / price / removes
-                                  │
-                         clicks "Save draft"
-                                  │
-         shell.fetch(header POST) ──▶ orderId
-                                  │
-        for each line: shell.fetch(line POST, { salesOrder: orderId, ... })
+        Click "Save draft"
+               │
+               ▼
+   shell.fetch(header POST)  ─→  orderId
+               │
+               ▼
+     for each line in cart:
+       shell.fetch(line POST, { salesOrder: orderId, ... })
+               │
+               ▼
+         JWT → BFF → service token → NEO
 ```
 
-All traffic goes through the SDK. No direct `fetch` to Etendo.
+<br/>
+
+<span class="muted">Every call goes through the SDK. No direct fetch to Etendo.</span>
 
 ---
 
-## Quick Order — UI
+<!-- _class: lead -->
 
-**Two-column layout**, inspired by the ETP-3677 PoC:
-
-- **Left:** `CustomerSelector` (searchable BP) · `ProductGrid` (searchable cards).
-- **Right:** `CartPanel` — lines with `− qty +`, inline-editable price, remove, subtotal, `Save draft`.
-
-**Cart reducer** (`hooks/useCart.js`): `ADD_ITEM` / `UPDATE_QTY` / `UPDATE_PRICE` / `REMOVE_ITEM` / `CLEAR_CART`. Merge-on-duplicate; qty 0 deletes line.
-
-9 unit tests cover the reducer; 3 cover config resolution.
+## Before vs after
 
 ---
 
-## Before → after
+## Inline page (ETP-3677)
 
-| Aspect                  | Inline shell page (ETP-3677)          | SDK-hosted app (ETP-3805)                         |
-|-------------------------|---------------------------------------|---------------------------------------------------|
-| Where it lives          | `tools/app-shell/src/pages/...`       | `tools/quick-order-app/` (own workspace + BFF)    |
-| Deploy unit             | Couples to the shell bundle           | Independent; shell just opens the iframe          |
-| Etendo access           | Shared session                        | Sandboxed app JWT → service token bridge          |
-| Shell design system     | Tailwind + shadcn (native)            | Tokens via `@etendoerp/apps-sdk/styles.css`       |
-| Data ownership          | Shell-owned state                     | App-owned state; shell is pure host               |
-| Team coupling           | Every change through shell team       | App team ships on its own cadence                 |
+<br/>
 
----
+- Lives in `tools/app-shell/src/pages/`
 
-## Trade-offs (honest)
+- Deploys with the shell
 
-**What iframe hosting costs us:**
+- Shares shell state directly
 
-- Separate JS context → no direct access to shell state / router / toasts.
-- Styling is propagated via tokens, not components — no shadcn `<Button>`.
-- Two deploy targets to watch (shell + app BFF).
-
-**What it gives us:**
-
-- Hard isolation: an app can't crash the shell.
-- Clear API surface: only what the SDK exposes is usable.
-- Independent iteration for app teams.
-- Same visual language if the app imports `styles.css`.
+- Changes require shell PRs
 
 ---
 
-## What this unlocks
+## SDK-hosted app (ETP-3805)
 
-- **New apps without shell PRs.** Spin up a folder, consume the SDK, register in `apps-registry.js`, done.
-- **Internal tooling as first-class apps.** Smart Scan, Connections, custom reports.
-- **Third-party distribution (later).** Same SDK + descriptor story, just hosted elsewhere.
-- **Parallel development.** Different teams, different repos, same UX.
+<br/>
+
+- Lives in `tools/quick-order-app/`
+
+- Own BFF, own build
+
+- Sandboxed JWT → service token
+
+- Ships on its own cadence
+
+<br/>
+
+> Same design language, independent delivery.
 
 ---
 
-## Status · what's live today
+<!-- _class: lead -->
 
-- `@etendoerp/apps-sdk` and `@etendoerp/apps-sdk-bff` packages published to the workspace.
-- Spike app (`tools/spike-hello-app`) migrated onto the SDK.
-- `tools/quick-order-app` ships with:
-  - Cart reducer + 2-column POS-subset UI.
-  - Real draft-save flow (header + lines) through NEO.
-  - Shell CSS tokens applied.
-- PR `#352` against `main` · 12 unit tests green.
+## Trade-offs
+
+---
+
+## What iframes cost us
+
+<br/>
+
+- Separate JS context — no direct shell state/router.
+
+- No shadcn components — styling via tokens only.
+
+- Two deploy targets (shell + app BFF).
+
+---
+
+## What iframes give us
+
+<br/>
+
+- **Hard isolation** — an app can't crash the shell.
+
+- **Clear API** — only the SDK is usable.
+
+- **Parallel teams** — ship on your own rhythm.
+
+- **Same look** — shared tokens.
+
+---
+
+<!-- _class: lead -->
+
+## What it unlocks
+
+---
+
+## New doors
+
+<br/>
+
+- New apps **without shell PRs**.
+
+- Internal tooling as first-class apps.
+
+- Third-party distribution path (later).
+
+- Many teams, one consistent UX.
+
+---
+
+<!-- _class: lead -->
+
+## Status
+
+---
+
+## Live today
+
+<br/>
+
+- `@etendoerp/apps-sdk` + `apps-sdk-bff` — published.
+
+- Spike app migrated onto the SDK.
+
+- `quick-order-app` ships with:
+  - 2-column POS-subset UI
+  - Real draft save through NEO
+  - Shell CSS tokens applied
+
+- **PR #352** — 12 unit tests green.
 
 ---
 
 ## Next steps
 
-- User review + merge PR #352.
-- Unblock the BP-location lookup 403 (external team tracking).
-- Add the style import to `spike-hello-app` for consistency.
-- Evaluate Option B (Tailwind preset) once a second consumer exists.
-- Document the descriptor / registration flow for third-party apps.
+<br/>
+
+- Merge PR #352.
+
+- Unblock BP lookup 403 (external).
+
+- Apply `styles.css` to spike app.
+
+- Document the third-party app registration flow.
+
+---
+
+<!-- _class: lead -->
+
+# Questions?
 
 <br/>
 
-### Questions?
-
-<span class="muted">docs: `docs/proposals/etendo-apps-sdk.md` · `docs/proposals/apps-sdk-styling.md` · `tools/quick-order-app/INDEX.md`</span>
+<span class="tiny">
+<code>docs/proposals/etendo-apps-sdk.md</code><br/>
+<code>docs/proposals/apps-sdk-styling.md</code><br/>
+<code>tools/quick-order-app/INDEX.md</code>
+</span>
