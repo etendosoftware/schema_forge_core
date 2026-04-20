@@ -1,8 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import CreateContactModal from '@/components/contract-ui/CreateContactModal';
+import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
@@ -39,25 +42,35 @@ function CustomLinesTable(props) {
 export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [cloneTarget, setCloneTarget] = useState(null);
 
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
+  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
+    useCreateContactModal({ apiBaseUrl, token });
 
   if (recordId) {
     return (
-      <GeneratedApp
-        {...props}
-        DetailTable={CustomLinesTable}
-      />
+      <CreateContactContext.Provider value={createContactCtxValue}>
+        <GeneratedApp
+          {...props}
+          DetailTable={CustomLinesTable}
+        />
+        {createContactState && createPortal(
+          <CreateContactModal
+            bpApiBaseUrl={bpApiBaseUrl}
+            headers={headers}
+            initialQuery={createContactState.query}
+            documentType="purchase"
+            onClose={() => setCreateContactState(null)}
+            onCreated={(newBP) => {
+              createContactState.onSelect({ id: newBP.id, name: newBP.name });
+              setCreateContactState(null);
+            }}
+          />,
+          document.body,
+        )}
+      </CreateContactContext.Provider>
     );
   }
-
-  const docStatus = searchParams.get('DocStatus');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   return (
     <>
@@ -68,7 +81,6 @@ export default function PurchaseOrderWindow(props) {
         windowName={windowName}
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(row) => setCloneTarget(row)}
-        initialColumnFilters={initialColumnFilters}
         {...props}
       />
       {cloneTarget && createPortal(
