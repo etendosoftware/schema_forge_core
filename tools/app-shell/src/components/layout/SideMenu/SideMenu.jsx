@@ -285,20 +285,22 @@ export default function SideMenu({
             <div className="absolute bottom-0 left-3 right-3 border-t border-border/50" />
           </div>
         ) : (
-          <div className="flex flex-row items-center h-[63px] px-2 border-b border-[#E8EAEF]">
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={onToggle}
-                  aria-label={ui('expandMenu')}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <PanelLeftOpen className="h-5 w-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{ui('expandMenu')}</TooltipContent>
-            </Tooltip>
+          <div className="flex flex-row items-center justify-center h-[63px] px-2">
+            <div className="flex items-center w-10 h-full border-b border-[#E8EAEF]">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={onToggle}
+                    aria-label={ui('expandMenu')}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-page-bg text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <PanelLeftOpen className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{ui('expandMenu')}</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         )}
 
