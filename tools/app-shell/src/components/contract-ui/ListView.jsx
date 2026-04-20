@@ -69,9 +69,10 @@ export function ListView({
   useSetPageMeta({
     title: label,
     breadcrumb: fullBreadcrumb,
+    recordCount: hook.items.length,
     onAddToFavorites: favKey ? () => toggleFavorite(favKey, label) : undefined,
     isFavorite: favActive,
-  }, [favActive]);
+  }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);

@@ -34,6 +34,7 @@ function openCommandPalette() {
 export default function TopBar({
   title,
   breadcrumb,
+  recordCount,
   menuAction,
   onAddToFavorites,
   isFavorite = false,
@@ -67,9 +68,16 @@ export default function TopBar({
         {title && (
           <div className="flex items-center gap-1 shrink-0 min-w-0">
             <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-base font-semibold text-text-primary truncate">
-                {title}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold text-text-primary truncate">
+                  {title}
+                </span>
+                {recordCount != null && (
+                  <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-xs font-medium text-muted-foreground bg-muted rounded-full shrink-0">
+                    {recordCount}
+                  </span>
+                )}
+              </div>
               {breadcrumb && (
                 <span className="text-xs text-topbar-breadcrumb truncate">
                   {breadcrumb}

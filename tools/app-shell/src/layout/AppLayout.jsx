@@ -34,6 +34,7 @@ function AppLayoutInner({ menuGroups, embedded }) {
           <TopBar
             title={meta?.title}
             breadcrumb={meta?.breadcrumb}
+            recordCount={meta?.recordCount}
             menuAction={meta?.menuAction}
             onAddToFavorites={meta?.onAddToFavorites}
             isFavorite={meta?.isFavorite}
