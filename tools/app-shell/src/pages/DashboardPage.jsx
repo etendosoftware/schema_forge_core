@@ -32,7 +32,6 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
 import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
-import { useFavorites } from '@/components/layout/FavoritesContext';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 import {
@@ -1282,9 +1281,6 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
   const { kpis, revenueTrend, expenseTrend, topClients, pendingTasks, recentInvoices, bestProducts, bestSellers, pendingAmounts, actions, loading } = useDashboardData();
   const { open: openCopilot } = useCopilot();
   const { config, toggle, reorder, reset } = useWidgetConfig();
-  const { toggleFavorite, isFavorite } = useFavorites();
-  const FAV_NAME = 'dashboard';
-  const FAV_LABEL = 'Home';
   const dashboardCurrency = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
 
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
@@ -1351,8 +1347,6 @@ export default function DashboardPage({ apiBaseUrl = '' }) {
           onClick: () => {},
           disabled: true,
         }}
-        onAddToFavorites={() => toggleFavorite(FAV_NAME, FAV_LABEL)}
-        isFavorite={isFavorite(FAV_NAME)}
         onPageHelp={() => {}}
         onAIClick={openCopilot}
       />
