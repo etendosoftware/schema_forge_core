@@ -53,12 +53,16 @@ const windowLoaders = {
 
 /**
  * Return the 2-level menu groups, merging installed SDK apps into the
- * Marketplace group. Groups or items with hidden: true are excluded.
+ * group declared by each menu entry. Groups or items with hidden: true
+ * are excluded by default; the `Marketplace` group is force-shown when
+ * the easter-egg flag `appStoreUnlocked` is true.
  *
  * @param {string[]} [installedAppIds] — appIds present in the installed-apps
  *   store. External apps only appear in the menu when their id is here.
+ * @param {{ appStoreUnlocked?: boolean }} [options]
  */
-export function buildMenuGroups(installedAppIds = []) {
+export function buildMenuGroups(installedAppIds = [], options = {}) {
+  const { appStoreUnlocked = false } = options;
   const installedSet = new Set(installedAppIds);
   const extraByGroup = new Map();
   for (const app of APP_CATALOG) {
@@ -74,7 +78,10 @@ export function buildMenuGroups(installedAppIds = []) {
   }
 
   return menuConfig.menu
-    .filter(group => !group.hidden)
+    .filter(group => {
+      if (group.hidden && group.group === 'Marketplace' && appStoreUnlocked) return true;
+      return !group.hidden;
+    })
     .map(group => {
       const extras = extraByGroup.get(group.group) || [];
       return {

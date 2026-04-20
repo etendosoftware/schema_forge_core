@@ -17,6 +17,7 @@ import {
   installApp,
   uninstallApp,
 } from '@/hooks/useInstalledApps.js';
+import { lockAppStore } from '@/hooks/useAppStoreUnlock.js';
 
 const ICON_MAP = {
   ShoppingCart,
@@ -130,19 +131,35 @@ export default function AppStorePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-          <Store className="h-5 w-5 text-primary" />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+            <Store className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">App Store</h1>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+              External apps built on the Etendo Apps SDK. Each app runs in its
+              own iframe with its own BFF — installing one here adds its menu
+              entries to the shell; uninstalling removes them. No shell rebuild
+              required.
+            </p>
+            <p className="text-xs text-muted-foreground/80 mt-2">
+              Tip: this section is hidden by default — reveal it with{' '}
+              <code className="px-1 py-0.5 rounded bg-muted text-foreground">playstoreon</code>,
+              hide it with{' '}
+              <code className="px-1 py-0.5 rounded bg-muted text-foreground">playstoreoff</code>.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-semibold">App Store</h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            External apps built on the Etendo Apps SDK. Each app runs in its
-            own iframe with its own BFF — installing one here adds its menu
-            entries to the shell; uninstalling removes them. No shell rebuild
-            required.
-          </p>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => lockAppStore()}
+          title="Hide the App Store from the sidebar"
+        >
+          Hide App Store
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

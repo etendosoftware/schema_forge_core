@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
@@ -20,6 +21,7 @@ import { LocaleProvider } from './i18n/index.js';
 import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
 import { useInstalledApps } from './hooks/useInstalledApps.js';
+import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStoreUnlock.js';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -180,6 +182,29 @@ function AppRoutes({ menuGroups, windowMap }) {
   );
 }
 
+/**
+ * Listens for the magic phrases "playstoreon" / "playstoreoff" anywhere in
+ * the shell and toggles the Marketplace group visibility. When unlocking,
+ * navigates straight to /app-store so the new surface is visible.
+ */
+function AppStoreKeyWatcher() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    return attachKeySequenceWatcher({
+      onUnlock: () => {
+        toast.success('App Store unlocked', {
+          description: 'Type "playstoreoff" to hide it again.',
+        });
+        navigate('/app-store');
+      },
+      onLock: () => {
+        toast('App Store hidden');
+      },
+    });
+  }, [navigate]);
+  return null;
+}
+
 /** Checks for SW updates on route changes; reload is automatic via controllerchange */
 function ServiceWorkerManager() {
   const location = useLocation();
@@ -195,9 +220,11 @@ function ServiceWorkerManager() {
 
 export default function App() {
   const installedApps = useInstalledApps();
-  // Rebuild the menu whenever the installed-apps set changes; windowMap is
-  // static because it already registers loaders for every known SDK app.
-  const menuGroups = buildMenuGroups(installedApps);
+  const appStoreUnlocked = useAppStoreUnlock();
+  // Rebuild the menu whenever the installed-apps set or the App Store
+  // unlock flag changes; windowMap is static because it already registers
+  // loaders for every known SDK app.
+  const menuGroups = buildMenuGroups(installedApps, { appStoreUnlocked });
   const [windowMap] = useState(() => buildWindowMap());
   const [locale, setLocale] = useLocaleState();
 
@@ -218,6 +245,7 @@ export default function App() {
   return (
     <BrowserRouter basename={routerBase}>
       <ServiceWorkerManager />
+      <AppStoreKeyWatcher />
       <LocaleProvider locale={locale} setLocale={setLocale}>
         <AuthProvider>
           <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />

@@ -88,6 +88,27 @@ and an Install / Uninstall toggle with a simulated spinner (~900 ms). The
 route `/app-store` is always present; the menu entry lives in the new
 `Marketplace` group.
 
+### Magic unlock ("playstore" easter-egg)
+
+The Marketplace group is `hidden: true` in `menu.json` — normal shell
+users never see an App Store entry. To reveal it, the user types the
+magic phrase `playstoreon` anywhere in the shell (outside editable
+fields). Typing `playstoreoff`, or clicking "Hide App Store" inside the
+store, locks it again.
+
+Implementation lives in `tools/app-shell/src/hooks/useAppStoreUnlock.js`:
+
+- A global `keydown` listener, installed once by `<AppStoreKeyWatcher />`
+  inside `App.jsx`, maintains a rolling buffer of characters. A 3 s
+  inactivity timeout resets the buffer so unrelated typing cannot
+  accidentally spell the phrase.
+- Editable targets (`INPUT`, `TEXTAREA`, contenteditable) are ignored so
+  typing these words in a form field does not trigger anything.
+- The unlock flag is persisted under `localStorage.etendo.appStoreUnlocked`
+  so a page reload keeps the Marketplace visible.
+- On unlock the watcher also navigates to `/app-store` and surfaces a
+  sonner toast, making the "new surface appeared" moment obvious.
+
 ## Out of scope
 
 - Real backend registry, descriptor uploads, permissions, signatures

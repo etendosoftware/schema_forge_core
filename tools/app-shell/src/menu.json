@@ -118,6 +118,7 @@
     {
       "group": "Marketplace",
       "icon": "Store",
+      "hidden": true,
       "items": [
         { "name": "app-store", "label": "App Store", "path": "app-store" }
       ]

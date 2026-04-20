@@ -12,33 +12,38 @@ describe('buildMenuGroups + installed apps', () => {
       'spike-hello-app should be hidden when not installed');
   });
 
-  it('injects quick-order entries into Sales and Purchases groups', () => {
-    const groups = buildMenuGroups(['quick-order']);
+  it('hides the Marketplace group until the App Store is unlocked', () => {
+    const locked = buildMenuGroups([], { appStoreUnlocked: false });
+    assert.equal(locked.find(g => g.group === 'Marketplace'), undefined,
+      'Marketplace should be hidden when locked');
+
+    const unlocked = buildMenuGroups([], { appStoreUnlocked: true });
+    const marketplace = unlocked.find(g => g.group === 'Marketplace');
+    assert.ok(marketplace, 'Marketplace should appear when unlocked');
+    assert.ok(marketplace.items.map(i => i.name).includes('app-store'),
+      'App Store entry should be inside Marketplace');
+  });
+
+  it('injects quick-order entries into Sales and Purchases regardless of unlock state', () => {
+    const groups = buildMenuGroups(['quick-order'], { appStoreUnlocked: false });
     const sales = groups.find(g => g.group === 'Sales');
     const purchases = groups.find(g => g.group === 'Purchases');
-    const marketplace = groups.find(g => g.group === 'Marketplace');
-
-    assert.ok(sales, 'Sales group missing');
-    assert.ok(purchases, 'Purchases group missing');
-    assert.ok(marketplace, 'Marketplace group missing');
 
     assert.ok(sales.items.map(i => i.name).includes('quick-order-sales'),
       'quick-order-sales should land under Sales');
     assert.ok(purchases.items.map(i => i.name).includes('quick-order-purchase'),
       'quick-order-purchase should land under Purchases');
-    assert.ok(marketplace.items.map(i => i.name).includes('app-store'),
-      'App Store entry should always be present in Marketplace');
   });
 
   it('falls back to app-level menuGroup when entry has none', () => {
-    const groups = buildMenuGroups(['spike-hello-app']);
+    const groups = buildMenuGroups(['spike-hello-app'], { appStoreUnlocked: true });
     const marketplace = groups.find(g => g.group === 'Marketplace');
     assert.ok(marketplace.items.map(i => i.name).includes('spike-hello-app'),
       'spike-hello-app should land under Marketplace (app-level fallback)');
   });
 
   it('handles multiple installed apps across different groups', () => {
-    const groups = buildMenuGroups(['quick-order', 'spike-hello-app']);
+    const groups = buildMenuGroups(['quick-order', 'spike-hello-app'], { appStoreUnlocked: true });
     const sales = groups.find(g => g.group === 'Sales');
     const marketplace = groups.find(g => g.group === 'Marketplace');
     assert.ok(sales.items.map(i => i.name).includes('quick-order-sales'));
