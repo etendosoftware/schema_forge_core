@@ -4,7 +4,7 @@
 > **Goal:** Extract the ETP-3805 spike plumbing into two versioned packages so internal apps (starting with `quick-order`) can be built without hand-rolling auth, JWKS verification, service-token bridging, or NEO proxying.
 > **Scope:** Internal apps only. Third-party addons are explicitly out of scope for v1 — see §10.
 > **Last updated:** 2026-04-20
-> **Implementation status (2026-04-20):** Phase A+B complete. Packages `@etendoerp/apps-sdk` and `@etendoerp/apps-sdk-bff` live in `packages/`, spike migrated and consuming them, all SDK tests green (10 BFF + 4 SDK). Next: Phase C (`quick-order-app`) — see plan in `docs/plans/`.
+> **Implementation status (2026-04-20):** Phase A+B+C complete. SDK packages live (`@etendoerp/apps-sdk` + `@etendoerp/apps-sdk-bff`), spike and quick-order consume them. First real consumer (`tools/quick-order-app/`) ships with two menu entries (Quick Sales Order, Quick Purchase Order) driven by the same `QuickOrderWindow` and `?type=sales|purchase`.
 
 ---
 
