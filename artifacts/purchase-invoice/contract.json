@@ -1,7 +1,7 @@
 {
   "version": "0.9.1",
-  "generatedAt": "2026-04-19T23:02:15.297Z",
-  "checksum": "2d799a3f7993a69a",
+  "generatedAt": "2026-04-20T21:06:00.556Z",
+  "checksum": "2c56190d8521a2fb",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -269,8 +269,7 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true,
-            "section": "principal"
+            "form": false
           },
           {
             "name": "salesOrder",
