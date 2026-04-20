@@ -68,6 +68,7 @@ export function ListView({
     breadcrumb: label,
     onAddToFavorites: favKey ? () => toggleFavorite(favKey, label) : undefined,
     isFavorite: favActive,
+    onPageHelp: () => {},
   }, [favActive]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [showSortPopover, setShowSortPopover] = useState(false);

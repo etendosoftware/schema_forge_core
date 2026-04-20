@@ -719,6 +719,7 @@ export function DetailView({
     breadcrumb: windowTitle,
     onAddToFavorites: favKey ? () => toggleFavorite(favKey, windowTitle) : undefined,
     isFavorite: favActive,
+    onPageHelp: () => {},
   }, [favActive]);
 
   const title = isNew
