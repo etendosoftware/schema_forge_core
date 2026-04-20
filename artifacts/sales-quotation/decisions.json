@@ -238,7 +238,8 @@
         "cashVAT": {
           "visibility": "discarded"
         }
-      }
+      },
+      "javaQualifier": "salesQuotationHeaderHandler"
     },
     "lines": {
       "javaQualifier": "orderLineHandler",

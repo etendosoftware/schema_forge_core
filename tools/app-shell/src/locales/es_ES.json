@@ -17409,7 +17409,7 @@
     "sqWhatToDo": "¿Cómo querés confirmar?",
     "sqCreateOrder": "Crear pedido de venta",
     "sqCreateOrderDesc": "Para productos con stock, entregas o pedidos con múltiples envíos.",
-    "sqInvoiceDirectlyDesc": "Próximamente — por ahora, creá el pedido y facturá desde ahí.",
+    "sqInvoiceDirectlyDesc": "Para servicios o ventas sin entrega física. Sin albarán.",
     "sqConfirmActionOrder": "Confirmar → Pedido de venta",
     "sqOrderCreated": "Pedido creado",
     "sqViewOrder": "Ver pedido →",
