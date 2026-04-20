@@ -324,7 +324,7 @@ export default function SideMenu({
                     key={g.group}
                     className={cn(
                       'flex justify-center py-0.5 border-l-[3px] transition-colors',
-                      isItemActive || isGroupActive ? 'border-sidebar-primary' : 'border-transparent'
+                      isItemActive || isGroupActive ? 'border-accent-highlight' : 'border-transparent'
                     )}
                   >
                     <Tooltip delayDuration={0}>
@@ -352,7 +352,7 @@ export default function SideMenu({
                   key={g.group}
                   className={cn(
                     'flex justify-center py-0.5 border-l-[3px] transition-colors',
-                    isGroupActive ? 'border-sidebar-primary' : 'border-transparent'
+                    isGroupActive ? 'border-accent-highlight' : 'border-transparent'
                   )}
                 >
                   <CollapsedGroupPopover
@@ -390,7 +390,7 @@ export default function SideMenu({
                     className={cn(
                       'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors border-l-[3px]',
                       isItemActive || isGroupActive
-                        ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-sidebar-primary'
+                        ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
                         : 'hover:bg-muted/50 border-transparent'
                     )}
                   >
@@ -419,13 +419,13 @@ export default function SideMenu({
                   className={cn(
                     'flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors border-l-[3px]',
                     isGroupActive && !isOpen
-                      ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-sidebar-primary'
+                      ? 'bg-accent-highlight text-accent-highlight-foreground font-medium border-accent-highlight'
                       : isGroupActive
-                        ? 'border-sidebar-primary hover:bg-muted/50'
+                        ? 'font-medium hover:bg-muted/50 border-accent-highlight'
                         : 'hover:bg-muted/50 border-transparent'
                   )}
                 >
-                  <GroupIcon weight={isGroupActive && !isOpen ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !(isGroupActive && !isOpen) && 'text-muted-foreground')} />
+                  <GroupIcon weight={isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !isGroupActive && 'text-muted-foreground')} />
                   <span className={cn('flex-1 text-left truncate', !(isGroupActive && !isOpen) && 'text-text-primary')}>{tMenu(g.group)}</span>
                   <ChevronDown className={cn(
                     'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-muted-foreground',
@@ -450,13 +450,17 @@ export default function SideMenu({
                           key={item.name}
                           to={`/${itemPath}`}
                           className={cn(
-                            'flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors border-l-[3px]',
+                            'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
-                              ? 'bg-accent-highlight text-accent-highlight-foreground font-semibold border-sidebar-primary'
-                              : 'text-text-primary hover:bg-muted/50 border-transparent'
+                              ? 'text-accent-highlight-foreground/80 font-semibold'
+                              : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
-                          {tMenu(item.label)}
+                          <span className={cn(
+                            'absolute left-[22px] top-0 bottom-0',
+                            isItemActive ? 'right-2 bg-accent-highlight' : 'w-0.5 bg-border'
+                          )} />
+                          <span className="relative z-10">{tMenu(item.label)}</span>
                         </NavLink>
                       );
                     })}
