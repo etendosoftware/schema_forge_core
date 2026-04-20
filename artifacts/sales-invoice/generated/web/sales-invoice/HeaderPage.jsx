@@ -58,7 +58,6 @@ const addLineFields = {
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
-    { key: 'grossAmount', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines

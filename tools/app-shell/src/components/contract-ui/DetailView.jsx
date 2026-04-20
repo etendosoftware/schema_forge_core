@@ -583,32 +583,23 @@ export function DetailView({
       // omits netUnitPrice (net price). Fetch the real tax rate from the Etendo DAL REST API
       // so the backend receives a valid netUnitPrice instead of null/0 at save time.
       if (result.grossUnitPrice != null && result.netUnitPrice == null) {
+        // Derive net price from gross using taxFactor from existing saved lines.
+        // Avoids DAL fetch which may not be available in all environments.
         const taxId = result.tax;
-        let taxRate = 0;
+        let taxFactor = null;
         if (taxId) {
-          try {
-            // Derive Etendo context path from the current URL (same logic as detectBaseUrl in auth/api.js)
-            const path = window.location.pathname;
-            const webIdx = path.indexOf('/web/');
-            const etendoBase = webIdx !== -1
-              ? path.substring(0, webIdx)
-              : (import.meta.env.VITE_API_BASE || '');
-            const dalUrl = `${etendoBase}/openapi/dal/C_Tax/${taxId}?_selectedProperties=rate`;
-            const res = await fetch(dalUrl, {
-              credentials: 'include',
-              headers: { 'Authorization': `Bearer ${token}` },
-            });
-            if (res.ok) {
-              const data = await res.json();
-              taxRate = parseFloat(data.rate ?? 0);
-            }
-          } catch {
-            taxRate = 0;
+          const ref = (hook.children || []).find(l =>
+            l.tax === taxId &&
+            parseFloat(String(l.grossAmount ?? '')) > 0 &&
+            parseFloat(String(l.lineNetAmount ?? '')) > 0
+          );
+          if (ref) {
+            taxFactor = parseFloat(String(ref.grossAmount)) / parseFloat(String(ref.lineNetAmount));
           }
         }
         const gross = Number(result.grossUnitPrice);
-        result.netUnitPrice = taxRate > 0
-          ? parseFloat((gross / (1 + taxRate / 100)).toFixed(6))
+        result.netUnitPrice = taxFactor != null && taxFactor > 1
+          ? parseFloat((gross / taxFactor).toFixed(6))
           : gross;
       }
       // netUnitPrice is kept as a fallback for the cascade guard below.
@@ -626,6 +617,67 @@ export function DetailView({
         const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
         const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
         if (qty > 0 && price > 0) result.lineNetAmount = String(qty * price);
+      }
+      // Compute grossAmount in real-time by deriving the tax factor from already-available data.
+      // No external fetch: tax rate is inferred from saved line values (grossAmount/lineNetAmount).
+      //   - Sidebar: rowValues holds the persisted line → taxFactor always available after first save.
+      //   - Add-row: looks for another saved line in hook.children with the same tax.
+      // Compute grossAmount in real-time. Also resolves tax$_identifier from existing lines.
+      // Condition: callout didn't set grossAmount OR set it to 0 (SL_Invoice_Amt returns 0
+      // for net price lists — only computes it for gross price lists in classic Etendo).
+      if (result.grossAmount == null || Number(result.grossAmount) === 0) {
+        // Use qty × price for qty/price changes (avoids stale callout lineNetAmount).
+        let lineNet;
+        if (field === 'invoicedQuantity' || field === 'unitPrice') {
+          const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
+          const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price : 0;
+        } else {
+          lineNet = parseFloat(String(result.lineNetAmount ?? rowValues.lineNetAmount ?? '')) || 0;
+        }
+
+        if (lineNet > 0) {
+          const effectiveTaxId = result.tax ?? rowValues.tax;
+
+          // 1. Tax rate from selector item aux data (if NEO selector returns 'rate' field).
+          //    When InlineSearchCombo selects a tax, handleFieldChange stores it as rowValues['tax_rate'].
+          let taxFactor = null;
+          const taxRateFromCtx = parseFloat(String(rowValues['tax_rate'] ?? ''));
+          if (!isNaN(taxRateFromCtx) && taxRateFromCtx >= 0) {
+            taxFactor = 1 + taxRateFromCtx / 100;
+          }
+
+          // 2. Derive taxFactor from the current row's saved values (sidebar case).
+          if (taxFactor === null) {
+            const savedGross = parseFloat(String(rowValues.grossAmount ?? '')) || 0;
+            const savedNet   = parseFloat(String(rowValues.lineNetAmount ?? '')) || 0;
+            if (savedGross > 0 && savedNet > 0) {
+              taxFactor = savedGross / savedNet;
+            }
+          }
+
+          // 3. Find any saved line with the same tax that has both amounts (add-row case).
+          if (taxFactor === null && effectiveTaxId) {
+            const ref = (hook.children || []).find(l =>
+              l.tax === effectiveTaxId &&
+              parseFloat(String(l.grossAmount ?? '')) > 0 &&
+              parseFloat(String(l.lineNetAmount ?? '')) > 0
+            );
+            if (ref) {
+              taxFactor = parseFloat(String(ref.grossAmount)) / parseFloat(String(ref.lineNetAmount));
+            }
+          }
+
+          if (taxFactor !== null) {
+            result.grossAmount = parseFloat((lineNet * taxFactor).toFixed(2));
+          }
+
+          // Resolve tax$_identifier from existing lines if callout didn't include it.
+          if (!result['tax$_identifier'] && effectiveTaxId) {
+            const ref = (hook.children || []).find(l => l.tax === effectiveTaxId && l['tax$_identifier']);
+            if (ref) result['tax$_identifier'] = ref['tax$_identifier'];
+          }
+        }
       }
       applyUpdates?.(result);
 
@@ -1346,15 +1398,35 @@ export function DetailView({
                               }
                             }
                             // Always recompute lineNetAmount = qty × unitPrice before POST.
-                            // The product callout sets lineNetAmount for qty=1; if the user
-                            // changes qty before the async callout responds, the stale qty=1
-                            // value would persist. Recomputing here ensures consistency.
-                            // lineNetAmount = QtyInvoiced × PriceActual is always correct:
-                            // unitPrice is already the net price for both gross and net price lists.
                             {
                               const qty   = parseFloat(String(lineData.invoicedQuantity ?? '')) || 0;
                               const price = parseFloat(String(lineData.unitPrice        ?? '')) || 0;
                               if (qty > 0 && price > 0) lineData.lineNetAmount = qty * price;
+                            }
+                            // Compute grossAmount if not already set correctly (0 counts as not set).
+                            if (!lineData.grossAmount || Number(lineData.grossAmount) === 0) {
+                              const qty     = parseFloat(String(lineData.invoicedQuantity ?? '')) || 0;
+                              const price   = parseFloat(String(lineData.unitPrice        ?? '')) || 0;
+                              const taxId   = lineData.tax;
+                              const lineNet = qty > 0 && price > 0 ? qty * price : 0;
+                              if (lineNet > 0 && taxId) {
+                                let taxFactor = null;
+                                // 1. Tax rate from selector aux (tax_rate stored by handleFieldChange).
+                                const txRate = parseFloat(String(lineData['tax_rate'] ?? ''));
+                                if (!isNaN(txRate) && txRate >= 0) taxFactor = 1 + txRate / 100;
+                                // 2. From existing saved lines with same tax.
+                                if (taxFactor === null) {
+                                  const ref = (hook.children || []).find(l =>
+                                    l.tax === taxId &&
+                                    parseFloat(String(l.grossAmount ?? '')) > 0 &&
+                                    parseFloat(String(l.lineNetAmount ?? '')) > 0
+                                  );
+                                  if (ref) taxFactor = parseFloat(String(ref.grossAmount)) / parseFloat(String(ref.lineNetAmount));
+                                }
+                                if (taxFactor !== null) {
+                                  lineData.grossAmount = parseFloat((lineNet * taxFactor).toFixed(2));
+                                }
+                              }
                             }
                             return hook.handleAddChild?.(lineData);
                           },
