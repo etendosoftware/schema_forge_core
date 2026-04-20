@@ -82,6 +82,14 @@ Design proposals and RFCs awaiting review and approval. See [proposals/INDEX.md]
 | [proposals/etendo-go-apps-technical-annex.md](proposals/etendo-go-apps-technical-annex.md) | Draft | External apps framework — technical annex (architecture, descriptor, JWT+JWKS, BFF, SDK) |
 | [plans/2026-04-17-etendo-go-apps-f1-spike-plan.md](plans/2026-04-17-etendo-go-apps-f1-spike-plan.md) | Ready | F1 spike execution plan (10 tasks, validates JWT+JWKS+BFF end-to-end) |
 
+## Presentations
+
+Slide-deck style walkthroughs (Marp Markdown). See [presentations/INDEX.md](presentations/INDEX.md) for how to render.
+
+| File | Description |
+|------|-------------|
+| [presentations/etendo-apps-sdk-demo.md](presentations/etendo-apps-sdk-demo.md) | Etendo Apps SDK + `quick-order-app` demo — architecture, JWT bridge, styling, trade-offs |
+
 ## Plans & Evaluations
 
 Plans follow a lifecycle: active in `plans/`, completed in `plans/completed/YYYY-MM-DD/`, discarded in `plans/discarded/`.
