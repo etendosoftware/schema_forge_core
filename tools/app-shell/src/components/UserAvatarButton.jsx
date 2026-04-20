@@ -68,8 +68,8 @@ export function UserAvatarButton({ expanded = false }) {
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        side={expanded ? 'top' : 'right'}
-        align={expanded ? 'start' : 'end'}
+        side="right"
+        align="end"
         className="w-56"
       >
         <div className="border-b px-4 py-3">
