@@ -638,12 +638,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
               value={values[field.key] ?? ''}
               onChange={(e) => {
                 const raw = e.target.value;
-                touchedFieldsRef.current.add(field.key);
                 if (isNumeric && raw !== '' && raw !== '-') {
                   const parsed = field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
-                  handleChange(field.key, isNaN(parsed) ? raw : parsed);
+                  handleFieldChange(field.key, isNaN(parsed) ? raw : parsed);
                 } else {
-                  handleChange(field.key, raw);
+                  handleFieldChange(field.key, raw);
                 }
               }}
               onKeyDown={handleKeyDown}
