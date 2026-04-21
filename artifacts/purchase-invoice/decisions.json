@@ -339,7 +339,7 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "selector",
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "taxableAmount": {

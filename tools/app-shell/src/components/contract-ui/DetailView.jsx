@@ -174,10 +174,15 @@ export function DetailView({
     }
     if (!parentRecordId) return next;
     if (detailEntity) {
+      // DateInvoiced is required by the C_Tax validationRule:
+      // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
+      // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
+      const invoiceDate = headerData?.invoiceDate ?? headerData?.orderDate ?? null;
       next[detailEntity] = {
         parentId: parentRecordId,
-        ...(isSOTrx ? { isSOTrx } : {}),
+        ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
+        ...(invoiceDate ? { DateInvoiced: invoiceDate } : {}),
       };
     }
     for (const tab of secondaryTabs) {
