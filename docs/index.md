@@ -81,6 +81,7 @@ Design proposals and RFCs awaiting review and approval. See [proposals/INDEX.md]
 | [proposals/etendo-go-apps.md](proposals/etendo-go-apps.md) | Draft | External apps framework for Etendo Go (Jira Connect-style) — executive summary |
 | [proposals/etendo-go-apps-technical-annex.md](proposals/etendo-go-apps-technical-annex.md) | Draft | External apps framework — technical annex (architecture, descriptor, JWT+JWKS, BFF, SDK) |
 | [plans/2026-04-17-etendo-go-apps-f1-spike-plan.md](plans/2026-04-17-etendo-go-apps-f1-spike-plan.md) | Ready | F1 spike execution plan (10 tasks, validates JWT+JWKS+BFF end-to-end) |
+| [proposals/initial-organization-setup-accounting.md](proposals/initial-organization-setup-accounting.md) | Reviewed / Pending plan | Initial Organization Setup accounting proposal — global package reuse, org wiring, completeness validation, and standard `AD_Org_Ready` finish |
 
 ## Presentations
 
