@@ -176,7 +176,7 @@
           "grid": true
         },
         "description": {
-          "section": "principal"
+          "form": false
         },
         "salesOrder": {
           "section": "other",
@@ -339,7 +339,7 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "selector",
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "taxableAmount": {
@@ -392,8 +392,11 @@
         },
         "grossAmount": {
           "visibility": "readOnly",
-          "form": false,
-          "grid": false
+          "grid": true,
+          "gridOrder": 6,
+          "form": true,
+          "section": "principal",
+          "displayLogic": null
         },
         "grossListPrice": {
           "visibility": "discarded",

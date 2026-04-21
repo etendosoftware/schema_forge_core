@@ -7,6 +7,7 @@
     "sidebarLayout": true,
     "breadcrumb": "Contact",
     "detailEntity": null,
+    "summaryFields": [],
     "primaryTabs": [
       {
         "key": "general",
@@ -37,6 +38,17 @@
     },
     "hidePrint": true,
     "hideMoreMenu": true,
+    "labelOverrides": {
+      "en_US": {
+        "FIN_Financial_Account_ID": "Account",
+        "PO_Financial_Account_ID": "Account"
+      },
+      "es_ES": {
+        "EM_Etgo_Identifier": "Identificador",
+        "FIN_Financial_Account_ID": "Cuenta",
+        "PO_Financial_Account_ID": "Cuenta"
+      }
+    },
     "processOverrides": {
       "setNewCurrency": {
         "exclude": true
@@ -113,10 +125,20 @@
           "section": "principal",
           "order": 2
         },
+        "etgoIdentifier": {
+          "visibility": "readOnly",
+          "form": true,
+          "grid": false,
+          "label": "Identifier",
+          "section": "principal",
+          "order": 0,
+          "displayLogic": "!!record.id"
+        },
         "searchKey": {
           "visibility": "editable",
+          "form": false,
           "grid": false,
-          "searchable": true,
+          "required": false,
           "section": "principal",
           "order": 1
         },

@@ -60,7 +60,7 @@ const addLineFields = {
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines

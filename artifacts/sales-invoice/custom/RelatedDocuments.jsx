@@ -26,8 +26,12 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
 
     if (orderId) {
       promises.push(
-        fetchById('sales-order', 'header', orderId, token, apiBaseUrl)
-          .then(d => setOrder(d))
+        (async () => {
+          const quotation = await fetchById('sales-quotation', 'quotation', orderId, token, apiBaseUrl).catch(() => null);
+          if (quotation) { setOrder({ ...quotation, _isQuotation: true }); return; }
+          const order = await fetchById('sales-order', 'header', orderId, token, apiBaseUrl).catch(() => null);
+          if (order) setOrder(order);
+        })()
       );
 
       promises.push(
@@ -52,17 +56,18 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const chips = [];
 
   if (order) {
+    const isQuotation = order._isQuotation;
     chips.push(
       <DocChip
         key="order"
-        icon={CHIP_ICONS.order}
-        iconColor={CHIP_COLORS.order}
-        title={ui('orderDoc', { number: order.documentNo })}
+        icon={isQuotation ? CHIP_ICONS.quotation : CHIP_ICONS.order}
+        iconColor={isQuotation ? CHIP_COLORS.quotation : CHIP_COLORS.order}
+        title={isQuotation ? ui('quotationDoc', { number: order.documentNo }) : ui('orderDoc', { number: order.documentNo })}
         amount={order.grandTotalAmount}
         currency={order['currency$_identifier']}
         status={order.documentStatus}
         statusLabel={ui(STATUS_KEYS[order.documentStatus] || order.documentStatus)}
-        onClick={() => navigate(`/sales-order/${order.id}`)}
+        onClick={() => navigate(`/${isQuotation ? 'sales-quotation' : 'sales-order'}/${order.id}`)}
       />
     );
   }

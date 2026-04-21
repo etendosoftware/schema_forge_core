@@ -34,10 +34,11 @@ function openCommandPalette() {
 export default function TopBar({
   title,
   breadcrumb,
+  recordCount,
   menuAction,
   onAddToFavorites,
   isFavorite = false,
-  onPageHelp,
+  onPageHelp = () => {},
   onSearchClick,
   searchPlaceholder,
   onAIClick,
@@ -59,17 +60,24 @@ export default function TopBar({
     <TooltipProvider>
       <header
         className={cn(
-          'flex h-[62px] shrink-0 items-center gap-4 px-6 bg-page-bg',
+          'flex h-[62px] shrink-0 items-center gap-4 pl-0 pr-6 bg-page-bg',
           className
         )}
       >
         {/* Left: title + breadcrumb + 3-dot menu */}
         {title && (
           <div className="flex items-center gap-1 shrink-0 min-w-0">
-            <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-base font-semibold text-text-primary truncate">
-                {title}
-              </span>
+            <div className="flex flex-col justify-center items-start min-w-0 h-12">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-semibold leading-8 text-text-primary truncate">
+                  {title}
+                </span>
+                {recordCount != null && (
+                  <span className="inline-flex items-center justify-center w-7 h-6 px-2 py-1 text-xs font-medium text-muted-foreground bg-page-bg border border-[#D1D4DB] rounded-lg shrink-0">
+                    {recordCount}
+                  </span>
+                )}
+              </div>
               {breadcrumb && (
                 <span className="text-xs text-topbar-breadcrumb truncate">
                   {breadcrumb}
