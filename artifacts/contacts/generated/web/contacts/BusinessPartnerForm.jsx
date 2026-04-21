@@ -2,7 +2,7 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:businessPartner
 const fields = [
-  { key: 'searchKey', column: 'Value', type: 'text', label: 'Search Key', required: true, section: 'principal' },
+  { key: 'etgoIdentifier', column: 'EM_Etgo_Identifier', type: 'text', label: 'Identifier', readOnly: true, section: 'principal', displayLogic: (record) => !!record.id },
   { key: 'name', column: 'Name', type: 'text', label: 'Commercial Name', required: true, section: 'principal' },
   { key: 'oBTIKTaxIDKey', column: 'EM_OBTIK_Tax_ID_Key', type: 'select', label: 'Clave NIF País Residencia', required: true, section: 'principal', options: [{ value: '1', label: 'NIF' }, { value: '2', label: 'NOI' }, { value: '3', label: 'Pasaporte' }, { value: '4', label: 'Documento oficial de identificación expedido por el país' }, { value: '5', label: 'Certificado de residencia fiscal' }, { value: '6', label: 'Otro documento probatorio' }, { value: '7', label: 'No Censado' }], defaultValue: '\'1\'' },
   { key: 'taxID', column: 'TaxID', type: 'text', label: 'Tax ID', section: 'principal' },

@@ -2,13 +2,13 @@ export const contactModalConfig = {
   headerFields: [
     { id: 'searchKey', labelKey: 'identifier', type: 'text', required: true },
     { id: 'name', labelKey: 'contactName', type: 'text', required: true },
-    { id: 'taxID', labelKey: 'taxIDField', type: 'text', placeholder: 'B-12345678', required: true },
     {
       id: 'taxIdType',
       labelKey: 'taxIdTypeField',
       type: 'dynamicSelect',
       optionsKey: 'taxIdTypes',
     },
+    { id: 'taxID', labelKey: 'taxIDField', type: 'text', placeholder: 'B-12345678', required: true },
   ],
   sections: [
     {

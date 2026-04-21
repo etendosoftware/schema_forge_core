@@ -31,7 +31,7 @@
   min-width: 0;
 }
 
-.entity-creation-modal input:not([type="checkbox"]):not([type="radio"]),
+.entity-creation-modal input:not([type="checkbox"]):not([type="radio"]):not(.option-picker-search),
 .entity-creation-modal select {
   height: 40px !important;
   min-height: 40px !important;

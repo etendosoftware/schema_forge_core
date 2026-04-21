@@ -16,7 +16,6 @@ const api = {
       "listUrl": "/sws/neo/contacts/businessPartner",
       "detailUrl": "/sws/neo/contacts/businessPartner/{id}",
       "supportedFilters": [
-        "searchKey",
         "name"
       ]
     },
@@ -573,6 +572,17 @@ const api = {
   },
   "window": {
     "category": "contact"
+  },
+  "labelOverrides": {
+    "en_US": {
+      "FIN_Financial_Account_ID": "Account",
+      "PO_Financial_Account_ID": "Account"
+    },
+    "es_ES": {
+      "EM_Etgo_Identifier": "Identificador",
+      "FIN_Financial_Account_ID": "Cuenta",
+      "PO_Financial_Account_ID": "Cuenta"
+    }
   }
 };
 
