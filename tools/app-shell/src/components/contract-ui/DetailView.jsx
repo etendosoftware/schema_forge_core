@@ -1079,7 +1079,7 @@ export function DetailView({
                     }
                   }}>
                     <Check className="h-3.5 w-3.5" />
-                    {draftMode.label || ui('process')}
+                    {ui(draftMode.label) || draftMode.label || ui('process')}
                   </Button>
                 </>
               ) : isNew ? (<>
@@ -1103,7 +1103,7 @@ export function DetailView({
                   }
                 }}>
                   <Check className="h-3.5 w-3.5" />
-                  {tMenu(draftMode.label) || ui('process')}
+                  {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
                 </Button>
                 )}
               </>
