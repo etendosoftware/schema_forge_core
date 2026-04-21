@@ -1079,7 +1079,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               {columns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
-                const isRight = NUMERIC_FIELD_TYPES.has(col.type);
+                const isNumeric = NUMERIC_FIELD_TYPES.has(col.type);
                 return (
                   <TableHead key={col.key} className="align-top">
                     <div className="flex flex-col gap-1.5 pb-2">
@@ -1115,7 +1115,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                             columnFilters[col.key]
                               ? 'border-primary/40 bg-primary/5 pr-6'
                               : 'border-border/35',
-                            isRight ? 'text-right' : '',
+                            isNumeric ? 'text-right' : '',
                           ].filter(Boolean).join(' ')}
                         />
                         {columnFilters[col.key] && (
