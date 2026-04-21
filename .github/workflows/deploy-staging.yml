@@ -47,6 +47,11 @@ jobs:
           # VITE_BUILD_ID is unique per workflow run (even same commit) — ensures sw.js
           # always differs between deploys so the service worker updates on every redeploy
           VITE_BUILD_ID: ${{ github.run_id }}
+          # CloudWatch RUM — IDs stored as GitHub Actions variables (not in repo)
+          VITE_RUM_APP_MONITOR_ID_STAGING: ${{ vars.RUM_APP_MONITOR_ID_STAGING }}
+          VITE_RUM_IDENTITY_POOL_ID_STAGING: ${{ vars.RUM_IDENTITY_POOL_ID_STAGING }}
+          VITE_RUM_APP_MONITOR_ID_EXPERIMENTAL: ${{ vars.RUM_APP_MONITOR_ID_EXPERIMENTAL }}
+          VITE_RUM_IDENTITY_POOL_ID_EXPERIMENTAL: ${{ vars.RUM_IDENTITY_POOL_ID_EXPERIMENTAL }}
         # .env.production (committed) provides VITE_MOCK=false and VITE_API_BASE=/etendo
 
       - name: Generate reports manifest

@@ -173,7 +173,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
   const status = displayInvoice.documentStatus;
   const badgeProps = getStatusBadgeProps(status);
-  const label = statusLabel(status);
+  const label = statusLabel(status, null, ui);
   const partnerName = displayInvoice.businessPartner$_identifier || displayInvoice.businessPartner || '—';
 
   // paymentDetails records use `amount` (applied amount)
@@ -375,13 +375,11 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
                 {/* Action buttons row */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Enviar — sales invoice only, primary black */}
-                  {isSalesInvoice && (
-                    <Button size="sm" className="gap-1.5 text-xs h-8 bg-gray-900 hover:bg-gray-800 text-white" onClick={openEmailModal}>
-                      <Send size={12} />
-                      {ui('invoicePreviewSend')}
-                    </Button>
-                  )}
+                  {/* Enviar */}
+                  <Button size="sm" className="gap-1.5 text-xs h-8 bg-gray-900 hover:bg-gray-800 text-white" onClick={openEmailModal}>
+                    <Send size={12} />
+                    {ui('invoicePreviewSend')}
+                  </Button>
 
                   {/* Add Payment */}
                   <Button
@@ -634,7 +632,7 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
         ) : payments.length === 0 && totalOutstanding > 0 ? (
           /* Pending installment — amber row */
           <div className="flex justify-between items-center px-4 py-3">
-            <span className="text-sm font-medium text-amber-600">{ui('statusPending')}</span>
+            <span className="text-sm font-medium text-amber-600">{ui('invoicePendingPayment')}</span>
             <span className="text-sm font-semibold tabular-nums text-amber-600">
               {currencyCode} {formatAmount(totalOutstanding)}
             </span>

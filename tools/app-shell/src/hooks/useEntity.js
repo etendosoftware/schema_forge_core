@@ -540,7 +540,6 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       // Include parentId in the body — the backend resolves it to the correct FK field name
       // and uses it to load parent record values for @FieldName@ defaults (generic, no hardcoding).
       body.parentId = selected.id;
-      console.log('[POST body]', JSON.stringify(body));
       const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
         method: 'POST',
         headers,

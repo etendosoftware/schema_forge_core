@@ -5,15 +5,23 @@ import { useUI } from '@/i18n';
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [orders, setOrders] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const ui = useUI();
 
   useEffect(() => {
     if (!recordId) { setLoading(false); return; }
-    fetchByCriteria('sales-order', 'header', 'quotation', recordId, token, apiBaseUrl)
-      .then(rows => { setOrders(rows); setLoading(false); })
-      .catch(() => { setOrders([]); setLoading(false); });
+    Promise.all([
+      fetchByCriteria('sales-order', 'header', 'quotation', recordId, token, apiBaseUrl)
+        .catch(() => []),
+      fetchByCriteria('sales-invoice', 'header', 'salesOrder', recordId, token, apiBaseUrl)
+        .catch(() => []),
+    ]).then(([orderRows, invoiceRows]) => {
+      setOrders(orderRows);
+      setInvoices(invoiceRows);
+      setLoading(false);
+    });
   }, [recordId, token, apiBaseUrl]);
 
   return (
@@ -29,6 +37,18 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
           status={row.documentStatus}
           statusLabel={ui(STATUS_KEYS[row.documentStatus] || row.documentStatus)}
           onClick={() => navigate(`/sales-order/${row.id}`)}
+        />
+      ))}
+      {invoices.map((row) => (
+        <DocChip
+          key={row.id}
+          icon={CHIP_ICONS.invoice}
+          iconColor={CHIP_COLORS.invoice}
+          title={ui('invoiceDoc', { number: row.documentNo })}
+          amount={row.grandTotalAmount}
+          status={row.documentStatus}
+          statusLabel={ui(STATUS_KEYS[row.documentStatus] || row.documentStatus)}
+          onClick={() => navigate(`/sales-invoice/${row.id}`)}
         />
       ))}
     </RelatedDocumentsShell>

@@ -58,14 +58,14 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
 
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
             <input
               ref={searchRef}
               type="text"
               value={query}
               onChange={e => onQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="option-picker-search w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
