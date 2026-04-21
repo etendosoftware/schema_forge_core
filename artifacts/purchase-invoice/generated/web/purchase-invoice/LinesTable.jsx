@@ -7,6 +7,7 @@ const columns = [
   { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price' },
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'amount', label: 'Line Net Amount' },
   { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'grossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
 ];
 // @sf-generated-end columns:lines
 

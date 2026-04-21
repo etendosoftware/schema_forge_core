@@ -392,8 +392,11 @@
         },
         "grossAmount": {
           "visibility": "readOnly",
-          "form": false,
-          "grid": false
+          "grid": true,
+          "gridOrder": 6,
+          "form": true,
+          "section": "principal",
+          "displayLogic": null
         },
         "grossListPrice": {
           "visibility": "discarded",
