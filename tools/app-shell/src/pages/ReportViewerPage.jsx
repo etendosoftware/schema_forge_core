@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 
 const FORMATS = [
   { id: 'preview', label: 'Preview', icon: Eye },
@@ -1288,13 +1289,21 @@ const CATEGORY_LABELS = {
 function ReportList({ reports, loading, searchQuery, setSearchQuery, categoryFilter, selectReport, locale, localeLangKey }) {
   const tMenu = useMenuLabel();
   const ui = useUI();
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = categoryFilter ? `report-viewer?category=${categoryFilter}` : 'report-viewer';
+  const favActive = isFavorite(favKey);
 
   const categoryBreadcrumb = categoryFilter && CATEGORY_LABELS[categoryFilter]
     ? tMenu(CATEGORY_LABELS[categoryFilter].en)
     : null;
   const breadcrumb = categoryBreadcrumb ? `${categoryBreadcrumb} / ${tMenu('Reports')}` : null;
 
-  useSetPageMeta({ title: tMenu('Reports'), breadcrumb });
+  useSetPageMeta({
+    title: tMenu('Reports'),
+    breadcrumb,
+    onAddToFavorites: () => toggleFavorite(favKey, tMenu('Reports')),
+    isFavorite: favActive,
+  }, [favActive]);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filtered = reports.filter(r => {
