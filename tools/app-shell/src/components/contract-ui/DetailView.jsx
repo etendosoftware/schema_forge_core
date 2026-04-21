@@ -289,6 +289,9 @@ export function DetailView({
   const calloutAppliedRef = useRef(new Set());
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
+  // Cache for tax rates fetched from the selector (keyed by tax ID).
+  // Avoids repeated API calls when the same tax appears on multiple lines.
+  const taxRateCacheRef = useRef({});
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
@@ -619,9 +622,14 @@ export function DetailView({
       // Fallback: when callout returns no lineNetAmount (e.g. SL_Invoice_Amt throws
       // PriceAdjustment exception for products without standard cost), compute qty × price.
       // Covers both the inline add-row (DataTable) and the sidebar detail form (DetailView).
-      if (result.lineNetAmount == null && (field === 'invoicedQuantity' || field === 'unitPrice')) {
-        const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
-        const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
+      // Also covers the product-selection case: SL_Invoice_Product returns 'priceActual' (OBDal
+      // property name), not 'unitPrice' (Schema Forge key), so result.unitPrice is null. But the
+      // selector item mapping already put unitPrice into rowValues before the callout fired.
+      if (result.lineNetAmount == null && (field === 'invoicedQuantity' || field === 'unitPrice' || field === 'product')) {
+        const qty   = field === 'invoicedQuantity' ? (parseFloat(value) || 0)
+                    : (parseFloat(String(rowValues.invoicedQuantity ?? '')) || 0);
+        const price = field === 'unitPrice'        ? (parseFloat(value) || 0)
+                    : (parseFloat(String(rowValues.unitPrice ?? '')) || 0);
         if (qty > 0 && price > 0) result.lineNetAmount = String(qty * price);
       }
       // Compute grossAmount in real-time by deriving the tax factor from already-available data.
@@ -633,10 +641,16 @@ export function DetailView({
       // for net price lists — only computes it for gross price lists in classic Etendo).
       if (result.grossAmount == null || Number(result.grossAmount) === 0) {
         // Use qty × price for qty/price changes (avoids stale callout lineNetAmount).
+        // For product-field changes: unitPrice was already injected into rowValues by the selector
+        // item mapping before the callout ran, so we can compute lineNet from rowValues directly.
         let lineNet;
         if (field === 'invoicedQuantity' || field === 'unitPrice') {
           const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
           const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price : 0;
+        } else if (field === 'product') {
+          const qty   = parseFloat(String(rowValues.invoicedQuantity ?? '')) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price : 0;
         } else {
           lineNet = parseFloat(String(result.lineNetAmount ?? rowValues.lineNetAmount ?? '')) || 0;
@@ -645,12 +659,23 @@ export function DetailView({
         if (lineNet > 0) {
           const effectiveTaxId = result.tax ?? rowValues.tax;
 
+          let taxFactor = null;
+
+          // 0. Tax rate injected by backend when callout sets a 'tax' field.
+          //    Covers the first-line-of-a-fresh-document case where no saved lines exist.
+          const calloutTaxRate = parseFloat(String(result.taxRate ?? ''));
+          if (!isNaN(calloutTaxRate)) {
+            taxFactor = 1 + calloutTaxRate / 100;
+            if (effectiveTaxId) taxRateCacheRef.current[effectiveTaxId] = calloutTaxRate;
+          }
+
           // 1. Tax rate from selector item aux data (if NEO selector returns 'rate' field).
           //    When InlineSearchCombo selects a tax, handleFieldChange stores it as rowValues['tax_rate'].
-          let taxFactor = null;
-          const taxRateFromCtx = parseFloat(String(rowValues['tax_rate'] ?? ''));
-          if (!isNaN(taxRateFromCtx) && taxRateFromCtx >= 0) {
-            taxFactor = 1 + taxRateFromCtx / 100;
+          if (taxFactor === null) {
+            const taxRateFromCtx = parseFloat(String(rowValues['tax_rate'] ?? ''));
+            if (!isNaN(taxRateFromCtx) && taxRateFromCtx >= 0) {
+              taxFactor = 1 + taxRateFromCtx / 100;
+            }
           }
 
           // 2. Derive taxFactor from the current row's saved values (sidebar case).
@@ -671,6 +696,15 @@ export function DetailView({
             );
             if (ref) {
               taxFactor = parseFloat(String(ref.grossAmount)) / parseFloat(String(ref.lineNetAmount));
+            }
+          }
+
+          // 4. Cached rate from a previous callout for the same tax (e.g., user changes qty
+          //    after already selecting the product — source 0 already cached the rate).
+          if (taxFactor === null && effectiveTaxId) {
+            const cachedRate = taxRateCacheRef.current[effectiveTaxId];
+            if (cachedRate != null) {
+              taxFactor = 1 + cachedRate / 100;
             }
           }
 

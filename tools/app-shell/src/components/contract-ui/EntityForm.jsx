@@ -569,7 +569,12 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       || f.readOnly
       || displayLogic?.readOnly?.[f.key] === true
       || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
-    const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    const rawDisplayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
+    // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
+    const displayValue = f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue))
+      ? parseFloat(Number(rawDisplayValue).toFixed(10))
+      : rawDisplayValue;
     // Shared read-only rendering for FK-style fields (dependent, selector, search)
     const renderReadOnlyFk = () => (
       <div key={f.key} className="space-y-1.5">
