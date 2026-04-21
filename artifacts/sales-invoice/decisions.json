@@ -276,7 +276,7 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "selector"
+          "inputMode": "search"
         },
         "lineNetAmount": {
           "visibility": "readOnly",
