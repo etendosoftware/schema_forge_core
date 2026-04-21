@@ -613,18 +613,18 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           );
         }
 
+        const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
         return (
           <TableCell key={col.key} className="py-1 px-2">
             <input
               ref={isFirst ? firstInputRef : undefined}
-              type={NUMERIC_FIELD_TYPES.has(field.type) ? 'number' : 'text'}
+              type={isNumeric ? 'number' : 'text'}
               inputMode={field.inputMode}
               value={values[field.key] ?? ''}
               onChange={(e) => {
                 const raw = e.target.value;
-                const isNumericType = NUMERIC_FIELD_TYPES.has(field.type);
                 touchedFieldsRef.current.add(field.key);
-                if (isNumericType && raw !== '' && raw !== '-') {
+                if (isNumeric && raw !== '' && raw !== '-') {
                   const parsed = field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
                   handleChange(field.key, isNaN(parsed) ? raw : parsed);
                 } else {
@@ -634,7 +634,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              className={`w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
             />
           </TableCell>
         );
@@ -888,13 +888,12 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         if (warehouseLabel) display = warehouseLabel;
       }
     }
-    // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
       const pill = col.pill;
       const pillLabel = pill && pill.when(row) ? pill.label : null;
       return (
         <span className="inline-flex items-center gap-2">
-          <span className="font-medium text-blue-600">{display}</span>
+          <span>{display}</span>
           {pillLabel && (
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pill.className || 'bg-gray-50 text-gray-600 border-gray-200'}`} style={{ borderWidth: '0.5px' }}>
               {pillLabel}
@@ -1080,7 +1079,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               {columns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
-                const isRight = col.type === 'amount';
+                const isNumeric = NUMERIC_FIELD_TYPES.has(col.type);
                 return (
                   <TableHead key={col.key} className="align-top">
                     <div className="flex flex-col gap-1.5 pb-2">
@@ -1116,7 +1115,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                             columnFilters[col.key]
                               ? 'border-primary/40 bg-primary/5 pr-6'
                               : 'border-border/35',
-                            isRight ? 'text-right' : '',
+                            isNumeric ? 'text-right' : '',
                           ].filter(Boolean).join(' ')}
                         />
                         {columnFilters[col.key] && (
@@ -1182,7 +1181,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       );
                     })()}
                     {columns.map(col => (
-                      <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                      <TableCell key={col.key} className={NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''}>
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}
