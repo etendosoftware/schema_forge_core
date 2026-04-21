@@ -736,7 +736,6 @@ export function DetailView({
           });
           if (cascadeRes.ok) {
             const cascadeData = await cascadeRes.json();
-            console.log('[DBG] SL_Order_Amt raw response:', JSON.stringify(cascadeData));
             const cascadeResult = {};
             if (cascadeData.updates) {
               for (const [k, entry] of Object.entries(cascadeData.updates)) {

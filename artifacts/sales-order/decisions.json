@@ -301,7 +301,7 @@
           "gridOrder": 4
         },
         "grossUnitPrice": {
-          "visibility": "system"
+          "form": false
         },
         "lineNetAmount": {
           "grid": false,
