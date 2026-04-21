@@ -1,7 +1,7 @@
 {
   "version": "0.11.1",
-  "generatedAt": "2026-04-20T23:14:36.307Z",
-  "checksum": "187124af4e1e7714",
+  "generatedAt": "2026-04-21T02:03:28.998Z",
+  "checksum": "27d7f0cded05077f",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -617,7 +617,7 @@
             "grid": true,
             "form": true,
             "reference": "Tax",
-            "inputMode": "selector",
+            "inputMode": "search",
             "section": "principal",
             "validationRule": {
               "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
@@ -3067,7 +3067,7 @@
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
-        "inputMode": "selector",
+        "inputMode": "search",
         "url": "/sws/neo/sales-invoice/lines/selectors/tax"
       },
       {
