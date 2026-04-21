@@ -328,7 +328,8 @@
           "section": "principal",
           "displayLogic": "record.customer"
         }
-      }
+      },
+      "javaQualifier": "contactBusinessPartnerHandler"
     },
     "locationAddress": {
       "fields": {
