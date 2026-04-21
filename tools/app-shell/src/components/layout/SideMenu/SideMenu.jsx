@@ -466,8 +466,8 @@ export default function SideMenu({
                           )}
                         >
                           <span className={cn(
-                            'absolute left-[33px] top-0 bottom-0 w-0.5',
-                            isItemActive ? 'bg-white/40' : 'bg-border'
+                            'absolute left-[33px] top-0 bottom-0 w-px',
+                            isItemActive ? 'bg-white/40' : 'bg-[#E8EAEF]'
                           )} />
                           {isItemActive && (
                             <span className="absolute left-[33px] right-2 top-0 bottom-0 bg-accent-highlight" />
@@ -486,7 +486,7 @@ export default function SideMenu({
                                 to={`/${itemPath}`}
                                 className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-text-primary hover:bg-muted/50 transition-colors"
                               >
-                                <span className="absolute left-[33px] top-0 bottom-0 w-0.5 bg-border" />
+                                <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
                                 <span className="relative z-10">{tMenu(item.label)}</span>
                               </NavLink>
                             );
@@ -497,7 +497,7 @@ export default function SideMenu({
                             onClick={() => setFavOverflowOpen(true)}
                             className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
                           >
-                            <span className="absolute left-[33px] top-0 bottom-0 w-0.5 bg-border" />
+                            <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
                             <span className="flex-1 text-left">
                               {ui('andNMore', { n: g.items.length - FAVORITES_VISIBLE })}
                             </span>
