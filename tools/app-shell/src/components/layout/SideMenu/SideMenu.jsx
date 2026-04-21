@@ -215,10 +215,14 @@ export default function SideMenu({
     if (activeGroup) initial[activeGroup.group] = true;
     return initial;
   });
+  const [favOverflowOpen, setFavOverflowOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
+  const FAVORITES_VISIBLE = 2;
+
   const toggleGroup = (group) => {
-    setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
+    if (group === 'Favorites') setFavOverflowOpen(false);
+    setOpenGroups(prev => ({ [group]: !prev[group] }));
   };
 
   const handleHelpClick = () => {
@@ -437,11 +441,14 @@ export default function SideMenu({
                 {isOpen && (
                   <div className="py-0.5">
                     {g.items.length === 0 && g.group === 'Favorites' && (
-                      <p className="pl-10 pr-4 py-1.5 text-xs text-muted-foreground italic">
+                      <p className="pl-[52px] pr-4 py-1.5 text-xs text-muted-foreground italic">
                         {ui('noFavoritesYet')}
                       </p>
                     )}
-                    {g.items.map((item) => {
+                    {(g.group === 'Favorites'
+                      ? g.items.slice(0, FAVORITES_VISIBLE)
+                      : g.items
+                    ).map((item) => {
                       const itemPath = item.path || item.name;
                       const currentFull = currentPath + location.search;
                       const isItemActive = g.group !== 'Favorites' && (item.path?.includes('?')
@@ -452,23 +459,52 @@ export default function SideMenu({
                           key={item.name}
                           to={`/${itemPath}`}
                           className={cn(
-                            'relative flex w-full items-center pl-10 pr-4 py-1.5 text-sm transition-colors',
+                            'relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm transition-colors',
                             isItemActive
                               ? 'text-accent-highlight-foreground font-semibold'
                               : 'text-text-primary hover:bg-muted/50'
                           )}
                         >
                           <span className={cn(
-                            'absolute left-[22px] top-0 bottom-0 w-0.5',
+                            'absolute left-[33px] top-0 bottom-0 w-0.5',
                             isItemActive ? 'bg-white/40' : 'bg-border'
                           )} />
                           {isItemActive && (
-                            <span className="absolute left-[22px] right-2 top-0 bottom-0 bg-accent-highlight" />
+                            <span className="absolute left-[33px] right-2 top-0 bottom-0 bg-accent-highlight" />
                           )}
                           <span className="relative z-10">{tMenu(item.label)}</span>
                         </NavLink>
                       );
                     })}
+                    {g.group === 'Favorites' && g.items.length > FAVORITES_VISIBLE && (
+                      favOverflowOpen
+                        ? g.items.slice(FAVORITES_VISIBLE).map((item) => {
+                            const itemPath = item.path || item.name;
+                            return (
+                              <NavLink
+                                key={item.name}
+                                to={`/${itemPath}`}
+                                className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-text-primary hover:bg-muted/50 transition-colors"
+                              >
+                                <span className="absolute left-[33px] top-0 bottom-0 w-0.5 bg-border" />
+                                <span className="relative z-10">{tMenu(item.label)}</span>
+                              </NavLink>
+                            );
+                          })
+                        : (
+                          <button
+                            type="button"
+                            onClick={() => setFavOverflowOpen(true)}
+                            className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                          >
+                            <span className="absolute left-[33px] top-0 bottom-0 w-0.5 bg-border" />
+                            <span className="flex-1 text-left">
+                              {ui('andNMore', { n: g.items.length - FAVORITES_VISIBLE })}
+                            </span>
+                            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                          </button>
+                        )
+                    )}
                   </div>
                 )}
               </div>

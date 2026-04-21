@@ -16575,6 +16575,7 @@
     "addToFavorites": "Add to favorites",
     "removeFromFavorites": "Remove from favorites",
     "noFavoritesYet": "No favorites yet",
+    "andNMore": "+{n} more",
     "pageHelp": "Page help",
     "configureDashboard": "Configure dashboard",
     "searchInvoices": "Search invoices...",

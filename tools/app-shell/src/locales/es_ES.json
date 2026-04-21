@@ -16810,6 +16810,7 @@
     "addToFavorites": "Añadir a favoritos",
     "removeFromFavorites": "Quitar de favoritos",
     "noFavoritesYet": "Aún no tienes favoritos",
+    "andNMore": "+{n} más",
     "pageHelp": "Ayuda de esta página",
     "configureDashboard": "Configurar dashboard",
     "searchInvoices": "Buscar facturas...",
