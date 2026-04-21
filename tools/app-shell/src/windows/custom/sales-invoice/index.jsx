@@ -9,6 +9,7 @@ import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
@@ -44,6 +45,12 @@ function SalesInvoiceTable(props) {
  * Routing:
  *   - recordId present  → standard HeaderPage (new / edit mode)
  *   - no recordId       → ListView with lateral preview modal
+ *
+ * To add grid clone (single + multirecord), see sales-order/index.jsx as reference:
+ *   1. import CloneOrderModal from '@/components/contract-ui/CloneOrderModal'
+ *   2. add useState(null) for cloneTargets
+ *   3. pass onCloneRow to ListView
+ *   4. render CloneOrderModal portal with cloneActionName="cloneRecord" and invoice i18n keys
  */
 export default function SalesInvoiceWindow(props) {
   const { recordId, token, apiBaseUrl, windowName } = props;
@@ -53,6 +60,7 @@ export default function SalesInvoiceWindow(props) {
   const ui = useUI();
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
+  const [cloneTargets, setCloneTargets] = useState(null);
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Sales / Sales Invoice';
@@ -121,7 +129,20 @@ export default function SalesInvoiceWindow(props) {
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
       />
+      {cloneTargets && createPortal(
+        <CloneOrderModal
+          records={cloneTargets}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          routePrefix="/sales-invoice/"
+          errorKey="cloneInvoiceError"
+          processingKey="invoiceProcessing"
+          onClose={() => setCloneTargets(null)}
+        />,
+        document.body,
+      )}
       {(previewRow || effectiveRecord) && (
         <InvoicePreviewModal
           specName="sales-invoice"
