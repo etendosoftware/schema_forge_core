@@ -30,7 +30,7 @@ const labelOverrides = {
 
 // @sf-generated-start summary:businessPartner
 const summary = [
-  { key: 'etgoIdentifier', column: 'EM_Etgo_Identifier', type: 'string' },
+
 ];
 
 const statusField = null;
