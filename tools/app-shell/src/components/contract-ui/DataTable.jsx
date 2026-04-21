@@ -557,11 +557,35 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           );
         }
 
-        // Selector fields render as native <select> dropdowns (few options)
+        // Selector fields render as native <select> dropdowns (few options).
+        // When catalog options are not pre-loaded, fall back to InlineSearchCombo
+        // which loads options dynamically from the selector URL.
         if (field.type === 'selector') {
           const options = getCatalogOptions(catalogs, entity, field);
           if (options.length === 0) {
-            return <TableCell key={col.key} className="py-1 px-2" />;
+            const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
+            if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
+            return (
+              <TableCell key={col.key} className="py-1 px-2">
+                <InlineSearchCombo
+                  field={{ ...field, type: 'search' }}
+                  value={values[field.key] ?? ''}
+                  displayLabel={values[field.key + '$_identifier'] || ''}
+                  options={[]}
+                  inputRef={isFirst ? firstInputRef : undefined}
+                  placeholder={fieldLabel}
+                  onChange={(id, label, selectedItem) => {
+                    touchedFieldsRef.current.add(field.key);
+                    handleChange(field.key + '$_identifier', label);
+                    handleFieldChange(field.key, id, selectedItem);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  selectorUrl={selectorUrl}
+                  selectorContext={selectorContext}
+                  token={token}
+                />
+              </TableCell>
+            );
           }
           return (
             <TableCell key={col.key} className="py-1 px-2">
