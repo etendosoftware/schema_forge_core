@@ -463,7 +463,7 @@ export default function SideMenu({
                             isItemActive ? 'bg-white/40' : 'bg-border'
                           )} />
                           {isItemActive && (
-                            <span className="absolute left-[23px] right-2 top-0 bottom-0 bg-accent-highlight" />
+                            <span className="absolute left-[22px] right-2 top-0 bottom-0 bg-accent-highlight" />
                           )}
                           <span className="relative z-10">{tMenu(item.label)}</span>
                         </NavLink>
