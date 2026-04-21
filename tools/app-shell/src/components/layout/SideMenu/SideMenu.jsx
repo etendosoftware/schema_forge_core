@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import {
@@ -215,6 +215,11 @@ export default function SideMenu({
     if (activeGroup) initial[activeGroup.group] = true;
     return initial;
   });
+
+  useEffect(() => {
+    setOpenGroups(activeGroup ? { [activeGroup.group]: true } : {});
+  }, [location.pathname, location.search]);
+
   const [favOverflowOpen, setFavOverflowOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
