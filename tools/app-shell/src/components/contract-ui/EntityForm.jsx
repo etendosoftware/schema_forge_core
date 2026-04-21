@@ -708,11 +708,17 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         if (auxData) {
+          const isGross = auxData.isTaxIncluded !== false;
           for (const [suffix, auxVal] of Object.entries(auxData)) {
-            // Gross price from price list — map directly to grossUnitPrice so the DB trigger
-            // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+            // Price from the document's price list. Mapping depends on price list type:
+            //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+            //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
             if (suffix === 'standardPrice' && auxVal != null) {
-              onChange?.('grossUnitPrice', auxVal);
+              if (isGross) {
+                onChange?.('grossUnitPrice', auxVal);
+              } else {
+                onChange?.('unitPrice', auxVal);
+              }
             } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
                 onChange?.(f.key + auxSuffix, auxSuffixVal);
