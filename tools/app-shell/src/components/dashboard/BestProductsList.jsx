@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight, TrendingUp, TrendingDown, Check, Minus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useUI } from '@/i18n';
@@ -27,6 +28,7 @@ function TrendPill({ pct }) {
 
 export function BestProductsList({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const { locale } = useLocaleSwitch();
   const numberLocale = localeFromUi(locale);
   const [viewMode, setViewMode] = useState('quantity');
@@ -271,6 +273,7 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
             return (
               <div
                 key={`${viewMode}-${row.name}-${i}`}
+                onClick={() => row.id && navigate(`/product/${row.id}`)}
                 style={{
                   display: 'flex',
                   flexDirection: 'row',
@@ -283,6 +286,7 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
                   order: i,
                   alignSelf: 'stretch',
                   flexGrow: 0,
+                  cursor: row.id ? 'pointer' : 'default',
                 }}
                 className="hover:bg-muted/50 transition-colors"
               >
@@ -323,46 +327,28 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
                     padding: '0px 8px 0px 0px',
                     height: '24px',
-                    borderRadius: '0px',
                     flex: 'none',
-                    order: 1,
                     flexGrow: 0,
                   }}
                 >
                   <TrendPill pct={row.trendPct ?? null} />
                 </div>
-                <div
+                <span
                   style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: '0px 8px',
-                    height: '24px',
-                    border: '1px solid #D1D4DB',
-                    borderRadius: '360px',
-                    flex: 'none',
-                    order: 2,
-                    flexGrow: 0,
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    lineHeight: '24px',
+                    color: '#6C6C89',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
-                  <span
-                    style={{
-                      height: '24px',
-                      fontFamily: 'Inter',
-                      fontStyle: 'normal',
-                      fontWeight: 400,
-                      fontSize: '12px',
-                      lineHeight: '24px',
-                      color: '#6C6C89',
-                    }}
-                  >
-                    {value}
-                  </span>
-                </div>
+                  {value}
+                </span>
+                <ChevronRight style={{ width: '16px', height: '16px', color: '#C4C9D4', flexShrink: 0, marginLeft: '4px' }} />
               </div>
             );
           })

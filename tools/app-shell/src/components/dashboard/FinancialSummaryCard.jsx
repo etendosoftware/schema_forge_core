@@ -9,7 +9,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
   const numberLocale = localeFromUi(locale);
 
   function getMetricValueTypography(value) {
-    const length = String(value ?? '').length;
+    const length = String(value ?? '').replace(/^-/, '').length;
 
     if (length >= 12) {
       return { fontSize: '20px', lineHeight: '24px' };

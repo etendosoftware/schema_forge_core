@@ -257,6 +257,7 @@ function mapRecentInvoices(handlerData) {
 function mapBestProducts(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   return handlerData.map((p) => ({
+    id: p.id || p.productId || p.mProductId || '',
     name: p.name || '',
     qty: p.qty || 0,
     amount: p.amount || 0,
@@ -271,6 +272,7 @@ function mapBestProducts(handlerData) {
 function mapBestSellers(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   return handlerData.map((s) => ({
+    id: s.id || s.productId || s.mProductId || '',
     name: s.name || '',
     qty: s.qty || 0,
     uom: s.uom || '',
