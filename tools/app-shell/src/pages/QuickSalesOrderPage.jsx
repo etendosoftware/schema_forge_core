@@ -1,10 +1,9 @@
 import { useState, useReducer, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUI, useMenuLabel } from '@/i18n';
 import { toast } from 'sonner';
-import { Receipt, MoreVertical, TrendingUp, Loader2, ScanBarcode, Search, Mic, Sparkles, Plus, Bell } from 'lucide-react';
-
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
+import { Receipt, TrendingUp, Loader2, ScanBarcode } from 'lucide-react';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 import CustomerSelector from './quick-sales-order/CustomerSelector.jsx';
 import ProductSearchBar from './quick-sales-order/ProductSearchBar.jsx';
 import ProductGrid from './quick-sales-order/ProductGrid.jsx';
@@ -298,6 +297,14 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
 
   const translatedTitle = tMenu('Quick Sales Order');
   const breadcrumb = `${tMenu('Proof of Concept')} / ${translatedTitle}`;
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = 'quick-sales-order';
+  useSetPageMeta({
+    title: translatedTitle,
+    breadcrumb,
+    onAddToFavorites: () => toggleFavorite(favKey, translatedTitle),
+    isFavorite: isFavorite(favKey),
+  }, [isFavorite(favKey)]);
 
   if (dataLoading) {
     return (
@@ -322,56 +329,7 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
   }
 
   return (
-    <div className="h-full flex flex-col" data-testid="quick-sales-order-page">
-      {/* Top bar */}
-      <div className="px-6 pt-3 pb-3 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="shrink-0">
-            <div className="flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-muted-foreground" />
-              <h1 className="text-xl font-bold text-foreground">{translatedTitle}</h1>
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb}</p>
-          </div>
-
-          {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-            </div>
-          </div>
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 shrink-0">
-            <kbd className="hidden lg:inline-block text-[10px] text-muted-foreground/50 border border-border/50 rounded px-1.5 py-0.5 mr-1">
-              F2 &middot; F4 &middot; F12
-            </kbd>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-            <UserAvatarButton />
-          </div>
-        </div>
-      </div>
-
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="quick-sales-order-page">
       {/* Main content: two columns */}
       <div className="flex-1 overflow-hidden bg-muted/10 p-4">
         <div className="h-full grid grid-cols-1 lg:grid-cols-5 gap-4">
