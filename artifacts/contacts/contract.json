@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-20T16:07:06.700Z",
-  "checksum": "c1978a789561284a",
+  "generatedAt": "2026-04-21T12:08:06.127Z",
+  "checksum": "114c92b5398058ea",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -55,6 +55,7 @@
         }
       },
       "detailEntity": null,
+      "summaryFields": [],
       "labelOverrides": {
         "en_US": {
           "FIN_Financial_Account_ID": "Account",
@@ -3484,6 +3485,7 @@
         }
       },
       "detailEntity": null,
+      "summaryFields": [],
       "labelOverrides": {
         "en_US": {
           "FIN_Financial_Account_ID": "Account",

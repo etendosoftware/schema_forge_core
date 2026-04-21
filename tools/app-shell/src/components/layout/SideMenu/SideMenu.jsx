@@ -383,20 +383,20 @@ export default function SideMenu({
                       </span>
                     </div>
                   )}
-                  <NavLink
-                    to={`/${itemPath}`}
-                    className="flex w-full items-center px-2 py-0.5 text-sm transition-colors"
-                  >
-                    <div className={cn(
-                      'flex flex-1 items-center gap-2.5 px-3 py-1.5',
-                      isItemActive || isGroupActive
-                        ? 'bg-accent-highlight text-accent-highlight-foreground font-medium'
-                        : 'hover:bg-muted/50'
-                    )}>
+                  <div className="px-2 py-0.5">
+                    <NavLink
+                      to={`/${itemPath}`}
+                      className={cn(
+                        'flex w-full items-center gap-2.5 px-3 py-1.5 text-sm transition-colors border-l-[3px] border-transparent',
+                        isItemActive || isGroupActive
+                          ? 'bg-accent-highlight text-accent-highlight-foreground font-medium'
+                          : 'hover:bg-muted/50'
+                      )}
+                    >
                       <Icon weight={isItemActive || isGroupActive ? 'fill' : 'regular'} className={cn('h-5 w-5 shrink-0', !(isItemActive || isGroupActive) && 'text-muted-foreground')} />
                       <span className={cn('flex-1 text-left truncate', !(isItemActive || isGroupActive) && 'text-text-primary')}>{tMenu(singleItem.label)}</span>
-                    </div>
-                  </NavLink>
+                    </NavLink>
+                  </div>
                 </div>
               );
             }
