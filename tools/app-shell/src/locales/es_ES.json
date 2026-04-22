@@ -17685,6 +17685,8 @@
     "noFinancialData": "Sin datos financieros",
     "customerBlockField": "Bloqueo de cliente",
     "generalTab": "General",
+    "direccionTab": "Dirección",
+    "masTab": "Más",
     "contactPersonTab": "Persona",
     "bankTab": "Cuenta bancaria",
     "addContactPerson": "Agregar persona de contacto",

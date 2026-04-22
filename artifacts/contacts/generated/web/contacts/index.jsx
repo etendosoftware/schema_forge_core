@@ -576,12 +576,14 @@ const api = {
   "labelOverrides": {
     "en_US": {
       "FIN_Financial_Account_ID": "Account",
-      "PO_Financial_Account_ID": "Account"
+      "PO_Financial_Account_ID": "Account",
+      "EM_Etgo_Web": "Website"
     },
     "es_ES": {
       "EM_Etgo_Identifier": "Identificador",
       "FIN_Financial_Account_ID": "Cuenta",
-      "PO_Financial_Account_ID": "Cuenta"
+      "PO_Financial_Account_ID": "Cuenta",
+      "EM_Etgo_Web": "Página web"
     }
   }
 };
