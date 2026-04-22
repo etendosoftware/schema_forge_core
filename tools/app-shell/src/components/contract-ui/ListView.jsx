@@ -70,7 +70,7 @@ export function ListView({
     title: label,
     breadcrumb: fullBreadcrumb,
     recordCount: hook.items.length,
-    onAddToFavorites: favKey ? () => toggleFavorite(favKey, label) : undefined,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || entity) : undefined,
     isFavorite: favActive,
   }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
