@@ -32,6 +32,7 @@ function AppLayoutInner({ menuGroups, embedded }) {
       >
         {!embedded && (
           <TopBar
+            onBack={meta?.onBack}
             title={meta?.title}
             breadcrumb={meta?.breadcrumb}
             recordCount={meta?.recordCount}

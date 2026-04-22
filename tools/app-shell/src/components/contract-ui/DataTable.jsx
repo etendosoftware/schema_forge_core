@@ -388,13 +388,28 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (topField === 'id' || topField === '_aux' || topField === 'label'
             || topField === 'name' || topField === 'searchKey'
             || typeof topVal === 'object' || topVal === null) continue;
-        // Gross price from price list — map directly to grossUnitPrice so the DB trigger
-        // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+        // Price from the document's price list. Mapping depends on price list type:
+        //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+        //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
+        // Mark the target field as touched so the callout does not overwrite it (some callouts
+        // look up the price themselves and may return a different value from another price list).
         if (topField === 'standardPrice' && topVal != null) {
-          snapshot['grossUnitPrice'] = topVal;
-          handleChange('grossUnitPrice', topVal);
-          snapshot['grossListPrice'] = topVal;
-          handleChange('grossListPrice', topVal);
+          const isGross = selectedItem?.isTaxIncluded !== false;
+          if (isGross) {
+            snapshot['grossUnitPrice'] = topVal;
+            handleChange('grossUnitPrice', topVal);
+            snapshot['grossListPrice'] = topVal;
+            handleChange('grossListPrice', topVal);
+            touchedFieldsRef.current.add('grossUnitPrice');
+            touchedFieldsRef.current.add('grossListPrice');
+          } else {
+            snapshot['unitPrice'] = topVal;
+            handleChange('unitPrice', topVal);
+            snapshot['listPrice'] = topVal;
+            handleChange('listPrice', topVal);
+            touchedFieldsRef.current.add('unitPrice');
+            touchedFieldsRef.current.add('listPrice');
+          }
           continue;
         }
         const ctxKey = `${key}_${topField}`;
