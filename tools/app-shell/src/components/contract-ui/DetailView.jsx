@@ -825,7 +825,7 @@ export function DetailView({
   useSetPageMeta({
     title: title || windowTitle,
     breadcrumb: fullBreadcrumb,
-    onAddToFavorites: favKey ? () => toggleFavorite(favKey, windowTitle) : undefined,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || breadcrumb?.split(' / ').at(-1).trim() || windowName) : undefined,
     isFavorite: favActive,
   }, [favActive, title]);
 
