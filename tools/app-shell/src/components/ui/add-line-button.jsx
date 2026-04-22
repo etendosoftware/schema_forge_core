@@ -6,20 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-
-const GROUP_STYLE = {
-  display: 'inline-flex',
-  flexDirection: 'row',
-  alignItems: 'stretch',
-  padding: 1,
-  height: 32,
-  background: '#FFFFFF',
-  border: '1px solid #D1D4DB',
-  borderRadius: 8,
-  boxShadow: '0px 1px 2px rgba(18, 18, 23, 0.05)',
-  fontFamily: 'Inter, sans-serif',
-  width: 'fit-content',
-};
+import { GROUP_STYLE, DIVIDER_STYLE, ICON_COLOR, TEXT_COLOR } from './add-line-button-tokens.js';
 
 const PRIMARY_STYLE = {
   display: 'inline-flex',
@@ -33,16 +20,10 @@ const PRIMARY_STYLE = {
   fontSize: 14,
   fontWeight: 500,
   lineHeight: '20px',
-  color: '#121217',
+  color: TEXT_COLOR,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   transition: 'background-color 0.15s ease',
-};
-
-const DIVIDER_STYLE = {
-  width: 1,
-  alignSelf: 'stretch',
-  background: '#E8EAEF',
 };
 
 const CHEVRON_STYLE = {
@@ -83,7 +64,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions })
       onMouseLeave={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = '#FFFFFF'; }}
       style={{ ...PRIMARY_STYLE, ...(disabled ? DISABLED_OVERLAY : null) }}
     >
-      <Plus size={20} color="#828FA3" strokeWidth={2} />
+      <Plus size={20} color={ICON_COLOR} strokeWidth={2} />
       <span>{label}</span>
     </button>
   );
@@ -97,7 +78,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions })
       style={{ ...CHEVRON_STYLE, ...(disabled ? DISABLED_OVERLAY : null) }}
       aria-label="More actions"
     >
-      <ChevronDown size={20} color="#828FA3" strokeWidth={2} />
+      <ChevronDown size={20} color={ICON_COLOR} strokeWidth={2} />
     </button>
   );
 
