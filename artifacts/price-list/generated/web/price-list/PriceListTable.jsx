@@ -4,7 +4,7 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
   { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
-  { key: 'salesPriceList', column: 'IsSOPriceList', type: 'boolean', labels: { es_ES: 'Tipo', en_US: 'Type' }, label: 'Type', badge: true, badgeLabels: { true: { es_ES: 'Venta', en_US: 'Sales' }, false: { es_ES: 'Compra', en_US: 'Purchase' } }, badgeVariants: { true: 'blue', false: 'purple' } },
+  { key: 'salesPriceList', column: 'IsSOPriceList', type: 'boolean', labels: {"es_ES":"Tipo","en_US":"Type"}, label: 'Sales Price List', badge: true, badgeLabels: {"true":{"es_ES":"Venta","en_US":"Sales"},"false":{"es_ES":"Compra","en_US":"Purchase"}}, badgeVariants: {"true":"blue","false":"purple"} },
 ];
 // @sf-generated-end columns:priceList
 
