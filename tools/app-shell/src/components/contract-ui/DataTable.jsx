@@ -475,10 +475,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
           const rawVal = values[col.key];
           const identVal = values[col.key + '$_identifier'];
+          const isNumericDerived = NUMERIC_FIELD_TYPES.has(col.type);
           const displayVal = identVal || rawVal;
           return (
-            <TableCell key={col.key} className="text-muted-foreground text-sm">
-              {displayVal != null && displayVal !== '' ? displayVal : '\u2014'}
+            <TableCell key={col.key} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
+              {displayVal != null && displayVal !== '' ? displayVal : '—'}
             </TableCell>
           );
         }
