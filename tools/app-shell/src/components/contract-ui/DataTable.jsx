@@ -11,6 +11,8 @@ import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import { StatusTag } from '@/components/ui/status-tag';
+import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
@@ -928,7 +930,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
+      if (col.enumVariants) {
+        const variant = col.enumVariants[raw] ?? 'neutral';
+        return <Tag variant={variant} label={label} />;
+      }
+      return <span>{label}</span>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
@@ -942,7 +948,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
+      return <StatusTag status={raw} label={label} />;
     }
     if (col.type === 'percent') {
       const val = Number(row[col.key]);
@@ -987,18 +993,25 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         };
         const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
         const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
-        const trueColor  = col.badgeColors?.true  ?? 'bg-emerald-100 text-emerald-800';
-        const falseColor = col.badgeColors?.false ?? 'bg-amber-100 text-amber-700';
-        if (isTruthyBoolean(val)) return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
-            {trueLabel}
-          </span>
-        );
-        if (isFalsyBoolean(val)) return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
-            {falseLabel}
-          </span>
-        );
+        if (!col.badgeColors) {
+          const trueVariant = col.badgeVariants?.true ?? 'green';
+          const falseVariant = col.badgeVariants?.false ?? 'neutral';
+          if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
+          if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
+        } else {
+          const trueColor  = col.badgeColors.true  ?? 'bg-emerald-100 text-emerald-800';
+          const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
+          if (isTruthyBoolean(val)) return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
+              {trueLabel}
+            </span>
+          );
+          if (isFalsyBoolean(val)) return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
+              {falseLabel}
+            </span>
+          );
+        }
       }
       if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
       if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale } from '@/i18n';
+import { StatusTag } from '@/components/ui/status-tag';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
@@ -8,15 +9,9 @@ function isCreditNote(row) {
   return (row['transactionDocument$_identifier'] || '').toLowerCase().includes('credit');
 }
 
-// Status classNames — locale-independent
-const STATUS_CLASS = {
-  draft:   'bg-gray-100 text-gray-600 border border-gray-200',
-  paid:    'bg-emerald-600 text-white border-transparent',
-  partial: 'bg-blue-50 text-blue-700 border border-blue-300',
-  pending: 'bg-amber-50 text-amber-700 border border-amber-300',
-  overdue: 'bg-red-50 text-red-700 border border-red-300',
-  voided:  'bg-red-100 text-red-600 border border-red-200',
-  closed:  'bg-gray-100 text-gray-600 border border-gray-200',
+const STATUS_TONE = {
+  draft: 'neutral', paid: 'success', partial: 'warning',
+  pending: 'warning', overdue: 'destructive', voided: 'destructive', closed: 'neutral',
 };
 
 // i18n keys for each status / UI element
@@ -75,9 +70,9 @@ export default function InvoiceHeaderTable(props) {
     { key: '_status', column: '_status', type: 'custom', label: t('statusColumn'),
       render: (row) => {
         const statusKey = getInvoiceStatus(row);
-        const className = STATUS_CLASS[statusKey] || STATUS_CLASS.pending;
+        const tone = STATUS_TONE[statusKey] || 'neutral';
         const label = gl[STATUS_KEYS[statusKey]] || statusKey;
-        return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`} style={{ borderWidth: '0.5px' }}>{label}</span>;
+        return <StatusTag status={statusKey} tone={tone} label={label} />;
       },
     },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },

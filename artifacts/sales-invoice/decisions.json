@@ -134,8 +134,7 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "processed": {
           "visibility": "readOnly",
