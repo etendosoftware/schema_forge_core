@@ -131,8 +131,7 @@
           "grid": false,
           "label": "Identifier",
           "section": "principal",
-          "order": 0,
-          "displayLogic": "!!record.id"
+          "order": 0
         },
         "searchKey": {
           "visibility": "editable",
