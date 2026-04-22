@@ -379,14 +379,6 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
             }
           }
 
-          // Remove NEO auto-sequence placeholders (e.g. "<10000000>") — they carry the
-          // wrong format (no prefix/mask). The real value is assigned by backend on save.
-          for (const key of Object.keys(normalized)) {
-            if (typeof normalized[key] === 'string' && /^<\d+>$/.test(normalized[key])) {
-              delete normalized[key];
-            }
-          }
-
           const isContactsBusinessPartner = entity === 'businessPartner'
             && /\/contacts$/i.test(apiBaseUrl || '');
           if (isContactsBusinessPartner && (normalized.oBTIKTaxIDKey == null || normalized.oBTIKTaxIDKey === '')) {
