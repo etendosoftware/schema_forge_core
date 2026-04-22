@@ -1,6 +1,5 @@
 export const contactModalConfig = {
   headerFields: [
-    { id: 'searchKey', labelKey: 'identifier', type: 'text', required: true },
     { id: 'name', labelKey: 'contactName', type: 'text', required: true },
     {
       id: 'taxIdType',
@@ -59,6 +58,6 @@ export const contactModalConfig = {
       ],
     },
   ],
-  requiredFields: ['searchKey', 'name', 'taxID', 'country'],
-  progressFields: ['searchKey', 'name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
+  requiredFields: ['name', 'taxID', 'country'],
+  progressFields: ['name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
 };
