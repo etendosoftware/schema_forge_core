@@ -8,12 +8,12 @@ import {
   useState,
 } from 'react';
 import { useAuth } from '@/auth/AuthContext.jsx';
-import { buildHeaders } from '@/auth/api.js';
+import { buildHeaders, detectBaseUrl } from '@/auth/api.js';
 
 const FavoritesContext = createContext(null);
 
 const STORAGE_PREFIX = 'sf_favorites_';
-const FAVORITES_ENDPOINT = '/sws/neo/favorites';
+const FAVORITES_ENDPOINT = `${detectBaseUrl()}/sws/neo/favorites`;
 
 function storageKey(username) {
   return `${STORAGE_PREFIX}${username || 'anonymous'}`;
@@ -86,10 +86,11 @@ export function FavoritesProvider({ children }) {
   );
 
   const addFavorite = useCallback(
-    (name, label) => {
+    (name, label, labels) => {
       if (!name) return;
       if (favorites.some((f) => f.name === name)) return;
-      const next = [...favorites, { name, label: label || name }];
+      const entry = labels ? { name, label: label || name, labels } : { name, label: label || name };
+      const next = [...favorites, entry];
       setFavorites(next);
       writeFavorites(username, next);
       syncToServer(next);
@@ -109,12 +110,13 @@ export function FavoritesProvider({ children }) {
   );
 
   const toggleFavorite = useCallback(
-    (name, label) => {
+    (name, label, labels) => {
       if (!name) return;
       const exists = favorites.some((f) => f.name === name);
+      const entry = labels ? { name, label: label || name, labels } : { name, label: label || name };
       const next = exists
         ? favorites.filter((f) => f.name !== name)
-        : [...favorites, { name, label: label || name }];
+        : [...favorites, entry];
       setFavorites(next);
       writeFavorites(username, next);
       syncToServer(next);

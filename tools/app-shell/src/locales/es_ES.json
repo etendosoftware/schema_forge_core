@@ -16330,9 +16330,6 @@
     "Leads": {
       "label": "Leads"
     },
-    "HR": {
-      "label": "RRHH"
-    },
     "Employees": {
       "label": "Empleados"
     },
@@ -18115,6 +18112,15 @@
     "Reports": {
       "label": "Informes"
     },
+    "Purchases Reports": {
+      "label": "Informes de Compras"
+    },
+    "Inventory Reports": {
+      "label": "Informes de Inventario"
+    },
+    "Finance Reports": {
+      "label": "Informes de Finanzas"
+    },
     "Payment Tracker": {
       "label": "Seguimiento cobros-pagos"
     },
@@ -18377,7 +18383,7 @@
       "label": "Terceros"
     },
     "Return Material Receipt": {
-      "label": "Recibo devolución de material"
+      "label": "Recibo de Devolución"
     },
     "General Ledger Configuration": {
       "label": "Esquema contable"
@@ -18422,7 +18428,7 @@
       "label": "Transportista"
     },
     "Sales Order": {
-      "label": "Pedido de venta"
+      "label": "Pedido de Venta"
     },
     "Product Category": {
       "label": "Categoría del producto"
@@ -18458,7 +18464,7 @@
       "label": "Informes y procesos"
     },
     "Sales Invoice": {
-      "label": "Factura (Cliente)"
+      "label": "Factura de Venta"
     },
     "Physical Inventory": {
       "label": "Inventario físico"
@@ -18467,7 +18473,7 @@
       "label": "Ajuste de Costes"
     },
     "Goods Shipment": {
-      "label": "Albarán (Cliente)"
+      "label": "Albarán de Venta"
     },
     "Goods Movements": {
       "label": "Movimiento entre almacenes"
@@ -18479,13 +18485,13 @@
       "label": "Entradas de Datos Importados"
     },
     "Purchase Order": {
-      "label": "Pedido de compra"
+      "label": "Pedido de Compra"
     },
     "Purchase Invoice": {
-      "label": "Factura (Proveedor)"
+      "label": "Factura de Compra"
     },
     "Goods Receipt": {
-      "label": "Albarán (Proveedor)"
+      "label": "Albarán de Compra"
     },
     "Form": {
       "label": "Formulario"
@@ -18557,7 +18563,7 @@
       "label": "Rol permisos"
     },
     "Return to Vendor Shipment": {
-      "label": "Devolución a albarán de proveedor"
+      "label": "Albarán de Devolución a Proveedor"
     },
     "Alert": {
       "label": "Alertas"
@@ -18602,7 +18608,7 @@
       "label": "Inventario Referenciado"
     },
     "Sales Quotation": {
-      "label": "Presupuesto de ventas"
+      "label": "Presupuesto de Venta"
     },
     "Costing Algorithm": {
       "label": "Algoritmo de cálculo de costes"
@@ -18812,7 +18818,7 @@
       "label": "Método de Adjuntos"
     },
     "Return to Vendor": {
-      "label": "Devolución a proveedor"
+      "label": "Devolución a Proveedor"
     },
     "Process Group": {
       "label": "Grupo de Procesos"
@@ -18851,7 +18857,7 @@
       "label": "Histórico de auditoría"
     },
     "Return from Customer": {
-      "label": "Devolución de cliente"
+      "label": "Devolución de Cliente"
     },
     "Production Run": {
       "label": "Parte de Fabricación"
@@ -18942,6 +18948,30 @@
     },
     "Depreciation Setup": {
       "label": "Configuración de depreciación"
+    },
+    "Order": {
+      "label": "Pedido"
+    },
+    "Invoice": {
+      "label": "Factura"
+    },
+    "Quotation": {
+      "label": "Presupuesto"
+    },
+    "Shipment": {
+      "label": "Albarán"
+    },
+    "Receipt": {
+      "label": "Albarán"
+    },
+    "Return": {
+      "label": "Devolución"
+    },
+    "Return Receipt": {
+      "label": "Recibo de Devolución"
+    },
+    "Return Shipment": {
+      "label": "Albarán de Devolución"
     }
   },
   "statuses": {

@@ -16159,9 +16159,6 @@
     "Goods Receipt": {
       "label": "Goods Receipt"
     },
-    "HR": {
-      "label": "HR"
-    },
     "Home": {
       "label": "Home"
     },
@@ -18512,6 +18509,15 @@
     "Reports": {
       "label": "Reports"
     },
+    "Purchases Reports": {
+      "label": "Purchases Reports"
+    },
+    "Inventory Reports": {
+      "label": "Inventory Reports"
+    },
+    "Finance Reports": {
+      "label": "Finance Reports"
+    },
     "Production Management": {
       "label": "Production Management"
     },
@@ -18685,6 +18691,30 @@
     },
     "Intrastat File Configuration": {
       "label": "Intrastat File Configuration"
+    },
+    "Order": {
+      "label": "Order"
+    },
+    "Invoice": {
+      "label": "Invoice"
+    },
+    "Quotation": {
+      "label": "Quotation"
+    },
+    "Shipment": {
+      "label": "Shipment"
+    },
+    "Receipt": {
+      "label": "Receipt"
+    },
+    "Return": {
+      "label": "Return"
+    },
+    "Return Receipt": {
+      "label": "Return Receipt"
+    },
+    "Return Shipment": {
+      "label": "Return Shipment"
     }
   },
   "statuses": {
