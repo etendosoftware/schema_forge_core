@@ -17448,6 +17448,8 @@
     "noFinancialData": "No financial data",
     "customerBlockField": "Customer block",
     "generalTab": "General",
+    "direccionTab": "Address",
+    "masTab": "More",
     "contactPersonTab": "Person",
     "bankTab": "Bank account",
     "addContactPerson": "Add contact person",

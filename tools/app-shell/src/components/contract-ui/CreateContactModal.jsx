@@ -156,7 +156,7 @@ export default function CreateContactModal({
     setOpts(o => ({ ...o, regions: { options: [], loading: true, error: null } }));
 
     fetch(
-      `${bpApiBaseUrl}/bankAccount/selectors/C_Region_ID?C_Country_ID=${currentCountry}&country=${currentCountry}&limit=200`,
+      `${bpApiBaseUrl}/locationAddress/selectors/C_Region_ID?C_Country_ID=${currentCountry}&limit=200`,
       { headers }
     )
       .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -202,7 +202,6 @@ export default function CreateContactModal({
 
     // Step 1 — Create BP
     const createPayload = {
-      searchKey: form.searchKey?.trim(),
       name: form.name?.trim(),
       taxID: form.taxID?.trim(),
       oBTIKTaxIDKey: form.taxIdType || '1',
@@ -372,7 +371,6 @@ export default function CreateContactModal({
       saveLabel={ui('saveContact')}
       {...contactModalConfig}
       initialValues={{
-        searchKey: '',
         name: '',
         taxID: '',
         taxIdType: '1',

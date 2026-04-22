@@ -1,6 +1,5 @@
 export const contactModalConfig = {
   headerFields: [
-    { id: 'searchKey', labelKey: 'identifier', type: 'text', required: true },
     { id: 'name', labelKey: 'contactName', type: 'text', required: true },
     {
       id: 'taxIdType',
@@ -13,7 +12,7 @@ export const contactModalConfig = {
   sections: [
     {
       id: 'general',
-      labelKey: 'generalTab',
+      labelKey: 'direccionTab',
       component: 'AddressSection',
     },
     {
@@ -58,7 +57,17 @@ export const contactModalConfig = {
         { id: 'iban', labelKey: 'ibanField', type: 'text' },
       ],
     },
+    {
+      id: 'more',
+      labelKey: 'masTab',
+      plain: true,
+      fields: [
+        { id: 'etgoEmail', labelKey: 'contactEmail', type: 'email' },
+        { id: 'etgoPhone', labelKey: 'contactPhone', type: 'tel' },
+        { id: 'etgoWeb', labelKey: 'websiteField', type: 'text' },
+      ],
+    },
   ],
-  requiredFields: ['searchKey', 'name', 'taxID', 'country'],
-  progressFields: ['searchKey', 'name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
+  requiredFields: ['name', 'taxID', 'country'],
+  progressFields: ['name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
 };
