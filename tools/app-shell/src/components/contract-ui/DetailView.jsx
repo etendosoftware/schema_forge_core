@@ -1521,7 +1521,7 @@ export function DetailView({
                           {allEntryFields.length > 0 && (
                             <AddLineButton
                               onClick={handleAddLineClick}
-                              label={ui('addEntity', { label: tMenu(detailLabel || 'Lines') })}
+                              label={ui('addLine')}
                             />
                           )}
                           {DetailExtraActions && (

@@ -16655,6 +16655,7 @@
     "pricingCreatedUsingDefaultValues": "Precio creado usando valores predeterminados.",
     "unableToSavePricing": "No se pudo guardar el precio.",
     "addEntity": "Añadir {label}",
+    "addLine": "Añadir línea",
     "noAdditionalActions": "No hay acciones adicionales",
     "entityDetail": "Detalle de {label}",
     "saveHeaderFirst": "Guarda el encabezado primero para agregar líneas.",
