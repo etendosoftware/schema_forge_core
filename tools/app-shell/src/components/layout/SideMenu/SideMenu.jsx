@@ -61,6 +61,7 @@ import {
 import { cn } from '@/lib/utils.js';
 import { useMenuLabel, useUI, useLocaleSwitch } from '@/i18n';
 import { useFavorites } from '@/components/layout/FavoritesContext';
+import menuConfig from '@/menu.json';
 
 const ICON_MAP = {
   ClipboardCheck,
@@ -203,14 +204,14 @@ export default function SideMenu({
 
   const favNameMap = useMemo(() => {
     const map = {};
-    for (const g of menuGroups) {
+    for (const g of menuConfig.menu) {
       if (g.group === 'Favorites') continue;
       for (const item of g.items || []) {
         map[item.path || item.name] = item.favname || item.label;
       }
     }
     return map;
-  }, [menuGroups]);
+  }, []);
 
   const resolvedMenuGroups = menuGroups.map((g) => {
     if (g.group !== 'Favorites') return g;

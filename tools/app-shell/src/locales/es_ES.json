@@ -16142,7 +16142,7 @@
       "label": "Albarán de devolución"
     },
     "Purchase Invoice": {
-      "label": "Factura"
+      "label": "Factura de Compra"
     },
     "Warehouses": {
       "label": "Almacenes"
@@ -16232,7 +16232,7 @@
       "label": "General"
     },
     "Goods Receipt": {
-      "label": "Albarán"
+      "label": "Albarán de Compra"
     },
     "Return Shipments": {
       "label": "Envíos de devolución"
@@ -16253,31 +16253,31 @@
       "label": "Facturas recurrentes"
     },
     "Sales Quotation": {
-      "label": "Presupuesto"
+      "label": "Presupuesto de Venta"
     },
     "Sales Order": {
-      "label": "Pedido"
+      "label": "Pedido de Venta"
     },
     "Goods Shipment": {
-      "label": "Albarán"
+      "label": "Albarán de Venta"
     },
     "Sales Invoice": {
-      "label": "Factura"
+      "label": "Factura de Venta"
     },
     "Return from Customer": {
-      "label": "Devolución"
+      "label": "Devolución de Cliente"
     },
     "Return Material Receipt": {
-      "label": "Albarán de devolución"
+      "label": "Recibo de Devolución"
     },
     "Purchase Order": {
-      "label": "Pedido"
+      "label": "Pedido de Compra"
     },
     "Return to Vendor": {
-      "label": "Devolución"
+      "label": "Devolución a Proveedor"
     },
     "Return to Vendor Shipment": {
-      "label": "Albarán de devolución"
+      "label": "Albarán de Devolución a Proveedor"
     },
     "Quotation": {
       "label": "Presupuesto"
