@@ -1,5 +1,3 @@
-import { formatAmount } from '@/lib/formatAmount.js';
-
 export function localeFromUi(locale) {
   return locale === 'es_ES' ? 'es-ES' : 'en-US';
 }
@@ -20,10 +18,9 @@ export function formatDashboardNumber(value, locale = 'en-US', options = {}) {
 }
 
 export function formatDashboardAmount(value, currencyLabel, locale = 'en-US') {
-  const raw = formatAmount(value, currencyLabel);
   const num = Number(value);
 
-  if (!Number.isFinite(num)) return raw;
+  if (!Number.isFinite(num)) return String(value ?? '\u2014');
 
   const localizedAmount = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 2,
@@ -34,10 +31,12 @@ export function formatDashboardAmount(value, currencyLabel, locale = 'en-US') {
     return num < 0 ? `-${localizedAmount}` : localizedAmount;
   }
 
-  const match = raw.match(/[0-9][0-9,.-]*/);
-  if (!match) return raw;
+  const normalizedLabel = String(currencyLabel).trim();
+  const codeMatch = normalizedLabel.toUpperCase().match(/\b[A-Z]{3}\b/);
+  const currencyCode = codeMatch ? codeMatch[0] : normalizedLabel.toUpperCase();
+  const formatted = `${currencyCode} ${localizedAmount}`;
 
-  return raw.replace(match[0], localizedAmount);
+  return num < 0 ? `-${formatted}` : formatted;
 }
 
 export function formatDashboardCompact(value, { locale = 'en-US', currencyLabel = '', maxDecimals = 1 } = {}) {
