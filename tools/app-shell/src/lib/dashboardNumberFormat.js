@@ -1,3 +1,5 @@
+const DASHBOARD_NUMBER_LOCALE = 'en-US';
+
 export function localeFromUi(locale) {
   return locale === 'es_ES' ? 'es-ES' : 'en-US';
 }
@@ -11,7 +13,7 @@ export function formatDashboardNumber(value, locale = 'en-US', options = {}) {
     maximumFractionDigits = 0,
   } = options;
 
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(DASHBOARD_NUMBER_LOCALE, {
     minimumFractionDigits,
     maximumFractionDigits,
   }).format(num);
@@ -22,7 +24,7 @@ export function formatDashboardAmount(value, currencyLabel, locale = 'en-US') {
 
   if (!Number.isFinite(num)) return String(value ?? '\u2014');
 
-  const localizedAmount = new Intl.NumberFormat(locale, {
+  const localizedAmount = new Intl.NumberFormat(DASHBOARD_NUMBER_LOCALE, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(num));

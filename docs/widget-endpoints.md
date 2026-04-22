@@ -348,7 +348,7 @@ Fields: `id` (unique), `author` (display name), `text` (message), `timestamp` (I
 
 Data is filtered to sales invoices (`issotrx = 'Y'`) in completed statuses (`CO`, `CL`) with `dateinvoiced` in the last 7 days, sorted by newest first, limited to 10 rows.
 
-Dashboard monetary widgets render values with an ISO currency prefix to avoid symbol ambiguity in multi-currency orgs (for example, `EUR 7284,20` in `es-ES` and `USD 7,284.20` in `en-US`).
+Dashboard monetary widgets render values with an ISO currency prefix and fixed en-US numeric separators to avoid symbol and locale ambiguity in multi-currency orgs (for example, `EUR 7,284.20`).
 
 ## Transitioning to Real Data
 
