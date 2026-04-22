@@ -69,3 +69,27 @@ export function formatDashboardCompact(value, { locale = 'en-US', currencyLabel 
 export function formatDashboardAxisTick(value, locale = 'en-US') {
   return formatDashboardCompact(value, { locale, maxDecimals: 1 });
 }
+
+export function niceScale(dataMax) {
+  if (dataMax <= 0) return { niceMax: 100, ticks: [0, 25, 50, 75, 100] };
+
+  const exp = Math.floor(Math.log10(dataMax));
+  const niceFactors = [1, 2, 2.5, 5, 10, 20, 25, 50];
+
+  for (let e = exp - 1; e <= exp + 1; e++) {
+    const base = Math.pow(10, e);
+    for (const f of niceFactors) {
+      const step = f * base;
+      const niceMax = Math.ceil(dataMax / step - 1e-10) * step;
+      const count = Math.round(niceMax / step) + 1;
+      if (count >= 4 && count <= 6) {
+        return { niceMax, ticks: Array.from({ length: count }, (_, i) => i * step) };
+      }
+    }
+  }
+
+  const step = Math.pow(10, exp);
+  const niceMax = Math.ceil(dataMax / step) * step;
+  const count = Math.round(niceMax / step) + 1;
+  return { niceMax, ticks: Array.from({ length: count }, (_, i) => i * step) };
+}
