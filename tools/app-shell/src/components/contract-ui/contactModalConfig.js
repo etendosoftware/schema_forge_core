@@ -12,7 +12,7 @@ export const contactModalConfig = {
   sections: [
     {
       id: 'general',
-      labelKey: 'generalTab',
+      labelKey: 'direccionTab',
       component: 'AddressSection',
     },
     {
@@ -55,6 +55,16 @@ export const contactModalConfig = {
         ]},
         { id: 'genericAccountNo', labelKey: 'genericAccountNoField', type: 'text' },
         { id: 'iban', labelKey: 'ibanField', type: 'text' },
+      ],
+    },
+    {
+      id: 'more',
+      labelKey: 'masTab',
+      plain: true,
+      fields: [
+        { id: 'etgoEmail', labelKey: 'contactEmail', type: 'email' },
+        { id: 'etgoPhone', labelKey: 'contactPhone', type: 'tel' },
+        { id: 'etgoWeb', labelKey: 'websiteField', type: 'text' },
       ],
     },
   ],

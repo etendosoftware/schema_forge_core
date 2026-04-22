@@ -134,10 +134,9 @@ export default function AddressSection({ form, onChange, opts }) {
   return (
     <>
       {/*
-        Layout: 4 equal columns, no spans.
+        Layout: 4 equal columns.
         Row 1: Primera línea | Segunda línea | Código postal | Ciudad
-        Row 2: País | Región | Correo electrónico* | Teléfono*
-        Row 3: Página web* | (3 empty)
+        Row 2: País | Región | — | —
       */}
       <div className="address-grid">
         {/* Row 1 */}
@@ -180,21 +179,7 @@ export default function AddressSection({ form, onChange, opts }) {
             <ChevronDown size={14} className="text-muted-foreground shrink-0" />
           </button>
         </div>
-        <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('contactEmail')}</label>
-          <input type="email" className={INPUT_CLS} value={form.etgoEmail ?? ''} onChange={e => onChange('etgoEmail', e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('contactPhone')}</label>
-          <input type="tel" className={INPUT_CLS} value={form.etgoPhone ?? ''} onChange={e => onChange('etgoPhone', e.target.value.replace(/[^\d\s+\-().]/g, ''))} />
-        </div>
-
-        {/* Row 3 */}
-        <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('websiteField')}</label>
-          <input type="text" className={INPUT_CLS} value={form.etgoWeb ?? ''} onChange={e => onChange('etgoWeb', e.target.value)} />
-        </div>
-        <div /><div /><div />
+        <div /><div />
       </div>
 
       {/* Country picker */}
